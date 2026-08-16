@@ -216,6 +216,10 @@ LOCALHOST_PROBE_ALLOWLIST_EXACT = frozenset(
         # (location /api/ -> proxy_pass http://api:8000/, which strips /api) and
         # routes/admin.py (APIRouter prefix="/admin/provision" + "/identity-providers").
         "http://localhost:8080/api/admin/provision/identity-providers",
+        # OPS-OBSERV-01: readiness probe documented in observability.md and
+        # diagnostics.md. Verified against nginx.conf (location /api/ ->
+        # proxy_pass http://api:8000/) and main.py's @app.get("/readyz").
+        "http://localhost:8080/api/readyz",
     }
 )
 LOCALHOST_PROBE_ALLOWLIST_PREFIX = (

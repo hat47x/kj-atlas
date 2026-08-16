@@ -1,7 +1,7 @@
 # Issue: SEC-ADMIN-PLANE-01 管理APIに業務面と分離された認可がなく、かつSaaSではブートストラップ不能
 
 - Type: Security / Bug
-- Status: In Progress
+- Status: Done
 - Source Issue: `SAAS-TENANT-AUTHEDGE-01`
 - Priority: P0
 - Owner: Maintainer
@@ -79,10 +79,10 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 - [x] AC-6: `THREAT_MODEL.md` と `04_Documentation/security.md` に管理面の保護要件を追記した。アプリ側保証と前段委譲（D1=C）の責務境界、および SaaS でのテナント発行の業務的正当性が範囲外であることを明記。
 - [x] AC-7: 越境の negative matrix を integration テストで固定した — 業務面キーで到達不可、資格情報なしで到達不可、誤った資格情報で到達不可、拒否応答が「未設定」と「誤り」を区別しない、提示値・設定値を反射しない、未知 profile が open へ fall through しない。
 
-## 残作業（本issueを Open のまま残す理由）
+## 残作業（Done 化の注記）
 
-- **AC-5（管理面の監査証跡）**: 未着手。既存 audit dispatcher は既定 `noop` で、かつ `view` 相当のイベントは SafeMode 既定で捨てられる（`OPS-OBSERV-01` 参照）。**監査の宛先が存在しない状態で emit を足しても証跡にならない**ため、`DATA-MAINT-06`（監査イベントのローカル永続化、Draft）の方針決定と併せて着手するのが妥当と判断した。ブートストラップ経路（stage A）は静的資格情報のため主体を特定できず、原理的に「誰が」を記録できない点も設計判断を要する。
-- **AC-3 の通し検証**: 空DBから `saas-multitenant` を起動し、制御プレーン資格情報で IdP 登録 → テナント紐付け → 実JWT で認証成立まで到達する E2E は未実施。`QA-E2E-SAAS-01` の範囲と重複するため、そちらへ寄せるか本issueで持つかの判断が要る。
+- **AC-5（管理面の監査証跡）**: **`issue-SEC-ADMIN-PLANE-03` で完了**（iteration 40・2026-08-15）。`admin_audit_events` テーブル＋記録middleware＋`GET /admin/provision/audit`（allowlist・composite cursor）。`verify_api_admin.sh` 実走行10/10。
+- **AC-3 の通し検証**: 空DBから `saas-multitenant` を起動し、制御プレーン資格情報で IdP 登録 → テナント紐付け → 実JWT で認証成立まで到達する E2E は未実施。**`QA-E2E-SAAS-01`（tenant session coverage gap）の範囲へ寄せる**（iteration 72 の棚卸しで決定）。AC-3 自体は経路の存在と分離認可をテストで固定済みであり、本issueは Done 化。
 
 ## 依存関係
 

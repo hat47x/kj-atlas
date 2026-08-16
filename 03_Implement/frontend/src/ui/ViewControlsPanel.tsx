@@ -54,6 +54,9 @@ type ViewControlsPanelProps = {
   showSeqNumbers: boolean;
   onShowSeqNumbersChange: (value: boolean) => void;
   providerKind: ProviderKind | null;
+  /** OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
+   * shown read-only. Empty until the first LLM call. */
+  llmCallCounts?: Record<string, number>;
   lastAiCallOutcome: "ok" | AiProviderErrorKind | null;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
@@ -145,6 +148,7 @@ export function ViewControlsPanel({
   showSeqNumbers,
   onShowSeqNumbersChange,
   providerKind,
+  llmCallCounts,
   lastAiCallOutcome,
   lodEnabled,
   onLodEnabledChange,
@@ -707,6 +711,17 @@ export function ViewControlsPanel({
         {lastAiCallOutcome ? (
           <div style={{ fontSize: 11, color: "#64748b" }}>
             {t(`view_controls.ai_provider.outcome.${lastAiCallOutcome}`)}
+          </div>
+        ) : null}
+        {llmCallCounts && Object.keys(llmCallCounts).length > 0 ? (
+          <div data-ui-region="llm-call-counts" style={{ fontSize: 11, color: "#64748b" }}>
+            {t("view_controls.ai_provider.call_counts", {
+              total: String(llmCallCounts.total ?? 0),
+              breakdown: Object.entries(llmCallCounts)
+                .filter(([kind]) => kind !== "total")
+                .map(([kind, count]) => `${kind}: ${count}`)
+                .join(", "),
+            })}
           </div>
         ) : null}
       </div>

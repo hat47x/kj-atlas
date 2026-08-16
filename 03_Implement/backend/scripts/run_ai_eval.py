@@ -128,7 +128,10 @@ def _run_eval(client_app, doc: DocumentV1, refine_count: int) -> None:
         print("|---|------|------|---------|")
         passed = 0
         for i, card in enumerate(doc.cards[: refine_count], start=1):
-            resp = client.post("/ai/refine-card-text", json={"cardText": card.text})
+            resp = client.post(
+                "/ai/refine-card-text",
+                json={"cardText": card.text, "textReviewed": True},
+            )
             if resp.status_code == 200:
                 body = resp.json()
                 refined = body.get("refinedText", "(missing refinedText)")

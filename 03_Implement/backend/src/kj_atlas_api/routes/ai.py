@@ -4,6 +4,7 @@ import math
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,7 @@ from kj_atlas_api.llm.provider import (
     build_audit_fields,
     generate_with_fallback,
     get_provider,
+    resolve_model_for_task,
 )
 from kj_atlas_api.models_ai import (
     CheckNarrativeRequest,
@@ -31,10 +33,12 @@ from kj_atlas_api.models_ai import (
     ExternalAgentTaskRegistrationResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
+    OpposingViewpointProposal,
     ProposalDecisionAuditRequest,
     ProposalDecisionAuditResponse,
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
+    ProposeOpposingViewpointRequest,
     ProviderStatusResponse,
     RefineCardTextRequest,
     RefineCardTextResponse,
@@ -137,6 +141,74 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
     )
 
 
+def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
+    """AI-MODEL-GOVERNANCE-01 R3 + AI-MODEL-GOVERNANCE-02: enforce the tenant
+    model allowlist AND that the model is an active registered model.
+
+    - A non-empty allowlist is fail-closed: a requested/resolved model outside
+      it is rejected with 403 model_not_allowed before any LLM call.
+    - Empty allowlist = platform-default: "all active registered models allowed".
+      AI-MODEL-GOVERNANCE-02 closes the gap where the platform-default was a
+      no-op, letting unregistered / disabled model ids reach the LLM provider.
+      An id that is not an active registered model (active provider included)
+      is rejected with 403 model_not_registered."""
+    from kj_atlas_api.model_registry_repository import (
+        list_models,
+        list_providers,
+        tenant_allowlist_effective_model_ids,
+    )
+
+    tenant = _resolve_audit_tenant(request, db)
+    effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
+    if effective is not None and model_id not in effective:
+        # R4: a model_not_allowed violation is a governance-relevant event --
+        # structured-log it (with the request id already attached by the logging
+        # substrate) so an operator can investigate repeated denials per tenant.
+        logger.warning(
+            "model_not_allowed",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+                "allowedModels": ",".join(sorted(effective)),
+            },
+        )
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "model_not_allowed",
+                "message": f"Model '{model_id}' is not in the tenant's allowed model set.",
+                "allowedModels": sorted(effective),
+            },
+        )
+
+    # AI-MODEL-GOVERNANCE-02: the registry is the source of truth for what is
+    # callable. Even under platform-default (empty allowlist), a model id that
+    # is not an active registered model (active provider included) must fail
+    # closed before any LLM call. Distinguishes "tenant-restricted" (above)
+    # from "does not exist / disabled" (here) for operator triage.
+    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_registered_ids = {
+        row.id
+        for row in list_models(db)
+        if row.lifecycle_state == "active" and row.provider_id in active_provider_ids
+    }
+    if model_id not in active_registered_ids:
+        logger.warning(
+            "model_not_registered",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+            },
+        )
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "model_not_registered",
+                "message": f"Model '{model_id}' is not an active registered model.",
+            },
+        )
+
+
 def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> None:
     """SEC-AI-SAFEMODE-01 (ADR-0068 D2=B): reject a document with unreviewed
     card text unless the caller explicitly requests relaxation AND the profile
@@ -149,6 +221,25 @@ def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> Non
             detail={
                 "code": "unreviewed_text_not_allowed",
                 "message": "Document contains unreviewed card text, which cannot be sent to the LLM under SafeMode.",
+            },
+        )
+
+
+def _reject_unreviewed_cards(cards, allow_unreviewed_text: bool | None) -> None:
+    """SEC-AI-SAFEMODE-02: the no-document AI routes take card text directly, so
+    the review state travels with the request (`textReviewed`). Reject any card
+    whose text is not certified reviewed unless the caller explicitly requests
+    relaxation AND the profile permits it. Defaults False (fail-closed), so an
+    unspecified `textReviewed` is treated as unreviewed — the request is
+    rejected — matching ADR-0068 D3=A (unspecified = SafeMode ON)."""
+    if allow_unreviewed_text is True and settings.allow_unreviewed_ai_text:
+        return
+    if any(getattr(card, "textReviewed", False) is not True for card in cards):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unreviewed_text_not_allowed",
+                "message": "Request contains unreviewed card text, which cannot be sent to the LLM under SafeMode.",
             },
         )
 
@@ -718,12 +809,83 @@ def _parse_merge_suggestions(
     return parsed_suggestions
 
 
+class AvailableModelItem(BaseModel):
+    id: str
+    displayName: str
+    providerId: str
+    capabilities: str | None = None
+
+
+class AvailableModelsResponse(BaseModel):
+    models: list[AvailableModelItem]
+
+
+def _is_user_selectable_model(capabilities: str | None) -> bool:
+    """AI-MODEL-GOVERNANCE-01 MMR-04: a model is user-selectable for the D5
+    per-operation selectors only if it serves an intermediate/generate tier.
+    final_judgement-only models (check_narrative / detect_contradiction etc.) are
+    fixed by admin policy and must NOT be offered for user selection."""
+    if not capabilities:
+        return True
+    lower = capabilities.strip().lower()
+    if "intermediate" in lower or "generate" in lower:
+        return True
+    if "final_judgement" in lower:
+        return False
+    return True
+
+
+@router.get(
+    "/available-models",
+    response_model=AvailableModelsResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def get_available_models(request: Request, db: Session = Depends(get_db)) -> AvailableModelsResponse:
+    """AI-MODEL-GOVERNANCE-01 R2: the active registered models this tenant is
+    allowed to use (registry active models intersected with the tenant allowlist;
+    empty allowlist = platform-default = all active registered models). The UI
+    model selector offers exactly this set -- user-selectable (intermediate/
+    generate) models only, never final_judgement-only ones (MMR-04) and never
+    disabled models or provider secrets."""
+    from kj_atlas_api.model_registry_repository import (
+        list_models,
+        list_providers,
+        tenant_allowlist_effective_model_ids,
+    )
+
+    tenant = _resolve_audit_tenant(request, db)
+    active_models = [row for row in list_models(db) if row.lifecycle_state == "active"]
+    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
+    allowed = [row for row in active_models if row.provider_id in active_provider_ids]
+    if effective is not None:
+        allowed = [row for row in allowed if row.id in effective]
+    allowed = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
+    return AvailableModelsResponse(
+        models=[
+            AvailableModelItem(
+                id=row.id,
+                displayName=row.display_name,
+                providerId=row.provider_id,
+                capabilities=row.capabilities,
+            )
+            for row in allowed
+        ]
+    )
+
+
 @router.get("/provider-status", response_model=ProviderStatusResponse)
 def get_provider_status() -> ProviderStatusResponse:
     """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured provider
     kind for display in the View panel. No connectivity check is performed;
-    "last known outcome" is tracked client-side from real AI-call results."""
-    return ProviderStatusResponse(providerKind=get_provider().provider_kind)
+    "last known outcome" is tracked client-side from real AI-call results.
+    OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
+    from kj_atlas_api.llm.provider import llm_call_counts
+
+    return ProviderStatusResponse(
+        providerKind=get_provider().provider_kind,
+        callCounts=llm_call_counts(),
+    )
 
 
 @router.post(
@@ -795,11 +957,13 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_island_summary"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
                 prompt=_build_island_summary_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -837,6 +1001,7 @@ def propose_island_summary(
             doc=payload.doc,
             islandId=payload.islandId,
             allowUnreviewedText=payload.allowUnreviewedText,
+            model=payload.model,
         ),
         request,
         db,
@@ -876,6 +1041,92 @@ def propose_island_summary(
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail="Proposal registration conflicted") from exc
+    return proposal
+
+
+def _build_opposing_viewpoint_prompt(payload: ProposeOpposingViewpointRequest) -> str:
+    """AI-OPPOSE-01 (M4): prompt the model to propose an opposing viewpoint or
+    evidence gap for a target card, using the doc's contradiction / evidence
+    structure. proposal-only -- the model never decides; the human does."""
+    target = next((card for card in payload.doc.cards if card.id == payload.targetCardId), None)
+    if target is None:
+        raise HTTPException(status_code=422, detail="targetCardId does not exist")
+    card_lines = "\n".join(f'  - id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards)
+    evidence_lines = "\n".join(
+        f'  - source "{link.fromCardId}" --{link.type}--> target "{link.toCardId}"'
+        for link in payload.doc.evidenceLinks or []
+    ) or "- (none)"
+    return "\n".join(
+        [
+            "You propose an OPPOSING viewpoint or an evidence-gap note for the target card.",
+            "Use only the provided cards and evidence links. Do not add outside facts.",
+            "The proposal is a candidate for human review -- it is never applied automatically.",
+            "Ground every claim in the card text. If the target's evidence is missing or weak, set evidenceGap=true.",
+            'Return strict JSON only: {"opposingText": string, "evidenceGap": boolean, "rationale": string, "warnings": [string,...]}',
+            f"Target card: {json.dumps({'id': target.id, 'text': target.text})}",
+            "Cards:",
+            card_lines,
+            "Evidence links:",
+            evidence_lines,
+        ]
+    )
+
+
+@router.post(
+    "/proposals/opposing-viewpoint",
+    response_model=OpposingViewpointProposal,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def propose_opposing_viewpoint(
+    payload: ProposeOpposingViewpointRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> OpposingViewpointProposal:
+    """AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint / evidence-gap
+    proposal for a target card, derived from the doc's contradiction and
+    evidence structure. Never auto-applied (status stays "proposed")."""
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=payload.doc.id,
+        safe_mode=False,
+        read_only=False,
+    )
+    if get_document_row(db, tenant=tenant, doc_id=payload.doc.id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if next((card for card in payload.doc.cards if card.id == payload.targetCardId), None) is None:
+        raise HTTPException(status_code=422, detail="targetCardId does not exist")
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("propose_opposing_viewpoint"))
+
+    try:
+        llm_response = generate_with_fallback(
+            LLMRequest(
+                task="propose_opposing_viewpoint",
+                prompt=_build_opposing_viewpoint_prompt(payload),
+                model=payload.model,
+            )
+        )
+    except ProviderDisabledError as exc:
+        _raise_llm_http_error(exc)
+    except ProviderRequestError as exc:
+        _raise_llm_http_error(exc)
+
+    try:
+        data = json.loads(llm_response.raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+    proposal = OpposingViewpointProposal(
+        proposalId=f"proposal-{uuid4()}",
+        targetCardId=payload.targetCardId,
+        opposingText=str(data.get("opposingText", data.get("opposing_text", ""))),
+        evidenceGap=bool(data.get("evidenceGap", data.get("evidence_gap", False))),
+        rationale=str(data.get("rationale", "")),
+        warnings=[str(w) for w in (data.get("warnings") or [])],
+    )
+    if not proposal.opposingText:
+        raise HTTPException(status_code=422, detail="LLM response missing opposingText")
     return proposal
 
 
@@ -1084,11 +1335,13 @@ def record_external_proposal_decision(
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("generate_narrative"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
                 prompt=_build_generate_narrative_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1211,11 +1464,14 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
+    _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="refine_card_text",
                 prompt=_build_refine_card_text_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1233,11 +1489,14 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
+    _reject_unreviewed_cards(payload.cards, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_card_groups",
                 prompt=_build_suggest_card_groups_prompt(payload),
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:
@@ -1255,6 +1514,7 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def detect_contradiction(payload: DetectContradictionRequest, request: Request, db: Session = Depends(get_db)) -> DetectContradictionResponse:
+    _reject_unreviewed_cards([payload.cardA, payload.cardB], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1277,6 +1537,8 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
+    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
+    _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1284,6 +1546,7 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Reques
                 prompt=_build_suggest_document_title_prompt(payload),
                 temperature=0.4,
                 max_tokens=300,
+                model=payload.model,
             )
         )
     except ProviderDisabledError as exc:

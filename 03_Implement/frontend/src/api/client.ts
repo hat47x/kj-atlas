@@ -455,11 +455,21 @@ export async function putDocument(
 
 export type ProviderKind = "none" | "local" | "large-scale";
 
+/** OPS-LLM-COST-02: the provider-status snapshot (kind + in-process LLM call
+ * counts per provider kind plus "total"). callCounts is empty until the first
+ * LLM call. */
+export type ProviderStatusSnapshot = {
+  providerKind: ProviderKind;
+  callCounts: Record<string, number>;
+};
+
 /**
  * PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured LLM provider.
- * This is a static config echo, not a connectivity check.
+ * This is a static config echo, not a connectivity check. OPS-LLM-COST-02
+ * carries the in-process LLM call counts through so an operator can see call
+ * volume (especially external / large-scale) in the UI.
  */
-export async function getProviderStatus(): Promise<ProviderKind> {
+export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
   const response = await fetch(`${API_BASE}/ai/provider-status`);
 
   if (!response.ok) {
@@ -467,8 +477,8 @@ export async function getProviderStatus(): Promise<ProviderKind> {
     throw new ApiError(response.status, errorDetail.message, { code: errorDetail.code, disabledReason: errorDetail.disabledReason });
   }
 
-  const body = (await response.json()) as { providerKind: ProviderKind };
-  return body.providerKind;
+  const body = (await response.json()) as ProviderStatusSnapshot;
+  return { providerKind: body.providerKind, callCounts: body.callCounts ?? {} };
 }
 
 export type SuggestLayoutResult = {
@@ -628,10 +638,39 @@ export type SuggestDocumentTitleResponse = {
   candidates: DocumentTitleCandidate[];
 };
 
+// AI-MODEL-GOVERNANCE-01 (R2): the models the current tenant is allowed to use,
+// for the per-operation model selector. Never includes disabled models.
+export type AvailableModelItem = {
+  id: string;
+  displayName: string;
+  providerId: string;
+  capabilities?: string | null;
+};
+
+export async function fetchAvailableModels(
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<AvailableModelItem[]> {
+  const response = await fetch(`${API_BASE}/ai/available-models`, {
+    headers: {
+      ...tenantSessionPreconditionHeaders(requestOptions),
+    },
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+  const body = (await response.json()) as { models: AvailableModelItem[] };
+  return body.models;
+}
+
 export async function suggestDocumentTitle(
   islandTitles: string[],
   cardTexts: string[],
   currentTitle: string | undefined,
+  model: string | undefined,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<SuggestDocumentTitleResponse> {
   const response = await fetch(`${API_BASE}/ai/suggest-document-title`, {
@@ -644,6 +683,7 @@ export async function suggestDocumentTitle(
       islandTitles,
       cardTexts,
       currentTitle: currentTitle ?? null,
+      model: model ?? null,
     }),
   });
 
@@ -666,6 +706,7 @@ export async function proposeIslandSummary(
   doc: DocumentV1,
   islandId: string,
   sourceBundleHash: string,
+  model: string | undefined,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<IslandSummaryProposal> {
   const response = await fetch(`${API_BASE}/ai/proposals/island-summary`, {
@@ -674,7 +715,7 @@ export async function proposeIslandSummary(
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ doc, islandId, sourceBundleHash }),
+    body: JSON.stringify({ doc, islandId, sourceBundleHash, model: model ?? null }),
   });
 
   if (!response.ok) {
@@ -683,6 +724,45 @@ export async function proposeIslandSummary(
   }
 
   return (await response.json()) as IslandSummaryProposal;
+}
+
+// AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint / evidence-gap
+// observation for a target card, grounded in the doc's contradiction/evidence
+// structure. Never auto-applied (status stays "proposed").
+export type OpposingViewpointProposal = {
+  proposalId: string;
+  type: "opposing_viewpoint";
+  status: "proposed";
+  reviewState: "unreviewed";
+  targetCardId: string;
+  opposingText: string;
+  evidenceGap: boolean;
+  rationale: string;
+  warnings: string[];
+};
+
+export async function proposeOpposingViewpoint(
+  doc: DocumentV1,
+  targetCardId: string,
+  model: string | undefined,
+  requestOptions: TenantScopedRequestOptions = {},
+): Promise<OpposingViewpointProposal> {
+  const response = await fetch(`${API_BASE}/ai/proposals/opposing-viewpoint`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantSessionPreconditionHeaders(requestOptions),
+    },
+    body: JSON.stringify({ doc, targetCardId, model: model ?? null }),
+  });
+  if (!response.ok) {
+    const errorDetail = await parseErrorDetail(response);
+    throw new ApiError(response.status, errorDetail.message, {
+      code: errorDetail.code,
+      disabledReason: errorDetail.disabledReason,
+    });
+  }
+  return (await response.json()) as OpposingViewpointProposal;
 }
 
 export async function recordProposalDecision(
@@ -928,6 +1008,7 @@ export type GenerateNarrativeResult = {
 export async function generateNarrative(
   doc: DocumentV1,
   narrativeTitle?: string,
+  model?: string,
   requestOptions: TenantScopedRequestOptions = {},
 ): Promise<GenerateNarrativeResult> {
   const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
@@ -936,7 +1017,7 @@ export async function generateNarrative(
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ doc, narrativeTitle }),
+    body: JSON.stringify({ doc, narrativeTitle, model: model ?? null }),
   });
 
   if (!response.ok) {

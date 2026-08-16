@@ -13,7 +13,9 @@ import {
   recordProposalDecision,
   registerExternalAgentProposal,
   registerExternalAgentTask,
+  fetchAvailableModels,
   proposeIslandSummary,
+  proposeOpposingViewpoint,
   suggestDocumentTitle,
   suggestMerges,
   summarizeIslandRelation,
@@ -22,10 +24,12 @@ import {
   archiveDocument,
   unarchiveDocument,
   listDocuments,
+  type AvailableModelItem,
   type DocumentListItem,
   type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
+  type OpposingViewpointProposal,
   type ProviderKind,
 } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
@@ -1280,6 +1284,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // fetched once from the backend config echo; lastAiCallOutcome is tracked
   // client-side from the actual result of the most recent AI call.
   const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
+  // OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
+  // surfaced read-only in the View panel next to the provider kind.
+  const [llmCallCounts, setLlmCallCounts] = useState<Record<string, number>>({});
   const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
   // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
   // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
@@ -1374,6 +1381,22 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [isRecordingIslandSummaryDecision, setIsRecordingIslandSummaryDecision] = useState(false);
   const [islandSummarySuggestionWarningsByIslandId, setIslandSummarySuggestionWarningsByIslandId] = useState<Record<string, string[]>>({});
   const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
+  // summary suggestion. "" = auto (platform default); the selector offers the
+  // tenant's allowed active models.
+  const [islandSummaryModel, setIslandSummaryModel] = useState<string>("");
+  // Tenant-allowed active models for the selector (guarded fetch, owned here).
+  const [availableModels, setAvailableModels] = useState<AvailableModelItem[] | null>(null);
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for document-title
+  // generation ("" = auto / platform default).
+  const [documentTitleModel, setDocumentTitleModel] = useState<string>("");
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for narrative
+  // generation ("" = auto / platform default).
+  const [narrativeModel, setNarrativeModel] = useState<string>("");
+  // AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint observation for the
+  // selected card; never auto-applied.
+  const [opposingViewpointProposal, setOpposingViewpointProposal] = useState<OpposingViewpointProposal | null>(null);
+  const [isProposingOpposingViewpoint, setIsProposingOpposingViewpoint] = useState(false);
   const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<KnownEdgeType>("related");
@@ -1537,9 +1560,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // the badge simply stays unknown rather than surfacing a spurious error.
     let cancelled = false;
     void getProviderStatus()
-      .then((kind) => {
+      .then(({ providerKind: kind, callCounts }) => {
         if (!cancelled) {
           setProviderKind(kind);
+          setLlmCallCounts(callCounts);
         }
       })
       .catch(() => {
@@ -2187,6 +2211,24 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     setRecentDocumentIds(appStorage.pushRecentDocumentId(docId));
   }, [appStorage]);
 
+  // AI-MODEL-GOVERNANCE-01 (R2): load the tenant's allowed active models for
+  // the model selector. The fetch goes through the guarded tenant-session
+  // wrapper so a stale session cannot leak the listing. Advisory: on failure
+  // the selector collapses (backend default applies).
+  useEffect(() => {
+    let cancelled = false;
+    void runTenantScopedApiRequest(() => fetchAvailableModels({ tenantSessionContext: verifiedTenantSession }))
+      .then((models) => {
+        if (!cancelled) setAvailableModels(models);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableModels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runTenantScopedApiRequest, verifiedTenantSession]);
+
   // 第2反復: fetch the full canvas list when the recent-documents dialog opens.
   // "my documents" filters by the current principal's created_by.
   useEffect(() => {
@@ -2486,11 +2528,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleSuggestDocumentTitle = useCallback(
     async (islandTitles: string[], cardTexts: string[], currentTitle: string | undefined) => {
-      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, {
+      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
         tenantSessionContext: verifiedTenantSession,
       }));
     },
-    [runTenantScopedApiRequest, verifiedTenantSession],
+    [documentTitleModel, runTenantScopedApiRequest, verifiedTenantSession],
   );
 
   const islandTitlesForSuggestion = useMemo(
@@ -3024,6 +3066,27 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     void loadDocument(selectedRecentDocumentId, { isArchived: selectedDoc?.lifecycle_state === "archived" });
   }, [activeDocumentId, canvasDocuments, loadDocument, selectedRecentDocumentId]);
 
+  const handleProposeOpposingViewpoint = useCallback(async (cardId: string) => {
+    if (!document || isProposingOpposingViewpoint) return;
+    if (aiBlockedByUnreviewed()) return;
+    setIsProposingOpposingViewpoint(true);
+    try {
+      const proposal = await runTenantScopedApiRequest(() => proposeOpposingViewpoint(
+        document,
+        cardId,
+        undefined,
+        { tenantSessionContext: verifiedTenantSession },
+      ));
+      setOpposingViewpointProposal(proposal);
+      setStatusMessage(t("app.status.opposing_viewpoint.ready"));
+    } catch (error) {
+      const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+      setStatusMessage(t("app.status.opposing_viewpoint.failed", { detail: resolveAiProviderErrorMessage(error, fallback) }));
+    } finally {
+      setIsProposingOpposingViewpoint(false);
+    }
+  }, [document, isProposingOpposingViewpoint, runTenantScopedApiRequest, verifiedTenantSession]);
+
   const handleSuggestIslandSummary = useCallback(async () => {
     if (!document || !selectedIslandId || isSuggestingIslandSummary) {
       return;
@@ -3045,6 +3108,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         document,
         targetIsland.id,
         `${document.id}:${document.updatedAt}`,
+        islandSummaryModel,
         { tenantSessionContext: verifiedTenantSession },
       ));
       setIslandSummaryProposal(proposal);
@@ -3060,6 +3124,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
   }, [
     document,
+    islandSummaryModel,
     isSuggestingIslandSummary,
     runTenantScopedApiRequest,
     selectedIslandId,
@@ -7995,6 +8060,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       const result = await runTenantScopedApiRequest(() => generateNarrative(
         document,
         `Draft ${draftIndex}`,
+        narrativeModel,
         { tenantSessionContext: verifiedTenantSession },
       ));
       const nextNarrative: Narrative = {
@@ -8030,6 +8096,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     applyDocumentChange,
     document,
     generatedNarratives.length,
+    narrativeModel,
     runTenantScopedApiRequest,
     verifiedTenantSession,
   ]);
@@ -8824,6 +8891,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         isReadOnly={isReadOnly}
         onSuggestTitle={handleSuggestDocumentTitle}
         providerEnabled={providerKind !== null && providerKind !== "none"}
+        documentTitleModel={documentTitleModel}
+        onDocumentTitleModelChange={setDocumentTitleModel}
+        availableModels={availableModels}
       />
       <SearchBar
         query={searchQuery}
@@ -10856,6 +10926,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             showSeqNumbers={showSeqNumbers}
             onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
+            llmCallCounts={llmCallCounts}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
@@ -11553,6 +11624,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               onGenerateFromReadingOrder={() => {
                 void handleGenerateNarrativeFromReadingOrder();
               }}
+              narrativeModel={narrativeModel}
+              onNarrativeModelChange={setNarrativeModel}
+              availableModels={availableModels}
               isChecking={isCheckingNarrative}
               isGenerating={isGeneratingNarrative}
               errorMessage={narrativeCheckError}
@@ -11943,6 +12017,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           onSuggestIslandSummary={() => {
             void handleSuggestIslandSummary();
           }}
+          islandSummaryModel={islandSummaryModel}
+          onIslandSummaryModelChange={setIslandSummaryModel}
+          availableModels={availableModels}
+          opposingViewpointProposal={opposingViewpointProposal}
+          isProposingOpposingViewpoint={isProposingOpposingViewpoint}
+          onProposeOpposingViewpoint={handleProposeOpposingViewpoint}
+          onDismissOpposingViewpointProposal={() => setOpposingViewpointProposal(null)}
           islandSummaryProposal={islandSummaryProposal}
           proposalAuditTrail={proposalAuditTrail}
           onAdoptIslandSummaryProposal={() => {

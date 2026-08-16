@@ -1442,6 +1442,42 @@ def test_docs_list_returns_tenant_metadata(sqlite_client: TestClient) -> None:
     assert "alpha" not in serialized
 
 
+def test_docs_list_keyset_pagination(sqlite_client: TestClient) -> None:
+    """SEC-DOC-BOUND-05: GET /docs?limit= bounds the response and X-Next-Cursor
+    pages the rest, without overlap or loss (ordered updated_at DESC, id ASC)."""
+    for index, doc_id in enumerate(("p1", "p2", "p3", "p4")):
+        payload = _sample_payload(doc_id)
+        payload["updatedAt"] = f"2026-08-15T00:00:{index:02d}Z"
+        resp = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+        assert resp.status_code in (200, 201), resp.text
+
+    # Page 1: limit 2 -> 2 rows + a next cursor.
+    page1 = sqlite_client.get("/docs?limit=2")
+    assert page1.status_code == 200
+    body1 = page1.json()
+    assert len(body1) == 2
+    next_cursor = page1.headers.get("X-Next-Cursor")
+    assert next_cursor, "expected X-Next-Cursor on a non-final page"
+
+    # Page 2 via the cursor -> the remaining rows, no next cursor (final page).
+    page2 = sqlite_client.get("/docs?limit=2&cursor=" + next_cursor)
+    assert page2.status_code == 200
+    body2 = page2.json()
+    assert len(body2) == 2
+    assert page2.headers.get("X-Next-Cursor") is None
+
+    ids = [entry["id"] for entry in body1 + body2]
+    # No overlap, no loss, newest first.
+    assert len(set(ids)) == 4
+    assert ids[0] == "p4"  # updatedAt 00:03 (newest) first
+    assert ids[3] == "p1"  # updatedAt 00:00 (oldest) last
+
+    # A `limit` above the row count returns everything without a cursor.
+    page_all = sqlite_client.get("/docs?limit=500")
+    assert len(page_all.json()) == 4
+    assert page_all.headers.get("X-Next-Cursor") is None
+
+
 def test_docs_archive_lifecycle(sqlite_client: TestClient) -> None:
     """ADR-0073 D2=A: archive/unarchive transitions lifecycle_state; the list
     reflects it; a missing doc is 404."""

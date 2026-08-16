@@ -297,6 +297,17 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="KJ_ATLAS_LLM_HIGH_REASONING_MODEL",
     )
+    # OPS-OBSERV-01: no logging configuration existed, so `extra={...}` payloads
+    # were silently discarded by the default formatter. These two keys install
+    # one.
+    log_level: str = Field(
+        default="INFO",
+        validation_alias="KJ_ATLAS_LOG_LEVEL",
+    )
+    log_json: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_LOG_JSON",
+    )
     api_key: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_API_KEY",
@@ -454,13 +465,6 @@ class Settings(BaseSettings):
     saas_auth_session_hash_key: str | None = Field(
         default=None,
         validation_alias="KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY",
-    )
-    log_level: str = Field(
-        # OPS-OBSERV-01 AC-1: structured (JSON) logging level. The JSON
-        # formatter renders every `extra=` payload (tenantId/docId/queueLength/
-        # LLM trace_id) that the default formatter silently drops.
-        default="INFO",
-        validation_alias="KJ_ATLAS_LOG_LEVEL",
     )
     app_revision: str = Field(
         # OPS-OBSERV-01 AC-4: build revision surfaced by /version and attached to

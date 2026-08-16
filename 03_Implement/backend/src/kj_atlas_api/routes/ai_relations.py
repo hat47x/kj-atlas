@@ -11,6 +11,7 @@ from kj_atlas_api.llm.provider import (
     generate_with_fallback,
 )
 from kj_atlas_api.models_ai import SummarizeIslandRelationRequest, SummarizeIslandRelationResponse
+from kj_atlas_api.routes.ai import _reject_unreviewed_text
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
 )
@@ -122,6 +123,9 @@ def _parse_relation_summary_response(
 )
 def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> SummarizeIslandRelationResponse:
     _validate_relation_summary_input(payload)
+    # SEC-AI-SAFEMODE-01: this doc-context route forwards card text to the LLM,
+    # so the doc's review state is enforced exactly like the other doc routes.
+    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
 
     try:
         llm_response = generate_with_fallback(

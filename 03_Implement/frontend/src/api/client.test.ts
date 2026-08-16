@@ -139,7 +139,7 @@ describe("tenant-scoped document request precondition", () => {
 
     await suggestLayout(createDocument(), undefined, requestOptions);
     await suggestMerges(createDocument(), undefined, requestOptions);
-    await proposeIslandSummary(createDocument(), "island-1", "bundle-1", requestOptions);
+    await proposeIslandSummary(createDocument(), "island-1", "bundle-1", undefined, requestOptions);
     await registerExternalAgentTask({
       docId: "doc-1",
       taskId: "task-1",
@@ -186,7 +186,7 @@ describe("tenant-scoped document request precondition", () => {
       cardTexts: [],
     }, requestOptions);
     await checkNarrative(createDocument(), "narrative", undefined, requestOptions);
-    await generateNarrative(createDocument(), undefined, requestOptions);
+    await generateNarrative(createDocument(), undefined, undefined, requestOptions);
 
     expect(fetchMock).toHaveBeenCalledTimes(10);
     for (const [, init] of fetchMock.mock.calls) {

@@ -53,10 +53,17 @@ def list_document_access_metadata_entries(
     db: Session,
     *,
     tenant: TenantContext,
-) -> tuple[DocumentAccessMetadataEntry, ...]:
-    """List document IDs and policy metadata without loading document payloads."""
+    cursor: str | None = None,
+    limit: int = 100,
+) -> tuple[list[DocumentAccessMetadataEntry], bool]:
+    """List document IDs and policy metadata without loading document payloads.
+
+    SEC-DOC-BOUND-04: keyset pagination on the server-owned DocumentRow.id
+    (ascending). `cursor` is the previous page's last document id; `limit`
+    (default 100, max 500) bounds the response. Returns (entries, has_more).
+    """
     apply_database_tenant_context(db=db, tenant=tenant)
-    rows = db.execute(
+    query = (
         select(DocumentRow.id, DocumentAccessMetadataRow)
         .outerjoin(
             DocumentAccessMetadataRow,
@@ -66,9 +73,14 @@ def list_document_access_metadata_entries(
             ),
         )
         .where(DocumentRow.tenant_id == tenant.tenant_id)
-        .order_by(DocumentRow.id.asc())
-    ).all()
-    return tuple(
+    )
+    if cursor is not None:
+        query = query.where(DocumentRow.id > cursor)
+    query = query.order_by(DocumentRow.id.asc()).limit(limit + 1)
+    rows = db.execute(query).all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    return [
         DocumentAccessMetadataEntry(doc_id=doc_id, metadata=metadata)
         for doc_id, metadata in rows
-    )
+    ], has_more

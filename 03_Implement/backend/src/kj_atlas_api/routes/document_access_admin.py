@@ -6,7 +6,7 @@ from hashlib import sha256
 from typing import Literal, cast
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, model_validator
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
@@ -237,13 +237,21 @@ def _conflict() -> HTTPException:
 @router.get("", response_model=DocumentAccessListResponse)
 def list_document_access_settings(
     request: Request,
+    response: Response,
+    cursor: str | None = Query(default=None, max_length=256),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> DocumentAccessListResponse:
     _, tenant, capability_version = _authorize_document_policy_management(
         request=request,
         db=db,
     )
-    entries = list_document_access_metadata_entries(db, tenant=tenant)
+    entries, has_more = list_document_access_metadata_entries(
+        db, tenant=tenant, cursor=cursor, limit=limit
+    )
+    if has_more and entries:
+        # SEC-DOC-BOUND-04: keyset cursor on the last document id.
+        response.headers["X-Next-Cursor"] = entries[-1].doc_id
     return DocumentAccessListResponse(
         capabilityVersion=capability_version,
         items=[_summary(tenant_id=tenant.tenant_id, entry=entry) for entry in entries],

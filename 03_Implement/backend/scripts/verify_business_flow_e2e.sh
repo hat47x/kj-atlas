@@ -61,9 +61,20 @@ echo "  mock LLM: http://127.0.0.1:${STUB_PORT} ($MOCK_LLM)"
 STUB_PID=$!
 sleep 2
 
-# 2. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the stub.
+# 2. Fresh migrated DB (deterministic run, independent of local state).
+TMP_DB="$(mktemp /tmp/kj_biz_XXXXXX.sqlite3)"
+(cd "$BACKEND_DIR" && KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+  "$VENV_PYTHON" -m alembic upgrade head > /tmp/kj_biz_migrate.log 2>&1)
+
+# 3. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the mock.
+#    KJ_ATLAS_ALLOW_JIT_PROVISIONING=true: scenario 9's CE4 proposal decision
+#    needs an authenticated reviewer identity, provided via x-forwarded-user
+#    (JIT provisioning, same as test_ce2_proposal_api.py). Scenarios 1-8 send
+#    no such header, so they are unaffected.
 KJ_ATLAS_LLM_PROVIDER=local \
 KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:${STUB_PORT}" \
+KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+KJ_ATLAS_ALLOW_JIT_PROVISIONING=true \
   "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_biz_backend.log 2>&1 &
 BACKEND_PID=$!
@@ -89,7 +100,7 @@ check "GET document (読戻し)" "200" "$get_code"
 
 # 3c. 文面整え（refine-card-text、ローカルLLM経由）。
 refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
-  -d '{"cardText":"待ち時間が長いと感じた","context":"店舗"}' )
+  -d '{"cardText":"待ち時間が長いと感じた","context":"店舗","textReviewed":true}' )
 case "$refined" in
   *'"refinedText"'*)
     echo "  PASS: refine-card-text via local LLM"
@@ -135,6 +146,2616 @@ curl -s -o /dev/null -X PUT "$BASE_URL/docs/biz-unreviewed" -H 'Content-Type: ap
 unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-island-summary" \
   -H 'Content-Type: application/json' -d "{\"doc\":$UNREVIEWED,\"islandId\":\"u-i\"}")
 check "unreviewed text blocked (422, SafeMode)" "422" "$unreviewed_code"
+
+echo ""
+echo "--- シナリオ2: 新規事業企画ワークショップ（ファシリテーター） ---"
+# 業態: 事業企画コンサルティング / 想定人物: ファシリテーター
+# 業務領域: 参加者のアイデア発言を KJ 法で構造化（カード→グループ→島）
+# 操作内容: 文書作成 -> 発言カード化 -> suggest-card-groups(発言の束ね提案)
+#           -> suggest-island-summary(島の表札) -> generate-narrative
+# 注意事項: refine 等で参加者の意図を変えない（mock は元文面を保持）
+WS_DOC_ID="biz-flow-workshop"
+WS_DOC='{"version":1,"id":"'$WS_DOC_ID'","title":"新規事業アイデア出し","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"予約の空き状況を通知する","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"スタッフの負荷を平準化する","x":20,"y":0,"textReviewed":true},{"id":"w4","text":"再来店を促す施策を打つ","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ws-i","cardIds":["w1","w2","w3","w4"]}],"readingOrder":["ws-i"]}'
+
+ws_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WS_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$WS_DOC")
+check "WS PUT document (作成)" "200" "$ws_put"
+
+# 発言の束ね提案（suggest-card-groups、モックは2グループに分割）。
+groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"顧客の待ち時間を可視化する","textReviewed":true},{"id":"w2","text":"予約の空き状況を通知する","textReviewed":true},{"id":"w3","text":"スタッフの負荷を平準化する","textReviewed":true},{"id":"w4","text":"再来店を促す施策を打つ","textReviewed":true}]}')
+case "$groups" in
+  *'"groups":'*'"cardIds":["w1","w2"]'*'"cardIds":["w3","w4"]'*)
+    echo "  PASS: suggest-card-groups splits all 4 cards into 2 groups"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-card-groups (got $groups)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島の表札（モックはメンバーカードを grounding）。
+ws_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WS_DOC,\"islandId\":\"ws-i\"}")
+case "$ws_summary" in
+  *'"groundingIds":["w1","w2","w3"]'*)
+    echo "  PASS: WS suggest-island-summary groundingIds = member cards"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: WS suggest-island-summary (got $ws_summary)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
+echo "--- シナリオ3: カスタマーサポート品質管理（クレーム真因分析） ---"
+# 業態: カスタマーサポートセンター（製造業の品質管理）
+# 想定人物: サポート品質マネージャー
+# 業務領域: クレーム・現場証言のKJ整理と、矛盾する証言の検出による真因分析
+# 操作内容: 文書作成 -> 証言カード化(レビュー済み) -> detect-contradiction(証言間の
+#          論理的矛盾をAI検出) -> suggest-island-summary(島の表札) -> 読戻し
+# 注意事項: 矛盾検出は「単なる意見の相違」と「論理的矛盾」を区別する（後者のみ報告）。
+#          証言の文面は refine 等で変更しない（現場の完全性・evidence としての位置づけ）。
+#          SafeMode の未レビュー境界(422)は島要約・ナラティブ等の doc 文脈ルートで効き、
+#          detect-contradiction は doc 文脈を持たない（issue 参照）。
+QM_DOC_ID="biz-flow-claim-analysis"
+QM_DOC='{"version":1,"id":"'$QM_DOC_ID'","title":"クレーム証言の真因分析","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"受注後に納期変更の連絡が来た","x":0,"y":0,"textReviewed":true},{"id":"q2","text":"営業は納期を守ると言った","x":10,"y":0,"textReviewed":true},{"id":"q3","text":"サポートは謝罪のみで原因を説明しなかった","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"qm-i","cardIds":["q1","q2","q3"]}],"readingOrder":["qm-i"]}'
+
+qm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$QM_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$QM_DOC")
+check "QM PUT document (作成)" "200" "$qm_put"
+
+qm_get=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$QM_DOC_ID")
+check "QM GET document (読戻し)" "200" "$qm_get"
+
+# 証言間の論理的矛盾をAI検出（detect-contradiction、モックは矛盾なしと応答）。
+contradiction=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"q1","text":"受注後に納期変更の連絡が来た","textReviewed":true},"cardB":{"id":"q2","text":"営業は納期を守ると言った","textReviewed":true}}')
+case "$contradiction" in
+  *'"hasContradiction":false'*)
+    echo "  PASS: detect-contradiction returns structured result (mock: no contradiction)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: detect-contradiction (got $contradiction)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島の表札（モックはメンバーカードを grounding）。
+qm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QM_DOC,\"islandId\":\"qm-i\"}")
+case "$qm_summary" in
+  *'"groundingIds":["q1","q2","q3"]'*)
+    echo "  PASS: QM suggest-island-summary groundingIds = member cards"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: QM suggest-island-summary (got $qm_summary)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項（SEC-AI-SAFEMODE-02）: 文書非依存AIルートも未レビュー本文を
+# 422 で拒否する（textReviewed は fail-closed 既定で未指定=未レビュー扱い）。
+unreviewed_contradiction=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/detect-contradiction" \
+  -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"q-u1","text":"確認前の証言","textReviewed":false},"cardB":{"id":"q-u2","text":"別の確認前証言","textReviewed":true}}')
+check "QM detect-contradiction unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$unreviewed_contradiction"
+
+echo ""
+echo "--- シナリオ5: 報道・編集（ナラティブのA/B照合検証） ---"
+# 業態: 報道・メディア（論説・編集）
+# 想定人物: 編集者（ナラティブの正確性を検証）
+# 業務領域: カード（事実）とナラティブ草稿の A/B 照合による整合性検証
+# 操作内容: 文書作成 -> カードレビュー済み化 -> ナラティブ草稿(generate-narrative)
+#          -> check-narrative(A/B照合: カードにない主張・触れていない島を検出) -> 読戻し
+# 注意事項: ナラティブはカードの事実を超える主張をしない。check-narrative は
+#          direction（b_missing_in_a / a_missing_in_b）で不整合を報告する。
+#          未レビューカードを含む文書はナラティブ経路で 422（SafeMode）。
+ED_DOC_ID="biz-flow-editorial"
+ED_DOC='{"version":1,"id":"'$ED_DOC_ID'","title":"市議会補正予算の記事草稿","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"市議会は補正予算案を可決した","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"財源には予備費を充てる","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"委員長は賛成の立場を表明した","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ed-i","cardIds":["e1","e2","e3"]}],"readingOrder":["ed-i"]}'
+
+ed_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ED_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$ED_DOC")
+check "ED PUT document (作成)" "200" "$ed_put"
+
+# ナラティブ草稿（モックは reading order を spine に）。
+ed_narrative=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_DOC}")
+case "$ed_narrative" in
+  *'"basedOnReadingOrder":["ed-i"]'*)
+    echo "  PASS: ED generate-narrative basedOnReadingOrder = reading order"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: ED generate-narrative (got $ed_narrative)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# A/B照合（check-narrative、モックは不整合なしと応答）。
+ED_NARR_TEXT="（草稿）市議会は補正予算案を可決し、財源には予備費を充てる。委員長は賛成の立場を表明した。"
+narrative_check=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_DOC,\"narrativeText\":\"$ED_NARR_TEXT\",\"basedOnReadingOrder\":[\"ed-i\"]}")
+case "$narrative_check" in
+  *'"issues":[]'*)
+    echo "  PASS: check-narrative A/B照合 returns no issues (mock)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: check-narrative (got $narrative_check)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は check-narrative で 422（SafeMode）。
+ED_UNREVIEWED='{"version":1,"id":"biz-flow-editorial-unr","title":"未レビュー記事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"eu1","text":"確認前の事実メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"ed-u","cardIds":["eu1"]}],"readingOrder":["ed-u"]}'
+ed_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/check-narrative" \
+  -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ED_UNREVIEWED,\"narrativeText\":\"$ED_NARR_TEXT\"}")
+check "ED check-narrative unreviewed text blocked (422, SafeMode)" "422" "$ed_unreviewed_code"
+
+echo ""
+echo "--- シナリオ6: 調査研究員のW型探究（多ラウンドジャーニーの保存・継続） ---"
+# 業態: 調査・研究（社会科学 / 市場調査）
+# 想定人物: 調査研究員（W型探究でラウンドを重ねる）
+# 業務領域: 複数ラウンドの探究ジャーニー（問いの深化）の保存・継続・並行編集の保護
+# 操作内容: ジャーニー開始(POST If-None-Match:*) -> 読戻し(GET) ->
+#          ラウンド深化(POST If-Match 更新) -> 並行編集の検出(古いIf-Match->409) -> 破棄(DELETE)
+# 注意事項: inquiry-bundle は CAS（If-Match/If-None-Match）で楽観的並行制御。
+#          前条件なしは 428・並行更新は 409。ラウンドの不変条件（iteration 単調）はクライアント責務。
+WT_ID="biz-flow-wtype"
+WT_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$WT_ID'","title":"窓口待ち時間を捉え直す","originSnapshotIds":["snapshot-origin"],"roundRecords":[{"roundId":"r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"来庁者は何を見て待つか","inputSnapshotIds":["snapshot-origin"],"outputSnapshotId":"snapshot-r1","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示を読むか"],"fieldworkRequests":[{"fieldworkRequestId":"fw-1","question":"注視状況を観察する"}]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-origin","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:origin","document":{"version":1,"id":"doc-wtype","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"obs-1","text":"観察メモ","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+# ラウンド2を追加した更新版（探究の深化）。
+WT_BUNDLE_V2='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$WT_ID'","title":"窓口待ち時間を捉え直す","originSnapshotIds":["snapshot-origin"],"roundRecords":[{"roundId":"r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"来庁者は何を見て待つか","inputSnapshotIds":["snapshot-origin"],"outputSnapshotId":"snapshot-r1","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示を読むか"],"fieldworkRequests":[{"fieldworkRequestId":"fw-1","question":"注視状況を観察する"}]}},{"roundId":"r2","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r3_essence_pursuit","iteration":2,"parentRoundIds":["r1"],"status":"in_progress","theme":"負担の正体を捉える","inputSnapshotIds":["snapshot-r1"],"outputSnapshotId":"snapshot-r2","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":["fw-1"],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-origin","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:origin","document":{"version":1,"id":"doc-wtype","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"obs-1","text":"観察メモ","x":0,"y":0}],"edges":[],"islands":[]}},{"schemaVersion":"1.0.0","snapshotId":"snapshot-r1","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:r1","document":{"version":1,"id":"doc-wtype-r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}}]}'
+
+# 6a. ジャーニー開始（If-None-Match: * で作成、201 + ETag）。
+wt_create=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$WT_BUNDLE")
+wt_create_code=$(echo "$wt_create" | head -1 | grep -oE '[0-9]{3}')
+wt_etag=$(echo "$wt_create" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+check "WT ジャーニー開始 (201 + ETag)" "201" "$wt_create_code"
+[ -n "$wt_etag" ] && { echo "  PASS: WT ETag acquired ($wt_etag)"; PASS=$((PASS+1)); } || { echo "  FAIL: WT ETag missing"; FAIL=$((FAIL+1)); }
+
+# 6b. 読戻し（ジャーニー構造が保持されている）。
+wt_get=$(curl -s -X GET "$BASE_URL/inquiry-bundles/$WT_ID")
+case "$wt_get" in
+  *'"roundRecords"'*'"theme":"来庁者は何を見て待つか"'*)
+    echo "  PASS: WT 読戻し（roundRecords 保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: WT 読戻し（got ${wt_get:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 6c. ラウンド深化（If-Match で更新、204 + ETag 繰り上げ）。
+wt_update=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $wt_etag" -d "$WT_BUNDLE_V2")
+wt_update_code=$(echo "$wt_update" | head -1 | grep -oE '[0-9]{3}')
+check "WT ラウンド深化 (204)" "204" "$wt_update_code"
+wt_etag2=$(echo "$wt_update" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+
+# 6d. 並行編集の検出（古い ETag で更新 -> 409）。
+wt_stale_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $wt_etag" -d "$WT_BUNDLE_V2")
+check "WT 並行編集を検出 (古いIf-Match -> 409)" "409" "$wt_stale_code"
+
+# 6e. 前条件なしは 428（CAS 必須）。
+wt_no_precond=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H 'Content-Type: application/json' -d "$WT_BUNDLE_V2")
+check "WT 前条件なし (428)" "428" "$wt_no_precond"
+
+# 6f. 破棄（DELETe も CAS: 現在の ETag が必要）。
+wt_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inquiry-bundles/$WT_ID" \
+  -H "If-Match: $wt_etag2")
+check "WT ジャーニー破棄 (204, If-Match)" "204" "$wt_del"
+
+echo ""
+echo "--- シナリオ7: 学術研究・概念関係の要約（島間関係の構造化） ---"
+# 業態: 学術研究 / ナレッジマネジメント
+# 想定人物: 研究者（概念間の関係を構造化する）
+# 業務領域: 複数概念（島）間の関係の要約・根拠付き接続
+# 操作内容: 文書作成 -> 島形成 -> summarize-island-relation(島間関係の要約) -> 読戻し
+# 注意事項: 関係種別は5語彙（related/negate/causal/mutual/equivalence）。derived=false は
+#          人間が指定した根拠ある関係のみ要約。未レビューカードは doc 文脈ルートで 422（SafeMode）。
+SR_DOC_ID="biz-flow-research"
+SR_DOC='{"version":1,"id":"'$SR_DOC_ID'","title":"概念関係の整理","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"外部環境の変化が需要に影響する","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"需要の変動が生産計画を変える","x":10,"y":0,"textReviewed":true},{"id":"r3","text":"在庫過多は資金繰りを圧迫する","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ri-a","cardIds":["r1","r2"]},{"id":"ri-b","cardIds":["r3"]}],"readingOrder":["ri-a","ri-b"]}'
+
+sr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SR_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$SR_DOC")
+check "SR PUT document (作成)" "200" "$sr_put"
+
+# 島間関係の要約（summarize-island-relation、モックは下書き要約＋warnings空）。
+relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SR_DOC,\"islandAId\":\"ri-a\",\"islandBId\":\"ri-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"r3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"r3\",\"text\":\"在庫過多は資金繰りを圧迫する\"}]}")
+case "$relation" in
+  *'"text"'*'"warnings":[]'*)
+    echo "  PASS: summarize-island-relation returns draft summary with empty warnings"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: summarize-island-relation (got $relation)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は 422（SafeMode・doc 文脈ルート）。
+SR_UNREVIEWED='{"version":1,"id":"biz-flow-research-unr","title":"未レビュー概念","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ru1","text":"確認前の概念メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"ri-u1","cardIds":["ru1"]}],"readingOrder":["ri-u1"]}'
+sr_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/summarize-island-relation" \
+  -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SR_UNREVIEWED,\"islandAId\":\"ri-u1\",\"islandBId\":\"ri-u1\",\"relationType\":\"related\",\"derived\":true,\"groundingCardIds\":[],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"ru1\",\"text\":\"確認前の概念メモ\"}]}")
+check "SR summarize-island-relation unreviewed text blocked (422, SafeMode)" "422" "$sr_unreviewed_code"
+
+echo ""
+echo "--- シナリオ8: ナレッジベース管理者の文書タイトル命名提案 ---"
+# 業態: ナレッジマネジメント / 図書館情報学
+# 想定人物: ナレッジベース管理者（文書の検索性を確保する）
+# 業務領域: 文書タイトルの命名・改名（検索・整理の要）
+# 操作内容: 文書作成 -> 島・カード確認 -> suggest-document-title(タイトル候補のAI提案) -> 読戻し
+# 注意事項: タイトル候補は proposal であり自動確定しない。未レビューカードは
+#          textReviewed fail-closed で 422（SEC-AI-SAFEMODE-02）。
+KB_DOC_ID="biz-flow-knowledgebase"
+KB_DOC='{"version":1,"id":"'$KB_DOC_ID'","title":"新規採用ガイド（仮）","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"k1","text":"入社手続きの一覧","x":0,"y":0,"textReviewed":true},{"id":"k2","text":"研修スケジュール","x":10,"y":0,"textReviewed":true},{"id":"k3","text":"社内ツールの初期設定","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"kb-i","cardIds":["k1","k2","k3"]}],"readingOrder":["kb-i"]}'
+
+kb_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$KB_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$KB_DOC")
+check "KB PUT document (作成)" "200" "$kb_put"
+
+# タイトル候補のAI提案（suggest-document-title、textReviewed を明示）。
+kb_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d "{\"islandTitles\":[\"入社手続き\"],\"cardTexts\":[\"入社手続きの一覧\",\"研修スケジュール\",\"社内ツールの初期設定\"],\"currentTitle\":\"新規採用ガイド（仮）\",\"textReviewed\":true}")
+case "$kb_title" in
+  *'"candidates"'*)
+    echo "  PASS: suggest-document-title returns title candidates (mock)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-document-title (got $kb_title)"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# AI-MODEL-GOVERNANCE-01 (R2): a model override flows through and is accepted
+# under platform-default allowlist (empty = all active registered models).
+kb_model_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-document-title" \
+  -H 'Content-Type: application/json' \
+  -d "{\"islandTitles\":[\"入社手続き\"],\"cardTexts\":[\"入社手続きの一覧\"],\"textReviewed\":true,\"model\":\"default\"}")
+check "suggest-document-title with model override accepted (200, platform-default)" "200" "$kb_model_code"
+
+# 注意事項: 未レビュー入力は 422（textReviewed fail-closed・SEC-AI-SAFEMODE-02）。
+kb_unreviewed_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-document-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["島"],"cardTexts":["確認前の内容"]}')
+check "KB suggest-document-title unreviewed text blocked (422, SEC-AI-SAFEMODE-02)" "422" "$kb_unreviewed_code"
+
+echo ""
+echo "--- シナリオ9: 人事マネージャーのAI提案レビュー（CE4 proposal連鎖） ---"
+# 業態: 人事・人材開発
+# 想定人物: 人事マネージャー（360度評価のとりまとめ）
+# 業務領域: AI提案（島要約）のレビューと採択/保留決定（value_traceability V3）
+# 操作内容: 文書作成 -> propose-island-summary(AI提案・proposal-only)
+#          -> 提案の受領 -> record-decision(採択・idempotencyKey) -> 再送の冪等確認
+#          -> 未登録提案への決定が404 -> 文書が自動適用されないことを確認
+# 注意事項: 提案は proposal-only（自動適用なし）。決定は idempotencyKey で再送しても
+#          重複記録しない。未登録 proposal への決定は 404・bundle 不一致は 409。
+REV_H="x-forwarded-user: e2e-reviewer"
+REV_H2="x-auth-provider: oidc"
+P9_ID="biz-flow-review"
+# NOTE: use a plain 64-hex bundle hash. The API accepts a `mock:`-prefixed hash
+# too, but AIProposalRow's CheckConstraint requires exactly 64 chars, so the
+# mock: variant 409s on registration (contract inconsistency, see dogfood README).
+P9_HASH="$(printf 'a%.0s' $(seq 1 64))"
+P9_DOC='{"version":1,"id":"'$P9_ID'","title":"360度評価のとりまとめ","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"課題解決力が高い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"報告が丁寧","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["r1","r2"],"summaryText":"旧要約"}],"readingOrder":["i1"]}'
+
+p9_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$P9_ID" \
+  -H 'Content-Type: application/json' -d "$P9_DOC")
+check "P9 PUT document (作成)" "200" "$p9_put"
+
+# AI提案（proposal-only・自動適用しない）。
+p9_propose=$(curl -s -X POST "$BASE_URL/ai/proposals/island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$P9_DOC,\"islandId\":\"i1\",\"sourceBundleHash\":\"$P9_HASH\"}")
+case "$p9_propose" in
+  *'"status":"proposed"'*)
+    echo "  PASS: P9 propose-island-summary returns proposal (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 propose-island-summary (got ${p9_propose:0:200})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+p9_pid=$(echo "$p9_propose" | grep -oE '"proposalId":"[^"]+"' | head -1 | cut -d'"' -f4)
+
+# 人間の決定（採択・idempotencyKey 付き・認証済みレビューア）。
+p9_adopt=$(curl -s -X POST "$BASE_URL/ai/proposals/audit" -H 'Content-Type: application/json' \
+  -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"$p9_pid\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k1\",\"decision\":\"adopt\",\"reason\":\"妥当\"}")
+case "$p9_adopt" in
+  *'"recorded":true'*'"status":"accepted"'*)
+    echo "  PASS: P9 record-decision adopt recorded (reviewer identity resolved)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 record-decision adopt (got ${p9_adopt:0:200})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+p9_event=$(echo "$p9_adopt" | grep -oE '"eventId":"[^"]+"' | head -1 | cut -d'"' -f4)
+
+# 再送の冪等確認（同じ idempotencyKey + 同一ペイロード -> 同じ eventId・重複記録なし）。
+# ※冪等性は key だけでなく提案/バンドル/決定/理由の完全一致を要求する（409で検出）。
+p9_repeat=$(curl -s -X POST "$BASE_URL/ai/proposals/audit" -H 'Content-Type: application/json' \
+  -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"$p9_pid\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k1\",\"decision\":\"adopt\",\"reason\":\"妥当\"}")
+case "$p9_repeat" in
+  *"\"eventId\":\"$p9_event\""*)
+    echo "  PASS: P9 再送は冪等（同じ eventId・重複記録なし）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: P9 idempotent resubmit (got ${p9_repeat:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 未登録 proposal への決定は 404。
+p9_unreg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/audit" \
+  -H 'Content-Type: application/json' -H "$REV_H" -H "$REV_H2" \
+  -d "{\"docId\":\"$P9_ID\",\"proposalId\":\"proposal-none\",\"sourceBundleHash\":\"$P9_HASH\",\"idempotencyKey\":\"p9-k2\",\"decision\":\"hold\"}")
+check "P9 未登録 proposal への決定 (404)" "404" "$p9_unreg"
+
+# proposal-only: 文書の summaryText は提案で自動適用されない。
+p9_doc_summary=$(curl -s "$BASE_URL/docs/$P9_ID" | grep -oE '"summaryText":"[^"]*"' | head -1)
+check "P9 文書は自動適用されない（旧要約のまま）" '"summaryText":"旧要約"' "$p9_doc_summary"
+
+echo ""
+echo "--- シナリオ10: フィールドワーカーのW型探究 × AI支援（複合フロー） ---"
+# 業態: 社会調査・フィールドワーク
+# 想定人物: フィールドワーカー（現地調査）
+# 業務領域: フィールドノートのKJ整理と探究ジャーニー（W型）への保存
+# 操作内容: ノートをカード化(PUT) -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> ジャーニー保存(inquiry-bundle create) -> 読戻し -> ラウンド深化(update)
+# 注意事項: ノートは逐語（refine で変えない）。ジャーニーは CAS（If-Match/If-None-Match）で
+#          並行編集を保護。未レビューカードは AI 経路で 422（SafeMode）。
+FW_ID="biz-flow-fieldwork"
+FW_DOC='{"version":1,"id":"'$FW_ID'","title":"現地調査ノート","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"朝の通勤時間帯が最も混雑する","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"改札の前に滞留が起きる","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"案内表示は見えにくい位置にある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fw-i","cardIds":["f1","f2","f3"]}],"readingOrder":["fw-i"]}'
+
+fw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FW_ID" \
+  -H 'Content-Type: application/json' -d "$FW_DOC")
+check "FW PUT document (フィールドノート作成)" "200" "$fw_put"
+
+# AI束ね（ノートの束ね提案・モックは2グループ）。
+fw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"朝の通勤時間帯が最も混雑する","textReviewed":true},{"id":"f2","text":"改札の前に滞留が起きる","textReviewed":true},{"id":"f3","text":"案内表示は見えにくい位置にある","textReviewed":true}]}')
+case "$fw_groups" in
+  *'"groups":'*)
+    echo "  PASS: FW AI束ね (suggest-card-groups)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW suggest-card-groups (got ${fw_groups:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島要約（モックはメンバーカードを grounding）。
+fw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FW_DOC,\"islandId\":\"fw-i\"}")
+case "$fw_summary" in
+  *'"groundingIds":["f1","f2","f3"]'*)
+    echo "  PASS: FW 島要約 (suggest-island-summary grounding = member cards)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW suggest-island-summary (got ${fw_summary:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ジャーニー保存（フィールドノートを snapshot として inquiry-bundle へ）。
+FW_JOURNEY_ID="biz-flow-fw-journey"
+FW_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$FW_JOURNEY_ID'","title":"駅の混雑を捉え直す","originSnapshotIds":["snapshot-fw"],"roundRecords":[{"roundId":"fw-r1","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"in_progress","theme":"滞留はいつどこで起きるか","inputSnapshotIds":["snapshot-fw"],"outputSnapshotId":"snapshot-fw","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":["案内表示の視認性"],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snapshot-fw","createdAt":"2026-08-15T00:00:00Z","canonicalDigest":"sha256:fw","document":'$FW_DOC'}]}'
+fw_journey_create=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$FW_BUNDLE")
+check "FW ジャーニー保存 (201 + CAS create)" "201" "$fw_journey_create"
+
+# ジャーニー読戻し（フィールドノートが snapshot として保持されている）。
+fw_journey_get=$(curl -s "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID")
+case "$fw_journey_get" in
+  *'"roundRecords"'*'"現地調査ノート"'*)
+    echo "  PASS: FW ジャーニー読戻し（フィールドノート snapshot 保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: FW ジャーニー読戻し（got ${fw_journey_get:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ジャーニー破棄。
+fw_journey_del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/inquiry-bundles/$FW_JOURNEY_ID" \
+  -H "If-Match: 1")
+check "FW ジャーニー破棄 (204)" "204" "$fw_journey_del"
+
+echo ""
+echo "--- シナリオ11: 会議ファシリテーターの配置・統合提案 ---"
+# 業態: オンライン会議ファシリテーション
+# 想定人物: ファシリテーター（多人数の議事を整理）
+# 業務領域: 議事カードの配置提案（suggest-layout）と島統合提案（suggest-merges）
+# 操作内容: 文書作成 -> suggest-layout(配置のAI提案) -> suggest-merges(島統合のAI提案) -> 読戻し
+# 注意事項: 配置・統合は提案であり自動適用しない。未レビューカードは 422（SafeMode）。
+MTG_DOC_ID="biz-flow-meeting"
+MTG_DOC='{"version":1,"id":"'$MTG_DOC_ID'","title":"定例ミーティング議事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"予算の見直しが必要","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"来期の体制を検討","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"顧客対応の改善","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mtg-a","cardIds":["m1","m2"]},{"id":"mtg-b","cardIds":["m3"]}],"readingOrder":["mtg-a","mtg-b"]}'
+
+mtg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MTG_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$MTG_DOC")
+check "MTG PUT document (作成)" "200" "$mtg_put"
+
+# 配置提案（suggest-layout、モックはグリッド配置）。
+layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MTG_DOC}")
+case "$layout" in
+  *'"transform"'*'"cards"'*)
+    echo "  PASS: suggest-layout returns transform + card positions (mock grid)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-layout (got ${layout:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島統合提案（suggest-merges、モックは空提案）。
+merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MTG_DOC}")
+case "$merges" in
+  *'"suggestions"'*)
+    echo "  PASS: suggest-merges returns suggestions list (mock: empty)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: suggest-merges (got ${merges:0:120})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 注意事項: 未レビューカードを含む文書は 422（SafeMode）。
+MTG_UNREVIEWED='{"version":1,"id":"biz-flow-meeting-unr","title":"未レビュー議事","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"mu1","text":"確認前の議事メモ","x":0,"y":0}],"edges":[],"islands":[{"id":"mtg-u","cardIds":["mu1"]}],"readingOrder":["mtg-u"]}'
+mtg_unreviewed=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/suggest-layout" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MTG_UNREVIEWED}")
+check "MTG suggest-layout unreviewed text blocked (422, SafeMode)" "422" "$mtg_unreviewed"
+
+echo ""
+echo "--- シナリオ12: ライブラリアンのコレクション管理（複数文書・一覧・絞り込み・アーカイブ） ---"
+# 業態: ナレッジベース・図書館（コレクション管理）
+# 想定人物: ライブラリアン（文書コレクションの管理者）
+# 業務領域: 複数文書の作成・一覧・作成者絞り込み・アーカイブ管理
+# 操作内容: 複数文書作成(PUT ×N) -> 一覧(GET /docs) -> 自分の文書で絞り込み
+#          (GET /docs?createdBy=<作成者UUID>) -> アーカイブ(POST archive) -> 一覧に反映確認
+# 注意事項: 一覧はメタデータのみ（カード本文非露出）。created_by は JIT 解決された UUID
+#          （ヘッダー値ではない）。アーカイブ文書は読み取り専用（PUT 423）。
+LIB_H="x-forwarded-user: librarian"
+LIB_H2="x-auth-provider: oidc"
+LIB_A='{"version":1,"id":"biz-flow-lib-a","title":"ライブラリアン文書A","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"la1","text":"カタログ方針","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+LIB_B='{"version":1,"id":"biz-flow-lib-b","title":"匿名作成文書B","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"lb1","text":"移行メモ","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+
+lib_a_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-a" \
+  -H 'Content-Type: application/json' -H "$LIB_H" -H "$LIB_H2" -d "$LIB_A")
+lib_b_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-b" \
+  -H 'Content-Type: application/json' -d "$LIB_B")
+check "LIB PUT 複数文書 (A=200,B=200)" "200200" "$lib_a_put$lib_b_put"
+
+# 一覧（全件・メタデータのみ）。
+lib_list=$(curl -s "$BASE_URL/docs")
+case "$lib_list" in
+  *'"id":"biz-flow-lib-a"'*'"id":"biz-flow-lib-b"'*)
+    echo "  PASS: LIB 一覧に複数文書が含まれる（メタデータ）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: LIB 一覧（got ${lib_list:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ライブラリアンの文書UUIDを取得し、自分の文書で絞り込み。
+lib_creator=$(echo "$lib_list" | grep -oE '"id":"biz-flow-lib-a"[^}]*"created_by":"[^"]*"' | grep -oE '"created_by":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$lib_creator" ]; then
+  lib_mine=$(curl -s "$BASE_URL/docs?createdBy=$lib_creator")
+  case "$lib_mine" in
+    *'"id":"biz-flow-lib-a"'*)
+      mine_has_b=$(echo "$lib_mine" | grep -c "biz-flow-lib-b")
+      if [ "$mine_has_b" = "0" ]; then
+        echo "  PASS: LIB createdBy 絞り込み（自分の文書のみ・匿名文書は除外）"
+        PASS=$((PASS+1))
+      else
+        echo "  FAIL: LIB createdBy 絞り込みに匿名文書が混入"
+        FAIL=$((FAIL+1))
+      fi
+      ;;
+    *)
+      echo "  FAIL: LIB createdBy 絞り込み（got ${lib_mine:0:120}）"
+      FAIL=$((FAIL+1))
+      ;;
+  esac
+else
+  echo "  FAIL: LIB created_by 取得不能（一覧からUUIDを抽出）"
+  FAIL=$((FAIL+1))
+fi
+
+# アーカイブ運用（一覧へ反映）。
+lib_arch=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/biz-flow-lib-b/archive" \
+  -H 'Content-Type: application/json' -H "$LIB_H" -H "$LIB_H2" -d '{}')
+check "LIB アーカイブ (204)" "204" "$lib_arch"
+lib_list2=$(curl -s "$BASE_URL/docs")
+case "$lib_list2" in
+  *'"id":"biz-flow-lib-b"'*'"lifecycle_state":"archived"'*)
+    echo "  PASS: LIB 一覧に archived が反映"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: LIB 一覧への archived 反映（got ${lib_list2:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# アーカイブ中は読み取り専用（PUT 423）。
+lib_locked=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/biz-flow-lib-b" \
+  -H 'Content-Type: application/json' -d "$LIB_B")
+check "LIB アーカイブ中 PUT (423 Locked)" "423" "$lib_locked"
+
+# keyset pagination（SEC-DOC-BOUND-05）: limit=1 で1件＋X-Next-Cursor → cursor で残りを取得。
+lib_page1=$(curl -s -D /tmp/kj_lib_page1.hdr "$BASE_URL/docs?limit=1")
+lib_next=$(grep -i '^X-Next-Cursor:' /tmp/kj_lib_page1.hdr | tr -d '\r' | sed 's/^[Xx]-[Nn]ext-[Cc]ursor: *//I')
+case "$lib_page1" in
+  *'"id":"'*'"id":"'*) echo "  FAIL: LIB pagination limit=1 が複数件を返した"; FAIL=$((FAIL+1));;
+  *'"id":"'*) echo "  PASS: LIB limit=1 で1件（レスポンスが上限内）"; PASS=$((PASS+1));;
+  *) echo "  FAIL: LIB pagination 応答（got ${lib_page1:0:100}）"; FAIL=$((FAIL+1));;
+esac
+if [ -n "$lib_next" ]; then
+  lib_page2=$(curl -s "$BASE_URL/docs?limit=1&cursor=$lib_next")
+  case "$lib_page2" in
+    *'"id":"'*) echo "  PASS: LIB X-Next-Cursor で次ページ取得成功"; PASS=$((PASS+1));;
+    *) echo "  FAIL: LIB cursor 次ページ（got ${lib_page2:0:100}）"; FAIL=$((FAIL+1));;
+  esac
+else
+  echo "  FAIL: LIB 複数文書なのに X-Next-Cursor が無い"; FAIL=$((FAIL+1))
+fi
+rm -f /tmp/kj_lib_page1.hdr
+
+echo ""
+echo "--- シナリオ13: 共同編集者の楽観的並行制御（ETag/If-Match 競合検出） ---"
+# 業態: コンサルティングファーム（共同編集）
+# 想定人物: 共同編集者A/B（同一文書を並行編集）
+# 業務領域: 文書の並行編集と競合検出（lost-update 防止・ADR-0076 サーバ権威LWW+CAS）
+# 操作内容: 文書作成 -> GET(ETag取得) -> Aが編集PUT(If-Match) -> Bが古いETagで編集PUT
+#          -> **409(競合検出・lost-update防止)** -> 最新ETag再取得 -> Bが再編集PUT -> 200
+# 注意事項: ETag/If-Match で楽観的並行制御。stale な保存は 409 で拒否（部分保存なし）。
+CE_DOC_ID="biz-flow-coedit"
+CE_DOC='{"version":1,"id":"'$CE_DOC_ID'","title":"提案書の共同編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"初版","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+CE_DOC_A='{"version":1,"id":"'$CE_DOC_ID'","title":"提案書の共同編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"Aの修正案","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+
+ce_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$CE_DOC")
+check "CE PUT document (作成)" "200" "$ce_put"
+
+# 初回 ETag 取得。
+ce_etag1=$(curl -s -D - -o /dev/null "$BASE_URL/docs/$CE_DOC_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+[ -n "$ce_etag1" ] && { echo "  PASS: CE ETag取得 ($(echo "$ce_etag1" | cut -c1-16)...)"; PASS=$((PASS+1)); } || { echo "  FAIL: CE ETag 未取得"; FAIL=$((FAIL+1)); }
+
+# A が編集（正しい If-Match で保存成功）。
+ce_a=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag1" -d "$CE_DOC_A")
+check "CE A編集 (If-Match 正 → 200)" "200" "$ce_a"
+
+# B が古い ETag で編集 → 409（lost-update 防止・部分保存なし）。
+ce_b_stale=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag1" -d "$CE_DOC_A")
+check "CE B編集 (stale If-Match → 409 競合検出)" "409" "$ce_b_stale"
+
+# 最新 ETag 再取得 → B が再編集 → 200。
+ce_etag2=$(curl -s -D - -o /dev/null "$BASE_URL/docs/$CE_DOC_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+ce_b_retry=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CE_DOC_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $ce_etag2" -d "$CE_DOC_A")
+check "CE B再編集 (最新If-Match → 200)" "200" "$ce_b_retry"
+
+# 競合検出後に文書が壊れていない（読戻しで最新状態）。
+ce_readback=$(curl -s "$BASE_URL/docs/$CE_DOC_ID")
+case "$ce_readback" in
+  *'"text":"Aの修正案"'*)
+    echo "  PASS: CE 読戻し（Aの修正が反映・部分保存なし）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CE 読戻し（got ${ce_readback:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
+echo "--- シナリオ14: 出版・コンテンツQA（内容上限の検証ゲート） ---"
+# 業態: 出版・コンテンツ制作（QA）
+# 想定人物: コンテンツ品質担当（校正者）
+# 業務領域: コンテンツ上限の検証と品質ゲート（DOMAIN-CARD-TEXT-01）
+# 操作内容: カード本文2001文字->422(上限違反) -> 2000文字で保存(200) -> タイトル501文字->422
+#          -> 500文字タイトルで保存(200) -> 読戻し
+# 注意事項: 上限は API 境界で強制（カード本文2000・タイトル500・島要約2000）。
+#          A1 構造化エラー（schemaVersion/errorEnvelope）で返る。
+QA_LONG_CARD=$(printf 'あ%.0s' $(seq 1 2001))
+QA_OK_CARD=$(printf 'あ%.0s' $(seq 1 2000))
+QA_LONG_TITLE=$(printf 'い%.0s' $(seq 1 501))
+QA_OK_TITLE=$(printf 'い%.0s' $(seq 1 500))
+
+qa_over_card=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-card" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-card","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_LONG_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+check "QA カード2001文字 → 422（上限違反）" "422" "$qa_over_card"
+
+qa_ok_card=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-ok-card" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-ok-card","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_OK_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+check "QA カード2000文字 → 200（境界内）" "200" "$qa_ok_card"
+
+qa_over_title=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-title","title":"'"$QA_LONG_TITLE"'","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}')
+check "QA タイトル501文字 → 422（上限違反）" "422" "$qa_over_title"
+
+qa_ok_title=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-ok-title" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-ok-title","title":"'"$QA_OK_TITLE"'","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[]}')
+check "QA タイトル500文字 → 200（境界内）" "200" "$qa_ok_title"
+
+# 構造化 A1 エラー確認（上限違反の応答形式）。
+qa_error_body=$(curl -s -X PUT "$BASE_URL/docs/qa-doc-error" -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-error","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"q1","text":"'"$QA_LONG_CARD"'","x":0,"y":0}],"edges":[],"islands":[]}')
+case "$qa_error_body" in
+  *'"errorEnvelope"'*)
+    echo "  PASS: QA 上限違反は構造化A1エラーで返る（errorEnvelope）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: QA A1エラー形式（got ${qa_error_body:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 島要約2001文字 → 422（島要約の上限・ISLAND_SUMMARY_MAX_LENGTH=2000）。
+QA_LONG_SUMMARY=$(printf 'う%.0s' $(seq 1 2001))
+qa_over_summary=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/qa-doc-over-summary" \
+  -H 'Content-Type: application/json' \
+  -d '{"version":1,"id":"qa-doc-over-summary","title":"QA","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[{"id":"i1","cardIds":[],"summaryText":"'"$QA_LONG_SUMMARY"'"}]}')
+check "QA 島要約2001文字 → 422（上限違反）" "422" "$qa_over_summary"
+
+echo ""
+echo "--- シナリオ15: 編集者の統合決定ガバナンス（マージ決定の記録と復元） ---"
+# 業態: 出版・編集（ナレッジ統合）
+# 想定人物: 編集者（AIの統合提案を採否する）
+# 業務領域: マージ提案の決定記録（traceability・監査）と復元ログ参照
+# 操作内容: 文書作成 -> 統合決定を記録(POST merge-decision-logs) -> グループ別ログ確認
+#          (GET by-group) -> 復元ログ参照(GET restore) -> 重複決定が409
+# 注意事項: 決定は append のみ（更新不可・traceability の正本）。同一 decisionId は 409。
+#          action は accept/partial/reject/defer の enum。
+MD_DOC_ID="biz-flow-merge-gov"
+MD_DOC='{"version":1,"id":"'$MD_DOC_ID'","title":"ナレッジ統合の編集","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"草案","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+MD_REC='{"record":{"decisionId":"md-1","groupId":"g-merge","action":"accept","selectedCardIds":["c1"],"note":"統合を採択","decidedBy":"editor","decidedAt":"2026-08-15T00:00:00Z","snapshotVersion":"v1"}}'
+
+md_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MD_DOC_ID" \
+  -H 'Content-Type: application/json' -d "$MD_DOC")
+check "MD PUT document (作成)" "200" "$md_put"
+
+# 統合決定を記録（append・201）。
+md_post=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs" \
+  -H 'Content-Type: application/json' -d "$MD_REC")
+check "MD 決定記録 (201)" "201" "$md_post"
+
+# 重複 decisionId は 409（決定の唯一性）。
+md_dup=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs" \
+  -H 'Content-Type: application/json' -d "$MD_REC")
+check "MD 重複決定 (409)" "409" "$md_dup"
+
+# グループ別ログ確認。
+md_group=$(curl -s "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs/by-group/g-merge")
+case "$md_group" in
+  *'"decisionId":"md-1"'*'"action":"accept"'*)
+    echo "  PASS: MD グループ別ログ（append 順・決定内容保持）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: MD by-group（got ${md_group:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 復元ログ参照。
+md_restore=$(curl -s "$BASE_URL/docs/$MD_DOC_ID/merge-decision-logs/restore/v1")
+case "$md_restore" in
+  *'"decisionId":"md-1"'*)
+    echo "  PASS: MD 復元ログ（snapshotVersion で参照）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: MD restore（got ${md_restore:0:120}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
+echo "--- シナリオ16: 外部エージェント連携（Org-D・外部AI成果物の提案受領） ---"
+# 業態: AI連携サービス（外部エージェント）
+# 想定人物: 外部エージェント（トリガー型AI）+ 人間レビューア
+# 業務領域: 外部AIの成果物を提案として受領・人間がレビュー決定（EXT-AGENT-02 proposal-only）
+# 操作内容: 文書作成 -> 外部タスク登録(/ai/external-tasks/register)
+#          -> 外部提案登録(/ai/external-proposals/register) -> 人間が決定(/ai/external-proposals/audit)
+#          -> 未登録提案への決定404
+# 注意事項: 提案は未レビューで着地（自動適用なし）。baseDocSignature（{docId}:{updatedAt}）不一致は409。
+#          登録していない proposal への決定は404。hash は64hex（DATA-CONTRACT-02）。
+EXT_H="x-forwarded-user: ext-agent"
+EXT_H2="x-auth-provider: oidc"
+EXT_ID="biz-flow-ext-agent"
+EXT_DOC='{"version":1,"id":"'$EXT_ID'","title":"外部統合","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"v1","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+EXT_SIG="biz-flow-ext-agent:2026-08-15T00:00:00Z"
+EXT_H64="$(printf 'a%.0s' $(seq 1 64))"
+
+ext_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EXT_ID" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" -d "$EXT_DOC")
+check "EXT PUT document (作成)" "200" "$ext_put"
+
+# 外部タスク登録（依頼の正本）。
+ext_task=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-tasks/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-1\",\"baseDocSignature\":\"$EXT_SIG\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"taskKind\":\"narrative_draft\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 外部タスク登録 (200)" "200" "$ext_task"
+
+# 外部提案登録（proposal-only・未レビュー着地）。
+ext_prop=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-1\",\"baseDocSignature\":\"$EXT_SIG\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"proposalId\":\"ext-prop-1\",\"proposalKind\":\"narrative_draft\",\"proposalFingerprint\":\"$EXT_H64\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 外部提案登録 (200・未レビュー着地)" "200" "$ext_prop"
+
+# 人間の決定（hold・保留）。
+ext_audit=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/audit" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"proposalId\":\"ext-prop-1\",\"sourceBundleHash\":\"$EXT_H64\",\"idempotencyKey\":\"ext-k1\",\"decision\":\"hold\",\"reason\":\"要確認\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 人間の決定 (hold・200)" "200" "$ext_audit"
+
+# 未登録 proposal への決定は404。
+ext_unreg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-proposals/audit" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"proposalId\":\"ext-prop-none\",\"sourceBundleHash\":\"$EXT_H64\",\"idempotencyKey\":\"ext-k2\",\"decision\":\"reject\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT 未登録提案への決定 (404)" "404" "$ext_unreg"
+
+# baseDocSignature 不一致は409（依頼時点の文書シグネチャを検証・stale な依頼を拒否）。
+ext_stale_sig=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/external-tasks/register" \
+  -H 'Content-Type: application/json' -H "$EXT_H" -H "$EXT_H2" \
+  -d "{\"docId\":\"$EXT_ID\",\"taskId\":\"ext-task-stale\",\"baseDocSignature\":\"$EXT_ID:1999-01-01T00:00:00Z\",\"sourceBundleHash\":\"$EXT_H64\",\"queryCanonicalHash\":\"$EXT_H64\",\"taskKind\":\"narrative_draft\",\"provenanceLevel\":\"user_presented_unsigned\"}")
+check "EXT stale baseDocSignature (409)" "409" "$ext_stale_sig"
+
+echo ""
+echo "--- シナリオ17: マーケティングアナリストの顧客レビュー全行程分析 ---"
+# 業態: eコマース・マーケティング
+# 想定人物: マーケティングアナリスト（顧客レビューを分析）
+# 業務領域: 顧客レビューの全行程KJ分析（束ね→島→ナラティブ→矛盾検出→タイトル）
+# 操作内容: レビューをカード化(PUT) -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> ナラティブ(generate-narrative) -> 矛盾検出(detect-contradiction)
+#          -> タイトル提案(suggest-document-title) -> 読戻し
+# 注意事項: 全AI操作は未レビュー入力で 422（SafeMode・textReviewed fail-closed）。
+#          レビュー発言は逐語（refine で変えない）。
+MK_ID="biz-flow-marketing"
+MK_DOC='{"version":1,"id":"'$MK_ID'","title":"顧客レビュー分析","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"k1","text":"配送が遅い","x":0,"y":0,"textReviewed":true},{"id":"k2","text":"梱包が丁寧","x":10,"y":0,"textReviewed":true},{"id":"k3","text":"返品手続きが面倒","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mk-i","cardIds":["k1","k2","k3"]}],"readingOrder":["mk-i"]}'
+
+mk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MK_ID" \
+  -H 'Content-Type: application/json' -d "$MK_DOC")
+check "MK PUT document (作成)" "200" "$mk_put"
+
+# ① AI束ね
+mk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"k1","text":"配送が遅い","textReviewed":true},{"id":"k2","text":"梱包が丁寧","textReviewed":true},{"id":"k3","text":"返品手続きが面倒","textReviewed":true}]}')
+case "$mk_groups" in *'"groups":'*) echo "  PASS: MK ①束ね (card-groups)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MK_DOC,\"islandId\":\"mk-i\"}")
+case "$mk_summary" in *'"groundingIds":["k1","k2","k3"]'*) echo "  PASS: MK ②島要約 (grounding=member)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ ナラティブ
+mk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MK_DOC}")
+case "$mk_narr" in *'"basedOnReadingOrder":["mk-i"]'*) echo "  PASS: MK ③ナラティブ (reading order)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ③ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ④ 矛盾検出
+mk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"k1","text":"配送が遅い","textReviewed":true},"cardB":{"id":"k2","text":"梱包が丁寧","textReviewed":true}}')
+case "$mk_contra" in *'"hasContradiction":false'*) echo "  PASS: MK ④矛盾検出 (structured)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ④矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ⑤ タイトル提案
+mk_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["配送"],"cardTexts":["配送が遅い","梱包が丁寧","返品手続きが面倒"],"textReviewed":true}')
+case "$mk_title" in *'"candidates"'*) echo "  PASS: MK ⑤タイトル提案 (candidates)"; PASS=$((PASS+1));; *) echo "  FAIL: MK ⑤タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し（全行程後も文書は保持）。
+mk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MK_ID")
+check "MK 読戻し (200)" "200" "$mk_read"
+
+echo ""
+echo "--- シナリオ18: リスクレビューアの反対視点提案（AI-OPPOSE-01） ---"
+# 業態: リスク管理・監査
+# 想定人物: リスクレビューア（意思決定の前提を検証）
+# 業務領域: 意思決定の反対視点・根拠不足の提案（AI-OPPOSE-01 M4・proposal-only）
+# 操作内容: 文書作成 -> propose-opposing-viewpoint(反対視点のproposal-only提案)
+#          -> 未レビューdocで422(SafeMode) -> 存在しないtargetCardIdで422
+# 注意事項: 提案は proposal-only（自動適用なし・status=proposed）。contradiction/evidence
+#          構造から導出。doc は永続化必須（未永続化は404）。
+OP_ID="biz-flow-risk"
+OP_DOC='{"version":1,"id":"'$OP_ID'","title":"配送改善の意思決定","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"配送が遅いという声は多い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"遅延の原因は倉庫処理にある","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[]}'
+OP_UNREV='{"version":1,"id":"biz-flow-risk-unrev","title":"未レビュー","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"u1","text":"確認前の前提","x":0,"y":0}],"edges":[],"islands":[]}'
+
+op_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$OP_ID" \
+  -H 'Content-Type: application/json' -d "$OP_DOC")
+check "OP PUT document (作成)" "200" "$op_put"
+
+# 反対視点の提案（proposal-only・自動適用なし）。
+op_prop=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$OP_DOC,\"targetCardId\":\"r1\"}")
+case "$op_prop" in
+  *'"status":"proposed"'*'"opposingText"'*)
+    echo "  PASS: OP 反対視点提案 (proposal-only・opposingText)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: OP propose-opposing-viewpoint (got ${op_prop:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# 未レビュー doc で 422（SafeMode 門禁・doc を永続化してから）。
+curl -s -o /dev/null -X PUT "$BASE_URL/docs/biz-flow-risk-unrev" \
+  -H 'Content-Type: application/json' -d "$OP_UNREV"
+op_unrev=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$OP_UNREV,\"targetCardId\":\"u1\"}")
+check "OP 未レビューdoc → 422 (SafeMode)" "422" "$op_unrev"
+
+# 存在しない targetCardId は 422。
+op_badcard=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$OP_DOC,\"targetCardId\":\"no-such-card\"}")
+check "OP 存在しない targetCardId → 422" "422" "$op_badcard"
+
+echo ""
+echo "--- シナリオ19: 多職種ケース会議（医療・介護・反対視点確認） ---"
+# 業態: 医療・介護（ケース会議）
+# 想定人物: ケースワーカー（多職種会議のとりまとめ）
+# 業務領域: ケース情報の整理と意思決定の反対視点確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 反対視点提案(propose-opposing-viewpoint) -> 読戻し
+# 注意事項: 反対視点は proposal-only（自動適用なし・status=proposed）。未レビューは422（SafeMode）。
+CW_ID="biz-flow-care"
+CW_DOC='{"version":1,"id":"'$CW_ID'","title":"ケース会議の整理","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"在宅ケアを継続できる","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"家族の負担が増えている","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"訪問頻度を増やすべき","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cw-i","cardIds":["w1","w2","w3"]}],"readingOrder":["cw-i"]}'
+
+cw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CW_ID" \
+  -H 'Content-Type: application/json' -d "$CW_DOC")
+check "CW PUT document (作成)" "200" "$cw_put"
+
+# ① AI束ね
+cw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"在宅ケアを継続できる","textReviewed":true},{"id":"w2","text":"家族の負担が増えている","textReviewed":true},{"id":"w3","text":"訪問頻度を増やすべき","textReviewed":true}]}')
+case "$cw_groups" in *'"groups":'*) echo "  PASS: CW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CW_DOC,\"islandId\":\"cw-i\"}")
+case "$cw_summary" in *'"groundingIds":["w1","w2","w3"]'*) echo "  PASS: CW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 反対視点提案（在宅ケア継続の意思決定に対する反対視点・proposal-only）
+cw_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CW_DOC,\"targetCardId\":\"w1\"}")
+case "$cw_opp" in
+  *'"status":"proposed"'*'"opposingText"'*)
+    echo "  PASS: CW ③反対視点提案 (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CW ③反対視点提案 (got ${cw_opp:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ④ 読戻し
+cw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CW_ID")
+check "CW 読戻し (200)" "200" "$cw_read"
+
+echo ""
+echo "--- シナリオ20: 品質監査官の批判的検証（多角的な意思決定レビュー） ---"
+# 業態: 品質監査（内部統制）
+# 想定人物: 品質監査官（意思決定を多角的に検証）
+# 業務領域: 矛盾検出・反対視点・ナラティブ整合の批判的レビュー
+# 操作内容: 文書作成 -> 矛盾検出(detect-contradiction) -> 反対視点提案(opposing-viewpoint)
+#          -> ナラティブA/B照合(check-narrative) -> 読戻し
+# 注意事項: 全て proposal-only（自動適用なし）。未レビューは422（SafeMode）。
+QA2_ID="biz-flow-audit"
+QA2_DOC='{"version":1,"id":"'$QA2_ID'","title":"業務プロセス改善の決定","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"改善により工数が減る","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"初期導入コストが高い","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"リスクは許容範囲","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"qa2-i","cardIds":["a1","a2","a3"]}],"readingOrder":["qa2-i"]}'
+
+qa2_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$QA2_ID" \
+  -H 'Content-Type: application/json' -d "$QA2_DOC")
+check "QA2 PUT document (作成)" "200" "$qa2_put"
+
+# ① 矛盾検出（改善の工数削減 vs 導入コスト）
+qa2_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a1","text":"改善により工数が減る","textReviewed":true},"cardB":{"id":"a2","text":"初期導入コストが高い","textReviewed":true}}')
+case "$qa2_contra" in *'"hasContradiction"'*) echo "  PASS: QA2 ①矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ①矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ② 反対視点提案（proposal-only）
+qa2_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QA2_DOC,\"targetCardId\":\"a1\"}")
+case "$qa2_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: QA2 ②反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ②反対視点"; FAIL=$((FAIL+1));; esac
+
+# ③ ナラティブA/B照合（モックは不整合なし）
+qa2_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$QA2_DOC,\"narrativeText\":\"（草稿）業務プロセス改善により工数が減る一方、初期導入コストが高い。\",\"basedOnReadingOrder\":[\"qa2-i\"]}")
+case "$qa2_narr" in *'"issues":[]'*) echo "  PASS: QA2 ③ナラティブA/B照合"; PASS=$((PASS+1));; *) echo "  FAIL: QA2 ③A/B照合 (${qa2_narr:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ 読戻し
+qa2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$QA2_ID")
+check "QA2 読戻し (200)" "200" "$qa2_read"
+
+echo ""
+echo "--- シナリオ21: 生成AI連携のコンテキスト解決（CE4 context bundle） ---"
+# 業態: AI連携サービス（コンテキスト基盤）
+# 想定人物: 生成AIエージェント（文書のコンテキストを解決）
+# 業務領域: CE4 context bundle の解決（AIが文書コンテキストを取得する基盤）
+# 操作内容: context/bundles:resolve(コンテキスト解決) -> 応答の確認(equivalenceKey/bundleHash)
+#          -> safeMode=false は 422 -> proposalLifecycle は proposal-only の意味を持つ
+# 注意事項: sourceBundleHash は sha256: または mock: 形式。safeMode 既定 true。
+#          解決は契約ベース（ドキュメント永続化は不要）。
+CB_H64="mock:$(printf 'a%.0s' $(seq 1 64))"
+
+# ① コンテキスト解決（safeMode=true・既定）。
+cb_resolve=$(curl -s -X POST "$BASE_URL/context/bundles:resolve" -H 'Content-Type: application/json' \
+  -d "{\"query\":\"課題は何か\",\"dryRun\":true,\"sourceBundleHash\":\"$CB_H64\",\"safeMode\":true}")
+case "$cb_resolve" in
+  *'"equivalenceKey"'*'"bundleHash"'*)
+    echo "  PASS: CB コンテキスト解決 (equivalenceKey/bundleHash)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CB resolve (got ${cb_resolve:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ② proposalLifecycle が proposal-only の意味を持つ。
+case "$cb_resolve" in
+  *'"proposalLifecycle":"proposed"'*)
+    echo "  PASS: CB proposalLifecycle=proposed (proposal-only)"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: CB proposalLifecycle (got ${cb_resolve:0:150})"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+# ③ safeMode=false は 422（SafeMode 既定・fail-closed）。
+cb_unsafe=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/context/bundles:resolve" \
+  -H 'Content-Type: application/json' \
+  -d "{\"query\":\"課題は何か\",\"dryRun\":true,\"sourceBundleHash\":\"$CB_H64\",\"safeMode\":false}")
+check "CB safeMode=false → 422 (SafeMode fail-closed)" "422" "$cb_unsafe"
+
+echo ""
+echo "--- シナリオ22: 共同研究チームのW型探索（ジャーニーの並行編集・CAS競合検出） ---"
+# 業態: 共同研究（アカデミア）
+# 想定人物: 共同研究者A/B（同一の探究ジャーニーを並行編集）
+# 業務領域: 探究ジャーニーの共同編集と楽観的並行制御（lost-update 防止）
+# 操作内容: 文書作成 -> ジャーニー開始(If-None-Match:*) -> Aがラウンド更新(If-Match)
+#          -> Bが古いIf-Matchで更新(**409**) -> 最新ETagでBが再更新(200)
+# 注意事項: ジャーニーは CAS（If-Match/If-None-Match）で楽観的並行制御。stale 更新は 409。
+CR_ID="biz-flow-collab-journey"
+CR_BUNDLE='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$CR_ID'","title":"共同探究","originSnapshotIds":["snap-orig"],"roundRecords":[{"roundId":"cr-r1","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"in_progress","theme":"共同テーマ","inputSnapshotIds":["snap-orig"],"outputSnapshotId":"snap-orig","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snap-orig","createdAt":"2026-08-16T00:00:00Z","canonicalDigest":"sha256:orig","document":{"version":1,"id":"cr-doc","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"観察","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+CR_BUNDLE_V2='{"schemaVersion":"1.0.0","journey":{"schemaVersion":"1.0.0","journeyId":"'$CR_ID'","title":"共同探究","originSnapshotIds":["snap-orig"],"roundRecords":[{"roundId":"cr-r1","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","stage":"r2_situation_grasp","iteration":1,"parentRoundIds":[],"status":"handed_off","theme":"共同テーマ（Aが更新）","inputSnapshotIds":["snap-orig"],"outputSnapshotId":"snap-orig","handoff":{"carryoverRefs":[],"heldRefs":[],"unresolvedQuestions":[],"fieldworkRequests":[]}}],"resolvedFieldworkQuestionIds":[],"status":"in_progress"},"snapshots":[{"schemaVersion":"1.0.0","snapshotId":"snap-orig","createdAt":"2026-08-16T00:00:00Z","canonicalDigest":"sha256:orig","document":{"version":1,"id":"cr-doc","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"観察","x":0,"y":0}],"edges":[],"islands":[]}}]}'
+
+# ジャーニー開始（If-None-Match:* で作成・201＋ETag）。
+cr_create=$(curl -s -i -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H 'If-None-Match: *' -d "$CR_BUNDLE")
+cr_code=$(echo "$cr_create" | head -1 | grep -oE '[0-9]{3}')
+cr_etag1=$(echo "$cr_create" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+check "CR ジャーニー開始 (201)" "201" "$cr_code"
+
+# A がラウンド更新（正しい If-Match で成功）。
+cr_a=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag1" -d "$CR_BUNDLE_V2")
+check "CR A更新 (If-Match 正 → 204)" "204" "$cr_a"
+
+# B が古い ETag で更新 → 409（lost-update 防止）。
+cr_b_stale=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag1" -d "$CR_BUNDLE_V2")
+check "CR B更新 (stale If-Match → 409 競合検出)" "409" "$cr_b_stale"
+
+# 最新 ETag 取得 → B が再更新 → 204。
+cr_etag2=$(curl -s -D - -o /dev/null "$BASE_URL/inquiry-bundles/$CR_ID" | tr -d '\r' | grep -i '^ETag:' | sed 's/ETag: *//I')
+cr_b_retry=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/inquiry-bundles/$CR_ID" \
+  -H 'Content-Type: application/json' -H "If-Match: $cr_etag2" -d "$CR_BUNDLE_V2")
+check "CR B再更新 (最新If-Match → 204)" "204" "$cr_b_retry"
+
+echo ""
+echo "--- シナリオ23: 教育研修・カリキュラム改善（受講者フィードバック分析） ---"
+# 業態: 教育・研修（カリキュラム改善）
+# 想定人物: 教育企画担当（受講者フィードバックを分析）
+# 業務領域: 受講者フィードバックのKJ分析によるカリキュラム改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 全AI操作は未レビュー入力で422（SafeMode）。受講者の発言は逐語（refineで変えない）。
+EDU_ID="biz-flow-edu"
+EDU_DOC='{"version":1,"id":"'$EDU_ID'","title":"研修改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"演習時間が足りない","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"事例が実務に近い","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"資料が多すぎる","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"edu-i","cardIds":["e1","e2","e3"]}],"readingOrder":["edu-i"]}'
+
+edu_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EDU_ID" \
+  -H 'Content-Type: application/json' -d "$EDU_DOC")
+check "EDU PUT document (作成)" "200" "$edu_put"
+
+# ① AI束ね
+edu_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"演習時間が足りない","textReviewed":true},{"id":"e2","text":"事例が実務に近い","textReviewed":true},{"id":"e3","text":"資料が多すぎる","textReviewed":true}]}')
+case "$edu_groups" in *'"groups":'*) echo "  PASS: EDU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+edu_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EDU_DOC,\"islandId\":\"edu-i\"}")
+case "$edu_summary" in *'"groundingIds":["e1","e2","e3"]'*) echo "  PASS: EDU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（演習不足 vs 資料過多）
+edu_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"e1","text":"演習時間が足りない","textReviewed":true},"cardB":{"id":"e3","text":"資料が多すぎる","textReviewed":true}}')
+case "$edu_contra" in *'"hasContradiction"'*) echo "  PASS: EDU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+edu_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["研修"],"cardTexts":["演習時間が足りない","事例が実務に近い","資料が多すぎる"],"textReviewed":true}')
+case "$edu_title" in *'"candidates"'*) echo "  PASS: EDU ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: EDU ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+edu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EDU_ID")
+check "EDU 読戻し (200)" "200" "$edu_read"
+
+echo ""
+echo "--- シナリオ24: 災害対応・現場報告の整理と矛盾検出（安全クリティカル） ---"
+# 業態: 防災・災害対応
+# 想定人物: 災害対策本部スタッフ（現場報告を整理）
+# 業務領域: 現場報告のKJ整理と矛盾報告の検出・反対視点の確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+# 注意事項: 矛盾する現場報告は隠さず表面化する（安全クリティカル）。全て proposal-only。
+#          未レビューは422（SafeMode）。
+DR_ID="biz-flow-disaster"
+DR_DOC='{"version":1,"id":"'$DR_ID'","title":"現場報告の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"避難所に食料が届いている","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"避難所の食料が不足している","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"道路が通行止め","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dr-i","cardIds":["d1","d2","d3"]}],"readingOrder":["dr-i"]}'
+
+dr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DR_ID" \
+  -H 'Content-Type: application/json' -d "$DR_DOC")
+check "DR PUT document (作成)" "200" "$dr_put"
+
+# ① AI束ね
+dr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"避難所に食料が届いている","textReviewed":true},{"id":"d2","text":"避難所の食料が不足している","textReviewed":true},{"id":"d3","text":"道路が通行止め","textReviewed":true}]}')
+case "$dr_groups" in *'"groups":'*) echo "  PASS: DR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DR_DOC,\"islandId\":\"dr-i\"}")
+case "$dr_summary" in *'"groundingIds":["d1","d2","d3"]'*) echo "  PASS: DR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（食料が届いている vs 不足している — 矛盾する現場報告を表面化）
+dr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"避難所に食料が届いている","textReviewed":true},"cardB":{"id":"d2","text":"避難所の食料が不足している","textReviewed":true}}')
+case "$dr_contra" in *'"hasContradiction"'*) echo "  PASS: DR ③矛盾検出（矛盾報告を表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（食料対応の意思決定に対する反対視点・proposal-only）
+dr_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DR_DOC,\"targetCardId\":\"d1\"}")
+case "$dr_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: DR ④反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: DR ④反対視点"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+dr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DR_ID")
+check "DR 読戻し (200)" "200" "$dr_read"
+
+echo ""
+echo "--- シナリオ25: 法務レビュー（契約条項の整理と整合性検証） ---"
+# 業態: 法務・コンプライアンス
+# 想定人物: 法務担当（契約レビュー）
+# 業務領域: 契約条項のKJ整理と整合性検証（条項間の矛盾・法務意見のA/B照合）
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブA/B照合(check-narrative)
+# 注意事項: 条項の文面は逐語（refineで変えない）。整合性検証は提案のみ（自動適用なし）。
+LG_ID="biz-flow-legal"
+LG_DOC='{"version":1,"id":"'$LG_ID'","title":"契約レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"l1","text":"解約は30日前の通知で可能","x":0,"y":0,"textReviewed":true},{"id":"l2","text":"違約金は契約額の20%","x":10,"y":0,"textReviewed":true},{"id":"l3","text":"個人情報は目的外利用しない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lg-i","cardIds":["l1","l2","l3"]}],"readingOrder":["lg-i"]}'
+
+lg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LG_ID" \
+  -H 'Content-Type: application/json' -d "$LG_DOC")
+check "LG PUT document (作成)" "200" "$lg_put"
+
+# ① AI束ね
+lg_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"l1","text":"解約は30日前の通知で可能","textReviewed":true},{"id":"l2","text":"違約金は契約額の20%","textReviewed":true},{"id":"l3","text":"個人情報は目的外利用しない","textReviewed":true}]}')
+case "$lg_groups" in *'"groups":'*) echo "  PASS: LG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lg_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG_DOC,\"islandId\":\"lg-i\"}")
+case "$lg_summary" in *'"groundingIds":["l1","l2","l3"]'*) echo "  PASS: LG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 条項間の矛盾検出
+lg_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"l1","text":"解約は30日前の通知で可能","textReviewed":true},"cardB":{"id":"l2","text":"違約金は契約額の20%","textReviewed":true}}')
+case "$lg_contra" in *'"hasContradiction"'*) echo "  PASS: LG ③条項間の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 法務意見のナラティブA/B照合
+lg_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG_DOC,\"narrativeText\":\"（草稿）解約には30日前の通知を要し、違約金は契約額の20%とし、個人情報は目的外利用しない。\",\"basedOnReadingOrder\":[\"lg-i\"]}")
+case "$lg_narr" in *'"issues":[]'*) echo "  PASS: LG ④法務意見のA/B照合"; PASS=$((PASS+1));; *) echo "  FAIL: LG ④A/B照合 (${lg_narr:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG_ID")
+check "LG 読戻し (200)" "200" "$lg_read"
+
+echo ""
+echo "--- シナリオ26: 政策立案・パブリックコメントの整理 ---"
+# 業態: 公的機関・政策立案
+# 想定人物: 政策担当（パブリックコメントを整理）
+# 業務領域: パブリックコメントのKJ整理と対立意見の矛盾検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 意見は逐語（refineで変えない）。対立意見は隠さず表面化する。未レビューは422。
+PC_ID="biz-flow-policy"
+PC_DOC='{"version":1,"id":"'$PC_ID'","title":"パブリックコメント整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"料金値上げに反対する","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"サービス改善には財源が必要","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"手続きの簡素化を求める","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pc-i","cardIds":["p1","p2","p3"]}],"readingOrder":["pc-i"]}'
+
+pc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PC_ID" \
+  -H 'Content-Type: application/json' -d "$PC_DOC")
+check "PC PUT document (作成)" "200" "$pc_put"
+
+# ① AI束ね
+pc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"料金値上げに反対する","textReviewed":true},{"id":"p2","text":"サービス改善には財源が必要","textReviewed":true},{"id":"p3","text":"手続きの簡素化を求める","textReviewed":true}]}')
+case "$pc_groups" in *'"groups":'*) echo "  PASS: PC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PC_DOC,\"islandId\":\"pc-i\"}")
+case "$pc_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: PC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 対立意見の矛盾検出（値上げ反対 vs 財源必要）
+pc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"料金値上げに反対する","textReviewed":true},"cardB":{"id":"p2","text":"サービス改善には財源が必要","textReviewed":true}}')
+case "$pc_contra" in *'"hasContradiction"'*) echo "  PASS: PC ③対立意見の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: PC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ草稿
+pc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PC_DOC}")
+case "$pc_narr" in *'"basedOnReadingOrder":["pc-i"]'*) echo "  PASS: PC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PC_ID")
+check "PC 読戻し (200)" "200" "$pc_read"
+
+echo ""
+echo "--- シナリオ27: 金融・融資審査のリスク評価 ---"
+# 業態: 金融・融資審査
+# 想定人物: 融資審査担当（リスク情報を評価）
+# 業務領域: リスク情報のKJ整理と矛盾リスク信号の検出・反対視点の確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+# 注意事項: リスク情報は逐語（refineで変えない）。矛盾するリスク信号は隠さず表面化。
+#          全AI操作は未レビュー入力で422（SafeMode）。
+FN_ID="biz-flow-finance"
+FN_DOC='{"version":1,"id":"'$FN_ID'","title":"融資審査のリスク評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"売上は堅調に推移","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"在庫が過剰に増えている","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"仕入先との取引は安定","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fn-i","cardIds":["f1","f2","f3"]}],"readingOrder":["fn-i"]}'
+
+fn_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FN_ID" \
+  -H 'Content-Type: application/json' -d "$FN_DOC")
+check "FN PUT document (作成)" "200" "$fn_put"
+
+# ① AI束ね
+fn_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"売上は堅調に推移","textReviewed":true},{"id":"f2","text":"在庫が過剰に増えている","textReviewed":true},{"id":"f3","text":"仕入先との取引は安定","textReviewed":true}]}')
+case "$fn_groups" in *'"groups":'*) echo "  PASS: FN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fn_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FN_DOC,\"islandId\":\"fn-i\"}")
+case "$fn_summary" in *'"groundingIds":["f1","f2","f3"]'*) echo "  PASS: FN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾リスク信号の検出（売上堅調 vs 在庫過剰）
+fn_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"f1","text":"売上は堅調に推移","textReviewed":true},"cardB":{"id":"f2","text":"在庫が過剰に増えている","textReviewed":true}}')
+case "$fn_contra" in *'"hasContradiction"'*) echo "  PASS: FN ③矛盾リスク信号の検出"; PASS=$((PASS+1));; *) echo "  FAIL: FN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（融資判断に対する反対視点・proposal-only）
+fn_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FN_DOC,\"targetCardId\":\"f2\"}")
+case "$fn_opp" in *'"status":"proposed"'*'"opposingText"'*) echo "  PASS: FN ④反対視点提案 (proposal-only)"; PASS=$((PASS+1));; *) echo "  FAIL: FN ④反対視点"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fn_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FN_ID")
+check "FN 読戻し (200)" "200" "$fn_read"
+
+echo ""
+echo "--- シナリオ28: 観光・宿泊・訪問者フィードバックの整理 ---"
+# 業態: 観光・宿泊
+# 想定人物: 宿泊施設マネージャー（訪問者フィードバックを分析）
+# 業務領域: 訪問者フィードバックのKJ整理と満足/不満の要因分析
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 訪問者の声は逐語（refineで変えない）。矛盾する評価は隠さず表面化。
+TR_ID="biz-flow-tourism"
+TR_DOC='{"version":1,"id":"'$TR_ID'","title":"宿泊施設の改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"眺望が素晴らしい","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"朝食の選択肢が少ない","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"スタッフの対応が丁寧","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tr-i"]}'
+
+tr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TR_ID" \
+  -H 'Content-Type: application/json' -d "$TR_DOC")
+check "TR PUT document (作成)" "200" "$tr_put"
+
+# ① AI束ね
+tr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"眺望が素晴らしい","textReviewed":true},{"id":"t2","text":"朝食の選択肢が少ない","textReviewed":true},{"id":"t3","text":"スタッフの対応が丁寧","textReviewed":true}]}')
+case "$tr_groups" in *'"groups":'*) echo "  PASS: TR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"islandId\":\"tr-i\"}")
+case "$tr_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（満足要因 vs 不満要因）
+tr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"眺望が素晴らしい","textReviewed":true},"cardB":{"id":"t2","text":"朝食の選択肢が少ない","textReviewed":true}}')
+case "$tr_contra" in *'"hasContradiction"'*) echo "  PASS: TR ③満足/不満の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+tr_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["宿泊"],"cardTexts":["眺望が素晴らしい","朝食の選択肢が少ない","スタッフの対応が丁寧"],"textReviewed":true}')
+case "$tr_title" in *'"candidates"'*) echo "  PASS: TR ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: TR ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
+check "TR 読戻し (200)" "200" "$tr_read"
+
+echo ""
+echo "--- シナリオ29: 製造・生産現場の改善提案整理 ---"
+# 業態: 製造・生産
+# 想定人物: 生産改善リーダー（現場の改善提案を整理）
+# 業務領域: 現場改善提案のKJ整理と課題の因果関係の要約
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> ナラティブ(generate-narrative)
+# 注意事項: 現場の声は逐語（refineで変えない）。関係要約は提案のみ（自動適用なし）。
+MF_ID="biz-flow-manufacturing"
+MF_DOC='{"version":1,"id":"'$MF_ID'","title":"生産現場の改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"段取り替えに時間がかかる","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"部品の在庫管理が煩雑","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"設備の稼働率が低い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mf-a","cardIds":["m1","m2"]},{"id":"mf-b","cardIds":["m3"]}],"readingOrder":["mf-a","mf-b"]}'
+
+mf_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MF_ID" \
+  -H 'Content-Type: application/json' -d "$MF_DOC")
+check "MF PUT document (作成)" "200" "$mf_put"
+
+# ① AI束ね
+mf_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"m1","text":"段取り替えに時間がかかる","textReviewed":true},{"id":"m2","text":"部品の在庫管理が煩雑","textReviewed":true},{"id":"m3","text":"設備の稼働率が低い","textReviewed":true}]}')
+case "$mf_groups" in *'"groups":'*) echo "  PASS: MF ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MF ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mf_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"islandId\":\"mf-a\"}")
+case "$mf_summary" in *'"groundingIds":["m1","m2"]'*) echo "  PASS: MF ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MF ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係の要約（段取り・在庫 → 稼働率 の因果）
+mf_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"islandAId\":\"mf-a\",\"islandBId\":\"mf-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"m3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"m3\",\"text\":\"設備の稼働率が低い\"}]}")
+case "$mf_rel" in *'"text"'*) echo "  PASS: MF ③島間関係の要約 (causal)"; PASS=$((PASS+1));; *) echo "  FAIL: MF ③関係要約 (${mf_rel:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+mf_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MF_DOC}")
+case "$mf_narr" in *'"basedOnReadingOrder":["mf-a","mf-b"]'*) echo "  PASS: MF ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MF ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MF_ID")
+check "MF 読戻し (200)" "200" "$mf_read"
+
+echo ""
+echo "--- シナリオ30: 人事評価・360度フィードバックの統合 ---"
+# 業態: 人事・人材開発
+# 想定人物: 人事マネージャー（360度評価の統合）
+# 業務領域: 360度フィードバックのKJ統合と矛盾フィードバックの検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: フィードバックは逐語（refineで変えない）。矛盾する評価は表面化する。
+HR_ID="biz-flow-hr360"
+HR_DOC='{"version":1,"id":"'$HR_ID'","title":"360度評価の統合","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"h1","text":"リーダーシップが高い","x":0,"y":0,"textReviewed":true},{"id":"h2","text":"決断が遅い","x":10,"y":0,"textReviewed":true},{"id":"h3","text":"チームへの配慮が十分","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hr-i","cardIds":["h1","h2","h3"]}],"readingOrder":["hr-i"]}'
+
+hr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HR_ID" \
+  -H 'Content-Type: application/json' -d "$HR_DOC")
+check "HR PUT document (作成)" "200" "$hr_put"
+
+# ① AI束ね
+hr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"h1","text":"リーダーシップが高い","textReviewed":true},{"id":"h2","text":"決断が遅い","textReviewed":true},{"id":"h3","text":"チームへの配慮が十分","textReviewed":true}]}')
+case "$hr_groups" in *'"groups":'*) echo "  PASS: HR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HR_DOC,\"islandId\":\"hr-i\"}")
+case "$hr_summary" in *'"groundingIds":["h1","h2","h3"]'*) echo "  PASS: HR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 評価者間の矛盾検出（リーダーシップ高い vs 決断が遅い）
+hr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"h1","text":"リーダーシップが高い","textReviewed":true},"cardB":{"id":"h2","text":"決断が遅い","textReviewed":true}}')
+case "$hr_contra" in *'"hasContradiction"'*) echo "  PASS: HR ③評価者間の矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HR_DOC}")
+case "$hr_narr" in *'"basedOnReadingOrder":["hr-i"]'*) echo "  PASS: HR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+hr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HR_ID")
+check "HR 読戻し (200)" "200" "$hr_read"
+
+echo ""
+echo "--- シナリオ31: NPO・市民活動のボランティア報告整理 ---"
+# 業態: NPO・市民活動
+# 想定人物: 活動コーディネーター（ボランティア報告を整理）
+# 業務領域: ボランティア報告のKJ整理と活動課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 報告は逐語（refineで変えない）。矛盾する報告は表面化する。
+NP_ID="biz-flow-npo"
+NP_DOC='{"version":1,"id":"'$NP_ID'","title":"ボランティア活動報告","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"n1","text":"参加者のモチベーションが高い","x":0,"y":0,"textReviewed":true},{"id":"n2","text":"資材が不足している","x":10,"y":0,"textReviewed":true},{"id":"n3","text":"告知が行き届いていない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"np-i","cardIds":["n1","n2","n3"]}],"readingOrder":["np-i"]}'
+
+np_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NP_ID" \
+  -H 'Content-Type: application/json' -d "$NP_DOC")
+check "NP PUT document (作成)" "200" "$np_put"
+
+# ① AI束ね
+np_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"n1","text":"参加者のモチベーションが高い","textReviewed":true},{"id":"n2","text":"資材が不足している","textReviewed":true},{"id":"n3","text":"告知が行き届いていない","textReviewed":true}]}')
+case "$np_groups" in *'"groups":'*) echo "  PASS: NP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+np_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NP_DOC,\"islandId\":\"np-i\"}")
+case "$np_summary" in *'"groundingIds":["n1","n2","n3"]'*) echo "  PASS: NP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（モチベーション高い vs 資材不足・告知不足）
+np_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"n1","text":"参加者のモチベーションが高い","textReviewed":true},"cardB":{"id":"n2","text":"資材が不足している","textReviewed":true}}')
+case "$np_contra" in *'"hasContradiction"'*) echo "  PASS: NP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: NP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+np_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NP_DOC}")
+case "$np_narr" in *'"basedOnReadingOrder":["np-i"]'*) echo "  PASS: NP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+np_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NP_ID")
+check "NP 読戻し (200)" "200" "$np_read"
+
+echo ""
+echo "--- シナリオ32: 不動産・物件情報と内見フィードバックの整理 ---"
+# 業態: 不動産・物件管理
+# 想定人物: 物件マネージャー（内見フィードバックを分析）
+# 業務領域: 物件情報のKJ整理と内見フィードバックの課題検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 内見者の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+RE_ID="biz-flow-realestate"
+RE_DOC='{"version":1,"id":"'$RE_ID'","title":"物件改善の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"r1","text":"駅から近い","x":0,"y":0,"textReviewed":true},{"id":"r2","text":"日当たりが良い","x":10,"y":0,"textReviewed":true},{"id":"r3","text":"設備が古い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"re-i","cardIds":["r1","r2","r3"]}],"readingOrder":["re-i"]}'
+
+re_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$RE_ID" \
+  -H 'Content-Type: application/json' -d "$RE_DOC")
+check "RE PUT document (作成)" "200" "$re_put"
+
+# ① AI束ね
+re_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"r1","text":"駅から近い","textReviewed":true},{"id":"r2","text":"日当たりが良い","textReviewed":true},{"id":"r3","text":"設備が古い","textReviewed":true}]}')
+case "$re_groups" in *'"groups":'*) echo "  PASS: RE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: RE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+re_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$RE_DOC,\"islandId\":\"re-i\"}")
+case "$re_summary" in *'"groundingIds":["r1","r2","r3"]'*) echo "  PASS: RE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: RE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（立地・日照が良い vs 設備が古い）
+re_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"r1","text":"駅から近い","textReviewed":true},"cardB":{"id":"r3","text":"設備が古い","textReviewed":true}}')
+case "$re_contra" in *'"hasContradiction"'*) echo "  PASS: RE ③矛盾検出（立地 vs 設備）"; PASS=$((PASS+1));; *) echo "  FAIL: RE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+re_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["物件"],"cardTexts":["駅から近い","日当たりが良い","設備が古い"],"textReviewed":true}')
+case "$re_title" in *'"candidates"'*) echo "  PASS: RE ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: RE ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+re_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RE_ID")
+check "RE 読戻し (200)" "200" "$re_read"
+
+echo ""
+echo "--- シナリオ33: 通信・IT・サポート問い合わせの分析 ---"
+# 業態: 通信・ITサービス
+# 想定人物: サポート品質マネージャー（問い合わせを分析）
+# 業務領域: サポート問い合わせのKJ整理と対応課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 利用者の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+IT_ID="biz-flow-it-support"
+IT_DOC='{"version":1,"id":"'$IT_ID'","title":"サポート問い合わせ分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"i1","text":"ログインが頻繁に失敗する","x":0,"y":0,"textReviewed":true},{"id":"i2","text":"応答速度は満足","x":10,"y":0,"textReviewed":true},{"id":"i3","text":"設定画面が分かりにくい","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"it-i","cardIds":["i1","i2","i3"]}],"readingOrder":["it-i"]}'
+
+it_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IT_ID" \
+  -H 'Content-Type: application/json' -d "$IT_DOC")
+check "IT PUT document (作成)" "200" "$it_put"
+
+# ① AI束ね
+it_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"i1","text":"ログインが頻繁に失敗する","textReviewed":true},{"id":"i2","text":"応答速度は満足","textReviewed":true},{"id":"i3","text":"設定画面が分かりにくい","textReviewed":true}]}')
+case "$it_groups" in *'"groups":'*) echo "  PASS: IT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+it_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IT_DOC,\"islandId\":\"it-i\"}")
+case "$it_summary" in *'"groundingIds":["i1","i2","i3"]'*) echo "  PASS: IT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（ログイン失敗 vs 応答速度満足）
+it_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"i1","text":"ログインが頻繁に失敗する","textReviewed":true},"cardB":{"id":"i2","text":"応答速度は満足","textReviewed":true}}')
+case "$it_contra" in *'"hasContradiction"'*) echo "  PASS: IT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: IT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+it_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IT_DOC}")
+case "$it_narr" in *'"basedOnReadingOrder":["it-i"]'*) echo "  PASS: IT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+it_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IT_ID")
+check "IT 読戻し (200)" "200" "$it_read"
+
+echo ""
+echo "--- シナリオ34: エネルギー・設備点検レポートの整理 ---"
+# 業態: エネルギー・インフラ
+# 想定人物: 設備点検リーダー（点検レポートを整理）
+# 業務領域: 設備点検レポートのKJ整理と異常の優先順位付けの基礎
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> タイトル提案(suggest-document-title)
+# 注意事項: 点検記録は逐語（refineで変えない）。異常の因果は提案のみ。
+EN_ID="biz-flow-energy"
+EN_DOC='{"version":1,"id":"'$EN_ID'","title":"設備点検レポート","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"冷却系の温度が高い","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"振動が大きくなっている","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"潤滑油の量が少ない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"en-a","cardIds":["e1","e2"]},{"id":"en-b","cardIds":["e3"]}],"readingOrder":["en-a","en-b"]}'
+
+en_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EN_ID" \
+  -H 'Content-Type: application/json' -d "$EN_DOC")
+check "EN PUT document (作成)" "200" "$en_put"
+
+# ① AI束ね
+en_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"冷却系の温度が高い","textReviewed":true},{"id":"e2","text":"振動が大きくなっている","textReviewed":true},{"id":"e3","text":"潤滑油の量が少ない","textReviewed":true}]}')
+case "$en_groups" in *'"groups":'*) echo "  PASS: EN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+en_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EN_DOC,\"islandId\":\"en-a\"}")
+case "$en_summary" in *'"groundingIds":["e1","e2"]'*) echo "  PASS: EN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係の要約（潤滑油不足 → 振動・温度上昇 の因果）
+en_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EN_DOC,\"islandAId\":\"en-b\",\"islandBId\":\"en-a\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"e1\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"e1\",\"text\":\"冷却系の温度が高い\"}]}")
+case "$en_rel" in *'"text"'*) echo "  PASS: EN ③島間関係の要約 (causal)"; PASS=$((PASS+1));; *) echo "  FAIL: EN ③関係要約 (${en_rel:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+en_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["設備"],"cardTexts":["冷却系の温度が高い","振動が大きくなっている","潤滑油の量が少ない"],"textReviewed":true}')
+case "$en_title" in *'"candidates"'*) echo "  PASS: EN ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: EN ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+en_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EN_ID")
+check "EN 読戻し (200)" "200" "$en_read"
+
+echo ""
+echo "--- シナリオ35: 農業・生産者レポートの整理 ---"
+# 業態: 農業・アグリテック
+# 想定人物: 営農アドバイザー（生産者レポートを分析）
+# 業務領域: 圃場レポートのKJ整理と栽培課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 生産者の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+AG_ID="biz-flow-agriculture"
+AG_DOC='{"version":1,"id":"'$AG_ID'","title":"圃場レポート分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"収量が昨年より増えた","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"病害が広がっている","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"灌漑設備が十分機能する","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ag-i","cardIds":["a1","a2","a3"]}],"readingOrder":["ag-i"]}'
+
+ag_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AG_ID" \
+  -H 'Content-Type: application/json' -d "$AG_DOC")
+check "AG PUT document (作成)" "200" "$ag_put"
+
+# ① AI束ね
+ag_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"a1","text":"収量が昨年より増えた","textReviewed":true},{"id":"a2","text":"病害が広がっている","textReviewed":true},{"id":"a3","text":"灌漑設備が十分機能する","textReviewed":true}]}')
+case "$ag_groups" in *'"groups":'*) echo "  PASS: AG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ag_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AG_DOC,\"islandId\":\"ag-i\"}")
+case "$ag_summary" in *'"groundingIds":["a1","a2","a3"]'*) echo "  PASS: AG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（収量増 vs 病害拡大）
+ag_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a1","text":"収量が昨年より増えた","textReviewed":true},"cardB":{"id":"a2","text":"病害が広がっている","textReviewed":true}}')
+case "$ag_contra" in *'"hasContradiction"'*) echo "  PASS: AG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ag_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AG_DOC}")
+case "$ag_narr" in *'"basedOnReadingOrder":["ag-i"]'*) echo "  PASS: AG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ag_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AG_ID")
+check "AG 読戻し (200)" "200" "$ag_read"
+
+echo ""
+echo "--- シナリオ36: 物流・配送現場報告の整理 ---"
+# 業態: 物流・配送
+# 想定人物: 配送管理者（現場報告を分析）
+# 業務領域: 配送現場報告のKJ整理と配送課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 現場の声は逐語（refineで変えない）。矛盾する報告は表面化する。
+LG2_ID="biz-flow-logistics"
+LG2_DOC='{"version":1,"id":"'$LG2_ID'","title":"配送現場の報告","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"l1","text":"配送時間が守られている","x":0,"y":0,"textReviewed":true},{"id":"l2","text":"荷物の破損が増えている","x":10,"y":0,"textReviewed":true},{"id":"l3","text":"ルートの最適化が進む","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lg2-i","cardIds":["l1","l2","l3"]}],"readingOrder":["lg2-i"]}'
+
+lg2_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LG2_ID" \
+  -H 'Content-Type: application/json' -d "$LG2_DOC")
+check "LG2 PUT document (作成)" "200" "$lg2_put"
+
+# ① AI束ね
+lg2_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"l1","text":"配送時間が守られている","textReviewed":true},{"id":"l2","text":"荷物の破損が増えている","textReviewed":true},{"id":"l3","text":"ルートの最適化が進む","textReviewed":true}]}')
+case "$lg2_groups" in *'"groups":'*) echo "  PASS: LG2 ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lg2_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG2_DOC,\"islandId\":\"lg2-i\"}")
+case "$lg2_summary" in *'"groundingIds":["l1","l2","l3"]'*) echo "  PASS: LG2 ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（時間厳守 vs 破損増加）
+lg2_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"l1","text":"配送時間が守られている","textReviewed":true},"cardB":{"id":"l2","text":"荷物の破損が増えている","textReviewed":true}}')
+case "$lg2_contra" in *'"hasContradiction"'*) echo "  PASS: LG2 ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+lg2_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["配送"],"cardTexts":["配送時間が守られている","荷物の破損が増えている","ルートの最適化が進む"],"textReviewed":true}')
+case "$lg2_title" in *'"candidates"'*) echo "  PASS: LG2 ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: LG2 ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lg2_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG2_ID")
+check "LG2 読戻し (200)" "200" "$lg2_read"
+
+echo ""
+echo "--- シナリオ37: 食品・飲食・メニュー改善の顧客声分析 ---"
+# 業態: 食品・飲食
+# 想定人物: メニュー開発担当（顧客の声を分析）
+# 業務領域: メニュー改善の顧客声KJ整理と改善課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 顧客の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+FD_ID="biz-flow-food"
+FD_DOC='{"version":1,"id":"'$FD_ID'","title":"メニュー改善の分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"味付けは好評","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"提供時間が長い","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"価格は妥当","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fd-i","cardIds":["d1","d2","d3"]}],"readingOrder":["fd-i"]}'
+
+fd_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FD_ID" \
+  -H 'Content-Type: application/json' -d "$FD_DOC")
+check "FD PUT document (作成)" "200" "$fd_put"
+
+# ① AI束ね
+fd_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"味付けは好評","textReviewed":true},{"id":"d2","text":"提供時間が長い","textReviewed":true},{"id":"d3","text":"価格は妥当","textReviewed":true}]}')
+case "$fd_groups" in *'"groups":'*) echo "  PASS: FD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fd_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FD_DOC,\"islandId\":\"fd-i\"}")
+case "$fd_summary" in *'"groundingIds":["d1","d2","d3"]'*) echo "  PASS: FD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（味好評 vs 提供時間長い）
+fd_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"味付けは好評","textReviewed":true},"cardB":{"id":"d2","text":"提供時間が長い","textReviewed":true}}')
+case "$fd_contra" in *'"hasContradiction"'*) echo "  PASS: FD ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: FD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fd_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FD_DOC}")
+case "$fd_narr" in *'"basedOnReadingOrder":["fd-i"]'*) echo "  PASS: FD ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FD ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FD_ID")
+check "FD 読戻し (200)" "200" "$fd_read"
+
+echo ""
+echo "--- シナリオ38: 編集者・ナラティブA/B不整合の検出 ---"
+# 業態: 出版・報道（シナリオ5のA/B不整合検出の拡張）
+# 想定人物: 編集者（ナラティブと図解の不整合を検出）
+# 業務領域: ナラティブのA/B照合で不整合の方向と件数を報告
+# 操作内容: 文書作成 -> check-narrative（A/B不整合の検出・direction/counts）
+# 注意事項: 不整合は「カードにない主張（b_missing_in_a）」と「触れていない島
+#          （a_missing_in_b）」を方向で報告。件数（counts）は報告の正本。
+AB_ID="biz-flow-ab-mismatch"
+AB_DOC='{"version":1,"id":"'$AB_ID'","title":"A/B照合検証","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"事実A","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"summaryText":"s"}],"readingOrder":["i1"]}'
+
+ab_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AB_ID" \
+  -H 'Content-Type: application/json' -d "$AB_DOC")
+check "AB PUT document (作成)" "200" "$ab_put"
+
+# A/B不整合の検出（モックは marker「未検証の主張」で a_missing_in_b を報告）。
+ab_narr=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AB_DOC,\"narrativeText\":\"（草稿）事実Aに加えて、未検証の主張が含まれている。\",\"basedOnReadingOrder\":[\"i1\"]}")
+case "$ab_narr" in
+  *'"direction":"a_missing_in_b"'*)
+    echo "  PASS: AB ①A/B不整合の方向（a_missing_in_b）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: AB ①A/B不整合の方向（got ${ab_narr:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+case "$ab_narr" in
+  *'"counts"'*'"bMissingInA":0'*'"aMissingInB":1'*)
+    echo "  PASS: AB ②A/B件数（counts: bMissingInA=0/aMissingInB=1）"
+    PASS=$((PASS+1))
+    ;;
+  *)
+    echo "  FAIL: AB ②A/B件数（got ${ab_narr:0:150}）"
+    FAIL=$((FAIL+1))
+    ;;
+esac
+
+echo ""
+echo "--- シナリオ39: スポーツ・コーチング・選手フィードバックの整理 ---"
+# 業態: スポーツ・コーチング
+# 想定人物: コーチ（選手フィードバックを整理）
+# 業務領域: 選手フィードバックのKJ整理と強化課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 選手の声は逐語（refineで変えない）。矛盾する評価は表面化する。
+SP_ID="biz-flow-sports"
+SP_DOC='{"version":1,"id":"'$SP_ID'","title":"チーム強化の分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"フィジカルが向上している","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"戦術理解が不足している","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"連携は良好","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sp-i","cardIds":["s1","s2","s3"]}],"readingOrder":["sp-i"]}'
+
+sp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SP_ID" \
+  -H 'Content-Type: application/json' -d "$SP_DOC")
+check "SP PUT document (作成)" "200" "$sp_put"
+
+# ① AI束ね
+sp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"フィジカルが向上している","textReviewed":true},{"id":"s2","text":"戦術理解が不足している","textReviewed":true},{"id":"s3","text":"連携は良好","textReviewed":true}]}')
+case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"islandId\":\"sp-i\"}")
+case "$sp_summary" in *'"groundingIds":["s1","s2","s3"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（フィジカル向上 vs 戦術理解不足）
+sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s1","text":"フィジカルが向上している","textReviewed":true},"cardB":{"id":"s2","text":"戦術理解が不足している","textReviewed":true}}')
+case "$sp_contra" in *'"hasContradiction"'*) echo "  PASS: SP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SP_DOC}")
+case "$sp_narr" in *'"basedOnReadingOrder":["sp-i"]'*) echo "  PASS: SP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
+check "SP 読戻し (200)" "200" "$sp_read"
+
+echo ""
+echo "--- シナリオ40: 研究開発・製薬・治験データの整理 ---"
+# 業態: 研究開発・製薬
+# 想定人物: 治験データアナリスト（治験結果を整理）
+# 業務領域: 治験データのKJ整理と安全性シグナルの検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> タイトル提案(suggest-document-title)
+# 注意事項: 治験データは逐語（refineで変えない）。矛盾する安全性シグナルは表面化する。
+RD_ID="biz-flow-pharma"
+RD_DOC='{"version":1,"id":"'$RD_ID'","title":"治験データの整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"有効性は高い","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"有害事象が報告されている","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"服薬コンプライアンスは良好","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"rd-i","cardIds":["p1","p2","p3"]}],"readingOrder":["rd-i"]}'
+
+rd_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$RD_ID" \
+  -H 'Content-Type: application/json' -d "$RD_DOC")
+check "RD PUT document (作成)" "200" "$rd_put"
+
+# ① AI束ね
+rd_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"有効性は高い","textReviewed":true},{"id":"p2","text":"有害事象が報告されている","textReviewed":true},{"id":"p3","text":"服薬コンプライアンスは良好","textReviewed":true}]}')
+case "$rd_groups" in *'"groups":'*) echo "  PASS: RD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: RD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+rd_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$RD_DOC,\"islandId\":\"rd-i\"}")
+case "$rd_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: RD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: RD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（有効性 vs 有害事象 — 安全性シグナル）
+rd_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"有効性は高い","textReviewed":true},"cardB":{"id":"p2","text":"有害事象が報告されている","textReviewed":true}}')
+case "$rd_contra" in *'"hasContradiction"'*) echo "  PASS: RD ③安全性シグナルの矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: RD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案
+rd_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["治験"],"cardTexts":["有効性は高い","有害事象が報告されている","服薬コンプライアンスは良好"],"textReviewed":true}')
+case "$rd_title" in *'"candidates"'*) echo "  PASS: RD ④タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: RD ④タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+rd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RD_ID")
+check "RD 読戻し (200)" "200" "$rd_read"
+
+echo ""
+echo "--- シナリオ41: 保険・事故・請求データの分析 ---"
+# 業態: 保険・損害保険
+# 想定人物: 保険査定担当（事故・請求データを分析）
+# 業務領域: 事故・請求データのKJ整理とリスク要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 請求データは逐語（refineで変えない）。矛盾する報告は表面化する。
+IN_ID="biz-flow-insurance"
+IN_DOC='{"version":1,"id":"'$IN_ID'","title":"事故・請求データ分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"n1","text":"事故の報告が減少している","x":0,"y":0,"textReviewed":true},{"id":"n2","text":"保険金請求が増えている","x":10,"y":0,"textReviewed":true},{"id":"n3","text":"対応プロセスは円滑","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"in-i","cardIds":["n1","n2","n3"]}],"readingOrder":["in-i"]}'
+
+in_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IN_ID" \
+  -H 'Content-Type: application/json' -d "$IN_DOC")
+check "IN PUT document (作成)" "200" "$in_put"
+
+# ① AI束ね
+in_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"n1","text":"事故の報告が減少している","textReviewed":true},{"id":"n2","text":"保険金請求が増えている","textReviewed":true},{"id":"n3","text":"対応プロセスは円滑","textReviewed":true}]}')
+case "$in_groups" in *'"groups":'*) echo "  PASS: IN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+in_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IN_DOC,\"islandId\":\"in-i\"}")
+case "$in_summary" in *'"groundingIds":["n1","n2","n3"]'*) echo "  PASS: IN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（事故減少 vs 請求増加）
+in_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"n1","text":"事故の報告が減少している","textReviewed":true},"cardB":{"id":"n2","text":"保険金請求が増えている","textReviewed":true}}')
+case "$in_contra" in *'"hasContradiction"'*) echo "  PASS: IN ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: IN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+in_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IN_DOC}")
+case "$in_narr" in *'"basedOnReadingOrder":["in-i"]'*) echo "  PASS: IN ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IN ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+in_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IN_ID")
+check "IN 読戻し (200)" "200" "$in_read"
+
+echo ""
+echo "--- シナリオ42: 環境・環境影響評価の整理 ---"
+# 業態: 環境・コンサルティング
+# 想定人物: 環境影響評価担当（環境評価データを整理）
+# 業務領域: 環境影響評価のKJ整理と影響要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 調査データは逐語（refineで変えない）。矛盾する影響要因は表面化する。
+EV_ID="biz-flow-env"
+EV_DOC='{"version":1,"id":"'$EV_ID'","title":"環境影響評価の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"水質は基準を満たす","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"騒音の苦情が増えている","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"植生は保全されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ev-i","cardIds":["e1","e2","e3"]}],"readingOrder":["ev-i"]}'
+
+ev_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EV_ID" \
+  -H 'Content-Type: application/json' -d "$EV_DOC")
+check "EV PUT document (作成)" "200" "$ev_put"
+
+# ① AI束ね
+ev_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"水質は基準を満たす","textReviewed":true},{"id":"e2","text":"騒音の苦情が増えている","textReviewed":true},{"id":"e3","text":"植生は保全されている","textReviewed":true}]}')
+case "$ev_groups" in *'"groups":'*) echo "  PASS: EV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ev_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EV_DOC,\"islandId\":\"ev-i\"}")
+case "$ev_summary" in *'"groundingIds":["e1","e2","e3"]'*) echo "  PASS: EV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（水質基準充足 vs 騒音苦情増加）
+ev_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"e1","text":"水質は基準を満たす","textReviewed":true},"cardB":{"id":"e2","text":"騒音の苦情が増えている","textReviewed":true}}')
+case "$ev_contra" in *'"hasContradiction"'*) echo "  PASS: EV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ev_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EV_DOC}")
+case "$ev_narr" in *'"basedOnReadingOrder":["ev-i"]'*) echo "  PASS: EV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ev_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EV_ID")
+check "EV 読戻し (200)" "200" "$ev_read"
+
+echo ""
+echo "--- シナリオ43: 建設・施工現場進捗の整理 ---"
+# 業態: 建設・施工
+# 想定人物: 現場監督（施工進捗を整理）
+# 業務領域: 施工現場報告のKJ整理と工程課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 現場報告は逐語（refineで変えない）。矛盾する工程報告は表面化する。
+CS_ID="biz-flow-construction"
+CS_DOC='{"version":1,"id":"'$CS_ID'","title":"施工進捗の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"基礎工事は予定通り","x":0,"y":0,"textReviewed":true},{"id":"c2","text":"資材の納入が遅れている","x":10,"y":0,"textReviewed":true},{"id":"c3","text":"安全対策は徹底されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cs-i","cardIds":["c1","c2","c3"]}],"readingOrder":["cs-i"]}'
+
+cs_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CS_ID" \
+  -H 'Content-Type: application/json' -d "$CS_DOC")
+check "CS PUT document (作成)" "200" "$cs_put"
+
+# ① AI束ね
+cs_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"c1","text":"基礎工事は予定通り","textReviewed":true},{"id":"c2","text":"資材の納入が遅れている","textReviewed":true},{"id":"c3","text":"安全対策は徹底されている","textReviewed":true}]}')
+case "$cs_groups" in *'"groups":'*) echo "  PASS: CS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cs_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CS_DOC,\"islandId\":\"cs-i\"}")
+case "$cs_summary" in *'"groundingIds":["c1","c2","c3"]'*) echo "  PASS: CS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（基礎工事順調 vs 資材納入遅延）
+cs_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"c1","text":"基礎工事は予定通り","textReviewed":true},"cardB":{"id":"c2","text":"資材の納入が遅れている","textReviewed":true}}')
+case "$cs_contra" in *'"hasContradiction"'*) echo "  PASS: CS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cs_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CS_DOC}")
+case "$cs_narr" in *'"basedOnReadingOrder":["cs-i"]'*) echo "  PASS: CS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CS_ID")
+check "CS 読戻し (200)" "200" "$cs_read"
+
+echo ""
+echo "--- シナリオ44: 通信・キャリア・ネットワーク障害分析 ---"
+# 業態: 通信・キャリア
+# 想定人物: ネットワーク運用担当（障害報告を整理）
+# 業務領域: ネットワーク障害報告のKJ整理と障害要因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: 障害報告は逐語（refineで変えない）。矛盾する報告は表面化する。
+TC_ID="biz-flow-telecom"
+TC_DOC='{"version":1,"id":"'$TC_ID'","title":"ネットワーク障害の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"光回線は安定している","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"モバイル網で遅延が増えている","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"サポート対応は迅速","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tc-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tc-i"]}'
+
+tc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TC_ID" \
+  -H 'Content-Type: application/json' -d "$TC_DOC")
+check "TC PUT document (作成)" "200" "$tc_put"
+
+# ① AI束ね
+tc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"光回線は安定している","textReviewed":true},{"id":"t2","text":"モバイル網で遅延が増えている","textReviewed":true},{"id":"t3","text":"サポート対応は迅速","textReviewed":true}]}')
+case "$tc_groups" in *'"groups":'*) echo "  PASS: TC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TC_DOC,\"islandId\":\"tc-i\"}")
+case "$tc_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（光回線安定 vs モバイル網遅延）
+tc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"光回線は安定している","textReviewed":true},"cardB":{"id":"t2","text":"モバイル網で遅延が増えている","textReviewed":true}}')
+case "$tc_contra" in *'"hasContradiction"'*) echo "  PASS: TC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+tc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TC_DOC}")
+case "$tc_narr" in *'"basedOnReadingOrder":["tc-i"]'*) echo "  PASS: TC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TC_ID")
+check "TC 読戻し (200)" "200" "$tc_read"
+
+echo ""
+echo "--- シナリオ45: 教育・大学・研究プロジェクトの振り返り整理 ---"
+# 業態: 教育・大学（研究プロジェクト）
+# 想定人物: 研究プロジェクトリーダー（プロジェクト振り返りを整理）
+# 業務領域: 研究プロジェクトの振り返りのKJ整理と課題の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+# 注意事項: メンバーの声は逐語（refineで変えない）。矛盾する報告は表面化する。
+UV_ID="biz-flow-university"
+UV_DOC='{"version":1,"id":"'$UV_ID'","title":"研究プロジェクト振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"u1","text":"成果は計画通り","x":0,"y":0,"textReviewed":true},{"id":"u2","text":"人員が不足している","x":10,"y":0,"textReviewed":true},{"id":"u3","text":"国際連携は進んでいる","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"uv-i","cardIds":["u1","u2","u3"]}],"readingOrder":["uv-i"]}'
+
+uv_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$UV_ID" \
+  -H 'Content-Type: application/json' -d "$UV_DOC")
+check "UV PUT document (作成)" "200" "$uv_put"
+
+# ① AI束ね
+uv_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"u1","text":"成果は計画通り","textReviewed":true},{"id":"u2","text":"人員が不足している","textReviewed":true},{"id":"u3","text":"国際連携は進んでいる","textReviewed":true}]}')
+case "$uv_groups" in *'"groups":'*) echo "  PASS: UV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: UV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+uv_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$UV_DOC,\"islandId\":\"uv-i\"}")
+case "$uv_summary" in *'"groundingIds":["u1","u2","u3"]'*) echo "  PASS: UV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: UV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（成果計画通り vs 人員不足）
+uv_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"u1","text":"成果は計画通り","textReviewed":true},"cardB":{"id":"u2","text":"人員が不足している","textReviewed":true}}')
+case "$uv_contra" in *'"hasContradiction"'*) echo "  PASS: UV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: UV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+uv_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$UV_DOC}")
+case "$uv_narr" in *'"basedOnReadingOrder":["uv-i"]'*) echo "  PASS: UV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: UV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+uv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$UV_ID")
+check "UV 読戻し (200)" "200" "$uv_read"
+
+echo ""
+echo "--- シナリオ46: 医療・診断・診断確定前の反対視点レビュー（保留接続） ---"
+# 業態: 医療・診断（診断確定前レビュー）
+# 想定人物: 診断医（確定前に反対視点・根拠不足をレビューし、保留する）
+# 業務領域: 診断カルテのKJ整理と、確定前の反対視点・根拠不足の検出・保留接続
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 反対視点提案(propose-opposing-viewpoint) -> 保留接続(holdState=held)
+#          -> ナラティブ(generate-narrative) -> 読戻し（非自動適用の確認）
+# 注意事項: 反対視点はproposal-only（status=proposed・reviewState=unreviewed・自動適用なし）。
+#          AI提案はカード文面を書き換えない。人間が「保留して再確認」で holdState=held に
+#          接続し、違和感・根拠不足を作業状態として残す（AI-OPPOSE-01 R2・非破壊接続）。
+DX_ID="biz-flow-diagnosis"
+DX_DOC='{"version":1,"id":"'$DX_ID'","title":"診断確定前レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dx1","text":"検査値は基準範囲内","x":0,"y":0,"textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","x":10,"y":0,"textReviewed":true},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dx-i","cardIds":["dx1","dx2","dx3"]}],"readingOrder":["dx-i"]}'
+# 人間の「保留して再確認」を文書へ反映した版（dx2 を holdState=held へ・文面は不変）
+DX_DOC_HELD='{"version":1,"id":"'$DX_ID'","title":"診断確定前レビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dx1","text":"検査値は基準範囲内","x":0,"y":0,"textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","x":10,"y":0,"textReviewed":true,"holdState":"held"},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dx-i","cardIds":["dx1","dx2","dx3"]}],"readingOrder":["dx-i"]}'
+
+dx_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DX_ID" \
+  -H 'Content-Type: application/json' -d "$DX_DOC")
+check "DX PUT document (作成)" "200" "$dx_put"
+
+# ① AI束ね
+dx_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"dx1","text":"検査値は基準範囲内","textReviewed":true},{"id":"dx2","text":"症状は軽症で経過観察が妥当","textReviewed":true},{"id":"dx3","text":"問診で夜間の呼吸困難を訴えている","textReviewed":true}]}')
+case "$dx_groups" in *'"groups":'*) echo "  PASS: DX ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DX ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dx_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DX_DOC,\"islandId\":\"dx-i\"}")
+case "$dx_summary" in *'"groundingIds":["dx1","dx2","dx3"]'*) echo "  PASS: DX ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DX ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 反対視点提案（AI-OPPOSE-01: 軽症判断への反対視点・根拠不足・proposal-only境界）
+dx_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DX_DOC,\"targetCardId\":\"dx2\"}")
+case "$dx_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: DX ③反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ③反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+case "$dx_oppose" in
+  *'"opposingText"'*'"evidenceGap":true'*'"rationale"'*) echo "  PASS: DX ③b根拠不足(evidenceGap)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ③b根拠不足(evidenceGap)"; FAIL=$((FAIL+1));; esac
+
+# ④ 保留接続（人間の「保留して再確認」を文書へ反映・AI-OPPOSE-01 R2 非破壊接続）
+dx_hold=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DX_ID" \
+  -H 'Content-Type: application/json' -d "$DX_DOC_HELD")
+check "DX ④保留接続 (holdState=held を反映)" "200" "$dx_hold"
+
+# ⑤ ナラティブ
+dx_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DX_DOC_HELD}")
+case "$dx_narr" in *'"basedOnReadingOrder":["dx-i"]'*) echo "  PASS: DX ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DX ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し：保留状態が永続し、カード文面が自動適用で書き換わらない（非自動適用）
+dx_read=$(curl -s "$BASE_URL/docs/$DX_ID")
+case "$dx_read" in *'"holdState":"held"'*) echo "  PASS: DX ⑥保留状態が永続"; PASS=$((PASS+1));; *) echo "  FAIL: DX ⑥保留状態が永続"; FAIL=$((FAIL+1));; esac
+case "$dx_read" in
+  *'"text":"症状は軽症で経過観察が妥当"'*) echo "  PASS: DX ⑥b非自動適用（文面不変）"; PASS=$((PASS+1));;
+  *) echo "  FAIL: DX ⑥b非自動適用（文面不変）"; FAIL=$((FAIL+1));; esac
+
+echo ""
+echo "--- シナリオ47: AI運用・ITガバナンスのモデル選択とテナント許容制限 ---"
+# 業態: AI運用・ITガバナンス
+# 想定人物: AI機能利用者（業務ユーザーがモデルを選択）
+# 業務領域: 文書整理AIのモデル選択とテナント許容制限の適用
+# 操作内容: 文書作成 -> モデル一覧取得(GET /ai/available-models・R2データ源)
+#          -> 許容モデル明示選択で生成(generate-narrative+model)
+#          -> テナント許容リスト設定(admin) -> 一覧が制限を反映
+#          -> 非許容モデルは403(model_not_allowed・R3 fail-closed)
+# 注意事項: モデル選択はテナント許容リストに制限される（空=プラットフォーム既定=全許可）。
+#          非許容モデルは LLM 呼び出し前に fail-closed(403) で遮断される（自動降格しない）。
+MG_ID="biz-flow-model-gov"
+MG_DOC='{"version":1,"id":"'$MG_ID'","title":"モデル選択検証","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"モデルAの要約精度は高い","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"モデルBはコストが低い","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mg-i","cardIds":["m1","m2"]}],"readingOrder":["mg-i"]}'
+
+mg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MG_ID" \
+  -H 'Content-Type: application/json' -d "$MG_DOC")
+check "MG PUT document (作成)" "200" "$mg_put"
+
+# ① モデル一覧取得（AI-MODEL-GOVERNANCE R2: モデルセレクタのデータ源）
+mg_models=$(curl -s "$BASE_URL/ai/available-models")
+MG_MODEL_ID=$(printf '%s' "$mg_models" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
+case "$mg_models" in
+  *'"models":['*)
+    if [ -n "$MG_MODEL_ID" ]; then echo "  PASS: MG ①モデル一覧取得 (id=$MG_MODEL_ID)"; PASS=$((PASS+1));
+    else echo "  FAIL: MG ①モデル一覧取得 (models 空)"; FAIL=$((FAIL+1)); fi;;
+  *) echo "  FAIL: MG ①モデル一覧取得"; FAIL=$((FAIL+1));; esac
+
+# ② 許容モデル明示選択で生成（R2: 操作単位モデル上書き・有効モデルは 200）
+mg_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+case "$mg_narr" in *'"basedOnReadingOrder":["mg-i"]'*) echo "  PASS: MG ②許容モデル明示選択(200)"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②許容モデル明示選択"; FAIL=$((FAIL+1));; esac
+
+# ②b 未登録モデルIDはプラットフォーム既定でも 403（AI-MODEL-GOVERNANCE-02:
+#     空allowlist=active登録済みのみ許可・未登録は LLM 呼び出し前に遮断）
+mg_bogus=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"totally-bogus-model\"}")
+mg_bogus_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/generate-narrative" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MG_DOC,\"model\":\"totally-bogus-model\"}")
+check "MG ②b未登録モデル -> 403 (model_not_registered)" "403" "$mg_bogus_code"
+case "$mg_bogus" in *'"model_not_registered"'*) echo "  PASS: MG ②b code=model_not_registered"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②b code=model_not_registered"; FAIL=$((FAIL+1));; esac
+
+# ③ テナント許容リストを制限（local-dev の control-plane は無キーで開放）
+mg_allow=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+  "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
+  -H 'Content-Type: application/json' -d '{"modelIds":["bogus-restricted-only"]}')
+check "MG ③テナント許容リスト設定(制限)" "200" "$mg_allow"
+
+# ④ 一覧が制限を反映（許容リスト外のモデルは選択候補から消える）
+mg_models2=$(curl -s "$BASE_URL/ai/available-models")
+case "$mg_models2" in
+  *'"id":"'$MG_MODEL_ID'"'*) echo "  FAIL: MG ④制限反映（$MG_MODEL_ID が残存）"; FAIL=$((FAIL+1));;
+  *) echo "  PASS: MG ④制限反映（選択候補から除外）"; PASS=$((PASS+1));; esac
+
+# ⑤ 非許容モデルは 403（R3 fail-closed・LLM 呼び出し前に遮断・code=model_not_allowed）
+mg_block=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+mg_block_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/generate-narrative" \
+  -H 'Content-Type: application/json' -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
+check "MG ⑤非許容モデル -> 403 (model_not_allowed)" "403" "$mg_block_code"
+case "$mg_block" in *'"model_not_allowed"'*) echo "  PASS: MG ⑤b code=model_not_allowed"; PASS=$((PASS+1));; *) echo "  FAIL: MG ⑤b code=model_not_allowed"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 許容リストをプラットフォーム既定（空=active登録済み全許可）へ復元。
+#    scenario 47 の制限が後続シナリオのモデル検査（card-groups/refine 等）を
+#    汚染しないよう、状態を後片付けする（admin での空リスト設定=既定復帰）。
+mg_restore=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+  "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
+  -H 'Content-Type: application/json' -d '{"modelIds":[]}')
+check "MG ⑥許容リスト復元(空=既定)" "200" "$mg_restore"
+
+echo ""
+echo "--- シナリオ48: 文化・芸術・美術館の展示企画（来場者声の整理と統合） ---"
+# 業態: 文化・芸術（美術館・展示企画）
+# 想定人物: キュレーター（展示企画者）
+# 業務領域: 来場者フィードバックのKJ整理と、展示コンセプトの統合
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 文面整え(refine-card-text)
+#          -> 島間関係要約(summarize-island-relation) -> 統合提案(suggest-merges)
+#          -> 読戻し
+# 注意事項: refine は来場者の声を逐語で保持（意図を変えない・ADR-0064）。
+#          島間関係は示唆（確証でなく・proposal-only）。統合提案は提案（人間が採否）。
+MU_ID="biz-flow-museum"
+MU_DOC='{"version":1,"id":"'$MU_ID'","title":"展示企画フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cu1","text":"静寂な空間が好評だった","x":0,"y":0,"textReviewed":true},{"id":"cu2","text":"音声ガイドの案内が多すぎるとの声","x":10,"y":0,"textReviewed":true},{"id":"cu3","text":"順路が分かりにくい","x":20,"y":0,"textReviewed":true},{"id":"cu4","text":"企画展のテーマは共感を呼んだ","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"m-1","cardIds":["cu1","cu2"]},{"id":"m-2","cardIds":["cu3","cu4"]}],"readingOrder":["m-1","m-2"]}'
+
+mu_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MU_ID" \
+  -H 'Content-Type: application/json' -d "$MU_DOC")
+check "MU PUT document (作成)" "200" "$mu_put"
+
+# ① AI束ね
+mu_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cu1","text":"静寂な空間が好評だった","textReviewed":true},{"id":"cu2","text":"音声ガイドの案内が多すぎるとの声","textReviewed":true},{"id":"cu3","text":"順路が分かりにくい","textReviewed":true},{"id":"cu4","text":"企画展のテーマは共感を呼んだ","textReviewed":true}]}')
+case "$mu_groups" in *'"groups":'*) echo "  PASS: MU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 文面整え（refine-card-text・逐語性を保持・ADR-0064）
+mu_refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
+  -d '{"cardText":"音声ガイドの案内が多すぎるとの声","context":"展示鑑賞環境","textReviewed":true}')
+case "$mu_refined" in *'"refinedText"'*) echo "  PASS: MU ②文面整え(refine)"; PASS=$((PASS+1));; *) echo "  FAIL: MU ②文面整え(refine)"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係要約（summarize-island-relation・モックは下書き示唆＋warnings空）
+mu_relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MU_DOC,\"islandAId\":\"m-1\",\"islandBId\":\"m-2\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"cu2\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"cu2\",\"text\":\"音声ガイドの案内が多すぎるとの声\"}]}")
+case "$mu_relation" in
+  *'"text"'*'"warnings":[]'*) echo "  PASS: MU ③島間関係要約"; PASS=$((PASS+1));;
+  *) echo "  FAIL: MU ③島間関係要約"; FAIL=$((FAIL+1));; esac
+
+# ④ 統合提案（suggest-merges・モックは空提案・人間が採否）
+mu_merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MU_DOC}")
+case "$mu_merges" in *'"suggestions"'*) echo "  PASS: MU ④統合提案(merges)"; PASS=$((PASS+1));; *) echo "  FAIL: MU ④統合提案(merges)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MU_ID")
+check "MU 読戻し (200)" "200" "$mu_read"
+
+echo ""
+echo "--- シナリオ49: IT運用・AIサービス監視（プロバイダ状態とLLM呼び出し量の確認） ---"
+# 業態: IT運用・AIサービス監視
+# 想定人物: AI運用担当（サービスのAI状態・コストを監視）
+# 業務領域: AIプロバイダの状態確認とLLM呼び出し量（コスト指標）の確認
+# 操作内容: 文書作成 -> プロバイダ状態取得(GET /ai/provider-status・前)
+#          -> AI操作実行(generate-narrative) -> プロバイダ状態取得(後)
+#          -> 読戻し
+# 注意事項: provider-status は read-only エコー（ADR-0050 D1・稼働中スイッチなし）。
+#          LLM呼び出し回数（OPS-LLM-COST-01）は実呼び出し後にインクリメントされる。
+SV_ID="biz-flow-supervise"
+SV_DOC='{"version":1,"id":"'$SV_ID'","title":"AIサービス監視","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sv1","text":"AI要約の利用頻度が高い","x":0,"y":0,"textReviewed":true},{"id":"sv2","text":"モデル呼び出し量の監視が必要","x":10,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sv-i","cardIds":["sv1","sv2"]}],"readingOrder":["sv-i"]}'
+
+sv_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SV_ID" \
+  -H 'Content-Type: application/json' -d "$SV_DOC")
+check "SV PUT document (作成)" "200" "$sv_put"
+
+# ① プロバイダ状態（前）: read-only エコー（providerKind=local）+ callCounts 存在
+sv_before=$(curl -s "$BASE_URL/ai/provider-status")
+case "$sv_before" in
+  *'"providerKind":"local"'*'"callCounts"'*) echo "  PASS: SV ①プロバイダ状態(前)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: SV ①プロバイダ状態(前)"; FAIL=$((FAIL+1));; esac
+
+# ② AI操作実行（LLM実呼び出し・コスト指標の分母）
+sv_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SV_DOC}")
+case "$sv_narr" in *'"basedOnReadingOrder":["sv-i"]'*) echo "  PASS: SV ②AI操作実行"; PASS=$((PASS+1));; *) echo "  FAIL: SV ②AI操作実行"; FAIL=$((FAIL+1));; esac
+
+# ③ プロバイダ状態（後）: LLM呼び出し回数が増加（OPS-LLM-COST-01）
+sv_after=$(curl -s "$BASE_URL/ai/provider-status")
+sv_before_total=$(printf '%s' "$sv_before" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+sv_after_total=$(printf '%s' "$sv_after" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+if [ -n "$sv_before_total" ] && [ -n "$sv_after_total" ] && [ "$sv_after_total" -gt "$sv_before_total" ]; then
+  echo "  PASS: SV ③呼び出し回数が増加 ($sv_before_total -> $sv_after_total)"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: SV ③呼び出し回数が増加 (before=$sv_before_total after=$sv_after_total)"
+  FAIL=$((FAIL+1))
+fi
+
+# ④ 読戻し
+sv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SV_ID")
+check "SV 読戻し (200)" "200" "$sv_read"
+
+echo ""
+echo "--- シナリオ50: 小売・ECの返品クレーム根本原因分析 ---"
+# 業態: 小売・EC（通販・カスタマーサービス）
+# 想定人物: ECカスタマーサポートチームリーダー
+# 業務領域: 返品・クレームのKJ分類と根本原因の検出
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> レイアウト(suggest-layout)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: クレームは逐語で保持。多数意見（最多理由）に埋もれる少数・急増シグナル
+#          （商品説明ギャップ）を矛盾検出で表面化する（少数意見の外在化・V2）。
+EC_ID="biz-flow-ec"
+EC_DOC='{"version":1,"id":"'$EC_ID'","title":"返品クレーム分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","x":0,"y":0,"textReviewed":true},{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","x":10,"y":0,"textReviewed":true},{"id":"ec3","text":"配送遅延による返品は減少傾向","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ec-i","cardIds":["ec1","ec2","ec3"]}],"readingOrder":["ec-i"]}'
+
+ec_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EC_ID" \
+  -H 'Content-Type: application/json' -d "$EC_DOC")
+check "EC PUT document (作成)" "200" "$ec_put"
+
+# ① AI束ね
+ec_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","textReviewed":true},{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","textReviewed":true},{"id":"ec3","text":"配送遅延による返品は減少傾向","textReviewed":true}]}')
+case "$ec_groups" in *'"groups":'*) echo "  PASS: EC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ec_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EC_DOC,\"islandId\":\"ec-i\"}")
+case "$ec_summary" in *'"groundingIds":["ec1","ec2","ec3"]'*) echo "  PASS: EC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（最多理由 vs 急増シグナル・少数意見の表面化）
+ec_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ec1","text":"返品理由で最も多いのはサイズ不一致","textReviewed":true},"cardB":{"id":"ec2","text":"商品説明と実物のギャップを指摘する声が急増","textReviewed":true}}')
+case "$ec_contra" in *'"hasContradiction"'*) echo "  PASS: EC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ レイアウト（配置提案・モックはグリッド配置）
+ec_layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EC_DOC}")
+case "$ec_layout" in *'"transform"'*'"cards"'*) echo "  PASS: EC ④レイアウト"; PASS=$((PASS+1));; *) echo "  FAIL: EC ④レイアウト"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+ec_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EC_DOC}")
+case "$ec_narr" in *'"basedOnReadingOrder":["ec-i"]'*) echo "  PASS: EC ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EC ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+ec_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EC_ID")
+check "EC 読戻し (200)" "200" "$ec_read"
+
+echo ""
+echo "--- シナリオ51: ゲーム・エンタメ運営のプレイヤー声整理（バグ/要望分離と修正優先の反対視点） ---"
+# 業態: ゲーム・エンタメ（オンラインゲーム運営）
+# 想定人物: ゲーム運営プロデューサー（プレイヤー声の整理と修正優先判断）
+# 業務領域: プレイヤーのバグ報告・要望・不満のKJ分類と、修正優先の判断材料
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: バグ報告と要望・不満を混在させず分離する。修正優先への反対視点（既存
+#          機能の安定性）を proposal-only で提案し、人間が採否する（AIは先取りしない）。
+GM_ID="biz-flow-game"
+GM_DOC='{"version":1,"id":"'$GM_ID'","title":"プレイヤー声整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","x":0,"y":0,"textReviewed":true},{"id":"gm2","text":"新マップ追加を望む声がある","x":10,"y":0,"textReviewed":true},{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"gm-i","cardIds":["gm1","gm2","gm3"]}],"readingOrder":["gm-i"]}'
+
+gm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$GM_ID" \
+  -H 'Content-Type: application/json' -d "$GM_DOC")
+check "GM PUT document (作成)" "200" "$gm_put"
+
+# ① AI束ね
+gm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","textReviewed":true},{"id":"gm2","text":"新マップ追加を望む声がある","textReviewed":true},{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","textReviewed":true}]}')
+case "$gm_groups" in *'"groups":'*) echo "  PASS: GM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: GM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+gm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GM_DOC,\"islandId\":\"gm-i\"}")
+case "$gm_summary" in *'"groundingIds":["gm1","gm2","gm3"]'*) echo "  PASS: GM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: GM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（バグ修正優先 vs 既存安定優先・修正判断の相克）
+gm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"gm1","text":"サーバー遅延でログインできない報告が多い","textReviewed":true},"cardB":{"id":"gm3","text":"既存機能の安定性を優先すべきとの意見","textReviewed":true}}')
+case "$gm_contra" in *'"hasContradiction"'*) echo "  PASS: GM ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: GM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（新マップ要望への反対視点・proposal-only境界）
+gm_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GM_DOC,\"targetCardId\":\"gm2\"}")
+case "$gm_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: GM ④反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: GM ④反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+gm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$GM_DOC}")
+case "$gm_narr" in *'"basedOnReadingOrder":["gm-i"]'*) echo "  PASS: GM ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: GM ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+gm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GM_ID")
+check "GM 読戻し (200)" "200" "$gm_read"
+
+echo ""
+echo "--- シナリオ52: 介護施設のヒヤリハット報告のKJ分析（A/B照合で取りこぼし防止） ---"
+# 業態: 介護・ヘルスケア（介護施設運営）
+# 想定人物: 介護施設の安全管理者（インシデント報告を整理）
+# 業務領域: ヒヤリハット（事故寸前）報告のKJ分類と、重大事故化の防止
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: ヒヤリハット報告は逐語で保持（報告者の意図を変えない）。ナラティブが
+#          重要な報告を取りこぼしていないかを A/B照合（KJ-AB-CROSS-CHECK-01）で確認。
+HH_ID="biz-flow-care"
+HH_DOC='{"version":1,"id":"'$HH_ID'","title":"ヒヤリハット報告分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"hh1","text":"転倒の報告が今月増えている","x":0,"y":0,"textReviewed":true},{"id":"hh2","text":"夜間帯にベッドからの転落が発生しやすい","x":10,"y":0,"textReviewed":true},{"id":"hh3","text":"軽微な事例は記録されない傾向がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hh-i","cardIds":["hh1","hh2","hh3"]}],"readingOrder":["hh-i"]}'
+
+hh_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HH_ID" \
+  -H 'Content-Type: application/json' -d "$HH_DOC")
+check "HH PUT document (作成)" "200" "$hh_put"
+
+# ① AI束ね
+hh_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"hh1","text":"転倒の報告が今月増えている","textReviewed":true},{"id":"hh2","text":"夜間帯にベッドからの転落が発生しやすい","textReviewed":true},{"id":"hh3","text":"軽微な事例は記録されない傾向がある","textReviewed":true}]}')
+case "$hh_groups" in *'"groups":'*) echo "  PASS: HH ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HH ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hh_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HH_DOC,\"islandId\":\"hh-i\"}")
+case "$hh_summary" in *'"groundingIds":["hh1","hh2","hh3"]'*) echo "  PASS: HH ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HH ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（転倒報告の増加 vs 軽微事例の未記録・記録体制の相克）
+hh_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"hh1","text":"転倒の報告が今月増えている","textReviewed":true},"cardB":{"id":"hh3","text":"軽微な事例は記録されない傾向がある","textReviewed":true}}')
+case "$hh_contra" in *'"hasContradiction"'*) echo "  PASS: HH ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HH ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hh_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HH_DOC}")
+case "$hh_narr" in *'"basedOnReadingOrder":["hh-i"]'*) echo "  PASS: HH ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HH ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（check-narrative・ナラティブが重要報告を取りこぼさない）
+HH_NARR_TEXT="（草稿）転倒報告が増えており、夜間帯のベッド転落が一因とみられる。軽微な事例の記録漏れが課題である。"
+hh_check=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HH_DOC,\"narrativeText\":\"$HH_NARR_TEXT\",\"basedOnReadingOrder\":[\"hh-i\"]}")
+case "$hh_check" in
+  *'"issues":[]'*) echo "  PASS: HH ⑤A/B照合(取りこぼしなし)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: HH ⑤A/B照合(取りこぼしなし)"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+hh_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HH_ID")
+check "HH 読戻し (200)" "200" "$hh_read"
+
+echo ""
+echo "--- シナリオ53: 交通・インフラの運行トラブル分析（複合要因の表面化と矮小化への反対視点） ---"
+# 業態: 交通・インフラ（公共交通・鉄道/バス運営）
+# 想定人物: 運行管理担当（ダイヤ乱れの原因整理と再発防止）
+# 業務領域: 運行トラブル（遅延・運休）のKJ整理と、複合要因の表面化
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 反対視点提案(propose-opposing-viewpoint)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 運行トラブルの原因を単一に矮小化しない（信号・気象・点検の複合要因を
+#          表面化）。単一原因への反対視点を proposal-only で提案し、人間が判断。
+TR_ID="biz-flow-transit"
+TR_DOC='{"version":1,"id":"'$TR_ID'","title":"運行トラブル分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"tr1","text":"信号故障が主因と発表された","x":0,"y":0,"textReviewed":true},{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","x":10,"y":0,"textReviewed":true},{"id":"tr3","text":"乗客報告で車両点検の遅れが指摘された","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["tr1","tr2","tr3"]}],"readingOrder":["tr-i"]}'
+
+tr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TR_ID" \
+  -H 'Content-Type: application/json' -d "$TR_DOC")
+check "TR PUT document (作成)" "200" "$tr_put"
+
+# ① AI束ね
+tr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"tr1","text":"信号故障が主因と発表された","textReviewed":true},{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","textReviewed":true},{"id":"tr3","text":"乗客報告で車両点検の遅れが指摘された","textReviewed":true}]}')
+case "$tr_groups" in *'"groups":'*) echo "  PASS: TR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"islandId\":\"tr-i\"}")
+case "$tr_summary" in *'"groundingIds":["tr1","tr2","tr3"]'*) echo "  PASS: TR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（単一原因 vs 複合要因・矮小化の防止）
+tr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"tr1","text":"信号故障が主因と発表された","textReviewed":true},"cardB":{"id":"tr2","text":"強風と大雨が重なった時間帯に遅延が集中した","textReviewed":true}}')
+case "$tr_contra" in *'"hasContradiction"'*) echo "  PASS: TR ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（単一原因発表への反対視点・複合要因の指摘・proposal-only）
+tr_oppose=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"targetCardId\":\"tr1\"}")
+case "$tr_oppose" in
+  *'"status":"proposed"'*'"reviewState":"unreviewed"'*) echo "  PASS: TR ④反対視点提案(proposal-only)"; PASS=$((PASS+1));;
+  *) echo "  FAIL: TR ④反対視点提案(proposal-only)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+tr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TR_DOC}")
+case "$tr_narr" in *'"basedOnReadingOrder":["tr-i"]'*) echo "  PASS: TR ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TR ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
+check "TR 読戻し (200)" "200" "$tr_read"
+
+echo ""
+echo "--- シナリオ54: ファッション・アパレルのトレンド分析（イノベーターの少数先行シグナル） ---"
+# 業態: ファッション・アパレル（ブランド運営）
+# 想定人物: ブランド企画担当（トレンドを読み取る）
+# 業務領域: 顧客声・バイヤー意見のKJ分類と、次シーズンの方向性
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> タイトル提案(suggest-document-title) -> 読戻し
+# 注意事項: トレンド先行者（イノベーター）の少数の声と多数の後追いの声を区別し、
+#          少数の先行シグナルを矛盾検出で表面化（V2・少数意見の外在化がトレンド検出の鍵）。
+#          タイトル候補は proposal（自動確定しない）。
+FS_ID="biz-flow-fashion"
+FS_DOC='{"version":1,"id":"'$FS_ID'","title":"トレンド分析（仮）","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","x":0,"y":0,"textReviewed":true},{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","x":10,"y":0,"textReviewed":true},{"id":"fs3","text":"SNSでビンテージ調スタイルへの関心が高まり始めている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fs-i","cardIds":["fs1","fs2","fs3"]}],"readingOrder":["fs-i"]}'
+
+fs_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FS_ID" \
+  -H 'Content-Type: application/json' -d "$FS_DOC")
+check "FS PUT document (作成)" "200" "$fs_put"
+
+# ① AI束ね
+fs_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","textReviewed":true},{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","textReviewed":true},{"id":"fs3","text":"SNSでビンテージ調スタイルへの関心が高まり始めている","textReviewed":true}]}')
+case "$fs_groups" in *'"groups":'*) echo "  PASS: FS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fs_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FS_DOC,\"islandId\":\"fs-i\"}")
+case "$fs_summary" in *'"groundingIds":["fs1","fs2","fs3"]'*) echo "  PASS: FS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（少数先行シグナル vs 多数後追い・イノベーターの声の表面化）
+fs_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"fs1","text":"少数の先行購入者が生地の質感の変化を指摘","textReviewed":true},"cardB":{"id":"fs2","text":"売れ筋は定番のベーシックアイテムが大半","textReviewed":true}}')
+case "$fs_contra" in *'"hasContradiction"'*) echo "  PASS: FS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: FS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fs_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FS_DOC}")
+case "$fs_narr" in *'"basedOnReadingOrder":["fs-i"]'*) echo "  PASS: FS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ タイトル提案（分析レポートのタイトル候補・proposalで自動確定しない）
+fs_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["トレンド動向"],"cardTexts":["少数の先行購入者が生地の質感の変化を指摘","売れ筋は定番のベーシックアイテムが大半","SNSでビンテージ調スタイルへの関心が高まり始めている"],"currentTitle":"トレンド分析（仮）","textReviewed":true}')
+case "$fs_title" in *'"candidates"'*) echo "  PASS: FS ⑤タイトル提案"; PASS=$((PASS+1));; *) echo "  FAIL: FS ⑤タイトル提案"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+fs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FS_ID")
+check "FS 読戻し (200)" "200" "$fs_read"
+
+echo ""
+echo "--- シナリオ55: NGO・国際協力の人道支援ニーズ整理（発言力の非対称性の表面化） ---"
+# 業態: NGO・国際協力（人道支援）
+# 想定人物: 支援調整員（被災地・コミュニティのニーズを整理）
+# 業務領域: 支援ニーズのKJ分類と、支援優先の判断（リソース配分）
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 声の大きい主体（大口ドナー）と声の小さな受益者のニーズを区別し、
+#          発言力の非対称性を矛盾検出で表面化（少数意見の外在化・V2）。支援計画は
+#          受益者視点を欠落させない。
+NG_ID="biz-flow-ngo"
+NG_DOC='{"version":1,"id":"'$NG_ID'","title":"支援ニーズ整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","x":0,"y":0,"textReviewed":true},{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","x":10,"y":0,"textReviewed":true},{"id":"ng3","text":"物流コストの高騰で支援物資の到達が遅れている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ng-i","cardIds":["ng1","ng2","ng3"]}],"readingOrder":["ng-i"]}'
+
+ng_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NG_ID" \
+  -H 'Content-Type: application/json' -d "$NG_DOC")
+check "NG PUT document (作成)" "200" "$ng_put"
+
+# ① AI束ね
+ng_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","textReviewed":true},{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","textReviewed":true},{"id":"ng3","text":"物流コストの高騰で支援物資の到達が遅れている","textReviewed":true}]}')
+case "$ng_groups" in *'"groups":'*) echo "  PASS: NG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ng_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NG_DOC,\"islandId\":\"ng-i\"}")
+case "$ng_summary" in *'"groundingIds":["ng1","ng2","ng3"]'*) echo "  PASS: NG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（大口ドナー優先 vs 声の小さな受益者のニーズ・発言力の非対称性）
+ng_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ng1","text":"大口ドナーの要望が支援計画に強く反映されている","textReviewed":true},"cardB":{"id":"ng2","text":"現地の小規模コミュニティは安全な水へのニーズを訴えている","textReviewed":true}}')
+case "$ng_contra" in *'"hasContradiction"'*) echo "  PASS: NG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: NG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ng_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NG_DOC}")
+case "$ng_narr" in *'"basedOnReadingOrder":["ng-i"]'*) echo "  PASS: NG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ng_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NG_ID")
+check "NG 読戻し (200)" "200" "$ng_read"
+
+echo ""
+echo "--- シナリオ56: 自治体・行政窓口の市民問い合わせ整理（頻出/ロングテールの島分離） ---"
+# 業態: 自治体・行政（市民窓口）
+# 想定人物: 窓口サービス改善担当
+# 業務領域: 市民からの問い合わせのKJ分類と、FAQ・窓口改善の根拠
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 島間関係要約(summarize-island-relation) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 頻出問い合わせ（手続き案内の分かりにくさ）とロングテール問い合わせ
+#          （個別の複合事情）を島として分離し、島間関係を整理して改善の全体像を見る。
+CM_ID="biz-flow-citizen"
+CM_DOC='{"version":1,"id":"'$CM_ID'","title":"市民問い合わせ整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cm1","text":"住民票の取得手続きの案内が分かりにくい","x":0,"y":0,"textReviewed":true},{"id":"cm2","text":"窓口が混雑していて待ち時間が長い","x":10,"y":0,"textReviewed":true},{"id":"cm3","text":"相続に伴う手続きが複数絡み合って分からない","x":20,"y":0,"textReviewed":true},{"id":"cm4","text":"引っ越しに伴う住所変更の一括手続きを知りたい","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cm-1","cardIds":["cm1","cm2"]},{"id":"cm-2","cardIds":["cm3","cm4"]}],"readingOrder":["cm-1","cm-2"]}'
+
+cm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CM_ID" \
+  -H 'Content-Type: application/json' -d "$CM_DOC")
+check "CM PUT document (作成)" "200" "$cm_put"
+
+# ① AI束ね
+cm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cm1","text":"住民票の取得手続きの案内が分かりにくい","textReviewed":true},{"id":"cm2","text":"窓口が混雑していて待ち時間が長い","textReviewed":true},{"id":"cm3","text":"相続に伴う手続きが複数絡み合って分からない","textReviewed":true},{"id":"cm4","text":"引っ越しに伴う住所変更の一括手続きを知りたい","textReviewed":true}]}')
+case "$cm_groups" in *'"groups":'*) echo "  PASS: CM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（頻出問い合わせの島）
+cm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CM_DOC,\"islandId\":\"cm-1\"}")
+case "$cm_summary" in *'"groundingIds":["cm1","cm2"]'*) echo "  PASS: CM ②島要約(頻出)"; PASS=$((PASS+1));; *) echo "  FAIL: CM ②島要約(頻出)"; FAIL=$((FAIL+1));; esac
+
+# ③ 島間関係要約（頻出 vs ロングテール・改善の全体像）
+cm_relation=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CM_DOC,\"islandAId\":\"cm-1\",\"islandBId\":\"cm-2\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"cm3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"cm3\",\"text\":\"相続に伴う手続きが複数絡み合って分からない\"}]}")
+case "$cm_relation" in
+  *'"text"'*'"warnings":[]'*) echo "  PASS: CM ③島間関係要約"; PASS=$((PASS+1));;
+  *) echo "  FAIL: CM ③島間関係要約"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CM_DOC}")
+case "$cm_narr" in *'"basedOnReadingOrder":["cm-1","cm-2"]'*) echo "  PASS: CM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CM_ID")
+check "CM 読戻し (200)" "200" "$cm_read"
+
+echo ""
+echo "--- シナリオ57: スポーツチーム運営のファン声分析（勝敗と独立した体験の声と統合提案） ---"
+# 業態: スポーツ・チーム運営（プロスポーツクラブ）
+# 想定人物: マーケティング責任者（ファンエンゲージメントを分析）
+# 業務領域: ファンからの声（満足・不満・要望）のKJ分類と、エンゲージメント施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 統合提案(suggest-merges)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 重複するファンの要望を統合提案で整理（人間が採否・自動適用しない）。
+#          試合結果（勝敗）に左右されないスタジアム体験の声を矛盾検出で表面化。
+SP_ID="biz-flow-sports"
+SP_DOC='{"version":1,"id":"'$SP_ID'","title":"ファン声分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","x":0,"y":0,"textReviewed":true},{"id":"sp2","text":"チケットの再販システムを導入してほしい","x":10,"y":0,"textReviewed":true},{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","x":20,"y":0,"textReviewed":true},{"id":"sp4","text":"スタジアムの案内表示が分かりにくい","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sp-i","cardIds":["sp1","sp2","sp3","sp4"]}],"readingOrder":["sp-i"]}'
+
+sp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SP_ID" \
+  -H 'Content-Type: application/json' -d "$SP_DOC")
+check "SP PUT document (作成)" "200" "$sp_put"
+
+# ① AI束ね
+sp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","textReviewed":true},{"id":"sp2","text":"チケットの再販システムを導入してほしい","textReviewed":true},{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","textReviewed":true},{"id":"sp4","text":"スタジアムの案内表示が分かりにくい","textReviewed":true}]}')
+case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"islandId\":\"sp-i\"}")
+case "$sp_summary" in *'"groundingIds":["sp1","sp2","sp3"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（勝敗と独立した体験の不満 vs 勝敗依存の許容）
+sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sp1","text":"試合に勝ってもスタジアムの混雑が不満","textReviewed":true},"cardB":{"id":"sp3","text":"試合に負けたときの雰囲気が沈むのは仕方ない","textReviewed":true}}')
+case "$sp_contra" in *'"hasContradiction"'*) echo "  PASS: SP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 統合提案（重複する要望の整理・人間が採否）
+sp_merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC}")
+case "$sp_merges" in *'"suggestions"'*) echo "  PASS: SP ④統合提案(merges)"; PASS=$((PASS+1));; *) echo "  FAIL: SP ④統合提案(merges)"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+sp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SP_DOC}")
+case "$sp_narr" in *'"basedOnReadingOrder":["sp-i"]'*) echo "  PASS: SP ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SP ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
+check "SP 読戻し (200)" "200" "$sp_read"
+
+echo ""
+echo "--- シナリオ58: ソフトウェア開発チームのスプリント振り返り（個人の声と全体の認識の乖離） ---"
+# 業態: IT・ソフトウェア開発（開発チーム）
+# 想定人物: スクラムマスター／開発チームリーダー（スプリント振り返り）
+# 業務領域: スプリントの振り返り（良かった点・課題）のKJ整理と、改善アクションの検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 個人の懸念（コードレビューの形式化など・心理的安全性）とチーム全体の
+#          認識（計画通り）の乖離を矛盾検出で表面化（少数意見の外在化・V2）。
+SW_ID="biz-flow-sprint"
+SW_DOC='{"version":1,"id":"'$SW_ID'","title":"スプリント振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sw1","text":"スプリントは計画通りに進んでいる","x":0,"y":0,"textReviewed":true},{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","x":10,"y":0,"textReviewed":true},{"id":"sw3","text":"デプロイ後に不具合が増えた","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sw-i","cardIds":["sw1","sw2","sw3"]}],"readingOrder":["sw-i"]}'
+
+sw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SW_ID" \
+  -H 'Content-Type: application/json' -d "$SW_DOC")
+check "SW PUT document (作成)" "200" "$sw_put"
+
+# ① AI束ね
+sw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sw1","text":"スプリントは計画通りに進んでいる","textReviewed":true},{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","textReviewed":true},{"id":"sw3","text":"デプロイ後に不具合が増えた","textReviewed":true}]}')
+case "$sw_groups" in *'"groups":'*) echo "  PASS: SW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SW_DOC,\"islandId\":\"sw-i\"}")
+case "$sw_summary" in *'"groundingIds":["sw1","sw2","sw3"]'*) echo "  PASS: SW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（チーム全体の認識 vs 個人の懸念・心理的安全性）
+sw_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sw1","text":"スプリントは計画通りに進んでいる","textReviewed":true},"cardB":{"id":"sw2","text":"コードレビューが形式的で品質が下がっていると感じる","textReviewed":true}}')
+case "$sw_contra" in *'"hasContradiction"'*) echo "  PASS: SW ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sw_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SW_DOC}")
+case "$sw_narr" in *'"basedOnReadingOrder":["sw-i"]'*) echo "  PASS: SW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SW_ID")
+check "SW 読戻し (200)" "200" "$sw_read"
+
+echo ""
+echo "--- シナリオ59: 言語サービス・翻訳レビューの用語一貫性管理 ---"
+# 業態: 言語サービス（翻訳・ローカライゼーション）
+# 想定人物: 翻訳レビュアー（品質管理）
+# 業務領域: 翻訳レビューコメントのKJ整理と、用語・文体の一貫性確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 用語の揺れ（表記不統一）を矛盾検出で表面化し、用語集（グロッサリー）の
+#          統一根拠にする。原文の意図は逐語で保持する（翻訳で変えない）。
+TRL_ID="biz-flow-translation"
+TRL_DOC='{"version":1,"id":"'$TRL_ID'","title":"翻訳レビュー整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"公開文書の用語は用語集で統一されている","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"新規製品の用語追加が用語集に反映されていない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tr-i"]}'
+
+trl_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TRL_ID" \
+  -H 'Content-Type: application/json' -d "$TRL_DOC")
+check "TRL PUT document (作成)" "200" "$trl_put"
+
+# ① AI束ね
+trl_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","textReviewed":true},{"id":"t2","text":"公開文書の用語は用語集で統一されている","textReviewed":true},{"id":"t3","text":"新規製品の用語追加が用語集に反映されていない","textReviewed":true}]}')
+case "$trl_groups" in *'"groups":'*) echo "  PASS: TRL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+trl_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TRL_DOC,\"islandId\":\"tr-i\"}")
+case "$trl_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TRL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（内部マニュアルの訳語の揺れ vs 公開文書の統一・品質管理の相克）
+trl_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","textReviewed":true},"cardB":{"id":"t2","text":"公開文書の用語は用語集で統一されている","textReviewed":true}}')
+case "$trl_contra" in *'"hasContradiction"'*) echo "  PASS: TRL ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+trl_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TRL_DOC}")
+case "$trl_narr" in *'"basedOnReadingOrder":["tr-i"]'*) echo "  PASS: TRL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+trl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TRL_ID")
+check "TRL 読戻し (200)" "200" "$trl_read"
+
+echo ""
+echo "--- シナリオ60: 自動車・モビリティの新型車ユーザー評価整理（世代間乖離と共通課題の分離） ---"
+# 業態: 自動車・モビリティ（自動車メーカー）
+# 想定人物: 商品企画担当（ユーザー評価を整理）
+# 業務領域: 新型車のユーザー評価・市場フィードバックのKJ分類と、改良ポイントの検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 年齢・地域による評価の偏り（世代間の評価乖離）と、全世代に共通する
+#          課題を区別し、改良の優先度を決める（セグメントと共通課題の分離）。
+AU_ID="biz-flow-auto"
+AU_DOC='{"version":1,"id":"'$AU_ID'","title":"新型車ユーザー評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"au1","text":"若年層はデジタル機能を評価している","x":0,"y":0,"textReviewed":true},{"id":"au2","text":"高齢層は操作が複雑と感じている","x":10,"y":0,"textReviewed":true},{"id":"au3","text":"燃費性能の不満が全世代に共通している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"au-i","cardIds":["au1","au2","au3"]}],"readingOrder":["au-i"]}'
+
+au_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AU_ID" \
+  -H 'Content-Type: application/json' -d "$AU_DOC")
+check "AU PUT document (作成)" "200" "$au_put"
+
+# ① AI束ね
+au_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"au1","text":"若年層はデジタル機能を評価している","textReviewed":true},{"id":"au2","text":"高齢層は操作が複雑と感じている","textReviewed":true},{"id":"au3","text":"燃費性能の不満が全世代に共通している","textReviewed":true}]}')
+case "$au_groups" in *'"groups":'*) echo "  PASS: AU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+au_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AU_DOC,\"islandId\":\"au-i\"}")
+case "$au_summary" in *'"groundingIds":["au1","au2","au3"]'*) echo "  PASS: AU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（世代間の評価乖離・デジタル機能 vs 操作複雑）
+au_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"au1","text":"若年層はデジタル機能を評価している","textReviewed":true},"cardB":{"id":"au2","text":"高齢層は操作が複雑と感じている","textReviewed":true}}')
+case "$au_contra" in *'"hasContradiction"'*) echo "  PASS: AU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+au_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AU_DOC}")
+case "$au_narr" in *'"basedOnReadingOrder":["au-i"]'*) echo "  PASS: AU ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AU ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+au_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AU_ID")
+check "AU 読戻し (200)" "200" "$au_read"
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="

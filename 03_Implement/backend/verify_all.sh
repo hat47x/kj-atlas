@@ -129,7 +129,12 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
   if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
     cur=$("$VENV_PYTHON" -m alembic current 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
     head=$("$VENV_PYTHON" -m alembic heads 2>/dev/null | grep -oE '^[0-9_]+' | head -1)
-    if [ -n "$cur" ] && [ -n "$head" ] && [ "$cur" != "$head" ]; then
+    # DOGFOOD-09: an empty `alembic current` means the DB has NO alembic_version
+    # row (never migrated) — that is also "not migrated" and must skip the API
+    # checks instead of running them into raw 500s.
+    cur="${cur:-none}"
+    head="${head:-none}"
+    if [ "$cur" != "$head" ]; then
       echo "  SKIP: API/MCP verification — DB migration state ($cur) != alembic head ($head)."
       echo "        Run 'alembic upgrade head' first (DOGFOOD-09) so the checks exercise a migrated DB."
       migrated=0
@@ -165,6 +170,25 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
   fi
 else
   echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
+fi
+
+# 10. Self-contained business-flow E2Es (standard scenarios 1-12).
+# ------------------------------------------------------------------
+# These scripts start their OWN backend + mock LLM on a dedicated port (they
+# do not reuse the running $API_BASE), so they are safe to run alongside the
+# API/MCP checks above. They freeze the dogfooding standard business flows
+# (業態×操作) against the deterministic local LLM mock — the CI-enforced
+# regression that a plain curl probe cannot give. Requires the venv and free
+# ports 8005-8007.
+if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
+  check "Business-flow E2E (scenarios 1-12, mock LLM)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_business_flow_e2e.sh" 8005
+  check "Admin CLI/API ops flow E2E (scenario 4)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
+  check "KJ multi-round collaboration E2E (mock LLM)" \
+    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
+else
+  echo "  SKIP: business-flow E2Es — backend venv/alembic.ini not found"
 fi
 
 # ------------------------------------------------------------------

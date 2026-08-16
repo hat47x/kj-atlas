@@ -64,6 +64,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 - tenant-scoped な文書の**行メタデータ一覧**を返す（SafeMode非依存 — 本文カードは含まない。本文は `GET /docs/{doc_id}` の SafeMode 経路で取得する）。
 - Query：`createdBy`（任意・作成者フィルタ。「自分の文書」。`created_by=NULL` の移行文書は一致しない）。
+- Query（**SEC-DOC-BOUND-05・keyset pagination**）：`limit`（既定500・最大500）と `cursor`（前ページ末尾の不透明カーソル）。並び順 `(updated_at DESC, id ASC)`。次ページがある場合 `X-Next-Cursor` レスポンスヘッダーで次カーソルを返す（`{urlencoded(updated_at)}:{id}`）。レスポンスは配列のまま（既存クライアントは後方互換）。
 - Response：`DocumentListItem[]`、`updated_at` 降順
   - `{ id, title?, created_by?, lifecycle_state, updated_at }`
   - `created_by` は不変の作成者事実（未特定の移行文書は省略）。`lifecycle_state` は `active` / `archived`（ADR-0073 D2=A）。
@@ -430,6 +431,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - Response: `ProviderStatusResponse`
   - `providerKind: "none" | "local" | "large-scale"`
+  - `callCounts: { [providerKind]: number, total: number }` — **OPS-LLM-COST-01（段階2）**: プロセス内の LLM 呼び出し回数（provider種別別＋total）。初回呼び出しまでは空。単一プロセス前提（共有ストアは段階3）。
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
 
 ### 2.12 AI/LLM生成API
@@ -457,6 +459,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - Request: `SuggestMergesRequest`
   - `doc: DocumentV1` — 現在の文書全体
+  - `instruction?: string` — 提案方針の指示（任意）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SuggestMergesResponse`
   - `suggestions: MergeSuggestion[]` — 統合候補の配列
 - 類似カードの統合候補を提案する。各候補は統合対象カード群と統合理由を含む。
@@ -464,10 +468,14 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/suggest-island-summary`
 
 - Request: `SuggestIslandSummaryRequest`
+  - `doc: DocumentV1` — 現在の文書全体（対象島を含む）
   - `islandId: string` — 対象の島ID
-  - `cardTexts: string[]` — 島に属するカードの本文（レビュー済みのみ）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
 - Response: `SuggestIslandSummaryResponse`
   - `summaryText: string` — 表札候補文
+  - `groundingIds: string[]` — 根拠としたメンバーカードのID
+  - `warnings?: string[]`
 - 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
 - **DX-CLEANUP-07 案B**: この直接 route はフロントエンドの直接呼び出し元を持たない（UI は proposal-only の `POST /ai/proposals/island-summary` を使用）。**後方互換・外部 API クライアント用に維持**する。`suggest_island_summary` 関数本体は proposal route の内部実装として再利用されている。
 
@@ -485,6 +493,19 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `reviewState: "unreviewed"`
 - `/ai/suggest-island-summary` のproposalラッパー。人間の明示的Adopt/Reject/Hold操作を経て文書へ反映される。
 - 成功時は本文を持たないproposal相関行を`ai_proposals`へ保存する。対象Documentが存在しない、またはwrite認可されない場合はproposalを生成・登録しない。
+
+**POST** `/ai/proposals/opposing-viewpoint`（AI-OPPOSE-01・iteration 65 以降で契約化）
+
+- Request: `ProposeOpposingViewpointRequest`
+  - `doc: DocumentV1` — 現在の文書全体（contradiction / evidence 構造を含む）
+  - `targetCardId: string` — 反対視点・根拠不足を検討する対象カード
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
+- Response: `OpposingViewpointProposal`（proposal-only）
+  - `proposalId: string`
+  - `type: "opposing_viewpoint"`, `status: "proposed"`, `reviewState: "unreviewed"`
+  - `targetCardId: string`, `opposingText: string`, `evidenceGap: boolean`, `rationale: string`, `warnings: string[]`
+- contradiction / evidence 構造をもとに、対象カードの**反対視点・根拠不足**を提案する（value_traceability V1/V3）。**proposal-only（自動適用なし・人間の判断を先取りしない）**。対象カードが存在しない場合は 422、対象Documentが永続化されていない場合は 404。判定（Adopt/Reject/Hold）は `/ai/proposals/audit` と同経路。
 
 **POST** `/ai/proposals/audit`
 
@@ -549,17 +570,25 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - Request: `GenerateNarrativeRequest`
   - `doc: DocumentV1` — 現在の文書全体
+  - `narrativeTitle?: string` — ナラティブのタイトル（任意）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
 - Response: `GenerateNarrativeResponse`
-  - `narrative: Narrative` — 生成された文章
+  - `text: string` — 生成された文章
+  - `basedOnReadingOrder: string[]` — 参照した読取順
+  - `warnings?: string[]`
 - A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（kj_technique.md §5）を人間が実施する必要がある。
 
 **POST** `/ai/check-narrative`
 
 - Request: `CheckNarrativeRequest`
-  - `narrative: Narrative`
-  - `doc: DocumentV1`
+  - `doc: DocumentV1` — 検証対象のA型図解
+  - `narrativeText: string` — 検証対象のナラティブ本文
+  - `basedOnReadingOrder?: string[]` — ナラティブが従った読取順（A/B照合のA側）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `CheckNarrativeResponse`
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
+    - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
 - 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
 
 **POST** `/ai/refine-card-text`
@@ -567,6 +596,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `RefineCardTextRequest`
   - `cardText: string` — 元のカード本文
   - `context?: string` — 周辺カードの本文（任意）
+  - `textReviewed?: boolean` — 入力本文が人間レビュー済みか（`SEC-AI-SAFEMODE-02`。**既定 false = fail-closed**。未指定・false は 422）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`。`KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ有効）
 - Response: `RefineCardTextResponse`
   - `refinedText: string` — 改善された文
   - `reasoning?: string` — 変更理由
@@ -575,23 +606,27 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/suggest-card-groups`
 
 - Request: `SuggestCardGroupsRequest`
-  - `cards: CardRef[]` — カードの配列（id + text、最大100件）
+  - `cards: CardRef[]` — カードの配列（id + text + textReviewed、最大100件）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `SuggestCardGroupsResponse`
   - `groups: SuggestedGroup[]` — グループの配列
     - `label: string`
     - `cardIds: string[]`
     - `rationale?: string`
 - カード群のテーマ別グループ化（島候補）を提案する。1段目の束は2〜3枚が原則。
+- `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。1件でも未レビューのカードを含むと 422（`unreviewed_text_not_allowed`）。
 
 **POST** `/ai/detect-contradiction`
 
 - Request: `DetectContradictionRequest`
-  - `cardA: CardRef`
+  - `cardA: CardRef`（id + text + textReviewed）
   - `cardB: CardRef`
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `DetectContradictionResponse`
   - `hasContradiction: boolean`
   - `explanation?: string`
 - 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
+- `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。どちらかが未レビューなら 422。
 
 #### 廃止済み: カード重要度評価（再実装禁止）
 
@@ -612,6 +647,9 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `islandAId: string`, `islandBId: string`
   - `relationType: "related" | "negate" | "causal" | "mutual" | "equivalence" | "unknown"`
   - `derived: bool`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`
+  - `cardTexts: RelationCardText[]` — 根拠カードの本文（id + text）
+  - `edgeTexts?: RelationEdgeText[]` — 根拠エッジの本文（edgeId/type/from/to）
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SummarizeIslandRelationResponse`
   - `text: string`, `groundingCardIds: string[]`, `groundingEdgeIds: string[]`, `warnings: string[]`
 - 2つの島間の関係を要約する。関係種別は5語彙（related/negate/causal/mutual/equivalence）から選ぶ。
@@ -622,6 +660,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `islandTitles: string[]` — 島の表札一覧（最大50件）
   - `cardTexts: string[]` — レビュー済みカード本文（最大50件）
   - `currentTitle?: string` — 現在のタイトル
+  - `textReviewed?: boolean` — `cardTexts` が人間レビュー済みか（`SEC-AI-SAFEMODE-02`。**既定 false = fail-closed**。未指定・false は 422）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送出許可（`SEC-AI-SAFEMODE-01`）
 - Response: `SuggestDocumentTitleResponse`
   - `candidates: DocumentTitleCandidate[]` — タイトル候補（1〜3件）
     - `title: string`
@@ -686,9 +726,40 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - allowlist に `tenant_id`・本文・secret・生PII・policyRef生値は含めない（ADR-0035）。
 - 監査記録は fail-open（記録失敗でも管理操作を阻害しない）。
 
+**GET** `/admin/provision/models`
+
+- AI-MODEL-GOVERNANCE-01（R1）: モデル/プロバイダレジストリ一覧。`X-Admin-Api-Key`（または provision capability）の control-plane 認可必須。
+- Response: `{ "providers": [{ "id", "providerKind", "displayName", "lifecycleState" }], "models": [{ "id", "providerId", "displayName", "capabilities?", "lifecycleState" }] }`。プラットフォーム共有資産（tenant 非依存）。
+
+**POST** `/admin/provision/models/providers` / **POST** `/admin/provision/models`
+
+- プロバイダ/モデルを**動的に登録**（control-plane 認可）。`apiKeyRef` は秘密管理キー参照のみ（平文のAPIキーを保存しない・ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
+- モデル無効化: `PATCH /admin/provision/models/{model_id}` で `lifecycleState: disabled`。無効モデルへの呼び出しは fail-closed。
+
+**GET/PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
+
+- AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist（fail-closed）。空 = プラットフォーム既定。適用は Phase 2 の実効モデル解決で交差（より狭い方が勝つ）。
+
 **GET** `/healthz`
 
 - 未認証。プロセス生存確認。`200 {"status": "ok"}` を返す。
+- **liveness のみで、何も検査しない。** OPS-OBSERV-01: 以前はこれが唯一のAPI確認手段として全runbookで案内されていたため、DBを失った状態でも `ok` を返すことが運用上の落とし穴になっていた。依存の状態は `/readyz` を使う。
+
+**GET** `/readyz`
+
+- 未認証。依存の readiness を検査する（OPS-OBSERV-01）。
+- Response: `{ status: "ready" | "not_ready", checks: { [name: string]: string } }`
+- `checks.database`: `ok` | `unreachable`。到達不能時の理由は接続文字列を含みうるため応答へ出さない。
+- `checks.schema`: `ok` | `mismatch`。DBの `alembic_version` とビルドが期待するAlembic head の一致を見る。`mismatch` のとき `checks.schemaExpected` と `checks.schemaApplied` にリビジョンIDを併記する（いずれも秘密ではなく、roll-forward と restore の判断に必要）。
+- 準備完了なら `200`、そうでなければ `503`。例外を投げず必ず status で答える。
+- 起動時検査はAlembicの**スクリプト側**の分岐しか見ておらずDBの適用済みリビジョンを読まないため、古いスキーマのDBでも正常起動する。その隙間をこのendpointが埋める。
+
+**GET** `/version`
+
+- 未認証。稼働中のビルドを返す（OPS-OBSERV-01）。
+- Response: `{ revision: string, runtimeProfile: string }`
+- `revision` は `KJ_ATLAS_APP_REVISION`。未設定時は `"unknown"`。
+- `runtimeProfile` はprofile名をそのまま返す。`GET /session/bootstrap-policy` が profile 名を隠してbootstrap modeへ写像するのとは**意図的に異なる**——運用者はどのprofileで動いているかを知る必要があり、profile名自体は秘密ではない。
 
 **GET** `/redoc`
 
@@ -1139,6 +1210,7 @@ Tenant Admin向けに次のrouteを実装する。ただし、application lifecy
 - `GET /tenant-admin/document-access`
   - active tenant内の文書IDと`visibility`、設定有無、binding状態、policy version、更新時刻、opaque revisionだけを返す。
   - title、本文、card、review集計、tenantId、binding IDを一覧responseへ含めない。metadata未登録は`Restricted / unconfigured`として返す。
+  - **SEC-DOC-BOUND-04・keyset pagination**: `limit`（既定100・最大500）と `cursor`（前ページ末尾の文書ID）。`DocumentRow.id` 昇順。次ページがある場合 `X-Next-Cursor` ヘッダーで返す。
 - `GET /tenant-admin/document-access/{doc_id}`
   - 一覧項目に加えて、編集対象の非秘密`policyBindingId`だけを返す。responseの`ETag`はbodyの`revision`と一致させる。
 - `PUT /tenant-admin/document-access/{doc_id}`
@@ -1169,7 +1241,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 - tenant は request body、path、query、header の利用者入力から決定しない。server-resolved identity と active membership から解決された trusted `TenantContext` のみを使用する。
 - tenant session precondition がある構成では、既存の `tenantSessionVersion` guard を適用する。trusted tenant context を解決できない場合は fail-closed（`403 tenant_context_untrusted`）とする。
 - `journey_id` は空でない、前後に空白がない、printable、最大256文字の canonical文字列でなければならない。不正値は `422`（`invalid_journey_id`）とする。
-- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **5 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする。
+- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **20 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする（`MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES`。`KJ_ATLAS_MAX_DOCUMENT_BYTES` の文書サイズ上限 20 MiB と整合。**ドッグフーディング iteration 83 で実装値と契約の乖離を検出し api.md を修正**）。
 - backend は payload の未知keyや将来versionを解釈・変換しない。Inquiry bundle のstrict import/export、SafeMode projection、DocumentV1との関係は既存のfrontend/domain契約が保持する。
 - **保持契約（DATA-INQUIRY-RETENTION-01 D1=案A）**: 探究bundleは **明示DELETEまで永続** する。自動期限・purge・保持例外（legal hold等）は**存在しない**。期限切れと長期停止は区別されず、backendはpayload内の日時・stage・個人情報有無から期限を推測しない。明示DELETEのみが削除経路で、削除時は本文なし監査を同一transactionで記録する。
 
@@ -1184,7 +1256,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
   - 前提条件なし — `428`（`precondition_required`）。
   - `If-Match` が wildcard `*`・複数値・非正整数、または `If-Match` と `If-None-Match` の両方 — `422`（`invalid_if_match` / `invalid_if_none_match` / `conflicting_preconditions`）。
 - validation error: `422`（JSONでない、非有限値、または不正な `journey_id`）
-- size error: `413`（serialized payload が5 MiB超）
+- size error: `413`（serialized payload が20 MiB超）
 
 **GET** `/inquiry-bundles/{journey_id}`
 

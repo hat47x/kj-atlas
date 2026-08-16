@@ -149,8 +149,8 @@ def test_route_decorator_regex_extracts_multiline_calls() -> None:
     """
     content = AI_ROUTES_PATH.read_text(encoding="utf-8")
     matches = list(ROUTE_DECORATOR_RE.finditer(content))
-    assert len(matches) == 15, (
-        f"expected 15 @router decorators in routes/ai.py, extracted {len(matches)}: "
+    assert len(matches) == 17, (
+        f"expected 17 @router decorators in routes/ai.py, extracted {len(matches)}: "
         "a multi-line `@router.post(\\n    \"/x\", ...)` call is going undetected again"
     )
     paths = {m.group(2) for m in matches}

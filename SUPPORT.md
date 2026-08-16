@@ -17,7 +17,7 @@ kj-atlas の使い方、障害調査、セキュリティ連絡の入口をま�
 - 発生日時、利用していた URL、ブラウザ、OS。
 - 実行方法（Docker Compose、直接起動、公開環境など）。
 - 最小再現手順、期待した結果、実際の結果。
-- 画面上のエラー、HTTP status、`/api/healthz` の結果。
+- 画面上のエラー、HTTP status、エラー画面に出る `requestId`、`/api/healthz`（liveness）と `/api/readyz`（依存の状態）の結果。
 - 直前に行った操作（保存、import、export、AI 提案、共有前確認など）。
 - 秘密情報を除外したスクリーンショットやログ。
 - 可能であれば、画面ヘッダーの「サポート診断バンドル」から生成した診断バンドル（`diag-bundle.v1`）。手入力より漏れが少なく、秘密情報や本文は含まれません。詳細は [diagnostics.md](04_Documentation/diagnostics.md) を参照してください。
@@ -36,7 +36,7 @@ GitHub Issuesは現在運用していません。開始時は`CONTRIBUTING.md`�
 ## 障害時の最初の確認
 
 1. 画面だけの問題か、API も失敗しているかを分けます。
-2. `curl -fsS http://localhost:8080/api/healthz` で API の応答を確認します（これは liveness のみ。DB まで含めた準備状態は `curl -fsS http://localhost:8080/api/readyz` で確認し、503 なら DB・migration を調査します）。
+2. `curl -fsS http://localhost:8080/api/healthz` で API が応答するかを確認します（liveness のみ。DBの状態は見ていません）。応答するのに動作がおかしい場合は `curl -s http://localhost:8080/api/readyz` でDB到達性とスキーマ世代を確認します。
 3. Docker Compose を使っている場合は `docker compose ps` と `docker compose logs api --tail=200` を確認します。
 4. 保存に失敗した場合は、画面上の内容を残したまま再試行し、必要であれば JSON 書き出しで変更を保全します。
 5. 共有前確認や SafeMode の警告が出ている場合は、警告内容を確認してから操作を続けます。

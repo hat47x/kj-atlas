@@ -23,6 +23,28 @@ MAX_LLM_TASK_LENGTH = 128
 MAX_LLM_OUTPUT_TOKENS = 32_768
 _LLM_TASK = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 
+# OPS-LLM-COST-01 (段階2): in-process LLM call counter. Counts every request
+# that reaches a provider, keyed by provider kind ("none" / "local" /
+# "large-scale" / "fixture"). Single-process deploy only; a shared store is a
+# 段階3 decision (hard/soft limits + auto-downgrade). Exposed read-only via
+# /ai/provider-status.
+_LLM_CALL_COUNTS: dict[str, int] = {}
+
+
+def _record_llm_call(provider_kind: str) -> None:
+    _LLM_CALL_COUNTS[provider_kind] = _LLM_CALL_COUNTS.get(provider_kind, 0) + 1
+    _LLM_CALL_COUNTS["total"] = _LLM_CALL_COUNTS.get("total", 0) + 1
+
+
+def llm_call_counts() -> dict[str, int]:
+    """Snapshot of the in-process LLM call counter (copied, never the live dict)."""
+    return dict(_LLM_CALL_COUNTS)
+
+
+def reset_llm_call_counts() -> None:
+    """Clear the counter. Ops/tests only — a counter reset is not a runtime event."""
+    _LLM_CALL_COUNTS.clear()
+
 
 @dataclass(frozen=True)
 class LLMRequest:
@@ -755,6 +777,10 @@ def get_provider() -> LLMProvider:
 
 def generate_with_fallback(req: LLMRequest) -> LLMResponse:
     provider = get_provider()
+    # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
+    # operator can see external (large-scale) call volume; counting the attempt
+    # (before any provider error) is what cost control needs.
+    _record_llm_call(provider.provider_kind)
     try:
         return provider.generate(req)
     except ProviderRequestError as exc:

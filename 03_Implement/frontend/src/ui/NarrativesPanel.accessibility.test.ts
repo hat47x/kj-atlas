@@ -51,6 +51,9 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof NarrativesPa
     hideSourceCards: false,
     safeMode: true,
     onFocusItem: vi.fn(),
+    narrativeModel: "",
+    onNarrativeModelChange: vi.fn(),
+    availableModels: null,
     ...overrides,
   };
 

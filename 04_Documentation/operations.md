@@ -25,7 +25,7 @@ Docker Compose の標準構成は次の3サービスです。
 kj-atlas の運用確認は、次の順で見ると切り分けやすくなります。
 
 1. 画面が開くか。
-2. API が `/api/healthz` に応答するか。
+2. API が `/api/healthz` に応答するか（liveness）。応答するのに動作がおかしい場合は `/api/readyz` でDBとスキーマを確認します。
 3. DB が healthy か。
 4. 保存と再読み込みができるか。
 5. LLM や audit など、外部接続を有効にした部分だけ追加で確認する。
@@ -90,7 +90,8 @@ docker compose logs api --tail=100
 - `db` が healthy になっている。
 - `api` が migration 後に起動している。
 - `web` が `KJ_ATLAS_WEB_PORT` のポートで公開されている。
-- `/api/healthz` が `{"status":"ok"}` を返す。
+- `/api/healthz` が `{"status":"ok"}` を返す（**liveness のみ。DBの状態は見ていません**）。
+- `/api/readyz` が `{"status":"ready"}` を返す（DB到達性とスキーマ世代を検査します）。DBを失った状態でも `/api/healthz` は成功するため、依存の確認はこちらを使ってください。
 
 > **ヘルスチェックの意味（OPS-OBSERV-01）**: `/healthz` は **liveness（プロセス生存）のみ**で、DB には触れません（DB を失っても `{"status":"ok"}` を返します）。依存（DB 到達性・migration の適用状態）まで確認するには `/readyz` を使います。DB 停止時に `/readyz` は 503、schema が migration head より古い場合も 503 `schema_mismatch` を返します。ビルドリビジョンは `/version` で確認できます。
 
@@ -293,6 +294,15 @@ docker compose logs db --tail=100
 ```
 
 障害調査では、最初に発生時刻、操作内容、対象ドキュメント ID、HTTP status、画面上のエラーを控えます。ログやスクリーンショットを共有する前に、秘密情報を除外してください。診断 worker の見方は [diagnostics.md](diagnostics.md)、残してよい情報の判断は [data_handling.md](data_handling.md) を参照してください。
+
+ログは既定で1行1JSONです。エラー応答の `requestId`（`X-Request-Id` ヘッダーと同じ値）でログ行を絞り込めます。
+
+```bash
+docker compose logs api | grep '"requestId":"<利用者から聞いたID>'
+```
+
+ログの形式、突き合わせ手順、および**まだ観測できないこと**（メトリクス、監査イベントのローカル保存）は
+[observability.md](observability.md) にまとめています。
 
 **ログの形式・相関ID・ヘルスチェックの意味**は [observability.md](observability.md) を参照してください。`X-Request-Id` を使って障害報告をサーバ側ログへ突き合わせます。
 

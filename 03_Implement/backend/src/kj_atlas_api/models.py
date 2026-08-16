@@ -1637,4 +1637,65 @@ class SuggestMergesResponse(BaseModel):
     suggestions: list[MergeSuggestion]
 
 
+# AI-MODEL-GOVERNANCE-01 (R1): dynamic model/provider registry. A provider is a
+# service/credential boundary; a model is a callable destination owned by a
+# provider. Platform-shared assets (NOT tenant-scoped): tenants only restrict
+# WHICH models they may use via tenant_model_allowlist (R3). Secrets are stored
+# as references only (api_key_ref -> env/secret manager), never plaintext.
+class LLMProviderRegistryRow(Base):
+    __tablename__ = "llm_provider_registry"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    provider_kind: Mapped[str] = mapped_column(Text, nullable=False)  # local|external|deepseek
+    display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    base_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    api_key_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class LLMModelRegistryRow(Base):
+    __tablename__ = "llm_model_registry"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["provider_id"],
+            ["llm_provider_registry.id"],
+            name="fk_llm_model_registry_provider",
+            ondelete="CASCADE",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)  # canonical model_id (<=256)
+    provider_id: Mapped[str] = mapped_column(Text, nullable=False)
+    display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    # Comma-separated tier tags, e.g. "intermediate,generate" / "final_judgement".
+    capabilities: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class TenantModelAllowlistRow(Base):
+    """R3: a tenant's allowed models (fail-closed allowlist). Empty = the
+    platform-default set resolved by the effective-model resolver. Tenant-scoped
+    (two-layer defense: app WHERE + RLS)."""
+
+    __tablename__ = "tenant_model_allowlist"
+
+    tenant_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    model_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("llm_model_registry.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 apply_persistent_text_shapes(Base.metadata)

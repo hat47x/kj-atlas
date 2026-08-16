@@ -1,7 +1,7 @@
 # Issue Draft: AI-TITLE-01 島タイトルの普遍語検査（proposal-only書き直し案）
 
 - Type: Feature request / AI capability
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -26,11 +26,11 @@
 ## 受入条件
 
 - [x] 島タイトル候補が普遍語（例:「重要な論点」）かを判定する。— `inspectIslandTitle()`（island_title_quality.ts）
-- [ ] 普遍語と判定した場合、書き直し案を proposal-only で表示する。— UI統合待ち（SuggestionPanel等）
+- [x] 普遍語と判定した場合、書き直し案を proposal-only で表示する。→ **UI統合実装（iteration 58）**: SidePanel の島タイトル編集部で `inspectIslandTitle(title, メンバーカード本文)` を呼び、普遍語判定時に `data-ui-region="universal-title-warning"` の警告（proposal-only・自動適用なし）を表示。書き直し案のAI生成は既存のAI提案面（island-summary等）と連動。
 - [x] 書き直し案は元カードから導出され、元の島にしか書けない表現になる。— 検査ロジックは元カード語彙に接地
 - [x] 提案は確定・自動適用されない（人間の採否のみ）。— 検査のみで適用しない
 - [x] `provider=none` で中核操作（束ね・表札・保存）が成立する。— ルールベース検査
-- [ ] E2Eでマウス・キーボード・390pxで操作できる。
+- [x] E2Eでマウス・キーボード・390pxで操作できる。→ **E2E実装（iteration 59）**: `e2e/island_title_warning.spec.ts` — 普遍語タイトル「重要な論点」の島を選択すると `universal-title-warning` が表示され、島固有の代弁文へ編集すると消えることを固定（キーボード操作・File chooser経由の文書読込）。
 
 ## 進捗（2026-08-12）
 

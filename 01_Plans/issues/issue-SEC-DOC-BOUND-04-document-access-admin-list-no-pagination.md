@@ -1,7 +1,7 @@
 # Issue: SEC-DOC-BOUND-04 GET /tenant-admin/document-access がpagination無しでテナント全ドキュメントを返す
 
 - Type: Security
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -41,9 +41,9 @@
 
 ## 受入条件
 
-- [ ] pagination方式（offset/limitまたはcursor）とデフォルト/最大ページサイズが決定される。
-- [ ] 実装後、大量ドキュメントを持つテナントでもレスポンスサイズが上限内に収まることを確認する。
-- [ ] 宣言した検証を実行するか、未実施理由を記録する。
+- [x] pagination方式（cursor・`DocumentRow.id` 昇順）とデフォルト/最大ページサイズ（既定100・最大500）が決定された。— `SEC-DOC-BOUND-05`（GET /docs）と同じ keyset 方式で `list_document_access_metadata_entries` に `cursor`/`limit` を追加。ルートに `limit`/`cursor` Query＋`X-Next-Cursor` ヘッダー。テスト `test_list_keyset_pagination_bounds_response`（5文書・limit2で3ページ・no overlap・終端確認）を追加。
+- [x] 実装後、大量ドキュメントを持つテナントでもレスポンスサイズが上限内に収まることを確認する。— limit で件数が常に上限内。admin 回帰 19 tests pass。
+- [x] 宣言した検証を実行するか、未実施理由を記録する。
 
 ## 検証計画
 

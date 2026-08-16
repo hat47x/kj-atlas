@@ -1,4 +1,6 @@
 import { useId, useMemo, useState } from "react";
+import type { AvailableModelItem } from "../api/client";
+import { ModelSelector } from "./ModelSelector";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
 import { buildNarrativeGrounding } from "../domain/grounding";
@@ -24,6 +26,10 @@ type NarrativesPanelProps = {
   onNarrativeTextChange: (value: string) => void;
   onCheckConsistency: (selectedNarrativeId: string | null) => void;
   onGenerateFromReadingOrder: () => void;
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override ("" = auto).
+  narrativeModel: string;
+  onNarrativeModelChange: (model: string) => void;
+  availableModels: AvailableModelItem[] | null;
   isChecking: boolean;
   isGenerating: boolean;
   errorMessage: string | null;
@@ -68,6 +74,9 @@ export function NarrativesPanel({
   hideSourceCards,
   onFocusItem,
   safeMode,
+  narrativeModel,
+  onNarrativeModelChange,
+  availableModels,
 }: NarrativesPanelProps) {
   const panelTitleId = useId();
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
@@ -196,6 +205,14 @@ export function NarrativesPanel({
         >
           {isChecking ? t("narratives.panel.checking") : t("narratives.panel.check_consistency")}
         </button>
+        <ModelSelector
+          label={t("model_selector.label")}
+          value={narrativeModel}
+          onChange={onNarrativeModelChange}
+          disabled={isGenerating}
+          dataUiRegion="model-selector-narrative"
+          models={availableModels}
+        />
         <button
           type="button"
           onClick={onGenerateFromReadingOrder}

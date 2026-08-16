@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveIslandDisplayTitle } from "../i18n/island_title";
+import { inspectIslandTitle } from "../domain/island_title_quality";
 import { t } from "../i18n/translate";
 
 import { formatTimestamp } from "../domain/format_timestamp";
@@ -7,6 +8,8 @@ import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain
 import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
+import type { AvailableModelItem, OpposingViewpointProposal } from "../api/client";
+import { ModelSelector } from "./ModelSelector";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
 import { ShelfPanel } from "./ShelfPanel";
@@ -107,8 +110,19 @@ type SidePanelProps = {
   onSummaryTextChange: (value: string) => void;
   onRestoreSummaryHistoryEntry: (historyEntryId: string) => void;
   onShowSummaryHistoryGrounding: (groundingIds: string[]) => void;
+  // AI-OPPOSE-01 (M4): proposal-only opposing-viewpoint surface.
+  opposingViewpointProposal: OpposingViewpointProposal | null;
+  isProposingOpposingViewpoint: boolean;
+  onProposeOpposingViewpoint: (cardId: string) => void;
+  onDismissOpposingViewpointProposal: () => void;
   onSummaryReviewedChange: (value: boolean) => void;
   onSuggestIslandSummary: () => void;
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
+  // summary suggestion ("" = auto / platform default).
+  islandSummaryModel: string;
+  onIslandSummaryModelChange: (model: string) => void;
+  /** Tenant-allowed active models (guarded fetch owned by App); null = loading. */
+  availableModels: AvailableModelItem[] | null;
   islandSummaryProposal: {
     proposalId: string;
     status: "proposed";
@@ -301,8 +315,15 @@ export function SidePanel({
   onSummaryTextChange,
   onRestoreSummaryHistoryEntry,
   onShowSummaryHistoryGrounding,
+  opposingViewpointProposal,
+  isProposingOpposingViewpoint,
+  onProposeOpposingViewpoint,
+  onDismissOpposingViewpointProposal,
   onSummaryReviewedChange,
   onSuggestIslandSummary,
+  islandSummaryModel,
+  onIslandSummaryModelChange,
+  availableModels,
   islandSummaryProposal,
   proposalAuditTrail,
   onAdoptIslandSummaryProposal,
@@ -2479,6 +2500,36 @@ export function SidePanel({
               marginBottom: 10,
             }}
           />
+          {(() => {
+            // AI-TITLE-01: surface a universal-phrase placard (a title that
+            // would fit ANY island) as a proposal-only warning. The rewrite
+            // proposal itself is AI-assisted and lives on the suggestion
+            // surface; here we only flag the risk, never auto-apply.
+            const title = selectedIsland.title?.trim();
+            if (!title || !document) return null;
+            const memberTexts = selectedIsland.cardIds
+              .map((cardId) => document.cards.find((card) => card.id === cardId))
+              .filter((card): card is (typeof document.cards)[number] => Boolean(card))
+              .map((card) => card.text);
+            const inspection = inspectIslandTitle(title, memberTexts);
+            if (!inspection.isUniversal) return null;
+            return (
+              <div
+                data-ui-region="universal-title-warning"
+                style={{
+                  fontSize: 11,
+                  color: "#9a3412",
+                  backgroundColor: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  marginBottom: 10,
+                }}
+              >
+                {t("side_panel.island_editor.universal_title_warning")}
+              </div>
+            );
+          })()}
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             {t("side_panel.island_editor.placard_card")}
@@ -2555,14 +2606,24 @@ export function SidePanel({
             {t("side_panel.summary.label")}
           </label>
           {isAdvancedUiEnabled ? (
-            <button
-              type="button"
-              onClick={onSuggestIslandSummary}
-              disabled={isSuggestingIslandSummary}
-              style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
-            >
-              {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
-            </button>
+            <>
+              <ModelSelector
+                label={t("model_selector.label")}
+                value={islandSummaryModel}
+                onChange={onIslandSummaryModelChange}
+                disabled={isSuggestingIslandSummary}
+                dataUiRegion="model-selector"
+                models={availableModels}
+              />
+              <button
+                type="button"
+                onClick={onSuggestIslandSummary}
+                disabled={isSuggestingIslandSummary}
+                style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+              >
+                {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
+              </button>
+            </>
           ) : null}
           {islandSummaryProposal ? (
             <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
@@ -3534,6 +3595,66 @@ export function SidePanel({
               >
                 {t("side_panel.card_inspector.focus")}
               </button>
+              {opposingViewpointProposal && opposingViewpointProposal.targetCardId === selectedCard.id ? (
+                <div
+                  data-ui-region="opposing-viewpoint-proposal"
+                  style={{
+                    border: "1px solid #fed7aa",
+                    borderRadius: 6,
+                    backgroundColor: "#fff7ed",
+                    padding: 8,
+                    marginBottom: 10,
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: "#9a3412", fontWeight: 700 }}>
+                    {opposingViewpointProposal.evidenceGap
+                      ? t("side_panel.card_inspector.evidence_gap")
+                      : t("side_panel.card_inspector.opposing_viewpoint")}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#0f172a" }}>{opposingViewpointProposal.opposingText}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{opposingViewpointProposal.rationale}</div>
+                  <div style={{ fontSize: 10, color: "#9a3412" }}>
+                    {t("side_panel.card_inspector.proposal_only")}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      data-ui-region="hold-opposing-viewpoint"
+                      onClick={() => {
+                        // AI-OPPOSE-01: connect the evidence-gap proposal to the
+                        // card's hold state so the concern is kept and can be
+                        // returned to (元の違和感・矛盾に戻れる).
+                        onCardHoldStateChange("held");
+                        onDismissOpposingViewpointProposal();
+                      }}
+                      style={{ fontSize: 11 }}
+                    >
+                      {t("side_panel.card_inspector.hold_for_review")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onDismissOpposingViewpointProposal}
+                      style={{ fontSize: 11 }}
+                    >
+                      {t("side_panel.card_inspector.dismiss_proposal")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-ui-region="propose-opposing-viewpoint"
+                  onClick={() => onProposeOpposingViewpoint(selectedCard.id)}
+                  disabled={isProposingOpposingViewpoint}
+                  style={{ width: "100%", marginBottom: 10, fontWeight: 600 }}
+                >
+                  {isProposingOpposingViewpoint
+                    ? t("side_panel.card_inspector.proposing_opposing")
+                    : t("side_panel.card_inspector.propose_opposing")}
+                </button>
+              )}
               <div style={{ marginBottom: 12 }}>
                 <button
                   ref={cardQualityAssistTriggerRef}

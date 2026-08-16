@@ -7,7 +7,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from kj_atlas_api.models import DocumentV1, NarrativeCheckCounts
 
 
-SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
+# DATA-CONTRACT-02 (案b): align the API contract with the persistence bound.
+# The ai_proposals / decision tables enforce `length(source_bundle_hash) = 64`,
+# so a `mock:`-prefixed (69-char) hash passed the request pattern but failed at
+# DB flush with a misleading 409. The docs CE4 path keeps its OWN mock: gate
+# (runtime policy `ce4_source_bundle_hash_allow_mock`); the proposal path now
+# accepts only the 64-char SHA-256 form, matching what can be persisted.
+SOURCE_BUNDLE_HASH_PATTERN = r"^[0-9a-f]{64}$"
 
 
 class ProviderStatusResponse(BaseModel):
@@ -20,6 +26,10 @@ class ProviderStatusResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     providerKind: Literal["none", "local", "large-scale"]
+    # OPS-LLM-COST-01 (段階2): in-process LLM call counts per provider kind
+    # (plus "total"). Referenceable so an operator can see external
+    # (large-scale) call volume. Empty until the first LLM call.
+    callCounts: dict[str, int] = Field(default_factory=dict)
 
 
 class NarrativeIssueReference(BaseModel):
@@ -66,6 +76,8 @@ class GenerateNarrativeRequest(BaseModel):
     narrativeTitle: str | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class GenerateNarrativeResponse(BaseModel):
@@ -83,6 +95,8 @@ class SuggestIslandSummaryRequest(BaseModel):
     islandId: str = Field(min_length=1)
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class SuggestIslandSummaryResponse(BaseModel):
@@ -121,6 +135,8 @@ class SummarizeIslandRelationRequest(BaseModel):
     groundingEdgeIds: list[str]
     edgeTexts: list[RelationEdgeText] | None = None
     cardTexts: list[RelationCardText]
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class SummarizeIslandRelationResponse(BaseModel):
@@ -156,6 +172,37 @@ class ProposalEnvelope(BaseModel):
     rationale: str = Field(min_length=1)
 
 
+class ProposeOpposingViewpointRequest(BaseModel):
+    """AI-OPPOSE-01 (M4): propose an opposing viewpoint or evidence gap for a
+    target card, derived from the doc's contradiction / evidence structure.
+    proposal-only -- never auto-applied."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV1
+    targetCardId: str = Field(min_length=1, max_length=128)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
+
+
+class OpposingViewpointProposal(BaseModel):
+    """Proposal-only opposing-viewpoint / evidence-gap observation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1)
+    type: Literal["opposing_viewpoint"] = "opposing_viewpoint"
+    status: Literal["proposed"] = "proposed"
+    reviewState: Literal["unreviewed"] = "unreviewed"
+    targetCardId: str = Field(min_length=1)
+    opposingText: str = Field(min_length=1)
+    evidenceGap: bool
+    rationale: str = Field(min_length=1)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class ProposeIslandSummaryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -164,6 +211,8 @@ class ProposeIslandSummaryRequest(BaseModel):
     sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class ProposalDecisionAuditRequest(BaseModel):
@@ -260,6 +309,15 @@ class RefineCardTextRequest(BaseModel):
 
     cardText: str = Field(min_length=1, max_length=2000)
     context: str | None = Field(default=None, max_length=2000)
+    # SEC-AI-SAFEMODE-02: this route has no document context, so the review
+    # state travels with the request. textReviewed certifies the caller has
+    # human-reviewed the input text; it defaults False (fail-closed) per
+    # ADR-0068 D3=A (unspecified = SafeMode ON).
+    textReviewed: bool = False
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class RefineCardTextResponse(BaseModel):
@@ -275,12 +333,20 @@ class SuggestCardGroupsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cards: list[_CardRef] = Field(min_length=2, max_length=100)
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class _CardRef(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(min_length=1, max_length=256)
     text: str = Field(min_length=1, max_length=2000)
+    # SEC-AI-SAFEMODE-02: no-doc routes take card text directly, so the review
+    # state travels with each card. Defaults False (unreviewed, fail-closed) per
+    # ADR-0068 D3=A.
+    textReviewed: bool = False
 
 
 class SuggestCardGroupsResponse(BaseModel):
@@ -303,6 +369,8 @@ class DetectContradictionRequest(BaseModel):
 
     cardA: _CardRef
     cardB: _CardRef
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
 
 
 class DetectContradictionResponse(BaseModel):
@@ -321,6 +389,15 @@ class SuggestDocumentTitleRequest(BaseModel):
     islandTitles: list[str] = Field(min_length=0, max_length=50)
     cardTexts: list[str] = Field(min_length=0, max_length=50)
     currentTitle: str | None = Field(default=None, max_length=500)
+    # SEC-AI-SAFEMODE-02: this no-doc route forwards cardTexts to the LLM, so
+    # the review state travels with the request. textReviewed certifies the
+    # input texts are human-reviewed; defaults False (fail-closed, ADR-0068
+    # D3=A).
+    textReviewed: bool = False
+    # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
+    allowUnreviewedText: bool | None = None
+    # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
+    model: str | None = Field(default=None, max_length=256)
 
 
 class _DocumentTitleCandidate(BaseModel):

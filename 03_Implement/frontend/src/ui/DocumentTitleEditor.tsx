@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from "react";
+import type { AvailableModelItem } from "../api/client";
 import { t } from "../i18n/translate";
+import { ModelSelector } from "./ModelSelector";
 
 export interface DocumentTitleEditorProps {
   documentTitle: string | undefined;
@@ -13,6 +15,10 @@ export interface DocumentTitleEditorProps {
     currentTitle: string | undefined,
   ) => Promise<{ candidates: { title: string }[] }>;
   providerEnabled: boolean;
+  // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override ("" = auto).
+  documentTitleModel: string;
+  onDocumentTitleModelChange: (model: string) => void;
+  availableModels: AvailableModelItem[] | null;
 }
 
 export function DocumentTitleEditor({
@@ -23,6 +29,9 @@ export function DocumentTitleEditor({
   isReadOnly,
   onSuggestTitle,
   providerEnabled,
+  documentTitleModel,
+  onDocumentTitleModelChange,
+  availableModels,
 }: DocumentTitleEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(documentTitle ?? "");
@@ -162,23 +171,33 @@ export function DocumentTitleEditor({
             {displayTitle}
           </h1>
           {!isReadOnly && providerEnabled && (
-            <button
-              onClick={handleSuggest}
-              disabled={isSuggesting}
-              style={{
-                fontSize: 11,
-                padding: "2px 6px",
-                borderRadius: 4,
-                border: "1px solid #cbd5e1",
-                background: "var(--panel, #f8fafc)",
-                color: "var(--fg, #0f172a)",
-                cursor: isSuggesting ? "not-allowed" : "pointer",
-                opacity: isSuggesting ? 0.5 : 1,
-              }}
-              data-testid="suggest-title-button"
-            >
-              {isSuggesting ? "..." : t("document_title.suggest")}
-            </button>
+            <>
+              <ModelSelector
+                label={t("model_selector.label")}
+                value={documentTitleModel}
+                onChange={onDocumentTitleModelChange}
+                disabled={isSuggesting}
+                dataUiRegion="model-selector-title"
+                models={availableModels}
+              />
+              <button
+                onClick={handleSuggest}
+                disabled={isSuggesting}
+                style={{
+                  fontSize: 11,
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "var(--panel, #f8fafc)",
+                  color: "var(--fg, #0f172a)",
+                  cursor: isSuggesting ? "not-allowed" : "pointer",
+                  opacity: isSuggesting ? 0.5 : 1,
+                }}
+                data-testid="suggest-title-button"
+              >
+                {isSuggesting ? "..." : t("document_title.suggest")}
+              </button>
+            </>
           )}
         </div>
       )}

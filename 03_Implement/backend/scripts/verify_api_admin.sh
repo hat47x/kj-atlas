@@ -129,7 +129,9 @@ if [ "$mode" = "auth" ]; then
       -d '{"provider":"verify_admin","externalUid":"probe-admin-y"}')"
 
   # 9. SEC-ADMIN-PLANE-03: the control-plane audit trail recorded the
-  #    provision/users operation (success + abnormal case).
+  #    provision/users operation (success + abnormal case), and each event
+  #    carries the compliance evidence fields: result, statusCode, the
+  #    request_id correlation, and the actor fingerprint.
   audit_code=$(curl -s -o /tmp/kj_admin_audit.json -w '%{http_code}' \
     "$BASE_URL/admin/provision/audit?limit=10" -H "X-Admin-Api-Key: $ADMIN_KEY")
   if [ "$audit_code" = "200" ]; then
@@ -138,6 +140,26 @@ if [ "$mode" = "auth" ]; then
       PASS=$((PASS+1))
     else
       echo "  FAIL: audit trail lacks the provision/users event"
+      FAIL=$((FAIL+1))
+    fi
+    if grep -q '"result":"allowed"' /tmp/kj_admin_audit.json &&
+       grep -q '"statusCode":201\|"statusCode":200' /tmp/kj_admin_audit.json &&
+       grep -q '"requestId":"[0-9a-f]\{32\}"' /tmp/kj_admin_audit.json &&
+       grep -q '"actorRefHash":"[0-9a-f]\{16\}"' /tmp/kj_admin_audit.json; then
+      echo "  PASS: audit evidence (result/statusCode/requestId/actorRefHash)"
+      PASS=$((PASS+1))
+    else
+      echo "  FAIL: audit event lacks compliance evidence fields"
+      FAIL=$((FAIL+1))
+    fi
+    # SEC-ADMIN-PLANE-03 (DOGFOOD-06 abnormal case): a rejected /admin/*
+    # request (wrong admin key -> 401) must ALSO be recorded with result=denied
+    # so the trail reflects both allowed and denied operations.
+    if grep -q '"result":"denied"' /tmp/kj_admin_audit.json; then
+      echo "  PASS: audit trail records a denied /admin/* operation"
+      PASS=$((PASS+1))
+    else
+      echo "  FAIL: audit trail lacks a denied-operation event (wrong key 401)"
       FAIL=$((FAIL+1))
     fi
   else

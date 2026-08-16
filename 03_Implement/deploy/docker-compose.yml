@@ -24,6 +24,7 @@ services:
       - KJ_ATLAS_RUNTIME_PROFILE=${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}
       - KJ_ATLAS_DATABASE_URL=${KJ_ATLAS_DATABASE_URL:-postgresql+asyncpg://${KJ_ATLAS_POSTGRES_USER:-kj_atlas}:${KJ_ATLAS_POSTGRES_PASSWORD:-kj_atlas}@db:5432/${KJ_ATLAS_POSTGRES_DB:-kj_atlas}}
       - KJ_ATLAS_LLM_PROVIDER=${KJ_ATLAS_LLM_PROVIDER:-none}
+      - KJ_ATLAS_APP_REVISION
       # Pass-through only when set on the host (unset stays unset in the container,
       # not an empty string) -- ENV-COMPOSE-01 Phase 2. Never given a default here:
       # an empty-string default would silently disable the protection these keys

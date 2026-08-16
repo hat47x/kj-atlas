@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from urllib.parse import quote
 from hashlib import sha256
 from datetime import datetime, timezone
 from threading import Lock
@@ -434,7 +435,10 @@ def _resolve_request_tenant(*, request: Request, db: Session) -> TenantContext:
 @router.get("", response_model=list[DocumentListItem])
 def list_documents(
     request: Request,
+    response: Response,
     created_by: str | None = Query(default=None, max_length=512, alias="createdBy"),
+    cursor: str | None = Query(default=None, max_length=1024),
+    limit: int = Query(default=500, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> list[DocumentListItem]:
     """第2反復: list the tenant's document metadata (canvas list foundation).
@@ -442,9 +446,21 @@ def list_documents(
     Row metadata only — never card content (the per-document read path is the
     SafeMode-scoped GET /docs/{doc_id}). Payload-independent and tenant-scoped.
     `createdBy` filters to one creator ("my documents").
+
+    SEC-DOC-BOUND-05: keyset pagination. `limit` (1..500, default 500) bounds
+    the response; when more rows follow, `X-Next-Cursor` carries the opaque
+    `"{updated_at}:{id}"` cursor for the next page. The response stays a bare
+    array, so existing clients are unaffected.
     """
     tenant = _resolve_request_tenant(request=request, db=db)
-    return DatabaseDocumentContentStore(db).list_documents(tenant=tenant, created_by=created_by)
+    items, has_more = DatabaseDocumentContentStore(db).list_documents(
+        tenant=tenant, created_by=created_by, cursor=cursor, limit=limit
+    )
+    if has_more and items:
+        # SEC-DOC-BOUND-05: updated_at is ISO (contains colons), so URL-encode
+        # it; the repository decodes it. The id half stays raw.
+        response.headers["X-Next-Cursor"] = f"{quote(items[-1].updated_at)}:{items[-1].id}"
+    return items
 
 
 def _transition_lifecycle(request: Request, db: Session, doc_id: str, state: Literal["active", "archived"]) -> Response:
