@@ -3686,5 +3686,45 @@ ad_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AD_ID")
 check "AD 読戻し (200)" "200" "$ad_read"
 
 echo ""
+echo "--- シナリオ84: 化学・素材のSDS・規制対応（迅速さと正確さの相克） ---"
+# 業態: 化学・素材（化学品メーカー）
+# 想定人物: 安全・規制担当（SDS・規制対応を整理）
+# 業務領域: 安全データシート（SDS）・規制要求・顧客照会のKJ分類と、安全・コンプライアンス改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 顧客の迅速な対応要求（SDS提供）と正確な安全情報の提供（規制再検証）の
+#          トレードオフを矛盾検出で表面化し、対応プロセス改善の根拠にする（迅速さと正確さの相克）。
+CH_ID="biz-flow-chemical"
+CH_DOC='{"version":1,"id":"'$CH_ID'","title":"SDS・規制対応整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ch1","text":"顧客はSDSの迅速な提供を求めている","x":0,"y":0,"textReviewed":true},{"id":"ch2","text":"規制変更に伴うSDSの再検証に時間がかかっている","x":10,"y":0,"textReviewed":true},{"id":"ch3","text":"誤ったSDS提供がクレームにつながった事例がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ch-i","cardIds":["ch1","ch2","ch3"]}],"readingOrder":["ch-i"]}'
+
+ch_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CH_ID" \
+  -H 'Content-Type: application/json' -d "$CH_DOC")
+check "CH PUT document (作成)" "200" "$ch_put"
+
+# ① AI束ね
+ch_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ch1","text":"顧客はSDSの迅速な提供を求めている","textReviewed":true},{"id":"ch2","text":"規制変更に伴うSDSの再検証に時間がかかっている","textReviewed":true},{"id":"ch3","text":"誤ったSDS提供がクレームにつながった事例がある","textReviewed":true}]}')
+case "$ch_groups" in *'"groups":'*) echo "  PASS: CH ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CH ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ch_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CH_DOC,\"islandId\":\"ch-i\"}")
+case "$ch_summary" in *'"groundingIds":["ch1","ch2","ch3"]'*) echo "  PASS: CH ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CH ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（SDS迅速提供 vs 規制再検証・迅速さと正確さの相克）
+ch_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ch1","text":"顧客はSDSの迅速な提供を求めている","textReviewed":true},"cardB":{"id":"ch2","text":"規制変更に伴うSDSの再検証に時間がかかっている","textReviewed":true}}')
+case "$ch_contra" in *'"hasContradiction"'*) echo "  PASS: CH ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CH ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ch_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CH_DOC}")
+case "$ch_narr" in *'"basedOnReadingOrder":["ch-i"]'*) echo "  PASS: CH ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CH ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ch_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CH_ID")
+check "CH 読戻し (200)" "200" "$ch_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
