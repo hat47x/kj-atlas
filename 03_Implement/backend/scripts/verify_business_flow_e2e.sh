@@ -6166,5 +6166,47 @@ mov_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MOV_ID")
 check "MOV 読戻し (200)" "200" "$mov_read"
 
 echo ""
+echo "--- シナリオ142: カメラ・写真（品質・思い出と効率・コストのトレードオフ） ---"
+# 業態: カメラ・写真（カメラ店・写真館）
+# 想定人物: カメラ店店長／写真館オーナー
+# 業務領域: 商品・撮影サービス・プリント・顧客への声のKJ分類と、店舗・サービスの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 七五三や成人式など大切な場面の撮影を丁寧に・仕上がりの品質にこだわる（品質・思い出）と
+#          機材投資や撮影時間・価格競争への対応（効率・コスト）のトレードオフを矛盾検出（正パス）
+#          で表面化し、店舗・サービスの改善根拠にする（品質と効率の相克・プリントやアルバム・
+#          データ納品の多様化で顧客との長い関係を築く動きも指摘）。
+CAM_ID="biz-flow-camera"
+CAM_DOC='{"version":1,"id":"'$CAM_ID'","title":"カメラ店・写真館のサービス改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"七五三や成人式など大切な場面の撮影を丁寧に、仕上がりの品質にこだわる声（品質・思い出）","x":0,"y":0,"textReviewed":true},{"id":"c2","text":"機材投資や撮影時間・価格競争など、品質と効率・コストのトレードオフに悩む声（効率・コスト）","x":10,"y":0,"textReviewed":true},{"id":"c3","text":"プリントやアルバム、データ納品の多様化で顧客との長い関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cam-i","cardIds":["c1","c2","c3"]}],"readingOrder":["cam-i"]}'
+
+cam_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CAM_ID" \
+  -H 'Content-Type: application/json' -d "$CAM_DOC")
+check "CAM PUT document (作成)" "200" "$cam_put"
+
+# ① AI束ね
+cam_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"c1","text":"七五三や成人式など大切な場面の撮影を丁寧に、仕上がりの品質にこだわる声（品質・思い出）","textReviewed":true},{"id":"c2","text":"機材投資や撮影時間・価格競争など、品質と効率・コストのトレードオフに悩む声（効率・コスト）","textReviewed":true},{"id":"c3","text":"プリントやアルバム、データ納品の多様化で顧客との長い関係を築く動き","textReviewed":true}]}')
+case "$cam_groups" in *'"groups":'*) echo "  PASS: CAM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CAM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cam_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CAM_DOC,\"islandId\":\"cam-i\"}")
+case "$cam_summary" in *'"groundingIds":["c1","c2","c3"]'*) echo "  PASS: CAM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CAM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・思い出 vs 効率・コスト・品質と効率の相克・正パス）
+cam_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"c1","text":"七五三や成人式など大切な場面の撮影を丁寧に、仕上がりの品質にこだわる声（品質・思い出）","textReviewed":true},"cardB":{"id":"c2","text":"機材投資や撮影時間・価格競争など、品質と効率・コストのトレードオフに悩む声（効率・コスト）","textReviewed":true}}')
+case "$cam_contra" in *'"hasContradiction":true'*) echo "  PASS: CAM ③矛盾検出（品質・思い出と効率・コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CAM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cam_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CAM_DOC}")
+case "$cam_narr" in *'"basedOnReadingOrder":["cam-i"]'*) echo "  PASS: CAM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CAM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cam_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CAM_ID")
+check "CAM 読戻し (200)" "200" "$cam_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
