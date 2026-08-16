@@ -133,13 +133,44 @@ check "Documentation contract checks" \
   $VENV_PYTHON "$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')/01_Plans/docs_check.py"
 
 # ------------------------------------------------------------------
-# 9. API/MCP verification (non-Web paths; requires a running backend)
+# 9. API/MCP verification (non-Web paths)
 # ------------------------------------------------------------------
 # These curl/tsx-based checks exercise the admin CLI/API and MCP paths an
-# operator actually uses. They need a live backend (uvicorn on :8000), so
-# they are skipped with a note when it is not reachable — never a failure.
+# operator actually uses. When no backend is reachable on the configured base
+# (default :8000), a self-contained backend is started (fresh migrated DB +
+# business/admin keys + local mock LLM) so the checks run in CI without a
+# manually-started uvicorn. The pre-start is never a failure by itself.
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')"
 API_BASE="${KJ_ATLAS_VERIFY_API_BASE:-http://127.0.0.1:8000}"
+SELF_BACKEND_PID=""
+SELF_STUB_PID=""
+SELF_DB=""
+if ! curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/dev/null | grep -q 200; then
+  if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
+    SELF_DB="$(mktemp /tmp/kj_verify_api_XXXX.sqlite3)"
+    SELF_API_KEY="biz-verify-api"
+    SELF_ADM_KEY="adm-verify-api"
+    STUB_PORT=$("$VENV_PYTHON" -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()")
+    BK_PORT=$("$VENV_PYTHON" -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()")
+    if (cd "$ROOT_DIR/03_Implement/backend" && KJ_ATLAS_DATABASE_URL="sqlite:///$SELF_DB" "$VENV_PYTHON" -m alembic upgrade head >/dev/null 2>&1); then
+      "$VENV_PYTHON" "$ROOT_DIR/03_Implement/deploy/tools/mock_local_llm.py" --host 127.0.0.1 --port "$STUB_PORT" >/tmp/kj_verify_stub.log 2>&1 &
+      SELF_STUB_PID=$!
+      KJ_ATLAS_API_KEY="$SELF_API_KEY" KJ_ATLAS_ADMIN_API_KEY="$SELF_ADM_KEY" \
+      KJ_ATLAS_DATABASE_URL="sqlite:///$SELF_DB" \
+      KJ_ATLAS_LLM_PROVIDER=local KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:$STUB_PORT" \
+        "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BK_PORT" --host 127.0.0.1 >/tmp/kj_verify_backend.log 2>&1 &
+      SELF_BACKEND_PID=$!
+      API_BASE="http://127.0.0.1:$BK_PORT"
+      # The API scripts read KJ_ATLAS_API_KEY / KJ_ATLAS_ADMIN_API_KEY for their
+      # X-API-Key / X-Admin-Api-Key headers (keyed-backend path, fixed in 2d26a5eb).
+      export KJ_ATLAS_API_KEY="$SELF_API_KEY" KJ_ATLAS_ADMIN_API_KEY="$SELF_ADM_KEY"
+      for _ in $(seq 1 40); do curl -s -o /dev/null "$API_BASE/healthz" && break; sleep 0.5; done
+      echo "  (self-contained API backend started on $API_BASE — keyed + local mock)"
+    else
+      SELF_DB=""
+    fi
+  fi
+fi
 if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/dev/null | grep -q 200; then
   # DOGFOOD-09: a backend running against a DB that is behind the alembic head
   # yields confusing raw 500s ("no such column: ...") on document/inquiry
@@ -191,6 +222,16 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
 else
   echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
 fi
+
+# Clean up the self-contained backend (if any) started for the API/MCP checks,
+# and drop the keys we exported for it — otherwise check 10's E2Es inherit them
+# and start keyed backends whose curls send no key (401).
+if [ -n "$SELF_BACKEND_PID" ]; then
+  kill "$SELF_BACKEND_PID" 2>/dev/null
+  unset KJ_ATLAS_API_KEY KJ_ATLAS_ADMIN_API_KEY
+fi
+if [ -n "$SELF_STUB_PID" ]; then kill "$SELF_STUB_PID" 2>/dev/null; fi
+if [ -n "$SELF_DB" ]; then rm -f "$SELF_DB"; fi
 
 # 10. Self-contained business-flow E2Es (standard scenarios 1-12).
 # ------------------------------------------------------------------
