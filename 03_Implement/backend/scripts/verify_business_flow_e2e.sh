@@ -7005,5 +7005,47 @@ welfare_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WELFARE_I
 check "WELFARE 読戻し (200)" "200" "$welfare_read"
 
 echo ""
+echo "--- シナリオ162: シェアオフィス・コワーキング（環境・コミュニティと稼働率・収益のトレードオフ） ---"
+# 業態: シェアオフィス・コワーキング（ワークスペース運営）
+# 想定人物: 施設運営マネージャー
+# 業務領域: 設備・コミュニティ・会員・運営への声のKJ分類と、ワークスペース運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 快適な設備と交流のあるコミュニティづくり・会員の成長支援（環境・コミュニティ）と稼働率や
+#          会費設定への対応（稼働率・収益）のトレードオフを矛盾検出（正パス）で表面化し、ワークスペース
+#          運営の改善根拠にする（環境・コミュニティと稼働率の相克・イベントや勉強会・スタートアップ支援
+#          で会員同士のつながりを育てる動きも指摘）。
+COWORK_ID="biz-flow-coworking"
+COWORK_DOC='{"version":1,"id":"'$COWORK_ID'","title":"ワークスペース運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"co1","text":"快適な設備と交流のあるコミュニティづくり、会員の成長支援を重視する声（環境・コミュニティ）","x":0,"y":0,"textReviewed":true},{"id":"co2","text":"稼働率や会費設定への対応など、環境・コミュニティと稼働率・収益のトレードオフに悩む声（稼働率・収益）","x":10,"y":0,"textReviewed":true},{"id":"co3","text":"イベントや勉強会、スタートアップ支援で会員同士のつながりを育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cowork-i","cardIds":["co1","co2","co3"]}],"readingOrder":["cowork-i"]}'
+
+cowork_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$COWORK_ID" \
+  -H 'Content-Type: application/json' -d "$COWORK_DOC")
+check "COWORK PUT document (作成)" "200" "$cowork_put"
+
+# ① AI束ね
+cowork_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"co1","text":"快適な設備と交流のあるコミュニティづくり、会員の成長支援を重視する声（環境・コミュニティ）","textReviewed":true},{"id":"co2","text":"稼働率や会費設定への対応など、環境・コミュニティと稼働率・収益のトレードオフに悩む声（稼働率・収益）","textReviewed":true},{"id":"co3","text":"イベントや勉強会、スタートアップ支援で会員同士のつながりを育てる動き","textReviewed":true}]}')
+case "$cowork_groups" in *'"groups":'*) echo "  PASS: COWORK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: COWORK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cowork_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$COWORK_DOC,\"islandId\":\"cowork-i\"}")
+case "$cowork_summary" in *'"groundingIds":["co1","co2","co3"]'*) echo "  PASS: COWORK ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: COWORK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（環境・コミュニティ vs 稼働率・収益・環境・コミュニティと稼働率の相克・正パス）
+cowork_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"co1","text":"快適な設備と交流のあるコミュニティづくり、会員の成長支援を重視する声（環境・コミュニティ）","textReviewed":true},"cardB":{"id":"co2","text":"稼働率や会費設定への対応など、環境・コミュニティと稼働率・収益のトレードオフに悩む声（稼働率・収益）","textReviewed":true}}')
+case "$cowork_contra" in *'"hasContradiction":true'*) echo "  PASS: COWORK ③矛盾検出（環境・コミュニティと稼働率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: COWORK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cowork_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$COWORK_DOC}")
+case "$cowork_narr" in *'"basedOnReadingOrder":["cowork-i"]'*) echo "  PASS: COWORK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: COWORK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cowork_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$COWORK_ID")
+check "COWORK 読戻し (200)" "200" "$cowork_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
