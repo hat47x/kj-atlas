@@ -6040,5 +6040,47 @@ ener_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ENER_ID")
 check "ENER 読戻し (200)" "200" "$ener_read"
 
 echo ""
+echo "--- シナリオ139: 家電量販店（接客・アフターと価格・売上のトレードオフ） ---"
+# 業態: 家電量販店（家電小売・販売）
+# 想定人物: 店長／販売責任者
+# 業務領域: 商品・接客・価格・アフターサービスへの声のKJ分類と、店舗運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 商品の丁寧な説明とアフターサービス・相談に乗る接客（顧客満足・信頼）とネット通販や
+#          価格競争への対応（価格・売上）のトレードオフを矛盾検出（正パス）で表面化し、
+#          店舗運営の改善根拠にする（接客と価格の相克・家電の設置や修理・買い替え相談で
+#          顧客との長い関係を築く動きも指摘）。
+ELEC_ID="biz-flow-electronics"
+ELEC_DOC='{"version":1,"id":"'$ELEC_ID'","title":"家電量販店の店舗運営","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"e1","text":"商品の丁寧な説明とアフターサービス・相談に乗る接客を重視する声（接客・アフター）","x":0,"y":0,"textReviewed":true},{"id":"e2","text":"ネット通販や価格競争への対応など、接客の質と売上・価格のトレードオフに悩む声（価格・売上）","x":10,"y":0,"textReviewed":true},{"id":"e3","text":"家電の設置や修理、買い替え相談で顧客との長い関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"elec-i","cardIds":["e1","e2","e3"]}],"readingOrder":["elec-i"]}'
+
+elec_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ELEC_ID" \
+  -H 'Content-Type: application/json' -d "$ELEC_DOC")
+check "ELEC PUT document (作成)" "200" "$elec_put"
+
+# ① AI束ね
+elec_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"e1","text":"商品の丁寧な説明とアフターサービス・相談に乗る接客を重視する声（接客・アフター）","textReviewed":true},{"id":"e2","text":"ネット通販や価格競争への対応など、接客の質と売上・価格のトレードオフに悩む声（価格・売上）","textReviewed":true},{"id":"e3","text":"家電の設置や修理、買い替え相談で顧客との長い関係を築く動き","textReviewed":true}]}')
+case "$elec_groups" in *'"groups":'*) echo "  PASS: ELEC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ELEC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+elec_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ELEC_DOC,\"islandId\":\"elec-i\"}")
+case "$elec_summary" in *'"groundingIds":["e1","e2","e3"]'*) echo "  PASS: ELEC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ELEC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（接客・アフター vs 価格・売上・接客と価格の相克・正パス）
+elec_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"e1","text":"商品の丁寧な説明とアフターサービス・相談に乗る接客を重視する声（接客・アフター）","textReviewed":true},"cardB":{"id":"e2","text":"ネット通販や価格競争への対応など、接客の質と売上・価格のトレードオフに悩む声（価格・売上）","textReviewed":true}}')
+case "$elec_contra" in *'"hasContradiction":true'*) echo "  PASS: ELEC ③矛盾検出（接客・アフターと価格・売上のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: ELEC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+elec_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ELEC_DOC}")
+case "$elec_narr" in *'"basedOnReadingOrder":["elec-i"]'*) echo "  PASS: ELEC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ELEC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+elec_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ELEC_ID")
+check "ELEC 読戻し (200)" "200" "$elec_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
