@@ -3402,5 +3402,45 @@ hc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HC_ID")
 check "HC 読戻し (200)" "200" "$hc_read"
 
 echo ""
+echo "--- シナリオ77: 介護・在宅支援のケアプラン見直し（ケアの質と家族負担のバランス） ---"
+# 業態: 介護・在宅支援（訪問介護/在宅ケア）
+# 想定人物: ケアマネージャー（家族の声を整理）
+# 業務領域: 在宅ケア利用者・家族からのフィードバックのKJ分類と、ケアプラン改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: ケアの質の維持（訪問頻度）と家族の介護負担（精神的・経済的）のバランスを
+#          矛盾検出で表面化し、ケアプラン見直しの根拠にする（質と負担のバランス）。
+ZT_ID="biz-flow-homecare"
+ZT_DOC='{"version":1,"id":"'$ZT_ID'","title":"在宅ケア家族フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"zt1","text":"訪問頻度を増やしてケアの質を高めるべきとの声","x":0,"y":0,"textReviewed":true},{"id":"zt2","text":"家族の介護負担が大きく、精神的・経済的に疲弊している","x":10,"y":0,"textReviewed":true},{"id":"zt3","text":"デイサービスの利用で家族の負担が軽減された","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"zt-i","cardIds":["zt1","zt2","zt3"]}],"readingOrder":["zt-i"]}'
+
+zt_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ZT_ID" \
+  -H 'Content-Type: application/json' -d "$ZT_DOC")
+check "ZT PUT document (作成)" "200" "$zt_put"
+
+# ① AI束ね
+zt_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"zt1","text":"訪問頻度を増やしてケアの質を高めるべきとの声","textReviewed":true},{"id":"zt2","text":"家族の介護負担が大きく、精神的・経済的に疲弊している","textReviewed":true},{"id":"zt3","text":"デイサービスの利用で家族の負担が軽減された","textReviewed":true}]}')
+case "$zt_groups" in *'"groups":'*) echo "  PASS: ZT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ZT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+zt_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ZT_DOC,\"islandId\":\"zt-i\"}")
+case "$zt_summary" in *'"groundingIds":["zt1","zt2","zt3"]'*) echo "  PASS: ZT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ZT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（訪問頻度増加 vs 家族負担・質と負担のバランス）
+zt_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"zt1","text":"訪問頻度を増やしてケアの質を高めるべきとの声","textReviewed":true},"cardB":{"id":"zt2","text":"家族の介護負担が大きく、精神的・経済的に疲弊している","textReviewed":true}}')
+case "$zt_contra" in *'"hasContradiction"'*) echo "  PASS: ZT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: ZT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+zt_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ZT_DOC}")
+case "$zt_narr" in *'"basedOnReadingOrder":["zt-i"]'*) echo "  PASS: ZT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ZT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+zt_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ZT_ID")
+check "ZT 読戻し (200)" "200" "$zt_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
