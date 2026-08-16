@@ -28,15 +28,15 @@ echo "=== Dogfooding 記録の構造照合 ==="
 # 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 97）
 #    シナリオ1=初期フロー（ヘッダechoなし）・シナリオ4=別スクリプトのため、
 #    総シナリオ99 とは一致しない（マニフェスト §1 に注記）。
-EXPECT_HEADERS=131
+EXPECT_HEADERS=132
 ACTUAL_HEADERS=$(grep -c -e "--- シナリオ" "$ROOT/03_Implement/backend/scripts/verify_business_flow_e2e.sh")
 check "業務フローE2E シナリオヘッダ数 == $EXPECT_HEADERS" "$ACTUAL_HEADERS" "$EXPECT_HEADERS"
 
-# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ133・チェック803）
-if grep -q -e "シナリオ133・チェック803" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "シナリオドキュメント カバレッジ集約 (シナリオ133・チェック803)" "ok" "ok"
+# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ134・チェック809）
+if grep -q -e "シナリオ134・チェック809" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "シナリオドキュメント カバレッジ集約 (シナリオ134・チェック809)" "ok" "ok"
 else
-  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ133・チェック803)"
+  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ134・チェック809)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -108,14 +108,14 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 854 = 803 + 20 + 7 + 9 + 15）
-BUSINESS_CHECKS=803
+# 7. 総チェック数の算術照合（マニフェスト主張: 860 = 809 + 20 + 7 + 9 + 15）
+BUSINESS_CHECKS=809
 ADMIN_CHECKS=20
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=9
 CLI_CE4_CHECKS=15
 TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS + CLI_CE4_CHECKS))
-check "総チェック算術 (803+20+7+9+15)" "$TOTAL" "854"
+check "総チェック算術 (809+20+7+9+15)" "$TOTAL" "860"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then

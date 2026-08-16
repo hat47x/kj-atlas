@@ -5831,5 +5831,46 @@ sb_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SB_ID")
 check "SB 読戻し (200)" "200" "$sb_read"
 
 echo ""
+echo "--- シナリオ134: 港・海運（港湾の効率運用と環境・地域のトレードオフ） ---"
+# 業態: 港・海運（港湾・物流基地）
+# 想定人物: 港湾管理者／物流オペレーション責任者
+# 業務領域: 港湾施設・貨物取扱・環境・地域雇用への声のKJ分類と、港湾と地域の共存の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: コンテナ処理の自動化や24時間運用による港湾の効率（効率・自動化）と騒音・環境負荷・
+#          雇用への影響（環境・労働）のトレードオフを矛盾検出（正パス）で表面化し、港湾と
+#          地域の共存の根拠にする（効率と環境の相克・地域雇用や物流の要としての港湾の位置づけも指摘）。
+HAB_ID="biz-flow-harbor"
+HAB_DOC='{"version":1,"id":"'$HAB_ID'","title":"港湾と地域の共存","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"h1","text":"コンテナ処理の自動化や24時間運用で港湾の効率を高めるべきとの声（効率・自動化）","x":0,"y":0,"textReviewed":true},{"id":"h2","text":"24時間運用や自動化は騒音・環境負荷・雇用への影響など、効率と環境・労働のトレードオフに悩む声（環境・労働）","x":10,"y":0,"textReviewed":true},{"id":"h3","text":"地域雇用や物流の要として、港湾と地域の共存を目指す動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hab-i","cardIds":["h1","h2","h3"]}],"readingOrder":["hab-i"]}'
+
+hab_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HAB_ID" \
+  -H 'Content-Type: application/json' -d "$HAB_DOC")
+check "HAB PUT document (作成)" "200" "$hab_put"
+
+# ① AI束ね
+hab_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"h1","text":"コンテナ処理の自動化や24時間運用で港湾の効率を高めるべきとの声（効率・自動化）","textReviewed":true},{"id":"h2","text":"24時間運用や自動化は騒音・環境負荷・雇用への影響など、効率と環境・労働のトレードオフに悩む声（環境・労働）","textReviewed":true},{"id":"h3","text":"地域雇用や物流の要として、港湾と地域の共存を目指す動き","textReviewed":true}]}')
+case "$hab_groups" in *'"groups":'*) echo "  PASS: HAB ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HAB ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hab_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HAB_DOC,\"islandId\":\"hab-i\"}")
+case "$hab_summary" in *'"groundingIds":["h1","h2","h3"]'*) echo "  PASS: HAB ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HAB ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（効率・自動化 vs 環境・労働・効率と環境の相克・正パス）
+hab_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"h1","text":"コンテナ処理の自動化や24時間運用で港湾の効率を高めるべきとの声（効率・自動化）","textReviewed":true},"cardB":{"id":"h2","text":"24時間運用や自動化は騒音・環境負荷・雇用への影響など、効率と環境・労働のトレードオフに悩む声（環境・労働）","textReviewed":true}}')
+case "$hab_contra" in *'"hasContradiction":true'*) echo "  PASS: HAB ③矛盾検出（港湾の効率運用と環境・地域のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: HAB ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hab_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HAB_DOC}")
+case "$hab_narr" in *'"basedOnReadingOrder":["hab-i"]'*) echo "  PASS: HAB ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HAB ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+hab_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HAB_ID")
+check "HAB 読戻し (200)" "200" "$hab_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
