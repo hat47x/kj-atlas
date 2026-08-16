@@ -4411,5 +4411,45 @@ ju_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$JU_ID")
 check "JU 読戻し (200)" "200" "$ju_read"
 
 echo ""
+echo "--- シナリオ102: コンタクトセンターの通話品質管理（効率と品質のトレードオフ） ---"
+# 業態: コンタクトセンター（BPO/インハウス）
+# 想定人物: 品質管理担当（通話品質を分析）
+# 業務領域: 通話記録・顧客満足・オペレーター評価のKJ分類と、品質改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 応対時間の短縮（効率・コスト）と丁寧な対応（顧客満足・品質）のトレードオフを
+#          矛盾検出で表面化し、品質基準の根拠にする（効率と品質のトレードオフ）。
+CC_ID="biz-flow-callcenter"
+CC_DOC='{"version":1,"id":"'$CC_ID'","title":"通話品質分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cc1","text":"オペレーターの応対時間が長くコストがかかっている","x":0,"y":0,"textReviewed":true},{"id":"cc2","text":"顧客は丁寧な説明を評価しているが待ち時間が長い","x":10,"y":0,"textReviewed":true},{"id":"cc3","text":"解決率が低下しており再問い合わせが増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cc-i","cardIds":["cc1","cc2","cc3"]}],"readingOrder":["cc-i"]}'
+
+cc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CC_ID" \
+  -H 'Content-Type: application/json' -d "$CC_DOC")
+check "CC PUT document (作成)" "200" "$cc_put"
+
+# ① AI束ね
+cc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cc1","text":"オペレーターの応対時間が長くコストがかかっている","textReviewed":true},{"id":"cc2","text":"顧客は丁寧な説明を評価しているが待ち時間が長い","textReviewed":true},{"id":"cc3","text":"解決率が低下しており再問い合わせが増えている","textReviewed":true}]}')
+case "$cc_groups" in *'"groups":'*) echo "  PASS: CC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CC_DOC,\"islandId\":\"cc-i\"}")
+case "$cc_summary" in *'"groundingIds":["cc1","cc2","cc3"]'*) echo "  PASS: CC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（応対時間の長さ vs 丁寧さの評価・効率と品質のトレードオフ）
+cc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cc1","text":"オペレーターの応対時間が長くコストがかかっている","textReviewed":true},"cardB":{"id":"cc2","text":"顧客は丁寧な説明を評価しているが待ち時間が長い","textReviewed":true}}')
+case "$cc_contra" in *'"hasContradiction"'*) echo "  PASS: CC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CC_DOC}")
+case "$cc_narr" in *'"basedOnReadingOrder":["cc-i"]'*) echo "  PASS: CC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CC_ID")
+check "CC 読戻し (200)" "200" "$cc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
