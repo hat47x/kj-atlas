@@ -6795,5 +6795,47 @@ m_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MINSHUKU_ID")
 check "M 読戻し (200)" "200" "$m_read"
 
 echo ""
+echo "--- シナリオ157: 酒場・バー（質・雰囲気と集客・収益のトレードオフ） ---"
+# 業態: 酒場・バー（バー・居酒屋運営）
+# 想定人物: 店主／バーテンダー
+# 業務領域: ドリンク・接客・雰囲気・価格への声のKJ分類と、バー運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: オリジナルのドリンクや丁寧な接客・居心地のよい雰囲気づくり（質・雰囲気）と集客や価格設定
+#          への対応（集客・収益）のトレードオフを矛盾検出（正パス）で表面化し、バー運営の改善根拠に
+#          する（質と集客の相克・常連との関係づくりやイベント・クラフトビールやカクテルの提案で
+#          個性を出す動きも指摘）。
+BAR_ID="biz-flow-bar"
+BAR_DOC='{"version":1,"id":"'$BAR_ID'","title":"バー運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"br1","text":"オリジナルのドリンクや丁寧な接客、居心地のよい雰囲気づくりを重視する声（質・雰囲気）","x":0,"y":0,"textReviewed":true},{"id":"br2","text":"集客や価格設定への対応など、質・雰囲気と集客・収益のトレードオフに悩む声（集客・収益）","x":10,"y":0,"textReviewed":true},{"id":"br3","text":"常連との関係づくりやイベント、クラフトビールやカクテルの提案で個性を出す動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bar-i","cardIds":["br1","br2","br3"]}],"readingOrder":["bar-i"]}'
+
+bar_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BAR_ID" \
+  -H 'Content-Type: application/json' -d "$BAR_DOC")
+check "BAR PUT document (作成)" "200" "$bar_put"
+
+# ① AI束ね
+bar_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"br1","text":"オリジナルのドリンクや丁寧な接客、居心地のよい雰囲気づくりを重視する声（質・雰囲気）","textReviewed":true},{"id":"br2","text":"集客や価格設定への対応など、質・雰囲気と集客・収益のトレードオフに悩む声（集客・収益）","textReviewed":true},{"id":"br3","text":"常連との関係づくりやイベント、クラフトビールやカクテルの提案で個性を出す動き","textReviewed":true}]}')
+case "$bar_groups" in *'"groups":'*) echo "  PASS: BAR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BAR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+bar_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BAR_DOC,\"islandId\":\"bar-i\"}")
+case "$bar_summary" in *'"groundingIds":["br1","br2","br3"]'*) echo "  PASS: BAR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BAR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（質・雰囲気 vs 集客・収益・質と集客の相克・正パス）
+bar_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"br1","text":"オリジナルのドリンクや丁寧な接客、居心地のよい雰囲気づくりを重視する声（質・雰囲気）","textReviewed":true},"cardB":{"id":"br2","text":"集客や価格設定への対応など、質・雰囲気と集客・収益のトレードオフに悩む声（集客・収益）","textReviewed":true}}')
+case "$bar_contra" in *'"hasContradiction":true'*) echo "  PASS: BAR ③矛盾検出（質・雰囲気と集客・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BAR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bar_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BAR_DOC}")
+case "$bar_narr" in *'"basedOnReadingOrder":["bar-i"]'*) echo "  PASS: BAR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BAR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+bar_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BAR_ID")
+check "BAR 読戻し (200)" "200" "$bar_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
