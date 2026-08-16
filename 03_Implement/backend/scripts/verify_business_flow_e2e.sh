@@ -2262,8 +2262,10 @@ case "$sv_narr" in *'"basedOnReadingOrder":["sv-i"]'*) echo "  PASS: SV ②AI操
 
 # ③ プロバイダ状態（後）: LLM呼び出し回数が増加（OPS-LLM-COST-01）
 sv_after=$(curl -s "$BASE_URL/ai/provider-status")
-sv_before_total=$(printf '%s' "$sv_before" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
-sv_after_total=$(printf '%s' "$sv_after" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+# callCounts の "total":N を抽出（[0-9]+ 必須）。provider-status が tokenUsage の
+# "total":{"input":..} も返すため、[0-9]* だと tokenUsage 側の空キャプチャで破綻する。
+sv_before_total=$(printf '%s' "$sv_before" | sed -n 's/.*"total":\([0-9][0-9]*\).*/\1/p')
+sv_after_total=$(printf '%s' "$sv_after" | sed -n 's/.*"total":\([0-9][0-9]*\).*/\1/p')
 if [ -n "$sv_before_total" ] && [ -n "$sv_after_total" ] && [ "$sv_after_total" -gt "$sv_before_total" ]; then
   echo "  PASS: SV ③呼び出し回数が増加 ($sv_before_total -> $sv_after_total)"
   PASS=$((PASS+1))
@@ -3076,6 +3078,46 @@ case "$av_narr" in *'"basedOnReadingOrder":["av-i"]'*) echo "  PASS: AV ④ナ�
 # ⑤ 読戻し
 av_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AV_ID")
 check "AV 読戻し (200)" "200" "$av_read"
+
+echo ""
+echo "--- シナリオ69: 出版・メディアの雑誌特集企画会議（読者ニーズと商業性の相克） ---"
+# 業態: 出版・メディア（雑誌編集）
+# 想定人物: 編集長（特集企画を整理）
+# 業務領域: 特集企画案・読者反応・ライター提案のKJ分類と、号の構成決定
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 読者の求めるテーマと広告主の意向の相克を矛盾検出で表面化し、編集判断の
+#          根拠にする（編集の独立と商業性のバランス）。
+PU_ID="biz-flow-publishing"
+PU_DOC='{"version":1,"id":"'$PU_ID'","title":"特集企画会議","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"pu1","text":"読者アンケートでは生活情報系の特集が人気","x":0,"y":0,"textReviewed":true},{"id":"pu2","text":"広告主からは美容・健康系の特集を期待する声","x":10,"y":0,"textReviewed":true},{"id":"pu3","text":"ライターからは深掘り調査系の企画提案がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pu-i","cardIds":["pu1","pu2","pu3"]}],"readingOrder":["pu-i"]}'
+
+pu_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PU_ID" \
+  -H 'Content-Type: application/json' -d "$PU_DOC")
+check "PU PUT document (作成)" "200" "$pu_put"
+
+# ① AI束ね
+pu_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"pu1","text":"読者アンケートでは生活情報系の特集が人気","textReviewed":true},{"id":"pu2","text":"広告主からは美容・健康系の特集を期待する声","textReviewed":true},{"id":"pu3","text":"ライターからは深掘り調査系の企画提案がある","textReviewed":true}]}')
+case "$pu_groups" in *'"groups":'*) echo "  PASS: PU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pu_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PU_DOC,\"islandId\":\"pu-i\"}")
+case "$pu_summary" in *'"groundingIds":["pu1","pu2","pu3"]'*) echo "  PASS: PU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（読者ニーズ vs 広告主の意向・編集の独立と商業性の相克）
+pu_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"pu1","text":"読者アンケートでは生活情報系の特集が人気","textReviewed":true},"cardB":{"id":"pu2","text":"広告主からは美容・健康系の特集を期待する声","textReviewed":true}}')
+case "$pu_contra" in *'"hasContradiction"'*) echo "  PASS: PU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: PU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+pu_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PU_DOC}")
+case "$pu_narr" in *'"basedOnReadingOrder":["pu-i"]'*) echo "  PASS: PU ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PU ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PU_ID")
+check "PU 読戻し (200)" "200" "$pu_read"
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
