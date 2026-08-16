@@ -6879,5 +6879,47 @@ music_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MUSIC_ID")
 check "MUSIC 読戻し (200)" "200" "$music_read"
 
 echo ""
+echo "--- シナリオ159: ペットケア（動物の福祉・安全と効率・収益のトレードオフ） ---"
+# 業態: ペットケア（トリミング・ペットシッター）
+# 想定人物: トリマー／ペットケア事業者
+# 業務領域: トリミング・預かり・健康管理・飼い主への声のKJ分類と、ペットケアの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 動物の福祉と安全を最優先し緊張に寄り添う丁寧なトリミングや預かり（福祉・安全）と
+#          施術の回転や価格設定への対応（効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、
+#          ペットケアの改善根拠にする（福祉と効率の相克・飼い主への健康相談やしつけの支援・長く
+#          付き合う関係を築く動きも指摘）。
+PETCARE_ID="biz-flow-petcare"
+PETCARE_DOC='{"version":1,"id":"'$PETCARE_ID'","title":"ペットケアの改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"pc1","text":"動物の福祉と安全を最優先し、緊張に寄り添う丁寧なトリミングや預かりを重視する声（福祉・安全）","x":0,"y":0,"textReviewed":true},{"id":"pc2","text":"施術の回転や価格設定への対応など、福祉・安全と効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"pc3","text":"飼い主への健康相談やしつけの支援、長く付き合う関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pet-i","cardIds":["pc1","pc2","pc3"]}],"readingOrder":["pet-i"]}'
+
+petcare_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PETCARE_ID" \
+  -H 'Content-Type: application/json' -d "$PETCARE_DOC")
+check "PETCARE PUT document (作成)" "200" "$petcare_put"
+
+# ① AI束ね
+petcare_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"pc1","text":"動物の福祉と安全を最優先し、緊張に寄り添う丁寧なトリミングや預かりを重視する声（福祉・安全）","textReviewed":true},{"id":"pc2","text":"施術の回転や価格設定への対応など、福祉・安全と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"pc3","text":"飼い主への健康相談やしつけの支援、長く付き合う関係を築く動き","textReviewed":true}]}')
+case "$petcare_groups" in *'"groups":'*) echo "  PASS: PETCARE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PETCARE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+petcare_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PETCARE_DOC,\"islandId\":\"pet-i\"}")
+case "$petcare_summary" in *'"groundingIds":["pc1","pc2","pc3"]'*) echo "  PASS: PETCARE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PETCARE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（福祉・安全 vs 効率・収益・福祉と効率の相克・正パス）
+petcare_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"pc1","text":"動物の福祉と安全を最優先し、緊張に寄り添う丁寧なトリミングや預かりを重視する声（福祉・安全）","textReviewed":true},"cardB":{"id":"pc2","text":"施術の回転や価格設定への対応など、福祉・安全と効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$petcare_contra" in *'"hasContradiction":true'*) echo "  PASS: PETCARE ③矛盾検出（動物の福祉・安全と効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: PETCARE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+petcare_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PETCARE_DOC}")
+case "$petcare_narr" in *'"basedOnReadingOrder":["pet-i"]'*) echo "  PASS: PETCARE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PETCARE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+petcare_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PETCARE_ID")
+check "PETCARE 読戻し (200)" "200" "$petcare_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
