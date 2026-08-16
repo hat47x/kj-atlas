@@ -2878,5 +2878,45 @@ com_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$COM_ID")
 check "COM 読戻し (200)" "200" "$com_read"
 
 echo ""
+echo "--- シナリオ64: 銀行・資産運用の運用レビュー整理（短期の顧客心理と長期の方針） ---"
+# 業態: 銀行・資産運用（プライベートバンク）
+# 想定人物: ファイナンシャルアドバイザー（運用レビューを整理）
+# 業務領域: 顧客の運用レビュー（リスク・リターン・方針）のKJ分類と、見直し提案
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 短期的な損失への不安（顧客心理）と長期的な運用方針の相克を矛盾検出で
+#          表面化し、運用見直しの根拠にする（市場下落時の心理と方針の乖離）。
+BK_ID="biz-flow-wealth"
+BK_DOC='{"version":1,"id":"'$BK_ID'","title":"運用レビュー整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"bk1","text":"市場下落で損失が出ており、不安を訴える声","x":0,"y":0,"textReviewed":true},{"id":"bk2","text":"長期運用方針は変えずに保有を継続すべきとの意見","x":10,"y":0,"textReviewed":true},{"id":"bk3","text":"リスク許容度の見直しが必要との指摘","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bk-i","cardIds":["bk1","bk2","bk3"]}],"readingOrder":["bk-i"]}'
+
+bk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BK_ID" \
+  -H 'Content-Type: application/json' -d "$BK_DOC")
+check "BK PUT document (作成)" "200" "$bk_put"
+
+# ① AI束ね
+bk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"bk1","text":"市場下落で損失が出ており、不安を訴える声","textReviewed":true},{"id":"bk2","text":"長期運用方針は変えずに保有を継続すべきとの意見","textReviewed":true},{"id":"bk3","text":"リスク許容度の見直しが必要との指摘","textReviewed":true}]}')
+case "$bk_groups" in *'"groups":'*) echo "  PASS: BK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+bk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BK_DOC,\"islandId\":\"bk-i\"}")
+case "$bk_summary" in *'"groundingIds":["bk1","bk2","bk3"]'*) echo "  PASS: BK ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（短期の損失不安 vs 長期の方針継続・市場下落時の心理と方針の乖離）
+bk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"bk1","text":"市場下落で損失が出ており、不安を訴える声","textReviewed":true},"cardB":{"id":"bk2","text":"長期運用方針は変えずに保有を継続すべきとの意見","textReviewed":true}}')
+case "$bk_contra" in *'"hasContradiction"'*) echo "  PASS: BK ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: BK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BK_DOC}")
+case "$bk_narr" in *'"basedOnReadingOrder":["bk-i"]'*) echo "  PASS: BK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
+check "BK 読戻し (200)" "200" "$bk_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
