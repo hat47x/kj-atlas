@@ -4330,5 +4330,46 @@ lb_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LB_ID")
 check "LB 読戻し (200)" "200" "$lb_read"
 
 echo ""
+echo "--- シナリオ100: カフェ・喫茶チェーンの店舗オペレーションと顧客体験の整理（回転と滞在の乖離） ---"
+# 業態: カフェ・喫茶チェーン（カフェチェーン運営）
+# 想定人物: 店舗運営担当（顧客の声を整理）
+# 業務領域: メニュー・店舗・接客への顧客の声のKJ分類と、店舗運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 店舗の回転率（客単価・席回転）と、顧客の滞在体験（ゆっくり過ごしたい・
+#          作業したい）の乖離を矛盾検出で表面化し、店舗運営と席構成の根拠にする
+#          （回転と滞在の乖離）。
+CF_ID="biz-flow-cafe"
+CF_DOC='{"version":1,"id":"'$CF_ID'","title":"店舗オペレーションと顧客体験","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cf1","text":"席の回転は速く、客単価の向上は順調だと運営は評価している","x":0,"y":0,"textReviewed":true},{"id":"cf2","text":"顧客からはゆっくり過ごしたいが、席の滞在時間を気にしてしまうという声がある","x":10,"y":0,"textReviewed":true},{"id":"cf3","text":"季節限定メニューは好評で、新規客の来店は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cf-i","cardIds":["cf1","cf2","cf3"]}],"readingOrder":["cf-i"]}'
+
+cf_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CF_ID" \
+  -H 'Content-Type: application/json' -d "$CF_DOC")
+check "CF PUT document (作成)" "200" "$cf_put"
+
+# ① AI束ね
+cf_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cf1","text":"席の回転は速く、客単価の向上は順調だと運営は評価している","textReviewed":true},{"id":"cf2","text":"顧客からはゆっくり過ごしたいが、席の滞在時間を気にしてしまうという声がある","textReviewed":true},{"id":"cf3","text":"季節限定メニューは好評で、新規客の来店は増えている","textReviewed":true}]}')
+case "$cf_groups" in *'"groups":'*) echo "  PASS: CF ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CF ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cf_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CF_DOC,\"islandId\":\"cf-i\"}")
+case "$cf_summary" in *'"groundingIds":["cf1","cf2","cf3"]'*) echo "  PASS: CF ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CF ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（回転率 vs 滞在体験・回転と滞在の乖離）
+cf_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cf1","text":"席の回転は速く、客単価の向上は順調だと運営は評価している","textReviewed":true},"cardB":{"id":"cf2","text":"顧客からはゆっくり過ごしたいが、席の滞在時間を気にしてしまうという声がある","textReviewed":true}}')
+case "$cf_contra" in *'"hasContradiction"'*) echo "  PASS: CF ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CF ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cf_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CF_DOC}")
+case "$cf_narr" in *'"basedOnReadingOrder":["cf-i"]'*) echo "  PASS: CF ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CF ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CF_ID")
+check "CF 読戻し (200)" "200" "$cf_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
