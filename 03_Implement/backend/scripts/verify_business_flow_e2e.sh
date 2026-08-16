@@ -5748,5 +5748,46 @@ cln_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CLN_ID")
 check "CLN 読戻し (200)" "200" "$cln_read"
 
 echo ""
+echo "--- シナリオ132: 林業・木材（森林保全と林業の採算のトレードオフ） ---"
+# 業態: 林業・木材（森林経営・製材）
+# 想定人物: 森林組合リーダー／林業経営者
+# 業務領域: 森林保全・伐採・木材利用・担い手への声のKJ分類と、持続可能な林業の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 森林の保全（水源涵養・生物多様性）と林業の採算（伐採・木材価格・担い手不足）の
+#          トレードオフを矛盾検出（正パス）で表面化し、持続可能な林業の根拠にする
+#          （環境と生業の相克・林業体験や木材利用の促進で地域と山をつなぎ担い手を育てる動きも指摘）。
+FOR_ID="biz-flow-forestry"
+FOR_DOC='{"version":1,"id":"'$FOR_ID'","title":"持続可能な林業","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"fo1","text":"森林の保全や水源涵養・生物多様性を守る間伐や持続可能な経営を重視する声（環境・保全）","x":0,"y":0,"textReviewed":true},{"id":"fo2","text":"木材価格の低迷や担い手不足など、森林保全と林業の採算のトレードオフに悩む声（採算・担い手）","x":10,"y":0,"textReviewed":true},{"id":"fo3","text":"林業体験や木材利用の促進で地域と山をつなぎ、担い手を育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"for-i","cardIds":["fo1","fo2","fo3"]}],"readingOrder":["for-i"]}'
+
+for_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FOR_ID" \
+  -H 'Content-Type: application/json' -d "$FOR_DOC")
+check "FOR PUT document (作成)" "200" "$for_put"
+
+# ① AI束ね
+for_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"fo1","text":"森林の保全や水源涵養・生物多様性を守る間伐や持続可能な経営を重視する声（環境・保全）","textReviewed":true},{"id":"fo2","text":"木材価格の低迷や担い手不足など、森林保全と林業の採算のトレードオフに悩む声（採算・担い手）","textReviewed":true},{"id":"fo3","text":"林業体験や木材利用の促進で地域と山をつなぎ、担い手を育てる動き","textReviewed":true}]}')
+case "$for_groups" in *'"groups":'*) echo "  PASS: FOR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FOR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+for_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FOR_DOC,\"islandId\":\"for-i\"}")
+case "$for_summary" in *'"groundingIds":["fo1","fo2","fo3"]'*) echo "  PASS: FOR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FOR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（森林保全 vs 林業の採算・環境と生業の相克・正パス）
+for_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"fo1","text":"森林の保全や水源涵養・生物多様性を守る間伐や持続可能な経営を重視する声（環境・保全）","textReviewed":true},"cardB":{"id":"fo2","text":"木材価格の低迷や担い手不足など、森林保全と林業の採算のトレードオフに悩む声（採算・担い手）","textReviewed":true}}')
+case "$for_contra" in *'"hasContradiction":true'*) echo "  PASS: FOR ③矛盾検出（森林保全と林業の採算のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: FOR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+for_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FOR_DOC}")
+case "$for_narr" in *'"basedOnReadingOrder":["for-i"]'*) echo "  PASS: FOR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FOR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+for_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FOR_ID")
+check "FOR 読戻し (200)" "200" "$for_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
