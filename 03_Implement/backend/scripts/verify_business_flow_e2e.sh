@@ -3280,5 +3280,46 @@ gy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GY_ID")
 check "GY 読戻し (200)" "200" "$gy_read"
 
 echo ""
+echo "--- シナリオ74: ペット・動物病院の飼い主フィードバック整理（主観報告と客観所見の乖離） ---"
+# 業態: ペット・動物病院（動物病院運営）
+# 想定人物: 獣医師／動物病院スタッフ（飼い主の声を整理）
+# 業務領域: 飼い主からの症状報告・治療満足・受付対応の声のKJ分類と、再診・受付改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 飼い主が語る症状の主観（見た目の印象）と診療記録の客観所見（検査値）の
+#          乖離を矛盾検出で表面化し、飼い主への説明と再診率改善の根拠にする
+#          （代理報告の限界）。
+VT_ID="biz-flow-vet"
+VT_DOC='{"version":1,"id":"'$VT_ID'","title":"飼い主フィードバック整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"vt1","text":"飼い主は元気そうと話すが、検査では炎症値が高い","x":0,"y":0,"textReviewed":true},{"id":"vt2","text":"治療費の負担で再診を控える声がある","x":10,"y":0,"textReviewed":true},{"id":"vt3","text":"待ち時間は短く、スタッフの説明は丁寧と評価されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"vt-i","cardIds":["vt1","vt2","vt3"]}],"readingOrder":["vt-i"]}'
+
+vt_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$VT_ID" \
+  -H 'Content-Type: application/json' -d "$VT_DOC")
+check "VT PUT document (作成)" "200" "$vt_put"
+
+# ① AI束ね
+vt_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"vt1","text":"飼い主は元気そうと話すが、検査では炎症値が高い","textReviewed":true},{"id":"vt2","text":"治療費の負担で再診を控える声がある","textReviewed":true},{"id":"vt3","text":"待ち時間は短く、スタッフの説明は丁寧と評価されている","textReviewed":true}]}')
+case "$vt_groups" in *'"groups":'*) echo "  PASS: VT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: VT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+vt_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$VT_DOC,\"islandId\":\"vt-i\"}")
+case "$vt_summary" in *'"groundingIds":["vt1","vt2","vt3"]'*) echo "  PASS: VT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: VT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（主観の見た目 vs 客観の検査値・代理報告の限界）
+vt_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"vt1","text":"飼い主は元気そうと話すが、検査では炎症値が高い","textReviewed":true},"cardB":{"id":"vt2","text":"治療費の負担で再診を控える声がある","textReviewed":true}}')
+case "$vt_contra" in *'"hasContradiction"'*) echo "  PASS: VT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: VT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+vt_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$VT_DOC}")
+case "$vt_narr" in *'"basedOnReadingOrder":["vt-i"]'*) echo "  PASS: VT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: VT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+vt_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$VT_ID")
+check "VT 読戻し (200)" "200" "$vt_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
