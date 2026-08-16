@@ -68,6 +68,23 @@ if [ "$code" = "503" ]; then
   trace=$(grep -o '"trace_id":"[^"]*"' /tmp/kj_ai_body.json | head -1)
   echo "  INFO: structured error carries trace_id ($trace) — observability present"
   PASS=$((PASS+1))
+elif [ "$code" = "403" ]; then
+  # Model governance (AI-MODEL-GOVERNANCE-01/02) short-circuits BEFORE the
+  # provider: an unregistered/disallowed model id fails closed with 403
+  # model_not_registered / model_not_allowed. That is ALSO a fail-closed
+  # outcome (the reviewed request never succeeded) — assert it rather than
+  # treating it as an opaque skip.
+  err=$(grep -o '"code":"[^"]*"' /tmp/kj_ai_body.json | head -1)
+  case "$err" in
+    '"code":"model_not_registered"'|'"code":"model_not_allowed"')
+      echo "  PASS: reviewed request under governance -> 403 $err (fail-closed before provider)"
+      PASS=$((PASS+1))
+      ;;
+    *)
+      echo "  FAIL: reviewed request -> 403 with unexpected code $err"
+      FAIL=$((FAIL+1))
+      ;;
+  esac
 else
   echo "  INFO: provider is configured (code $code), 503 fail-closed check skipped"
   echo "        — the unreviewed-422 boundary above is the provider-agnostic contract."
