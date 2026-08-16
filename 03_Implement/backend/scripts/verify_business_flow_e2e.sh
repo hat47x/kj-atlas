@@ -3968,5 +3968,45 @@ pm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PM_ID")
 check "PM 読戻し (200)" "200" "$pm_read"
 
 echo ""
+echo "--- シナリオ91: イベント・興行の来場者声と集客目標の整理（集客と体験の乖離） ---"
+# 業態: イベント・興行（イベント運営）
+# 想定人物: イベントプロデューサー（来場者アンケートを整理）
+# 業務領域: チケット販売・会場運営・来場者体験への声のKJ分類と、次回イベント改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 企画側の集客目標（チケット完売・収益）と、来場者の体験（混雑・待ち時間・
+#          満足）の乖離を矛盾検出で表面化し、次回イベントの企画根拠にする（集客と体験の乖離）。
+EV_ID="biz-flow-event"
+EV_DOC='{"version":1,"id":"'$EV_ID'","title":"来場者声と集客目標","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ev1","text":"チケットは完売し、集客目標は達成された","x":0,"y":0,"textReviewed":true},{"id":"ev2","text":"来場者からは会場の混雑と待ち時間に不満の声がある","x":10,"y":0,"textReviewed":true},{"id":"ev3","text":"ステージ演出は好評で、次回の参加意向は高い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ev-i","cardIds":["ev1","ev2","ev3"]}],"readingOrder":["ev-i"]}'
+
+ev_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EV_ID" \
+  -H 'Content-Type: application/json' -d "$EV_DOC")
+check "EV PUT document (作成)" "200" "$ev_put"
+
+# ① AI束ね
+ev_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ev1","text":"チケットは完売し、集客目標は達成された","textReviewed":true},{"id":"ev2","text":"来場者からは会場の混雑と待ち時間に不満の声がある","textReviewed":true},{"id":"ev3","text":"ステージ演出は好評で、次回の参加意向は高い","textReviewed":true}]}')
+case "$ev_groups" in *'"groups":'*) echo "  PASS: EV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ev_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EV_DOC,\"islandId\":\"ev-i\"}")
+case "$ev_summary" in *'"groundingIds":["ev1","ev2","ev3"]'*) echo "  PASS: EV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（集客目標 vs 来場者体験・集客と体験の乖離）
+ev_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ev1","text":"チケットは完売し、集客目標は達成された","textReviewed":true},"cardB":{"id":"ev2","text":"来場者からは会場の混雑と待ち時間に不満の声がある","textReviewed":true}}')
+case "$ev_contra" in *'"hasContradiction"'*) echo "  PASS: EV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ev_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EV_DOC}")
+case "$ev_narr" in *'"basedOnReadingOrder":["ev-i"]'*) echo "  PASS: EV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ev_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EV_ID")
+check "EV 読戻し (200)" "200" "$ev_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
