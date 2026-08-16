@@ -28,30 +28,49 @@ echo "=== Dogfooding 記録の構造照合 ==="
 # 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 97）
 #    シナリオ1=初期フロー（ヘッダechoなし）・シナリオ4=別スクリプトのため、
 #    総シナリオ99 とは一致しない（マニフェスト §1 に注記）。
-EXPECT_HEADERS=103
+EXPECT_HEADERS=122
 ACTUAL_HEADERS=$(grep -c -e "--- シナリオ" "$ROOT/03_Implement/backend/scripts/verify_business_flow_e2e.sh")
 check "業務フローE2E シナリオヘッダ数 == $EXPECT_HEADERS" "$ACTUAL_HEADERS" "$EXPECT_HEADERS"
 
-# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ105・チェック615）
-if grep -q -e "シナリオ105・チェック615" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "シナリオドキュメント カバレッジ集約 (シナリオ105・チェック615)" "ok" "ok"
+# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ124・チェック749）
+if grep -q -e "シナリオ124・チェック749" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "シナリオドキュメント カバレッジ集約 (シナリオ124・チェック749)" "ok" "ok"
 else
-  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ105・チェック615)"
+  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ124・チェック749)"
   FAIL=$((FAIL + 1))
 fi
 
-# 3. シナリオドキュメントの状態リストにシナリオ99 が含まれる
-if grep -q -e "シナリオ105（iteration 175" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "状態リストにシナリオ105 (iteration 175)" "ok" "ok"
+# 3. シナリオドキュメントの状態リストにシナリオ124 が含まれる
+if grep -q -e "シナリオ124（iteration 194" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "状態リストにシナリオ124 (iteration 194)" "ok" "ok"
 else
-  echo "  FAIL: 状態リストにシナリオ105 (iteration 175)"
+  echo "  FAIL: 状態リストにシナリオ124 (iteration 194)"
   FAIL=$((FAIL + 1))
 fi
 
 # 4. 発行済み課題の存在と Status: Done
 for issue in \
   "issue-AI-MODEL-GOVERNANCE-02-unregistered-model-rejected-under-platform-default.md" \
-  "issue-OPS-LLM-COST-02-llm-call-counts-ui-visibility.md"; do
+  "issue-OPS-LLM-COST-02-llm-call-counts-ui-visibility.md" \
+  "issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md" \
+  "issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md" \
+  "issue-DOGFOOD-13-island-summary-grounding-capped-at-three-cards.md" \
+  "issue-DOGFOOD-14-check-narrative-lacks-b-missing-in-a-positive-path.md" \
+  "issue-DOGFOOD-15-island-relation-summary-grounding-always-empty.md" \
+  "issue-DOGFOOD-16-refine-card-text-meaning-preservation-unverifiable.md" \
+  "issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md" \
+  "issue-DOGFOOD-18-title-suggestion-not-grounded-in-canvas-content.md" \
+  "issue-DOGFOOD-19-merge-suggestions-lack-deterministic-positive-path.md" \
+  "issue-DOGFOOD-20-card-groups-not-theme-based.md" \
+  "issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md" \
+  "issue-DOGFOOD-22-ce4-proposal-grounding-unverified.md" \
+  "issue-DOGFOOD-23-layout-card-preservation-unverified.md" \
+  "issue-DOGFOOD-25-check-narrative-multi-island-omission.md" \
+  "issue-DOGFOOD-26-title-suggestion-first-island-bias.md" \
+  "issue-DOGFOOD-27-contradiction-explanation-not-grounded-in-pair.md" \
+  "issue-DOGFOOD-28-relation-summary-text-not-grounded-in-islands.md" \
+  "issue-DOGFOOD-29-island-placard-text-not-grounded-in-theme.md" \
+  "issue-DOGFOOD-30-layout-island-and-reading-order-preservation-unverified.md"; do
   if [ -f "$ROOT/01_Plans/issues/$issue" ] && grep -q "^\- Status: Done" "$ROOT/01_Plans/issues/$issue"; then
     check "課題 $issue" "Done" "Done"
   else
@@ -89,14 +108,14 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 621 = 579 + 12 + 7 + 8 + 15）
-BUSINESS_CHECKS=615
+# 7. 総チェック数の算術照合（マニフェスト主張: 791 = 749 + 12 + 7 + 8 + 15）
+BUSINESS_CHECKS=749
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=8
 CLI_CE4_CHECKS=15
 TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS + CLI_CE4_CHECKS))
-check "総チェック算術 (615+12+7+8+15)" "$TOTAL" "657"
+check "総チェック算術 (749+12+7+8+15)" "$TOTAL" "791"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then

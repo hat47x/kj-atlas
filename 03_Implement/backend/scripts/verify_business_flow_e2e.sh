@@ -179,7 +179,7 @@ esac
 ws_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
   -d "{\"doc\":$WS_DOC,\"islandId\":\"ws-i\"}")
 case "$ws_summary" in
-  *'"groundingIds":["w1","w2","w3"]'*)
+  *'"groundingIds":["w1","w2","w3","w4"]'*)
     echo "  PASS: WS suggest-island-summary groundingIds = member cards"
     PASS=$((PASS+1))
     ;;
@@ -2162,24 +2162,33 @@ mg_bogus_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/gen
 check "MG ②b未登録モデル -> 403 (model_not_registered)" "403" "$mg_bogus_code"
 case "$mg_bogus" in *'"model_not_registered"'*) echo "  PASS: MG ②b code=model_not_registered"; PASS=$((PASS+1));; *) echo "  FAIL: MG ②b code=model_not_registered"; FAIL=$((FAIL+1));; esac
 
-# ③ テナント許容リストを制限（local-dev の control-plane は無キーで開放）
+# ③ 許容リストで default を除外するため、2つ目の登録済みモデル（restricted）を admin API で登録
+#    （DOGFOOD-24 追従: 許容リスト強化後は登録済み活性モデルのみ許容・未登録/非活性は 422。
+#      providerId は local E2E の seed が常に "local" を登録するため固定）
+mg_reg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/admin/provision/models" \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"restricted","providerId":"local","displayName":"Restricted","capabilities":"generate"}')
+check "MG ③モデル登録(restricted)" "201" "$mg_reg"
+
+# ④ テナント許容リストを [restricted] に制限（default を除外・local-dev の control-plane は無キーで開放）
 mg_allow=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
   "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
-  -H 'Content-Type: application/json' -d '{"modelIds":["bogus-restricted-only"]}')
-check "MG ③テナント許容リスト設定(制限)" "200" "$mg_allow"
+  -H 'Content-Type: application/json' -d '{"modelIds":["restricted"]}')
+check "MG ④テナント許容リスト設定(制限)" "200" "$mg_allow"
 
-# ④ 一覧が制限を反映（許容リスト外のモデルは選択候補から消える）
+# ⑤ 一覧が制限を反映（default は選択候補から消え・restricted のみ残る）
 mg_models2=$(curl -s "$BASE_URL/ai/available-models")
 case "$mg_models2" in
-  *'"id":"'$MG_MODEL_ID'"'*) echo "  FAIL: MG ④制限反映（$MG_MODEL_ID が残存）"; FAIL=$((FAIL+1));;
-  *) echo "  PASS: MG ④制限反映（選択候補から除外）"; PASS=$((PASS+1));; esac
+  *'"id":"'$MG_MODEL_ID'"'*) echo "  FAIL: MG ⑤制限反映（$MG_MODEL_ID が残存）"; FAIL=$((FAIL+1));;
+  *'"id":"restricted"'*) echo "  PASS: MG ⑤制限反映（default除外・restricted のみ）"; PASS=$((PASS+1));;
+  *) echo "  FAIL: MG ⑤制限反映（restricted が見えない）"; FAIL=$((FAIL+1));; esac
 
-# ⑤ 非許容モデルは 403（R3 fail-closed・LLM 呼び出し前に遮断・code=model_not_allowed）
+# ⑤b 非許容モデル（default）は 403（R3 fail-closed・LLM 呼び出し前に遮断・code=model_not_allowed）
 mg_block=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
   -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
 mg_block_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/ai/generate-narrative" \
   -H 'Content-Type: application/json' -d "{\"doc\":$MG_DOC,\"model\":\"$MG_MODEL_ID\"}")
-check "MG ⑤非許容モデル -> 403 (model_not_allowed)" "403" "$mg_block_code"
+check "MG ⑤b非許容モデル -> 403 (model_not_allowed)" "403" "$mg_block_code"
 case "$mg_block" in *'"model_not_allowed"'*) echo "  PASS: MG ⑤b code=model_not_allowed"; PASS=$((PASS+1));; *) echo "  FAIL: MG ⑤b code=model_not_allowed"; FAIL=$((FAIL+1));; esac
 
 # ⑥ 許容リストをプラットフォーム既定（空=active登録済み全許可）へ復元。
@@ -2619,7 +2628,7 @@ case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1)
 # ② 島要約
 sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
   -d "{\"doc\":$SP_DOC,\"islandId\":\"sp-i\"}")
-case "$sp_summary" in *'"groundingIds":["sp1","sp2","sp3"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
+case "$sp_summary" in *'"groundingIds":["sp1","sp2","sp3","sp4"]'*) echo "  PASS: SP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約"; FAIL=$((FAIL+1));; esac
 
 # ③ 矛盾検出（勝敗と独立した体験の不満 vs 勝敗依存の許容）
 sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
@@ -4569,6 +4578,881 @@ case "$fd_narr" in *'"basedOnReadingOrder":["fd-i"]'*) echo "  PASS: FD ④ナ�
 # ⑤ 読戻し
 fd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FD_ID")
 check "FD 読戻し (200)" "200" "$fd_read"
+
+echo ""
+echo "--- シナリオ106: 警察・公安の地域防犯計画（防犯強化と住民のプライバシーのトレードオフ） ---"
+# 業態: 警察・公安（警察署・地域安全）
+# 想定人物: 地域安全担当（防犯係・パトロール計画立案者）
+# 業務領域: 住民の防犯情報・パトロール報告・地域安全の声のKJ分類と、パトロール配置・防犯施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> 島間関係要約(summarize-island-relation)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 防犯強化（重点配備・カメラ増設による抑止）と住民の安心・プライバシー（過度な監視への
+#          懸念・住民主体の見守り）のトレードオフを矛盾検出で表面化し、施策の根拠にする。
+#          関係要約は提案のみ（自動適用なし）。
+PL_ID="biz-flow-police"
+PL_DOC='{"version":1,"id":"'$PL_ID'","title":"地域防犯計画の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"夜間の犯罪多発地区へのパトロール重点配備を求める声（防犯強化と住民のプライバシーはトレードオフ）","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"防犯カメラの増設は犯罪抑止に効果的との指摘","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"過度な監視への不安や、住民の見守り活動の重要性を訴える声","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pl-a","cardIds":["p1","p2"]},{"id":"pl-b","cardIds":["p3"]}],"readingOrder":["pl-a","pl-b"]}'
+
+pl_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PL_ID" \
+  -H 'Content-Type: application/json' -d "$PL_DOC")
+check "PL PUT document (作成)" "200" "$pl_put"
+
+# ① AI束ね
+pl_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"夜間の犯罪多発地区へのパトロール重点配備を求める声（防犯強化と住民のプライバシーはトレードオフ）","textReviewed":true},{"id":"p2","text":"防犯カメラの増設は犯罪抑止に効果的との指摘","textReviewed":true},{"id":"p3","text":"過度な監視への不安や、住民の見守り活動の重要性を訴える声","textReviewed":true}]}')
+case "$pl_groups" in *'"groups":'*) echo "  PASS: PL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（防犯強化・抑止の島）
+pl_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PL_DOC,\"islandId\":\"pl-a\"}")
+case "$pl_summary" in *'"groundingIds":["p1","p2"]'*) echo "  PASS: PL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（防犯強化・重点配備 vs 監視への不安・防犯強化とプライバシーのトレードオフ）
+pl_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"夜間の犯罪多発地区へのパトロール重点配備を求める声（防犯強化と住民のプライバシーはトレードオフ）","textReviewed":true},"cardB":{"id":"p3","text":"過度な監視への不安や、住民の見守り活動の重要性を訴える声","textReviewed":true}}')
+case "$pl_contra" in *'"hasContradiction":true'*) echo "  PASS: PL ③矛盾検出（防犯強化とプライバシーのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: PL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 島間関係の要約（重点配備・カメラ増設の強化 → 住民の監視不安 の因果）
+pl_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PL_DOC,\"islandAId\":\"pl-a\",\"islandBId\":\"pl-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"p3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"p3\",\"text\":\"過度な監視への不安や、住民の見守り活動の重要性を訴える声\"}]}")
+case "$pl_rel" in *'"text"'*) echo "  PASS: PL ④島間関係の要約 (causal)"; PASS=$((PASS+1));; *) echo "  FAIL: PL ④関係要約 (${pl_rel:0:100})"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+pl_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PL_DOC}")
+case "$pl_narr" in *'"basedOnReadingOrder":["pl-a","pl-b"]'*) echo "  PASS: PL ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PL ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+pl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PL_ID")
+check "PL 読戻し (200)" "200" "$pl_read"
+
+echo ""
+echo "--- シナリオ107: データセンター運用（省電力化と信頼性のトレードオフ） ---"
+# 業態: IT・データセンター（データセンター運営）
+# 想定人物: データセンター運用マネージャー／施設管理担当
+# 業務領域: 設備点検・障害対応・テナント要求のKJ分類と、運用改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: 省電力化（PUE・コスト）と信頼性・可用性（SLA・冗長構成）のトレードオフを矛盾検出
+#          （正パス）で表面化し、運用方針の根拠にする。ナラティブはA/B照合で島の取りこぼしを
+#          検出（check-narrative の正パスは島IDに依存しない・DOGFOOD-12）。
+DC_ID="biz-flow-datacenter"
+DC_DOC='{"version":1,"id":"'$DC_ID'","title":"データセンター運用改善の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dc1","text":"省電力化のため冷却設備の稼働を抑えたい","x":0,"y":0,"textReviewed":true},{"id":"dc2","text":"冷却抑制はサーバー停止リスクとトレードオフになるため冗長構成は外せない","x":10,"y":0,"textReviewed":true},{"id":"dc3","text":"テナントからは稼働率保証(SLA)の維持を求められている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dc-i","cardIds":["dc1","dc2","dc3"]}],"readingOrder":["dc-i"]}'
+
+dc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DC_ID" \
+  -H 'Content-Type: application/json' -d "$DC_DOC")
+check "DC PUT document (作成)" "200" "$dc_put"
+
+# ① AI束ね
+dc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"dc1","text":"省電力化のため冷却設備の稼働を抑えたい","textReviewed":true},{"id":"dc2","text":"冷却抑制はサーバー停止リスクとトレードオフになるため冗長構成は外せない","textReviewed":true},{"id":"dc3","text":"テナントからは稼働率保証(SLA)の維持を求められている","textReviewed":true}]}')
+case "$dc_groups" in *'"groups":'*) echo "  PASS: DC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DC_DOC,\"islandId\":\"dc-i\"}")
+case "$dc_summary" in *'"groundingIds":["dc1","dc2","dc3"]'*) echo "  PASS: DC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（省電力化 vs 冗長維持・省電力と信頼性のトレードオフ・正パス）
+dc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"dc1","text":"省電力化のため冷却設備の稼働を抑えたい","textReviewed":true},"cardB":{"id":"dc2","text":"冷却抑制はサーバー停止リスクとトレードオフになるため冗長構成は外せない","textReviewed":true}}')
+case "$dc_contra" in *'"hasContradiction":true'*) echo "  PASS: DC ③矛盾検出（省電力と信頼性のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+dc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DC_DOC}")
+case "$dc_narr" in *'"basedOnReadingOrder":["dc-i"]'*) echo "  PASS: DC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島dc-iに触れていない・a_missing_in_b・島ID非依存の正パス）
+dc_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DC_DOC,\"narrativeText\":\"（草稿）省電力化と信頼性の両立を検討し運用改善を進める。ただし冷却最適化には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"dc-i\"]}")
+case "$dc_ab" in *'ナラティブが島dc-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: DC ⑤A/B照合（島dc-iの取りこぼし・a_missing_in_b・島ID非依存）"; PASS=$((PASS+1));; *) echo "  FAIL: DC ⑤A/B照合（${dc_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+dc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DC_ID")
+check "DC 読戻し (200)" "200" "$dc_read"
+
+echo ""
+echo "--- シナリオ108: 自治体・廃棄物処理（3R推進と住民負担のトレードオフ） ---"
+# 業態: 自治体・廃棄物処理（ごみ処理・3R）
+# 想定人物: 廃棄物管理担当（クリーンセンター／ごみ行政担当）
+# 業務領域: 収集・分別・処理の課題と住民の声のKJ分類と、3R施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: 3R推進（分別徹底・リサイクル拡大による環境負荷削減）と住民の負担・処理コスト
+#          （分別ルールの複雑化・施設老朽化）のトレードオフを矛盾検出（正パス）で表面化し、
+#          施策の根拠にする。島要約は4カード島の全接地（DOGFOOD-13）で固定。
+WM_ID="biz-flow-wastemgmt"
+WM_DOC='{"version":1,"id":"'$WM_ID'","title":"廃棄物処理・3R施策の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"分別徹底とリサイクル拡大で埋立量を減らしたい（3R・環境負荷削減）","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"分別の徹底は住民の手間・負担とトレードオフになる（分別ルールの複雑化で不満）","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"処理施設の老朽化で改修費用が必要（処理コスト）","x":20,"y":0,"textReviewed":true},{"id":"w4","text":"生ごみ・食品ロスの減量で処理量を抑えたい（発生抑制）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"wm-i","cardIds":["w1","w2","w3","w4"]}],"readingOrder":["wm-i"]}'
+
+wm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WM_ID" \
+  -H 'Content-Type: application/json' -d "$WM_DOC")
+check "WM PUT document (作成)" "200" "$wm_put"
+
+# ① AI束ね
+wm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"分別徹底とリサイクル拡大で埋立量を減らしたい（3R・環境負荷削減）","textReviewed":true},{"id":"w2","text":"分別の徹底は住民の手間・負担とトレードオフになる（分別ルールの複雑化で不満）","textReviewed":true},{"id":"w3","text":"処理施設の老朽化で改修費用が必要（処理コスト）","textReviewed":true},{"id":"w4","text":"生ごみ・食品ロスの減量で処理量を抑えたい（発生抑制）","textReviewed":true}]}')
+case "$wm_groups" in *'"groups":'*) echo "  PASS: WM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: WM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地・DOGFOOD-13）
+wm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WM_DOC,\"islandId\":\"wm-i\"}")
+case "$wm_summary" in *'"groundingIds":["w1","w2","w3","w4"]'*) echo "  PASS: WM ②島要約（4カード島の全接地・DOGFOOD-13）"; PASS=$((PASS+1));; *) echo "  FAIL: WM ②島要約（${wm_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（3R推進 vs 住民負担・3Rと負担のトレードオフ・正パス）
+wm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"w1","text":"分別徹底とリサイクル拡大で埋立量を減らしたい（3R・環境負荷削減）","textReviewed":true},"cardB":{"id":"w2","text":"分別の徹底は住民の手間・負担とトレードオフになる（分別ルールの複雑化で不満）","textReviewed":true}}')
+case "$wm_contra" in *'"hasContradiction":true'*) echo "  PASS: WM ③矛盾検出（3Rと住民負担のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: WM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+wm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$WM_DOC}")
+case "$wm_narr" in *'"basedOnReadingOrder":["wm-i"]'*) echo "  PASS: WM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: WM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島wm-iに触れていない・a_missing_in_b）
+wm_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WM_DOC,\"narrativeText\":\"（草稿）3R推進と住民負担のバランスを検討する。ただし発生抑制策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"wm-i\"]}")
+case "$wm_ab" in *'ナラティブが島wm-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: WM ⑤A/B照合（島wm-iの取りこぼし・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: WM ⑤A/B照合（${wm_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+wm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WM_ID")
+check "WM 読戻し (200)" "200" "$wm_read"
+
+echo ""
+echo "--- シナリオ109: 放送局・番組編成（商業性と公共性のトレードオフ） ---"
+# 業態: 放送・メディア（テレビ局・番組編成）
+# 想定人物: 編成担当／プロデューサー（番組編成方針を分析）
+# 業務領域: 視聴率・番組評価・視聴者からの声のKJ分類と、編成方針の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative・b_missing_in_a) -> 読戻し
+# 注意事項: 商業性（広告収益・高視聴率番組への集中投資）と公共性（教養・報道番組の維持）の
+#          トレードオフを矛盾検出（正パス）で表面化し、編成方針の根拠にする。ナラティブが
+#          カードの根拠を欠く主張を含む場合は A/B照合で b_missing_in_a を報告（DOGFOOD-14・
+#          双方向の正パス固定）。
+BC_ID="biz-flow-broadcast"
+BC_DOC='{"version":1,"id":"'$BC_ID'","title":"番組編成方針の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"b1","text":"若年層のテレビ離れが進み視聴率が低下している（視聴率・若年層）","x":0,"y":0,"textReviewed":true},{"id":"b2","text":"広告収益を支える高視聴率番組への集中投資は編成の自由とトレードオフになる（商業性）","x":10,"y":0,"textReviewed":true},{"id":"b3","text":"公共放送として教養・報道番組の維持を求める声（公共性・使命）","x":20,"y":0,"textReviewed":true},{"id":"b4","text":"視聴者からは番組編成のマンネリ化への不満がある（編成・マンネリ）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bcast-i","cardIds":["b1","b2","b3","b4"]}],"readingOrder":["bcast-i"]}'
+
+bc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BC_ID" \
+  -H 'Content-Type: application/json' -d "$BC_DOC")
+check "BC PUT document (作成)" "200" "$bc_put"
+
+# ① AI束ね
+bc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"b1","text":"若年層のテレビ離れが進み視聴率が低下している（視聴率・若年層）","textReviewed":true},{"id":"b2","text":"広告収益を支える高視聴率番組への集中投資は編成の自由とトレードオフになる（商業性）","textReviewed":true},{"id":"b3","text":"公共放送として教養・報道番組の維持を求める声（公共性・使命）","textReviewed":true},{"id":"b4","text":"視聴者からは番組編成のマンネリ化への不満がある（編成・マンネリ）","textReviewed":true}]}')
+case "$bc_groups" in *'"groups":'*) echo "  PASS: BC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+bc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BC_DOC,\"islandId\":\"bcast-i\"}")
+case "$bc_summary" in *'"groundingIds":["b1","b2","b3","b4"]'*) echo "  PASS: BC ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: BC ②島要約（${bc_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（商業性 vs 公共性・商業と公共のトレードオフ・正パス）
+bc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"b2","text":"広告収益を支える高視聴率番組への集中投資は編成の自由とトレードオフになる（商業性）","textReviewed":true},"cardB":{"id":"b3","text":"公共放送として教養・報道番組の維持を求める声（公共性・使命）","textReviewed":true}}')
+case "$bc_contra" in *'"hasContradiction":true'*) echo "  PASS: BC ③矛盾検出（商業性と公共性のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BC_DOC}")
+case "$bc_narr" in *'"basedOnReadingOrder":["bcast-i"]'*) echo "  PASS: BC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブがカードの根拠を欠く主張を含む・b_missing_in_a・DOGFOOD-14）
+bc_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BC_DOC,\"narrativeText\":\"（草稿）若年層離れに対応するため若者向け番組を強化する。なお視聴者満足度が過去最高を記録したという根拠のない主張も含まれる。\",\"basedOnReadingOrder\":[\"bcast-i\"]}")
+case "$bc_ab" in *'"direction":"b_missing_in_a"'*'"bMissingInA":1'*) echo "  PASS: BC ⑤A/B照合（根拠のない主張・b_missing_in_a・双方向の正パス）"; PASS=$((PASS+1));; *) echo "  FAIL: BC ⑤A/B照合（${bc_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+bc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BC_ID")
+check "BC 読戻し (200)" "200" "$bc_read"
+
+echo ""
+echo "--- シナリオ110: 水族館・動物園の運営（体験価値と運営コストのトレードオフ） ---"
+# 業態: レジャー・動物園（水族館／動物園運営）
+# 想定人物: 施設運営責任者／飼育担当マネージャー
+# 業務領域: 来園者の声・展示・動物福祉・運営コストのKJ分類と、施設運営方針の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> 島間関係要約(summarize-island-relation・接地エコー)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 体験価値（体験型展示・動物福祉の充実）と運営コスト（入園料・改修投資）のトレードオフを
+#          矛盾検出（正パス）で表面化し、施設運営方針の根拠にする。島間関係要約は接地カード
+#          （groundingCardIds）が保全されることを固定（DOGFOOD-15）。
+ZO_ID="biz-flow-zoo"
+ZO_DOC='{"version":1,"id":"'$ZO_ID'","title":"動物園運営方針の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"z1","text":"来園者は体験型展示と動物とのふれあいを求めている（来園者体験）","x":0,"y":0,"textReviewed":true},{"id":"z2","text":"動物福祉のため展示環境の改善は必要（動物福祉）","x":10,"y":0,"textReviewed":true},{"id":"z3","text":"入園料の値上げは来場者減につながりかねない（料金・集客）","x":20,"y":0,"textReviewed":true},{"id":"z4","text":"体験価値と施設投資はトレードオフの関係にあり改修費の捻出が課題（運営コスト）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"zoo-a","cardIds":["z1","z2"]},{"id":"zoo-b","cardIds":["z3","z4"]}],"readingOrder":["zoo-a","zoo-b"]}'
+
+zo_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ZO_ID" \
+  -H 'Content-Type: application/json' -d "$ZO_DOC")
+check "ZO PUT document (作成)" "200" "$zo_put"
+
+# ① AI束ね
+zo_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"z1","text":"来園者は体験型展示と動物とのふれあいを求めている（来園者体験）","textReviewed":true},{"id":"z2","text":"動物福祉のため展示環境の改善は必要（動物福祉）","textReviewed":true},{"id":"z3","text":"入園料の値上げは来場者減につながりかねない（料金・集客）","textReviewed":true},{"id":"z4","text":"体験価値と施設投資はトレードオフの関係にあり改修費の捻出が課題（運営コスト）","textReviewed":true}]}')
+case "$zo_groups" in *'"groups":'*) echo "  PASS: ZO ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ZO ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（体験・福祉の島）
+zo_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ZO_DOC,\"islandId\":\"zoo-a\"}")
+case "$zo_summary" in *'"groundingIds":["z1","z2"]'*) echo "  PASS: ZO ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ZO ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（体験価値 vs 運営コスト・体験とコストのトレードオフ・正パス）
+zo_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"z1","text":"来園者は体験型展示と動物とのふれあいを求めている（来園者体験）","textReviewed":true},"cardB":{"id":"z4","text":"体験価値と施設投資はトレードオフの関係にあり改修費の捻出が課題（運営コスト）","textReviewed":true}}')
+case "$zo_contra" in *'"hasContradiction":true'*) echo "  PASS: ZO ③矛盾検出（体験価値と運営コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: ZO ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 島間関係要約（体験・福祉の充実 → 運営コストの制約 の因果・接地エコー）
+zo_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ZO_DOC,\"islandAId\":\"zoo-a\",\"islandBId\":\"zoo-b\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"z4\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"z4\",\"text\":\"体験価値と施設投資はトレードオフの関係にあり改修費の捻出が課題（運営コスト）\"}]}")
+case "$zo_rel" in *'"groundingCardIds":["z4"]'*) echo "  PASS: ZO ④島間関係要約（接地カードが保全・DOGFOOD-15）"; PASS=$((PASS+1));; *) echo "  FAIL: ZO ④島間関係要約（${zo_rel:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+zo_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ZO_DOC}")
+case "$zo_narr" in *'"basedOnReadingOrder":["zoo-a","zoo-b"]'*) echo "  PASS: ZO ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ZO ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+zo_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ZO_ID")
+check "ZO 読戻し (200)" "200" "$zo_read"
+
+echo ""
+echo "--- シナリオ111: 半導体製造（品質と効率のトレードオフ） ---"
+# 業態: 製造・半導体（半導体工場・生産管理）
+# 想定人物: 工場生産管理担当／品質管理エンジニア
+# 業務領域: 歩留まり・生産効率・品質不良・設備稼働のKJ分類と、生産改善
+# 操作内容: 文書作成 -> 文面整え(refine-card-text・raw現場報告の明確化) -> AI束ね(suggest-card-groups)
+#          -> 島要約(suggest-island-summary・4カード島の全接地) -> 矛盾検出(detect-contradiction・正パス)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 品質（歩留まり・良品率）と効率（サイクルタイム・生産性）のトレードオフを矛盾検出
+#          （正パス）で表面化し、生産改善の根拠にする。文面整えは**元の意味（キーフレーズ）を保持**
+#          することを固定（DOGFOOD-16・refineの操作カバー拡大）。
+SM_ID="biz-flow-semi"
+SM_DOC='{"version":1,"id":"'$SM_ID'","title":"半導体工場の生産改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"歩留まり向上のため設備調整とレシピ見直しを徹底したい（品質・歩留まり）","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"生産効率を上げるためサイクルタイムを短縮したい（効率・生産性）","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"検査工程の短縮は歩留まりとトレードオフになり不良の流出につながる（品質・効率）","x":20,"y":0,"textReviewed":true},{"id":"s4","text":"設備の稼働率を下げずに予防保全の時間を確保したい（設備・保全）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"semi-i","cardIds":["s1","s2","s3","s4"]}],"readingOrder":["semi-i"]}'
+
+sm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SM_ID" \
+  -H 'Content-Type: application/json' -d "$SM_DOC")
+check "SM PUT document (作成)" "200" "$sm_put"
+
+# ① 文面整え（raw現場報告を明確化・元の意味を保持）
+sm_refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
+  -d '{"cardText":"歩留まりが下がってロット廃棄が増えた","context":"半導体工場・前工程","textReviewed":true}')
+case "$sm_refined" in *'"refinedText"'*'歩留まり'*) echo "  PASS: SM ①文面整え（元の意味を保持・DOGFOOD-16）"; PASS=$((PASS+1));; *) echo "  FAIL: SM ①文面整え（${sm_refined:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ② AI束ね
+sm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"歩留まり向上のため設備調整とレシピ見直しを徹底したい（品質・歩留まり）","textReviewed":true},{"id":"s2","text":"生産効率を上げるためサイクルタイムを短縮したい（効率・生産性）","textReviewed":true},{"id":"s3","text":"検査工程の短縮は歩留まりとトレードオフになり不良の流出につながる（品質・効率）","textReviewed":true},{"id":"s4","text":"設備の稼働率を下げずに予防保全の時間を確保したい（設備・保全）","textReviewed":true}]}')
+case "$sm_groups" in *'"groups":'*) echo "  PASS: SM ②束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SM ②束ね"; FAIL=$((FAIL+1));; esac
+
+# ③ 島要約（4カード島の全接地）
+sm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SM_DOC,\"islandId\":\"semi-i\"}")
+case "$sm_summary" in *'"groundingIds":["s1","s2","s3","s4"]'*) echo "  PASS: SM ③島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: SM ③島要約（${sm_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ④ 矛盾検出（効率 vs 品質・品質と効率のトレードオフ・正パス）
+sm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s2","text":"生産効率を上げるためサイクルタイムを短縮したい（効率・生産性）","textReviewed":true},"cardB":{"id":"s3","text":"検査工程の短縮は歩留まりとトレードオフになり不良の流出につながる（品質・効率）","textReviewed":true}}')
+case "$sm_contra" in *'"hasContradiction":true'*) echo "  PASS: SM ④矛盾検出（品質と効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SM ④矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+sm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SM_DOC}")
+case "$sm_narr" in *'"basedOnReadingOrder":["semi-i"]'*) echo "  PASS: SM ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SM ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+sm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SM_ID")
+check "SM 読戻し (200)" "200" "$sm_read"
+
+echo ""
+echo "--- シナリオ112: 訪問看護（ケアの質と訪問効率のトレードオフ） ---"
+# 業態: 医療・在宅ケア（訪問看護ステーション）
+# 想定人物: 訪問看護管理者／ケアマネジャー
+# 業務領域: 訪問看護のケア記録・利用者・家族からの声のKJ分類と、ケア提供体制の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> 反対視点提案(propose-opposing-viewpoint・対象主張を参照)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: ケアの質（手厚い看護）と訪問効率（処置時間・訪問件数）のトレードオフを矛盾検出
+#          （正パス）で表面化し、ケア提供体制の根拠にする。反対視点は proposal-only で
+#          対象カードの主張（訪問件数）に応答することを固定（DOGFOOD-17）。
+VN_ID="biz-flow-visiting"
+VN_DOC='{"version":1,"id":"'$VN_ID'","title":"訪問看護ケア体制の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"v1","text":"利用者宅での処置時間が長く訪問件数をこなせない（訪問効率・件数）","x":0,"y":0,"textReviewed":true},{"id":"v2","text":"一人暮らしの高齢者への見守りニーズが増えている（利用者ニーズ・見守り）","x":10,"y":0,"textReviewed":true},{"id":"v3","text":"看護師の残業が増え離職者が続出している（人材・疲弊）","x":20,"y":0,"textReviewed":true},{"id":"v4","text":"ケアの質と訪問回数はトレードオフの関係にあり手厚いケアは効率を下げる（質と効率）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"visit-i","cardIds":["v1","v2","v3","v4"]}],"readingOrder":["visit-i"]}'
+
+vn_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$VN_ID" \
+  -H 'Content-Type: application/json' -d "$VN_DOC")
+check "VN PUT document (作成)" "200" "$vn_put"
+
+# ① AI束ね
+vn_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"v1","text":"利用者宅での処置時間が長く訪問件数をこなせない（訪問効率・件数）","textReviewed":true},{"id":"v2","text":"一人暮らしの高齢者への見守りニーズが増えている（利用者ニーズ・見守り）","textReviewed":true},{"id":"v3","text":"看護師の残業が増え離職者が続出している（人材・疲弊）","textReviewed":true},{"id":"v4","text":"ケアの質と訪問回数はトレードオフの関係にあり手厚いケアは効率を下げる（質と効率）","textReviewed":true}]}')
+case "$vn_groups" in *'"groups":'*) echo "  PASS: VN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: VN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+vn_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$VN_DOC,\"islandId\":\"visit-i\"}")
+case "$vn_summary" in *'"groundingIds":["v1","v2","v3","v4"]'*) echo "  PASS: VN ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: VN ②島要約（${vn_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（訪問効率 vs ケアの質・質と効率のトレードオフ・正パス）
+vn_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"v1","text":"利用者宅での処置時間が長く訪問件数をこなせない（訪問効率・件数）","textReviewed":true},"cardB":{"id":"v4","text":"ケアの質と訪問回数はトレードオフの関係にあり手厚いケアは効率を下げる（質と効率）","textReviewed":true}}')
+case "$vn_contra" in *'"hasContradiction":true'*) echo "  PASS: VN ③矛盾検出（ケアの質と訪問効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: VN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 反対視点提案（proposal-only・対象カードの主張「訪問件数」を参照・DOGFOOD-17）
+vn_opp=$(curl -s -X POST "$BASE_URL/ai/proposals/opposing-viewpoint" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$VN_DOC,\"targetCardId\":\"v1\"}")
+case "$vn_opp" in *'"status":"proposed"'*'"opposingText"'*'訪問件数'*) echo "  PASS: VN ④反対視点提案（proposal-only・対象主張に応答・DOGFOOD-17）"; PASS=$((PASS+1));; *) echo "  FAIL: VN ④反対視点（${vn_opp:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+vn_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$VN_DOC}")
+case "$vn_narr" in *'"basedOnReadingOrder":["visit-i"]'*) echo "  PASS: VN ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: VN ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+vn_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$VN_ID")
+check "VN 読戻し (200)" "200" "$vn_read"
+
+echo ""
+echo "--- シナリオ113: 書店（品揃えと在庫コストのトレードオフ） ---"
+# 業態: サービス・小売（書店・ブックストア）
+# 想定人物: 書店オーナー／仕入れ担当
+# 業務領域: 売上・在庫・顧客の声・書店イベントのKJ分類と、品揃え・売場づくりの検討
+# 操作内容: 文書作成 -> タイトル提案(suggest-document-title・文書テーマを参照) -> AI束ね(suggest-card-groups)
+#          -> 島要約(suggest-island-summary・4カード島の全接地) -> 矛盾検出(detect-contradiction・正パス)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 品揃え（ニッチな要望に応える棚づくり）と在庫コスト（仕入れ・在庫の偏り）のトレードオフを
+#          矛盾検出（正パス）で表面化し、品揃え・売場づくりの根拠にする。タイトル提案は**文書の
+#          テーマ（島ラベル）に接地**することを固定（DOGFOOD-18）。
+BK_ID="biz-flow-bookstore"
+BK_DOC='{"version":1,"id":"'$BK_ID'","title":"書店の棚づくりと在庫戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"b1","text":"ベストセラーの大量仕入れで売り切れを防ぎたい（売上・在庫回転）","x":0,"y":0,"textReviewed":true},{"id":"b2","text":"読者のニッチな要望に応える棚づくりをしたい（品揃え・ニッチ）","x":10,"y":0,"textReviewed":true},{"id":"b3","text":"在庫の偏りは仕入れコストとトレードオフの関係にありバランスが難しい（在庫・コスト）","x":20,"y":0,"textReviewed":true},{"id":"b4","text":"書店イベントやフェアで来店動機を高めたい（集客・イベント）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"book-i","cardIds":["b1","b2","b3","b4"]}],"readingOrder":["book-i"]}'
+
+bk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BK_ID" \
+  -H 'Content-Type: application/json' -d "$BK_DOC")
+check "BK PUT document (作成)" "200" "$bk_put"
+
+# ① タイトル提案（文書のテーマに接地・DOGFOOD-18）
+bk_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["書店の棚づくりと品揃え戦略"],"cardTexts":["ベストセラーの大量仕入れで売り切れを防ぎたい","読者のニッチな要望に応える棚づくりをしたい","在庫の偏りは仕入れコストとトレードオフの関係にありバランスが難しい","書店イベントやフェアで来店動機を高めたい"],"textReviewed":true}')
+case "$bk_title" in *'"candidates"'*'棚づくり'*) echo "  PASS: BK ①タイトル提案（文書テーマに接地・DOGFOOD-18）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ①タイトル提案（${bk_title:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ② AI束ね
+bk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"b1","text":"ベストセラーの大量仕入れで売り切れを防ぎたい（売上・在庫回転）","textReviewed":true},{"id":"b2","text":"読者のニッチな要望に応える棚づくりをしたい（品揃え・ニッチ）","textReviewed":true},{"id":"b3","text":"在庫の偏りは仕入れコストとトレードオフの関係にありバランスが難しい（在庫・コスト）","textReviewed":true},{"id":"b4","text":"書店イベントやフェアで来店動機を高めたい（集客・イベント）","textReviewed":true}]}')
+case "$bk_groups" in *'"groups":'*) echo "  PASS: BK ②束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BK ②束ね"; FAIL=$((FAIL+1));; esac
+
+# ③ 島要約（4カード島の全接地）
+bk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BK_DOC,\"islandId\":\"book-i\"}")
+case "$bk_summary" in *'"groundingIds":["b1","b2","b3","b4"]'*) echo "  PASS: BK ③島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ③島要約（${bk_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ④ 矛盾検出（ニッチ棚づくり vs 在庫コスト・品揃えと在庫コストのトレードオフ・正パス）
+bk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"b2","text":"読者のニッチな要望に応える棚づくりをしたい（品揃え・ニッチ）","textReviewed":true},"cardB":{"id":"b3","text":"在庫の偏りは仕入れコストとトレードオフの関係にありバランスが難しい（在庫・コスト）","textReviewed":true}}')
+case "$bk_contra" in *'"hasContradiction":true'*) echo "  PASS: BK ④矛盾検出（品揃えと在庫コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ④矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+bk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BK_DOC}")
+case "$bk_narr" in *'"basedOnReadingOrder":["book-i"]'*) echo "  PASS: BK ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BK ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
+check "BK 読戻し (200)" "200" "$bk_read"
+
+echo ""
+echo "--- シナリオ114: 税理士・会計事務所（顧客サービスと料金・業務量のトレードオフ） ---"
+# 業態: 金融・法務・専門サービス（税理士・会計事務所）
+# 想定人物: 税理士／会計担当パートナー
+# 業務領域: 顧客の決算・申告・経理相談の声のKJ分類と、業務効率化・顧客サービスの検討
+# 操作内容: 文書作成 -> 統合提案(suggest-merges・同カテゴリのカード対) -> AI束ね(suggest-card-groups)
+#          -> 島要約(suggest-island-summary・4カード島の全接地) -> 矛盾検出(detect-contradiction・正パス)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 顧客サービス（経営相談への期待）と料金・業務量（受注の取捨）のトレードオフを矛盾検出
+#          （正パス）で表面化し、業務改善の根拠にする。統合提案は同カテゴリのカード対
+#          （業務効率・a1/a2）をマージ候補として提示することを固定（DOGFOOD-19）。
+TX_ID="biz-flow-tax"
+TX_DOC='{"version":1,"id":"'$TX_ID'","title":"税理士事務所の業務改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"決算書の作成に時間がかかり繁忙期に残業が増える（業務効率）","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"電子帳簿保存法への対応が進まず手作業が残る（業務効率）","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"顧客からは経営相談に乗ってほしいという声がある（顧客サービス）","x":20,"y":0,"textReviewed":true},{"id":"a4","text":"料金交渉と業務量はトレードオフの関係にあり受注の取捨が難しい（料金・受注）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tax-i","cardIds":["a1","a2","a3","a4"]}],"readingOrder":["tax-i"]}'
+
+tx_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TX_ID" \
+  -H 'Content-Type: application/json' -d "$TX_DOC")
+check "TX PUT document (作成)" "200" "$tx_put"
+
+# ① 統合提案（同カテゴリのカード対 a1/a2 をマージ候補として提示・DOGFOOD-19）
+tx_merges=$(curl -s -X POST "$BASE_URL/ai/suggest-merges" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TX_DOC}")
+case "$tx_merges" in *'"suggestions"'*'a1'*'a2'*) echo "  PASS: TX ①統合提案（業務効率カード対をマージ候補に提示・DOGFOOD-19）"; PASS=$((PASS+1));; *) echo "  FAIL: TX ①統合提案（${tx_merges:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ② AI束ね
+tx_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"a1","text":"決算書の作成に時間がかかり繁忙期に残業が増える（業務効率）","textReviewed":true},{"id":"a2","text":"電子帳簿保存法への対応が進まず手作業が残る（業務効率）","textReviewed":true},{"id":"a3","text":"顧客からは経営相談に乗ってほしいという声がある（顧客サービス）","textReviewed":true},{"id":"a4","text":"料金交渉と業務量はトレードオフの関係にあり受注の取捨が難しい（料金・受注）","textReviewed":true}]}')
+case "$tx_groups" in *'"groups":'*) echo "  PASS: TX ②束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TX ②束ね"; FAIL=$((FAIL+1));; esac
+
+# ③ 島要約（4カード島の全接地）
+tx_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TX_DOC,\"islandId\":\"tax-i\"}")
+case "$tx_summary" in *'"groundingIds":["a1","a2","a3","a4"]'*) echo "  PASS: TX ③島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: TX ③島要約（${tx_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ④ 矛盾検出（顧客サービス vs 料金・業務量・サービスと料金のトレードオフ・正パス）
+tx_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a3","text":"顧客からは経営相談に乗ってほしいという声がある（顧客サービス）","textReviewed":true},"cardB":{"id":"a4","text":"料金交渉と業務量はトレードオフの関係にあり受注の取捨が難しい（料金・受注）","textReviewed":true}}')
+case "$tx_contra" in *'"hasContradiction":true'*) echo "  PASS: TX ④矛盾検出（顧客サービスと料金・業務量のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: TX ④矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+tx_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TX_DOC}")
+case "$tx_narr" in *'"basedOnReadingOrder":["tax-i"]'*) echo "  PASS: TX ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TX ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+tx_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TX_ID")
+check "TX 読戻し (200)" "200" "$tx_read"
+
+echo ""
+echo "--- シナリオ115: コンビニエンスストア本部（商品品質と廃棄コストのトレードオフ） ---"
+# 業態: 小売・コンビニ（コンビニエンスストア・FC本部）
+# 想定人物: コンビニ本部・運営担当
+# 業務領域: 店舗運営・商品・オペレーション・加盟店の声のKJ分類と、本部施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups・カテゴリ別の同グループ化) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative) -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: 商品品質向上（お弁当・総菜の差別化）と廃棄コスト（新商品の売れ残り）のトレードオフを
+#          矛盾検出（正パス）で表面化し、本部施策の根拠にする。AI束ねは**テーマ（カテゴリ）類似性**
+#          による同グループ化（c1/c3=オペレーション・c2/c4=商品戦略）を固定（DOGFOOD-20）。
+CV_ID="biz-flow-cvs"
+CV_DOC='{"version":1,"id":"'$CV_ID'","title":"コンビニ本部施策の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"24時間営業の見直しで人手不足に対応したい（オペレーション）","x":0,"y":0,"textReviewed":true},{"id":"c2","text":"お弁当・総菜の品質向上で他店との差別化を図りたい（商品戦略）","x":10,"y":0,"textReviewed":true},{"id":"c3","text":"レジ待ち時間の短縮など店舗オペレーションを改善したい（オペレーション）","x":20,"y":0,"textReviewed":true},{"id":"c4","text":"新商品の投入と売れ残り廃棄はトレードオフの関係にあり在庫管理が難しい（商品戦略）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cvs-i","cardIds":["c1","c2","c3","c4"]}],"readingOrder":["cvs-i"]}'
+
+cv_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CV_ID" \
+  -H 'Content-Type: application/json' -d "$CV_DOC")
+check "CV PUT document (作成)" "200" "$cv_put"
+
+# ① AI束ね（カテゴリ別の同グループ化・c1/c3=オペレーション・c2/c4=商品戦略・DOGFOOD-20）
+cv_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"c1","text":"24時間営業の見直しで人手不足に対応したい（オペレーション）","textReviewed":true},{"id":"c2","text":"お弁当・総菜の品質向上で他店との差別化を図りたい（商品戦略）","textReviewed":true},{"id":"c3","text":"レジ待ち時間の短縮など店舗オペレーションを改善したい（オペレーション）","textReviewed":true},{"id":"c4","text":"新商品の投入と売れ残り廃棄はトレードオフの関係にあり在庫管理が難しい（商品戦略）","textReviewed":true}]}')
+case "$cv_groups" in *'c1","c3'*'c2","c4'*) echo "  PASS: CV ①AI束ね（テーマ類似性で同グループ化・DOGFOOD-20）"; PASS=$((PASS+1));; *) echo "  FAIL: CV ①AI束ね（${cv_groups:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+cv_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CV_DOC,\"islandId\":\"cvs-i\"}")
+case "$cv_summary" in *'"groundingIds":["c1","c2","c3","c4"]'*) echo "  PASS: CV ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: CV ②島要約（${cv_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（商品品質 vs 廃棄コスト・品質とコストのトレードオフ・正パス）
+cv_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"c2","text":"お弁当・総菜の品質向上で他店との差別化を図りたい（商品戦略）","textReviewed":true},"cardB":{"id":"c4","text":"新商品の投入と売れ残り廃棄はトレードオフの関係にあり在庫管理が難しい（商品戦略）","textReviewed":true}}')
+case "$cv_contra" in *'"hasContradiction":true'*) echo "  PASS: CV ③矛盾検出（商品品質と廃棄コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cv_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CV_DOC}")
+case "$cv_narr" in *'"basedOnReadingOrder":["cvs-i"]'*) echo "  PASS: CV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島cvs-iに触れていない・a_missing_in_b）
+cv_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CV_DOC,\"narrativeText\":\"（草稿）本部施策を検討する。ただし新規施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"cvs-i\"]}")
+case "$cv_ab" in *'ナラティブが島cvs-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: CV ⑤A/B照合（島cvs-iの取りこぼし・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: CV ⑤A/B照合（${cv_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+cv_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CV_ID")
+check "CV 読戻し (200)" "200" "$cv_read"
+
+echo ""
+echo "--- シナリオ116: ドラッグストア（調剤サービスと運営コストのトレードオフ） ---"
+# 業態: 小売・ドラッグストア（調剤併設）
+# 想定人物: ドラッグストア店長／本部運営担当
+# 業務領域: 医薬品・調剤・一般品・顧客の声のKJ分類と、店舗運営・品揃えの検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative・読み順の島を本文で参照)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: 調剤サービス（待ち時間短縮・顧客満足）と運営コスト（在庫管理・人員配置）のトレードオフを
+#          矛盾検出（正パス）で表面化し、店舗運営の根拠にする。ナラティブは**読み順の島（drg-i）を
+#          本文で参照**することを固定（DOGFOOD-21）。
+DG_ID="biz-flow-drugstore"
+DG_DOC='{"version":1,"id":"'$DG_ID'","title":"ドラッグストア店舗運営の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"調剤待ち時間の短縮で顧客満足を高めたい（調剤・サービス）","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"OTC医薬品と化粧品・日用品の売場を分けたい（売場・品揃え）","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"薬剤師の在庫管理と一般品の陳列はトレードオフの関係にあり優先順位が難しい（運営・コスト）","x":20,"y":0,"textReviewed":true},{"id":"d4","text":"処方箋応需と一般販売の両立で人員配置に悩む（人員・オペレーション）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"drg-i","cardIds":["d1","d2","d3","d4"]}],"readingOrder":["drg-i"]}'
+
+dg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DG_ID" \
+  -H 'Content-Type: application/json' -d "$DG_DOC")
+check "DG PUT document (作成)" "200" "$dg_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+dg_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"調剤待ち時間の短縮で顧客満足を高めたい（調剤・サービス）","textReviewed":true},{"id":"d2","text":"OTC医薬品と化粧品・日用品の売場を分けたい（売場・品揃え）","textReviewed":true},{"id":"d3","text":"薬剤師の在庫管理と一般品の陳列はトレードオフの関係にあり優先順位が難しい（運営・コスト）","textReviewed":true},{"id":"d4","text":"処方箋応需と一般販売の両立で人員配置に悩む（人員・オペレーション）","textReviewed":true}]}')
+case "$dg_groups" in *'"groups":'*) echo "  PASS: DG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+dg_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DG_DOC,\"islandId\":\"drg-i\"}")
+case "$dg_summary" in *'"groundingIds":["d1","d2","d3","d4"]'*) echo "  PASS: DG ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: DG ②島要約（${dg_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（調剤サービス vs 運営コスト・サービスとコストのトレードオフ・正パス）
+dg_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"調剤待ち時間の短縮で顧客満足を高めたい（調剤・サービス）","textReviewed":true},"cardB":{"id":"d3","text":"薬剤師の在庫管理と一般品の陳列はトレードオフの関係にあり優先順位が難しい（運営・コスト）","textReviewed":true}}')
+case "$dg_contra" in *'"hasContradiction":true'*) echo "  PASS: DG ③矛盾検出（調剤サービスと運営コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ（読み順の島を本文で参照・DOGFOOD-21）
+dg_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DG_DOC}")
+case "$dg_narr" in *'読み順（drg-i）'*'"basedOnReadingOrder":["drg-i"]'*) echo "  PASS: DG ④ナラティブ（読み順の島を本文で参照・DOGFOOD-21）"; PASS=$((PASS+1));; *) echo "  FAIL: DG ④ナラティブ（${dg_narr:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島drg-iに触れていない・a_missing_in_b）
+dg_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DG_DOC,\"narrativeText\":\"（草稿）店舗運営を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"drg-i\"]}")
+case "$dg_ab" in *'ナラティブが島drg-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: DG ⑤A/B照合（島drg-iの取りこぼし・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: DG ⑤A/B照合（${dg_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+dg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DG_ID")
+check "DG 読戻し (200)" "200" "$dg_read"
+
+echo ""
+echo "--- シナリオ117: ホームセンター（品揃えと在庫スペースのトレードオフ） ---"
+# 業態: 小売・ホームセンター（DIY・住まい）
+# 想定人物: ホームセンター店長／仕入れ担当
+# 業務領域: 品揃え・売場・DIY需要・顧客の声のKJ分類と、品揃え・販促の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> CE4提案(proposals/island-summary・提案の接地を保持)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 品揃え（売場の両立・DIY需要）と在庫スペース（拡充と優先順位）のトレードオフを矛盾検出
+#          （正パス）で表面化し、品揃え・販促の根拠にする。CE4提案は**proposal-only かつ
+#          diff.groundingIds が島の全カード**であることを固定（DOGFOOD-22）。
+HC_ID="biz-flow-homecenter"
+HC_DOC='{"version":1,"id":"'$HC_ID'","title":"ホームセンター品揃えの整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"h1","text":"DIY人気で木材・工具の需要が伸びている（DIY需要）","x":0,"y":0,"textReviewed":true},{"id":"h2","text":"季節商品と日用品の売場を両立させたい（売場・品揃え）","x":10,"y":0,"textReviewed":true},{"id":"h3","text":"品揃えの拡充と在庫スペースはトレードオフの関係にあり優先順位が難しい（在庫・スペース）","x":20,"y":0,"textReviewed":true},{"id":"h4","text":"ネット通販との価格競争で利益率が下がっている（価格・競争）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hc-i","cardIds":["h1","h2","h3","h4"]}],"readingOrder":["hc-i"]}'
+HC_HASH="$(printf 'b%.0s' $(seq 1 64))"
+
+hc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HC_ID" \
+  -H 'Content-Type: application/json' -d "$HC_DOC")
+check "HC PUT document (作成)" "200" "$hc_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+hc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"h1","text":"DIY人気で木材・工具の需要が伸びている（DIY需要）","textReviewed":true},{"id":"h2","text":"季節商品と日用品の売場を両立させたい（売場・品揃え）","textReviewed":true},{"id":"h3","text":"品揃えの拡充と在庫スペースはトレードオフの関係にあり優先順位が難しい（在庫・スペース）","textReviewed":true},{"id":"h4","text":"ネット通販との価格競争で利益率が下がっている（価格・競争）","textReviewed":true}]}')
+case "$hc_groups" in *'"groups":'*) echo "  PASS: HC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+hc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HC_DOC,\"islandId\":\"hc-i\"}")
+case "$hc_summary" in *'"groundingIds":["h1","h2","h3","h4"]'*) echo "  PASS: HC ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: HC ②島要約（${hc_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品揃え vs 在庫スペース・品揃えと在庫のトレードオフ・正パス）
+hc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"h2","text":"季節商品と日用品の売場を両立させたい（売場・品揃え）","textReviewed":true},"cardB":{"id":"h3","text":"品揃えの拡充と在庫スペースはトレードオフの関係にあり優先順位が難しい（在庫・スペース）","textReviewed":true}}')
+case "$hc_contra" in *'"hasContradiction":true'*) echo "  PASS: HC ③矛盾検出（品揃えと在庫スペースのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: HC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ CE4提案（proposal-only・提案の接地を保持・DOGFOOD-22）
+hc_prop=$(curl -s -X POST "$BASE_URL/ai/proposals/island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HC_DOC,\"islandId\":\"hc-i\",\"sourceBundleHash\":\"$HC_HASH\"}")
+case "$hc_prop" in *'"status":"proposed"'*'"groundingIds":["h1","h2","h3","h4"]'*) echo "  PASS: HC ④CE4提案（proposal-only・提案の接地を保持・DOGFOOD-22）"; PASS=$((PASS+1));; *) echo "  FAIL: HC ④CE4提案（${hc_prop:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+hc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HC_DOC}")
+case "$hc_narr" in *'"basedOnReadingOrder":["hc-i"]'*) echo "  PASS: HC ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HC ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+hc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HC_ID")
+check "HC 読戻し (200)" "200" "$hc_read"
+
+echo ""
+echo "--- シナリオ118: 百貨店（外商接客と売場効率のトレードオフ） ---"
+# 業態: 小売・百貨店（デパート・外商・売場）
+# 想定人物: 百貨店外商担当／売場マネージャー
+# 業務領域: 外商顧客・売場・売上・顧客の声のKJ分類と、接客・販促の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス) -> 配置提案(suggest-layout・全カード保持)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 外商接客（個別ニーズへの対応）と売場効率（人員配置・手厚さ）のトレードオフを矛盾検出
+#          （正パス）で表面化し、接客・販促の根拠にする。配置提案は**全カード（d1〜d4）が座標付きで
+#          保持される**ことを固定（DOGFOOD-23）。
+DP_ID="biz-flow-dept"
+DP_DOC='{"version":1,"id":"'$DP_ID'","title":"百貨店の接客・売場戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"外商顧客の個別ニーズに応える接客を強化したい（外商・接客）","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"若年層を呼び込む売場づくりを進めたい（売場・集客）","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"接客の手厚さと売場の効率はトレードオフの関係にあり人員配置が難しい（接客・効率）","x":20,"y":0,"textReviewed":true},{"id":"d4","text":"催事やイベントで集客を高めたい（催事・販促）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dep-i","cardIds":["d1","d2","d3","d4"]}],"readingOrder":["dep-i"]}'
+
+dp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DP_ID" \
+  -H 'Content-Type: application/json' -d "$DP_DOC")
+check "DP PUT document (作成)" "200" "$dp_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+dp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"外商顧客の個別ニーズに応える接客を強化したい（外商・接客）","textReviewed":true},{"id":"d2","text":"若年層を呼び込む売場づくりを進めたい（売場・集客）","textReviewed":true},{"id":"d3","text":"接客の手厚さと売場の効率はトレードオフの関係にあり人員配置が難しい（接客・効率）","textReviewed":true},{"id":"d4","text":"催事やイベントで集客を高めたい（催事・販促）","textReviewed":true}]}')
+case "$dp_groups" in *'"groups":'*) echo "  PASS: DP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+dp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DP_DOC,\"islandId\":\"dep-i\"}")
+case "$dp_summary" in *'"groundingIds":["d1","d2","d3","d4"]'*) echo "  PASS: DP ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: DP ②島要約（${dp_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（外商接客 vs 売場効率・接客と効率のトレードオフ・正パス）
+dp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"外商顧客の個別ニーズに応える接客を強化したい（外商・接客）","textReviewed":true},"cardB":{"id":"d3","text":"接客の手厚さと売場の効率はトレードオフの関係にあり人員配置が難しい（接客・効率）","textReviewed":true}}')
+case "$dp_contra" in *'"hasContradiction":true'*) echo "  PASS: DP ③矛盾検出（外商接客と売場効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 配置提案（全カードが座標付きで保持・DOGFOOD-23）
+dp_layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DP_DOC}")
+case "$dp_layout" in *'"suggestedDoc"'*'d1'*'d2'*'d3'*'d4'*) echo "  PASS: DP ④配置提案（全カードが保持・DOGFOOD-23）"; PASS=$((PASS+1));; *) echo "  FAIL: DP ④配置提案（${dp_layout:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+dp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DP_DOC}")
+case "$dp_narr" in *'"basedOnReadingOrder":["dep-i"]'*) echo "  PASS: DP ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DP ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+dp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DP_ID")
+check "DP 読戻し (200)" "200" "$dp_read"
+
+echo ""
+echo "--- シナリオ119: 精肉・鮮魚（鮮度維持とロス削減のトレードオフ） ---"
+# 業態: 小売・精肉鮮魚（専門小売・精肉/鮮魚店）
+# 想定人物: 精肉・鮮魚店店主／仕入れ担当
+# 業務領域: 仕入れ・鮮度管理・売場・顧客の声のKJ分類と、品揃え・鮮度施策の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative・複数島の取りこぼし) -> 読戻し
+# 注意事項: 鮮度維持（仕入れ・当日完売）とロス削減（廃棄との兼ね合い）のトレードオフを矛盾検出
+#          （正パス）で表面化し、鮮度施策の根拠にする。A/B照合は**複数島（meat-i/fish-i）の
+#          取りこぼし**（aMissingInB:2・先頭島以外を含む報告）を固定（DOGFOOD-25）。
+MF_ID="biz-flow-meatfish"
+MF_DOC='{"version":1,"id":"'$MF_ID'","title":"精肉・鮮魚店の鮮度戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"仕入れの鮮度を最優先し当日完売を目指したい（鮮度・品質）","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"季節の食材を使った提案で売場を差別化したい（品揃え・提案）","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"鮮度維持とロス削減はトレードオフの関係にあり廃棄との兼ね合いが難しい（鮮度・ロス）","x":20,"y":0,"textReviewed":true},{"id":"m4","text":"量り売りとパック売りの売場をどう分けるか悩む（売場・オペレーション）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"meat-i","cardIds":["m1","m2"]},{"id":"fish-i","cardIds":["m3","m4"]}],"readingOrder":["meat-i","fish-i"]}'
+
+mf_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MF_ID" \
+  -H 'Content-Type: application/json' -d "$MF_DOC")
+check "MF PUT document (作成)" "200" "$mf_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+mf_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"m1","text":"仕入れの鮮度を最優先し当日完売を目指したい（鮮度・品質）","textReviewed":true},{"id":"m2","text":"季節の食材を使った提案で売場を差別化したい（品揃え・提案）","textReviewed":true},{"id":"m3","text":"鮮度維持とロス削減はトレードオフの関係にあり廃棄との兼ね合いが難しい（鮮度・ロス）","textReviewed":true},{"id":"m4","text":"量り売りとパック売りの売場をどう分けるか悩む（売場・オペレーション）","textReviewed":true}]}')
+case "$mf_groups" in *'"groups":'*) echo "  PASS: MF ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MF ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（鮮度・品揃えの島）
+mf_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"islandId\":\"meat-i\"}")
+case "$mf_summary" in *'"groundingIds":["m1","m2"]'*) echo "  PASS: MF ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MF ②島要約（${mf_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（鮮度 vs ロス・鮮度とロスのトレードオフ・正パス）
+mf_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"m1","text":"仕入れの鮮度を最優先し当日完売を目指したい（鮮度・品質）","textReviewed":true},"cardB":{"id":"m3","text":"鮮度維持とロス削減はトレードオフの関係にあり廃棄との兼ね合いが難しい（鮮度・ロス）","textReviewed":true}}')
+case "$mf_contra" in *'"hasContradiction":true'*) echo "  PASS: MF ③矛盾検出（鮮度維持とロス削減のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: MF ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+mf_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MF_DOC}")
+case "$mf_narr" in *'"basedOnReadingOrder":["meat-i","fish-i"]'*) echo "  PASS: MF ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MF ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（複数島の取りこぼし・aMissingInB:2・先頭島以外を含む報告・DOGFOOD-25）
+mf_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MF_DOC,\"narrativeText\":\"（草稿）仕入れ鮮度を最優先し、季節の食材で売場を差別化したい。ただしロス削減策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"meat-i\",\"fish-i\"]}")
+case "$mf_ab" in *'ナラティブが島meat-i, fish-iに触れていない'*'"aMissingInB":2'*) echo "  PASS: MF ⑤A/B照合（複数島の取りこぼし・aMissingInB:2・DOGFOOD-25）"; PASS=$((PASS+1));; *) echo "  FAIL: MF ⑤A/B照合（${mf_ab:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+mf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MF_ID")
+check "MF 読戻し (200)" "200" "$mf_read"
+
+echo ""
+echo "--- シナリオ120: アミューズメント（集客と維持のトレードオフ） ---"
+# 業態: レジャー・アミューズメント（ゲームセンター・アーケード）
+# 想定人物: アミューズメント施設運営マネージャー
+# 業務領域: ゲーム機・売上・客層・オペレーションのKJ分類と、施設運営・集客の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> タイトル提案(suggest-document-title・全体テーマ)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 集客（新作ゲーム機の導入）と維持（筐体メンテナンスと稼働率）のトレードオフを矛盾検出
+#          （正パス）で表面化し、施設運営の根拠にする。タイトル提案は**複数島の文書で全体テーマ
+#          （両方の島ラベル）を反映**することを固定（DOGFOOD-26）。
+AM_ID="biz-flow-amuse"
+AM_DOC='{"version":1,"id":"'$AM_ID'","title":"アミューズメント施設の運営戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"a1","text":"新作ゲーム機の導入で集客を増やしたい（集客・新規）","x":0,"y":0,"textReviewed":true},{"id":"a2","text":"子供向けエリアと大人向けエリアを分けたい（客層・ゾーニング）","x":10,"y":0,"textReviewed":true},{"id":"a3","text":"筐体のメンテナンスと稼働率はトレードオフの関係にあり優先順位が難しい（維持・稼働）","x":20,"y":0,"textReviewed":true},{"id":"a4","text":"クレーンゲームの景品原価と利益率のバランスに悩む（景品・利益）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"amu-grow","cardIds":["a1","a2"]},{"id":"amu-ops","cardIds":["a3","a4"]}],"readingOrder":["amu-grow","amu-ops"]}'
+
+am_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AM_ID" \
+  -H 'Content-Type: application/json' -d "$AM_DOC")
+check "AM PUT document (作成)" "200" "$am_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+am_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"a1","text":"新作ゲーム機の導入で集客を増やしたい（集客・新規）","textReviewed":true},{"id":"a2","text":"子供向けエリアと大人向けエリアを分けたい（客層・ゾーニング）","textReviewed":true},{"id":"a3","text":"筐体のメンテナンスと稼働率はトレードオフの関係にあり優先順位が難しい（維持・稼働）","textReviewed":true},{"id":"a4","text":"クレーンゲームの景品原価と利益率のバランスに悩む（景品・利益）","textReviewed":true}]}')
+case "$am_groups" in *'"groups":'*) echo "  PASS: AM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（集客・客層の島）
+am_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AM_DOC,\"islandId\":\"amu-grow\"}")
+case "$am_summary" in *'"groundingIds":["a1","a2"]'*) echo "  PASS: AM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AM ②島要約（${am_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（集客 vs 維持・集客と維持のトレードオフ・正パス）
+am_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"a1","text":"新作ゲーム機の導入で集客を増やしたい（集客・新規）","textReviewed":true},"cardB":{"id":"a3","text":"筐体のメンテナンスと稼働率はトレードオフの関係にあり優先順位が難しい（維持・稼働）","textReviewed":true}}')
+case "$am_contra" in *'"hasContradiction":true'*) echo "  PASS: AM ③矛盾検出（集客と維持のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: AM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ タイトル提案（複数島の全体テーマ・両島ラベルを反映・DOGFOOD-26）
+am_title=$(curl -s -X POST "$BASE_URL/ai/suggest-document-title" -H 'Content-Type: application/json' \
+  -d '{"islandTitles":["アミューズメントの集客・客層戦略","ゲーム機の維持・景品利益"],"cardTexts":["新作ゲーム機の導入で集客を増やしたい","子供向けエリアと大人向けエリアを分けたい","筐体のメンテナンスと稼働率はトレードオフの関係にあり優先順位が難しい","クレーンゲームの景品原価と利益率のバランスに悩む"],"textReviewed":true}')
+case "$am_title" in *'"candidates"'*'アミューズメントの集客・客層戦略'*'ゲーム機の維持・景品利益'*) echo "  PASS: AM ④タイトル提案（複数島の全体テーマを反映・DOGFOOD-26）"; PASS=$((PASS+1));; *) echo "  FAIL: AM ④タイトル提案（${am_title:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+am_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AM_DOC}")
+case "$am_narr" in *'"basedOnReadingOrder":["amu-grow","amu-ops"]'*) echo "  PASS: AM ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AM ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+am_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AM_ID")
+check "AM 読戻し (200)" "200" "$am_read"
+
+echo ""
+echo "--- シナリオ121: 温浴・スパ（衛生管理と運営コストのトレードオフ） ---"
+# 業態: レジャー・温浴（温泉・スパ・日帰り入浴）
+# 想定人物: 温浴施設支配人／運営担当
+# 業務領域: 施設運営・客層・清掃・料金のKJ分類と、集客・サービス改善の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・4カード島の全接地)
+#          -> 矛盾検出(detect-contradiction・正パス・説明文がカード対を参照) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: 衛生管理（清掃・再来訪）と運営コスト（改修の優先順位）のトレードオフを矛盾検出（正パス）で
+#          表面化し、施設運営の根拠にする。矛盾検出の**説明文がカード対（衛生・品質 / 快適・コスト）を
+#          参照**することを固定（DOGFOOD-27）。
+SP_ID="biz-flow-spa"
+SP_DOC='{"version":1,"id":"'$SP_ID'","title":"温浴施設の運営戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"源泉の質や雰囲気を売りに集客を高めたい（集客・魅力）","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"清掃と衛生管理を徹底し再来訪につなげたい（衛生・品質）","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"施設の快適さと運営コストはトレードオフの関係にあり改修の優先順位が難しい（快適・コスト）","x":20,"y":0,"textReviewed":true},{"id":"s4","text":"混雑時の待ち時間と客の満足度のバランスに悩む（混雑・満足）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"spa-i","cardIds":["s1","s2","s3","s4"]}],"readingOrder":["spa-i"]}'
+
+sp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SP_ID" \
+  -H 'Content-Type: application/json' -d "$SP_DOC")
+check "SP PUT document (作成)" "200" "$sp_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+sp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"源泉の質や雰囲気を売りに集客を高めたい（集客・魅力）","textReviewed":true},{"id":"s2","text":"清掃と衛生管理を徹底し再来訪につなげたい（衛生・品質）","textReviewed":true},{"id":"s3","text":"施設の快適さと運営コストはトレードオフの関係にあり改修の優先順位が難しい（快適・コスト）","textReviewed":true},{"id":"s4","text":"混雑時の待ち時間と客の満足度のバランスに悩む（混雑・満足）","textReviewed":true}]}')
+case "$sp_groups" in *'"groups":'*) echo "  PASS: SP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（4カード島の全接地）
+sp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"islandId\":\"spa-i\"}")
+case "$sp_summary" in *'"groundingIds":["s1","s2","s3","s4"]'*) echo "  PASS: SP ②島要約（4カード島の全接地）"; PASS=$((PASS+1));; *) echo "  FAIL: SP ②島要約（${sp_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（衛生 vs コスト・説明文がカード対を参照・DOGFOOD-27）
+sp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s2","text":"清掃と衛生管理を徹底し再来訪につなげたい（衛生・品質）","textReviewed":true},"cardB":{"id":"s3","text":"施設の快適さと運営コストはトレードオフの関係にあり改修の優先順位が難しい（快適・コスト）","textReviewed":true}}')
+case "$sp_contra" in *'"hasContradiction":true'*'清掃と衛生管理を徹底し再来訪につなげたい'*'施設の快適さと運営コストはトレードオフ'*) echo "  PASS: SP ③矛盾検出（説明文がカード対を参照・DOGFOOD-27）"; PASS=$((PASS+1));; *) echo "  FAIL: SP ③矛盾検出（${sp_contra:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SP_DOC}")
+case "$sp_narr" in *'"basedOnReadingOrder":["spa-i"]'*) echo "  PASS: SP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島spa-iに触れていない・a_missing_in_b）
+sp_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SP_DOC,\"narrativeText\":\"（草稿）施設運営を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"spa-i\"]}")
+case "$sp_ab" in *'ナラティブが島spa-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: SP ⑤A/B照合（島spa-iの取りこぼし・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: SP ⑤A/B照合（${sp_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+sp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SP_ID")
+check "SP 読戻し (200)" "200" "$sp_read"
+
+echo ""
+echo "--- シナリオ122: 映画館（集客と稼働のトレードオフ） ---"
+# 業態: レジャー・映画（映画館・シネマコンプレックス）
+# 想定人物: シネマコンプレックス支配人／興行担当
+# 業務領域: 上映作品・客層・座席稼働・映画館運営のKJ分類と、編成・集客の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> 島間関係要約(summarize-island-relation・島A/Bを本文で参照)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: 集客（話題作の同時上映）と稼働（座席稼働率と上映回数）のトレードオフを矛盾検出（正パス）で
+#          表面化し、編成・集客の根拠にする。島間関係要約は**本文が島A/B（cine-sched/cine-ops）を参照**
+#          することを固定（DOGFOOD-28）。
+CN_ID="biz-flow-cinema"
+CN_DOC='{"version":1,"id":"'$CN_ID'","title":"シネマコンプレックス編成戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"話題作の同時上映で集客を高めたい（集客・編成）","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"客層に合わせたレイトショーや特別上映を組んで差別化したい（編成・客層）","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"座席稼働率と上映回数はトレードオフの関係にあり回数調整が難しい（稼働・コスト）","x":20,"y":0,"textReviewed":true},{"id":"f4","text":"人気作品の長期上映と新作の投入のバランスに悩む（編成・新作）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cine-sched","cardIds":["f1","f2"]},{"id":"cine-ops","cardIds":["f3","f4"]}],"readingOrder":["cine-sched","cine-ops"]}'
+
+cn_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CN_ID" \
+  -H 'Content-Type: application/json' -d "$CN_DOC")
+check "CN PUT document (作成)" "200" "$cn_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+cn_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"話題作の同時上映で集客を高めたい（集客・編成）","textReviewed":true},{"id":"f2","text":"客層に合わせたレイトショーや特別上映を組んで差別化したい（編成・客層）","textReviewed":true},{"id":"f3","text":"座席稼働率と上映回数はトレードオフの関係にあり回数調整が難しい（稼働・コスト）","textReviewed":true},{"id":"f4","text":"人気作品の長期上映と新作の投入のバランスに悩む（編成・新作）","textReviewed":true}]}')
+case "$cn_groups" in *'"groups":'*) echo "  PASS: CN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（集客・編成の島）
+cn_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CN_DOC,\"islandId\":\"cine-sched\"}")
+case "$cn_summary" in *'"groundingIds":["f1","f2"]'*) echo "  PASS: CN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CN ②島要約（${cn_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（集客 vs 稼働・集客と稼働のトレードオフ・正パス）
+cn_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"f1","text":"話題作の同時上映で集客を高めたい（集客・編成）","textReviewed":true},"cardB":{"id":"f3","text":"座席稼働率と上映回数はトレードオフの関係にあり回数調整が難しい（稼働・コスト）","textReviewed":true}}')
+case "$cn_contra" in *'"hasContradiction":true'*) echo "  PASS: CN ③矛盾検出（集客と稼働のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 島間関係要約（本文が島A/Bを参照・DOGFOOD-28）
+cn_rel=$(curl -s -X POST "$BASE_URL/ai/summarize-island-relation" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CN_DOC,\"islandAId\":\"cine-sched\",\"islandBId\":\"cine-ops\",\"relationType\":\"causal\",\"derived\":false,\"groundingCardIds\":[\"f3\"],\"groundingEdgeIds\":[],\"cardTexts\":[{\"id\":\"f3\",\"text\":\"座席稼働率と上映回数はトレードオフの関係にあり回数調整が難しい（稼働・コスト）\"}]}")
+case "$cn_rel" in *'"text"'*'島cine-schedと島cine-ops'*) echo "  PASS: CN ④島間関係要約（本文が島A/Bを参照・DOGFOOD-28）"; PASS=$((PASS+1));; *) echo "  FAIL: CN ④島間関係要約（${cn_rel:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+cn_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CN_DOC}")
+case "$cn_narr" in *'"basedOnReadingOrder":["cine-sched","cine-ops"]'*) echo "  PASS: CN ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CN ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+cn_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CN_ID")
+check "CN 読戻し (200)" "200" "$cn_read"
+
+echo ""
+echo "--- シナリオ123: 自転車店（サービスと在庫・レイアウトのトレードオフ） ---"
+# 業態: 小売・自転車（サイクルショップ・修理販売）
+# 想定人物: 自転車店店主／店舗運営担当
+# 業務領域: 販売・修理・部品在庫・顧客の声のKJ分類と、品揃え・サービス改善の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary・表札がテーマを参照)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> A/B照合(check-narrative) -> 読戻し
+# 注意事項: サービス（修理納期短縮・試乗体験）と在庫・レイアウト（拡充とスペース）のトレードオフを
+#          矛盾検出（正パス）で表面化し、品揃え・サービス改善の根拠にする。島要約の**表札が島の
+#          テーマ（顧客サービス）を参照**することを固定（DOGFOOD-29）。
+BK_ID="biz-flow-bike"
+BK_DOC='{"version":1,"id":"'$BK_ID'","title":"自転車店の品揃え・サービス戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"b1","text":"サイズ合わせや試乗体験を充実させたい（顧客サービス）","x":0,"y":0,"textReviewed":true},{"id":"b2","text":"修理の納期を短縮し顧客満足を高めたい（顧客サービス）","x":10,"y":0,"textReviewed":true},{"id":"b3","text":"在庫の拡充と修理スペースはトレードオフの関係にあり店舗レイアウトが難しい（在庫・レイアウト）","x":20,"y":0,"textReviewed":true},{"id":"b4","text":"e-bikeやクロスバイクの需要に応える品揃えを検討したい（品揃え・新カテゴリ）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bike-i","cardIds":["b1","b2","b3","b4"]}],"readingOrder":["bike-i"]}'
+
+bk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BK_ID" \
+  -H 'Content-Type: application/json' -d "$BK_DOC")
+check "BK PUT document (作成)" "200" "$bk_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+bk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"b1","text":"サイズ合わせや試乗体験を充実させたい（顧客サービス）","textReviewed":true},{"id":"b2","text":"修理の納期を短縮し顧客満足を高めたい（顧客サービス）","textReviewed":true},{"id":"b3","text":"在庫の拡充と修理スペースはトレードオフの関係にあり店舗レイアウトが難しい（在庫・レイアウト）","textReviewed":true},{"id":"b4","text":"e-bikeやクロスバイクの需要に応える品揃えを検討したい（品揃え・新カテゴリ）","textReviewed":true}]}')
+case "$bk_groups" in *'"groups":'*) echo "  PASS: BK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（表札が島のテーマを参照・DOGFOOD-29）
+bk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BK_DOC,\"islandId\":\"bike-i\"}")
+case "$bk_summary" in *'"summaryText"'*'顧客サービス'*) echo "  PASS: BK ②島要約（表札が島のテーマを参照・DOGFOOD-29）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ②島要約（${bk_summary:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（サービス vs 在庫・レイアウト・サービスと在庫のトレードオフ・正パス）
+bk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"b2","text":"修理の納期を短縮し顧客満足を高めたい（顧客サービス）","textReviewed":true},"cardB":{"id":"b3","text":"在庫の拡充と修理スペースはトレードオフの関係にあり店舗レイアウトが難しい（在庫・レイアウト）","textReviewed":true}}')
+case "$bk_contra" in *'"hasContradiction":true'*) echo "  PASS: BK ③矛盾検出（サービスと在庫・レイアウトのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BK_DOC}")
+case "$bk_narr" in *'"basedOnReadingOrder":["bike-i"]'*) echo "  PASS: BK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ A/B照合（ナラティブが島bike-iに触れていない・a_missing_in_b）
+bk_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BK_DOC,\"narrativeText\":\"（草稿）店舗運営を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"bike-i\"]}")
+case "$bk_ab" in *'ナラティブが島bike-iに触れていない'*'"aMissingInB":1'*) echo "  PASS: BK ⑤A/B照合（島bike-iの取りこぼし・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: BK ⑤A/B照合（${bk_ab:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
+check "BK 読戻し (200)" "200" "$bk_read"
+
+echo ""
+echo "--- シナリオ124: フラワーショップ（ギフト需要と仕入れロスのトレードオフ） ---"
+# 業態: 小売・生花（フラワーショップ・花屋）
+# 想定人物: 生花店店主／フローリスト
+# 業務領域: 仕入れ・花の在庫・アレンジメント・顧客の声のKJ分類と、品揃え・サービス改善の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> 配置提案(suggest-layout・島・読み順を保持)
+#          -> ナラティブ(generate-narrative) -> 読戻し
+# 注意事項: ギフト需要（冠婚葬祭・リピーター）と仕入れロス（発注バランス・廃棄）のトレードオフを
+#          矛盾検出（正パス）で表面化し、品揃え・サービス改善の根拠にする。配置提案は**島・読み順
+#          （flr-gift/flr-ops）を保持**することを固定（DOGFOOD-30）。
+FL_ID="biz-flow-flower"
+FL_DOC='{"version":1,"id":"'$FL_ID'","title":"フラワーショップの品揃え・サービス戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"冠婚葬祭やギフト需要に応える品揃えを整えたい（ギフト需要）","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"アレンジメント教室や定期宅配でリピーターを増やしたい（ギフト需要）","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"仕入れ量と売れ残りの廃棄はトレードオフの関係にあり発注のバランスが難しい（仕入れ・ロス）","x":20,"y":0,"textReviewed":true},{"id":"f4","text":"鮮度管理と花の廃棄ロスを減らしたい（仕入れ・ロス）","x":30,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"flr-gift","cardIds":["f1","f2"]},{"id":"flr-ops","cardIds":["f3","f4"]}],"readingOrder":["flr-gift","flr-ops"]}'
+
+fl_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FL_ID" \
+  -H 'Content-Type: application/json' -d "$FL_DOC")
+check "FL PUT document (作成)" "200" "$fl_put"
+
+# ① AI束ね（カテゴリ別の同グループ化）
+fl_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"冠婚葬祭やギフト需要に応える品揃えを整えたい（ギフト需要）","textReviewed":true},{"id":"f2","text":"アレンジメント教室や定期宅配でリピーターを増やしたい（ギフト需要）","textReviewed":true},{"id":"f3","text":"仕入れ量と売れ残りの廃棄はトレードオフの関係にあり発注のバランスが難しい（仕入れ・ロス）","textReviewed":true},{"id":"f4","text":"鮮度管理と花の廃棄ロスを減らしたい（仕入れ・ロス）","textReviewed":true}]}')
+case "$fl_groups" in *'"groups":'*) echo "  PASS: FL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約（ギフト需要の島）
+fl_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FL_DOC,\"islandId\":\"flr-gift\"}")
+case "$fl_summary" in *'"groundingIds":["f1","f2"]'*) echo "  PASS: FL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FL ②島要約（${fl_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（ギフト需要 vs 仕入れロス・需要とロスのトレードオフ・正パス）
+fl_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"f1","text":"冠婚葬祭やギフト需要に応える品揃えを整えたい（ギフト需要）","textReviewed":true},"cardB":{"id":"f3","text":"仕入れ量と売れ残りの廃棄はトレードオフの関係にあり発注のバランスが難しい（仕入れ・ロス）","textReviewed":true}}')
+case "$fl_contra" in *'"hasContradiction":true'*) echo "  PASS: FL ③矛盾検出（ギフト需要と仕入れロスのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: FL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ 配置提案（島・読み順を保持・DOGFOOD-30）
+fl_layout=$(curl -s -X POST "$BASE_URL/ai/suggest-layout" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FL_DOC}")
+case "$fl_layout" in *'"suggestedDoc"'*'"islands"'*'"readingOrder":["flr-gift","flr-ops"]'*) echo "  PASS: FL ④配置提案（島・読み順を保持・DOGFOOD-30）"; PASS=$((PASS+1));; *) echo "  FAIL: FL ④配置提案（${fl_layout:0:200}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ
+fl_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FL_DOC}")
+case "$fl_narr" in *'"basedOnReadingOrder":["flr-gift","flr-ops"]'*) echo "  PASS: FL ⑤ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FL ⑤ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑥ 読戻し
+fl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FL_ID")
+check "FL 読戻し (200)" "200" "$fl_read"
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
