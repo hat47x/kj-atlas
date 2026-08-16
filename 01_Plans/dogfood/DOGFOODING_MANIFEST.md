@@ -7,19 +7,19 @@
 
 ---
 
-## 1. 現状サマリ（2026-08-17・iteration 214 時点）
+## 1. 現状サマリ（2026-08-17・iteration 215 時点）
 
 | 指標 | 値 | 検証方法 |
 |------|----|---------|
-| 総シナリオ数（シナリオ1〜144） | 144 | §2.1 実走行＋`business-flow-e2e-scenarios-2026-08-15.md` |
-| 業務フローE2Eスクリプトのシナリオヘッダ数 | 142 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
-| カバー業態数 | 144 | シナリオドキュメント「カバレッジ集約」 |
-| 業務フローE2Eチェック数 | 869 | §2.1 実走行 → `Result: 869 passed, 0 failed` |
-| 総チェック数（check 10） | **927** | = 869（業務フロー）＋ 20（admin ops）＋ 7（kj multi-round）＋ 16（MCP CE-4 audit）＋ 15（CLI CE-4 audit）— 算術を verify script で照合 |
+| 総シナリオ数（シナリオ1〜145） | 145 | §2.1 実走行＋`business-flow-e2e-scenarios-2026-08-15.md` |
+| 業務フローE2Eスクリプトのシナリオヘッダ数 | 143 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
+| カバー業態数 | 145 | シナリオドキュメント「カバレッジ集約」 |
+| 業務フローE2Eチェック数 | 875 | §2.1 実走行 → `Result: 875 passed, 0 failed` |
+| 総チェック数（check 10） | **933** | = 875（業務フロー）＋ 20（admin ops）＋ 7（kj multi-round）＋ 16（MCP CE-4 audit）＋ 15（CLI CE-4 audit）— 算術を verify script で照合 |
 | 発行済み課題 | 21（AI-MODEL-GOVERNANCE-02 / OPS-LLM-COST-02 / DOGFOOD-11 / DOGFOOD-12 / DOGFOOD-13 / DOGFOOD-14 / DOGFOOD-15 / DOGFOOD-16 / DOGFOOD-17 / DOGFOOD-18 / DOGFOOD-19 / DOGFOOD-20 / DOGFOOD-21 / DOGFOOD-22 / DOGFOOD-23 / DOGFOOD-25 / DOGFOOD-26 / DOGFOOD-27 / DOGFOOD-28 / DOGFOOD-29 / DOGFOOD-30・**すべて Done**） | verify script |
 | 検証層 | backend単体・frontend単体・frontend UI E2E・業務フローE2E・計画文書整合 | §2 |
 
-> 注記: 総チェック数は**業務フローE2Eのチェック数（869）とは別**。CIハーネス `verify_all.sh` check 10 は5自己完結E2E（業務フロー・admin ops・kj multi-round・MCP CE-4 audit・CLI CE-4 audit）を実行するため、総数 = 927。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。iteration 195 の実走行照合で、並行編集者が拡張した admin ops（12→20・CLIモデルレジストリ運用追加）と MCP CE-4 audit（8→9）を実チェック数へ同期した。
+> 注記: 総チェック数は**業務フローE2Eのチェック数（875）とは別**。CIハーネス `verify_all.sh` check 10 は5自己完結E2E（業務フロー・admin ops・kj multi-round・MCP CE-4 audit・CLI CE-4 audit）を実行するため、総数 = 933。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。iteration 195 の実走行照合で、並行編集者が拡張した admin ops（12→20・CLIモデルレジストリ運用追加）と MCP CE-4 audit（8→9）を実チェック数へ同期した。
 
 ---
 
@@ -28,7 +28,7 @@
 ### 2.1 業務フローE2E（決定性モックLLM・課金なし）
 ```bash
 cd 03_Implement/backend
-bash scripts/verify_business_flow_e2e.sh 8005   # 期待: "Result: 869 passed, 0 failed"（シナリオ1〜144）
+bash scripts/verify_business_flow_e2e.sh 8005   # 期待: "Result: 875 passed, 0 failed"（シナリオ1〜145）
 ```
 - 起点: `mock_local_llm.py`（GPU不要・決定的・`/generate` 契約）
 - 固定対象: 業態×人物×領域×操作×注意事項の標準業務フロー
@@ -73,14 +73,14 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 
 | 成果物 | 役割 | 検証コマンド |
 |--------|------|-------------|
-| `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜144・869 checks） | §2.1 |
+| `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜145・875 checks） | §2.1 |
 | `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・20 checks・自前スクリプト＋CLIモデルレジストリ運用を含む） | §2.2 |
 | `03_Implement/backend/scripts/verify_kj_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
 | `03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py` | MCP read→CE-4監査（channel=mcp）→HTTPシンク到達の自己完結E2E（16 checks・外部提案登録＋MCP側でもproposed→decided決定反映を確認） | §2.2 |
 | `03_Implement/backend/scripts/verify_cli_ce4_audit_e2e.py` | `kj` CLI→CE-4監査（channel=cli）→HTTPシンク到達の自己完結E2E（15 checks・全CE4ライフサイクル＋resolve-bundle） | §2.2 |
 | `03_Implement/backend/verify_all.sh` | CIハーネス（check 10 配線） | §2.2 |
 | `03_Implement/deploy/tools/mock_local_llm.py` | 決定性モックLLM（GPU不要） | §2.1 前提 |
-| `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md` | シナリオ定義・カバレッジ集約（シナリオ144・チェック869） | §2.1 数値照合 |
+| `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md` | シナリオ定義・カバレッジ集約（シナリオ145・チェック875） | §2.1 数値照合 |
 | `01_Plans/dogfood/README.md` | イテレーション履歴ログ（iteration 1〜194） | 目視 / verify script |
 | `01_Plans/dogfood/verify_dogfood_records.sh` | **本マニフェストの構造照合スクリプト** | 直接実行 |
 | `03_Implement/frontend/e2e/ce4_island_summary_proposal.spec.ts` | CE4 proposal 連鎖のUI固定 | §2.5 |
@@ -220,6 +220,7 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 | iteration 212 | シナリオ142（カメラ・写真・品質と効率の相克・矛盾検出の正パスを追加）→ 857/857 |
 | iteration 213 | シナリオ143（医薬品卸・供給と効率の相克・矛盾検出の正パスを追加）→ 863/863 |
 | iteration 214 | シナリオ144（スポーツ用品・専門性と価格の相克・矛盾検出の正パスを追加）→ 869/869 |
+| iteration 215 | シナリオ145（コンサート・ライブ運営・音楽の質と集客の相克・矛盾検出の正パスを追加）→ 875/875 |
 
 ---
 

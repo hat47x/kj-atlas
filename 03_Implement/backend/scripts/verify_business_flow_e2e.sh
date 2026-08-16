@@ -6292,5 +6292,47 @@ sport_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SPORT_ID")
 check "SPORT 読戻し (200)" "200" "$sport_read"
 
 echo ""
+echo "--- シナリオ145: コンサート・ライブ運営（音楽の質・体験と集客・収益のトレードオフ） ---"
+# 業態: コンサート・ライブ運営（ライブハウス・興行）
+# 想定人物: ライブハウス支配人／イベントプロデューサー
+# 業務領域: 出演者・観客・音響・集客への声のKJ分類と、ライブ運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: アーティストの表現と観客の体験（音響・ステージ・雰囲気）を大切にする（音楽の質・体験）と
+#          チケット販売や運営コストへの対応（集客・収益）のトレードオフを矛盾検出（正パス）で
+#          表面化し、ライブ運営の改善根拠にする（音楽の質と集客の相克・若手アーティストの育成や
+#          地域コミュニティとの連携で文化を育てる動きも指摘）。
+LIVE_ID="biz-flow-live"
+LIVE_DOC='{"version":1,"id":"'$LIVE_ID'","title":"ライブ運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"l1","text":"アーティストの表現と観客の体験（音響・ステージ・雰囲気）を大切にする声（音楽の質・体験）","x":0,"y":0,"textReviewed":true},{"id":"l2","text":"チケット販売や運営コストへの対応など、音楽の質と集客・収益のトレードオフに悩む声（集客・収益）","x":10,"y":0,"textReviewed":true},{"id":"l3","text":"若手アーティストの育成や地域コミュニティとの連携で文化を育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"live-i","cardIds":["l1","l2","l3"]}],"readingOrder":["live-i"]}'
+
+live_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LIVE_ID" \
+  -H 'Content-Type: application/json' -d "$LIVE_DOC")
+check "LIVE PUT document (作成)" "200" "$live_put"
+
+# ① AI束ね
+live_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"l1","text":"アーティストの表現と観客の体験（音響・ステージ・雰囲気）を大切にする声（音楽の質・体験）","textReviewed":true},{"id":"l2","text":"チケット販売や運営コストへの対応など、音楽の質と集客・収益のトレードオフに悩む声（集客・収益）","textReviewed":true},{"id":"l3","text":"若手アーティストの育成や地域コミュニティとの連携で文化を育てる動き","textReviewed":true}]}')
+case "$live_groups" in *'"groups":'*) echo "  PASS: LIVE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LIVE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+live_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LIVE_DOC,\"islandId\":\"live-i\"}")
+case "$live_summary" in *'"groundingIds":["l1","l2","l3"]'*) echo "  PASS: LIVE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LIVE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（音楽の質・体験 vs 集客・収益・音楽の質と集客の相克・正パス）
+live_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"l1","text":"アーティストの表現と観客の体験（音響・ステージ・雰囲気）を大切にする声（音楽の質・体験）","textReviewed":true},"cardB":{"id":"l2","text":"チケット販売や運営コストへの対応など、音楽の質と集客・収益のトレードオフに悩む声（集客・収益）","textReviewed":true}}')
+case "$live_contra" in *'"hasContradiction":true'*) echo "  PASS: LIVE ③矛盾検出（音楽の質・体験と集客・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: LIVE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+live_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$LIVE_DOC}")
+case "$live_narr" in *'"basedOnReadingOrder":["live-i"]'*) echo "  PASS: LIVE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: LIVE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+live_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LIVE_ID")
+check "LIVE 読戻し (200)" "200" "$live_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
