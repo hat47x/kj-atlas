@@ -251,6 +251,121 @@ try {
     );
     await page.close();
   }
+
+  // A11: rapid keyboard collapse/expand must not create a React update loop.
+  if (run("A11")) {
+    const page = await open(
+      [
+        { id: "c1", text: "折りたたみ確認A", x: 220, y: 220 },
+        { id: "c2", text: "折りたたみ確認B", x: 500, y: 220 },
+      ],
+      [{ id: "i1", title: "折りたみ確認島", cardIds: ["c1", "c2"], shape: { kind: "rect", x: 150, y: 160, width: 560, height: 260 } }]
+    );
+    const updateDepthWarnings = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && message.text().includes("Maximum update depth exceeded")) {
+        updateDepthWarnings.push(message.text());
+      }
+    });
+    for (let index = 0; index < 12; index += 1) {
+      const toggle = page.getByRole("button", { name: /島 i1 を(折りたたむ|展開)/ });
+      await toggle.focus();
+      await page.keyboard.press("Space");
+      await page.waitForTimeout(30);
+    }
+    await page.waitForTimeout(300);
+    rec(
+      "A11",
+      "島の折りたたみ・展開をキーボードで反復しても更新loopにならない",
+      updateDepthWarnings.length === 0,
+      `Maximum update depth警告=${updateDepthWarnings.length}`
+    );
+    await page.close();
+  }
+
+  // A12: clearing a selection with Escape must retain a useful keyboard
+  // focus target when the selected-only context action disappears.
+  if (run("A12")) {
+    const page = await open([{ id: "c1", text: "選択解除フォーカス確認", x: 220, y: 220 }]);
+    await page.getByRole("button", { name: "選択解除フォーカス確認" }).click();
+    const focusSelected = page.getByRole("button", { name: "選択中のカードを表示" });
+    await focusSelected.focus();
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    const context = page.locator('[data-panel="selection-context"]');
+    const selectionCleared = await focusSelected.count() === 0;
+    const focusRetained = await context.evaluate((element) => document.activeElement === element);
+    const active = await page.evaluate(() => {
+      const element = document.activeElement;
+      return element ? `${element.tagName.toLowerCase()}:${element.getAttribute("aria-label") || ""}` : "(none)";
+    });
+    rec(
+      "A12",
+      "選択専用ボタン上のEscapeで選択解除後もfocusを維持する",
+      selectionCleared && focusRetained,
+      `選択解除=${selectionCleared} / contextへfocus=${focusRetained} / active=${active}`
+    );
+    await page.close();
+  }
+
+  // A13: focusing a collapsed island and then expanding it reproduced the
+  // random sweep's CanvasShell maximum-update-depth warning.
+  if (run("A13")) {
+    const page = await open(
+      [
+        { id: "c1", text: "focus展開確認A", x: 220, y: 220 },
+        { id: "c2", text: "focus展開確認B", x: 500, y: 220 },
+        { id: "c3", text: "focus展開確認C", x: 740, y: 220 },
+      ],
+      [
+        { id: "base-island", title: "既存島", cardIds: ["c1", "c2"], shape: { kind: "rect", x: 150, y: 160, width: 560, height: 260 } },
+        { id: "i1", title: "focus展開確認島", cardIds: ["c1", "c3"], shape: { kind: "rect", x: 150, y: 160, width: 820, height: 260 } },
+      ]
+    );
+    const updateDepthWarnings = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && message.text().includes("Maximum update depth exceeded")) {
+        updateDepthWarnings.push(message.text());
+      }
+    });
+    const toggle = () => page.getByRole("button", { name: /島 i1 を(折りたたむ|展開)/ });
+    const focus = () => page.getByRole("button", { name: "島 i1 を表示" });
+    await toggle().focus();
+    await page.keyboard.press("Enter");
+    for (let index = 0; index < 1; index += 1) {
+      await focus().focus();
+      await page.keyboard.press("Enter");
+    }
+    await toggle().focus();
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(400);
+    rec(
+      "A13",
+      "折りたたみ島をfocus反復後に展開しても更新loopにならない",
+      updateDepthWarnings.length === 0,
+      `Maximum update depth警告=${updateDepthWarnings.length}`
+    );
+    await page.close();
+  }
+
+  // A14: stabilizing the transform callback must not suppress ordinary user
+  // camera changes from reaching the document's dirty/save flow.
+  if (run("A14")) {
+    const page = await open([{ id: "c1", text: "camera永続化確認", x: 220, y: 220 }]);
+    const save = page.getByRole("banner").getByRole("button", { name: /^(保存|Save)$/ });
+    const disabledBefore = await save.isDisabled();
+    await page.mouse.move(700, 500);
+    await page.mouse.wheel(0, -400);
+    await page.waitForTimeout(300);
+    const enabledAfter = await save.isEnabled();
+    rec(
+      "A14",
+      "通常のwheel zoomが文書の未保存変更として反映される",
+      disabledBefore && enabledAfter,
+      `操作前Save無効=${disabledBefore} / zoom後Save有効=${enabledAfter}`
+    );
+    await page.close();
+  }
 } catch (error) {
   rec("EXCEPTION", "実行時例外", false, String(error).slice(0, 300));
 } finally {

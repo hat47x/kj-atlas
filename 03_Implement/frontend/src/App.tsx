@@ -1578,6 +1578,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const document = history?.present ?? null;
+  const documentRef = useRef(document);
+  documentRef.current = document;
   const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
 
   // UI-RESILIENCE-01: restore a document preserved by the error boundary
@@ -2627,7 +2629,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleTransformChange = useCallback(
     (nextTransform: DocumentV1["transform"]) => {
-      if (!document || isPreviewingSuggestion) {
+      const currentDocument = documentRef.current;
+      if (!currentDocument || isPreviewingSuggestion) {
         return;
       }
 
@@ -2636,7 +2639,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const current = document.transform;
+      const current = currentDocument.transform;
       if (
         current.panX === nextTransform.panX &&
         current.panY === nextTransform.panY &&
@@ -2660,7 +2663,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         };
       });
     },
-    [document, isPreviewingSuggestion]
+    [isPreviewingSuggestion]
   );
 
   const handleCardMove = useCallback(
@@ -4751,6 +4754,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
+    const activeElement = window.document.activeElement;
+    const shouldRestoreSelectionContextFocus =
+      activeElement instanceof HTMLElement &&
+      activeElement.closest('[data-panel="selection-context"]') !== null;
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (previousSelectedCardIds.length === 0) {
         return previousSelectedCardIds;
@@ -4760,6 +4768,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setSelectedIslandId(null);
     setSelectedEdgeId(null);
+    if (shouldRestoreSelectionContextFocus) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (window.document.activeElement !== window.document.body) {
+            return;
+          }
+          const selectionContext = window.document.querySelector<HTMLElement>('[data-panel="selection-context"]');
+          selectionContext?.focus({ preventScroll: true });
+        });
+      });
+    }
   }, [isPickingEdgeTarget]);
 
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {

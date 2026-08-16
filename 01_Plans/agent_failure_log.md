@@ -489,6 +489,13 @@ Updated: 2026-08-03
 - 対応: HEADの行内容と改行形式を照合し、既存行ごとの改行形式を復元して実質差分をCardView 2行、test 14行へ縮小した。
 - 再発防止: 混在改行fileは一律変換せず、`git diff --numstat`で異常増加を確認してから既存行の改行形式を保つ。
 
+## 2026-08-16: 計画更新JavaScriptの配列要素区切り漏れ
+
+- 事象: モンキーテスト継続計画の更新時、隣接するplan item間のcommaを欠き`SyntaxError`で停止した。
+- 原因: 複数項目を一行へ圧縮して入力し、構文確認が不十分だった。
+- 対応: plan itemを一行ずつ分けてcommaを明示し、同じ計画を正常に更新した。
+- 再発防止: 複数itemのtool入力は整形した複数行で記述し、各object終端のcommaを確認する。
+
 ## 2026-08-12: verify_mcp が .ts モジュール import + TS構文で Node 20 から起動不能
 
 - 事象: `verify_mcp.mjs` が `import { interpretProjectionResult } from "../src/mcp_verify_result.ts"` と `as` キャストを含むため、素の `node`（.nvmrc は 20）で `ERR_UNKNOWN_FILE_EXTENSION`／`SyntaxError: Unexpected identifier 'as'` になった。

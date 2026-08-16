@@ -27,7 +27,7 @@ const trace = [];
 function finding(kind, detail) {
   const key = `${kind}::${detail}`.slice(0, 400);
   if (findings.some((f) => `${f.kind}::${f.detail}`.slice(0, 400) === key)) return;
-  findings.push({ kind, detail, afterAction: trace.length, recentTrace: trace.slice(-12) });
+  findings.push({ kind, detail, afterAction: trace.length, recentTrace: trace.slice(-200) });
 }
 
 function buildDocument(n) {
@@ -75,7 +75,7 @@ page.on("console", (m) => {
   const text = m.text();
   // 404/500 on routed fixtures are expected noise from the stubbed API.
   if (/Failed to load resource/.test(text)) return;
-  finding("console.error", text.slice(0, 300));
+  finding("console.error", text.slice(0, 1200));
 });
 
 const sample = { value: true };
@@ -187,12 +187,21 @@ try {
   trace.push("open-sample");
 
   for (let i = 0; i < ACTIONS; i += 1) {
+    const focusBeforeAction = await page.evaluate(() => {
+      const active = document.activeElement;
+      return {
+        bodyFocused: active === document.body || active === null,
+        description: active
+          ? `${active.tagName.toLowerCase()}:${active.getAttribute("aria-label") || (active.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 40)}`
+          : "(none)",
+      };
+    });
     const roll = rnd();
     let action = "";
     try {
       if (roll < 0.5) {
         const key = pick(keyActions);
-        action = `key:${key}`;
+        action = `key:${key}@${focusBeforeAction.description}`;
         await page.keyboard.press(key);
       } else if (roll < 0.62) {
         const buttons = await page.locator("header button:visible:enabled").all();
@@ -294,8 +303,8 @@ try {
     if (i % 5 === 0 || roll >= 0.5) {
       const snap = await snapshot();
       checkInvariants(snap, action);
-      if (snap.bodyFocused && /^key:(Tab|Shift\+Tab|Escape)$/.test(action)) {
-        finding("focus-lost-to-body", `${action} の後にフォーカスが<body>へ落ちた`);
+      if (snap.bodyFocused && !focusBeforeAction.bodyFocused && /^key:(Tab|Shift\+Tab|Escape)@/.test(action)) {
+        finding("focus-lost-to-body", `${action} の後にフォーカスが<body>へ落ちた（操作前=${focusBeforeAction.description}）`);
       }
     }
   }

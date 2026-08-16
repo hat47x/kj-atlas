@@ -1311,6 +1311,7 @@ export function SidePanel({
         data-panel="selection-context"
         aria-label={t("side_panel.context.title")}
         aria-live="polite"
+        tabIndex={-1}
         style={{
           marginBottom: 12,
           padding: 10,
