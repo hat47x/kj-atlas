@@ -7,12 +7,13 @@ import {
 import { DocumentNotFoundError, fetchDocument, fetchDocumentMetadata, type DocumentClientConfig } from "./document_client.js";
 import { computeQueryCanonicalHash, emitContextAuditEvent, logAuditEntry } from "./audit_log.js";
 
-// EXT-CONN-01 subslice B: the ONLY capability this server registers. Read-only
+// EXT-CONN-01 subslice B: this is ONE of the read-only capabilities this server
+// registers (with get_proposal_status in proposal_status_tool.ts). Read-only
 // resources.list() and tools.list() are exercised by
 // context_projection_tool.test.ts against a fixed snapshot so a future PR
 // cannot silently add a write/ingest/apply/publish/sampling/elicitation
 // capability without that test visibly changing (Maintainer代理裁可
-// allowlist condition).
+// allowlist condition). Both registered tools are read-only.
 
 export function registerContextProjectionTool(server: McpServer, documentClientConfig: DocumentClientConfig): void {
   server.registerTool(

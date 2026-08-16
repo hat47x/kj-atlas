@@ -229,7 +229,7 @@ describe("buildHttpApp", () => {
     try {
       await client.connect(transport);
       const { tools } = await client.listTools();
-      expect(tools.map((tool) => tool.name)).toEqual(["get_context_projection"]);
+      expect(tools.map((tool) => tool.name)).toEqual(["get_context_projection", "get_proposal_status"]);
 
       const result = await client.callTool({
         name: "get_context_projection",
