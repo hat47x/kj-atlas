@@ -2718,5 +2718,45 @@ trl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TRL_ID")
 check "TRL 読戻し (200)" "200" "$trl_read"
 
 echo ""
+echo "--- シナリオ60: 自動車・モビリティの新型車ユーザー評価整理（世代間乖離と共通課題の分離） ---"
+# 業態: 自動車・モビリティ（自動車メーカー）
+# 想定人物: 商品企画担当（ユーザー評価を整理）
+# 業務領域: 新型車のユーザー評価・市場フィードバックのKJ分類と、改良ポイントの検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 年齢・地域による評価の偏り（世代間の評価乖離）と、全世代に共通する
+#          課題を区別し、改良の優先度を決める（セグメントと共通課題の分離）。
+AU_ID="biz-flow-auto"
+AU_DOC='{"version":1,"id":"'$AU_ID'","title":"新型車ユーザー評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"au1","text":"若年層はデジタル機能を評価している","x":0,"y":0,"textReviewed":true},{"id":"au2","text":"高齢層は操作が複雑と感じている","x":10,"y":0,"textReviewed":true},{"id":"au3","text":"燃費性能の不満が全世代に共通している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"au-i","cardIds":["au1","au2","au3"]}],"readingOrder":["au-i"]}'
+
+au_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AU_ID" \
+  -H 'Content-Type: application/json' -d "$AU_DOC")
+check "AU PUT document (作成)" "200" "$au_put"
+
+# ① AI束ね
+au_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"au1","text":"若年層はデジタル機能を評価している","textReviewed":true},{"id":"au2","text":"高齢層は操作が複雑と感じている","textReviewed":true},{"id":"au3","text":"燃費性能の不満が全世代に共通している","textReviewed":true}]}')
+case "$au_groups" in *'"groups":'*) echo "  PASS: AU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+au_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AU_DOC,\"islandId\":\"au-i\"}")
+case "$au_summary" in *'"groundingIds":["au1","au2","au3"]'*) echo "  PASS: AU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（世代間の評価乖離・デジタル機能 vs 操作複雑）
+au_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"au1","text":"若年層はデジタル機能を評価している","textReviewed":true},"cardB":{"id":"au2","text":"高齢層は操作が複雑と感じている","textReviewed":true}}')
+case "$au_contra" in *'"hasContradiction"'*) echo "  PASS: AU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+au_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AU_DOC}")
+case "$au_narr" in *'"basedOnReadingOrder":["au-i"]'*) echo "  PASS: AU ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AU ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+au_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AU_ID")
+check "AU 読戻し (200)" "200" "$au_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
