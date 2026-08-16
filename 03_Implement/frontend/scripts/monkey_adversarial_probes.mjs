@@ -86,6 +86,7 @@ try {
   // A3: context menu must close with Escape (acceptance_check.md 操作感: Escapeで閉じる).
   if (run("A3")) {
     const page = await open([{ id: "c1", text: "右クリック対象", x: 220, y: 220 }]);
+    const baseline = await page.getByRole("menuitem").count();
     await page.getByRole("button", { name: "右クリック対象" }).click({ button: "right" });
     await page.waitForTimeout(300);
     const opened = await page.getByRole("menuitem").count();
@@ -96,8 +97,8 @@ try {
       const a = document.activeElement;
       return a ? `${a.tagName.toLowerCase()}:${(a.getAttribute("aria-label") || (a.textContent ?? "").trim()).slice(0, 30)}` : "(none)";
     });
-    rec("A3", "カードのコンテキストメニューがEscapeで閉じる", opened > 0 && stillOpen === 0,
-      `開いた項目数=${opened} / Escape後=${stillOpen} / Escape後のフォーカス=${focus}`);
+    rec("A3", "カードのコンテキストメニューがEscapeで閉じる", opened > baseline && stillOpen === baseline,
+      `常設項目=${baseline} / 開いた後=${opened} / Escape後=${stillOpen} / Escape後のフォーカス=${focus}`);
     await page.close();
   }
 

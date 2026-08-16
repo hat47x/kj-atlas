@@ -158,6 +158,21 @@ function checkInvariants(snap, action) {
     finding("nan-transform", `座標にNaN/Infinityを含む要素が${snap.nanTransforms}件 (after ${action})`);
 }
 
+async function isActionable(locator, options = {}) {
+  try {
+    await locator.click({ ...options, trial: true, timeout: 350 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function clickIfActionable(locator, options = {}) {
+  if (!(await isActionable(locator, options))) return false;
+  await locator.click({ ...options, timeout: 2000 });
+  return true;
+}
+
 const keyActions = [
   "Tab", "Tab", "Tab", "Shift+Tab", "Enter", "Space", "Escape", "Escape",
   "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Home", "End",
@@ -180,12 +195,12 @@ try {
         action = `key:${key}`;
         await page.keyboard.press(key);
       } else if (roll < 0.62) {
-        const buttons = await page.locator("header button:visible").all();
+        const buttons = await page.locator("header button:visible:enabled").all();
         if (buttons.length) {
           const b = buttons[Math.floor(rnd() * buttons.length)];
           const name = ((await b.getAttribute("aria-label")) || (await b.innerText()) || "").replace(/\s+/g, " ").trim().slice(0, 24);
           action = `click-header:${name}`;
-          await b.click({ timeout: 2000 });
+          if (!(await clickIfActionable(b))) action = "skip-blocked-header";
         }
       } else if (roll < 0.72) {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
@@ -193,13 +208,18 @@ try {
           const c = cards[Math.floor(rnd() * cards.length)];
           const mods = rnd() < 0.3 ? ["Shift"] : [];
           action = `click-card${mods.length ? "+Shift" : ""}`;
-          await c.click({ timeout: 2000, modifiers: mods });
+          if (!(await clickIfActionable(c, { modifiers: mods }))) action = "skip-blocked-card";
         }
       } else if (roll < 0.78) {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
         if (cards.length) {
           action = "dblclick-card";
-          await cards[Math.floor(rnd() * cards.length)].dblclick({ timeout: 2000 });
+          const card = cards[Math.floor(rnd() * cards.length)];
+          if (await isActionable(card)) {
+            await card.dblclick({ timeout: 2000 });
+          } else {
+            action = "skip-blocked-card";
+          }
         }
       } else if (roll < 0.83) {
         action = "type";
@@ -208,7 +228,8 @@ try {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
         if (cards.length) {
           action = "rightclick-card";
-          await cards[Math.floor(rnd() * cards.length)].click({ button: "right", timeout: 2000 });
+          const card = cards[Math.floor(rnd() * cards.length)];
+          if (!(await clickIfActionable(card, { button: "right" }))) action = "skip-blocked-card";
         }
       } else if (roll < 0.93) {
         const items = await page.getByRole("menuitem").all();
@@ -216,16 +237,17 @@ try {
           const it = items[Math.floor(rnd() * items.length)];
           const name = ((await it.innerText()) || "").replace(/\s+/g, " ").trim().slice(0, 20);
           action = `menuitem:${name}`;
-          await it.click({ timeout: 2000 });
+          if (!(await clickIfActionable(it))) action = "skip-blocked-menuitem";
         } else {
           action = "key:Escape";
           await page.keyboard.press("Escape");
         }
       } else if (roll < 0.96) {
-        const boxes = await page.locator('input[type="checkbox"]:visible').all();
+        const boxes = await page.locator('input[type="checkbox"]:visible:enabled').all();
         if (boxes.length) {
           action = "toggle-checkbox";
-          await boxes[Math.floor(rnd() * boxes.length)].click({ timeout: 2000 });
+          const box = boxes[Math.floor(rnd() * boxes.length)];
+          if (!(await clickIfActionable(box))) action = "skip-blocked-checkbox";
         }
       } else if (roll < 0.985) {
         // drag a random card by a random offset (may land on empty canvas or on the island).
@@ -233,7 +255,7 @@ try {
         if (cards.length) {
           const c = cards[Math.floor(rnd() * cards.length)];
           const box = await c.boundingBox();
-          if (box) {
+          if (box && await isActionable(c)) {
             const dx = Math.floor((rnd() - 0.5) * 400);
             const dy = Math.floor((rnd() - 0.5) * 300);
             action = `drag-card(${dx},${dy})`;

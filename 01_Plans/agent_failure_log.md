@@ -454,6 +454,27 @@ Updated: 2026-08-03
 - 対応: fixtureを行頭が明示的な文字列連結へ変更し、長文部分だけを挿入する形へ単純化した。
 - 再発防止: 動的な複数行内容を含むmetadata fixtureではdedentに依存せず、生成後の先頭行とmetadata行がcolumn 0であることが明白な構築方法を使う。
 
+## 2026-08-16: frontend起動時のNode実行PATH確認漏れ
+
+- 事象: モンキーテスト用frontendを`npm run dev`で起動しようとして、`npm: command not found`で停止した。
+- 原因: このDesktopセッションでは通常PATHにNode/npmがなく、ワークスペース同梱runtimeの場所を先に確認していなかった。
+- 対応: 同梱runtimeを取得し、そのNode実行体からViteを直接起動した。
+- 再発防止: Desktop環境でNode系コマンドを使う前にworkspace dependenciesを確認し、同梱Nodeを明示して実行する。
+
+## 2026-08-16: OSが異なるNodeとnode_modulesを組み合わせてVite起動に失敗
+
+- 事象: Windows版の同梱NodeでWSL側に展開済みの`node_modules`からViteを起動し、`@rollup/rollup-win32-x64-msvc`欠損で停止した。
+- 原因: `node_modules`にはLinux向けRollup optional packageだけがあり、Windows Nodeとの実行環境が一致していなかった。
+- 対応: 依存物を破壊的に再展開せず、既存の静的buildをPython HTTP serverで配信し、Windows Edgeを使う既存モンキーハーネスで検証した。
+- 再発防止: Node本体と`node_modules`のOSを起動前に揃える。混在時は既存依存物を書き換えず、静的buildまたは同一OSの隔離環境を使う。
+
+## 2026-08-16: 計画文書検証をfrontend配下から相対実行
+
+- 事象: frontendスクリプトの構文確認と同じ作業ディレクトリで`python 01_Plans/issues/validate_active_issue_memos.py`を続け、file not foundで停止した。
+- 原因: frontend固有コマンドとrepository-root基準コマンドを一つの実行へまとめた際、後半の基準ディレクトリを切り替えなかった。
+- 対応: リポジトリ直下からvalidatorとdocs-checkを再実行し、成功を確認した。
+- 再発防止: 複数領域の検証を連結するときは各コマンドの基準ディレクトリを先に揃えるか、領域ごとに実行を分ける。
+
 ## 2026-08-12: verify_mcp が .ts モジュール import + TS構文で Node 20 から起動不能
 
 - 事象: `verify_mcp.mjs` が `import { interpretProjectionResult } from "../src/mcp_verify_result.ts"` と `as` キャストを含むため、素の `node`（.nvmrc は 20）で `ERR_UNKNOWN_FILE_EXTENSION`／`SyntaxError: Unexpected identifier 'as'` になった。
