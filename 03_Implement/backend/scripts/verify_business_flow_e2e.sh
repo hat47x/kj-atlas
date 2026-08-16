@@ -5956,5 +5956,47 @@ pub_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PUB_ID")
 check "PUB 読戻し (200)" "200" "$pub_read"
 
 echo ""
+echo "--- シナリオ137: 医療機器（安全性・品質と市場投入スピードのトレードオフ） ---"
+# 業態: 医療機器（医療機器メーカー・販売）
+# 想定人物: 医療機器営業／マーケティング責任者
+# 業務領域: 製品開発・臨床現場の声・品質・規制への声のKJ分類と、医療機器開発の在り方の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 患者安全のための品質・安全性と規制対応の確保（安全性・品質）と開発期間の短縮や
+#          コスト削減への圧力（スピード・コスト）のトレードオフを矛盾検出（正パス）で表面化し、
+#          医療機器開発の在り方の根拠にする（安全性とスピードの相克・臨床現場の声を製品開発に
+#          活かし医療現場とともに歩む動きも指摘）。
+MED_ID="biz-flow-meddevice"
+MED_DOC='{"version":1,"id":"'$MED_ID'","title":"医療機器開発の在り方","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"患者安全のための品質・安全性と規制対応を最優先する声（安全性・品質）","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"開発期間の短縮やコスト削減への圧力など、安全性と市場投入スピードのトレードオフに悩む声（スピード・コスト）","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"臨床現場の声を製品開発に活かし、医療現場とともに歩む動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"med-i","cardIds":["m1","m2","m3"]}],"readingOrder":["med-i"]}'
+
+med_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MED_ID" \
+  -H 'Content-Type: application/json' -d "$MED_DOC")
+check "MED PUT document (作成)" "200" "$med_put"
+
+# ① AI束ね
+med_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"m1","text":"患者安全のための品質・安全性と規制対応を最優先する声（安全性・品質）","textReviewed":true},{"id":"m2","text":"開発期間の短縮やコスト削減への圧力など、安全性と市場投入スピードのトレードオフに悩む声（スピード・コスト）","textReviewed":true},{"id":"m3","text":"臨床現場の声を製品開発に活かし、医療現場とともに歩む動き","textReviewed":true}]}')
+case "$med_groups" in *'"groups":'*) echo "  PASS: MED ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MED ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+med_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MED_DOC,\"islandId\":\"med-i\"}")
+case "$med_summary" in *'"groundingIds":["m1","m2","m3"]'*) echo "  PASS: MED ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MED ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安全性・品質 vs スピード・コスト・安全性とスピードの相克・正パス）
+med_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"m1","text":"患者安全のための品質・安全性と規制対応を最優先する声（安全性・品質）","textReviewed":true},"cardB":{"id":"m2","text":"開発期間の短縮やコスト削減への圧力など、安全性と市場投入スピードのトレードオフに悩む声（スピード・コスト）","textReviewed":true}}')
+case "$med_contra" in *'"hasContradiction":true'*) echo "  PASS: MED ③矛盾検出（安全性・品質と市場投入スピードのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: MED ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+med_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MED_DOC}")
+case "$med_narr" in *'"basedOnReadingOrder":["med-i"]'*) echo "  PASS: MED ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MED ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+med_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MED_ID")
+check "MED 読戻し (200)" "200" "$med_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
