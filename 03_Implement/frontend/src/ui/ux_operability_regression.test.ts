@@ -487,6 +487,19 @@ describe("UX Operability regression contracts", () => {
     expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
   });
 
+  it("QA-MONKEY-32: title editing and AI candidate adoption remain explicit and keyboard-safe", () => {
+    const titleEditorSource = readSource("src/ui/DocumentTitleEditor.tsx");
+
+    expect(titleEditorSource).toContain('type="button"');
+    expect(titleEditorSource).toContain('t("document_title.edit_aria", { title: displayTitle })');
+    expect(titleEditorSource).toContain('aria-labelledby="document-title-candidates-label"');
+    expect(titleEditorSource).toContain('role="status"');
+    expect(titleEditorSource).toContain('t("document_title.proposal_only_hint")');
+    expect(titleEditorSource).toContain('t("document_title.adopt_candidate", { title: candidate })');
+    expect(titleEditorSource).toContain("focusTitleDisplay();");
+    expect(titleEditorSource).toContain("suggestButtonRef.current?.focus()");
+  });
+
   it("SEC-AI-SAFEMODE-03: title suggestions exclude unreviewed island titles before certification", () => {
     const appSource = readSource("src/App.tsx");
 

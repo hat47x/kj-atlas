@@ -42,6 +42,8 @@
 | `AI-DEEPSEEK-MODEL-01` | Contract / P1 | DeepSeek既定modelが送信層でだけ解決され、統制層で`default`として403拒否された | provider既定modelを統制前に解決し、実API回帰で確認 |
 | `AI-TITLE-SAFEMODE-01` | Security / UX / P1 | タイトル提案がレビュー証明を欠き422、島タイトルのreview filterも欠落 | レビュー済み島タイトル・カードだけに限定して証明を付与 |
 | `OPS-LLM-COST-03` | Operations / UX / P2 | 生成後もView panelが起動時のcall count/token usageを表示した | panel open時に最新snapshotを再取得 |
+| `QA-MONKEY-32` | Accessibility / UX / P1 | タイトル編集がclick専用で、AI候補の採用意味・通知・focus復帰が不明確 | native button、proposal-only説明、live status、明示採用名、閉じる操作、focus復帰を追加 |
+| `UX-PERF-01` | Performance / UX / P2 | production main chunkが約1,366KB（gzip約377KB）で、低速環境の操作開始時間が未計測 | 実測・内訳分析・遅延読込境界の評価をOpenで起票 |
 
 ## ランダムスイープ結果
 
@@ -63,6 +65,8 @@ QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/32
 
 その後、Git管理外のlocal credentialを環境変数へ一時注入し、隔離SQLiteでDeepSeek実APIを検証した。資格情報の値は出力・記録・コミットしていない。初回は既定modelの統制不整合でカード改善・島要約がともに403となり、`AI-DEEPSEEK-MODEL-01`を修正後、両方200、島内grounding ID、call count 2、入力626／出力122トークンを確認した。実Edgeのタイトル提案ではSafeMode契約不整合と利用量表示のstale snapshotを順に検出・修正し、候補3件、採用前タイトル不変、`deepseek: 1`、入力118／出力47トークンを再読込なしで確認した。
 
+タイトル提案のUX継続探索では、ja/en・390pxの実Edgeでタイトル表示が`h1` click handlerだけのためTab到達不能、候補領域に名前・生成通知・proposal-only説明がなく、採用や閉じる後にfocusが脱落することを確認した。`QA-MONKEY-32`修正後はnative buttonへのTab/Enter、Enter/Escape編集終了後のfocus復帰、候補3件の明示的な採用名、採用前タイトル不変、採用後タイトルfocus、閉じる後の提案button focusを日英双方で確認し、390pxの`scrollWidth=clientWidth=390`を維持した。
+
 ## 固定回帰と自動検査
 
 - adversarial A1〜A19: A15はja/enの双方で取消後focus復帰、A16はEnter確定後focus復帰、A17は削除後の近傍カードfocus、A18はサンプル開始後の先頭カードfocus、A19はミニマップ切替後のtoggle focusを確認。
@@ -72,6 +76,8 @@ QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/32
 - DeepSeek実API: カード改善1/1、島要約1/1、タイトル候補1/1。すべて`deepseek-chat`のprimary pathでfallbackなし。
 - proposal-only: タイトル候補3件の表示後も現在タイトルは不変。候補選択前の自動適用なし。
 - 利用量表示: 実生成後にView panelを開き、call count/token usageの最新snapshotを表示。
+- タイトル候補UX: ja/en・390pxでkeyboard編集、live status、proposal-only説明、採用・閉じる後focus復帰、横overflowなしを確認。
+- production build: 成功。main chunk約1,366KB（gzip約377KB）の既存警告は`UX-PERF-01`へ分離し、閾値緩和ではなく実測後に分割判断する。
 
 ## 再現コマンド
 

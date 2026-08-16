@@ -537,3 +537,10 @@ Updated: 2026-08-03
 - 原因: 近傍test内のlocal変数をdescribe共通変数と誤認した。
 - 対応: 新規test内で`readSource("src/App.tsx")`を明示し、81/81件とtypecheckの成功を確認した。
 - 再発防止: 静的source contract test追加時は変数宣言scopeを確認し、新規`it`内で対象sourceを取得する。
+
+## 2026-08-16: browser routeの広いglobがfrontend source moduleを404化
+
+- 事象: UX probeで`**/api/**`をAPI stubとして登録したところ、`/src/api/client.ts`と`/src/api/session_bootstrap_policy.ts`まで一致して404となり、画面が空になった。
+- 原因: URL pathの`/api/`がbackend prefixだけでなくfrontend source directoryにも現れることを考慮しなかった。
+- 対応: route callbackでpathnameが`/api/`から始まる場合だけstubし、`/src/api/`は通常配信へcontinueした。ja/enの実Edge probeを完走した。
+- 再発防止: Vite画面のAPI interceptionはglobだけで判定せず、`new URL(request.url()).pathname.startsWith("/api/")`を併用する。

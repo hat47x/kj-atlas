@@ -64,6 +64,45 @@ test("shows the suggest-title button when a provider is configured", async ({ pa
   await expect(page.getByTestId("title-suggest-error")).toHaveCount(0);
 });
 
+test("title candidates explain proposal-only adoption and preserve keyboard focus", async ({ page }) => {
+  await routeEssentials(page, "deepseek");
+  await page.route("**/ai/suggest-document-title", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ candidates: [
+        { title: "Regional mobility for everyday life" },
+        { title: "Reconnecting shopping and transport" },
+      ] }),
+    });
+  });
+  await page.goto("/?locale=en");
+  await page.getByRole("button", { name: "Create new document" }).click();
+
+  const title = page.getByTestId("document-title-display");
+  await expect(page.getByRole("button", { name: "Edit title: Untitled" })).toBeVisible();
+  await title.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("document-title-input")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(title).toBeFocused();
+
+  const suggest = page.getByTestId("suggest-title-button");
+  await suggest.click();
+  const candidates = page.getByRole("region", { name: "AI title candidates" });
+  await expect(candidates).toContainText("current title stays unchanged");
+  await expect(title).toHaveText("Untitled");
+
+  await page.getByRole("button", { name: "Adopt this candidate: Regional mobility for everyday life" }).click();
+  await expect(title).toHaveText("Regional mobility for everyday life");
+  await expect(title).toBeFocused();
+
+  await suggest.click();
+  await page.getByRole("button", { name: "Dismiss candidates" }).click();
+  await expect(page.getByTestId("title-candidates")).toHaveCount(0);
+  await expect(suggest).toBeFocused();
+});
+
 test("hides the suggest-title button when the provider is none", async ({ page }) => {
   await routeEssentials(page, "none");
   await page.goto("/?locale=en");
