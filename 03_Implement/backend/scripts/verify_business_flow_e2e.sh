@@ -6921,5 +6921,47 @@ petcare_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PETCARE_I
 check "PETCARE 読戻し (200)" "200" "$petcare_read"
 
 echo ""
+echo "--- シナリオ160: フードトラック・移動販売（品質・衛生と出店・収益のトレードオフ） ---"
+# 業態: フードトラック・移動販売（移動販売・屋台）
+# 想定人物: フードトラックオーナー／移動販売業者
+# 業務領域: メニュー・出店場所・衛生・顧客への声のKJ分類と、移動販売の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 料理の質と衛生管理・地域のイベントでの提供を大切にする（品質・衛生）と出店場所や天候依存
+#          （出店・収益）のトレードオフを矛盾検出（正パス）で表面化し、移動販売の改善根拠にする
+#          （品質と出店の相克・SNSでの情報発信やリピーターづくり・地域の食の担い手としての役割を
+#          模索する動きも指摘）。
+FOODTRUCK_ID="biz-flow-foodtruck"
+FOODTRUCK_DOC='{"version":1,"id":"'$FOODTRUCK_ID'","title":"移動販売の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ft1","text":"料理の質と衛生管理、地域のイベントでの提供を大切にする声（品質・衛生）","x":0,"y":0,"textReviewed":true},{"id":"ft2","text":"出店場所や天候依存など、品質と出店機会・収益のトレードオフに悩む声（出店・収益）","x":10,"y":0,"textReviewed":true},{"id":"ft3","text":"SNSでの情報発信やリピーターづくり、地域の食の担い手としての役割を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ft-i","cardIds":["ft1","ft2","ft3"]}],"readingOrder":["ft-i"]}'
+
+foodtruck_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FOODTRUCK_ID" \
+  -H 'Content-Type: application/json' -d "$FOODTRUCK_DOC")
+check "FOODTRUCK PUT document (作成)" "200" "$foodtruck_put"
+
+# ① AI束ね
+foodtruck_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ft1","text":"料理の質と衛生管理、地域のイベントでの提供を大切にする声（品質・衛生）","textReviewed":true},{"id":"ft2","text":"出店場所や天候依存など、品質と出店機会・収益のトレードオフに悩む声（出店・収益）","textReviewed":true},{"id":"ft3","text":"SNSでの情報発信やリピーターづくり、地域の食の担い手としての役割を模索する動き","textReviewed":true}]}')
+case "$foodtruck_groups" in *'"groups":'*) echo "  PASS: FOODTRUCK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FOODTRUCK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+foodtruck_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FOODTRUCK_DOC,\"islandId\":\"ft-i\"}")
+case "$foodtruck_summary" in *'"groundingIds":["ft1","ft2","ft3"]'*) echo "  PASS: FOODTRUCK ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FOODTRUCK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・衛生 vs 出店・収益・品質と出店の相克・正パス）
+foodtruck_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ft1","text":"料理の質と衛生管理、地域のイベントでの提供を大切にする声（品質・衛生）","textReviewed":true},"cardB":{"id":"ft2","text":"出店場所や天候依存など、品質と出店機会・収益のトレードオフに悩む声（出店・収益）","textReviewed":true}}')
+case "$foodtruck_contra" in *'"hasContradiction":true'*) echo "  PASS: FOODTRUCK ③矛盾検出（品質・衛生と出店・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: FOODTRUCK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+foodtruck_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FOODTRUCK_DOC}")
+case "$foodtruck_narr" in *'"basedOnReadingOrder":["ft-i"]'*) echo "  PASS: FOODTRUCK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FOODTRUCK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+foodtruck_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FOODTRUCK_ID")
+check "FOODTRUCK 読戻し (200)" "200" "$foodtruck_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
