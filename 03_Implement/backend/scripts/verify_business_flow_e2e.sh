@@ -6837,5 +6837,47 @@ bar_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BAR_ID")
 check "BAR 読戻し (200)" "200" "$bar_read"
 
 echo ""
+echo "--- シナリオ158: 音楽教室・カルチャースクール（教育の質・成長と効率・収益のトレードオフ） ---"
+# 業態: 音楽教室・カルチャースクール（音楽教室運営）
+# 想定人物: 教室長／講師
+# 業務領域: レッスン・生徒の成長・講師・運営への声のKJ分類と、教室運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 一人ひとりの成長に寄り添う丁寧な指導と音楽の楽しさを伝える（教育の質・成長）と
+#          レッスン枠や集客への圧力（効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、
+#          教室運営の改善根拠にする（教育の質と効率の相克・発表会やアンサンブル・大人の学び直しの場
+#          として地域に開かれた教室を目指す動きも指摘）。
+MUSIC_ID="biz-flow-music-school"
+MUSIC_DOC='{"version":1,"id":"'$MUSIC_ID'","title":"音楽教室の運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"mu1","text":"一人ひとりの成長に寄り添う丁寧な指導と音楽の楽しさを伝えることを重視する声（教育の質・成長）","x":0,"y":0,"textReviewed":true},{"id":"mu2","text":"レッスン枠や集客への圧力など、教育の質と運営効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"mu3","text":"発表会やアンサンブル、大人の学び直しの場として地域に開かれた教室を目指す動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"music-i","cardIds":["mu1","mu2","mu3"]}],"readingOrder":["music-i"]}'
+
+music_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MUSIC_ID" \
+  -H 'Content-Type: application/json' -d "$MUSIC_DOC")
+check "MUSIC PUT document (作成)" "200" "$music_put"
+
+# ① AI束ね
+music_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"mu1","text":"一人ひとりの成長に寄り添う丁寧な指導と音楽の楽しさを伝えることを重視する声（教育の質・成長）","textReviewed":true},{"id":"mu2","text":"レッスン枠や集客への圧力など、教育の質と運営効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"mu3","text":"発表会やアンサンブル、大人の学び直しの場として地域に開かれた教室を目指す動き","textReviewed":true}]}')
+case "$music_groups" in *'"groups":'*) echo "  PASS: MUSIC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MUSIC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+music_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MUSIC_DOC,\"islandId\":\"music-i\"}")
+case "$music_summary" in *'"groundingIds":["mu1","mu2","mu3"]'*) echo "  PASS: MUSIC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MUSIC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（教育の質・成長 vs 効率・収益・教育の質と効率の相克・正パス）
+music_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"mu1","text":"一人ひとりの成長に寄り添う丁寧な指導と音楽の楽しさを伝えることを重視する声（教育の質・成長）","textReviewed":true},"cardB":{"id":"mu2","text":"レッスン枠や集客への圧力など、教育の質と運営効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$music_contra" in *'"hasContradiction":true'*) echo "  PASS: MUSIC ③矛盾検出（教育の質・成長と効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: MUSIC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+music_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MUSIC_DOC}")
+case "$music_narr" in *'"basedOnReadingOrder":["music-i"]'*) echo "  PASS: MUSIC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MUSIC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+music_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MUSIC_ID")
+check "MUSIC 読戻し (200)" "200" "$music_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
