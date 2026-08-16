@@ -4249,5 +4249,45 @@ mr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MR_ID")
 check "MR 読戻し (200)" "200" "$mr_read"
 
 echo ""
+echo "--- シナリオ98: 物流・倉庫の配送オペレーション（配送スピードと配送コストのトレードオフ） ---"
+# 業態: 物流・倉庫（配送/3PL）
+# 想定人物: 物流マネージャー（配送オペレーションを整理）
+# 業務領域: 配送・在庫・倉庫オペレーションの課題のKJ分類と、改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 配送スピード（即日配達）と配送コスト（トラック積載率）のトレードオフを
+#          矛盾検出で表面化し、オペレーション改善の根拠にする（スピードとコストのトレードオフ）。
+LG_ID="biz-flow-logistics"
+LG_DOC='{"version":1,"id":"'$LG_ID'","title":"配送オペレーション整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"lg1","text":"即日配達への期待が高まり配送スピードを求められている","x":0,"y":0,"textReviewed":true},{"id":"lg2","text":"トラック積載率が低く配送コストが膨らんでいる","x":10,"y":0,"textReviewed":true},{"id":"lg3","text":"在庫の欠品・過剰在庫のバランスに課題がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lg-i","cardIds":["lg1","lg2","lg3"]}],"readingOrder":["lg-i"]}'
+
+lg_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LG_ID" \
+  -H 'Content-Type: application/json' -d "$LG_DOC")
+check "LG PUT document (作成)" "200" "$lg_put"
+
+# ① AI束ね
+lg_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"lg1","text":"即日配達への期待が高まり配送スピードを求められている","textReviewed":true},{"id":"lg2","text":"トラック積載率が低く配送コストが膨らんでいる","textReviewed":true},{"id":"lg3","text":"在庫の欠品・過剰在庫のバランスに課題がある","textReviewed":true}]}')
+case "$lg_groups" in *'"groups":'*) echo "  PASS: LG ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LG ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lg_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LG_DOC,\"islandId\":\"lg-i\"}")
+case "$lg_summary" in *'"groundingIds":["lg1","lg2","lg3"]'*) echo "  PASS: LG ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LG ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（即日配達 vs 配送コスト・スピードとコストのトレードオフ）
+lg_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"lg1","text":"即日配達への期待が高まり配送スピードを求められている","textReviewed":true},"cardB":{"id":"lg2","text":"トラック積載率が低く配送コストが膨らんでいる","textReviewed":true}}')
+case "$lg_contra" in *'"hasContradiction"'*) echo "  PASS: LG ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LG ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+lg_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$LG_DOC}")
+case "$lg_narr" in *'"basedOnReadingOrder":["lg-i"]'*) echo "  PASS: LG ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: LG ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG_ID")
+check "LG 読戻し (200)" "200" "$lg_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
