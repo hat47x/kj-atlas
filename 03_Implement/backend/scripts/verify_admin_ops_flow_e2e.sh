@@ -127,6 +127,23 @@ audit_wrong_code=$(curl -s -o /dev/null -w '%{http_code}' \
   -H "X-Admin-Api-Key: wrong-key" "$BASE_URL/admin/provision/audit")
 check "GET audit with wrong admin key (401)" "401" "$audit_wrong_code"
 
+# 5. 管理者が自前で書いたスクリプト（stdlib のみ・依存なし）が同じライフサイクルと
+#    control-plane 監査・キー分離を実走行できる（iteration 131 追加・非Web経路の拡充）。
+#    scripts/examples/admin_lifecycle.py は内部で 10 個のアサーションを自己検証し、
+#    失敗時は非ゼロで exit する。これを E2E の 1 チェックとして固定する。
+ADMIN_SCRIPT="$SCRIPT_DIR/examples/admin_lifecycle.py"
+if KJ_ATLAS_API_BASE_URL="$BASE_URL" \
+   KJ_ATLAS_API_KEY="$BIZ_KEY" \
+   KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" \
+   "$VENV_PYTHON" "$ADMIN_SCRIPT" "admin-self-script-doc" > /tmp/kj_admin_self_script.log 2>&1; then
+  echo "  PASS: admin self-script (lifecycle + audit + key separation, exit 0)"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin self-script (exit non-zero)"
+  cat /tmp/kj_admin_self_script.log
+  FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

@@ -15,11 +15,11 @@
 | 業務フローE2Eスクリプトのシナリオヘッダ数 | 62 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
 | カバー業態数 | 64 | シナリオドキュメント「カバレッジ集約」 |
 | 業務フローE2Eチェック数 | 369 | §2.1 実走行 → `Result: 369 passed, 0 failed` |
-| 総チェック数（check 10） | **387** | = 369（業務フロー）＋ 11（admin ops）＋ 7（kj multi-round）— 算術を verify script で照合 |
+| 総チェック数（check 10） | **388** | = 369（業務フロー）＋ 12（admin ops）＋ 7（kj multi-round）— 算術を verify script で照合 |
 | 発行済み課題 | 2（AI-MODEL-GOVERNANCE-02 / OPS-LLM-COST-02・**両方 Done**） | verify script |
 | 検証層 | backend単体・frontend単体・frontend UI E2E・業務フローE2E・計画文書整合 | §2 |
 
-> 注記: 総チェック数は**業務フローE2Eのチェック数（369）とは別**。CIハーネス `verify_all.sh` check 10 は3自己完結E2E（業務フロー・admin ops・kj multi-round）を専用ポートで実行するため、総数 = 387。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。
+> 注記: 総チェック数は**業務フローE2Eのチェック数（369）とは別**。CIハーネス `verify_all.sh` check 10 は3自己完結E2E（業務フロー・admin ops・kj multi-round）を専用ポートで実行するため、総数 = 388。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。
 
 ---
 
@@ -74,7 +74,7 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 | 成果物 | 役割 | 検証コマンド |
 |--------|------|-------------|
 | `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜64・369 checks） | §2.1 |
-| `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・11 checks） | §2.2 |
+| `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・12 checks・自前スクリプト経路を含む） | §2.2 |
 | `03_Implement/backend/scripts/verify_kj_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
 | `03_Implement/backend/verify_all.sh` | CIハーネス（check 10 配線） | §2.2 |
 | `03_Implement/deploy/tools/mock_local_llm.py` | 決定性モックLLM（GPU不要） | §2.1 前提 |
