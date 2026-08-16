@@ -39,14 +39,21 @@ const client = new Client({ name: "kj-atlas-mcp-verify", version: "1.0.0" });
 try {
   await client.connect(transport);
 
-  // 1. List tools — expect exactly one read-only tool.
+  // 1. List tools — expect exactly the two read-only tools (EXT-CONN-01
+  //    allowlist: context projection + CE4 proposal lifecycle status).
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name);
   console.log(`tools/list: ${names.join(", ")}`);
-  if (names.length !== 1 || names[0] !== "get_context_projection") {
-    throw new Error("Expected exactly get_context_projection tool");
+  const expected = ["get_context_projection", "get_proposal_status"];
+  if (names.length !== expected.length || expected.some((name) => !names.includes(name))) {
+    throw new Error(`Expected exactly ${expected.join(", ")} tools, got ${names.join(", ")}`);
   }
-  console.log("  → single read-only tool confirmed ✅");
+  for (const tool of tools) {
+    if (!tool.annotations?.readOnlyHint) {
+      throw new Error(`Tool ${tool.name} is not read-only (EXT-CONN-01 allowlist)`);
+    }
+  }
+  console.log(`  → ${names.length} read-only tools confirmed ✅`);
 
   // 2. Call get_context_projection (safeMode defaults true → no card text).
   console.log(`calling get_context_projection(docId=${docId}, constraint=${constraint}, safeMode=true)`);
