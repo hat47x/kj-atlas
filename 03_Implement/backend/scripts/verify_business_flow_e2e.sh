@@ -6460,5 +6460,47 @@ craft_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CRAFT_ID")
 check "CRAFT 読戻し (200)" "200" "$craft_read"
 
 echo ""
+echo "--- シナリオ149: 牧場・酪農（品質・動物福祉と採算・人手のトレードオフ） ---"
+# 業態: 牧場・酪農（酪農家・牧場経営）
+# 想定人物: 酪農家／牧場経営者
+# 業務領域: 牛の健康・搾乳・飼料・経営・後継者への声のKJ分類と、酪農の持続的経営の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 牛の健康と福祉・安全で高品質な乳製品へのこだわり（品質・動物福祉）と飼料コストや
+#          人手不足（採算・人手）のトレードオフを矛盾検出（正パス）で表面化し、酪農の持続的経営の
+#          根拠にする（福祉と採算の相克・牧場体験や加工品の販売・後継者の育成で地域と酪農をつなぐ
+#          動きも指摘）。
+DAIRY_ID="biz-flow-dairy"
+DAIRY_DOC='{"version":1,"id":"'$DAIRY_ID'","title":"酪農の持続的経営","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"d1","text":"牛の健康と福祉、安全で高品質な乳製品へのこだわりを重視する声（品質・動物福祉）","x":0,"y":0,"textReviewed":true},{"id":"d2","text":"飼料コストや人手不足など、品質・福祉と経営効率のトレードオフに悩む声（採算・人手）","x":10,"y":0,"textReviewed":true},{"id":"d3","text":"牧場体験や加工品の販売、後継者の育成で地域と酪農をつなぐ動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"dairy-i","cardIds":["d1","d2","d3"]}],"readingOrder":["dairy-i"]}'
+
+dairy_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DAIRY_ID" \
+  -H 'Content-Type: application/json' -d "$DAIRY_DOC")
+check "DAIRY PUT document (作成)" "200" "$dairy_put"
+
+# ① AI束ね
+dairy_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"d1","text":"牛の健康と福祉、安全で高品質な乳製品へのこだわりを重視する声（品質・動物福祉）","textReviewed":true},{"id":"d2","text":"飼料コストや人手不足など、品質・福祉と経営効率のトレードオフに悩む声（採算・人手）","textReviewed":true},{"id":"d3","text":"牧場体験や加工品の販売、後継者の育成で地域と酪農をつなぐ動き","textReviewed":true}]}')
+case "$dairy_groups" in *'"groups":'*) echo "  PASS: DAIRY ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DAIRY ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+dairy_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DAIRY_DOC,\"islandId\":\"dairy-i\"}")
+case "$dairy_summary" in *'"groundingIds":["d1","d2","d3"]'*) echo "  PASS: DAIRY ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DAIRY ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・動物福祉 vs 採算・人手・福祉と採算の相克・正パス）
+dairy_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"d1","text":"牛の健康と福祉、安全で高品質な乳製品へのこだわりを重視する声（品質・動物福祉）","textReviewed":true},"cardB":{"id":"d2","text":"飼料コストや人手不足など、品質・福祉と経営効率のトレードオフに悩む声（採算・人手）","textReviewed":true}}')
+case "$dairy_contra" in *'"hasContradiction":true'*) echo "  PASS: DAIRY ③矛盾検出（品質・動物福祉と採算・人手のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DAIRY ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+dairy_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DAIRY_DOC}")
+case "$dairy_narr" in *'"basedOnReadingOrder":["dairy-i"]'*) echo "  PASS: DAIRY ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DAIRY ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+dairy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DAIRY_ID")
+check "DAIRY 読戻し (200)" "200" "$dairy_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
