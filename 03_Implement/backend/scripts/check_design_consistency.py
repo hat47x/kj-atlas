@@ -162,6 +162,13 @@ EXTERNAL_ENDPOINT_PREFIXES = (
     # these as a separate category for the same reason: they address no
     # tenant-scoped resource and never reach the backend.
     "/packs/",
+    # Mock IdP admin surface (tests/level2/mock_idp.py): registration of
+    # client secrets / back-channel logout URIs and Logout Token dispatch used
+    # by the OIDC/back-channel-logout test flows. These are served by the mock
+    # IdP app, not kj-atlas's own API, so they must not be flagged as api.md
+    # gaps -- same rationale as the /login, /oauth/, /.well-known/ entries.
+    "/admin/register-",
+    "/admin/trigger-backchannel-",
 )
 WILDCARD_ENDPOINT_PATTERNS = ("/*", "/")  # trailing wildcard or bare prefix
 
@@ -237,6 +244,13 @@ if API_MD.exists():
                 continue
             # Skip external IdP endpoints and wildcard future references
             if _is_external_or_wildcard(raw_path):
+                continue
+            # Issues legitimately describe planned/future APIs; per
+            # DX-DESIGN-CHECK-02 they are plans, not drift candidates, so
+            # references from 01_Plans/issues/* must not be counted as api.md
+            # gaps (the issue memo citing a not-yet-contracted endpoint is a
+            # normal state, not drift).
+            if str(doc_path).startswith(str(ISSUE_DIR)):
                 continue
             # Only check design docs, not implementation code
             if "02_Architecture" in str(doc_path) or "01_Plans" in str(doc_path):

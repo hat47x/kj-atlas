@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from kj_atlas_api.model_registry_repository import register_model, register_provider
 from kj_atlas_api.routes import ai
 from kj_atlas_api.db import get_db
-from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse
+from kj_atlas_api.llm.provider import LLMResponse
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base, TenantRow
 from kj_atlas_api.settings import settings

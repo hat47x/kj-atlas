@@ -22,7 +22,6 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient

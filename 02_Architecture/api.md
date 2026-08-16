@@ -434,6 +434,11 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `callCounts: { [providerKind]: number, total: number }` — **OPS-LLM-COST-01（段階2）**: プロセス内の LLM 呼び出し回数（provider種別別＋total）。初回呼び出しまでは空。単一プロセス前提（共有ストアは段階3）。
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
 
+**GET** `/ai/available-models`
+
+- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタし、`final_judgement` 専用モデルは除外。
+- Response: モデルID・表示名・"auto" 既定の選択肢。UI の `ModelSelector` がこの一覧でモデル選択肢を限定する。
+
 ### 2.12 AI/LLM生成API
 
 全エンドポイント共通:
