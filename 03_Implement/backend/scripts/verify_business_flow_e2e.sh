@@ -6628,5 +6628,47 @@ cust_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CUST_ID")
 check "CUST 読戻し (200)" "200" "$cust_read"
 
 echo ""
+echo "--- シナリオ153: ガソリンスタンド（安全・信頼と価格・効率のトレードオフ） ---"
+# 業態: ガソリンスタンド（給油所・エネルギー小売）
+# 想定人物: 店長／地域密着経営者
+# 業務領域: 給油・点検・販売・顧客への声のKJ分類と、給油所運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 安全な給油と車検・点検など丁寧なサービスで地域の安全を支える（安全・信頼）と
+#          ガソリン価格競争や販売量への圧力（価格・効率）のトレードオフを矛盾検出（正パス）で
+#          表面化し、給油所運営の改善根拠にする（安全と価格の相克・EV充電やカー用品販売・地域の
+#          見守り拠点としての役割を模索する動きも指摘）。
+GAS_ID="biz-flow-gas-station"
+GAS_DOC='{"version":1,"id":"'$GAS_ID'","title":"給油所運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"gs1","text":"安全な給油と車検・点検など丁寧なサービスで地域の安全を支えることを重視する声（安全・信頼）","x":0,"y":0,"textReviewed":true},{"id":"gs2","text":"ガソリン価格競争や販売量への圧力など、安全・サービスと価格・効率のトレードオフに悩む声（価格・効率）","x":10,"y":0,"textReviewed":true},{"id":"gs3","text":"EV充電やカー用品販売、地域の見守り拠点としての役割を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"gas-i","cardIds":["gs1","gs2","gs3"]}],"readingOrder":["gas-i"]}'
+
+gas_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$GAS_ID" \
+  -H 'Content-Type: application/json' -d "$GAS_DOC")
+check "GAS PUT document (作成)" "200" "$gas_put"
+
+# ① AI束ね
+gas_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"gs1","text":"安全な給油と車検・点検など丁寧なサービスで地域の安全を支えることを重視する声（安全・信頼）","textReviewed":true},{"id":"gs2","text":"ガソリン価格競争や販売量への圧力など、安全・サービスと価格・効率のトレードオフに悩む声（価格・効率）","textReviewed":true},{"id":"gs3","text":"EV充電やカー用品販売、地域の見守り拠点としての役割を模索する動き","textReviewed":true}]}')
+case "$gas_groups" in *'"groups":'*) echo "  PASS: GAS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: GAS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+gas_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GAS_DOC,\"islandId\":\"gas-i\"}")
+case "$gas_summary" in *'"groundingIds":["gs1","gs2","gs3"]'*) echo "  PASS: GAS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: GAS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安全・信頼 vs 価格・効率・安全と価格の相克・正パス）
+gas_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"gs1","text":"安全な給油と車検・点検など丁寧なサービスで地域の安全を支えることを重視する声（安全・信頼）","textReviewed":true},"cardB":{"id":"gs2","text":"ガソリン価格競争や販売量への圧力など、安全・サービスと価格・効率のトレードオフに悩む声（価格・効率）","textReviewed":true}}')
+case "$gas_contra" in *'"hasContradiction":true'*) echo "  PASS: GAS ③矛盾検出（安全・信頼と価格・効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: GAS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+gas_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$GAS_DOC}")
+case "$gas_narr" in *'"basedOnReadingOrder":["gas-i"]'*) echo "  PASS: GAS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: GAS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+gas_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GAS_ID")
+check "GAS 読戻し (200)" "200" "$gas_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
