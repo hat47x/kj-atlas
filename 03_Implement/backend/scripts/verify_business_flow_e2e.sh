@@ -2918,5 +2918,45 @@ bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
 check "BK 読戻し (200)" "200" "$bk_read"
 
 echo ""
+echo "--- シナリオ65: 教育・学校運営の保護者アンケート整理（期待と実態の乖離） ---"
+# 業態: 教育・学校運営（小中学校）
+# 想定人物: 教頭／学校事務（保護者アンケートを整理）
+# 業務領域: 保護者からのフィードバック（教育内容・安全・連絡）のKJ分類と、学校運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 保護者の期待（教育内容の拡充）と学校の実態（教員負担・リソース）の乖離を
+#          矛盾検出で表面化し、運営改善の根拠にする（期待と実態のギャップ）。
+SC_ID="biz-flow-school"
+SC_DOC='{"version":1,"id":"'$SC_ID'","title":"保護者アンケート整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sc1","text":"保護者は英語教育の拡充を期待している","x":0,"y":0,"textReviewed":true},{"id":"sc2","text":"教員の負担が増えており現場は疲弊している","x":10,"y":0,"textReviewed":true},{"id":"sc3","text":"安全対策の強化を求める声が強い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sc-i","cardIds":["sc1","sc2","sc3"]}],"readingOrder":["sc-i"]}'
+
+sc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SC_ID" \
+  -H 'Content-Type: application/json' -d "$SC_DOC")
+check "SC PUT document (作成)" "200" "$sc_put"
+
+# ① AI束ね
+sc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sc1","text":"保護者は英語教育の拡充を期待している","textReviewed":true},{"id":"sc2","text":"教員の負担が増えており現場は疲弊している","textReviewed":true},{"id":"sc3","text":"安全対策の強化を求める声が強い","textReviewed":true}]}')
+case "$sc_groups" in *'"groups":'*) echo "  PASS: SC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SC_DOC,\"islandId\":\"sc-i\"}")
+case "$sc_summary" in *'"groundingIds":["sc1","sc2","sc3"]'*) echo "  PASS: SC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（保護者の期待 vs 教員の負担・期待と実態の乖離）
+sc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sc1","text":"保護者は英語教育の拡充を期待している","textReviewed":true},"cardB":{"id":"sc2","text":"教員の負担が増えており現場は疲弊している","textReviewed":true}}')
+case "$sc_contra" in *'"hasContradiction"'*) echo "  PASS: SC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SC_DOC}")
+case "$sc_narr" in *'"basedOnReadingOrder":["sc-i"]'*) echo "  PASS: SC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SC_ID")
+check "SC 読戻し (200)" "200" "$sc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

@@ -7,19 +7,19 @@
 
 ---
 
-## 1. 現状サマリ（2026-08-16・iteration 132 時点）
+## 1. 現状サマリ（2026-08-16・iteration 134 時点）
 
 | 指標 | 値 | 検証方法 |
 |------|----|---------|
-| 総シナリオ数（シナリオ1〜64） | 64 | §2.1 実走行＋`business-flow-e2e-scenarios-2026-08-15.md` |
-| 業務フローE2Eスクリプトのシナリオヘッダ数 | 62 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
-| カバー業態数 | 64 | シナリオドキュメント「カバレッジ集約」 |
-| 業務フローE2Eチェック数 | 369 | §2.1 実走行 → `Result: 369 passed, 0 failed` |
-| 総チェック数（check 10） | **388** | = 369（業務フロー）＋ 12（admin ops）＋ 7（kj multi-round）— 算術を verify script で照合 |
+| 総シナリオ数（シナリオ1〜65） | 65 | §2.1 実走行＋`business-flow-e2e-scenarios-2026-08-15.md` |
+| 業務フローE2Eスクリプトのシナリオヘッダ数 | 63 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
+| カバー業態数 | 65 | シナリオドキュメント「カバレッジ集約」 |
+| 業務フローE2Eチェック数 | 375 | §2.1 実走行 → `Result: 375 passed, 0 failed` |
+| 総チェック数（check 10） | **394** | = 375（業務フロー）＋ 12（admin ops）＋ 7（kj multi-round）— 算術を verify script で照合 |
 | 発行済み課題 | 2（AI-MODEL-GOVERNANCE-02 / OPS-LLM-COST-02・**両方 Done**） | verify script |
 | 検証層 | backend単体・frontend単体・frontend UI E2E・業務フローE2E・計画文書整合 | §2 |
 
-> 注記: 総チェック数は**業務フローE2Eのチェック数（369）とは別**。CIハーネス `verify_all.sh` check 10 は3自己完結E2E（業務フロー・admin ops・kj multi-round）を専用ポートで実行するため、総数 = 388。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。
+> 注記: 総チェック数は**業務フローE2Eのチェック数（375）とは別**。CIハーネス `verify_all.sh` check 10 は3自己完結E2E（業務フロー・admin ops・kj multi-round）を専用ポートで実行するため、総数 = 394。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。
 
 ---
 
@@ -28,7 +28,7 @@
 ### 2.1 業務フローE2E（決定性モックLLM・課金なし）
 ```bash
 cd 03_Implement/backend
-bash scripts/verify_business_flow_e2e.sh 8005   # 期待: "Result: 369 passed, 0 failed"（シナリオ1〜64）
+bash scripts/verify_business_flow_e2e.sh 8005   # 期待: "Result: 375 passed, 0 failed"（シナリオ1〜65）
 ```
 - 起点: `mock_local_llm.py`（GPU不要・決定的・`/generate` 契約）
 - 固定対象: 業態×人物×領域×操作×注意事項の標準業務フロー
@@ -73,12 +73,12 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 
 | 成果物 | 役割 | 検証コマンド |
 |--------|------|-------------|
-| `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜64・369 checks） | §2.1 |
+| `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜65・375 checks） | §2.1 |
 | `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・12 checks・自前スクリプト経路を含む） | §2.2 |
 | `03_Implement/backend/scripts/verify_kj_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
 | `03_Implement/backend/verify_all.sh` | CIハーネス（check 10 配線） | §2.2 |
 | `03_Implement/deploy/tools/mock_local_llm.py` | 決定性モックLLM（GPU不要） | §2.1 前提 |
-| `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md` | シナリオ定義・カバレッジ集約（シナリオ64・チェック369） | §2.1 数値照合 |
+| `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md` | シナリオ定義・カバレッジ集約（シナリオ65・チェック375） | §2.1 数値照合 |
 | `01_Plans/dogfood/README.md` | イテレーション履歴ログ（iteration 1〜127） | 目視 / verify script |
 | `01_Plans/dogfood/verify_dogfood_records.sh` | **本マニフェストの構造照合スクリプト** | 直接実行 |
 | `03_Implement/frontend/e2e/ce4_island_summary_proposal.spec.ts` | CE4 proposal 連鎖のUI固定 | §2.5 |
@@ -117,6 +117,8 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 | iteration 130 | シナリオ62（セキュリティ・SOC）→ 357/357 |
 | iteration 131 | シナリオ63（オンラインコミュニティ）→ 363/363 |
 | iteration 132 | シナリオ64（銀行・資産運用）→ 369/369 |
+| iteration 133 | **管理者自前スクリプトのCLI/API経路をE2E固定**（admin ops 12/12・並行作業） |
+| iteration 134 | シナリオ65（教育・学校運営）→ 375/375 |
 
 ---
 
