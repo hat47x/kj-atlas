@@ -5538,5 +5538,47 @@ pst_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PST_ID")
 check "PST 読戻し (200)" "200" "$pst_read"
 
 echo ""
+echo "--- シナリオ127: 葬儀・斎場（遺族への丁寧な対応と費用の透明性のトレードオフ） ---"
+# 業態: 葬儀・斎場（葬祭サービス）
+# 想定人物: 葬儀ディレクター／葬祭コーディネーター
+# 業務領域: 葬儀プラン・遺族の要望・費用・アフターケアの声のKJ分類と、葬祭サービスの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 故人・遺族への丁寧な対応（グリーフケア・カスタムセレモニー）と費用の明確化
+#          （見積もりの透明性・負担感）のトレードオフを矛盾検出（正パス）で表面化し、
+#          葬祭サービスの信頼性の根拠にする（心の寄り添いと価格の相克・アフターケアで
+#          遺族との長い関係を築く動きも指摘）。
+FUN_ID="biz-flow-funeral"
+FUN_DOC='{"version":1,"id":"'$FUN_ID'","title":"葬祭サービスの信頼性","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"f1","text":"故人への丁寧な対応と遺族の気持ちに寄り添うカスタムセレモニーを重視する声（グリーフケア）","x":0,"y":0,"textReviewed":true},{"id":"f2","text":"葬儀費用の見積もりが不透明で、丁寧な対応と費用のトレードオフに悩む声（費用の透明性）","x":10,"y":0,"textReviewed":true},{"id":"f3","text":"アフターケアや法要の案内で遺族との長い関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fun-i","cardIds":["f1","f2","f3"]}],"readingOrder":["fun-i"]}'
+
+fun_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FUN_ID" \
+  -H 'Content-Type: application/json' -d "$FUN_DOC")
+check "FUN PUT document (作成)" "200" "$fun_put"
+
+# ① AI束ね
+fun_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"f1","text":"故人への丁寧な対応と遺族の気持ちに寄り添うカスタムセレモニーを重視する声（グリーフケア）","textReviewed":true},{"id":"f2","text":"葬儀費用の見積もりが不透明で、丁寧な対応と費用のトレードオフに悩む声（費用の透明性）","textReviewed":true},{"id":"f3","text":"アフターケアや法要の案内で遺族との長い関係を築く動き","textReviewed":true}]}')
+case "$fun_groups" in *'"groups":'*) echo "  PASS: FUN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FUN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fun_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FUN_DOC,\"islandId\":\"fun-i\"}")
+case "$fun_summary" in *'"groundingIds":["f1","f2","f3"]'*) echo "  PASS: FUN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FUN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（丁寧な対応 vs 費用の透明性・心の寄り添いと価格の相克・正パス）
+fun_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"f1","text":"故人への丁寧な対応と遺族の気持ちに寄り添うカスタムセレモニーを重視する声（グリーフケア）","textReviewed":true},"cardB":{"id":"f2","text":"葬儀費用の見積もりが不透明で、丁寧な対応と費用のトレードオフに悩む声（費用の透明性）","textReviewed":true}}')
+case "$fun_contra" in *'"hasContradiction":true'*) echo "  PASS: FUN ③矛盾検出（遺族への丁寧な対応と費用の透明性のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: FUN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fun_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FUN_DOC}")
+case "$fun_narr" in *'"basedOnReadingOrder":["fun-i"]'*) echo "  PASS: FUN ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FUN ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fun_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FUN_ID")
+check "FUN 読戻し (200)" "200" "$fun_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
