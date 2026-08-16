@@ -5706,5 +5706,47 @@ trav_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TRAV_ID")
 check "TRAV 読戻し (200)" "200" "$trav_read"
 
 echo ""
+echo "--- シナリオ131: クリーニング（仕上がり品質と処理効率のトレードオフ） ---"
+# 業態: クリーニング（クリーニング店・宅配クリーニング）
+# 想定人物: クリーニング店経営者／品質管理担当
+# 業務領域: 仕上がり品質・受け渡し・料金・スタッフの声のKJ分類と、店舗・サービスの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 仕上がりの品質と丁寧な検品・仕上げへのこだわり（顧客満足・品質）と短納期の処理や
+#          価格競争への対応（処理効率・コスト）のトレードオフを矛盾検出（正パス）で表面化し、
+#          店舗・サービスの改善根拠にする（品質と効率の相克・宅配クリーニングや定期利用で
+#          顧客との長い関係を築く動きも指摘）。
+CLN_ID="biz-flow-cleaner"
+CLN_DOC='{"version":1,"id":"'$CLN_ID'","title":"クリーニング店のサービス改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"仕上がりの品質と丁寧な検品・仕上げへのこだわりを重視する声（品質・丁寧さ）","x":0,"y":0,"textReviewed":true},{"id":"c2","text":"短納期の処理や価格競争への対応など、品質と処理効率のトレードオフに悩む声（処理効率）","x":10,"y":0,"textReviewed":true},{"id":"c3","text":"宅配クリーニングや定期的な利用で顧客との長い関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cln-i","cardIds":["c1","c2","c3"]}],"readingOrder":["cln-i"]}'
+
+cln_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CLN_ID" \
+  -H 'Content-Type: application/json' -d "$CLN_DOC")
+check "CLN PUT document (作成)" "200" "$cln_put"
+
+# ① AI束ね
+cln_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"c1","text":"仕上がりの品質と丁寧な検品・仕上げへのこだわりを重視する声（品質・丁寧さ）","textReviewed":true},{"id":"c2","text":"短納期の処理や価格競争への対応など、品質と処理効率のトレードオフに悩む声（処理効率）","textReviewed":true},{"id":"c3","text":"宅配クリーニングや定期的な利用で顧客との長い関係を築く動き","textReviewed":true}]}')
+case "$cln_groups" in *'"groups":'*) echo "  PASS: CLN ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CLN ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cln_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CLN_DOC,\"islandId\":\"cln-i\"}")
+case "$cln_summary" in *'"groundingIds":["c1","c2","c3"]'*) echo "  PASS: CLN ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CLN ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・丁寧さ vs 処理効率・品質と効率の相克・正パス）
+cln_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"c1","text":"仕上がりの品質と丁寧な検品・仕上げへのこだわりを重視する声（品質・丁寧さ）","textReviewed":true},"cardB":{"id":"c2","text":"短納期の処理や価格競争への対応など、品質と処理効率のトレードオフに悩む声（処理効率）","textReviewed":true}}')
+case "$cln_contra" in *'"hasContradiction":true'*) echo "  PASS: CLN ③矛盾検出（仕上がり品質と処理効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CLN ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cln_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CLN_DOC}")
+case "$cln_narr" in *'"basedOnReadingOrder":["cln-i"]'*) echo "  PASS: CLN ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CLN ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cln_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CLN_ID")
+check "CLN 読戻し (200)" "200" "$cln_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
