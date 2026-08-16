@@ -121,6 +121,16 @@ try:
 finally:
     bad.unlink()
 
+# --- checklist items are citable and validated ----------------------------
+probe.write_text("存在する: CHK-X3 / 存在しない: CHK-X9\n", encoding="utf-8")
+try:
+    found = check_norm_identifier_resolution(ROOT, md_paths + [probe.relative_to(ROOT)])
+    bad = [f.target for f in found if f.path.endswith("_norm_probe.md")]
+    report("mutation: unknown checklist item detected", "CHK-X9" in bad)
+    report("valid checklist item not flagged", "CHK-X3" not in bad)
+finally:
+    probe.unlink()
+
 print()
 print("FAILURES:", failures)
 sys.exit(1 if failures else 0)

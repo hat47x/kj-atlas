@@ -59,19 +59,19 @@
 <table>
   <thead><tr><th style="width:4%;">#</th><th style="width:10%;">次元</th><th style="width:46%;">チェック項目</th><th style="width:40%;">判定基準</th></tr></thead>
   <tbody>
-    <tr class="biz"><td>B1</td><td>業務</td><td>この設計判断がないと、どの利用者journeyが完遂できないか明確に述べられている</td><td>「便利だから」「あったほうがいい」ではなく、欠如時の具体的な障害が特定できる</td></tr>
-    <tr class="biz"><td>B2</td><td>業務</td><td>既存の「侵してはならない核」と衝突しない（SafeMode・proposal-only・反スコアリング・キャンバス主従・保留の健全性）</td><td>ui_design_handoff.md の6核すべてとの整合を確認</td></tr>
-    <tr class="biz"><td>B3</td><td>業務</td><td>画面を純増させず、既存画面の置換・包含・モード分離で収まっている</td><td>ADR-0043 複雑性予算を参照。新規操作を既定表示へ追加していない</td></tr>
-    <tr class="biz"><td>B4</td><td>業務</td><td>利用者種別（Standard user / Tenant Admin / Platform operator）とcapabilityが明確</td><td>誰が操作できるか、capability不足時の挙動が定義されている</td></tr>
-    <tr class="biz"><td>B5</td><td>業務</td><td>利用者・テナントの無効化時の振る舞いが定義されている（無効化された主体の文書・権限・共有リンクの扱い）</td><td>無効化時の文書の可視性・所有移管・削除・共有失効が一貫して定義されている（post-mvp-business-scope-design-program.html §3 / §7-3）</td></tr>
-    <tr class="data"><td>D1</td><td>データ</td><td>この設計判断が扱うデータの正本と保存範囲（サーバー/文書内/端末のみ/環境変数）が明確</td><td>正本が不明なデータをUIが表示・編集しようとしていない</td></tr>
-    <tr class="data"><td>D2</td><td>データ</td><td>表示する情報が「識別メタデータ」か「知的成果物本体」か区別され、管理面で後者を表示していない</td><td>admin-surface-metadata-display-correction.html の境界定義を参照</td></tr>
-    <tr class="data"><td>D3</td><td>データ</td><td>データ境界クラス（L1運用〜L0計画）と実装状態が一致している</td><td>data_model_operations_overview.html のCRUD表と照合</td></tr>
-    <tr class="data"><td>D4</td><td>データ</td><td>SafeMode ON時に表示・送信される情報がSafeModeの制約を満たす（未レビュー本文の非表示等）</td><td>THREAT_MODEL.md のSafeMode境界と照合</td></tr>
-    <tr class="func"><td>F1</td><td>機能</td><td>必要なAPI endpointが api.md で契約済み、または本設計判断の一部として契約を定義している</td><td>未契約APIを前提とした画面設計を行っていない</td></tr>
-    <tr class="func"><td>F2</td><td>機能</td><td>画面の全状態（Loading / Empty / Ready / Error / Blocked / Read-only）が定義されている</td><td>異常状態がEmptyやReadyと混同されていない</td></tr>
-    <tr class="func"><td>F3</td><td>機能</td><td>capability不足時の表示が定義され、権限なしのEmptyへ偽装していない</td><td>blocked stateがEmpty/read-only/Network errorと区別されている</td></tr>
-    <tr class="func"><td>F4</td><td>機能</td><td>不可逆操作に確認が含まれ、取消方法が提供されている</td><td>削除・失効・公開範囲変更等の確認UIがある</td></tr>
+    <tr class="biz"><td>CHK-B1</td><td>業務</td><td>この設計判断がないと、どの利用者journeyが完遂できないか明確に述べられている</td><td>「便利だから」「あったほうがいい」ではなく、欠如時の具体的な障害が特定できる</td></tr>
+    <tr class="biz"><td>CHK-B2</td><td>業務</td><td>既存の「侵してはならない核」と衝突しない（SafeMode・proposal-only・反スコアリング・キャンバス主従・保留の健全性）</td><td>ui_design_handoff.md の6核すべてとの整合を確認</td></tr>
+    <tr class="biz"><td>CHK-B3</td><td>業務</td><td>画面を純増させず、既存画面の置換・包含・モード分離で収まっている</td><td>ADR-0043 複雑性予算を参照。新規操作を既定表示へ追加していない</td></tr>
+    <tr class="biz"><td>CHK-B4</td><td>業務</td><td>利用者種別（Standard user / Tenant Admin / Platform operator）とcapabilityが明確</td><td>誰が操作できるか、capability不足時の挙動が定義されている</td></tr>
+    <tr class="biz"><td>CHK-B5</td><td>業務</td><td>利用者・テナントの無効化時の振る舞いが定義されている（無効化された主体の文書・権限・共有リンクの扱い）</td><td>無効化時の文書の可視性・所有移管・削除・共有失効が一貫して定義されている（post-mvp-business-scope-design-program.html §3 / §7-3）</td></tr>
+    <tr class="data"><td>CHK-D1</td><td>データ</td><td>この設計判断が扱うデータの正本と保存範囲（サーバー/文書内/端末のみ/環境変数）が明確</td><td>正本が不明なデータをUIが表示・編集しようとしていない</td></tr>
+    <tr class="data"><td>CHK-D2</td><td>データ</td><td>表示する情報が「識別メタデータ」か「知的成果物本体」か区別され、管理面で後者を表示していない</td><td>admin-surface-metadata-display-correction.html の境界定義を参照</td></tr>
+    <tr class="data"><td>CHK-D3</td><td>データ</td><td>データ境界クラス（L1運用〜L0計画）と実装状態が一致している</td><td>data_model_operations_overview.html のCRUD表と照合</td></tr>
+    <tr class="data"><td>CHK-D4</td><td>データ</td><td>SafeMode ON時に表示・送信される情報がSafeModeの制約を満たす（未レビュー本文の非表示等）</td><td>THREAT_MODEL.md のSafeMode境界と照合</td></tr>
+    <tr class="func"><td>CHK-F1</td><td>機能</td><td>必要なAPI endpointが api.md で契約済み、または本設計判断の一部として契約を定義している</td><td>未契約APIを前提とした画面設計を行っていない</td></tr>
+    <tr class="func"><td>CHK-F2</td><td>機能</td><td>画面の全状態（Loading / Empty / Ready / Error / Blocked / Read-only）が定義されている</td><td>異常状態がEmptyやReadyと混同されていない</td></tr>
+    <tr class="func"><td>CHK-F3</td><td>機能</td><td>capability不足時の表示が定義され、権限なしのEmptyへ偽装していない</td><td>blocked stateがEmpty/read-only/Network errorと区別されている</td></tr>
+    <tr class="func"><td>CHK-F4</td><td>機能</td><td>不可逆操作に確認が含まれ、取消方法が提供されている</td><td>削除・失効・公開範囲変更等の確認UIがある</td></tr>
   </tbody>
 </table>
 
@@ -80,12 +80,12 @@
 <table>
   <thead><tr><th style="width:4%;">#</th><th style="width:25%;">牽制</th><th style="width:41%;">チェック項目</th><th style="width:30%;">実例（管理面タイトル表示補正）</th></tr></thead>
   <tbody>
-    <tr><td>X1</td><td>業務→データ</td><td>業務上必要な表示項目が、データの非表示原則を侵していないか</td><td class="pass">✓ タイトルは識別メタデータのため表示可。カード本文は非表示（侵さず）</td></tr>
-    <tr><td>X2</td><td>業務→機能</td><td>業務要求が未契約APIを暗黙に前提としていないか</td><td class="pass">✓ GET /docs はタイトルを返す。新規API不要</td></tr>
-    <tr><td>X3</td><td>データ→業務</td><td>データの保存範囲が、業務上の編集操作と矛盾していないか</td><td class="pass">✓ タイトルはDocument.titleとして保存され、文書保存で永続化される</td></tr>
-    <tr><td>X4</td><td>データ→機能</td><td>データ境界クラスが、APIのCRUDサポートレベルと一致しているか</td><td class="pass">✓ タイトルはL1 Supported。PUT /docs/{id} で保存可能</td></tr>
-    <tr><td>X5</td><td>機能→業務</td><td>APIの状態遷移が、業務シナリオの全経路をカバーしているか</td><td class="pass">✓ 保存失敗（409競合）→再読込→再編集 の経路が定義済み</td></tr>
-    <tr><td>X6</td><td>機能→データ</td><td>APIの有無がデータ境界クラスを歪めていないか（APIがあるからL1運用可能と誤認させない）</td><td class="pass">✓ タイトルはDocument全体の一部であり、タイトル単独のAPIは不要</td></tr>
+    <tr><td>CHK-X1</td><td>業務→データ</td><td>業務上必要な表示項目が、データの非表示原則を侵していないか</td><td class="pass">✓ タイトルは識別メタデータのため表示可。カード本文は非表示（侵さず）</td></tr>
+    <tr><td>CHK-X2</td><td>業務→機能</td><td>業務要求が未契約APIを暗黙に前提としていないか</td><td class="pass">✓ GET /docs はタイトルを返す。新規API不要</td></tr>
+    <tr><td>CHK-X3</td><td>データ→業務</td><td>データの保存範囲が、業務上の編集操作と矛盾していないか</td><td class="pass">✓ タイトルはDocument.titleとして保存され、文書保存で永続化される</td></tr>
+    <tr><td>CHK-X4</td><td>データ→機能</td><td>データ境界クラスが、APIのCRUDサポートレベルと一致しているか</td><td class="pass">✓ タイトルはL1 Supported。PUT /docs/{id} で保存可能</td></tr>
+    <tr><td>CHK-X5</td><td>機能→業務</td><td>APIの状態遷移が、業務シナリオの全経路をカバーしているか</td><td class="pass">✓ 保存失敗（409競合）→再読込→再編集 の経路が定義済み</td></tr>
+    <tr><td>CHK-X6</td><td>機能→データ</td><td>APIの有無がデータ境界クラスを歪めていないか（APIがあるからL1運用可能と誤認させない）</td><td class="pass">✓ タイトルはDocument全体の一部であり、タイトル単独のAPIは不要</td></tr>
   </tbody>
 </table>
 
@@ -94,11 +94,11 @@
 <table>
   <thead><tr><th style="width:4%;">#</th><th style="width:10%;">次元</th><th style="width:46%;">チェック項目</th><th style="width:40%;">判定基準</th></tr></thead>
   <tbody>
-    <tr class="biz"><td>K1</td><td>業務</td><td>AI提案は候補生成に留まり、人間の明示操作なしに文書へ反映されない</td><td>proposal-only。一括Adoptを新設していない</td></tr>
-    <tr class="biz"><td>K2</td><td>業務</td><td>保留・違和感の保持・表現を妨げない。確定を促すUI（「解決」ボタン等）を置かない</td><td>amberが保留・違和感以外に使われていない</td></tr>
-    <tr class="data"><td>K3</td><td>データ</td><td>カードのka（声・価値）フィールドがSafeMode時に適切に制御される</td><td>未レビューkaはAIへ送信しない</td></tr>
-    <tr class="data"><td>K4</td><td>データ</td><td>EvidenceLink・出典参照がSafeMode・共有時に適切に制御される</td><td>未レビュー出典は共有出力から除外</td></tr>
-    <tr class="func"><td>K5</td><td>機能</td><td>AI提案のタスク名が操作別モデルレベル定義に含まれている</td><td>AGENTS.md §1.2 の表にタスクが登録済み</td></tr>
+    <tr class="biz"><td>CHK-K1</td><td>業務</td><td>AI提案は候補生成に留まり、人間の明示操作なしに文書へ反映されない</td><td>proposal-only。一括Adoptを新設していない</td></tr>
+    <tr class="biz"><td>CHK-K2</td><td>業務</td><td>保留・違和感の保持・表現を妨げない。確定を促すUI（「解決」ボタン等）を置かない</td><td>amberが保留・違和感以外に使われていない</td></tr>
+    <tr class="data"><td>CHK-K3</td><td>データ</td><td>カードのka（声・価値）フィールドがSafeMode時に適切に制御される</td><td>未レビューkaはAIへ送信しない</td></tr>
+    <tr class="data"><td>CHK-K4</td><td>データ</td><td>EvidenceLink・出典参照がSafeMode・共有時に適切に制御される</td><td>未レビュー出典は共有出力から除外</td></tr>
+    <tr class="func"><td>CHK-K5</td><td>機能</td><td>AI提案のタスク名が操作別モデルレベル定義に含まれている</td><td>AGENTS.md §1.2 の表にタスクが登録済み</td></tr>
   </tbody>
 </table>
 

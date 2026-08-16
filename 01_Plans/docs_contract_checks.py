@@ -512,11 +512,20 @@ def check_adr_id_uniqueness(root: Path, markdown_paths: list[Path]) -> list[Docs
 
 #: Constitution-layer identifiers (DOC-NORM-01). Definitions are headings or
 #: top-level list items; anything else mentioning the token is a reference.
-NORM_ID_RE = re.compile(r"\b(DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2}\b")
+NORM_ID_RE = re.compile(r"\b(?:(?:DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2}|CHK-[BDFXK]\d)\b")
 NORM_ID_DEFINITION_RE = re.compile(
     r"^(?:#{2,4}\s+|-\s+\*\*)((?:DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2})\b", re.M
 )
-#: A line-number reference into the constitution layer, e.g. `domain.md:88`.
+#: The three-element checklist (02_Architecture, HTML). Its items are the gate a
+#: design decision must pass, so they are citable the same way norms are. The
+#: per-ADR three-element tables are deliberately NOT given identifiers: those are
+#: reasoning that produced a decision, and 234+ reasoning cells would reproduce
+#: the exists-but-unreferenced failure at scale.
+THREE_ELEMENT_CHECKLIST_PATH = Path("02_Architecture/three-element-constraint-checklist.html")
+CHECKLIST_ID_DEFINITION_RE = re.compile(r"<td>(CHK-[BDFXK]\d)</td>")
+
+#: A line-number reference into the constitution layer, e.g. a doc path with a
+#: trailing colon and digits.
 #: These rot the moment the file is edited, which is why identifiers exist.
 NORM_LINE_REFERENCE_RE = re.compile(r"00_Prompt/[A-Za-z0-9_.-]+\.md:\d+")
 
@@ -543,6 +552,15 @@ def _collect_norm_definitions(root: Path) -> dict[str, Path]:
                 duplicates.append((identifier, definitions[identifier], relative))
             else:
                 definitions.setdefault(identifier, relative)
+    checklist = root / THREE_ELEMENT_CHECKLIST_PATH
+    if checklist.is_file():
+        try:
+            checklist_text = checklist.read_text(encoding="utf-8")
+        except OSError:
+            checklist_text = ""
+        for identifier in CHECKLIST_ID_DEFINITION_RE.findall(checklist_text):
+            definitions.setdefault(identifier, THREE_ELEMENT_CHECKLIST_PATH)
+
     _collect_norm_definitions.duplicates = duplicates  # type: ignore[attr-defined]
     return definitions
 
@@ -678,6 +696,8 @@ def check_norm_identifier_resolution(
         except OSError:
             continue
 
+        if relative == THREE_ELEMENT_CHECKLIST_PATH:
+            continue
         defined_here = set(NORM_ID_DEFINITION_RE.findall(text))
         for line_number, line in enumerate(text.splitlines(), start=1):
             for match in NORM_ID_RE.finditer(line):
