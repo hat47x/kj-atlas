@@ -42,6 +42,15 @@ def _stub_metadata() -> LLMCallMetadata:
     )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _app_db_schema() -> None:
+    """Ensure the shared SQLite DB has the full app schema (tenant_model_allowlist etc.)."""
+    from kj_atlas_api.db import engine
+    from kj_atlas_api.models import Base
+
+    Base.metadata.create_all(bind=engine)
+
+
 @pytest.fixture(scope="module")
 def eval_doc() -> DocumentV1:
     raw = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))

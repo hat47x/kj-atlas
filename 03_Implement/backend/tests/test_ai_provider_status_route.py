@@ -1,8 +1,18 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from kj_atlas_api.llm.provider import reset_llm_call_counts
 from kj_atlas_api.main import app
 from kj_atlas_api.settings import settings
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _app_db_schema() -> None:
+    """Ensure the shared SQLite DB has the full app schema (tenant_model_allowlist etc.)."""
+    from kj_atlas_api.db import engine
+    from kj_atlas_api.models import Base
+
+    Base.metadata.create_all(bind=engine)
 
 
 def test_provider_status_echoes_none_by_default() -> None:

@@ -12,6 +12,15 @@ from kj_atlas_api.routes import ai
 from kj_atlas_api.settings import settings
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _app_db_schema() -> None:
+    """Ensure the shared SQLite DB has the full app schema (tenant_model_allowlist etc.)."""
+    from kj_atlas_api.db import engine
+    from kj_atlas_api.models import Base
+
+    Base.metadata.create_all(bind=engine)
+
+
 def _doc_with_cards(cards: list[dict]) -> dict:
     return {
         "version": 1,
