@@ -2,13 +2,21 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { setActiveLocale } from "../i18n/translate";
-import { ModelSelector } from "./ModelSelector";
+import { ModelSelector, reconcileModelSelection } from "./ModelSelector";
 
 // AI-MODEL-GOVERNANCE-01 (R2): the selector is presentational (App owns the
 // guarded fetch). It must never block the operation and always expose the
 // "auto / default" fallback.
 
 describe("ModelSelector", () => {
+  it("clears a selected model that disappeared after an administrator change", () => {
+    expect(reconcileModelSelection("disabled-model", [])).toBe("");
+    expect(reconcileModelSelection("active-model", [
+      { id: "active-model", displayName: "Active", providerId: "local" },
+    ])).toBe("active-model");
+    expect(reconcileModelSelection("loading-model", null)).toBe("loading-model");
+  });
+
   it("renders a disabled auto-select while models are loading (null)", () => {
     setActiveLocale("ja");
     const html = renderToStaticMarkup(

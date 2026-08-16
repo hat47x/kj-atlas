@@ -34,3 +34,7 @@
 ## 検出記録（2026-08-16）
 
 管理API、管理者example script、利用者SPAを同時に動かしたモンキーテストで検出。example scriptはキー分離を10/10通過し、利用者画面のlocal/session storageと本文に両キーが存在しないことをEdgeで確認した一方、管理UIと正式な管理CLI commandは存在しなかった。
+
+## 部分対応記録（2026-08-16）
+
+正式CLIの既存CE4 commandがキー有効backendへ接続できない`SEC-CLI-AUTH-01`を修正し、business-plane keyを環境変数だけから送るよう統一した。これはMCPとの認証協調を回復するが、本issueが求める管理command・確認付きwrite・独立管理consoleは未実装のためOpenを維持する。

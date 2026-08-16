@@ -16,9 +16,8 @@ Usage:
   .venv/bin/python scripts/verify_cli_ce4_audit_e2e.py [PORT]
 
 Requires the backend venv. Uses free ports for the backend and audit sink.
-The backend runs WITHOUT an API key (local-dev open mode): the `kj` CLI does
-not send X-API-Key (it only carries optional x-actor-ref / x-trace-id), which
-is exactly the deployment this path targets.
+The backend runs with a business-plane API key and the CLI reads that key from
+`KJ_ATLAS_API_KEY`; the secret is never placed in a process argument.
 """
 
 from __future__ import annotations
@@ -39,6 +38,7 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(os.path.dirname(BACKEND_DIR))
 VENV_PYTHON = os.path.join(BACKEND_DIR, ".venv", "bin", "python")
 DOC_ID = "cli-audit-doc"
+BUSINESS_API_KEY = "cli-e2e-business-key"
 
 PASS = 0
 FAIL = 0
@@ -116,7 +116,7 @@ def _put_document(base_url: str, doc: dict) -> None:
         f"{base_url}/docs/{doc['id']}",
         data=json.dumps(doc).encode("utf-8"),
         method="PUT",
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "X-API-Key": BUSINESS_API_KEY},
     )
     with urllib.request.urlopen(req) as resp:
         if resp.status != 200:
@@ -140,6 +140,7 @@ def main() -> int:
         backend_env = dict(
             os.environ,
             KJ_ATLAS_DATABASE_URL=f"sqlite:///{db_path}",
+            KJ_ATLAS_API_KEY=BUSINESS_API_KEY,
             KJ_ATLAS_AUDIT_EXPORT_ENABLED="1",
             KJ_ATLAS_AUDIT_TRANSPORT="http",
             KJ_ATLAS_AUDIT_HTTP_ENDPOINT=f"http://127.0.0.1:{sink_port}/audit",
@@ -191,6 +192,7 @@ def main() -> int:
             ("proposal-diff", "proposal", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src}),
             ("apply", "apply", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src, "sideEffect": "none"}),
         ]
+        cli_env = dict(os.environ, KJ_ATLAS_API_KEY=BUSINESS_API_KEY)
         for cli_cmd, _op, payload in operations:
             input_path = os.path.join(tmp, f"cli_{cli_cmd}.json")
             with open(input_path, "w", encoding="utf-8") as fh:
@@ -199,6 +201,7 @@ def main() -> int:
                 [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
                  cli_cmd, "--input", input_path],
                 cwd=BACKEND_DIR,
+                env=cli_env,
                 capture_output=True,
                 text=True,
                 timeout=60,
@@ -216,6 +219,7 @@ def main() -> int:
              "ce4", "resolve-bundle", "--query", "課題は何か",
              "--source-bundle-hash", "mock:" + ("d" * 64)],
             cwd=BACKEND_DIR,
+            env=cli_env,
             capture_output=True,
             text=True,
             timeout=60,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from typing import Any
 
 import httpx
@@ -39,6 +40,24 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         sub.add_argument("--dry-run", action="store_true", default=True)
         sub.set_defaults(operation=operation)
     return parser.parse_args(argv)
+
+
+def _business_plane_headers(*, actor_ref: str | None = None, trace_id: str | None = None) -> dict[str, str]:
+    """Build non-secret and business-plane auth headers for CLI requests.
+
+    The API key is environment-only by design: accepting it as a command-line
+    option would expose it in shell history and process listings. Empty or
+    whitespace-only values behave as unset, preserving open local-dev mode.
+    """
+    headers: dict[str, str] = {}
+    api_key = (os.environ.get("KJ_ATLAS_API_KEY") or "").strip()
+    if api_key:
+        headers["x-api-key"] = api_key
+    if actor_ref:
+        headers["x-actor-ref"] = actor_ref
+    if trace_id:
+        headers["x-trace-id"] = trace_id
+    return headers
 
 
 
@@ -124,6 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         response = httpx.post(
             f"{args.api_base_url}/context/bundles:resolve",
             json=payload,
+            headers=_business_plane_headers(),
             timeout=5.0,
         )
         response.raise_for_status()
@@ -145,11 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("input JSON must include docId")
 
     doc_id, payload = _build_payload(args, input_payload)
-    headers: dict[str, str] = {}
-    if args.actor_ref:
-        headers["x-actor-ref"] = args.actor_ref
-    if args.trace_id:
-        headers["x-trace-id"] = args.trace_id
+    headers = _business_plane_headers(actor_ref=args.actor_ref, trace_id=args.trace_id)
 
     response = httpx.post(
         f"{args.api_base_url}/docs/{doc_id}/context-audit",

@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import { useEffect, type ChangeEvent } from "react";
 import type { AvailableModelItem } from "../api/client";
 import { t } from "../i18n/translate";
 
@@ -31,7 +31,21 @@ const selectStyle = {
   maxWidth: 220,
 } as const;
 
+export function reconcileModelSelection(value: string, models: AvailableModelItem[] | null): string {
+  if (models === null || value === "" || models.some((model) => model.id === value)) {
+    return value;
+  }
+  return "";
+}
+
 export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, models }: ModelSelectorProps) {
+  useEffect(() => {
+    const reconciled = reconcileModelSelection(value, models);
+    if (reconciled !== value) {
+      onChange(reconciled);
+    }
+  }, [models, onChange, value]);
+
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onChange(event.target.value);
   };

@@ -100,6 +100,13 @@ export PYTHONPATH=src
 pytest
 ```
 
+### CE4 CLI authentication
+
+`kj_atlas_api.cli` uses `KJ_ATLAS_API_KEY` for business-plane API
+authentication. Keep the secret in the environment; there is intentionally no
+command-line key option because process arguments and shell history are not a
+safe secret transport. An unset value preserves open `local-dev` behavior.
+
 PostgreSQL roundtrip test を実行する場合:
 
 ```bash

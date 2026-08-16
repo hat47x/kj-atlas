@@ -126,13 +126,22 @@ export function DocumentTitleEditor({
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
       {isEditing ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
+          onBlur={(event) => {
+            const nextTarget = event.relatedTarget;
+            if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+              return;
+            }
+            handleSaveEdit();
+          }}
+        >
           <input
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            onBlur={handleSaveEdit}
+            aria-label={t("document_title.input_aria")}
             autoFocus
             style={{
               fontSize: 16,
@@ -147,7 +156,10 @@ export function DocumentTitleEditor({
             data-testid="document-title-input"
           />
           <button
-            onClick={handleSaveEdit}
+            onClick={() => {
+              handleSaveEdit();
+              focusTitleDisplay();
+            }}
             style={{
               fontSize: 12,
               padding: "2px 8px",

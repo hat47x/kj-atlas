@@ -1520,9 +1520,28 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ) {
         blockStaleTenantSession();
       }
+      if (
+        error instanceof ApiError
+        && ["model_not_allowed", "model_not_registered", "model_provider_unavailable"].includes(error.code ?? "")
+      ) {
+        // An administrator may change provider/model lifecycle or a tenant
+        // allowlist while this page is open. The rejected mutation is already
+        // fail-closed server-side; refresh the advisory selector immediately
+        // so the user does not keep retrying a stale model choice.
+        try {
+          const models = await runTenantScopedTask(() => fetchAvailableModels({
+            tenantSessionContext: verifiedTenantSession,
+          }));
+          setAvailableModels(models);
+        } catch (refreshError) {
+          if (!(refreshError instanceof StaleTenantSessionResultError)) {
+            setAvailableModels([]);
+          }
+        }
+      }
       throw error;
     }
-  }, [blockStaleTenantSession, runTenantScopedTask]);
+  }, [blockStaleTenantSession, runTenantScopedTask, verifiedTenantSession]);
 
   useEffect(() => {
     return cleanupRuntimeResources;
@@ -2534,9 +2553,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleSuggestDocumentTitle = useCallback(
     async (islandTitles: string[], cardTexts: string[], currentTitle: string | undefined) => {
-      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
-        tenantSessionContext: verifiedTenantSession,
-      }));
+      try {
+        return await runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
+          tenantSessionContext: verifiedTenantSession,
+        }));
+      } catch (error) {
+        if (
+          error instanceof ApiError
+          && ["model_not_allowed", "model_not_registered", "model_provider_unavailable"].includes(error.code ?? "")
+        ) {
+          throw new Error(t("ai.model_policy_changed"));
+        }
+        const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+        throw new Error(resolveAiProviderErrorMessage(error, fallback));
+      }
     },
     [documentTitleModel, runTenantScopedApiRequest, verifiedTenantSession],
   );
@@ -8926,7 +8956,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         onTitleChange={handleUpdateDocumentTitle}
         isReadOnly={isReadOnly}
         onSuggestTitle={handleSuggestDocumentTitle}
-        providerEnabled={providerKind !== null && providerKind !== "none"}
+        providerEnabled={
+          providerKind !== null
+          && providerKind !== "none"
+          && availableModels !== null
+          && availableModels.length > 0
+        }
         modelSelectionVisible={
           (providerKind !== null && providerKind !== "none")
           || availableModels !== null

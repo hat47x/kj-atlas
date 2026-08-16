@@ -649,3 +649,38 @@ Updated: 2026-08-03
 - 原因: 別のrepository検証器のinterfaceを類推し、helpまたは実装を確認せず引数を組み立てた。
 - 対応: 対応済みの`--root 01_Plans/issues`で全active issueを検証し、57件成功と`docs_check.py`成功を確認した。
 - 再発防止: repository固有validatorは初回実行前に`--help`またはargument parserを確認し、宣言済みoptionだけを使う。
+
+## 2026-08-16: backend配下からCLI testのrepository相対pathを二重指定
+
+- 事象: CLI認証修正後の近接testで、既にbackendを作業directoryにしているのに`03_Implement/backend/tests/...`を指定し、対象検索で停止した。
+- 原因: repository root基準のpathとcommandの作業directory基準を混在させた。
+- 対応: backend基準の`tests/test_cli_ce4_audit.py`へ直し、10件成功を確認した。
+- 再発防止: 実行前にworking directoryと各path引数を一組で読み、同じdirectory segmentの重複がないことを確認する。
+
+## 2026-08-16: Edge管理変更fixtureが初期一覧の呼出回数を状態として使用
+
+- 事象: 管理変更後のmodel一覧再同期を確認するEdge probeで、選択欄が操作前からdisabledとなりtimeoutした。
+- 原因: 開発時の初期化では一覧APIが複数回呼ばれ得るのに、「1回目だけmodelあり、2回目以降は空」という呼出回数依存fixtureにしていた。
+- 対応: 生成APIが管理変更由来の403を返した時点で明示的状態flagを切り替え、それ以前の一覧呼出しは何回でも同じmodelを返すよう修正した。
+- 再発防止: React初期化を跨ぐbrowser fixtureは呼出回数ではなく、再現対象のdomain eventを状態遷移条件にする。
+
+## 2026-08-16: タイトルfocus修正後のEdge確認を旧Vite assetで実行
+
+- 事象: `aria-label`追加後のEdge probeが変更前のinputを読み、無名inputとbodyへのfocus消失を再検出した。
+- 原因: WSL上のViteがfrontend source変更をWindows Edge側へ反映していなかった。
+- 対応: dev serverを再起動し、変更後assetで再実行した。
+- 再発防止: frontend sourceを変更した後のWindows Edge最終検証は、Viteを再起動してasset世代を揃える。
+
+## 2026-08-16: requestAnimationFrameのfocus復帰前にEdge probeが判定
+
+- 事象: タイトル保存ボタン押下後、表示ボタンは再描画済みだがfocus検査時点では一時的にbodyで、probeが失敗した。
+- 原因: 製品コードは次animation frameでfocusを戻す設計なのに、probeが要素のvisibleだけを待って即時判定した。
+- 対応: active elementがタイトル表示ボタンになる条件を明示的に待ってから判定する。
+- 再発防止: 非同期focus管理のE2Eは要素再描画とfocus commitを別条件として待つ。
+
+## 2026-08-16: frontend全体testのtenant wrapper契約へ内部再同期経路を未登録
+
+- 事象: frontend全体1,463件のうち、管理変更後のmodel一覧再取得がtenant generation guardを通っているにもかかわらず、静的契約testが未guardと判定した。
+- 原因: 契約testは`runTenantScopedApiRequest`という表層wrapper名だけを許可し、そのwrapper自身のerror recovery内で使う下位generation guardを表現できなかった。
+- 対応: 表層request wrapperと、その内部復旧専用の`runTenantScopedTask`をgeneration guardの許可構文として列挙し、session identifier必須検査は維持した。
+- 再発防止: 非同期回復経路を追加する際は、runtime guardだけでなく全call siteを検査する静的coverage契約も同時に更新する。
