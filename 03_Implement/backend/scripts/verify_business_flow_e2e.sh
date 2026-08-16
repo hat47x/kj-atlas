@@ -6753,5 +6753,47 @@ nail_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NAIL_ID")
 check "NAIL 読戻し (200)" "200" "$nail_read"
 
 echo ""
+echo "--- シナリオ156: ペンション・民宿（おもてなし・地域と効率・収益のトレードオフ） ---"
+# 業態: ペンション・民宿（民宿・民泊経営）
+# 想定人物: 民宿オーナー／経営者
+# 業務領域: 宿泊・食事・おもてなし・地域への声のKJ分類と、民宿経営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 手作りの料理と温かいおもてなし・地域の魅力を伝える（おもてなし・地域）と人手不足や
+#          稼働率への対応（効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、民宿経営の
+#          改善根拠にする（おもてなしと効率の相克・地域の素材や文化・農家・職人との連携で民宿ならではの
+#          体験をつくる動きも指摘）。
+MINSHUKU_ID="biz-flow-minshuku"
+MINSHUKU_DOC='{"version":1,"id":"'$MINSHUKU_ID'","title":"民宿経営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ms1","text":"手作りの料理と温かいおもてなし、地域の魅力を伝えることを重視する声（おもてなし・地域）","x":0,"y":0,"textReviewed":true},{"id":"ms2","text":"人手不足や稼働率への対応など、おもてなしと効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"ms3","text":"地域の素材や文化、農家・職人との連携で民宿ならではの体験をつくる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"m-i","cardIds":["ms1","ms2","ms3"]}],"readingOrder":["m-i"]}'
+
+m_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MINSHUKU_ID" \
+  -H 'Content-Type: application/json' -d "$MINSHUKU_DOC")
+check "M PUT document (作成)" "200" "$m_put"
+
+# ① AI束ね
+m_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ms1","text":"手作りの料理と温かいおもてなし、地域の魅力を伝えることを重視する声（おもてなし・地域）","textReviewed":true},{"id":"ms2","text":"人手不足や稼働率への対応など、おもてなしと効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"ms3","text":"地域の素材や文化、農家・職人との連携で民宿ならではの体験をつくる動き","textReviewed":true}]}')
+case "$m_groups" in *'"groups":'*) echo "  PASS: M ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: M ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+m_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MINSHUKU_DOC,\"islandId\":\"m-i\"}")
+case "$m_summary" in *'"groundingIds":["ms1","ms2","ms3"]'*) echo "  PASS: M ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: M ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（おもてなし・地域 vs 効率・収益・おもてなしと効率の相克・正パス）
+m_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ms1","text":"手作りの料理と温かいおもてなし、地域の魅力を伝えることを重視する声（おもてなし・地域）","textReviewed":true},"cardB":{"id":"ms2","text":"人手不足や稼働率への対応など、おもてなしと効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$m_contra" in *'"hasContradiction":true'*) echo "  PASS: M ③矛盾検出（おもてなし・地域と効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: M ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+m_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MINSHUKU_DOC}")
+case "$m_narr" in *'"basedOnReadingOrder":["m-i"]'*) echo "  PASS: M ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: M ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+m_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MINSHUKU_ID")
+check "M 読戻し (200)" "200" "$m_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
