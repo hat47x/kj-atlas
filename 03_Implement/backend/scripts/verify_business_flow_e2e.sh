@@ -5580,5 +5580,47 @@ fun_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FUN_ID")
 check "FUN 読戻し (200)" "200" "$fun_read"
 
 echo ""
+echo "--- シナリオ128: 演劇・舞台芸術（芸術性と興行の維持のトレードオフ） ---"
+# 業態: 演劇・舞台芸術（劇場・劇団運営）
+# 想定人物: 劇場支配人／芸術監督
+# 業務領域: 演目の企画・観客の声・チケット販売・運営の声のKJ分類と、劇場運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 芸術性の追求（実験的演目・新人登用・質の維持）と集客・収益（興行の維持・
+#          チケット価格）のトレードオフを矛盾検出（正パス）で表面化し、劇場運営の
+#          持続可能性の根拠にする（創造性と経営の相克・常連ファンと地域とのつながりで
+#          観客を育てる動きも指摘）。
+TH_ID="biz-flow-theater"
+TH_DOC='{"version":1,"id":"'$TH_ID'","title":"劇場運営の持続可能性","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"芸術性の高い実験的な演目や新人の登用を重視する声（芸術性）","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"客席稼働率を高めるための集客・チケット価格戦略とのトレードオフに悩む声（収益・集客）","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"常連のファンや地域とのつながり、ワークショップで観客を育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"th-i","cardIds":["t1","t2","t3"]}],"readingOrder":["th-i"]}'
+
+th_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TH_ID" \
+  -H 'Content-Type: application/json' -d "$TH_DOC")
+check "TH PUT document (作成)" "200" "$th_put"
+
+# ① AI束ね
+th_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"芸術性の高い実験的な演目や新人の登用を重視する声（芸術性）","textReviewed":true},{"id":"t2","text":"客席稼働率を高めるための集客・チケット価格戦略とのトレードオフに悩む声（収益・集客）","textReviewed":true},{"id":"t3","text":"常連のファンや地域とのつながり、ワークショップで観客を育てる動き","textReviewed":true}]}')
+case "$th_groups" in *'"groups":'*) echo "  PASS: TH ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TH ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+th_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TH_DOC,\"islandId\":\"th-i\"}")
+case "$th_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TH ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TH ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（芸術性 vs 集客・収益・創造性と経営の相克・正パス）
+th_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"芸術性の高い実験的な演目や新人の登用を重視する声（芸術性）","textReviewed":true},"cardB":{"id":"t2","text":"客席稼働率を高めるための集客・チケット価格戦略とのトレードオフに悩む声（収益・集客）","textReviewed":true}}')
+case "$th_contra" in *'"hasContradiction":true'*) echo "  PASS: TH ③矛盾検出（芸術性と興行の維持のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: TH ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+th_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TH_DOC}")
+case "$th_narr" in *'"basedOnReadingOrder":["th-i"]'*) echo "  PASS: TH ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TH ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+th_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TH_ID")
+check "TH 読戻し (200)" "200" "$th_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
