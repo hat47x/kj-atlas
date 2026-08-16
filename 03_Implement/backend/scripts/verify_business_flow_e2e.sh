@@ -4048,5 +4048,45 @@ ht_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HT_ID")
 check "HT 読戻し (200)" "200" "$ht_read"
 
 echo ""
+echo "--- シナリオ93: 通信キャリアの料金プランと解約理由（価格競争とネットワーク投資のトレードオフ） ---"
+# 業態: 通信キャリア（携帯/固定通信）
+# 想定人物: マーケティング責任者（解約理由を分析）
+# 業務領域: 解約・乗り換え理由のKJ分類と、料金プラン・サービス改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 低価格競争（料金プランの値下げ）とネットワーク投資（品質維持）のトレードオフを
+#          矛盾検出で表面化し、プラン改定の根拠にする（価格と品質のトレードオフ）。
+TP_ID="biz-flow-telco"
+TP_DOC='{"version":1,"id":"'$TP_ID'","title":"料金プラン・解約分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"tp1","text":"競合の低価格プランへの乗り換えが増えている","x":0,"y":0,"textReviewed":true},{"id":"tp2","text":"ネットワーク品質の維持には投資が必要という社内意見","x":10,"y":0,"textReviewed":true},{"id":"tp3","text":"解約理由は価格だけでなくサポート対応も指摘されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tp-i","cardIds":["tp1","tp2","tp3"]}],"readingOrder":["tp-i"]}'
+
+tp_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TP_ID" \
+  -H 'Content-Type: application/json' -d "$TP_DOC")
+check "TP PUT document (作成)" "200" "$tp_put"
+
+# ① AI束ね
+tp_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"tp1","text":"競合の低価格プランへの乗り換えが増えている","textReviewed":true},{"id":"tp2","text":"ネットワーク品質の維持には投資が必要という社内意見","textReviewed":true},{"id":"tp3","text":"解約理由は価格だけでなくサポート対応も指摘されている","textReviewed":true}]}')
+case "$tp_groups" in *'"groups":'*) echo "  PASS: TP ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TP ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tp_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TP_DOC,\"islandId\":\"tp-i\"}")
+case "$tp_summary" in *'"groundingIds":["tp1","tp2","tp3"]'*) echo "  PASS: TP ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TP ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（低価格競争 vs ネットワーク投資・価格と品質のトレードオフ）
+tp_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"tp1","text":"競合の低価格プランへの乗り換えが増えている","textReviewed":true},"cardB":{"id":"tp2","text":"ネットワーク品質の維持には投資が必要という社内意見","textReviewed":true}}')
+case "$tp_contra" in *'"hasContradiction"'*) echo "  PASS: TP ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TP ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+tp_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TP_DOC}")
+case "$tp_narr" in *'"basedOnReadingOrder":["tp-i"]'*) echo "  PASS: TP ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TP ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TP_ID")
+check "TP 読戻し (200)" "200" "$tp_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
