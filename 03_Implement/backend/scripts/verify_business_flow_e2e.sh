@@ -7088,5 +7088,47 @@ drone_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DRONE_ID")
 check "DRONE 読戻し (200)" "200" "$drone_read"
 
 echo ""
+echo "--- シナリオ164: パン屋・ベーカリー（こだわり・品質と効率・売上のトレードオフ） ---"
+# 業態: パン屋・ベーカリー（パン製造・ベーカリー店）
+# 想定人物: ベーカリーオーナー／パン職人
+# 業務領域: 製パン・商品・衛生・販売への声のKJ分類と、ベーカリー運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: こだわりの製パンと焼きたての品質・素材へのこだわり（こだわり・品質）と生産効率や販売への
+#          対応（効率・売上）のトレードオフを矛盾検出（正パス）で表面化し、ベーカリー運営の改善根拠に
+#          する（こだわりと効率の相克・季節の商品や地域の素材・子ども向けの体験で地域に愛される店を
+#          目指す動きも指摘）。
+BAKERY_ID="biz-flow-bakery"
+BAKERY_DOC='{"version":1,"id":"'$BAKERY_ID'","title":"ベーカリー運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"bk1","text":"こだわりの製パンと焼きたての品質、素材へのこだわりを重視する声（こだわり・品質）","x":0,"y":0,"textReviewed":true},{"id":"bk2","text":"生産効率や販売への対応など、こだわり・品質と効率・売上のトレードオフに悩む声（効率・売上）","x":10,"y":0,"textReviewed":true},{"id":"bk3","text":"季節の商品や地域の素材、子ども向けの体験で地域に愛される店を目指す動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bakery-i","cardIds":["bk1","bk2","bk3"]}],"readingOrder":["bakery-i"]}'
+
+bakery_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BAKERY_ID" \
+  -H 'Content-Type: application/json' -d "$BAKERY_DOC")
+check "BAKERY PUT document (作成)" "200" "$bakery_put"
+
+# ① AI束ね
+bakery_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"bk1","text":"こだわりの製パンと焼きたての品質、素材へのこだわりを重視する声（こだわり・品質）","textReviewed":true},{"id":"bk2","text":"生産効率や販売への対応など、こだわり・品質と効率・売上のトレードオフに悩む声（効率・売上）","textReviewed":true},{"id":"bk3","text":"季節の商品や地域の素材、子ども向けの体験で地域に愛される店を目指す動き","textReviewed":true}]}')
+case "$bakery_groups" in *'"groups":'*) echo "  PASS: BAKERY ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BAKERY ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+bakery_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BAKERY_DOC,\"islandId\":\"bakery-i\"}")
+case "$bakery_summary" in *'"groundingIds":["bk1","bk2","bk3"]'*) echo "  PASS: BAKERY ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BAKERY ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（こだわり・品質 vs 効率・売上・こだわりと効率の相克・正パス）
+bakery_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"bk1","text":"こだわりの製パンと焼きたての品質、素材へのこだわりを重視する声（こだわり・品質）","textReviewed":true},"cardB":{"id":"bk2","text":"生産効率や販売への対応など、こだわり・品質と効率・売上のトレードオフに悩む声（効率・売上）","textReviewed":true}}')
+case "$bakery_contra" in *'"hasContradiction":true'*) echo "  PASS: BAKERY ③矛盾検出（こだわり・品質と効率・売上のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BAKERY ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bakery_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BAKERY_DOC}")
+case "$bakery_narr" in *'"basedOnReadingOrder":["bakery-i"]'*) echo "  PASS: BAKERY ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BAKERY ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+bakery_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BAKERY_ID")
+check "BAKERY 読戻し (200)" "200" "$bakery_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
