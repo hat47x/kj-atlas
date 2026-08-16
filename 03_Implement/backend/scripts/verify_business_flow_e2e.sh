@@ -3726,5 +3726,45 @@ ch_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CH_ID")
 check "CH 読戻し (200)" "200" "$ch_read"
 
 echo ""
+echo "--- シナリオ85: IT・SaaSのカスタマーサクセス（新機能開発と既存顧客の安定運用のトレードオフ） ---"
+# 業態: IT・SaaS（クラウドサービス）
+# 想定人物: カスタマーサクセスマネージャー（顧客の解約・継続を分析）
+# 業務領域: 顧客の利用状況・解約リスク・要望のKJ分類と、継続率改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 新機能の開発（ロードマップ）と既存顧客の安定運用（サポート）のトレードオフを
+#          矛盾検出で表面化し、リソース配分の根拠にする（開発と安定のトレードオフ）。
+SA_ID="biz-flow-saas"
+SA_DOC='{"version":1,"id":"'$SA_ID'","title":"カスタマーサクセス分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sa1","text":"新機能の開発に注力してほしいとの要望が多い","x":0,"y":0,"textReviewed":true},{"id":"sa2","text":"既存機能の安定運用・サポートを優先すべきとの声","x":10,"y":0,"textReviewed":true},{"id":"sa3","text":"一部顧客で利用頻度が低下しており解約リスクが高い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sa-i","cardIds":["sa1","sa2","sa3"]}],"readingOrder":["sa-i"]}'
+
+sa_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SA_ID" \
+  -H 'Content-Type: application/json' -d "$SA_DOC")
+check "SA PUT document (作成)" "200" "$sa_put"
+
+# ① AI束ね
+sa_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sa1","text":"新機能の開発に注力してほしいとの要望が多い","textReviewed":true},{"id":"sa2","text":"既存機能の安定運用・サポートを優先すべきとの声","textReviewed":true},{"id":"sa3","text":"一部顧客で利用頻度が低下しており解約リスクが高い","textReviewed":true}]}')
+case "$sa_groups" in *'"groups":'*) echo "  PASS: SA ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SA ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sa_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SA_DOC,\"islandId\":\"sa-i\"}")
+case "$sa_summary" in *'"groundingIds":["sa1","sa2","sa3"]'*) echo "  PASS: SA ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SA ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（新機能開発 vs 既存安定・開発と安定のトレードオフ）
+sa_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sa1","text":"新機能の開発に注力してほしいとの要望が多い","textReviewed":true},"cardB":{"id":"sa2","text":"既存機能の安定運用・サポートを優先すべきとの声","textReviewed":true}}')
+case "$sa_contra" in *'"hasContradiction"'*) echo "  PASS: SA ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SA ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sa_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SA_DOC}")
+case "$sa_narr" in *'"basedOnReadingOrder":["sa-i"]'*) echo "  PASS: SA ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SA ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sa_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SA_ID")
+check "SA 読戻し (200)" "200" "$sa_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
