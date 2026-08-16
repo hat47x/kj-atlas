@@ -3240,5 +3240,45 @@ cs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CS_ID")
 check "CS 読戻し (200)" "200" "$cs_read"
 
 echo ""
+echo "--- シナリオ73: スポーツ・フィットネスのジム運営（設備投資と会員料金の相克） ---"
+# 業態: スポーツ・フィットネス（ジム/スポーツクラブ運営）
+# 想定人物: クラブマネージャー（会員フィードバックを整理）
+# 業務領域: 会員の継続・退会理由のKJ分類と、会員満足・継続率改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 設備投資（施設拡充）と会員料金（値上げへの抵抗）のトレードオフを矛盾検出で
+#          表面化し、運営判断の根拠にする（設備と料金の相克）。
+GY_ID="biz-flow-gym"
+GY_DOC='{"version":1,"id":"'$GY_ID'","title":"会員フィードバック整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"gy1","text":"会員は施設の混雑・機器不足を不満に感じている","x":0,"y":0,"textReviewed":true},{"id":"gy2","text":"設備拡充には会員料金の値上げが必要との声","x":10,"y":0,"textReviewed":true},{"id":"gy3","text":"初心者向けプログラムの満足度が高い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"gy-i","cardIds":["gy1","gy2","gy3"]}],"readingOrder":["gy-i"]}'
+
+gy_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$GY_ID" \
+  -H 'Content-Type: application/json' -d "$GY_DOC")
+check "GY PUT document (作成)" "200" "$gy_put"
+
+# ① AI束ね
+gy_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"gy1","text":"会員は施設の混雑・機器不足を不満に感じている","textReviewed":true},{"id":"gy2","text":"設備拡充には会員料金の値上げが必要との声","textReviewed":true},{"id":"gy3","text":"初心者向けプログラムの満足度が高い","textReviewed":true}]}')
+case "$gy_groups" in *'"groups":'*) echo "  PASS: GY ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: GY ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+gy_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GY_DOC,\"islandId\":\"gy-i\"}")
+case "$gy_summary" in *'"groundingIds":["gy1","gy2","gy3"]'*) echo "  PASS: GY ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: GY ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（設備不足の不満 vs 料金値上げの必要性・設備と料金の相克）
+gy_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"gy1","text":"会員は施設の混雑・機器不足を不満に感じている","textReviewed":true},"cardB":{"id":"gy2","text":"設備拡充には会員料金の値上げが必要との声","textReviewed":true}}')
+case "$gy_contra" in *'"hasContradiction"'*) echo "  PASS: GY ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: GY ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+gy_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$GY_DOC}")
+case "$gy_narr" in *'"basedOnReadingOrder":["gy-i"]'*) echo "  PASS: GY ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: GY ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+gy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GY_ID")
+check "GY 読戻し (200)" "200" "$gy_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
