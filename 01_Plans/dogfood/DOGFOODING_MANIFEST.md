@@ -15,11 +15,11 @@
 | 業務フローE2Eスクリプトのシナリオヘッダ数 | 134 | verify script（シナリオ1=初期フロー・ヘッダechoなし / シナリオ4=別スクリプト`verify_admin_ops_flow_e2e.sh`） |
 | カバー業態数 | 136 | シナリオドキュメント「カバレッジ集約」 |
 | 業務フローE2Eチェック数 | 821 | §2.1 実走行 → `Result: 821 passed, 0 failed` |
-| 総チェック数（check 10） | **874** | = 821（業務フロー）＋ 20（admin ops）＋ 7（kj multi-round）＋ 11（MCP CE-4 audit）＋ 15（CLI CE-4 audit）— 算術を verify script で照合 |
+| 総チェック数（check 10） | **877** | = 821（業務フロー）＋ 20（admin ops）＋ 7（kj multi-round）＋ 14（MCP CE-4 audit）＋ 15（CLI CE-4 audit）— 算術を verify script で照合 |
 | 発行済み課題 | 21（AI-MODEL-GOVERNANCE-02 / OPS-LLM-COST-02 / DOGFOOD-11 / DOGFOOD-12 / DOGFOOD-13 / DOGFOOD-14 / DOGFOOD-15 / DOGFOOD-16 / DOGFOOD-17 / DOGFOOD-18 / DOGFOOD-19 / DOGFOOD-20 / DOGFOOD-21 / DOGFOOD-22 / DOGFOOD-23 / DOGFOOD-25 / DOGFOOD-26 / DOGFOOD-27 / DOGFOOD-28 / DOGFOOD-29 / DOGFOOD-30・**すべて Done**） | verify script |
 | 検証層 | backend単体・frontend単体・frontend UI E2E・業務フローE2E・計画文書整合 | §2 |
 
-> 注記: 総チェック数は**業務フローE2Eのチェック数（821）とは別**。CIハーネス `verify_all.sh` check 10 は5自己完結E2E（業務フロー・admin ops・kj multi-round・MCP CE-4 audit・CLI CE-4 audit）を実行するため、総数 = 874。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。iteration 195 の実走行照合で、並行編集者が拡張した admin ops（12→20・CLIモデルレジストリ運用追加）と MCP CE-4 audit（8→9）を実チェック数へ同期した。
+> 注記: 総チェック数は**業務フローE2Eのチェック数（821）とは別**。CIハーネス `verify_all.sh` check 10 は5自己完結E2E（業務フロー・admin ops・kj multi-round・MCP CE-4 audit・CLI CE-4 audit）を実行するため、総数 = 877。以前の進捗報告で総数が誤記されていた差分（-10）は、本マニフェストの算術照合により検出・訂正された。iteration 195 の実走行照合で、並行編集者が拡張した admin ops（12→20・CLIモデルレジストリ運用追加）と MCP CE-4 audit（8→9）を実チェック数へ同期した。
 
 ---
 
@@ -76,7 +76,7 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 | `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜136・821 checks） | §2.1 |
 | `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・20 checks・自前スクリプト＋CLIモデルレジストリ運用を含む） | §2.2 |
 | `03_Implement/backend/scripts/verify_kj_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
-| `03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py` | MCP read→CE-4監査（channel=mcp）→HTTPシンク到達の自己完結E2E（11 checks・外部提案登録＋CE4提案ライフサイクル検証込み） | §2.2 |
+| `03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py` | MCP read→CE-4監査（channel=mcp）→HTTPシンク到達の自己完結E2E（14 checks・外部提案登録＋proposed→decided完全ライフサイクル検証込み） | §2.2 |
 | `03_Implement/backend/scripts/verify_cli_ce4_audit_e2e.py` | `kj` CLI→CE-4監査（channel=cli）→HTTPシンク到達の自己完結E2E（15 checks・全CE4ライフサイクル＋resolve-bundle） | §2.2 |
 | `03_Implement/backend/verify_all.sh` | CIハーネス（check 10 配線） | §2.2 |
 | `03_Implement/deploy/tools/mock_local_llm.py` | 決定性モックLLM（GPU不要） | §2.1 前提 |

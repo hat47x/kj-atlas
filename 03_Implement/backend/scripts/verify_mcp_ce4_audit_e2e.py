@@ -119,25 +119,48 @@ def _put_document(base_url: str, doc: dict) -> None:
         f"{base_url}/docs/{doc['id']}",
         data=json.dumps(doc).encode("utf-8"),
         method="PUT",
-        headers={"Content-Type": "application/json", "X-API-Key": BIZ_KEY},
+        headers={
+            "Content-Type": "application/json",
+            "X-API-Key": BIZ_KEY,
+            # Same reviewer identity the CE4 decision uses, so the doc is owned
+            # by the reviewer (the decision route requires actor_ref AND write
+            # access to the doc).
+            "x-forwarded-user": "mcp-audit-reviewer",
+            "x-auth-provider": "oidc",
+        },
     )
     with urllib.request.urlopen(req) as resp:
         if resp.status != 200:
             raise RuntimeError(f"PUT document failed: HTTP {resp.status}")
 
 
-def _post_json(base_url: str, path: str, body: dict) -> int:
+def _post_json(base_url: str, path: str, body: dict, extra_headers: dict | None = None) -> int:
+    headers = {"Content-Type": "application/json", "X-API-Key": BIZ_KEY}
+    if extra_headers:
+        headers.update(extra_headers)
     req = urllib.request.Request(
         f"{base_url}{path}",
         data=json.dumps(body).encode("utf-8"),
         method="POST",
-        headers={"Content-Type": "application/json", "X-API-Key": BIZ_KEY},
+        headers=headers,
     )
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             return resp.status
     except urllib.error.HTTPError as exc:
         return exc.code
+
+
+def _get_json(base_url: str, path: str) -> tuple[int, dict | None]:
+    req = urllib.request.Request(
+        f"{base_url}{path}",
+        headers={"X-API-Key": BIZ_KEY},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status, json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return exc.code, None
 
 
 def main() -> int:
@@ -170,6 +193,10 @@ def main() -> int:
             # safe-mode events unless this is set, so the audit-chain E2E enables
             # it to prove the channel=mcp event is actually delivered.
             KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE="1",
+            # CE4 proposal decision requires an authenticated reviewer
+            # (actor_ref), provided via x-forwarded-user; JIT-provision that
+            # reviewer so the doc and the decision share one identity.
+            KJ_ATLAS_ALLOW_JIT_PROVISIONING="true",
         )
         backend_proc = subprocess.Popen(
             [VENV_PYTHON, "-m", "uvicorn", "kj_atlas_api.main:app", "--port", str(backend_port), "--host", "127.0.0.1"],
@@ -276,6 +303,43 @@ def main() -> int:
         if http_proc.returncode != 0:
             print(http_proc.stdout[-2000:])
             print(http_proc.stderr[-2000:])
+
+        # 4b. CE4 decision reflection: verify_mcp.ts's get_proposal_status saw the
+        #     proposal as "proposed"; a human decision (adopt) flips it to
+        #     "accepted" with decidedAt -- the read-only status API reflects the
+        #     lifecycle (proposal-only -> decided).
+        check(
+            "external proposal decision (adopt 200)",
+            200,
+            _post_json(
+                base_url,
+                "/ai/external-proposals/audit",
+                {
+                    "docId": DOC_ID,
+                    "proposalId": "mcp-audit-proposal",
+                    "sourceBundleHash": "a" * 64,
+                    "idempotencyKey": "mcp-audit-decision",
+                    "decision": "adopt",
+                    "provenanceLevel": "user_presented_unsigned",
+                },
+                # The decision route requires an authenticated reviewer
+                # (actor_ref); the MCP e2e backend is keyless local-dev, so the
+                # reviewer identity travels via the forwarded-user header.
+                extra_headers={"x-forwarded-user": "mcp-audit-reviewer", "x-auth-provider": "oidc"},
+            ),
+        )
+        status_code, status_body = _get_json(base_url, f"/ai/proposals/status?docId={DOC_ID}")
+        check("GET /ai/proposals/status after decision (200)", 200, status_code)
+        _decided = [
+            p
+            for p in (status_body or {}).get("proposals", [])
+            if p.get("proposalId") == "mcp-audit-proposal"
+        ]
+        check(
+            "proposal status reflects human decision (accepted + decidedAt)",
+            True,
+            len(_decided) == 1 and _decided[0].get("status") == "accepted" and bool(_decided[0].get("decidedAt")),
+        )
 
         # 5. Give the async audit queue a moment, then assert the sink saw the
         #    channel=mcp context-audit event for this document.
