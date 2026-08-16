@@ -4491,5 +4491,45 @@ ws_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WS_ID")
 check "WS 読戻し (200)" "200" "$ws_read"
 
 echo ""
+echo "--- シナリオ104: 通信・OTTのメッセージングアプリ運用（収益化とユーザー体験のトレードオフ） ---"
+# 業態: 通信・OTT（メッセージング/SNSプラットフォーム）
+# 想定人物: プラットフォーム運営担当（コミュニティ・収益化を整理）
+# 業務領域: ユーザー行動・収益化・信頼性の課題のKJ分類と、プラットフォーム改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 収益化（広告・課金）とユーザー体験（プライバシー・快適性）のトレードオフを
+#          矛盾検出で表面化し、プラットフォーム運営の根拠にする（収益と体験のトレードオフ）。
+OT_ID="biz-flow-ott"
+OT_DOC='{"version":1,"id":"'$OT_ID'","title":"プラットフォーム運営整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ot1","text":"広告収益を増やすため表示を増やしたいとの意見","x":0,"y":0,"textReviewed":true},{"id":"ot2","text":"広告表示の増加でユーザー体験が悪化し離脱が増えている","x":10,"y":0,"textReviewed":true},{"id":"ot3","text":"プライバシー保護の強化を求めるユーザーの声が強い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ot-i","cardIds":["ot1","ot2","ot3"]}],"readingOrder":["ot-i"]}'
+
+ot_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$OT_ID" \
+  -H 'Content-Type: application/json' -d "$OT_DOC")
+check "OT PUT document (作成)" "200" "$ot_put"
+
+# ① AI束ね
+ot_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ot1","text":"広告収益を増やすため表示を増やしたいとの意見","textReviewed":true},{"id":"ot2","text":"広告表示の増加でユーザー体験が悪化し離脱が増えている","textReviewed":true},{"id":"ot3","text":"プライバシー保護の強化を求めるユーザーの声が強い","textReviewed":true}]}')
+case "$ot_groups" in *'"groups":'*) echo "  PASS: OT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: OT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ot_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$OT_DOC,\"islandId\":\"ot-i\"}")
+case "$ot_summary" in *'"groundingIds":["ot1","ot2","ot3"]'*) echo "  PASS: OT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: OT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（広告収益の増加 vs ユーザー体験の悪化・収益と体験のトレードオフ）
+ot_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ot1","text":"広告収益を増やすため表示を増やしたいとの意見","textReviewed":true},"cardB":{"id":"ot2","text":"広告表示の増加でユーザー体験が悪化し離脱が増えている","textReviewed":true}}')
+case "$ot_contra" in *'"hasContradiction"'*) echo "  PASS: OT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: OT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ot_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$OT_DOC}")
+case "$ot_narr" in *'"basedOnReadingOrder":["ot-i"]'*) echo "  PASS: OT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: OT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ot_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$OT_ID")
+check "OT 読戻し (200)" "200" "$ot_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
