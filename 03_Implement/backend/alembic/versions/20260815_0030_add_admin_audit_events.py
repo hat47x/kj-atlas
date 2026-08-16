@@ -39,6 +39,8 @@ def upgrade() -> None:
         "ix_admin_audit_events_route_result",
         "admin_audit_events",
         ["route", "result"],
+        # MySQL key-length limit: keep the composite index portable.
+        mysql_length={"route": 191, "result": 32},
     )
 
 

@@ -379,7 +379,13 @@ class SaasAuthSessionRow(Base):
     __tablename__ = "saas_auth_sessions"
     __table_args__ = (
         Index("ix_saas_auth_sessions_principal_id", "principal_id"),
-        Index("ix_saas_auth_sessions_issuer_subject", "issuer", "subject"),
+        Index(
+            "ix_saas_auth_sessions_issuer_subject",
+            "issuer",
+            "subject",
+            # MySQL key-length limit: index fixed prefixes (see migration 0027).
+            mysql_length={"issuer": 191, "subject": 191},
+        ),
     )
 
     session_key_hash: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -568,7 +574,13 @@ class AdminAuditEventRow(Base):
     __tablename__ = "admin_audit_events"
     __table_args__ = (
         Index("ix_admin_audit_events_occurred", "occurred_at"),
-        Index("ix_admin_audit_events_route_result", "route", "result"),
+        Index(
+            "ix_admin_audit_events_route_result",
+            "route",
+            "result",
+            # MySQL key-length limit: index fixed prefixes (see migration 0030).
+            mysql_length={"route": 191, "result": 32},
+        ),
     )
 
     event_id: Mapped[str] = mapped_column(Text, primary_key=True)

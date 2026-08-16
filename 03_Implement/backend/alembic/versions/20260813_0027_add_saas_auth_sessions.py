@@ -60,6 +60,9 @@ def upgrade() -> None:
         "saas_auth_sessions",
         ["issuer", "subject"],
         unique=False,
+        # MySQL key-length limit: issuer+subject (each up to 512 chars) would
+        # exceed 3072 bytes, so index fixed prefixes (standard MySQL practice).
+        mysql_length={"issuer": 191, "subject": 191},
     )
 
 
