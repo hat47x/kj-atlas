@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-10 並行イテレーション（cron loop）のシナリオ追記が verify_all.sh の E2E 実走行と競合して誤検知する
 
 - Type: Process / Bug
-- Status: Open
+- Status: Done
 - Source Issue: ドッグフーディングループ（`/loop` 10分間隔）の並行ファイアと CI ハーネスの実走行が競合して再現（2026-08-16、2回観測）
 - Priority: P2
 - Owner: Maintainer
@@ -44,6 +44,14 @@
 - **案C（検出＋再試行）**: check 10 実行前に `verify_business_flow_e2e.sh` の mtime を記録し、実行後に変化していたら「環境競合」として SKIP/再試行を報告する（`DOGFOOD-09` の migration 前提チェックと同じ発想）。
 
 採否は案A（検証側の自己防衛）を最優先候補とし、案Bはループ運用のパラメータ調整として併用を検討する。
+
+## 対応（2026-08-16）: 案A（実行時スナップショット化）を採択
+
+`verify_all.sh` check 10 を、各E2Eスクリプトを**同じディレクトリの一時スナップショット**（`.e2e_snapshot_$$_<basename>`）へコピーしてから実行する方式へ変更した（`run_e2e_snapshot` ヘルパー）。同一ディレクトリに置くことで、各スクリプトの `BASH_SOURCE` 由来パス（`SCRIPT_DIR` / `ROOT_DIR` / `examples/admin_lifecycle.py`）が単独実行と同一に解決される。実行後はスナップショットを削除する。
+
+- 対象: `verify_business_flow_e2e.sh`・`verify_admin_ops_flow_e2e.sh`・`verify_kj_multi_round.sh`（check 10 の3本）
+- 検証: `verify_all.sh` フル実走行で **All checks passed**（business-flow・admin・kj multi-round・MCP CE-4 audit の4本すべて PASS）。admin E2E はスナップショット経由でも `examples/admin_lifecycle.py` のパス解決が正しく 12/12。
+- 補足: 並行ファイアのポート重複（8005-8007）による競合は、ファイアが REPL アイドル時のみ起動する運用（案B）に依存するため、本Issueでは案Aのみ採択。競合が再発する場合は案B（interval延長・single-flight）を適用する。
 
 ## Traceability
 

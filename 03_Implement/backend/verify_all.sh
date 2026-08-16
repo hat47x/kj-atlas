@@ -30,6 +30,26 @@ check() {
   fi
 }
 
+# DOGFOOD-10 案A: run a self-contained E2E from a SAME-DIRECTORY snapshot so a
+# concurrent dogfooding iteration (cron /loop fire) that appends a scenario to
+# the original file cannot corrupt a running check. The snapshot lives next to
+# the original so each script's `BASH_SOURCE`-derived paths (SCRIPT_DIR /
+# ROOT_DIR / examples/*.py) resolve exactly as they do standalone.
+run_e2e_snapshot() {
+  local script="$1"
+  shift
+  local dir snapshot
+  dir="$(dirname "$script")"
+  snapshot="$dir/.e2e_snapshot_$$_$(basename "$script")"
+  if ! cp "$script" "$snapshot" 2>/dev/null; then
+    return 127
+  fi
+  bash "$snapshot" "$@"
+  local rc=$?
+  rm -f "$snapshot"
+  return $rc
+}
+
 echo "=== kj-atlas Comprehensive Verification ==="
 echo ""
 
@@ -181,12 +201,14 @@ fi
 # regression that a plain curl probe cannot give. Requires the venv and free
 # ports 8005-8007.
 if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
+  # DOGFOOD-10 案A: run each E2E from a same-dir snapshot so a concurrent
+  # iteration appending a scenario cannot corrupt a running check.
   check "Business-flow E2E (scenarios 1-12, mock LLM)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_business_flow_e2e.sh" 8005
+    run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_business_flow_e2e.sh" 8005
   check "Admin CLI/API ops flow E2E (scenario 4)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
+    run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
   check "KJ multi-round collaboration E2E (mock LLM)" \
-    bash "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
+    run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
   # MCP read -> CE-4 audit (channel=mcp) -> HTTP sink. Self-contained: starts
   # its own audit sink + migrated backend on free ports; runs verify_mcp.ts.
   # Requires the mcp package's node_modules (npm install) — the script reports
