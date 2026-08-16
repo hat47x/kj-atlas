@@ -43,7 +43,7 @@
 
 - [x] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintに加え、evidence/contradiction/summaryの全constraintで未レビューentity/refをlink単位（両端点reviewed必須）で除外し、SafeMode redactionから短縮hashを除去済み（2026-07-13、下記「実装記録」参照）。MCP経由の取得（実結線）はサブスライスBで行う。
 - [x] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ `kj-atlas-mcp`（`03_Implement/mcp/`）実装完了。`tools/list` は `get_context_projection` の1件のみ、`resources`capabilityは`initialize`応答に一切含まれない（登録ゼロのため`resources/list`はメソッド自体が存在しない）。固定snapshotテストで検証済み（下記「実装記録」参照）。
-- [x] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ ローカル構造化監査ログ（stderr、`mcp-context-read.v1`）で`bundleHash`/`queryCanonicalHash`相当を全readで記録。**CE-4のバックエンド`POST /docs/{id}/context-audit`への実結線は今回未実施**（下記「実装記録」の既知ギャップ参照）。
+- [x] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ ローカル構造化監査ログ（stderr、`mcp-context-read.v1`）で`bundleHash`/`queryCanonicalHash`相当を全readで記録。**2026-08-16 に CE-4 バックエンド`POST /docs/{id}/context-audit`（`channel="mcp"`）への実結線を完了**（下記「実装記録（2026-08-16）」参照。それ以前は既知ギャップとしてローカルログのみ）。
 - [x] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ `THREAT_MODEL.md` §6-1 として追記完了（2026-07-16、下記「実装記録」参照）。
 - [x] AC-5: 投影IRは輸送非依存で、MCPアダプタ層の差し替えが契約変更なしに可能な構造になっている。→ `context_bundle_projection.ts` として実装。純粋関数・輸送非依存・`ContextProjectionV1` IR固定。
 
@@ -116,6 +116,15 @@ Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設�
 
 - AC-3のCE-4実結線ギャップ（backendの`channel`enum拡張が必要）は、本Issueの承認範囲外として明示的に切り出し済みの既知の未実装であり、`Done`化のブロッカーとしては扱わない。CE-4への実結線が必要になった時点で、専用のbackend issueとして別途起票する。
 - `EXT-CONN-02`（webhook提案ingest）は引き続き`Draft`であり、本Issueの`Done`化とは別に「EXT-CONN-01の運用実績」ゲートが残る。運用実績はマージ後の実利用を通じて蓄積されるものであり、本Issueの完了条件には含まれない。
+
+## 実装記録（2026-08-16）: CE-4 監査結線（`channel="mcp"`）で AC-3 の既知ギャップを解消
+
+`Close-out` で「既知の未実装」として切り出していた AC-3 の CE-4 実結線ギャップ（backend `channel` enum に `"mcp"` スロットが無い）を、専用 backend issue 相当の変更として解消した。
+
+- **backend**: `ContextAuditPayload.channel` を `Literal["api", "cli", "gui", "mcp"]` へ拡張（`03_Implement/backend/src/kj_atlas_api/routes/docs.py`）。`api.md` の channel enum・消費者境界注記を `"mcp"` 込みへ更新。
+- **MCP**: 成功した投影読み取りごとに、`emitContextAuditEvent`（`src/audit_log.ts`）が `POST /docs/{id}/context-audit` へ `operation=query` / `command=context-query` / `channel="mcp"` / `equivalenceKey=queryCanonicalHash` / `bundleHash=projection.bundleHash` / `safeMode` / `dryRun=true` / `sideEffect=none` を送出（`src/context_projection_tool.ts`）。MCP由来の read が api/cli/gui と同じ監査トレイルに載る。
+- **best-effort 設計を明示**: CE-4 送出は追加の backend 可視シンクであり、読み取り自身の相関は従来どおり同期ローカル `mcp-context-read.v1`（stderr）エントリ。送出失敗は読み取りを失敗させず、構造化警告を stderr へ書く（`api.md` 消費者境界注記・MCP README runbook に明記）。
+- **テスト**: backend `test_context_audit_endpoint_accepts_mcp_channel`（channel=mcp の受容と監査イベント伝播）＋ MCP `audit_log.test.ts` の `emitContextAuditEvent` 3件（POST body・非2xx・ネットワーク失敗の best-effort）。backend 29 passed・MCP 61 tests pass・docs-check passed。
 
 ## Traceability
 
