@@ -52,7 +52,7 @@
 ## 受入条件
 
 - [x] AC-1（段階1）: `llm_escalation_policy.html` §03 の記述が、実装済み機能と未実装の計画を区別している。未実装の断定表現が残っていない。
-- [~] AC-2（段階2・部分）: **呼び出し回数**は計測・参照可能になった（OPS-LLM-COST-01 段階2・iteration 54）— `llm/provider.py` にプロセス内カウンタ（provider種別別＋total）を追加し `generate_with_fallback` で計上。`GET /ai/provider-status` の `callCounts` から参照可能（単一プロセス前提。共有ストアは段階3）。**トークン数**は `ADR-0050` D3 の provider `usage` 契約採択待ち（未計上）。
+- [~] AC-2（段階2・部分→拡充）: **呼び出し回数**は計測・参照可能になった（OPS-LLM-COST-01 段階2・iteration 54）— `llm/provider.py` にプロセス内カウンタ（provider種別別＋total）を追加し `generate_with_fallback` で計上。`GET /ai/provider-status` の `callCounts` から参照可能（単一プロセス前提。共有ストアは段階3）。**トークン数**も計上開始（2026-08-16）— `LLMResponse` に `input_tokens`/`output_tokens` を追加し、OpenAI互換 `usage`（DeepSeek等）を解析してプロセス内で蓄積、`GET /ai/provider-status` の `tokenUsage`（provider種別別＋total）から参照可能。usage未報告providerは0計上。欠損時の区別（AC-4）と共有store（AC-6）は段階3。
 - [ ] AC-3（段階3以降）: 上限設定と到達時挙動が実装され、テストで固定されている。降格時も SafeMode / proposal-only 境界が維持される。
 - [ ] AC-4: 計測値がprovider自己申告値かlocal tokenizer推定値かを区別し、provider／model／task／tenant等の集計scopeと欠損時挙動が一意である。prompt／response本文、生token、個人識別子をmetricへ保存しない。
 - [ ] AC-5: 上限設定と到達時挙動に新規設定キーを使う場合、`02_Architecture/runtime_parameter_registry.md`、設定model、起動時validation、運用文書を同期する。

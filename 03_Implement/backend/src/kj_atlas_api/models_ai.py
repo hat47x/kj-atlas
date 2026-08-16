@@ -30,6 +30,11 @@ class ProviderStatusResponse(BaseModel):
     # (plus "total"). Referenceable so an operator can see external
     # (large-scale) call volume. Empty until the first LLM call.
     callCounts: dict[str, int] = Field(default_factory=dict)
+    # OPS-LLM-COST-01 (段階2): in-process input/output token totals per provider
+    # kind (plus "total"). Populated from provider-reported usage (DeepSeek /
+    # OpenAI chat completions `usage`); providers that do not report usage
+    # contribute 0 tokens. Empty until the first LLM call.
+    tokenUsage: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
 class NarrativeIssueReference(BaseModel):

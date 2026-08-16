@@ -880,11 +880,12 @@ def get_provider_status() -> ProviderStatusResponse:
     kind for display in the View panel. No connectivity check is performed;
     "last known outcome" is tracked client-side from real AI-call results.
     OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
-    from kj_atlas_api.llm.provider import llm_call_counts
+    from kj_atlas_api.llm.provider import llm_call_counts, llm_token_usage
 
     return ProviderStatusResponse(
         providerKind=get_provider().provider_kind,
         callCounts=llm_call_counts(),
+        tokenUsage=llm_token_usage(),
     )
 
 

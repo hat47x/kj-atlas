@@ -432,6 +432,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Response: `ProviderStatusResponse`
   - `providerKind: "none" | "local" | "large-scale"`
   - `callCounts: { [providerKind]: number, total: number }` — **OPS-LLM-COST-01（段階2）**: プロセス内の LLM 呼び出し回数（provider種別別＋total）。初回呼び出しまでは空。単一プロセス前提（共有ストアは段階3）。
+  - `tokenUsage: { [providerKind]: { input: number, output: number }, total: {...} }` — **OPS-LLM-COST-01（段階2）**: プロセス内の入力/出力token合計（provider種別別＋total）。provider報告の`usage`（DeepSeek等のOpenAI互換`usage`）から計上し、報告が無いproviderは0。初回呼び出しまでは空。
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
 
 ### 2.12 AI/LLM生成API
