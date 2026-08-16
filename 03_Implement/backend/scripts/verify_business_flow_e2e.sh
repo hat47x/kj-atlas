@@ -5914,5 +5914,47 @@ salon_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SALON_ID")
 check "SALON 読戻し (200)" "200" "$salon_read"
 
 echo ""
+echo "--- シナリオ136: 出版社・書籍出版（内容・編集と売上・採算のトレードオフ） ---"
+# 業態: 出版社・書籍出版（出版・書店流通）
+# 想定人物: 編集者／出版企画担当
+# 業務領域: 出版企画・著者・販売・読者への声のKJ分類と、持続可能な出版の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 質の高い書籍の刊行（内容・編集・文化）と出版不況への対応（売上・電子化・在庫）の
+#          トレードオフを矛盾検出（正パス）で表面化し、持続可能な出版の根拠にする
+#          （内容と採算の相克・書店や読書イベントとの連携・電子書籍と紙の共存で読者との
+#          関係を築く動きも指摘）。
+PUB_ID="biz-flow-publisher"
+PUB_DOC='{"version":1,"id":"'$PUB_ID'","title":"持続可能な出版","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"質の高い内容と丁寧な編集にこだわり、文化や知の蓄積を担う出版を重視する声（内容・編集）","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"出版不況や電子化への対応など、質の高い出版と売上・採算のトレードオフに悩む声（売上・採算）","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"書店や読書イベントとの連携、電子書籍と紙の共存で読者との関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pub-i","cardIds":["p1","p2","p3"]}],"readingOrder":["pub-i"]}'
+
+pub_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PUB_ID" \
+  -H 'Content-Type: application/json' -d "$PUB_DOC")
+check "PUB PUT document (作成)" "200" "$pub_put"
+
+# ① AI束ね
+pub_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"質の高い内容と丁寧な編集にこだわり、文化や知の蓄積を担う出版を重視する声（内容・編集）","textReviewed":true},{"id":"p2","text":"出版不況や電子化への対応など、質の高い出版と売上・採算のトレードオフに悩む声（売上・採算）","textReviewed":true},{"id":"p3","text":"書店や読書イベントとの連携、電子書籍と紙の共存で読者との関係を築く動き","textReviewed":true}]}')
+case "$pub_groups" in *'"groups":'*) echo "  PASS: PUB ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PUB ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pub_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PUB_DOC,\"islandId\":\"pub-i\"}")
+case "$pub_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: PUB ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PUB ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（内容・編集 vs 売上・採算・内容と採算の相克・正パス）
+pub_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"質の高い内容と丁寧な編集にこだわり、文化や知の蓄積を担う出版を重視する声（内容・編集）","textReviewed":true},"cardB":{"id":"p2","text":"出版不況や電子化への対応など、質の高い出版と売上・採算のトレードオフに悩む声（売上・採算）","textReviewed":true}}')
+case "$pub_contra" in *'"hasContradiction":true'*) echo "  PASS: PUB ③矛盾検出（内容・編集と売上・採算のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: PUB ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+pub_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PUB_DOC}")
+case "$pub_narr" in *'"basedOnReadingOrder":["pub-i"]'*) echo "  PASS: PUB ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PUB ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pub_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PUB_ID")
+check "PUB 読戻し (200)" "200" "$pub_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
