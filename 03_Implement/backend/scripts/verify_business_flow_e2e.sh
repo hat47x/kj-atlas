@@ -3442,5 +3442,46 @@ zt_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ZT_ID")
 check "ZT 読戻し (200)" "200" "$zt_read"
 
 echo ""
+echo "--- シナリオ78: 保育・子育ての保護者アンケートと保育観察の整理（代理報告の限界） ---"
+# 業態: 保育・子育て（保育園運営）
+# 想定人物: 主任保育士（保護者アンケートと保育観察を整理）
+# 業務領域: 保護者アンケート・保育士の観察記録・保育方針への声のKJ分類と、保育運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 保護者が語る子どもの様子（主観・「家ではよく食べる」）と、保育士の
+#          観察記録（客観・給食の残量が多い）の乖離を矛盾検出で表面化し、保護者
+#          との情報共有と保育運営の根拠にする（代理報告の限界・子どもの本人は語れない）。
+HO_ID="biz-flow-daycare"
+HO_DOC='{"version":1,"id":"'$HO_ID'","title":"保護者アンケートと保育観察","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ho1","text":"保護者は家ではよく食べると話すが、保育所では給食の残量が多い","x":0,"y":0,"textReviewed":true},{"id":"ho2","text":"保護者から送迎時の連絡不足の声がある","x":10,"y":0,"textReviewed":true},{"id":"ho3","text":"クラス活動への参加意欲は高く、遊びは活発だと保育士は評価している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ho-i","cardIds":["ho1","ho2","ho3"]}],"readingOrder":["ho-i"]}'
+
+ho_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HO_ID" \
+  -H 'Content-Type: application/json' -d "$HO_DOC")
+check "HO PUT document (作成)" "200" "$ho_put"
+
+# ① AI束ね
+ho_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ho1","text":"保護者は家ではよく食べると話すが、保育所では給食の残量が多い","textReviewed":true},{"id":"ho2","text":"保護者から送迎時の連絡不足の声がある","textReviewed":true},{"id":"ho3","text":"クラス活動への参加意欲は高く、遊びは活発だと保育士は評価している","textReviewed":true}]}')
+case "$ho_groups" in *'"groups":'*) echo "  PASS: HO ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HO ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ho_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HO_DOC,\"islandId\":\"ho-i\"}")
+case "$ho_summary" in *'"groundingIds":["ho1","ho2","ho3"]'*) echo "  PASS: HO ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HO ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（保護者の主観報告 vs 保育士の客観観察・代理報告の限界）
+ho_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ho1","text":"保護者は家ではよく食べると話すが、保育所では給食の残量が多い","textReviewed":true},"cardB":{"id":"ho2","text":"保護者から送迎時の連絡不足の声がある","textReviewed":true}}')
+case "$ho_contra" in *'"hasContradiction"'*) echo "  PASS: HO ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HO ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ho_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HO_DOC}")
+case "$ho_narr" in *'"basedOnReadingOrder":["ho-i"]'*) echo "  PASS: HO ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HO ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ho_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HO_ID")
+check "HO 読戻し (200)" "200" "$ho_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
