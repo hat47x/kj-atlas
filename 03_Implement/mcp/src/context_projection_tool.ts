@@ -5,7 +5,7 @@ import {
   CONTEXT_PROJECTION_CONSTRAINTS,
 } from "../../frontend/src/export/context_bundle_projection.js";
 import { DocumentNotFoundError, fetchDocument, fetchDocumentMetadata, type DocumentClientConfig } from "./document_client.js";
-import { computeQueryCanonicalHash, logAuditEntry } from "./audit_log.js";
+import { computeQueryCanonicalHash, emitContextAuditEvent, logAuditEntry } from "./audit_log.js";
 
 // EXT-CONN-01 subslice B: the ONLY capability this server registers. Read-only
 // resources.list() and tools.list() are exercised by
@@ -67,6 +67,17 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
           queryCanonicalHash,
           bundleHash: projection.bundleHash,
           outcome: "ok",
+        });
+
+        // EXT-CONN-01 channel wiring: make this MCP-originated read visible in
+        // the backend's CE-4 audit trail (channel="mcp"). Best-effort -- the
+        // local entry above is the read's correlation; never fail a successful
+        // read over the additional sink.
+        await emitContextAuditEvent(documentClientConfig, {
+          docId,
+          safeMode,
+          queryCanonicalHash,
+          bundleHash: projection.bundleHash,
         });
 
         return {

@@ -399,6 +399,40 @@ def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
         assert "tenantId" not in event.metadata
 
 
+def test_context_audit_endpoint_accepts_mcp_channel(tmp_path) -> None:
+    # The read-only MCP server (03_Implement/mcp) audits its projections through
+    # this CE-4 endpoint with channel=mcp. The enum must accept the slot and the
+    # emitted audit event must carry it through unchanged so an MCP-originated
+    # read is traceable in the same audit trail as api/cli/gui callers.
+    spy = SpyAuditDispatcher()
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "query",
+                "safeMode": True,
+                "equivalenceKey": "a" * 64,
+                "bundleHash": "b" * 64,
+                "queryHash": "a" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
+                "rejectReasonCode": "none",
+                "command": "context-query",
+                "channel": "mcp",
+                "schemaVersion": "ce4.audit.v1",
+            },
+            headers={"x-trace-id": "trace-mcp"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "accepted"}
+
+    assert [event.eventType for event in spy.events] == ["query"]
+    assert spy.events[0].metadata["channel"] == "mcp"
+    assert spy.events[0].metadata["command"] == "context-query"
+
+
 def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch) -> None:
     spy = SpyAuditDispatcher()
     with _sqlite_client(tmp_path) as client:

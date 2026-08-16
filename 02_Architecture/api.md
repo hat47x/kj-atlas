@@ -122,7 +122,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - `sideEffect: "none"`
   - `rejectReasonCode?: "none" | "missing_event" | "equivalence_mismatch" | "dry_run_side_effect" | "safemode_regression"`
   - `command: string`
-  - `channel: "api" | "cli" | "gui"`
+  - `channel: "api" | "cli" | "gui" | "mcp"`
   - `schemaVersion: "ce4.audit.v1"`
 - Response: `{ "status": "accepted" }`
 - Error:
@@ -130,7 +130,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - 422: operation/command不一致、`dryRun` 違反、`sourceBundleHash` 欠損などの契約違反
 - 目的: `query -> bundle -> proposal -> apply` の監査4点を同一 `equivalenceKey` / `bundleHash` で接続し、proposal-only / dry-run の境界を検証する。
 - SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/operation/equivalenceKey/bundleHash`）の重複POSTは、`KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
-- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui"`はGUI以外の呼び出し元（CLI、将来のAgent/MCP連携等）を対等な一級市民として扱うために存在する契約であり、2026-08-06時点で`03_Implement/frontend/src`・`03_Implement/mcp/src`のいずれからも実呼び出しは無い。read-only MCPサーバー（`03_Implement/mcp/`）はこの経路を外部消費者として結線する候補に挙げたが、`channel`enumに`"mcp"`相当のスロットが無いことを理由に意図的に未結線としている（`03_Implement/mcp/src/audit_log.ts`、`03_Implement/mcp/README.md`「Non-goals」節、`issue-EXT-CONN-01-readonly-mcp-server.md` AC-3既知ギャップ）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
+- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui" | "mcp"`はGUI以外の呼び出し元（CLI、MCP経由の生成AI、将来のAgent連携等）を対等な一級市民として扱うために存在する契約である。2026-08-16時点で、read-only MCPサーバー（`03_Implement/mcp/`）が成功した各投影読み取りを`channel: "mcp"`で本エンドポイントへ監査送出する（`03_Implement/mcp/src/audit_log.ts` の `emitContextAuditEvent`）。CLI（`03_Implement/backend/src/kj_atlas_api/cli.py`）は`channel: "cli"`で送出する。監査はbest-effortであり、CE-4送出失敗は読み取り自体を失敗させない（MCP側のローカル監査エントリが読み取りの相関の正本）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
 
 
 ### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）
@@ -324,7 +324,7 @@ Consequences:
 | `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
 | `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
 
-追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
+追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui|mcp`）, `command`, `schemaVersion`.
  `schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
 CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
 

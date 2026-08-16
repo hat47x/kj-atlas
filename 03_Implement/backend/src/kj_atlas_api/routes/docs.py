@@ -672,7 +672,7 @@ class ContextAuditPayload(BaseModel):
         | None
     ) = None
     command: str
-    channel: Literal["api", "cli", "gui"] = "api"
+    channel: Literal["api", "cli", "gui", "mcp"] = "api"
     schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"
 
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeQueryCanonicalHash, logAuditEntry } from "./audit_log.js";
+import { computeQueryCanonicalHash, emitContextAuditEvent, logAuditEntry } from "./audit_log.js";
 
 describe("computeQueryCanonicalHash", () => {
   it("is deterministic for identical input", async () => {
@@ -78,5 +78,70 @@ describe("logAuditEntry", () => {
     const parsed = JSON.parse(stderrSpy.mock.calls[0][0] as string);
     expect(parsed.bundleHash).toBeNull();
     expect(parsed.outcome).toBe("not_found");
+  });
+});
+
+describe("emitContextAuditEvent", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("POSTs a CE-4 context-audit event with channel=mcp and the query/bundle hashes", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await emitContextAuditEvent(
+      { baseUrl: "http://127.0.0.1:8000", apiKey: "biz-key" },
+      { docId: "doc1", safeMode: true, queryCanonicalHash: "a".repeat(64), bundleHash: "b".repeat(64) },
+    );
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:8000/docs/doc1/context-audit");
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("biz-key");
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      operation: "query",
+      safeMode: true,
+      equivalenceKey: "a".repeat(64),
+      bundleHash: "b".repeat(64),
+      queryHash: "a".repeat(64),
+      dryRun: true,
+      sideEffect: "none",
+      command: "context-query",
+      channel: "mcp",
+      schemaVersion: "ce4.audit.v1",
+    });
+  });
+
+  it("does not throw on a non-2xx backend response (best-effort; writes a warning to stderr)", async () => {
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 422 }));
+
+    await expect(
+      emitContextAuditEvent(
+        { baseUrl: "http://127.0.0.1:8000" },
+        { docId: "doc1", safeMode: true, queryCanonicalHash: "a".repeat(64), bundleHash: "b".repeat(64) },
+      ),
+    ).resolves.toBeUndefined();
+
+    const written = stderrSpy.mock.calls[0][0] as string;
+    expect(JSON.parse(written).message).toContain("CE-4 audit emit failed");
+  });
+
+  it("does not throw when fetch itself rejects (best-effort on network error)", async () => {
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connection refused")));
+
+    await expect(
+      emitContextAuditEvent(
+        { baseUrl: "http://127.0.0.1:8000" },
+        { docId: "doc1", safeMode: true, queryCanonicalHash: "a".repeat(64), bundleHash: "b".repeat(64) },
+      ),
+    ).resolves.toBeUndefined();
+
+    const written = stderrSpy.mock.calls[0][0] as string;
+    expect(JSON.parse(written).message).toContain("CE-4 audit emit error");
   });
 });

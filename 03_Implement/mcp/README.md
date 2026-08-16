@@ -33,17 +33,14 @@ file if a future change appears to add capability.
 ## Non-goals
 
 - No write/ingest/apply/publish/sampling/elicitation capability, on either
-  transport.
+  transport. The CE-4 audit POST described below is the only outbound call this
+  server makes, and it is a *read audit* (a report of an already-served
+  projection), never a mutation of the document it projected.
 - **Resource server only.** This process never issues tokens, registers
   clients, or runs an authorization/consent endpoint -- it validates bearer
   tokens issued by an already-trusted external IdP (`ADR-0054`, consistent
   with `ADR-0020`'s "never run a production IdP/AS" stance). There is no
   code path for token issuance in this package.
-- No backend contract change: reads are audited locally (structured JSON on
-  stderr, `src/audit_log.ts`) rather than via the backend's
-  `POST /docs/{id}/context-audit` (CE-4) endpoint, whose `channel` enum has no
-  slot for an MCP-originated read yet. Wiring that in is a separate,
-  shared-contract change deferred to a dedicated backend issue.
 
 ## Running
 
@@ -116,6 +113,20 @@ exactly this; the scenarios below are what it checks.
 Interpretation rule: an `isError` outcome with `not_found`/`error` is a **valid
 signal** (the target document does not exist), not an MCP-path failure — the
 transport worked, the request reached the server, and the failure was classified.
+
+In addition to the local `mcp-context-read.v1` entry above, every **successful**
+read is reported to the backend's `POST /docs/{id}/context-audit` (CE-4)
+endpoint with `channel="mcp"` (`operation=query`, `command=context-query`,
+`equivalenceKey=queryCanonicalHash`, `bundleHash=projection.bundleHash`,
+`safeMode`, `dryRun=true`, `sideEffect=none`) via `src/audit_log.ts`
+`emitContextAuditEvent`. This closes the former channel-enum gap: an
+MCP-originated read is traceable in the same backend audit trail as
+api/cli/gui callers. The emit is **best-effort** — the synchronous local entry
+is the read's correlation, and a CE-4 POST failure never turns a successful
+read into an error (it logs a structured warning to stderr). A generative-AI
+verifier that needs to assert the backend saw the read can cross-check the
+deployment's audit sink directly; `verify_mcp.ts` itself validates the read
+path, not the sink delivery.
 
 ### Transport selection
 
