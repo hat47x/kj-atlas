@@ -4128,5 +4128,46 @@ rw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RW_ID")
 check "RW 読戻し (200)" "200" "$rw_read"
 
 echo ""
+echo "--- シナリオ95: タクシー・モビリティの配車と乗務員の声整理（効率と稼働のトレードオフ） ---"
+# 業態: タクシー・モビリティ（配車サービス）
+# 想定人物: 配車サービス運営（利用者と運転手の声を整理）
+# 業務領域: 配車待ち・料金・ドライバー対応への利用者の声のKJ分類と、サービス改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 配車の速さ（アルゴリズム・効率）と、運転手の稼働（労働・収入）の
+#          トレードオフを矛盾検出で表面化し、配車アルゴリズムと乗務員施策の根拠に
+#          する（効率と稼働のトレードオフ）。
+TX_ID="biz-flow-taxi"
+TX_DOC='{"version":1,"id":"'$TX_ID'","title":"配車と乗務員の声","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"tx1","text":"配車の速さは評価され、待ち時間は短いという声がある","x":0,"y":0,"textReviewed":true},{"id":"tx2","text":"運転手からは長時間勤務と収入の不安があるという声がある","x":10,"y":0,"textReviewed":true},{"id":"tx3","text":"料金の明確さは評価され、クレームは減っている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tx-i","cardIds":["tx1","tx2","tx3"]}],"readingOrder":["tx-i"]}'
+
+tx_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TX_ID" \
+  -H 'Content-Type: application/json' -d "$TX_DOC")
+check "TX PUT document (作成)" "200" "$tx_put"
+
+# ① AI束ね
+tx_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"tx1","text":"配車の速さは評価され、待ち時間は短いという声がある","textReviewed":true},{"id":"tx2","text":"運転手からは長時間勤務と収入の不安があるという声がある","textReviewed":true},{"id":"tx3","text":"料金の明確さは評価され、クレームは減っている","textReviewed":true}]}')
+case "$tx_groups" in *'"groups":'*) echo "  PASS: TX ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TX ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tx_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TX_DOC,\"islandId\":\"tx-i\"}")
+case "$tx_summary" in *'"groundingIds":["tx1","tx2","tx3"]'*) echo "  PASS: TX ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TX ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（配車の速さ vs 乗務員の稼働・効率と稼働のトレードオフ）
+tx_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"tx1","text":"配車の速さは評価され、待ち時間は短いという声がある","textReviewed":true},"cardB":{"id":"tx2","text":"運転手からは長時間勤務と収入の不安があるという声がある","textReviewed":true}}')
+case "$tx_contra" in *'"hasContradiction"'*) echo "  PASS: TX ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TX ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+tx_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TX_DOC}")
+case "$tx_narr" in *'"basedOnReadingOrder":["tx-i"]'*) echo "  PASS: TX ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TX ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tx_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TX_ID")
+check "TX 読戻し (200)" "200" "$tx_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
