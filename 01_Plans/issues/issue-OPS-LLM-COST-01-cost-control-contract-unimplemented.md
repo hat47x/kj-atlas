@@ -76,3 +76,9 @@
 
 - 段階1を完了。現行保証をprovider既定無効、外部opt-in、要求／応答bytes、要求単位max output tokensに限定し、回数・実使用token計測、予算上限、自動降格、dashboardは未実装計画と明記した。
 - 段階2以降は共有計数store、集計scope、provider usageの信頼境界を決める必要があるためOpenを維持する。全API rate limitは`SEC-RATE-LIMIT-01`へ分離した。
+
+## 進捗（2026-08-16）: 段階2の計測を完了し、政策文書へ反映
+
+- **段階2（計測）を実装**: 呼出回数（`callCounts`・既存）に加え、**入力/出力token計測（`tokenUsage`）**を実装（`LLMResponse.input/output_tokens`・`_record_llm_usage`・DeepSeek等のOpenAI互換`usage`解析・`/ai/provider-status`で参照可能）。単一プロセス前提（共有storeは段階3）。
+- **政策文書の整合（段階1の継続）**: `llm_escalation_policy.html` §03 を更新し、現行実装に「プロセス内の呼出回数・token計測」を追記。未実装計画は予算上限・local-only降格・dashboard・共有計数storeへ限定し、運用者が計測済みと未実装を誤解しないようにした。
+- 段階3（上限・降格・共有store・AC-3/AC-4/AC-6）は設定値と共有storeの設計判断が必要なため、引き続きOpen。
