@@ -455,12 +455,13 @@ export async function putDocument(
 
 export type ProviderKind = "none" | "local" | "large-scale";
 
-/** OPS-LLM-COST-02: the provider-status snapshot (kind + in-process LLM call
- * counts per provider kind plus "total"). callCounts is empty until the first
- * LLM call. */
+/** OPS-LLM-COST-02/01: the provider-status snapshot (kind + in-process LLM call
+ * counts and token usage per provider kind plus "total"). Empty until the
+ * first LLM call. */
 export type ProviderStatusSnapshot = {
   providerKind: ProviderKind;
   callCounts: Record<string, number>;
+  tokenUsage: Record<string, { input: number; output: number }>;
 };
 
 /**
@@ -478,7 +479,11 @@ export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
   }
 
   const body = (await response.json()) as ProviderStatusSnapshot;
-  return { providerKind: body.providerKind, callCounts: body.callCounts ?? {} };
+  return {
+    providerKind: body.providerKind,
+    callCounts: body.callCounts ?? {},
+    tokenUsage: body.tokenUsage ?? {},
+  };
 }
 
 export type SuggestLayoutResult = {

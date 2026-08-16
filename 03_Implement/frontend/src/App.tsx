@@ -1287,6 +1287,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
   // surfaced read-only in the View panel next to the provider kind.
   const [llmCallCounts, setLlmCallCounts] = useState<Record<string, number>>({});
+  const [llmTokenUsage, setLlmTokenUsage] = useState<Record<string, { input: number; output: number }>>({});
   const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
   // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
   // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
@@ -1560,10 +1561,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // the badge simply stays unknown rather than surfacing a spurious error.
     let cancelled = false;
     void getProviderStatus()
-      .then(({ providerKind: kind, callCounts }) => {
+      .then(({ providerKind: kind, callCounts, tokenUsage }) => {
         if (!cancelled) {
           setProviderKind(kind);
           setLlmCallCounts(callCounts);
+          setLlmTokenUsage(tokenUsage);
         }
       })
       .catch(() => {
@@ -10927,6 +10929,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
             llmCallCounts={llmCallCounts}
+            llmTokenUsage={llmTokenUsage}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
