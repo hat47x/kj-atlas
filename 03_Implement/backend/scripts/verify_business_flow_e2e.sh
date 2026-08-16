@@ -4289,5 +4289,46 @@ lg_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LG_ID")
 check "LG 読戻し (200)" "200" "$lg_read"
 
 echo ""
+echo "--- シナリオ99: 図書館・読書振興の利用者声と蔵書構成の整理（蔵書と出会いの乖離） ---"
+# 業態: 図書館・読書振興（公共図書館）
+# 想定人物: 図書館員（利用者と非利用者の声を整理）
+# 業務領域: 蔵書・貸出・読書イベントへの利用者の声のKJ分類と、読書振興施策改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 蔵書の充実（新刊購入・コスト）と、利用者の読みたい本への出会い（体験・
+#          検索性）の乖離を矛盾検出で表面化し、蔵書構成と読書振興の根拠にする
+#          （蔵書と出会いの乖離）。
+LB_ID="biz-flow-library"
+LB_DOC='{"version":1,"id":"'$LB_ID'","title":"利用者声と蔵書構成","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"lb1","text":"蔵書は充実し、新刊の購入が続いていると運営は評価している","x":0,"y":0,"textReviewed":true},{"id":"lb2","text":"利用者からは読みたい本を見つけにくいという声がある","x":10,"y":0,"textReviewed":true},{"id":"lb3","text":"子ども向けの読み聞かせは人気で、家族連れの利用は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"lb-i","cardIds":["lb1","lb2","lb3"]}],"readingOrder":["lb-i"]}'
+
+lb_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$LB_ID" \
+  -H 'Content-Type: application/json' -d "$LB_DOC")
+check "LB PUT document (作成)" "200" "$lb_put"
+
+# ① AI束ね
+lb_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"lb1","text":"蔵書は充実し、新刊の購入が続いていると運営は評価している","textReviewed":true},{"id":"lb2","text":"利用者からは読みたい本を見つけにくいという声がある","textReviewed":true},{"id":"lb3","text":"子ども向けの読み聞かせは人気で、家族連れの利用は増えている","textReviewed":true}]}')
+case "$lb_groups" in *'"groups":'*) echo "  PASS: LB ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: LB ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+lb_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$LB_DOC,\"islandId\":\"lb-i\"}")
+case "$lb_summary" in *'"groundingIds":["lb1","lb2","lb3"]'*) echo "  PASS: LB ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: LB ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（蔵書充実 vs 出会いにくさ・蔵書と出会いの乖離）
+lb_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"lb1","text":"蔵書は充実し、新刊の購入が続いていると運営は評価している","textReviewed":true},"cardB":{"id":"lb2","text":"利用者からは読みたい本を見つけにくいという声がある","textReviewed":true}}')
+case "$lb_contra" in *'"hasContradiction"'*) echo "  PASS: LB ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: LB ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+lb_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$LB_DOC}")
+case "$lb_narr" in *'"basedOnReadingOrder":["lb-i"]'*) echo "  PASS: LB ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: LB ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+lb_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$LB_ID")
+check "LB 読戻し (200)" "200" "$lb_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
