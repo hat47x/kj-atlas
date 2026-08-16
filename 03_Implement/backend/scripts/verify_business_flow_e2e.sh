@@ -5622,5 +5622,47 @@ th_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TH_ID")
 check "TH 読戻し (200)" "200" "$th_read"
 
 echo ""
+echo "--- シナリオ129: 酒類・醸造（伝統・品質と経営効率のトレードオフ） ---"
+# 業態: 酒類・醸造（ワイナリー・酒蔵）
+# 想定人物: 蔵元／製造責任者
+# 業務領域: 醸造・品質・販路・後継者への声のKJ分類と、蔵の持続的経営の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 伝統的な製法と原料へのこだわり・品質と熟成の重視（伝統・品質）と生産量拡大や
+#          価格競争への対応（経営効率）のトレードオフを矛盾検出（正パス）で表面化し、
+#          蔵の持続的経営の根拠にする（品質と経営の相克・蔵の見学や体験型イベントで
+#          ファンと後継者を育てる動きも指摘）。
+BRW_ID="biz-flow-brewery"
+BRW_DOC='{"version":1,"id":"'$BRW_ID'","title":"蔵の持続的経営","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"b1","text":"伝統的な製法と原料へのこだわりを守り、品質と熟成を重視する声（伝統・品質）","x":0,"y":0,"textReviewed":true},{"id":"b2","text":"生産量の拡大や価格競争への対応など、品質と経営のトレードオフに悩む声（経営効率）","x":10,"y":0,"textReviewed":true},{"id":"b3","text":"蔵の見学や体験型イベントでファンと後継者を育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"brw-i","cardIds":["b1","b2","b3"]}],"readingOrder":["brw-i"]}'
+
+brw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BRW_ID" \
+  -H 'Content-Type: application/json' -d "$BRW_DOC")
+check "BRW PUT document (作成)" "200" "$brw_put"
+
+# ① AI束ね
+brw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"b1","text":"伝統的な製法と原料へのこだわりを守り、品質と熟成を重視する声（伝統・品質）","textReviewed":true},{"id":"b2","text":"生産量の拡大や価格競争への対応など、品質と経営のトレードオフに悩む声（経営効率）","textReviewed":true},{"id":"b3","text":"蔵の見学や体験型イベントでファンと後継者を育てる動き","textReviewed":true}]}')
+case "$brw_groups" in *'"groups":'*) echo "  PASS: BRW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BRW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+brw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BRW_DOC,\"islandId\":\"brw-i\"}")
+case "$brw_summary" in *'"groundingIds":["b1","b2","b3"]'*) echo "  PASS: BRW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BRW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（伝統・品質 vs 経営効率・品質と経営の相克・正パス）
+brw_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"b1","text":"伝統的な製法と原料へのこだわりを守り、品質と熟成を重視する声（伝統・品質）","textReviewed":true},"cardB":{"id":"b2","text":"生産量の拡大や価格競争への対応など、品質と経営のトレードオフに悩む声（経営効率）","textReviewed":true}}')
+case "$brw_contra" in *'"hasContradiction":true'*) echo "  PASS: BRW ③矛盾検出（伝統・品質と経営効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: BRW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+brw_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BRW_DOC}")
+case "$brw_narr" in *'"basedOnReadingOrder":["brw-i"]'*) echo "  PASS: BRW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BRW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+brw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BRW_ID")
+check "BRW 読戻し (200)" "200" "$brw_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
