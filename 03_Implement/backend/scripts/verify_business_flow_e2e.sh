@@ -5872,5 +5872,47 @@ hab_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HAB_ID")
 check "HAB 読戻し (200)" "200" "$hab_read"
 
 echo ""
+echo "--- シナリオ135: 理美容・ヘアサロン（施術の質と回転率のトレードオフ） ---"
+# 業態: 理美容・ヘアサロン（理美容室）
+# 想定人物: サロンオーナー／スタイリスト
+# 業務領域: 施術・カウンセリング・価格・スタッフ育成への声のKJ分類と、サロン運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 丁寧なカウンセリングと一人ひとりに合わせた施術の質（顧客満足・時間）と予約の
+#          回転率や価格競争への対応（収益・効率）のトレードオフを矛盾検出（正パス）で表面化し、
+#          サロン運営の改善根拠にする（施術の質と収益の相克・スタイリストの育成や技術向上への
+#          投資・リピーターづくりで信頼を築く動きも指摘）。
+SALON_ID="biz-flow-salon"
+SALON_DOC='{"version":1,"id":"'$SALON_ID'","title":"サロン運営の改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sa1","text":"丁寧なカウンセリングと一人ひとりに合わせた施術の質を重視する声（施術の質・丁寧さ）","x":0,"y":0,"textReviewed":true},{"id":"sa2","text":"予約の回転率や価格競争への対応など、施術の質と収益・効率のトレードオフに悩む声（収益・回転）","x":10,"y":0,"textReviewed":true},{"id":"sa3","text":"スタイリストの育成や技術向上への投資、リピーターづくりで信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"salon-i","cardIds":["sa1","sa2","sa3"]}],"readingOrder":["salon-i"]}'
+
+salon_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SALON_ID" \
+  -H 'Content-Type: application/json' -d "$SALON_DOC")
+check "SALON PUT document (作成)" "200" "$salon_put"
+
+# ① AI束ね
+salon_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sa1","text":"丁寧なカウンセリングと一人ひとりに合わせた施術の質を重視する声（施術の質・丁寧さ）","textReviewed":true},{"id":"sa2","text":"予約の回転率や価格競争への対応など、施術の質と収益・効率のトレードオフに悩む声（収益・回転）","textReviewed":true},{"id":"sa3","text":"スタイリストの育成や技術向上への投資、リピーターづくりで信頼を築く動き","textReviewed":true}]}')
+case "$salon_groups" in *'"groups":'*) echo "  PASS: SALON ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SALON ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+salon_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SALON_DOC,\"islandId\":\"salon-i\"}")
+case "$salon_summary" in *'"groundingIds":["sa1","sa2","sa3"]'*) echo "  PASS: SALON ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SALON ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（施術の質 vs 収益・効率・施術の質と収益の相克・正パス）
+salon_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sa1","text":"丁寧なカウンセリングと一人ひとりに合わせた施術の質を重視する声（施術の質・丁寧さ）","textReviewed":true},"cardB":{"id":"sa2","text":"予約の回転率や価格競争への対応など、施術の質と収益・効率のトレードオフに悩む声（収益・回転）","textReviewed":true}}')
+case "$salon_contra" in *'"hasContradiction":true'*) echo "  PASS: SALON ③矛盾検出（施術の質と回転率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SALON ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+salon_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SALON_DOC}")
+case "$salon_narr" in *'"basedOnReadingOrder":["salon-i"]'*) echo "  PASS: SALON ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SALON ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+salon_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SALON_ID")
+check "SALON 読戻し (200)" "200" "$salon_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
