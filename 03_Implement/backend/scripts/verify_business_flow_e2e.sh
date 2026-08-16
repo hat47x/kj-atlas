@@ -7255,5 +7255,46 @@ eyewear_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EYEWEAR_I
 check "EYEWEAR 読戻し (200)" "200" "$eyewear_read"
 
 echo ""
+echo "--- シナリオ168: 建築設計事務所（デザイン・品質とコスト・工期のトレードオフ） ---"
+# 業態: 建築設計事務所（建築設計・監理）
+# 想定人物: 建築家／設計事務所代表
+# 業務領域: 設計・監理・クライアント・コストへの声のKJ分類と、設計事務所の運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 設計の質とこだわり・住まい手の想いを形にする（デザイン・品質）とコストや工期への圧力
+#          （コスト・工期）のトレードオフを矛盾検出（正パス）で表面化し、設計事務所の運営改善根拠に
+#          する（デザインとコストの相克・地域の景観や既存建物の再生・住民との対話を大切にする動きも指摘）。
+ARCH_ID="biz-flow-architecture"
+ARCH_DOC='{"version":1,"id":"'$ARCH_ID'","title":"設計事務所の運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ar1","text":"設計の質とこだわり、住まい手の想いを形にすることを重視する声（デザイン・品質）","x":0,"y":0,"textReviewed":true},{"id":"ar2","text":"コストや工期への圧力など、設計の質とコスト・工期のトレードオフに悩む声（コスト・工期）","x":10,"y":0,"textReviewed":true},{"id":"ar3","text":"地域の景観や既存建物の再生、住民との対話を大切にする動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"arch-i","cardIds":["ar1","ar2","ar3"]}],"readingOrder":["arch-i"]}'
+
+arch_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ARCH_ID" \
+  -H 'Content-Type: application/json' -d "$ARCH_DOC")
+check "ARCH PUT document (作成)" "200" "$arch_put"
+
+# ① AI束ね
+arch_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ar1","text":"設計の質とこだわり、住まい手の想いを形にすることを重視する声（デザイン・品質）","textReviewed":true},{"id":"ar2","text":"コストや工期への圧力など、設計の質とコスト・工期のトレードオフに悩む声（コスト・工期）","textReviewed":true},{"id":"ar3","text":"地域の景観や既存建物の再生、住民との対話を大切にする動き","textReviewed":true}]}')
+case "$arch_groups" in *'"groups":'*) echo "  PASS: ARCH ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ARCH ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+arch_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ARCH_DOC,\"islandId\":\"arch-i\"}")
+case "$arch_summary" in *'"groundingIds":["ar1","ar2","ar3"]'*) echo "  PASS: ARCH ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ARCH ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（デザイン・品質 vs コスト・工期・デザインとコストの相克・正パス）
+arch_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ar1","text":"設計の質とこだわり、住まい手の想いを形にすることを重視する声（デザイン・品質）","textReviewed":true},"cardB":{"id":"ar2","text":"コストや工期への圧力など、設計の質とコスト・工期のトレードオフに悩む声（コスト・工期）","textReviewed":true}}')
+case "$arch_contra" in *'"hasContradiction":true'*) echo "  PASS: ARCH ③矛盾検出（デザイン・品質とコスト・工期のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: ARCH ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+arch_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ARCH_DOC}")
+case "$arch_narr" in *'"basedOnReadingOrder":["arch-i"]'*) echo "  PASS: ARCH ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ARCH ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+arch_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ARCH_ID")
+check "ARCH 読戻し (200)" "200" "$arch_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
