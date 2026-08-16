@@ -3847,5 +3847,45 @@ hw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HW_ID")
 check "HW 読戻し (200)" "200" "$hw_read"
 
 echo ""
+echo "--- シナリオ88: 食品スーパーの店舗運営と顧客声の整理（効率と体験の乖離） ---"
+# 業態: 食品スーパー（スーパーマーケット運営）
+# 想定人物: 店長（店舗運営と顧客声を整理）
+# 業務領域: レジ・品揃え・店舗レイアウトへの顧客の声のKJ分類と、店舗運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 店舗の効率運営（客単価・レジ回転）と、顧客の買いやすさ（体験・ゆっくり
+#          選びたい）の乖離を矛盾検出で表面化し、店舗運営の改善根拠にする（効率と体験の乖離）。
+SM_ID="biz-flow-supermarket"
+SM_DOC='{"version":1,"id":"'$SM_ID'","title":"店舗運営と顧客声","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sm1","text":"レジの回転は速く、混雑時の待ち時間は短いと運営は評価している","x":0,"y":0,"textReviewed":true},{"id":"sm2","text":"顧客からはゆっくり選びたいが、レイアウトが分かりにくいという声がある","x":10,"y":0,"textReviewed":true},{"id":"sm3","text":"生鮮食品の鮮度は高く、リピート購入は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sm-i","cardIds":["sm1","sm2","sm3"]}],"readingOrder":["sm-i"]}'
+
+sm_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SM_ID" \
+  -H 'Content-Type: application/json' -d "$SM_DOC")
+check "SM PUT document (作成)" "200" "$sm_put"
+
+# ① AI束ね
+sm_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sm1","text":"レジの回転は速く、混雑時の待ち時間は短いと運営は評価している","textReviewed":true},{"id":"sm2","text":"顧客からはゆっくり選びたいが、レイアウトが分かりにくいという声がある","textReviewed":true},{"id":"sm3","text":"生鮮食品の鮮度は高く、リピート購入は増えている","textReviewed":true}]}')
+case "$sm_groups" in *'"groups":'*) echo "  PASS: SM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sm_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SM_DOC,\"islandId\":\"sm-i\"}")
+case "$sm_summary" in *'"groundingIds":["sm1","sm2","sm3"]'*) echo "  PASS: SM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（効率運営 vs 買いやすさ・効率と体験の乖離）
+sm_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sm1","text":"レジの回転は速く、混雑時の待ち時間は短いと運営は評価している","textReviewed":true},"cardB":{"id":"sm2","text":"顧客からはゆっくり選びたいが、レイアウトが分かりにくいという声がある","textReviewed":true}}')
+case "$sm_contra" in *'"hasContradiction"'*) echo "  PASS: SM ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sm_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SM_DOC}")
+case "$sm_narr" in *'"basedOnReadingOrder":["sm-i"]'*) echo "  PASS: SM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SM_ID")
+check "SM 読戻し (200)" "200" "$sm_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
