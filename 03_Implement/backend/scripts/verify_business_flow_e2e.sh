@@ -4531,5 +4531,45 @@ ot_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$OT_ID")
 check "OT 読戻し (200)" "200" "$ot_read"
 
 echo ""
+echo "--- シナリオ105: 自治体・消防の救急出動分析（迅速な出動と適切な搬送のトレードオフ） ---"
+# 業態: 自治体・消防（消防/救急）
+# 想定人物: 消防署長／救急運用担当（救急出動を分析）
+# 業務領域: 救急出動記録・通報内容・対応課題のKJ分類と、救急運用改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 迅速な出動（レスポンスタイム）と適切な医療搬送（搬送先選定・トリアージ）の
+#          トレードオフを矛盾検出で表面化し、救急運用の根拠にする（迅速性と適切性のトレードオフ）。
+FD_ID="biz-flow-fire"
+FD_DOC='{"version":1,"id":"'$FD_ID'","title":"救急出動分析","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"fd1","text":"救急要請が増加し迅速な出動が難しくなっている","x":0,"y":0,"textReviewed":true},{"id":"fd2","text":"搬送先の選定に時間がかかり病院到着が遅れている","x":10,"y":0,"textReviewed":true},{"id":"fd3","text":"軽症の救急要請が増えており現場の負担が増大している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"fd-i","cardIds":["fd1","fd2","fd3"]}],"readingOrder":["fd-i"]}'
+
+fd_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FD_ID" \
+  -H 'Content-Type: application/json' -d "$FD_DOC")
+check "FD PUT document (作成)" "200" "$fd_put"
+
+# ① AI束ね
+fd_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"fd1","text":"救急要請が増加し迅速な出動が難しくなっている","textReviewed":true},{"id":"fd2","text":"搬送先の選定に時間がかかり病院到着が遅れている","textReviewed":true},{"id":"fd3","text":"軽症の救急要請が増えており現場の負担が増大している","textReviewed":true}]}')
+case "$fd_groups" in *'"groups":'*) echo "  PASS: FD ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FD ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fd_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FD_DOC,\"islandId\":\"fd-i\"}")
+case "$fd_summary" in *'"groundingIds":["fd1","fd2","fd3"]'*) echo "  PASS: FD ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FD ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（迅速な出動 vs 適切な搬送・迅速性と適切性のトレードオフ）
+fd_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"fd1","text":"救急要請が増加し迅速な出動が難しくなっている","textReviewed":true},"cardB":{"id":"fd2","text":"搬送先の選定に時間がかかり病院到着が遅れている","textReviewed":true}}')
+case "$fd_contra" in *'"hasContradiction"'*) echo "  PASS: FD ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: FD ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fd_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FD_DOC}")
+case "$fd_narr" in *'"basedOnReadingOrder":["fd-i"]'*) echo "  PASS: FD ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FD ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fd_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FD_ID")
+check "FD 読戻し (200)" "200" "$fd_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
