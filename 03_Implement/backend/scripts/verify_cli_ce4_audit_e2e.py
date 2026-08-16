@@ -208,6 +208,31 @@ def main() -> int:
                 print(proc.stdout[-2000:])
                 print(proc.stderr[-2000:])
 
+        # The `kj` CLI's `ce4 resolve-bundle` subcommand POSTs to
+        # /context/bundles:resolve — the CE4 contract-resolution path, distinct
+        # from the /docs/{id}/context-audit lifecycle above. Doc-independent.
+        resolve_proc = subprocess.run(
+            [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
+             "ce4", "resolve-bundle", "--query", "課題は何か",
+             "--source-bundle-hash", "mock:" + ("d" * 64)],
+            cwd=BACKEND_DIR,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        check("kj CLI ce4 resolve-bundle exit", 0, resolve_proc.returncode)
+        if resolve_proc.returncode != 0:
+            print(resolve_proc.stdout[-2000:])
+            print(resolve_proc.stderr[-2000:])
+        else:
+            try:
+                resolved = json.loads(resolve_proc.stdout)
+            except json.JSONDecodeError:
+                resolved = {}
+            check("resolve-bundle returns equivalenceKey", True, bool(resolved.get("equivalenceKey")))
+            check("resolve-bundle returns bundleHash", True, bool(resolved.get("bundleHash")))
+            check("resolve-bundle returns auditChain", True, isinstance(resolved.get("auditChain"), dict))
+
         time.sleep(1.0)
         events = sink.snapshot()
         cli_events = [
