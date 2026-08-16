@@ -40,7 +40,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# 3. シナリオドキュメントの状態リストにシナリオ92 が含まれる
+# 3. シナリオドキュメントの状態リストにシナリオ93 が含まれる
 if grep -q -e "シナリオ93（iteration 163" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
   check "状態リストにシナリオ93 (iteration 163)" "ok" "ok"
 else
@@ -89,7 +89,7 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 579 = 537 + 12 + 7 + 8 + 15）
+# 7. 総チェック数の算術照合（マニフェスト主張: 585 = 543 + 12 + 7 + 8 + 15）
 BUSINESS_CHECKS=543
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
