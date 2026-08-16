@@ -203,6 +203,14 @@ try {
         const key = pick(keyActions);
         action = `key:${key}@${focusBeforeAction.description}`;
         await page.keyboard.press(key);
+        // Product focus restoration is intentionally deferred to the next
+        // animation frame after an element closes or is replaced. Async start
+        // actions can also finish after loading, so allow a short bounded wait
+        // for focus to settle before classifying a body transition.
+        await page.evaluate(() => new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined))));
+        if (!focusBeforeAction.bodyFocused) {
+          await page.waitForFunction(() => document.activeElement !== document.body, undefined, { timeout: 1000 }).catch(() => {});
+        }
       } else if (roll < 0.62) {
         const buttons = await page.locator("header button:visible:enabled").all();
         if (buttons.length) {
@@ -303,7 +311,7 @@ try {
     if (i % 5 === 0 || roll >= 0.5) {
       const snap = await snapshot();
       checkInvariants(snap, action);
-      if (snap.bodyFocused && !focusBeforeAction.bodyFocused && /^key:(Tab|Shift\+Tab|Escape)@/.test(action)) {
+      if (snap.bodyFocused && !focusBeforeAction.bodyFocused && /^key:(Tab|Shift\+Tab|Enter|Space|Escape|Delete|Backspace)@/.test(action)) {
         finding("focus-lost-to-body", `${action} の後にフォーカスが<body>へ落ちた（操作前=${focusBeforeAction.description}）`);
       }
     }

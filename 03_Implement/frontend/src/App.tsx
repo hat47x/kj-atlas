@@ -3974,6 +3974,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       openBuiltInSample();
     } finally {
       setIsLoading(false);
+      window.requestAnimationFrame(() => {
+        window.document.querySelector<HTMLElement>("[data-card-id]")?.focus({ preventScroll: true });
+      });
     }
   }, [loadDocument, loadPublicPack, openBuiltInSample]);
 
@@ -8988,7 +8991,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     if (selectedCardIds.length > 0) {
       const selectedCardIdSet = new Set(selectedCardIds);
+      const activeCardId =
+        window.document.activeElement instanceof HTMLElement
+          ? window.document.activeElement.dataset.cardId
+          : undefined;
+      const activeCardIndex = activeCardId
+        ? document.cards.findIndex((card) => card.id === activeCardId)
+        : -1;
       const nextCards = document.cards.filter((card) => !selectedCardIdSet.has(card.id));
+      const fallbackFocusCardId =
+        activeCardId && selectedCardIdSet.has(activeCardId) && nextCards.length > 0
+          ? nextCards[Math.min(Math.max(activeCardIndex, 0), nextCards.length - 1)]?.id
+          : undefined;
 
       if (nextCards.length === document.cards.length) {
         return;
@@ -9027,6 +9041,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           ? previousSelectedIslandId
           : null
       );
+      if (fallbackFocusCardId) {
+        window.requestAnimationFrame(() => {
+          const fallbackCard = Array.from(
+            window.document.querySelectorAll<HTMLElement>("[data-card-id]")
+          ).find((element) => element.dataset.cardId === fallbackFocusCardId);
+          fallbackCard?.focus({ preventScroll: true });
+        });
+      }
       return;
     }
 

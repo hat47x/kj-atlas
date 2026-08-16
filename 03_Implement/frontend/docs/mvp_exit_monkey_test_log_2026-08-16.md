@@ -8,7 +8,7 @@
 
 | 項目 | 値 |
 | --- | --- |
-| 候補 | `d2ea5778`付近のmain + 本記録のQA-MONKEY-25修正 |
+| 候補 | `b235a024`付近のmain + 本記録のQA-MONKEY-27〜30修正 |
 | 実行環境 | Windows Edge / Playwright 1.58.2 / axe-core 4.12.1。ViteはWSL上のNode 20で配信 |
 | locale | `ja` / `en` |
 | viewport | 320 / 390 / 768 / 1440 |
@@ -18,7 +18,7 @@
 
 1. `monkey_ui_sweep.mjs`で、キーボード、カード選択・編集、コンテキストメニュー、header、checkbox、drag、rubber-band、wheelをseed固定で反復した。
 2. focus脱落は操作前が非bodyで、操作後にbodyへ遷移した場合だけ報告した。console errorはReact stackを含む長さまで保持し、直近最大200操作を記録した。
-3. `monkey_adversarial_probes.mjs`へ、コンテキストメニュー、選択解除focus、島focus/camera同期、通常zoom永続化、inline編集取消focusを固定回帰として追加した。
+3. `monkey_adversarial_probes.mjs`へ、コンテキストメニュー、選択解除focus、島focus/camera同期、通常zoom永続化、inline編集取消・確定、カード削除、サンプル開始後のfocusを固定回帰として追加した。
 4. axe smoke 10状態とheader responsive/keyboard 9検査を別途実行した。
 
 ## 検出・起票した課題
@@ -32,6 +32,10 @@
 | `QA-MONKEY-24` | Reliability / P1 | focus中の折りたたみ島を展開するとcamera transform同期が更新loopになった | callbackを安定化して修正済み、A13/A14へ固定 |
 | `QA-MONKEY-25` | Accessibility / P1 | inline本文編集をEscape取消するとtextarea消滅後にfocusがbodyへ落ちた | 同じカードへ復帰するよう修正、A15へ固定 |
 | `QA-MONKEY-26` | Documentation / P2 | 8月13日以後の実施結果と現行CLIが恒久記録に反映されていなかった | 本記録を追加し、7月29日の旧環境変数名を更新 |
+| `QA-MONKEY-27` | Accessibility / P1 | inline本文編集をEnter確定するとtextarea消滅後にfocusがbodyへ落ちた | Escape経路と共通のfocus復帰処理へ修正、A16へ固定 |
+| `QA-MONKEY-28` | QA / P2 | focus脱落判定がEnter/Space/Delete/Backspaceと非同期完了を扱わなかった | 対象キーを拡張し、RAF・短い非同期待ち後の安定状態を判定 |
+| `QA-MONKEY-29` | Accessibility / P1 | focus中の選択カードをDeleteするとfocusがbodyへ落ちた | 文書順の近傍カードへfocusを移すよう修正、A17へ固定 |
+| `QA-MONKEY-30` | Accessibility / P1 | 「サンプルを開く」をEnter実行すると開始パネル消滅後にfocusがbodyへ落ちた | 読込完了後に先頭カードへfocusを移すよう修正、A18へ固定 |
 
 ## ランダムスイープ結果
 
@@ -47,9 +51,11 @@
 
 前段のQA-MONKEY-22〜24修正時には、seed 808・390pxとseed 909・1440pxを各300 loopで実行し、いずれもfinding 0を確認した。
 
+QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/320）でサンプル開始後、606（en/390）で共有パネルEscape後、8080（en/1440）で編集Enter後のfocus脱落候補を検出した。固定再現の結果、共有パネルと編集Enterは次frame復帰前の過渡状態であり、ハーネスを安定状態判定へ修正した。seed 606と8080は修正後finding 0、seed 505の実欠陥はA18で修正前false・修正後trueを確認した。
+
 ## 固定回帰と自動検査
 
-- adversarial A1〜A14: 14/14 ok。A15はja/enの双方で元本文復元=true、同じカードへのfocus復帰=true。
+- adversarial A1〜A18: A15はja/enの双方で取消後focus復帰、A16はEnter確定後focus復帰、A17は削除後の近傍カードfocus、A18はサンプル開始後の先頭カードfocusを確認。
 - axe smoke: start、選択context、島editor、inline editor、凡例、共有、作業mode、agent export/import、menuの10/10成功。
 - header responsive/keyboard: 390〜1440pxのlayout、panel範囲、Escape focus復帰、shortcutの9/9成功。
 - seed 404修正後: finding 0。未捕捉例外、console error、白画面、SafeMode消失、無名dialog/button/field、横overflow、NaN座標は検出なし。
@@ -66,7 +72,7 @@ KJ_ATLAS_MONKEY_VIEWPORT=1440 \
 KJ_ATLAS_BASE_URL='http://127.0.0.1:4173/?locale=en' \
 node ./scripts/monkey_ui_sweep.mjs
 
-KJ_ATLAS_MONKEY_ONLY=A1,A2,A15 node ./scripts/monkey_adversarial_probes.mjs
+KJ_ATLAS_MONKEY_ONLY=A1,A2,A15,A16,A17,A18 node ./scripts/monkey_adversarial_probes.mjs
 ```
 
 Windows側のEdgeを明示して実行する環境では、`KJ_ATLAS_SCREENSHOT_BROWSER_PATH`に実行ファイルを設定する。`SUSPECT`やfindingは自動的に製品欠陥とはみなさず、固定プローブまたは同seed再実行で再現してから課題化する。

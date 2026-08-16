@@ -138,6 +138,11 @@ function CardViewComponent({
   };
   const holdStateLabel = holdState ? t(`side_panel.hold_state.${holdState}`) : "";
   const unreviewedDescriptionId = `card-unreviewed-description-${card.id}`;
+  const restoreCardFocus = () => {
+    window.requestAnimationFrame(() => {
+      cardRootRef.current?.focus({ preventScroll: true });
+    });
+  };
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -321,6 +326,7 @@ function CardViewComponent({
       // While editing, button semantics/aria-pressed/tab-stop move entirely
       // to the textarea below -- the root is not an operable element then.
       role={isEditing ? undefined : "button"}
+      data-card-id={card.id}
       aria-pressed={isEditing ? undefined : isSelected}
       aria-describedby={
         !markerMode && !isEditing && !isTextReviewed ? unreviewedDescriptionId : undefined
@@ -523,12 +529,11 @@ function CardViewComponent({
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               onCommitEdit?.(card.id, event.currentTarget.value);
+              restoreCardFocus();
             } else if (event.key === "Escape") {
               event.preventDefault();
               onCancelEdit?.();
-              window.requestAnimationFrame(() => {
-                cardRootRef.current?.focus({ preventScroll: true });
-              });
+              restoreCardFocus();
             }
           }}
           onBlur={(event) => onCommitEdit?.(card.id, event.currentTarget.value)}

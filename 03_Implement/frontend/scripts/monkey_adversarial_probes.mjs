@@ -391,6 +391,84 @@ try {
       results.map((result) => `${result.locale}:元本文=${result.originalRestored}/focus=${result.focusReturned}`).join(" / ")
     );
   }
+
+  // A16: keyboard commit also removes the textarea; it should preserve the
+  // editing position just like Escape cancellation does.
+  if (run("A16")) {
+    const page = await open([{ id: "c1", text: "編集確定focus確認", x: 220, y: 220 }]);
+    const originalCard = page.getByRole("button", { name: "編集確定focus確認" });
+    await originalCard.dblclick();
+    const editor = page.getByRole("textbox", { name: "カード本文を編集" });
+    await editor.fill("確定後の本文");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(200);
+    const committedCard = page.getByRole("button", { name: "確定後の本文" });
+    const committed = await committedCard.count() === 1;
+    const focusReturned = committed && await committedCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A16",
+      "カード本文編集をEnter確定すると同じカードへfocusが戻る",
+      committed && focusReturned,
+      `本文確定=${committed} / cardへfocus=${focusReturned}`
+    );
+    await page.close();
+  }
+
+  // A17: deleting the currently focused card removes the active element. The
+  // keyboard workflow must continue from a surviving card instead of <body>.
+  if (run("A17")) {
+    const page = await open([
+      { id: "c1", text: "削除focus確認1", x: 220, y: 220 },
+      { id: "c2", text: "削除focus確認2", x: 500, y: 220 },
+    ]);
+    const deletedCard = page.getByRole("button", { name: "削除focus確認1" });
+    await deletedCard.focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(200);
+    const removed = await deletedCard.count() === 0;
+    const survivingCard = page.getByRole("button", { name: "削除focus確認2" });
+    const focusContinues = await survivingCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A17",
+      "focus中のカードをDelete削除すると残存カードへfocusが移る",
+      removed && focusContinues,
+      `削除=${removed} / 残存cardへfocus=${focusContinues}`
+    );
+    await page.close();
+  }
+
+  // A18: the start action replaces the modal and its focused button. The
+  // loaded canvas should receive a useful keyboard position.
+  if (run("A18")) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.route("**/packs/index.json", (r) =>
+      r.fulfill({ status: 404, contentType: "application/json", body: "{}" })
+    );
+    await page.route("**/docs/doc_phase1_canvas", (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { ETag: '"adv"' },
+        body: JSON.stringify(doc([{ id: "c1", text: "開始後focus確認", x: 220, y: 220 }])),
+      })
+    );
+    await page.goto("http://127.0.0.1:4173/?locale=ja");
+    const sampleButton = page.getByRole("button", { name: "サンプルを開く" });
+    await sampleButton.focus();
+    await page.keyboard.press("Enter");
+    await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "hidden" });
+    await page.waitForTimeout(300);
+    const firstCard = page.getByRole("button", { name: "開始後focus確認" });
+    const focusContinues = await firstCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A18",
+      "サンプルをEnterで開くと最初のカードへfocusが移る",
+      focusContinues,
+      `最初のcardへfocus=${focusContinues}`
+    );
+    await page.close();
+  }
 } catch (error) {
   rec("EXCEPTION", "実行時例外", false, String(error).slice(0, 300));
 } finally {
