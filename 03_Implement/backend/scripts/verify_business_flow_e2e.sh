@@ -3605,5 +3605,46 @@ bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
 check "BK 読戻し (200)" "200" "$bk_read"
 
 echo ""
+echo "--- シナリオ82: 電子・家電の製品サポートとユーザー評価の整理（一次解決と根本原因の乖離） ---"
+# 業態: 電子・家電（家電メーカー）
+# 想定人物: サポート品質担当（問い合わせと評価を整理）
+# 業務領域: サポート問い合わせ・ユーザー評価・製品改善要望のKJ分類と、製品・対応改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: サポートでの一次解決（手順どおり・対応満足）と、同じ使いにくさが繰り返し
+#          発生する根本原因（未解決）の乖離を矛盾検出で表面化し、製品改善の根拠に
+#          する（一次解決と根本原因の乖離）。
+EL_ID="biz-flow-electronics"
+EL_DOC='{"version":1,"id":"'$EL_ID'","title":"製品サポートとユーザー評価","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"el1","text":"サポートは手順どおり案内し、一次対応で解決したと報告されている","x":0,"y":0,"textReviewed":true},{"id":"el2","text":"同じ使いにくさの問い合わせが繰り返し発生し、根本原因が残っている","x":10,"y":0,"textReviewed":true},{"id":"el3","text":"新製品の評判は良く、購入検討は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"el-i","cardIds":["el1","el2","el3"]}],"readingOrder":["el-i"]}'
+
+el_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EL_ID" \
+  -H 'Content-Type: application/json' -d "$EL_DOC")
+check "EL PUT document (作成)" "200" "$el_put"
+
+# ① AI束ね
+el_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"el1","text":"サポートは手順どおり案内し、一次対応で解決したと報告されている","textReviewed":true},{"id":"el2","text":"同じ使いにくさの問い合わせが繰り返し発生し、根本原因が残っている","textReviewed":true},{"id":"el3","text":"新製品の評判は良く、購入検討は増えている","textReviewed":true}]}')
+case "$el_groups" in *'"groups":'*) echo "  PASS: EL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+el_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EL_DOC,\"islandId\":\"el-i\"}")
+case "$el_summary" in *'"groundingIds":["el1","el2","el3"]'*) echo "  PASS: EL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（一次解決 vs 根本原因の残存・一次解決と根本原因の乖離）
+el_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"el1","text":"サポートは手順どおり案内し、一次対応で解決したと報告されている","textReviewed":true},"cardB":{"id":"el2","text":"同じ使いにくさの問い合わせが繰り返し発生し、根本原因が残っている","textReviewed":true}}')
+case "$el_contra" in *'"hasContradiction"'*) echo "  PASS: EL ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+el_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EL_DOC}")
+case "$el_narr" in *'"basedOnReadingOrder":["el-i"]'*) echo "  PASS: EL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+el_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EL_ID")
+check "EL 読戻し (200)" "200" "$el_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
