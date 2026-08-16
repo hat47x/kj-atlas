@@ -25,12 +25,16 @@
 
 ## 受入条件
 
-- [ ] modelの`providerId`と異なるtransportへrequestを送らない。
-- [ ] 利用者画面に表示されたmodelは、同一session・同一tenant条件で実行前gateを通る。
-- [ ] `none`または設定不足provider配下のmodelは実行操作を有効化しない。
+- [x] modelの`providerId`と異なるtransportへrequestを送らない（短期fail-closed gate）。
+- [x] 利用者画面に表示されたmodelは、同一session・同一tenant条件で実行前gateを通る。
+- [x] `none`または設定不足provider配下のmodelは実行操作を有効化しない。
 - [ ] `apiKeyRef`の秘密値をDB・API・ログ・監査へ出さない。
 - [ ] DeepSeek/localの2providerを同時登録した統合testで正しいtransport選択と不一致拒否を固定する。
 
 ## 検出記録（2026-08-16）
 
 管理APIでprovider/modelを動的登録し、利用者APIとEdge画面への反映を横断確認した際、registry repositoryの説明と実行provider選択の実装が一致しないことを静的・実動作の両面で確認した。
+
+## 対応記録（2026-08-16）
+
+短期対策として、利用可能モデル一覧とAI実行前gateの双方で、登録provider kindとprocessの実行transportが一致するmodelだけを許可するようにした。不一致modelは一覧から除外し、IDを直接指定しても`model_provider_unavailable`（503）でLLM送信前に拒否する。本issueは複数providerへの動的dispatchとsecret参照解決が残るためOpenを維持する。

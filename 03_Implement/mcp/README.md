@@ -89,7 +89,7 @@ Notes for AI agents using this path:
   (no card text, no issue messages).
 - For the HTTP + OAuth 2.1 resource-server transport, set `KJ_ATLAS_MCP_TRANSPORT=http`
   and the required OAuth env vars (see Transport selection below); tokens must be
-  issued by the configured trusted issuer.
+  issued by the configured trusted issuer and carry the `read:context` scope.
 
 ### Generative-AI verification runbook
 
@@ -133,7 +133,7 @@ configured HTTP audit sink) in one self-contained run, use the dogfood E2E:
 
 ```bash
 cd 03_Implement/backend
-.venv/bin/python scripts/verify_mcp_ce4_audit_e2e.py   # expect "Result: 8 passed, 0 failed"
+.venv/bin/python scripts/verify_mcp_ce4_audit_e2e.py   # expect "Result: 9 passed, 0 failed"
 ```
 
 It starts a local audit sink, a migrated backend with
@@ -180,9 +180,10 @@ than falling back to an unauthenticated or wildcard-trusting mode:
 Behavior:
 
 - `POST/GET/DELETE /mcp` require a valid bearer token (`Authorization: Bearer
-  <token>`); missing/invalid/expired/wrong-issuer/wrong-audience tokens get a
-  401 with a `WWW-Authenticate: Bearer ... resource_metadata=...` header, via
-  the SDK's `requireBearerAuth`.
+  <token>`) with the `read:context` scope; missing/invalid/expired/wrong-issuer/
+  wrong-audience tokens get 401, while a valid token without the required scope
+  gets 403 `insufficient_scope`. Both responses carry a `WWW-Authenticate`
+  challenge via the SDK's `requireBearerAuth`.
 - `GET /.well-known/oauth-protected-resource` is intentionally unauthenticated
   (RFC 9728 requires this) and returns only non-secret discovery metadata.
 - All routes (including the metadata endpoint) share a 60 requests/minute/IP

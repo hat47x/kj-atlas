@@ -15,6 +15,7 @@ import { createRemoteBearerTokenVerifier } from "./oauth_verifier.js";
 
 const MCP_PATH = "/mcp";
 const PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
+export const MCP_READ_SCOPE = "read:context";
 
 /**
  * A conservative default: 60 req/min per client IP, applied to every route
@@ -44,6 +45,7 @@ export function buildHttpApp(config: HttpTransportConfig, documentClientConfig: 
     resource: config.resource,
     authorization_servers: config.authorizationServers,
     bearer_methods_supported: ["header"],
+    scopes_supported: [MCP_READ_SCOPE],
     // No score/rank/confidence/priority fields exist on this MCP server's
     // tool output (ADR-0041 CVI anti-scoring); nothing here echoes that
     // vocabulary into the discovery document either.
@@ -60,7 +62,11 @@ export function buildHttpApp(config: HttpTransportConfig, documentClientConfig: 
     resource: config.resource,
     jwksUri: config.jwksUri,
   });
-  const requireAuth = requireBearerAuth({ verifier, resourceMetadataUrl });
+  const requireAuth = requireBearerAuth({
+    verifier,
+    requiredScopes: [MCP_READ_SCOPE],
+    resourceMetadataUrl,
+  });
 
   // Stateless mode (sessionIdGenerator: undefined): this server has exactly
   // one read-only, idempotent tool and holds no per-client state worth

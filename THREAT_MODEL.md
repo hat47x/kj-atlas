@@ -103,6 +103,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 
 - 未認証／偽造／期限切れbearer tokenによる `POST/GET/DELETE /mcp` への到達
 - 他リソース向けに発行されたtoken（audience違い）や、信頼していないissuerが発行したtokenの受理（confused deputy）
+- 正規に署名されたtokenでもMCP文脈読取scopeを持たない主体が、認証済みという理由だけで投影を取得する認証・認可混同
 - 本サーバーが誤って authorization server 相当の機能（token発行・client登録・consent）を持ってしまうscope creep
 - 単純なリクエスト洪水によるCPU/メモリ枯渇（DoS）
 - 認証エラー応答から到達可能性・内部実装がfingerprintされる情報漏えい
@@ -112,8 +113,8 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 
 - ADR-0054/ADR-0020方針どおり、本サーバーは OAuth 2.1 **resource serverのみ**として実装し、token発行・client登録・authorization endpointは一切持たない（そのコードパス自体が存在しない）
 - `jose`の`jwtVerify`でtoken署名・`iss`（`KJ_ATLAS_MCP_TRUSTED_ISSUER`と厳密一致、prefix/wildcard一致は行わない）・`aud`（`KJ_ATLAS_MCP_RESOURCE_URL`）・`exp`を検証し、失敗経路はすべて`InvalidTokenError`にfail-closedで正規化（未知の失敗が既定で通過することはない）
-- SDKの`requireBearerAuth`により、認証失敗は常に401 + `WWW-Authenticate: Bearer ... resource_metadata=...`ヘッダーで応答し、tokenの有効性以外の情報（存在確認・詳細な失敗理由）を返さない
-- `/.well-known/oauth-protected-resource`（RFC 9728）は仕様上未認証公開が前提のdiscovery文書であり、`resource`/`authorization_servers`/`bearer_methods_supported`など非秘匿情報のみを返す。`/mcp`自体の認証要件は変えない
+- SDKの`requireBearerAuth`で`read:context` scopeを必須化する。認証失敗は401、正規tokenのscope不足は403 `insufficient_scope`とし、`WWW-Authenticate`で必要scopeを示す。いずれも文書存在確認へ到達させない
+- `/.well-known/oauth-protected-resource`（RFC 9728）は仕様上未認証公開が前提のdiscovery文書であり、`resource`/`authorization_servers`/`bearer_methods_supported`/`scopes_supported`など非秘匿情報のみを返す。`/mcp`自体の認証要件は変えない
 - 全route（metadata含む）に60 req/min/IPのrate limitを適用し、単純な洪水要求を早期にthrottleする
 - transportはstateless（`sessionIdGenerator: undefined`）とし、session固定化やsession storageに起因する攻撃面を持たない
 - request bodyは1MBに制限し、過大payloadでのメモリ消費を防ぐ

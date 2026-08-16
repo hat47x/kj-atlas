@@ -41,7 +41,7 @@ vi.mock("jose", async (importOriginal) => {
   };
 });
 
-const { buildHttpApp } = await import("./http_server.js");
+const { buildHttpApp, MCP_READ_SCOPE } = await import("./http_server.js");
 
 const TRUSTED_ISSUER = "https://idp.example/";
 const RESOURCE = "https://mcp.kj-atlas.example/";
@@ -79,7 +79,7 @@ async function startServer(): Promise<{ baseUrl: string; server: Server; private
 async function signToken(
   privateKey: PrivateKey,
   audience: string,
-  claims: Record<string, unknown> = { sub: "test-client" },
+  claims: Record<string, unknown> = { sub: "test-client", scope: MCP_READ_SCOPE },
   expiresIn = "5m",
 ): Promise<string> {
   return new SignJWT(claims)
@@ -105,11 +105,16 @@ describe("buildHttpApp", () => {
 
   it("serves the OAuth protected-resource metadata without requiring auth (RFC 9728)", async () => {
     const response = await fetch(`${context.baseUrl}/.well-known/oauth-protected-resource`);
-    const body = (await response.json()) as { resource: string; authorization_servers: string[] };
+    const body = (await response.json()) as {
+      resource: string;
+      authorization_servers: string[];
+      scopes_supported: string[];
+    };
 
     expect(response.status).toBe(200);
     expect(body.resource).toBe(RESOURCE);
     expect(body.authorization_servers).toEqual([TRUSTED_ISSUER]);
+    expect(body.scopes_supported).toEqual([MCP_READ_SCOPE]);
   });
 
   it("rejects POST /mcp with no Authorization header (401 + WWW-Authenticate)", async () => {
@@ -144,6 +149,31 @@ describe("buildHttpApp", () => {
     });
 
     expect(response.status).toBe(401);
+  });
+
+  it.each([
+    ["missing", { sub: "test-client" }],
+    ["unrelated", { sub: "test-client", scope: "profile read:evidence" }],
+  ])("rejects a valid token with %s read scope (403 + required scope challenge)", async (_case, claims) => {
+    const token = await signToken(context.privateKey, RESOURCE, claims);
+    const response = await fetch(`${context.baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test-client", version: "0.0.0" } },
+      }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("www-authenticate")).toContain('error="insufficient_scope"');
+    expect(response.headers.get("www-authenticate")).toContain(`scope="${MCP_READ_SCOPE}"`);
   });
 
   it("passes a validly-signed token through to the MCP transport (past the 401 boundary)", async () => {

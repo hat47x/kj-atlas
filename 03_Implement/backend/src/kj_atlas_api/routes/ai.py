@@ -74,6 +74,21 @@ from kj_atlas_api.tenant_session_precondition import (
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
+_PROVIDER_KIND_ALIASES = {
+    "local_http": "local",
+    "large_scale": "large-scale",
+    "external": "large-scale",
+}
+
+
+def _canonical_provider_kind(raw_kind: str) -> str:
+    normalized = raw_kind.strip().lower()
+    return _PROVIDER_KIND_ALIASES.get(normalized, normalized)
+
+
+def _provider_matches_runtime(provider_kind: str) -> bool:
+    return _canonical_provider_kind(provider_kind) == _canonical_provider_kind(get_provider().provider_kind)
+
 
 def _audit_llm_trace(
     request: Request,
@@ -186,10 +201,13 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
     # is not an active registered model (active provider included) must fail
     # closed before any LLM call. Distinguishes "tenant-restricted" (above)
     # from "does not exist / disabled" (here) for operator triage.
-    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_providers = [row for row in list_providers(db) if row.lifecycle_state == "active"]
+    active_provider_ids = {row.id for row in active_providers}
+    runtime_provider_ids = {row.id for row in active_providers if _provider_matches_runtime(row.provider_kind)}
+    models_by_id = {row.id: row for row in list_models(db)}
     active_registered_ids = {
         row.id
-        for row in list_models(db)
+        for row in models_by_id.values()
         if row.lifecycle_state == "active" and row.provider_id in active_provider_ids
     }
     if model_id not in active_registered_ids:
@@ -205,6 +223,25 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
             detail={
                 "code": "model_not_registered",
                 "message": f"Model '{model_id}' is not an active registered model.",
+            },
+        )
+
+    model = models_by_id[model_id]
+    if model.provider_id not in runtime_provider_ids:
+        logger.warning(
+            "model_provider_unavailable",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+                "providerId": model.provider_id,
+                "runtimeProviderKind": get_provider().provider_kind,
+            },
+        )
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "model_provider_unavailable",
+                "message": "The model's registered provider is not available in this runtime.",
             },
         )
 
@@ -855,7 +892,11 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
 
     tenant = _resolve_audit_tenant(request, db)
     active_models = [row for row in list_models(db) if row.lifecycle_state == "active"]
-    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_provider_ids = {
+        row.id
+        for row in list_providers(db)
+        if row.lifecycle_state == "active" and _provider_matches_runtime(row.provider_kind)
+    }
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
     allowed = [row for row in active_models if row.provider_id in active_provider_ids]
     if effective is not None:

@@ -9,7 +9,8 @@ Chain exercised (self-contained, deterministic, no billing):
   audit sink (this script) <- POST <- backend (uvicorn, audit transport=http)
       <- POST /docs/{id}/context-audit (channel=mcp, operation=query)
           <- MCP server (03_Implement/mcp, get_context_projection)
-              <- verify_mcp.ts (the generative-AI MCP client path)
+              <- verify_mcp.ts (stdio generative-AI MCP client path)
+              <- dogfood_mcp_http_e2e.mjs (OAuth scope + HTTP client path)
 
 Usage:
   .venv/bin/python scripts/verify_mcp_ce4_audit_e2e.py [PORT]
@@ -213,6 +214,26 @@ def main() -> int:
             print(proc.stdout[-2000:])
             print(proc.stderr[-2000:])
 
+        # Exercise the remote-client transport against the same real backend.
+        # The HTTP harness first proves that a valid signed token without the
+        # read:context scope is denied, then completes the authorized tool call.
+        node_cli = shutil.which("node")
+        if node_cli is None:
+            print("node is required for MCP HTTP e2e")
+            return 2
+        http_proc = subprocess.run(
+            [node_cli, "scripts/dogfood_mcp_http_e2e.mjs", DOC_ID],
+            cwd=MCP_DIR,
+            env=mcp_env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        check("MCP HTTP client (scope denial + authorized call) exit", 0, http_proc.returncode)
+        if http_proc.returncode != 0:
+            print(http_proc.stdout[-2000:])
+            print(http_proc.stderr[-2000:])
+
         # 5. Give the async audit queue a moment, then assert the sink saw the
         #    channel=mcp context-audit event for this document.
         time.sleep(1.0)
@@ -224,7 +245,7 @@ def main() -> int:
             and isinstance(e.get("metadata"), dict)
             and e["metadata"].get("channel") == "mcp"
         ]
-        check("audit sink received channel=mcp event", 1, len(mcp_events))
+        check("audit sink received both stdio and HTTP channel=mcp events", 2, len(mcp_events))
         if mcp_events:
             meta = mcp_events[0]["metadata"]
             check("metadata.operation=query", "query", meta.get("operation"))

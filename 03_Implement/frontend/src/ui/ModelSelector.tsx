@@ -59,6 +59,9 @@ export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, 
         >
           <option value="">{t("model_selector.none_available")}</option>
         </select>
+        <span role="status" style={{ maxWidth: 340, fontSize: 11, lineHeight: 1.4, color: "#64748b" }}>
+          {t("model_selector.none_available_help")}
+        </span>
       </label>
     );
   }

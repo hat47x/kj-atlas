@@ -54,7 +54,9 @@ describe("ModelSelector", () => {
       }),
     );
     expect(html).toContain("No models available");
+    expect(html).toContain("Check the administrator model policy or AI connection settings");
     expect(html).toContain("disabled");
     expect(html).toContain("aria-label=\"Model\"");
+    expect(html).toContain("role=\"status\"");
   });
 });

@@ -600,3 +600,52 @@ Updated: 2026-08-03
 - 原因: 既存issueの見た目だけを踏襲し、validatorが要求する全metadataと単一のlevel列挙値を確認しなかった。
 - 対応: 発見元と関連仕様を追記し、最も包括的な`e2e`へ正規化した。
 - 再発防止: 新規issueは起票直後にvalidatorを単独実行し、必須fieldと列挙値をその場で確定する。
+
+## 2026-08-16: 空のTHREAT_MODEL更新hunkを含めてpatch不成立
+
+- 事象: MCP scope認可の複数file patch末尾に、変更行のない`THREAT_MODEL.md`更新hunkを残してpatch全体が拒否された。
+- 原因: 脅威モデルの挿入位置を確認する前に空のplaceholder hunkを含めた。
+- 対応: 実装・test・READMEのpatchから空hunkを除いて適用し、脅威モデルの該当節を読んで別patchで更新した。
+- 再発防止: `apply_patch`へ渡す全hunkに実際の追加・削除行があることを確認し、挿入位置未確認のplaceholderを含めない。
+
+## 2026-08-16: provider不一致gate追加時に既存の未登録model拒否を移動
+
+- 事象: model providerの実行transport一致判定を追加した際、未登録modelを拒否する`raise`がprovider不一致分岐の後ろへ移動し、未登録IDで`KeyError`になった。
+- 原因: 既存分岐へ新しい判定を挿入するpatchで、2つの`raise`の対応関係を取り違えた。
+- 対応: 未登録判定直後へ403拒否を戻し、provider不一致の503拒否とは独立させ、既存model governance testを再実行した。
+- 再発防止: 認可gate追加時は各拒否理由ごとにlog・status・detailのまとまりを保ち、未登録ID、無効model、provider不一致を個別testで固定する。
+
+## 2026-08-16: backend testをsystem Pythonで起動
+
+- 事象: 回帰testの再実行時に`fastapi`が見つからず、test収集段階で停止した。
+- 原因: repositoryの`.venv`ではなくsystem側の`pytest`を起動した。
+- 対応: backend配下の`.venv/bin/pytest`へ切り替え、同じ対象testを実行した。
+- 再発防止: backend検証commandは明示的に`.venv/bin/pytest`を使い、作業directoryと仮想環境を一組で確認する。
+
+## 2026-08-16: frontendとMCPのtest実行PATHにNode.jsが未設定
+
+- 事象: backendとの並列回帰検証でfrontendとMCPの`npm`が見つからず、2つのjobが開始前に終了した。
+- 原因: このdesktop実行環境ではNode.jsが標準PATHに含まれず、既知のbundled Node.js pathを並列commandへ付与し忘れた。
+- 対応: `/home/hat47x/.nvm/versions/node/v20.20.2/bin`をPATH先頭へ明示して、同じtestと型検査を再実行する。
+- 再発防止: JavaScript系検証はrepositoryごとのcommandだけでなく、desktop環境用Node.js PATH prefixも共通の実行条件として扱う。
+
+## 2026-08-16: SaaS MCP起動拒否確認がtsxのWindows一時socketで先に停止
+
+- 事象: `saas-multitenant`でMCPがtenant-bound資格情報不足を拒否する確認が、`tsx`のIPC socketに対する`ENOTSUP`で先に停止した。
+- 原因: WSL processがWindows側の一時directoryを継承し、drvfs上でUnix socketを作ろうとした。
+- 対応: `TMPDIR=/tmp`を明示して再実行し、アプリ側のfail-closed理由まで到達させる。
+- 再発防止: WSL上で`tsx`を実走行する検証にはNode.js PATHと併せてLinux側`TMPDIR`を指定する。
+
+## 2026-08-16: Edge再確認でViteが変更前の翻訳catalogを返した
+
+- 事象: 空model時の日本語案内を短縮した直後のEdge probeで、画面が変更前の文言を返し検証が失敗した。
+- 原因: WSL上のVite監視とWindows Edgeを跨ぐ実行で、翻訳JSON変更が稼働中serverへ反映されていなかった。
+- 対応: Viteを再起動して同じEdge probeを実行し、短縮後の文言・disabled状態・accessible name・console errorなしを確認した。
+- 再発防止: Windowsブラウザによる最終画像確認は、対象asset変更後にdev serverを再起動してから行う。
+
+## 2026-08-16: active issue validatorへ未対応の個別file引数を指定
+
+- 事象: 新規・更新issueだけを検証しようとして`--files`を渡したが、validatorがそのoptionを持たずusage errorになった。
+- 原因: 別のrepository検証器のinterfaceを類推し、helpまたは実装を確認せず引数を組み立てた。
+- 対応: 対応済みの`--root 01_Plans/issues`で全active issueを検証し、57件成功と`docs_check.py`成功を確認した。
+- 再発防止: repository固有validatorは初回実行前に`--help`またはargument parserを確認し、宣言済みoptionだけを使う。

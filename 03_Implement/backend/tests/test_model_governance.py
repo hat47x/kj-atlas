@@ -335,9 +335,10 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
     """R2: GET /ai/available-models returns the tenant's allowed active models."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         for model_id, state in (("m1", "active"), ("m2", "active"), ("m3", "disabled")):
             client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
@@ -356,9 +357,10 @@ def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -
     """MMR-04: final_judgement-only models are not offered for user selection."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         for model_id, caps in (
             ("intermediate-model", "intermediate,generate"),
             ("judgement-only", "final_judgement"),
@@ -371,3 +373,61 @@ def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -
         assert "intermediate-model" in ids
         assert "mixed-model" in ids  # intermediate tier present -> selectable
         assert "judgement-only" not in ids  # final_judgement-only -> excluded (MMR-04)
+
+
+def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 short-term fail-closed boundary.
+
+    Registry metadata must not cause a local-runtime process to send a model
+    registered under the DeepSeek transport to the local endpoint (or vice
+    versa). The UI list and API execution gate use the same intersection.
+    """
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    doc = {
+        "version": 1,
+        "id": "provider-drift-doc",
+        "title": "provider drift",
+        "createdAt": "2026-08-16T00:00:00Z",
+        "updatedAt": "2026-08-16T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True}],
+        "edges": [],
+        "islands": [{"id": "i1", "cardIds": ["c1"]}],
+        "readingOrder": ["i1"],
+    }
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek"},
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models",
+            json={
+                "id": "deepseek-chat",
+                "providerId": "deepseek",
+                "displayName": "DeepSeek Chat",
+                "capabilities": "intermediate,generate",
+            },
+            headers=admin_headers,
+        )
+
+        listed = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY})
+        assert listed.status_code == 200
+        assert listed.json()["models"] == []
+
+        attempted = client.post(
+            "/ai/suggest-island-summary",
+            json={"doc": doc, "islandId": "i1", "model": "deepseek-chat"},
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert attempted.status_code == 503
+        assert attempted.json()["detail"] == {
+            "code": "model_provider_unavailable",
+            "message": "The model's registered provider is not available in this runtime.",
+        }

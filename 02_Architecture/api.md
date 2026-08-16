@@ -430,15 +430,16 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **GET** `/ai/provider-status`
 
 - Response: `ProviderStatusResponse`
-  - `providerKind: "none" | "local" | "large-scale"`
+  - `providerKind: "none" | "local" | "large-scale" | "deepseek"`
   - `callCounts: { [providerKind]: number, total: number }` — **OPS-LLM-COST-01（段階2）**: プロセス内の LLM 呼び出し回数（provider種別別＋total）。初回呼び出しまでは空。単一プロセス前提（共有ストアは段階3）。
   - `tokenUsage: { [providerKind]: { input: number, output: number }, total: {...} }` — **OPS-LLM-COST-01（段階2）**: プロセス内の入力/出力token合計（provider種別別＋total）。provider報告の`usage`（DeepSeek等のOpenAI互換`usage`）から計上し、報告が無いproviderは0。初回呼び出しまでは空。
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
 
 **GET** `/ai/available-models`
 
-- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタし、`final_judgement` 専用モデルは除外。
+- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。active model・active provider・tenant allowlist・現在のprocessで利用可能なprovider transportを交差し、`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタする。`final_judgement` 専用モデルと実行transport不一致modelは除外する。
 - Response: モデルID・表示名・"auto" 既定の選択肢。UI の `ModelSelector` がこの一覧でモデル選択肢を限定する。
+- 一覧取得後に状態が変わった場合を含め、実行APIへtransport不一致model IDを直接指定すると、LLM送信前に503 `model_provider_unavailable`で拒否する。
 
 ### 2.12 AI/LLM生成API
 

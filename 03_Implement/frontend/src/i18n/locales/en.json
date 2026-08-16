@@ -478,6 +478,7 @@
   "model_selector.auto": "Auto (default)",
   "model_selector.label": "Model",
   "model_selector.none_available": "No models available",
+  "model_selector.none_available_help": "Check the administrator model policy or AI connection settings.",
   "app.status.island_summary.requesting": "Generating an island summary draft...",
   "app.status.island_summary.ready_unreviewed": "Island summary draft generated. It is unreviewed; verify it against the grounding cards",
   "app.status.island_summary.failed": "Failed to generate island summary draft: {detail}",
