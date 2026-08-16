@@ -533,6 +533,12 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - proposalに対する人間の判断（Adopt/Reject/Hold）をtenant・Document・source bundleへ結合し、生成時registry`ai_proposals`との一致を確認して記録する。未登録IDや別Documentのproposalは404、source bundle不一致は409とする。reviewerはclient入力を信頼せず、serverが認証contextから解決する。追記イベントの正本は`ai_proposal_decision_events`、競合制御用の現在状態は`ai_proposal_decision_states`とする。
 - 同じidempotency keyと同じ内容の再送は同じreceiptを返す。`held`からは`accepted/rejected`へ一度だけ進められ、終端後の変更は409になる。
 
+**GET** `/ai/proposals/status`
+
+- CE4 read-only proposal lifecycle status for a document. Query: `docId`（tenant-scoped precondition 必須）。
+- Response: `ProposalStatusResponse`（`proposalId`・`proposalKind`・`origin`・各 proposal の判定状態など）。
+- generative-AI（MCP/API 経由）が proposal が依然 proposal-only か、人間が判定済み（accepted/rejected/held）かを検証するための traceability。read-only 契約（`action="read"`）で、proposal や判定を一切書き込まない。
+
 **POST** `/ai/external-tasks/register`
 
 - Request: `ExternalAgentTaskRegistrationRequest`
