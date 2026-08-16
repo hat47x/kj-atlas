@@ -1282,8 +1282,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // DOMAIN-TRACE-01 AC-3 (CB-1): the canvas seq badge is DEFAULT OFF.
   const [showSeqNumbers, setShowSeqNumbers] = useState(false);
   // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
-  // fetched once from the backend config echo; lastAiCallOutcome is tracked
-  // client-side from the actual result of the most recent AI call.
+  // fetched from the backend config echo at startup and whenever the View
+  // panel opens; lastAiCallOutcome is tracked client-side from the actual
+  // result of the most recent AI call.
   const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
   // OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
   // surfaced read-only in the View panel next to the provider kind.
@@ -2541,7 +2542,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   );
 
   const islandTitlesForSuggestion = useMemo(
-    () => (document?.islands ?? []).map((i) => i.title).filter((t): t is string => !!t),
+    () =>
+      (document?.islands ?? [])
+        // SEC-AI-SAFEMODE-03: title suggestion certifies its payload as
+        // human-reviewed at the API boundary, so unreviewed island titles
+        // must be excluded just like unreviewed card text below.
+        .filter((island) => island.titleReviewed === true)
+        .map((island) => island.title)
+        .filter((title): title is string => !!title),
     [document],
   );
 
@@ -10804,6 +10812,19 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     if (!isViewControlsOpen) {
       return;
     }
+
+    // OPS-LLM-COST-03: counters are in-process operational state, not static
+    // configuration. Refresh when the user opens this read-only surface so a
+    // call made after startup is not misleadingly shown as zero until reload.
+    void getProviderStatus()
+      .then(({ providerKind: kind, callCounts, tokenUsage }) => {
+        setProviderKind(kind);
+        setLlmCallCounts(callCounts);
+        setLlmTokenUsage(tokenUsage);
+      })
+      .catch(() => {
+        // Keep the last known display-only snapshot on a refresh failure.
+      });
 
     const frame = window.requestAnimationFrame(() => {
       viewControlsPanelRef.current?.focus();

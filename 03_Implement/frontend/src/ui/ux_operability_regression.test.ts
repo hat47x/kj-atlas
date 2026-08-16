@@ -487,6 +487,25 @@ describe("UX Operability regression contracts", () => {
     expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
   });
 
+  it("SEC-AI-SAFEMODE-03: title suggestions exclude unreviewed island titles before certification", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain(".filter((island) => island.titleReviewed === true)");
+    expect(appSource).toContain(".filter((c) => (c as { textReviewed?: boolean }).textReviewed === true)");
+  });
+
+  it("OPS-LLM-COST-03: opening View refreshes the operational provider snapshot", () => {
+    const appSource = readSource("src/App.tsx");
+    const openEffect = appSource.slice(
+      appSource.indexOf("if (!isViewControlsOpen)"),
+      appSource.indexOf("const headerViewControls"),
+    );
+
+    expect(openEffect).toContain("getProviderStatus()");
+    expect(openEffect).toContain("setLlmCallCounts(callCounts)");
+    expect(openEffect).toContain("setLlmTokenUsage(tokenUsage)");
+  });
+
   it("routes tenant-scoped AI calls through the stale-session cleanup boundary", () => {
     const appSource = readSource("src/App.tsx");
     const sidePanelSource = readSource("src/ui/SidePanel.tsx");

@@ -19,6 +19,7 @@ import {
   registerExternalAgentProposal,
   registerExternalAgentTask,
   summarizeIslandRelation,
+  suggestDocumentTitle,
   suggestMerges,
   suggestLayout,
   putInquiryBundle,
@@ -219,6 +220,36 @@ describe("tenant-scoped document request precondition", () => {
       },
     })).rejects.toBeInstanceOf(InvalidTenantSessionContextError);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("SafeMode AI request certification", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("certifies the reviewed-only title suggestion context", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ candidates: [{ title: "Reviewed title" }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await suggestDocumentTitle(
+      ["Reviewed island"],
+      ["Reviewed card"],
+      "Current title",
+      undefined,
+      { tenantSessionContext },
+    );
+
+    const request = fetchMock.mock.calls[0]?.[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      islandTitles: ["Reviewed island"],
+      cardTexts: ["Reviewed card"],
+      textReviewed: true,
+    });
   });
 });
 

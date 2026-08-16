@@ -133,7 +133,14 @@ def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
     if task in _FINAL_JUDGEMENT_TASKS and settings.llm_high_reasoning_model:
         return settings.llm_high_reasoning_model
 
-    # 4. Default model
+    # 4. Provider default. Resolve this before model-governance checks run in
+    # the route layer. DeepSeekProvider used to translate "default" only after
+    # that gate, so an otherwise valid deepseek-chat registration was rejected
+    # as model_not_registered whenever the caller omitted `model`.
+    if settings.llm_provider.strip().lower() == "deepseek":
+        return settings.deepseek_model
+
+    # 5. Default model
     return settings.local_llm_model or "default"
 
 

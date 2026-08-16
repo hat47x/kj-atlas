@@ -36,7 +36,7 @@ Settingsとprovider registryは`KJ_ATLAS_LLM_PROVIDER=deepseek`を正式に受�
 
 - backend response、frontend type、日英表示、診断bundle許可リストを`deepseek`へ同期した。診断bundleはprovider種別だけを含み、API key・endpoint・modelを含めない。
 - backend近接14件、frontend近接112件、provider status実Edge 3件、typecheck、docs-checkを通過した。
-- 実DeepSeek生成呼び出しは`KJ_ATLAS_DEEPSEEK_API_KEY`未設定のため未実施。資格情報なしで外部送信は行っていない。
+- Git管理外のlocal credentialを用いた隔離環境で実DeepSeek生成を実施し、カード改善・島要約・タイトル提案の200応答とprovider statusのcall count/token usage反映を確認した。資格情報の値は出力・記録・コミットしていない。
 
 ## 検証計画
 

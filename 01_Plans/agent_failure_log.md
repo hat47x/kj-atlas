@@ -516,3 +516,24 @@ Updated: 2026-08-03
 - 原因: 対象testの既存importとfixture名を確認せず、別の命名パターンを推測した。
 - 対応: 既存の`buildDiagnosticsBundle`と`BASE_INPUT`へ修正し、近接testを再実行した。
 - 再発防止: 既存testへ追加する場合は先にimport・共通fixture・直前describeを読み、既存helperをそのまま再利用する。
+
+## 2026-08-16: backend配下からrepository相対のcredential pathを使用
+
+- 事象: 隔離DB migrationをbackend directoryから実行した際、`local/DEEPSEEK_TOKEN.TXT`を相対指定してfile not foundとなり、API送信前に停止した。
+- 原因: 利用者指定pathの基準がrepository rootであることを、作業directory変更後のcommandへ反映しなかった。
+- 対応: repository rootからの絶対pathへ修正し、token値を表示せずmigrationと実API検証を完了した。
+- 再発防止: credential pathは存在確認済みの絶対pathを保持し、subdirectory実行へ相対pathを持ち込まない。
+
+## 2026-08-16: WSLの旧NodeとWindows Edgeを直接組み合わせてbrowser起動に失敗
+
+- 事象: PATH上のNode 12でViteが構文errorとなり、Node 20へ直した後もWSL PlaywrightからWindows Edgeへのremote debugging pipeが開けず停止した。
+- 原因: Node version確認前にViteを起動し、異OS process間でPlaywrightのpipe transportを使おうとした。
+- 対応: 既存Linux node_modulesにはWSL Node 20、Edge automationにはWindows bundled Node + playwright-coreを使い、同一OS内でprocessとtransportを揃えた。
+- 再発防止: Vite開始前にNode majorを確認し、Windows browserはWindows Node側から起動する。
+
+## 2026-08-16: SafeMode回帰testでsource変数のscopeを確認せず追加
+
+- 事象: `ux_operability_regression.test.ts`へ追加したtestが未定義の`appSource`を参照し、1/80件失敗してtypecheckも停止した。
+- 原因: 近傍test内のlocal変数をdescribe共通変数と誤認した。
+- 対応: 新規test内で`readSource("src/App.tsx")`を明示し、81/81件とtypecheckの成功を確認した。
+- 再発防止: 静的source contract test追加時は変数宣言scopeを確認し、新規`it`内で対象sourceを取得する。

@@ -87,22 +87,24 @@ def test_fixture_has_islands_for_summary(eval_doc: DocumentV1) -> None:
 
 
 def test_deepseek_provider_wired_for_eval_tasks(monkeypatch: pytest.MonkeyPatch) -> None:
-    """When DeepSeek is configured, the eval task names resolve to the model."""
+    """DeepSeek's provider default resolves before the governance gate."""
     from kj_atlas_api.settings import settings
 
+    original_provider = settings.llm_provider
     original_map = settings.llm_task_model_map
+    original_model = settings.deepseek_model
     try:
-        settings.llm_task_model_map = (
-            "refine_card_text=deepseek-chat,"
-            "suggest_island_summary=deepseek-chat"
-        )
-        # resolve_model_for_task should return deepseek-chat for both tasks
+        settings.llm_provider = "deepseek"
+        settings.llm_task_model_map = ""
+        settings.deepseek_model = "deepseek-chat"
         from kj_atlas_api.llm.provider import resolve_model_for_task
 
         assert resolve_model_for_task("refine_card_text") == "deepseek-chat"
         assert resolve_model_for_task("suggest_island_summary") == "deepseek-chat"
     finally:
+        settings.llm_provider = original_provider
         settings.llm_task_model_map = original_map
+        settings.deepseek_model = original_model
 
 
 # --- Mock endpoint-level evaluation flow (L2 criterion ③ rehearsal) ---

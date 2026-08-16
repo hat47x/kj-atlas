@@ -12,7 +12,7 @@
 | 実行環境 | Windows Edge / Playwright 1.58.2 / axe-core 4.12.1。ViteはWSL上のNode 20で配信 |
 | locale | `ja` / `en` |
 | viewport | 320 / 390 / 768 / 1440 |
-| fixture | Playwright routeで固定した6カード・1島、および個別プローブ用fixture。backend/LLM未接続 |
+| fixture | Playwright routeで固定した6カード・1島、個別プローブ用fixture、および隔離SQLite + DeepSeek実API |
 
 ## 方法
 
@@ -39,6 +39,9 @@
 | `AI-DEEPSEEK-STATUS-01` | Contract / P1 | DeepSeekはruntimeで受理されるがprovider status型が拒否し500になる | backend/frontend/診断bundle/日英表示/仕様を同期し、API・実Edge回帰へ固定 |
 | `MCP-DOGFOOD-12` | QA / P2 | MCP監査E2Eがnpm不在とWSLのWindows TEMPで起動不能 | package-local tsxとLinux一時領域を使うよう修正 |
 | `QA-MONKEY-31` | Accessibility / P1 | ミニマップを折りたたむと置換されたtoggleからfocusがbodyへ落ちた | 置換後toggleへfocusを引き継ぐよう修正、A19へ固定 |
+| `AI-DEEPSEEK-MODEL-01` | Contract / P1 | DeepSeek既定modelが送信層でだけ解決され、統制層で`default`として403拒否された | provider既定modelを統制前に解決し、実API回帰で確認 |
+| `AI-TITLE-SAFEMODE-01` | Security / UX / P1 | タイトル提案がレビュー証明を欠き422、島タイトルのreview filterも欠落 | レビュー済み島タイトル・カードだけに限定して証明を付与 |
+| `OPS-LLM-COST-03` | Operations / UX / P2 | 生成後もView panelが起動時のcall count/token usageを表示した | panel open時に最新snapshotを再取得 |
 
 ## ランダムスイープ結果
 
@@ -56,7 +59,9 @@
 
 QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/320）でサンプル開始後、606（en/390）で共有パネルEscape後、8080（en/1440）で編集Enter後のfocus脱落候補を検出した。固定再現の結果、共有パネルと編集Enterは次frame復帰前の過渡状態であり、ハーネスを安定状態判定へ修正した。seed 606と8080は修正後finding 0、seed 505の実欠陥はA18で修正前false・修正後trueを確認した。
 
-管理CLI・MCP・DeepSeek連動を加えた継続探索では、管理API 12/12、CLI→CE-4監査15/15、修正後MCP→CE-4監査8/8、MCP package 61/61を確認した。seed 9091（en/320、500 loop）はfinding 0。seed 10001（ja/1440、500 loop）はミニマップtoggleのfocus脱落1件を検出しA19へ固定した。DeepSeek実APIはAPI key未設定のため未課金の契約・表示経路までを検証対象とし、資格情報の値は探索・記録していない。
+管理CLI・MCP・DeepSeek連動を加えた継続探索では、管理API 12/12、CLI→CE-4監査15/15、修正後MCP→CE-4監査8/8、MCP package 61/61を確認した。seed 9091（en/320、500 loop）はfinding 0。seed 10001（ja/1440、500 loop）はミニマップtoggleのfocus脱落1件を検出しA19へ固定した。
+
+その後、Git管理外のlocal credentialを環境変数へ一時注入し、隔離SQLiteでDeepSeek実APIを検証した。資格情報の値は出力・記録・コミットしていない。初回は既定modelの統制不整合でカード改善・島要約がともに403となり、`AI-DEEPSEEK-MODEL-01`を修正後、両方200、島内grounding ID、call count 2、入力626／出力122トークンを確認した。実Edgeのタイトル提案ではSafeMode契約不整合と利用量表示のstale snapshotを順に検出・修正し、候補3件、採用前タイトル不変、`deepseek: 1`、入力118／出力47トークンを再読込なしで確認した。
 
 ## 固定回帰と自動検査
 
@@ -64,6 +69,9 @@ QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/32
 - axe smoke: start、選択context、島editor、inline editor、凡例、共有、作業mode、agent export/import、menuの10/10成功。
 - header responsive/keyboard: 390〜1440pxのlayout、panel範囲、Escape focus復帰、shortcutの9/9成功。
 - seed 404修正後: finding 0。未捕捉例外、console error、白画面、SafeMode消失、無名dialog/button/field、横overflow、NaN座標は検出なし。
+- DeepSeek実API: カード改善1/1、島要約1/1、タイトル候補1/1。すべて`deepseek-chat`のprimary pathでfallbackなし。
+- proposal-only: タイトル候補3件の表示後も現在タイトルは不変。候補選択前の自動適用なし。
+- 利用量表示: 実生成後にView panelを開き、call count/token usageの最新snapshotを表示。
 
 ## 再現コマンド
 

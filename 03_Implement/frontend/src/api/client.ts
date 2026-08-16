@@ -688,6 +688,11 @@ export async function suggestDocumentTitle(
       islandTitles,
       cardTexts,
       currentTitle: currentTitle ?? null,
+      // The App passes only human-reviewed title/card context. Carry that
+      // certification across the no-document SafeMode boundary explicitly;
+      // the backend defaults this field to false and otherwise rejects the
+      // request before any provider call.
+      textReviewed: true,
       model: model ?? null,
     }),
   });
