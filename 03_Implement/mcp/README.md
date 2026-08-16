@@ -128,6 +128,20 @@ verifier that needs to assert the backend saw the read can cross-check the
 deployment's audit sink directly; `verify_mcp.ts` itself validates the read
 path, not the sink delivery.
 
+To verify the whole chain (MCP read → CE-4 `channel="mcp"` event → backend →
+configured HTTP audit sink) in one self-contained run, use the dogfood E2E:
+
+```bash
+cd 03_Implement/backend
+.venv/bin/python scripts/verify_mcp_ce4_audit_e2e.py   # expect "Result: 8 passed, 0 failed"
+```
+
+It starts a local audit sink, a migrated backend with
+`KJ_ATLAS_AUDIT_TRANSPORT=http` (plus `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=1`,
+because MCP reads are safeMode=true and the dispatcher drops safe-mode events
+otherwise), runs `verify_mcp.ts` against it, and asserts the sink received the
+`channel="mcp"`/`operation=query` event for the read document.
+
 ### Transport selection
 
 | Variable | Default | Purpose |
