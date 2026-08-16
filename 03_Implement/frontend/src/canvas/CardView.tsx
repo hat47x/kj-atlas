@@ -108,6 +108,7 @@ function CardViewComponent({
   isProtected = false,
   showSeqNumber = false,
 }: CardViewProps) {
+  const cardRootRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -251,6 +252,7 @@ function CardViewComponent({
 
   return (
     <div
+      ref={cardRootRef}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -524,6 +526,9 @@ function CardViewComponent({
             } else if (event.key === "Escape") {
               event.preventDefault();
               onCancelEdit?.();
+              window.requestAnimationFrame(() => {
+                cardRootRef.current?.focus({ preventScroll: true });
+              });
             }
           }}
           onBlur={(event) => onCommitEdit?.(card.id, event.currentTarget.value)}

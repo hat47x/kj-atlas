@@ -29,7 +29,7 @@ const browser = await chromium.launch({
   executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
 });
 
-async function open(cards, islands) {
+async function open(cards, islands, locale = "ja") {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.route("**/packs/index.json", (r) =>
     r.fulfill({ status: 404, contentType: "application/json", body: "{}" })
@@ -42,7 +42,7 @@ async function open(cards, islands) {
       body: JSON.stringify(doc(cards, islands)),
     })
   );
-  await page.goto("http://127.0.0.1:4173/?locale=ja");
+  await page.goto(`http://127.0.0.1:4173/?locale=${locale}`);
   await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "visible" });
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
   await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "hidden" });
@@ -365,6 +365,31 @@ try {
       `操作前Save無効=${disabledBefore} / zoom後Save有効=${enabledAfter}`
     );
     await page.close();
+  }
+
+  // A15: cancelling inline edit removes the textarea, so focus must return
+  // to the same card instead of falling back to the document body.
+  if (run("A15")) {
+    const results = [];
+    for (const locale of ["ja", "en"]) {
+      const page = await open([{ id: "c1", text: "編集focus復帰確認", x: 220, y: 220 }], undefined, locale);
+      const card = page.getByRole("button", { name: "編集focus復帰確認" });
+      await card.dblclick();
+      const editor = page.getByRole("textbox", { name: /カード本文を編集|Edit card text/ });
+      await editor.fill("取り消す本文");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
+      const originalRestored = await page.getByRole("button", { name: "編集focus復帰確認" }).count() === 1;
+      const focusReturned = await card.evaluate((element) => document.activeElement === element);
+      results.push({ locale, originalRestored, focusReturned });
+      await page.close();
+    }
+    rec(
+      "A15",
+      "カード本文編集をEscape取消すると同じカードへfocusが戻る",
+      results.every((result) => result.originalRestored && result.focusReturned),
+      results.map((result) => `${result.locale}:元本文=${result.originalRestored}/focus=${result.focusReturned}`).join(" / ")
+    );
   }
 } catch (error) {
   rec("EXCEPTION", "実行時例外", false, String(error).slice(0, 300));
