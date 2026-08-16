@@ -3200,5 +3200,45 @@ es_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ES_ID")
 check "ES 読戻し (200)" "200" "$es_read"
 
 echo ""
+echo "--- シナリオ72: コンサルティングの組織変革プロジェクト振り返り（経営層の期待と現場の受容） ---"
+# 業態: コンサルティング（組織変革支援）
+# 想定人物: コンサルタント／プロジェクトリード（変革プロジェクトの振り返り）
+# 業務領域: 組織変革プロジェクトの振り返り（成果・課題・抵抗）のKJ分類と、次の展開
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 経営層の期待（スピード）と現場の準備（変革への抵抗）の乖離を矛盾検出で
+#          表面化し、展開の根拠にする（期待と受容の乖離）。
+CS_ID="biz-flow-consulting"
+CS_DOC='{"version":1,"id":"'$CS_ID'","title":"組織変革プロジェクト振り返り","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cs1","text":"経営層は変革のスピードアップを求めている","x":0,"y":0,"textReviewed":true},{"id":"cs2","text":"現場では新しい業務プロセスへの抵抗がある","x":10,"y":0,"textReviewed":true},{"id":"cs3","text":"初期の成果は一部部門で出始めている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cs-i","cardIds":["cs1","cs2","cs3"]}],"readingOrder":["cs-i"]}'
+
+cs_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CS_ID" \
+  -H 'Content-Type: application/json' -d "$CS_DOC")
+check "CS PUT document (作成)" "200" "$cs_put"
+
+# ① AI束ね
+cs_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cs1","text":"経営層は変革のスピードアップを求めている","textReviewed":true},{"id":"cs2","text":"現場では新しい業務プロセスへの抵抗がある","textReviewed":true},{"id":"cs3","text":"初期の成果は一部部門で出始めている","textReviewed":true}]}')
+case "$cs_groups" in *'"groups":'*) echo "  PASS: CS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cs_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CS_DOC,\"islandId\":\"cs-i\"}")
+case "$cs_summary" in *'"groundingIds":["cs1","cs2","cs3"]'*) echo "  PASS: CS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（スピードアップ要求 vs 現場の抵抗・期待と受容の乖離）
+cs_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cs1","text":"経営層は変革のスピードアップを求めている","textReviewed":true},"cardB":{"id":"cs2","text":"現場では新しい業務プロセスへの抵抗がある","textReviewed":true}}')
+case "$cs_contra" in *'"hasContradiction"'*) echo "  PASS: CS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cs_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CS_DOC}")
+case "$cs_narr" in *'"basedOnReadingOrder":["cs-i"]'*) echo "  PASS: CS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cs_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CS_ID")
+check "CS 読戻し (200)" "200" "$cs_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
