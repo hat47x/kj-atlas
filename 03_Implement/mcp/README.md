@@ -13,10 +13,18 @@ both surfaces.
 
 ## What it exposes
 
-One tool, `get_context_projection({ docId, constraint, safeMode? })`, wrapping
-`buildContextProjection` from the frontend's projection core. `constraint` is
-one of `reviewed-only | evidence | contradiction | summary`. `safeMode`
-defaults to `true` (the safe default) when omitted.
+Two read-only tools:
+
+1. `get_context_projection({ docId, constraint, safeMode? })`, wrapping
+   `buildContextProjection` from the frontend's projection core. `constraint` is
+   one of `reviewed-only | evidence | contradiction | summary`. `safeMode`
+   defaults to `true` (the safe default) when omitted.
+2. `get_proposal_status({ docId })` — the CE4 proposal lifecycle for a
+   document: whether each AI proposal is still proposal-only
+   (`status=proposed`) or was decided by a human
+   (`accepted | rejected | held`, with `decidedAt`). Lets a generative-AI
+   verifier confirm that a proposal was never auto-applied and to trace the
+   human decision, without mutating anything.
 
 **Scope (DOGFOOD-05)**: unreviewed cards are never exposed on any constraint —
 even `safeMode: false` reports `cards=0` for them (`SEC-CONTEXT-PROJECTION-01`
@@ -25,10 +33,11 @@ content, not for initial exploration of unreviewed material. An AI co-worker
 that needs to respect work-state on reviewed cards gets `holdState` metadata
 (DOGFOOD-08); it cannot use this server to read unreviewed content.
 
-No resources, no prompts, no other tools. `tools/list` and the absence of a
-`resources` capability in `initialize`'s response are locked by
-`src/context_projection_tool.test.ts` against a fixed snapshot — see that
-file if a future change appears to add capability.
+No resources, no prompts, no write tools. Both tools carry
+`readOnlyHint: true`; `tools/list` and the absence of a `resources` capability
+in `initialize`'s response are locked by `src/context_projection_tool.test.ts`
+against a fixed snapshot — see that file if a future change appears to add
+capability.
 
 ## Non-goals
 
