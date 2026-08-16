@@ -5789,5 +5789,47 @@ for_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FOR_ID")
 check "FOR 読戻し (200)" "200" "$for_read"
 
 echo ""
+echo "--- シナリオ133: 信用金庫・地域金融（地域密着支援と健全経営のトレードオフ） ---"
+# 業態: 信用金庫・地域金融（地域金融機関）
+# 想定人物: 融資担当／地域金融コーディネーター
+# 業務領域: 融資・地域貢献・事業支援・預金への声のKJ分類と、地域金融の在り方の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 地域の中小企業や個人事業主への丁寧な伴走支援と地域貢献（地域密着・支援）と
+#          収益性・融資の健全性を守る審査強化（健全性・収益）のトレードオフを矛盾検出
+#          （正パス）で表面化し、地域金融の在り方の根拠にする（支援と健全性の相克・
+#          地域の事業者との長い付き合いや金融教育で信頼を築く動きも指摘）。
+SB_ID="biz-flow-shinkin"
+SB_DOC='{"version":1,"id":"'$SB_ID'","title":"地域金融の在り方","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"地域の中小企業や個人事業主への丁寧な伴走支援と地域貢献を重視する声（地域密着・支援）","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"収益性や融資の健全性を守るための審査強化など、地域支援と健全経営のトレードオフに悩む声（健全性・収益）","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"地域の事業者との長い付き合いや金融教育で信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sb-i","cardIds":["s1","s2","s3"]}],"readingOrder":["sb-i"]}'
+
+sb_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SB_ID" \
+  -H 'Content-Type: application/json' -d "$SB_DOC")
+check "SB PUT document (作成)" "200" "$sb_put"
+
+# ① AI束ね
+sb_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"地域の中小企業や個人事業主への丁寧な伴走支援と地域貢献を重視する声（地域密着・支援）","textReviewed":true},{"id":"s2","text":"収益性や融資の健全性を守るための審査強化など、地域支援と健全経営のトレードオフに悩む声（健全性・収益）","textReviewed":true},{"id":"s3","text":"地域の事業者との長い付き合いや金融教育で信頼を築く動き","textReviewed":true}]}')
+case "$sb_groups" in *'"groups":'*) echo "  PASS: SB ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SB ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sb_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SB_DOC,\"islandId\":\"sb-i\"}")
+case "$sb_summary" in *'"groundingIds":["s1","s2","s3"]'*) echo "  PASS: SB ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SB ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（地域密着支援 vs 健全経営・支援と健全性の相克・正パス）
+sb_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s1","text":"地域の中小企業や個人事業主への丁寧な伴走支援と地域貢献を重視する声（地域密着・支援）","textReviewed":true},"cardB":{"id":"s2","text":"収益性や融資の健全性を守るための審査強化など、地域支援と健全経営のトレードオフに悩む声（健全性・収益）","textReviewed":true}}')
+case "$sb_contra" in *'"hasContradiction":true'*) echo "  PASS: SB ③矛盾検出（地域密着支援と健全経営のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SB ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sb_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SB_DOC}")
+case "$sb_narr" in *'"basedOnReadingOrder":["sb-i"]'*) echo "  PASS: SB ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SB ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sb_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SB_ID")
+check "SB 読戻し (200)" "200" "$sb_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
