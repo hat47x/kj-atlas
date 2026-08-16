@@ -300,6 +300,16 @@ def test_production_profile_with_both_keys_constructs(monkeypatch) -> None:
     assert built.api_key == _BUSINESS_KEY
 
 
+def test_business_and_control_plane_keys_must_be_distinct(monkeypatch) -> None:
+    for key, value in _settings_env("enterprise-production").items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", _ADMIN_KEY)
+    monkeypatch.setenv("KJ_ATLAS_API_KEY", _ADMIN_KEY)
+
+    with pytest.raises(ValueError, match="must be distinct credentials"):
+        Settings()
+
+
 @pytest.mark.parametrize("profile", ["local-dev", "evaluation"])
 def test_non_production_profiles_still_construct_without_any_key(monkeypatch, profile) -> None:
     for key, value in _settings_env(profile).items():

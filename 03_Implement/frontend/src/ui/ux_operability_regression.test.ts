@@ -1117,4 +1117,11 @@ describe("UX Operability regression contracts", () => {
     expect(viewControlsPanelSource).toContain("emptyCanvasHintCompleted");
     expect(viewControlsPanelSource).toContain('t("view_controls.onboarding.reset_empty_canvas")');
   });
+
+  it("shows registry state without enabling AI when the runtime provider is none", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain('providerKind !== null && providerKind !== "none"');
+    expect(appSource).toContain("|| availableModels !== null");
+  });
 });

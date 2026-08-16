@@ -757,6 +757,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
 
 - AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の更新（fail-closed・control-plane 認可）。空 = プラットフォーム既定。
+- 対象tenantが存在しactiveであること、各modelが登録済みかつactiveであること、modelIdsに重複がないことを更新前に検証する。存在しないtenantは404、無効なmodel集合・重複は422とし、部分更新しない。
 
 **GET** `/healthz`
 

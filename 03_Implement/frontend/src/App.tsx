@@ -8927,6 +8927,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         isReadOnly={isReadOnly}
         onSuggestTitle={handleSuggestDocumentTitle}
         providerEnabled={providerKind !== null && providerKind !== "none"}
+        modelSelectionVisible={
+          (providerKind !== null && providerKind !== "none")
+          || availableModels !== null
+        }
         documentTitleModel={documentTitleModel}
         onDocumentTitleModelChange={setDocumentTitleModel}
         availableModels={availableModels}

@@ -115,6 +115,65 @@ def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
         assert got["modelIds"] == ["m1", "m3"]
 
 
+def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "external", "displayName": "P"},
+            headers=headers,
+        )
+        for model_id in ("m1", "m2"):
+            client.post(
+                "/admin/provision/models",
+                json={"id": model_id, "providerId": "p", "displayName": model_id},
+                headers=headers,
+            )
+        client.patch(
+            "/admin/provision/models/m2",
+            json={"lifecycleState": "disabled"},
+            headers=headers,
+        )
+
+        missing_tenant = client.put(
+            "/admin/provision/models/tenants/missing/allowlist",
+            json={"modelIds": ["m1"]},
+            headers=headers,
+        )
+        assert missing_tenant.status_code == 404
+        assert missing_tenant.json()["detail"]["code"] == "tenant_not_found"
+
+        invalid_models = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["missing-model", "m2"]},
+            headers=headers,
+        )
+        assert invalid_models.status_code == 422
+        assert invalid_models.json()["detail"] == {
+            "code": "invalid_model_allowlist",
+            "message": "Every allowlisted model must be registered and active.",
+            "unknownModelIds": ["missing-model"],
+            "inactiveModelIds": ["m2"],
+        }
+
+        duplicate_models = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1", "m1"]},
+            headers=headers,
+        )
+        assert duplicate_models.status_code == 422
+        assert duplicate_models.json()["detail"]["code"] == "duplicate_model_ids"
+
+        current = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            headers=headers,
+        )
+        assert current.status_code == 200
+        assert current.json()["modelIds"] == []
+
+
 def test_admin_surface_requires_control_plane(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)

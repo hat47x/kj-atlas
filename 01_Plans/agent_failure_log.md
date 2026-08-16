@@ -544,3 +544,59 @@ Updated: 2026-08-03
 - 原因: URL pathの`/api/`がbackend prefixだけでなくfrontend source directoryにも現れることを考慮しなかった。
 - 対応: route callbackでpathnameが`/api/`から始まる場合だけstubし、`/src/api/`は通常配信へcontinueした。ja/enの実Edge probeを完走した。
 - 再発防止: Vite画面のAPI interceptionはglobだけで判定せず、`new URL(request.url()).pathname.startsWith("/api/")`を併用する。
+
+## 2026-08-16: pytestの出力捕捉用一時ファイルが消失
+
+- 事象: 管理面・認証面の回帰testを通常の出力捕捉付きで実行したところ、終了処理で捕捉用一時ファイルが見つからず`FileNotFoundError`になった。
+- 原因: `/mnt/d`上の実行環境でpytestの一時的な出力捕捉ファイルが終了前に消失した。アプリのassertion失敗ではなかった。
+- 対応: 出力捕捉を無効化する`-s`を付けて同じ46件を再実行し、全件成功を確認した。
+- 再発防止: drvfs上でpytestのcapture終了エラーが出た場合は、対象testを変えず`-s`で再実行し、アプリ不具合と環境不具合を切り分ける。
+
+## 2026-08-16: Edge probeが非表示のモデル選択肢を待ち続けた
+
+- 事象: 管理APIで登録済みのモデル選択肢をEdge実画面で待ったが、API応答は200でも30秒でtimeoutした。
+- 原因: frontendは利用可能モデル一覧とは別に、起動時providerが`none`ならタイトル欄のモデルUI全体を非表示にしていた。動的registryとの協調条件を見落としていた。
+- 対応: 実サービスのaccess logで`/ai/available-models`成功を確認し、画面の表示条件へ動的な利用可能モデルの有無を加えたうえでprobeを再実行する。
+- 再発防止: UI要素のtimeout時は、network応答、state更新、描画条件を順に分離して確認し、API成功だけで表示済みと判断しない。
+
+## 2026-08-16: 回帰testのdescribe表記を推測してpatch不成立
+
+- 事象: Appの表示条件と回帰testを同時更新したpatchが、test側のdescribe文字列の大文字・小文字差で適用されなかった。
+- 原因: 対象行を直前に確認せず、既存の見出し表記を推測した。
+- 対応: App変更とtest変更を分け、testファイルの実際の先頭・末尾を確認して正しい位置へ追加した。
+- 再発防止: 複数ファイルpatchで文脈行が不確かな場合は、対象箇所を先に読み、安定した近傍行を使う。
+
+## 2026-08-16: frontend配下からrepository相対pathを二重指定
+
+- 事象: frontendを作業directoryにした検証commandで`03_Implement/frontend/src/...`を指定し、対象ファイルを読めず後続の型検査が開始されなかった。
+- 原因: repository root基準のpathを、既にfrontendへ移動したcommandへそのまま持ち込んだ。
+- 対応: frontend基準の`src/...`へ直し、型検査と近接43件を完走した。
+- 再発防止: commandの作業directoryと引数pathの基準を実行前に一組として確認する。
+
+## 2026-08-16: select内optionへ通常要素のvisible判定を要求
+
+- 事象: 全モデル無効時の文言がDOMに存在するのに、Edge probeが`option`要素のvisible待機でtimeoutした。
+- 原因: ブラウザがselect内部のoptionを独立した可視要素として扱わないことを考慮せず、文言locatorへvisible条件を使った。
+- 対応: 親selectの可視性・disabled状態・textContentを組み合わせて確認する判定へ変更した。
+- 再発防止: selectの状態確認はoption単体のvisibilityではなく、select本体と選択肢内容を検証する。
+
+## 2026-08-16: Appとtestの文脈を一つのfile patchとして指定
+
+- 事象: Appのprop修正と回帰test更新をまとめたpatchで、testの文脈行をApp側の更新ブロック内に置いたため適用されなかった。
+- 原因: 複数ファイル更新時の`Update File`境界を正しく分けなかった。
+- 対応: Appとtestそれぞれの更新ブロックを明示して再適用した。
+- 再発防止: 複数ファイルpatchは各`Update File`ブロック内の文脈がそのファイル由来かを確認する。
+
+## 2026-08-16: issue statusへvalidator非対応のPlannedを使用
+
+- 事象: 新規issue 2件のStatusを`Planned`として起票し、active issue validatorが拒否した。
+- 原因: repositoryの許可値（Done / Draft / In Progress / Open）を確認せず、一般的な状態名を使った。
+- 対応: 未着手の正式課題を表す`Open`へ修正し、validatorを再実行する。
+- 再発防止: issue起票時は既存templateまたはvalidatorのStatus許可値を先に確認する。
+
+## 2026-08-16: 新規issueの必須metadataと検証levelを不足
+
+- 事象: Status修正後のvalidatorで、2件のSource Issue、1件のRelated ADR/Specが不足し、複合verification levelも拒否された。
+- 原因: 既存issueの見た目だけを踏襲し、validatorが要求する全metadataと単一のlevel列挙値を確認しなかった。
+- 対応: 発見元と関連仕様を追記し、最も包括的な`e2e`へ正規化した。
+- 再発防止: 新規issueは起票直後にvalidatorを単独実行し、必須fieldと列挙値をその場で確定する。

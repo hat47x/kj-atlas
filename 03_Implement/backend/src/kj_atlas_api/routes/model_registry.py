@@ -25,6 +25,7 @@ from kj_atlas_api.model_registry_repository import (
     set_model_lifecycle,
     set_tenant_model_allowlist,
 )
+from kj_atlas_api.models import TenantRow
 
 router = APIRouter(
     prefix="/admin/provision/models",
@@ -169,6 +170,7 @@ def update_model_lifecycle(
 
 @router.get("/tenants/{tenant_id}/allowlist")
 def get_tenant_allowlist(tenant_id: str, db: Session = Depends(get_db)) -> dict[str, object]:
+    _require_active_tenant(db, tenant_id=tenant_id)
     model_ids = sorted(list_tenant_allowed_model_ids(db, tenant_id=tenant_id))
     return {"tenantId": tenant_id, "modelIds": model_ids}
 
@@ -179,6 +181,58 @@ def put_tenant_allowlist(
     payload: SetTenantAllowlistRequest,
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    set_tenant_model_allowlist(db, tenant_id=tenant_id, model_ids=payload.modelIds, occurred_at=_now_iso())
+    _require_active_tenant(db, tenant_id=tenant_id)
+    duplicate_model_ids = sorted(
+        model_id for model_id in set(payload.modelIds) if payload.modelIds.count(model_id) > 1
+    )
+    if duplicate_model_ids:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "duplicate_model_ids",
+                "message": "The model allowlist must not contain duplicate model ids.",
+                "modelIds": duplicate_model_ids,
+            },
+        )
+
+    models_by_id = {row.id: row for row in list_models(db)}
+    unknown_model_ids = sorted(model_id for model_id in payload.modelIds if model_id not in models_by_id)
+    inactive_model_ids = sorted(
+        model_id
+        for model_id in payload.modelIds
+        if model_id in models_by_id and models_by_id[model_id].lifecycle_state != "active"
+    )
+    if unknown_model_ids or inactive_model_ids:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "invalid_model_allowlist",
+                "message": "Every allowlisted model must be registered and active.",
+                "unknownModelIds": unknown_model_ids,
+                "inactiveModelIds": inactive_model_ids,
+            },
+        )
+
+    set_tenant_model_allowlist(
+        db,
+        tenant_id=tenant_id,
+        model_ids=payload.modelIds,
+        occurred_at=_now_iso(),
+    )
     db.commit()
     return {"tenantId": tenant_id, "modelIds": sorted(payload.modelIds)}
+
+
+def _require_active_tenant(db: Session, *, tenant_id: str) -> TenantRow:
+    tenant = db.get(TenantRow, tenant_id)
+    if tenant is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "tenant_not_found", "message": "Tenant not found."},
+        )
+    if tenant.lifecycle_state != "active":
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "tenant_not_active", "message": "Tenant is not active."},
+        )
+    return tenant

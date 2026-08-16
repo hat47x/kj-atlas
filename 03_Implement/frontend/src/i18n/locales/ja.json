@@ -477,6 +477,7 @@
   "canvas.polygon.vertex_handle_help": "ドラッグまたは矢印キーで移動、DeleteキーまたはAlt+クリックで削除",
   "model_selector.auto": "自動（既定）",
   "model_selector.label": "モデル",
+  "model_selector.none_available": "利用可能なモデルがありません",
   "app.status.island_summary.requesting": "島の要約ドラフトを生成しています...",
   "app.status.island_summary.ready_unreviewed": "島の要約ドラフトを生成しました。未レビューのため、根拠カードと照合してください",
   "app.status.island_summary.failed": "島の要約ドラフトを生成できませんでした: {detail}",

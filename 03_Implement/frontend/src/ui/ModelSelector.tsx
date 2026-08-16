@@ -8,8 +8,8 @@ import { t } from "../i18n/translate";
 // tenant-session wrapper and passes the tenant's allowed ACTIVE models here.
 // Offers an "auto" (platform default) option plus each allowed model. "" means
 // auto — the backend falls back to the resolved default. When no models are
-// listed (or they are still loading) the selector collapses to nothing/disabled
-// so the operation is never blocked by model listing.
+// listed, keep a disabled status visible so an operator-side allowlist mistake
+// is distinguishable from a feature that does not support model selection.
 type ModelSelectorProps = {
   label: string;
   value: string;
@@ -48,7 +48,19 @@ export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, 
   }
 
   if (models.length === 0) {
-    return null;
+    return (
+      <label style={{ display: "grid", gap: 4 }} data-ui-region={dataUiRegion}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{label}</span>
+        <select
+          style={{ ...selectStyle, opacity: 0.65, cursor: "not-allowed" }}
+          disabled
+          value=""
+          aria-label={label}
+        >
+          <option value="">{t("model_selector.none_available")}</option>
+        </select>
+      </label>
+    );
   }
 
   return (

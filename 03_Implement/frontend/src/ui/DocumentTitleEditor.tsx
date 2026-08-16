@@ -15,6 +15,7 @@ export interface DocumentTitleEditorProps {
     currentTitle: string | undefined,
   ) => Promise<{ candidates: { title: string }[] }>;
   providerEnabled: boolean;
+  modelSelectionVisible: boolean;
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override ("" = auto).
   documentTitleModel: string;
   onDocumentTitleModelChange: (model: string) => void;
@@ -29,6 +30,7 @@ export function DocumentTitleEditor({
   isReadOnly,
   onSuggestTitle,
   providerEnabled,
+  modelSelectionVisible,
   documentTitleModel,
   onDocumentTitleModelChange,
   availableModels,
@@ -193,36 +195,36 @@ export function DocumentTitleEditor({
               </button>
             )}
           </h1>
+          {!isReadOnly && modelSelectionVisible && (
+            <ModelSelector
+              label={t("model_selector.label")}
+              value={documentTitleModel}
+              onChange={onDocumentTitleModelChange}
+              disabled={isSuggesting}
+              dataUiRegion="model-selector-title"
+              models={availableModels}
+            />
+          )}
           {!isReadOnly && providerEnabled && (
-            <>
-              <ModelSelector
-                label={t("model_selector.label")}
-                value={documentTitleModel}
-                onChange={onDocumentTitleModelChange}
-                disabled={isSuggesting}
-                dataUiRegion="model-selector-title"
-                models={availableModels}
-              />
-              <button
-                ref={suggestButtonRef}
-                onClick={handleSuggest}
-                disabled={isSuggesting}
-                aria-label={isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
-                style={{
-                  fontSize: 11,
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #cbd5e1",
-                  background: "var(--panel, #f8fafc)",
-                  color: "var(--fg, #0f172a)",
-                  cursor: isSuggesting ? "not-allowed" : "pointer",
-                  opacity: isSuggesting ? 0.5 : 1,
-                }}
-                data-testid="suggest-title-button"
-              >
-                {isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
-              </button>
-            </>
+            <button
+              ref={suggestButtonRef}
+              onClick={handleSuggest}
+              disabled={isSuggesting}
+              aria-label={isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
+              style={{
+                fontSize: 11,
+                padding: "2px 6px",
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+                background: "var(--panel, #f8fafc)",
+                color: "var(--fg, #0f172a)",
+                cursor: isSuggesting ? "not-allowed" : "pointer",
+                opacity: isSuggesting ? 0.5 : 1,
+              }}
+              data-testid="suggest-title-button"
+            >
+              {isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
+            </button>
           )}
         </div>
       )}

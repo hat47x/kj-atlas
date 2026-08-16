@@ -111,7 +111,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定 | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
 | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction / assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
-| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | 管理面（`/admin/provision/**`）を `X-Admin-Api-Key` で保護。業務面キーでは到達不可。`enterprise-production` / `saas-multitenant` では**必須**（未設定なら起動しない） |
+| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | 管理面（`/admin/provision/**`）を `X-Admin-Api-Key` で保護。業務面キーでは到達不可。`KJ_ATLAS_API_KEY`と同じ値は起動時に拒否。`enterprise-production` / `saas-multitenant` では**必須**（未設定なら起動しない） |
 | `KJ_ATLAS_LOG_JSON` | `true` | ログを1行1JSONで出力。`tenantId` / `docId` / `requestId` はこの経路で出力される（OPS-OBSERV-01） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |

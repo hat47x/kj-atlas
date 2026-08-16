@@ -43,7 +43,7 @@ describe("ModelSelector", () => {
     expect(html).toContain("Local Model");
   });
 
-  it("renders nothing when the tenant has no allowed models", () => {
+  it("shows an actionable disabled state when the tenant has no available models", () => {
     setActiveLocale("en");
     const html = renderToStaticMarkup(
       React.createElement(ModelSelector, {
@@ -53,6 +53,8 @@ describe("ModelSelector", () => {
         models: [],
       }),
     );
-    expect(html).toBe("");
+    expect(html).toContain("No models available");
+    expect(html).toContain("disabled");
+    expect(html).toContain("aria-label=\"Model\"");
   });
 });
