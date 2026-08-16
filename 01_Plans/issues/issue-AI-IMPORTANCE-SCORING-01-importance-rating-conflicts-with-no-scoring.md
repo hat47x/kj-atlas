@@ -7,6 +7,7 @@
 - Owner: Unassigned
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/deploy/tools/kj_canvas_demo.py`, `00_Prompt/domain.md`, `03_Implement/frontend/src/api/client.ts`
 - Related ADR/Spec: `00_Prompt/domain.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（§07）, `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`
+- Norms: `DOM-CORE-04`, `DOM-AI-07`, `DOM-AI-09`
 - Expected verification level: `integration`
 
 ## 課題

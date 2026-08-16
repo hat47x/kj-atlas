@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/view/outline_quality.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/i18n/locales/ja.json`, `03_Implement/frontend/src/domain/view/recommendations.ts`, `03_Implement/frontend/src/domain/view/structural_metrics.ts`
 - Related ADR/Spec: `02_Architecture/design/ui_design_handoff.md`, `00_Prompt/kj_technique.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`
+- Norms: `DOM-CORE-04`, `DOM-AI-07`, `KJT-SIGN-03`
 - Expected verification level: `unit`
 
 ## 課題

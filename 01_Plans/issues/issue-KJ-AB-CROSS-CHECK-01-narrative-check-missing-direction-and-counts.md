@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `models_ai.py`, `routes/ai.py`, `03_Implement/frontend/src/domain/types.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `api/client.ts`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `00_Prompt/kj_technique.md`（§5 A/B照合・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `KJT-INSPECT-04`, `KJT-SIGN-09`
 - Expected verification level: `integration`
 
 ## 課題

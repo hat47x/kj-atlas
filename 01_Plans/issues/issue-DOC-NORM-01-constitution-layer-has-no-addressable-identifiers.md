@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/ai_kj_execution_procedures.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`
 - Related ADR/Spec: `01_Plans/00-prompt-improvement-program-2026-08-15.md`（本issueの根拠。P1〜P3に対応）, `00_Prompt/cognitive_frame_and_evolution_criteria.md`
+- Norms: `DOM-SHARE-04`
 - Expected verification level: `docs-check`
 
 ## 課題

@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`（`_build_island_summary_prompt`）, `03_Implement/frontend/src/ui/SidePanel.tsx`, `src/i18n/locales/*.json`
 - Related ADR/Spec: `00_Prompt/kj_technique.md`（§3 表札検査・戻し検査）, `00_Prompt/ai_kj_execution_procedures.md`（§3 表札検査を自己実行）, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
+- Norms: `KJT-INSPECT-02`, `KJT-SIGN-12`, `DOM-CORE-02`
 - Expected verification level: `integration`
 
 ## 課題

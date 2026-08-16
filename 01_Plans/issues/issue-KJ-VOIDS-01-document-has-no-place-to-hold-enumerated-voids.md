@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/types.ts`, `void_detection.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `03_Implement/backend/src/kj_atlas_api/models.py`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `00_Prompt/kj_technique.md`（§4 空白の列挙・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `KJT-INSPECT-03`, `KJT-SIGN-04`
 - Expected verification level: `integration`
 
 ## 課題
