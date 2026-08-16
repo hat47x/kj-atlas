@@ -5496,5 +5496,47 @@ fis_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FIS_ID")
 check "FIS 読戻し (200)" "200" "$fis_read"
 
 echo ""
+echo "--- シナリオ126: 郵便・郵便局（ユニバーサルサービスと経営効率化のトレードオフ） ---"
+# 業態: 郵便・郵便局（郵便ネットワーク・集配）
+# 想定人物: 郵便局長／郵便ネットワーク計画担当
+# 業務領域: 集配・郵便局窓口・配達網への声のKJ分類と、ユニバーサルサービス維持と経営効率化の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 全国一律の郵便・郵便局網の維持（ユニバーサルサービス）と経営効率化
+#          （集配網縮小・料金改定）のトレードオフを矛盾検出（正パス）で表面化し、
+#          郵便ネットワークの持続可能性の根拠にする（公共性と効率の相克・デジタル化と
+#          荷物取扱拡大という新たな価値の模索も指摘）。
+PST_ID="biz-flow-postal"
+PST_DOC='{"version":1,"id":"'$PST_ID'","title":"郵便ネットワークの持続可能性","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"p1","text":"過疎地を含む全国一律の郵便・郵便局網の維持を求める声（ユニバーサルサービス）","x":0,"y":0,"textReviewed":true},{"id":"p2","text":"集配網の維持はコストがかさみ、合理化と料金見直しのトレードオフを迫るという懸念（経営効率化）","x":10,"y":0,"textReviewed":true},{"id":"p3","text":"デジタル化と荷物取扱の拡大で郵便ネットワークの新たな価値を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"pst-i","cardIds":["p1","p2","p3"]}],"readingOrder":["pst-i"]}'
+
+pst_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$PST_ID" \
+  -H 'Content-Type: application/json' -d "$PST_DOC")
+check "PST PUT document (作成)" "200" "$pst_put"
+
+# ① AI束ね
+pst_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"p1","text":"過疎地を含む全国一律の郵便・郵便局網の維持を求める声（ユニバーサルサービス）","textReviewed":true},{"id":"p2","text":"集配網の維持はコストがかさみ、合理化と料金見直しのトレードオフを迫るという懸念（経営効率化）","textReviewed":true},{"id":"p3","text":"デジタル化と荷物取扱の拡大で郵便ネットワークの新たな価値を模索する動き","textReviewed":true}]}')
+case "$pst_groups" in *'"groups":'*) echo "  PASS: PST ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: PST ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+pst_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$PST_DOC,\"islandId\":\"pst-i\"}")
+case "$pst_summary" in *'"groundingIds":["p1","p2","p3"]'*) echo "  PASS: PST ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: PST ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（ユニバーサルサービス vs 経営効率化・公共性と効率のトレードオフ・正パス）
+pst_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"p1","text":"過疎地を含む全国一律の郵便・郵便局網の維持を求める声（ユニバーサルサービス）","textReviewed":true},"cardB":{"id":"p2","text":"集配網の維持はコストがかさみ、合理化と料金見直しのトレードオフを迫るという懸念（経営効率化）","textReviewed":true}}')
+case "$pst_contra" in *'"hasContradiction":true'*) echo "  PASS: PST ③矛盾検出（ユニバーサルサービスと経営効率化のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: PST ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+pst_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$PST_DOC}")
+case "$pst_narr" in *'"basedOnReadingOrder":["pst-i"]'*) echo "  PASS: PST ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: PST ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+pst_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PST_ID")
+check "PST 読戻し (200)" "200" "$pst_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
