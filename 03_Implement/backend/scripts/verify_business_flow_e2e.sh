@@ -7296,5 +7296,46 @@ arch_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ARCH_ID")
 check "ARCH 読戻し (200)" "200" "$arch_read"
 
 echo ""
+echo "--- シナリオ169: クルーズ・観光船（安全・サービスと収益・効率のトレードオフ） ---"
+# 業態: クルーズ・観光船（クルーズ運航・旅客船）
+# 想定人物: クルーズ船運航責任者／船長
+# 業務領域: 航路・サービス・安全・乗客への声のKJ分類と、クルーズ運航の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 安全運航と乗客の快適さ・思い出に残る船旅の提供（安全・サービス）と運航コストや収益への圧力
+#          （収益・効率）のトレードオフを矛盾検出（正パス）で表面化し、クルーズ運航の改善根拠にする
+#          （安全・サービスと収益の相克・地域の観光や寄港地との連携・新しい航路や体験を開拓する動きも指摘）。
+CRUISE_ID="biz-flow-cruise"
+CRUISE_DOC='{"version":1,"id":"'$CRUISE_ID'","title":"クルーズ運航の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cr1","text":"安全運航と乗客の快適さ、思い出に残る船旅の提供を重視する声（安全・サービス）","x":0,"y":0,"textReviewed":true},{"id":"cr2","text":"運航コストや収益への圧力など、安全・サービスと収益・効率のトレードオフに悩む声（収益・効率）","x":10,"y":0,"textReviewed":true},{"id":"cr3","text":"地域の観光や寄港地との連携、新しい航路や体験を開拓する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cruise-i","cardIds":["cr1","cr2","cr3"]}],"readingOrder":["cruise-i"]}'
+
+cruise_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CRUISE_ID" \
+  -H 'Content-Type: application/json' -d "$CRUISE_DOC")
+check "CRUISE PUT document (作成)" "200" "$cruise_put"
+
+# ① AI束ね
+cruise_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cr1","text":"安全運航と乗客の快適さ、思い出に残る船旅の提供を重視する声（安全・サービス）","textReviewed":true},{"id":"cr2","text":"運航コストや収益への圧力など、安全・サービスと収益・効率のトレードオフに悩む声（収益・効率）","textReviewed":true},{"id":"cr3","text":"地域の観光や寄港地との連携、新しい航路や体験を開拓する動き","textReviewed":true}]}')
+case "$cruise_groups" in *'"groups":'*) echo "  PASS: CRUISE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CRUISE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cruise_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CRUISE_DOC,\"islandId\":\"cruise-i\"}")
+case "$cruise_summary" in *'"groundingIds":["cr1","cr2","cr3"]'*) echo "  PASS: CRUISE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CRUISE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安全・サービス vs 収益・効率・安全・サービスと収益の相克・正パス）
+cruise_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cr1","text":"安全運航と乗客の快適さ、思い出に残る船旅の提供を重視する声（安全・サービス）","textReviewed":true},"cardB":{"id":"cr2","text":"運航コストや収益への圧力など、安全・サービスと収益・効率のトレードオフに悩む声（収益・効率）","textReviewed":true}}')
+case "$cruise_contra" in *'"hasContradiction":true'*) echo "  PASS: CRUISE ③矛盾検出（安全・サービスと収益・効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CRUISE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cruise_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CRUISE_DOC}")
+case "$cruise_narr" in *'"basedOnReadingOrder":["cruise-i"]'*) echo "  PASS: CRUISE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CRUISE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cruise_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CRUISE_ID")
+check "CRUISE 読戻し (200)" "200" "$cruise_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
