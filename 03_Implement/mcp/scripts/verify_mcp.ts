@@ -191,6 +191,38 @@ try {
   }
   console.log(`  → bundle deterministic (hash stable across calls) ✅`);
 
+  // 5. CE4 proposal lifecycle (get_proposal_status, read-only): a generative-AI
+  //    verifier confirms a proposal is still proposal-only or was decided by a
+  //    human. A doc with no proposals returns an empty list (200) -- a valid
+  //    signal. This is a read; nothing is mutated.
+  console.log(`calling get_proposal_status(docId=${docId})`);
+  const proposalResult = await client.callTool({
+    name: "get_proposal_status",
+    arguments: { docId },
+  });
+  if (proposalResult.isError) {
+    throw new Error("get_proposal_status returned isError (backend proposal read failed)");
+  }
+  const proposalText = proposalResult.content?.[0]?.text;
+  if (typeof proposalText !== "string") {
+    throw new Error("No text content in proposal status result");
+  }
+  const proposalBody = JSON.parse(proposalText) as {
+    docId: string;
+    proposals: Array<{ proposalId: string; proposalKind: string; status: string; sourceBundleHash: string }>;
+  };
+  if (proposalBody.docId !== docId || !Array.isArray(proposalBody.proposals)) {
+    throw new Error("Unexpected get_proposal_status response shape");
+  }
+  for (const proposal of proposalBody.proposals) {
+    if (!["proposed", "accepted", "rejected", "held"].includes(proposal.status)) {
+      throw new Error(`Unexpected proposal status: ${proposal.status}`);
+    }
+  }
+  console.log(
+    `  → proposals: ${proposalBody.proposals.length} (statuses: ${proposalBody.proposals.map((p) => p.status).join(", ") || "none"}) ✅ (CE4 read-only)`,
+  );
+
   console.log("\nMCP verification PASSED ✅");
   process.exit(0);
 } catch (err) {
