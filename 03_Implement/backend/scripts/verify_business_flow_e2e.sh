@@ -7214,5 +7214,46 @@ nk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NETKAFE_ID")
 check "NK 読戻し (200)" "200" "$nk_read"
 
 echo ""
+echo "--- シナリオ167: 眼鏡店・コンタクト（目の健康・適合と効率・価格のトレードオフ） ---"
+# 業態: 眼鏡店・コンタクト（眼鏡・コンタクトレンズ販売）
+# 想定人物: 眼鏡店店長／認定コンタクト・補聴器担当
+# 業務領域: 商品・フィッティング・検眼・アフターへの声のKJ分類と、眼鏡店運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 丁寧な検眼とフィッティング・目の健康を考えた提案（目の健康・適合）と価格競争やネット通販への
+#          対応（効率・価格）のトレードオフを矛盾検出（正パス）で表面化し、眼鏡店運営の改善根拠にする
+#          （目の健康と効率の相克・定期検診やメンテナンスの案内・長く安心して使える関係を築く動きも指摘）。
+EYEWEAR_ID="biz-flow-eyewear"
+EYEWEAR_DOC='{"version":1,"id":"'$EYEWEAR_ID'","title":"眼鏡店運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"eg1","text":"丁寧な検眼とフィッティング、目の健康を考えた提案を重視する声（目の健康・適合）","x":0,"y":0,"textReviewed":true},{"id":"eg2","text":"価格競争やネット通販への対応など、目の健康・適合と効率・価格のトレードオフに悩む声（効率・価格）","x":10,"y":0,"textReviewed":true},{"id":"eg3","text":"定期検診やメンテナンスの案内、長く安心して使える関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"eye-i","cardIds":["eg1","eg2","eg3"]}],"readingOrder":["eye-i"]}'
+
+eyewear_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EYEWEAR_ID" \
+  -H 'Content-Type: application/json' -d "$EYEWEAR_DOC")
+check "EYEWEAR PUT document (作成)" "200" "$eyewear_put"
+
+# ① AI束ね
+eyewear_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"eg1","text":"丁寧な検眼とフィッティング、目の健康を考えた提案を重視する声（目の健康・適合）","textReviewed":true},{"id":"eg2","text":"価格競争やネット通販への対応など、目の健康・適合と効率・価格のトレードオフに悩む声（効率・価格）","textReviewed":true},{"id":"eg3","text":"定期検診やメンテナンスの案内、長く安心して使える関係を築く動き","textReviewed":true}]}')
+case "$eyewear_groups" in *'"groups":'*) echo "  PASS: EYEWEAR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EYEWEAR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+eyewear_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EYEWEAR_DOC,\"islandId\":\"eye-i\"}")
+case "$eyewear_summary" in *'"groundingIds":["eg1","eg2","eg3"]'*) echo "  PASS: EYEWEAR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EYEWEAR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（目の健康・適合 vs 効率・価格・目の健康と効率の相克・正パス）
+eyewear_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"eg1","text":"丁寧な検眼とフィッティング、目の健康を考えた提案を重視する声（目の健康・適合）","textReviewed":true},"cardB":{"id":"eg2","text":"価格競争やネット通販への対応など、目の健康・適合と効率・価格のトレードオフに悩む声（効率・価格）","textReviewed":true}}')
+case "$eyewear_contra" in *'"hasContradiction":true'*) echo "  PASS: EYEWEAR ③矛盾検出（目の健康・適合と効率・価格のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: EYEWEAR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+eyewear_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EYEWEAR_DOC}")
+case "$eyewear_narr" in *'"basedOnReadingOrder":["eye-i"]'*) echo "  PASS: EYEWEAR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EYEWEAR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+eyewear_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EYEWEAR_ID")
+check "EYEWEAR 読戻し (200)" "200" "$eyewear_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
