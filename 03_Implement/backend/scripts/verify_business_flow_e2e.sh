@@ -5455,5 +5455,46 @@ fl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FL_ID")
 check "FL 読戻し (200)" "200" "$fl_read"
 
 echo ""
+echo "--- シナリオ125: 水産・漁業（資源保護と生計維持のトレードオフ） ---"
+# 業態: 水産・漁業（漁協・水産加工）
+# 想定人物: 漁協組合長／水産加工場責任者
+# 業務領域: 漁獲量・資源管理・市場価格・加工現場の声のKJ分類と、持続可能な漁業と水産振興の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 資源保護（漁獲規制・休漁）と生計維持（漁獲量・雇用・価格）のトレードオフを
+#          矛盾検出（正パス）で表面化し、持続可能な漁業と水産振興の根拠にする
+#          （資源と生計の相克・漁業の担い手不足という構造課題も指摘）。
+FIS_ID="biz-flow-fishery"
+FIS_DOC='{"version":1,"id":"'$FIS_ID'","title":"水産資源と生計の両立","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"h1","text":"資源保護のため漁獲量の規制強化や休漁期間の設定を求める声","x":0,"y":0,"textReviewed":true},{"id":"h2","text":"規制強化は漁師の生計や雇用を圧迫し、資源保護と生計維持のトレードオフを招くという懸念","x":10,"y":0,"textReviewed":true},{"id":"h3","text":"鮮度保持のための加工・流通体制の整備と漁業の担い手育成が重要との指摘","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hs-i","cardIds":["h1","h2","h3"]}],"readingOrder":["hs-i"]}'
+
+fis_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$FIS_ID" \
+  -H 'Content-Type: application/json' -d "$FIS_DOC")
+check "FIS PUT document (作成)" "200" "$fis_put"
+
+# ① AI束ね
+fis_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"h1","text":"資源保護のため漁獲量の規制強化や休漁期間の設定を求める声","textReviewed":true},{"id":"h2","text":"規制強化は漁師の生計や雇用を圧迫し、資源保護と生計維持のトレードオフを招くという懸念","textReviewed":true},{"id":"h3","text":"鮮度保持のための加工・流通体制の整備と漁業の担い手育成が重要との指摘","textReviewed":true}]}')
+case "$fis_groups" in *'"groups":'*) echo "  PASS: FIS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: FIS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+fis_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$FIS_DOC,\"islandId\":\"hs-i\"}")
+case "$fis_summary" in *'"groundingIds":["h1","h2","h3"]'*) echo "  PASS: FIS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: FIS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（資源保護・規制 vs 生計維持・雇用・資源と生計のトレードオフ・正パス）
+fis_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"h1","text":"資源保護のため漁獲量の規制強化や休漁期間の設定を求める声","textReviewed":true},"cardB":{"id":"h2","text":"規制強化は漁師の生計や雇用を圧迫し、資源保護と生計維持のトレードオフを招くという懸念","textReviewed":true}}')
+case "$fis_contra" in *'"hasContradiction":true'*) echo "  PASS: FIS ③矛盾検出（資源保護と生計維持のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: FIS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+fis_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$FIS_DOC}")
+case "$fis_narr" in *'"basedOnReadingOrder":["hs-i"]'*) echo "  PASS: FIS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: FIS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+fis_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$FIS_ID")
+check "FIS 読戻し (200)" "200" "$fis_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
