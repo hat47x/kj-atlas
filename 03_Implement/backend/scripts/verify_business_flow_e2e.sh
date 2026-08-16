@@ -2958,5 +2958,45 @@ sc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SC_ID")
 check "SC 読戻し (200)" "200" "$sc_read"
 
 echo ""
+echo "--- シナリオ66: 建築・不動産開発の完工プロジェクトレビュー（工期と品質のトレードオフ） ---"
+# 業態: 建築・不動産開発（デベロッパー）
+# 想定人物: プロジェクトマネージャー（完工レビューを整理）
+# 業務領域: 完工プロジェクトの振り返り（工程・品質・コスト）のKJ分類と、次プロジェクトの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 工期短縮（並行施工）と品質確保（手直し防止）のトレードオフを矛盾検出で
+#          表面化し、次プロジェクトの改善根拠にする（スケジュールと品質の相克）。
+AR_ID="biz-flow-architect"
+AR_DOC='{"version":1,"id":"'$AR_ID'","title":"完工プロジェクトレビュー","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ar1","text":"工期を短縮するために並行施工を増やした","x":0,"y":0,"textReviewed":true},{"id":"ar2","text":"仕上げの手直しが発生し品質に課題が残った","x":10,"y":0,"textReviewed":true},{"id":"ar3","text":"サプライヤーとの調整不足がコスト超過の要因","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ar-i","cardIds":["ar1","ar2","ar3"]}],"readingOrder":["ar-i"]}'
+
+ar_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AR_ID" \
+  -H 'Content-Type: application/json' -d "$AR_DOC")
+check "AR PUT document (作成)" "200" "$ar_put"
+
+# ① AI束ね
+ar_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ar1","text":"工期を短縮するために並行施工を増やした","textReviewed":true},{"id":"ar2","text":"仕上げの手直しが発生し品質に課題が残った","textReviewed":true},{"id":"ar3","text":"サプライヤーとの調整不足がコスト超過の要因","textReviewed":true}]}')
+case "$ar_groups" in *'"groups":'*) echo "  PASS: AR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ar_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AR_DOC,\"islandId\":\"ar-i\"}")
+case "$ar_summary" in *'"groundingIds":["ar1","ar2","ar3"]'*) echo "  PASS: AR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（工期短縮 vs 品質課題・スケジュールと品質の相克）
+ar_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ar1","text":"工期を短縮するために並行施工を増やした","textReviewed":true},"cardB":{"id":"ar2","text":"仕上げの手直しが発生し品質に課題が残った","textReviewed":true}}')
+case "$ar_contra" in *'"hasContradiction"'*) echo "  PASS: AR ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ar_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AR_DOC}")
+case "$ar_narr" in *'"basedOnReadingOrder":["ar-i"]'*) echo "  PASS: AR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ar_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AR_ID")
+check "AR 読戻し (200)" "200" "$ar_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
