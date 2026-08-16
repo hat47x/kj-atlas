@@ -341,8 +341,30 @@ def main() -> int:
             len(_decided) == 1 and _decided[0].get("status") == "accepted" and bool(_decided[0].get("decidedAt")),
         )
 
+        # 4c. MCP-side decision reflection: re-run verify_mcp.ts after the human
+        #     decision so a generative-AI verifier confirms the CE4 proposal is
+        #     now decided (accepted) via the MCP get_proposal_status tool.
+        proc2 = subprocess.run(
+            [tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
+            cwd=MCP_DIR,
+            env=mcp_env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        check("MCP client re-run after decision (verify_mcp.ts) exit", 0, proc2.returncode)
+        check(
+            "MCP get_proposal_status reflects decided state (accepted)",
+            True,
+            "accepted" in (proc2.stdout or "") and "proposals: 1" in (proc2.stdout or ""),
+        )
+        if proc2.returncode != 0:
+            print(proc2.stdout[-2000:])
+            print(proc2.stderr[-2000:])
+
         # 5. Give the async audit queue a moment, then assert the sink saw the
-        #    channel=mcp context-audit event for this document.
+        #    channel=mcp context-audit events for this document (2 stdio runs of
+        #    verify_mcp.ts + 1 HTTP client call = 3).
         time.sleep(1.0)
         events = sink.snapshot()
         mcp_events = [
@@ -352,7 +374,7 @@ def main() -> int:
             and isinstance(e.get("metadata"), dict)
             and e["metadata"].get("channel") == "mcp"
         ]
-        check("audit sink received both stdio and HTTP channel=mcp events", 2, len(mcp_events))
+        check("audit sink received stdio x2 + HTTP channel=mcp events", 3, len(mcp_events))
         if mcp_events:
             meta = mcp_events[0]["metadata"]
             check("metadata.operation=query", "query", meta.get("operation"))
