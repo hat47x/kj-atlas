@@ -4451,5 +4451,45 @@ cc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CC_ID")
 check "CC 読戻し (200)" "200" "$cc_read"
 
 echo ""
+echo "--- シナリオ103: 自治体・上下水道の水道事業運営（安全確保と利用者負担のトレードオフ） ---"
+# 業態: 自治体・上下水道（水道事業）
+# 想定人物: 水道事業担当（水質・料金・老朽化の課題を整理）
+# 業務領域: 水質・料金・施設老朽化・給水停止の課題のKJ分類と、事業運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 水質の安全確保（検査・設備投資）と料金（利用者の負担感）のトレードオフを
+#          矛盾検出で表面化し、事業計画の根拠にする（安全と負担のトレードオフ）。
+WS_ID="biz-flow-watersupply"
+WS_DOC='{"version":1,"id":"'$WS_ID'","title":"水道事業課題整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ws1","text":"老朽化した水道管の更新投資が必要との技術的見解","x":0,"y":0,"textReviewed":true},{"id":"ws2","text":"水道料金の値上げは利用者の負担が大きいという懸念","x":10,"y":0,"textReviewed":true},{"id":"ws3","text":"水質検査の基準は維持し安全を確保すべきとの意見","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ws-i","cardIds":["ws1","ws2","ws3"]}],"readingOrder":["ws-i"]}'
+
+ws_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WS_ID" \
+  -H 'Content-Type: application/json' -d "$WS_DOC")
+check "WS PUT document (作成)" "200" "$ws_put"
+
+# ① AI束ね
+ws_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ws1","text":"老朽化した水道管の更新投資が必要との技術的見解","textReviewed":true},{"id":"ws2","text":"水道料金の値上げは利用者の負担が大きいという懸念","textReviewed":true},{"id":"ws3","text":"水質検査の基準は維持し安全を確保すべきとの意見","textReviewed":true}]}')
+case "$ws_groups" in *'"groups":'*) echo "  PASS: WS ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: WS ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ws_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WS_DOC,\"islandId\":\"ws-i\"}")
+case "$ws_summary" in *'"groundingIds":["ws1","ws2","ws3"]'*) echo "  PASS: WS ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: WS ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（老朽化更新投資 vs 料金値上げの負担・安全と負担のトレードオフ）
+ws_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ws1","text":"老朽化した水道管の更新投資が必要との技術的見解","textReviewed":true},"cardB":{"id":"ws2","text":"水道料金の値上げは利用者の負担が大きいという懸念","textReviewed":true}}')
+case "$ws_contra" in *'"hasContradiction"'*) echo "  PASS: WS ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: WS ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ws_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$WS_DOC}")
+case "$ws_narr" in *'"basedOnReadingOrder":["ws-i"]'*) echo "  PASS: WS ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: WS ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ws_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WS_ID")
+check "WS 読戻し (200)" "200" "$ws_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
