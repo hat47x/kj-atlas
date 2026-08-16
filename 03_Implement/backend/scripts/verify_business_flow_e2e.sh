@@ -7047,5 +7047,46 @@ cowork_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$COWORK_ID"
 check "COWORK 読戻し (200)" "200" "$cowork_read"
 
 echo ""
+echo "--- シナリオ163: ドローン事業（安全・法令と業務効率・収益のトレードオフ） ---"
+# 業態: ドローン事業（ドローンスクール・空撮・測量）
+# 想定人物: ドローン事業責任者／パイロット
+# 業務領域: 空撮・測量・点検・安全管理・規制への声のKJ分類と、ドローン事業の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 安全運航と法令順守（飛行許可・操縦資格）を最優先する（安全・法令）と受注やコストへの圧力
+#          （効率・収益）のトレードオフを矛盾検出（正パス）で表面化し、ドローン事業の改善根拠にする
+#          （安全と効率の相克・農業・インフラ点検・災害対応など新しい活用法を開拓する動きも指摘）。
+DRONE_ID="biz-flow-drone"
+DRONE_DOC='{"version":1,"id":"'$DRONE_ID'","title":"ドローン事業の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"dr1","text":"安全運航と法令順守（飛行許可・操縦資格）を最優先する声（安全・法令）","x":0,"y":0,"textReviewed":true},{"id":"dr2","text":"受注やコストへの圧力など、安全・法令と業務効率・収益のトレードオフに悩む声（効率・収益）","x":10,"y":0,"textReviewed":true},{"id":"dr3","text":"農業・インフラ点検・災害対応など新しい活用法を開拓する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"drone-i","cardIds":["dr1","dr2","dr3"]}],"readingOrder":["drone-i"]}'
+
+drone_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DRONE_ID" \
+  -H 'Content-Type: application/json' -d "$DRONE_DOC")
+check "DRONE PUT document (作成)" "200" "$drone_put"
+
+# ① AI束ね
+drone_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"dr1","text":"安全運航と法令順守（飛行許可・操縦資格）を最優先する声（安全・法令）","textReviewed":true},{"id":"dr2","text":"受注やコストへの圧力など、安全・法令と業務効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true},{"id":"dr3","text":"農業・インフラ点検・災害対応など新しい活用法を開拓する動き","textReviewed":true}]}')
+case "$drone_groups" in *'"groups":'*) echo "  PASS: DRONE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: DRONE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+drone_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DRONE_DOC,\"islandId\":\"drone-i\"}")
+case "$drone_summary" in *'"groundingIds":["dr1","dr2","dr3"]'*) echo "  PASS: DRONE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: DRONE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安全・法令 vs 効率・収益・安全と効率の相克・正パス）
+drone_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"dr1","text":"安全運航と法令順守（飛行許可・操縦資格）を最優先する声（安全・法令）","textReviewed":true},"cardB":{"id":"dr2","text":"受注やコストへの圧力など、安全・法令と業務効率・収益のトレードオフに悩む声（効率・収益）","textReviewed":true}}')
+case "$drone_contra" in *'"hasContradiction":true'*) echo "  PASS: DRONE ③矛盾検出（安全・法令と業務効率・収益のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: DRONE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+drone_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$DRONE_DOC}")
+case "$drone_narr" in *'"basedOnReadingOrder":["drone-i"]'*) echo "  PASS: DRONE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: DRONE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+drone_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DRONE_ID")
+check "DRONE 読戻し (200)" "200" "$drone_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
