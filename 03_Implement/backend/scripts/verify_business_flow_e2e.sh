@@ -2678,5 +2678,45 @@ sw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SW_ID")
 check "SW 読戻し (200)" "200" "$sw_read"
 
 echo ""
+echo "--- シナリオ59: 言語サービス・翻訳レビューの用語一貫性管理 ---"
+# 業態: 言語サービス（翻訳・ローカライゼーション）
+# 想定人物: 翻訳レビュアー（品質管理）
+# 業務領域: 翻訳レビューコメントのKJ整理と、用語・文体の一貫性確認
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 用語の揺れ（表記不統一）を矛盾検出で表面化し、用語集（グロッサリー）の
+#          統一根拠にする。原文の意図は逐語で保持する（翻訳で変えない）。
+TRL_ID="biz-flow-translation"
+TRL_DOC='{"version":1,"id":"'$TRL_ID'","title":"翻訳レビュー整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"公開文書の用語は用語集で統一されている","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"新規製品の用語追加が用語集に反映されていない","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["t1","t2","t3"]}],"readingOrder":["tr-i"]}'
+
+trl_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TRL_ID" \
+  -H 'Content-Type: application/json' -d "$TRL_DOC")
+check "TRL PUT document (作成)" "200" "$trl_put"
+
+# ① AI束ね
+trl_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","textReviewed":true},{"id":"t2","text":"公開文書の用語は用語集で統一されている","textReviewed":true},{"id":"t3","text":"新規製品の用語追加が用語集に反映されていない","textReviewed":true}]}')
+case "$trl_groups" in *'"groups":'*) echo "  PASS: TRL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+trl_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TRL_DOC,\"islandId\":\"tr-i\"}")
+case "$trl_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TRL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（内部マニュアルの訳語の揺れ vs 公開文書の統一・品質管理の相克）
+trl_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"製品マニュアルの訳語が担当者ごとに異なる","textReviewed":true},"cardB":{"id":"t2","text":"公開文書の用語は用語集で統一されている","textReviewed":true}}')
+case "$trl_contra" in *'"hasContradiction"'*) echo "  PASS: TRL ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+trl_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TRL_DOC}")
+case "$trl_narr" in *'"basedOnReadingOrder":["tr-i"]'*) echo "  PASS: TRL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TRL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+trl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TRL_ID")
+check "TRL 読戻し (200)" "200" "$trl_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
