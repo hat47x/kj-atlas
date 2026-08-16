@@ -25,26 +25,26 @@ check() {
 
 echo "=== Dogfooding 記録の構造照合 ==="
 
-# 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 93）
+# 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 94）
 #    シナリオ1=初期フロー（ヘッダechoなし）・シナリオ4=別スクリプトのため、
-#    総シナリオ95 とは一致しない（マニフェスト §1 に注記）。
-EXPECT_HEADERS=93
+#    総シナリオ96 とは一致しない（マニフェスト §1 に注記）。
+EXPECT_HEADERS=94
 ACTUAL_HEADERS=$(grep -c -e "--- シナリオ" "$ROOT/03_Implement/backend/scripts/verify_business_flow_e2e.sh")
 check "業務フローE2E シナリオヘッダ数 == $EXPECT_HEADERS" "$ACTUAL_HEADERS" "$EXPECT_HEADERS"
 
-# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ95・チェック555）
-if grep -q -e "シナリオ95・チェック555" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "シナリオドキュメント カバレッジ集約 (シナリオ95・チェック555)" "ok" "ok"
+# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ96・チェック561）
+if grep -q -e "シナリオ96・チェック561" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "シナリオドキュメント カバレッジ集約 (シナリオ96・チェック561)" "ok" "ok"
 else
-  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ95・チェック555)"
+  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ96・チェック561)"
   FAIL=$((FAIL + 1))
 fi
 
-# 3. シナリオドキュメントの状態リストにシナリオ95 が含まれる
-if grep -q -e "シナリオ95（iteration 165" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "状態リストにシナリオ95 (iteration 165)" "ok" "ok"
+# 3. シナリオドキュメントの状態リストにシナリオ96 が含まれる
+if grep -q -e "シナリオ96（iteration 166" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "状態リストにシナリオ96 (iteration 166)" "ok" "ok"
 else
-  echo "  FAIL: 状態リストにシナリオ95 (iteration 165)"
+  echo "  FAIL: 状態リストにシナリオ96 (iteration 166)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -89,14 +89,14 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 597 = 555 + 12 + 7 + 8 + 15）
-BUSINESS_CHECKS=555
+# 7. 総チェック数の算術照合（マニフェスト主張: 603 = 561 + 12 + 7 + 8 + 15）
+BUSINESS_CHECKS=561
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=8
 CLI_CE4_CHECKS=15
 TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS + CLI_CE4_CHECKS))
-check "総チェック算術 (555+12+7+8+15)" "$TOTAL" "597"
+check "総チェック算術 (561+12+7+8+15)" "$TOTAL" "603"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then

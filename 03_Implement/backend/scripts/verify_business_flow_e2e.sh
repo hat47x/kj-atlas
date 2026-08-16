@@ -4169,5 +4169,45 @@ tx_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TX_ID")
 check "TX 読戻し (200)" "200" "$tx_read"
 
 echo ""
+echo "--- シナリオ96: B2B・商社の貿易・輸出入（コスト削減と為替リスクのトレードオフ） ---"
+# 業態: B2B・商社（貿易・輸出入）
+# 想定人物: 貿易担当（輸出入の課題を整理）
+# 業務領域: 輸出入・通関・為替・物流の課題のKJ分類と、貿易オペレーション改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: コスト削減（為替ヘッジの縮小）と取引の安定性（為替変動リスク）のトレードオフを
+#          矛盾検出で表面化し、貿易戦略の根拠にする（コストとリスクのトレードオフ）。
+TR_ID="biz-flow-trade"
+TR_DOC='{"version":1,"id":"'$TR_ID'","title":"輸出入オペレーション整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"tr1","text":"コスト削減のため為替ヘッジを縮小したいとの意見","x":0,"y":0,"textReviewed":true},{"id":"tr2","text":"為替変動で取引の収益が不安定になっている","x":10,"y":0,"textReviewed":true},{"id":"tr3","text":"輸出入の通関手続きに時間がかかり納期に影響している","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"tr-i","cardIds":["tr1","tr2","tr3"]}],"readingOrder":["tr-i"]}'
+
+tr_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TR_ID" \
+  -H 'Content-Type: application/json' -d "$TR_DOC")
+check "TR PUT document (作成)" "200" "$tr_put"
+
+# ① AI束ね
+tr_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"tr1","text":"コスト削減のため為替ヘッジを縮小したいとの意見","textReviewed":true},{"id":"tr2","text":"為替変動で取引の収益が不安定になっている","textReviewed":true},{"id":"tr3","text":"輸出入の通関手続きに時間がかかり納期に影響している","textReviewed":true}]}')
+case "$tr_groups" in *'"groups":'*) echo "  PASS: TR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+tr_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TR_DOC,\"islandId\":\"tr-i\"}")
+case "$tr_summary" in *'"groundingIds":["tr1","tr2","tr3"]'*) echo "  PASS: TR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（為替ヘッジ縮小 vs 為替変動リスク・コストとリスクのトレードオフ）
+tr_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"tr1","text":"コスト削減のため為替ヘッジを縮小したいとの意見","textReviewed":true},"cardB":{"id":"tr2","text":"為替変動で取引の収益が不安定になっている","textReviewed":true}}')
+case "$tr_contra" in *'"hasContradiction"'*) echo "  PASS: TR ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: TR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+tr_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TR_DOC}")
+case "$tr_narr" in *'"basedOnReadingOrder":["tr-i"]'*) echo "  PASS: TR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+tr_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TR_ID")
+check "TR 読戻し (200)" "200" "$tr_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
