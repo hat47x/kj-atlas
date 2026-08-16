@@ -8,11 +8,43 @@ from kj_atlas_api.settings import settings
 
 @pytest.fixture(scope="module", autouse=True)
 def _app_db_schema() -> None:
-    """Ensure the shared SQLite DB has the full app schema (tenant_model_allowlist etc.)."""
-    from kj_atlas_api.db import engine
-    from kj_atlas_api.models import Base
+    """Ensure the shared SQLite DB has the full app schema AND a registered
+    provider/model matching the generation tests' stubbed runtime provider
+    (large-scale). _assert_model_allowed (AI-MODEL-GOVERNANCE-02) requires an
+    active registered model whose provider matches the runtime; a fresh SQLite
+    DB has neither until seeded."""
+    from sqlalchemy.exc import IntegrityError
 
+    from kj_atlas_api.db import SessionLocal, engine
+    from kj_atlas_api.models import Base
+    from kj_atlas_api.model_registry_repository import register_model, register_provider
+
+    _NOW = "2026-08-15T00:00:00+00:00"
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        register_provider(
+            db,
+            provider_id="large-scale",
+            provider_kind="large-scale",
+            display_name="Large-scale LLM (test)",
+            base_url=None,
+            api_key_ref=None,
+            occurred_at=_NOW,
+        )
+        register_model(
+            db,
+            model_id="default",
+            provider_id="large-scale",
+            display_name="default",
+            capabilities="intermediate,generate",
+            occurred_at=_NOW,
+        )
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+    finally:
+        db.close()
 
 
 def test_provider_status_echoes_none_by_default() -> None:
@@ -117,9 +149,11 @@ def test_provider_status_reports_llm_call_counts_after_a_call(monkeypatch) -> No
 
     # generate_with_fallback (defined in llm/provider.py) resolves the provider
     # via its OWN module-level get_provider; the provider-status route resolves
-    # it via its imported reference. Patch both to the stub.
+    # it via its imported reference. Patch both to the stub. This test is about
+    # call/token accounting, not model governance, so bypass the allowlist gate.
     monkeypatch.setattr(llm_provider, "get_provider", lambda: _StubProvider())
     monkeypatch.setattr(ai_routes, "get_provider", lambda: _StubProvider())
+    monkeypatch.setattr(ai_routes, "_assert_model_allowed", lambda *a, **k: None)
     reset_llm_call_counts()
 
     with TestClient(app) as client:
@@ -157,6 +191,8 @@ def test_provider_status_reports_token_usage_from_provider_response(monkeypatch)
 
     monkeypatch.setattr(llm_provider, "get_provider", lambda: _StubProvider())
     monkeypatch.setattr(ai_routes, "get_provider", lambda: _StubProvider())
+    # This test is about token accounting, not model governance; bypass the gate.
+    monkeypatch.setattr(ai_routes, "_assert_model_allowed", lambda *a, **k: None)
     reset_llm_call_counts()
 
     with TestClient(app) as client:

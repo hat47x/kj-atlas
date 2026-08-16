@@ -68,10 +68,16 @@ def _client(tmp_path) -> Iterator[TestClient]:
             db.close()
 
     app.dependency_overrides[get_db] = _get_test_db
+    # AI-MODEL-GOVERNANCE-02 provider-match check: the runtime provider must be
+    # the registered one (local). Default llm_provider is "none", which would
+    # make every _assert_model_allowed call 503 model_provider_unavailable.
+    original_provider = settings.llm_provider
+    settings.llm_provider = "local"
     try:
         with TestClient(app) as client:
             yield client
     finally:
+        settings.llm_provider = original_provider
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
