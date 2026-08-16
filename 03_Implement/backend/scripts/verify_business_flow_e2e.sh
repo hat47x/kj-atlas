@@ -3120,5 +3120,45 @@ pu_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$PU_ID")
 check "PU 読戻し (200)" "200" "$pu_read"
 
 echo ""
+echo "--- シナリオ70: 医療・クリニックの患者フィードバックと外来運営（丁寧さと効率の相克） ---"
+# 業態: 医療・診療（クリニック運営）
+# 想定人物: クリニック院長（患者フィードバックを整理）
+# 業務領域: 患者からのフィードバック（診療・待ち時間・対応）のKJ分類と、外来運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 診療の丁寧さ（時間をかける）と待ち時間（効率）のトレードオフを矛盾検出で
+#          表面化し、外来運営の根拠にする（丁寧さと効率の相克）。
+CL_ID="biz-flow-clinic"
+CL_DOC='{"version":1,"id":"'$CL_ID'","title":"患者フィードバック整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cl1","text":"患者は診察時間が短いと感じている","x":0,"y":0,"textReviewed":true},{"id":"cl2","text":"待ち時間が長いという不満が多い","x":10,"y":0,"textReviewed":true},{"id":"cl3","text":"オンライン予約の導入で混雑が減った","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cl-i","cardIds":["cl1","cl2","cl3"]}],"readingOrder":["cl-i"]}'
+
+cl_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CL_ID" \
+  -H 'Content-Type: application/json' -d "$CL_DOC")
+check "CL PUT document (作成)" "200" "$cl_put"
+
+# ① AI束ね
+cl_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cl1","text":"患者は診察時間が短いと感じている","textReviewed":true},{"id":"cl2","text":"待ち時間が長いという不満が多い","textReviewed":true},{"id":"cl3","text":"オンライン予約の導入で混雑が減った","textReviewed":true}]}')
+case "$cl_groups" in *'"groups":'*) echo "  PASS: CL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cl_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CL_DOC,\"islandId\":\"cl-i\"}")
+case "$cl_summary" in *'"groundingIds":["cl1","cl2","cl3"]'*) echo "  PASS: CL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（診察時間が短い vs 待ち時間が長い・丁寧さと効率の相克）
+cl_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cl1","text":"患者は診察時間が短いと感じている","textReviewed":true},"cardB":{"id":"cl2","text":"待ち時間が長いという不満が多い","textReviewed":true}}')
+case "$cl_contra" in *'"hasContradiction"'*) echo "  PASS: CL ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: CL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cl_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CL_DOC}")
+case "$cl_narr" in *'"basedOnReadingOrder":["cl-i"]'*) echo "  PASS: CL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CL_ID")
+check "CL 読戻し (200)" "200" "$cl_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

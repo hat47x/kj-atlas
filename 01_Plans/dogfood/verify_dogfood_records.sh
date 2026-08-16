@@ -25,26 +25,26 @@ check() {
 
 echo "=== Dogfooding 記録の構造照合 ==="
 
-# 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 67）
+# 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 68）
 #    シナリオ1=初期フロー（ヘッダechoなし）・シナリオ4=別スクリプトのため、
-#    総シナリオ69 とは一致しない（マニフェスト §1 に注記）。
-EXPECT_HEADERS=67
+#    総シナリオ70 とは一致しない（マニフェスト §1 に注記）。
+EXPECT_HEADERS=68
 ACTUAL_HEADERS=$(grep -c -e "--- シナリオ" "$ROOT/03_Implement/backend/scripts/verify_business_flow_e2e.sh")
 check "業務フローE2E シナリオヘッダ数 == $EXPECT_HEADERS" "$ACTUAL_HEADERS" "$EXPECT_HEADERS"
 
-# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ69・チェック399）
-if grep -q -e "シナリオ69・チェック399" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "シナリオドキュメント カバレッジ集約 (シナリオ69・チェック399)" "ok" "ok"
+# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ70・チェック405）
+if grep -q -e "シナリオ70・チェック405" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "シナリオドキュメント カバレッジ集約 (シナリオ70・チェック405)" "ok" "ok"
 else
-  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ69・チェック399)"
+  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ70・チェック405)"
   FAIL=$((FAIL + 1))
 fi
 
-# 3. シナリオドキュメントの状態リストにシナリオ69 が含まれる
-if grep -q -e "シナリオ69（iteration 139" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "状態リストにシナリオ69 (iteration 139)" "ok" "ok"
+# 3. シナリオドキュメントの状態リストにシナリオ70 が含まれる
+if grep -q -e "シナリオ70（iteration 140" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "状態リストにシナリオ70 (iteration 140)" "ok" "ok"
 else
-  echo "  FAIL: 状態リストにシナリオ69 (iteration 139)"
+  echo "  FAIL: 状態リストにシナリオ70 (iteration 140)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -89,13 +89,13 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 426 = 399 + 12 + 7 + 8）
-BUSINESS_CHECKS=399
+# 7. 総チェック数の算術照合（マニフェスト主張: 432 = 405 + 12 + 7 + 8）
+BUSINESS_CHECKS=405
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=8
 TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS))
-check "総チェック算術 (399+12+7+8)" "$TOTAL" "426"
+check "総チェック算術 (405+12+7+8)" "$TOTAL" "432"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then
