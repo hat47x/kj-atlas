@@ -5664,5 +5664,47 @@ brw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BRW_ID")
 check "BRW 読戻し (200)" "200" "$brw_read"
 
 echo ""
+echo "--- シナリオ130: 旅行代理店（顧客満足と販売効率のトレードオフ） ---"
+# 業態: 旅行代理店（旅行業）
+# 想定人物: 旅行コンサルタント／支店長
+# 業務領域: 旅行プラン・顧客の声・トラブル対応・手配の声のKJ分類と、店舗・販売戦略の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 顧客一人ひとりに合わせた丁寧な旅行提案とトラブル時の寄り添い（顧客満足）と
+#          オンライン化・手数料収入の減少への対応（販売効率）のトレードオフを矛盾検出
+#          （正パス）で表面化し、店舗・販売戦略の改善根拠にする（丁寧さと効率の相克・
+#          リピーターと地域密着のファンづくり・アフターフォローで関係を深める動きも指摘）。
+TRAV_ID="biz-flow-travel"
+TRAV_DOC='{"version":1,"id":"'$TRAV_ID'","title":"旅行代理店の販売戦略","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"t1","text":"顧客一人ひとりに合わせた丁寧な旅行提案とトラブル時の寄り添いを重視する声（顧客満足）","x":0,"y":0,"textReviewed":true},{"id":"t2","text":"オンライン予約の拡大で手数料収入が減り、丁寧な接客と販売効率のトレードオフに悩む声（販売効率）","x":10,"y":0,"textReviewed":true},{"id":"t3","text":"リピーターや地域密着のファンづくり、アフターフォローで関係を深める動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"trav-i","cardIds":["t1","t2","t3"]}],"readingOrder":["trav-i"]}'
+
+trav_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$TRAV_ID" \
+  -H 'Content-Type: application/json' -d "$TRAV_DOC")
+check "TRAV PUT document (作成)" "200" "$trav_put"
+
+# ① AI束ね
+trav_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"t1","text":"顧客一人ひとりに合わせた丁寧な旅行提案とトラブル時の寄り添いを重視する声（顧客満足）","textReviewed":true},{"id":"t2","text":"オンライン予約の拡大で手数料収入が減り、丁寧な接客と販売効率のトレードオフに悩む声（販売効率）","textReviewed":true},{"id":"t3","text":"リピーターや地域密着のファンづくり、アフターフォローで関係を深める動き","textReviewed":true}]}')
+case "$trav_groups" in *'"groups":'*) echo "  PASS: TRAV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: TRAV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+trav_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$TRAV_DOC,\"islandId\":\"trav-i\"}")
+case "$trav_summary" in *'"groundingIds":["t1","t2","t3"]'*) echo "  PASS: TRAV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: TRAV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（顧客満足 vs 販売効率・丁寧さと効率の相克・正パス）
+trav_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"t1","text":"顧客一人ひとりに合わせた丁寧な旅行提案とトラブル時の寄り添いを重視する声（顧客満足）","textReviewed":true},"cardB":{"id":"t2","text":"オンライン予約の拡大で手数料収入が減り、丁寧な接客と販売効率のトレードオフに悩む声（販売効率）","textReviewed":true}}')
+case "$trav_contra" in *'"hasContradiction":true'*) echo "  PASS: TRAV ③矛盾検出（顧客満足と販売効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: TRAV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+trav_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$TRAV_DOC}")
+case "$trav_narr" in *'"basedOnReadingOrder":["trav-i"]'*) echo "  PASS: TRAV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: TRAV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+trav_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TRAV_ID")
+check "TRAV 読戻し (200)" "200" "$trav_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
