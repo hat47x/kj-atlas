@@ -40,6 +40,8 @@ from kj_atlas_api.models_ai import (
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
     ProposeOpposingViewpointRequest,
+    ProposalStatusItem,
+    ProposalStatusResponse,
     ProviderStatusResponse,
     RefineCardTextRequest,
     RefineCardTextResponse,
@@ -51,6 +53,8 @@ from kj_atlas_api.models_ai import (
     SuggestIslandSummaryResponse,
 )
 from kj_atlas_api.models import (
+    AIProposalDecisionStateRow,
+    AIProposalRow,
     Card,
     MergeSuggestion,
     SuggestLayoutRequest,
@@ -1388,6 +1392,60 @@ def record_external_proposal_decision(
     db: Session = Depends(get_db),
 ) -> ProposalDecisionAuditResponse:
     return _record_proposal_decision(payload, request, db, expected_origin="external_agent")
+
+
+@router.get(
+    "/proposals/status",
+    response_model=ProposalStatusResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def get_proposal_status(
+    docId: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalStatusResponse:
+    """CE4 read-only proposal lifecycle status for a document.
+
+    Lets a generative-AI (via MCP or API) verify that a proposal is still
+    proposal-only or was decided by a human (accepted/rejected/held) --
+    traceability without mutating anything. Read-only by contract
+    (`action="read"`): no proposal or decision is written here.
+    """
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=docId,
+        safe_mode=False,
+        read_only=True,
+    )
+    proposals = (
+        db.query(AIProposalRow)
+        .filter_by(tenant_id=tenant.tenant_id, doc_id=docId)
+        .order_by(AIProposalRow.created_at.asc(), AIProposalRow.proposal_id.asc())
+        .all()
+    )
+    decisions = {
+        row.proposal_id: row
+        for row in db.query(AIProposalDecisionStateRow)
+        .filter_by(tenant_id=tenant.tenant_id, doc_id=docId)
+        .all()
+    }
+    return ProposalStatusResponse(
+        docId=docId,
+        proposals=[
+            ProposalStatusItem(
+                proposalId=row.proposal_id,
+                proposalKind=row.proposal_kind,
+                origin=row.origin,
+                status=decisions[row.proposal_id].status if row.proposal_id in decisions else "proposed",
+                sourceBundleHash=row.source_bundle_hash,
+                createdAt=row.created_at,
+                decidedAt=decisions[row.proposal_id].updated_at if row.proposal_id in decisions else None,
+            )
+            for row in proposals
+        ],
+    )
 
 
 @router.post(

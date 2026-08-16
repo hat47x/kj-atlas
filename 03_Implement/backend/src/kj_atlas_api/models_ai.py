@@ -302,6 +302,32 @@ class ExternalAgentProposalDecisionRequest(ProposalDecisionAuditRequest):
     provenanceLevel: Literal["user_presented_unsigned"]
 
 
+class ProposalStatusItem(BaseModel):
+    """One proposal's lifecycle status for a document (read-only)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str
+    proposalKind: str
+    origin: Literal["internal", "external_agent"]
+    # proposed (no decision yet) | accepted | rejected | held
+    status: Literal["proposed", "accepted", "rejected", "held"]
+    sourceBundleHash: str
+    createdAt: str
+    decidedAt: str | None = None
+
+
+class ProposalStatusResponse(BaseModel):
+    """Read-only proposal lifecycle status for a document. Lets a generative-AI
+    (via MCP or API) verify that a proposal is still proposal-only or was
+    decided by a human -- CE4 traceability without mutating anything."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    docId: str
+    proposals: list[ProposalStatusItem]
+
+
 # ---------------------------------------------------------------------------
 # ADR-0064: KJ-method card-level AI operations
 # ---------------------------------------------------------------------------
