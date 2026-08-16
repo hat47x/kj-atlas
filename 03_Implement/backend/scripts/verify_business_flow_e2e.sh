@@ -6124,5 +6124,47 @@ jew_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$JEW_ID")
 check "JEW 読戻し (200)" "200" "$jew_read"
 
 echo ""
+echo "--- シナリオ141: 引越し（丁寧さ・期日厳守と作業効率のトレードオフ） ---"
+# 業態: 引越し（引越会社・運送）
+# 想定人物: 引越支店長／運営責任者
+# 業務領域: 引越し作業・料金・スタッフ・顧客への声のKJ分類と、引越サービスの改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 荷物の丁寧な梱包・搬送と期日厳守（顧客満足・信頼）と繁忙期の人手不足・料金競争への
+#          対応（効率・人手）のトレードオフを矛盾検出（正パス）で表面化し、引越サービスの改善
+#          根拠にする（丁寧さと効率の相克・作業スタッフの育成や定着・地域密着の営業で信頼を
+#          築く動きも指摘）。
+MOV_ID="biz-flow-moving"
+MOV_DOC='{"version":1,"id":"'$MOV_ID'","title":"引越サービスの改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"m1","text":"荷物の丁寧な梱包・搬送と期日厳守へのこだわりを重視する声（丁寧さ・期日厳守）","x":0,"y":0,"textReviewed":true},{"id":"m2","text":"繁忙期の人手不足や料金競争など、丁寧さと作業効率のトレードオフに悩む声（効率・人手）","x":10,"y":0,"textReviewed":true},{"id":"m3","text":"作業スタッフの育成や定着、地域密着の営業で信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"mov-i","cardIds":["m1","m2","m3"]}],"readingOrder":["mov-i"]}'
+
+mov_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$MOV_ID" \
+  -H 'Content-Type: application/json' -d "$MOV_DOC")
+check "MOV PUT document (作成)" "200" "$mov_put"
+
+# ① AI束ね
+mov_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"m1","text":"荷物の丁寧な梱包・搬送と期日厳守へのこだわりを重視する声（丁寧さ・期日厳守）","textReviewed":true},{"id":"m2","text":"繁忙期の人手不足や料金競争など、丁寧さと作業効率のトレードオフに悩む声（効率・人手）","textReviewed":true},{"id":"m3","text":"作業スタッフの育成や定着、地域密着の営業で信頼を築く動き","textReviewed":true}]}')
+case "$mov_groups" in *'"groups":'*) echo "  PASS: MOV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: MOV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+mov_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$MOV_DOC,\"islandId\":\"mov-i\"}")
+case "$mov_summary" in *'"groundingIds":["m1","m2","m3"]'*) echo "  PASS: MOV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: MOV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（丁寧さ・期日厳守 vs 効率・人手・丁寧さと効率の相克・正パス）
+mov_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"m1","text":"荷物の丁寧な梱包・搬送と期日厳守へのこだわりを重視する声（丁寧さ・期日厳守）","textReviewed":true},"cardB":{"id":"m2","text":"繁忙期の人手不足や料金競争など、丁寧さと作業効率のトレードオフに悩む声（効率・人手）","textReviewed":true}}')
+case "$mov_contra" in *'"hasContradiction":true'*) echo "  PASS: MOV ③矛盾検出（丁寧さ・期日厳守と作業効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: MOV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+mov_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$MOV_DOC}")
+case "$mov_narr" in *'"basedOnReadingOrder":["mov-i"]'*) echo "  PASS: MOV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: MOV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+mov_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$MOV_ID")
+check "MOV 読戻し (200)" "200" "$mov_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
