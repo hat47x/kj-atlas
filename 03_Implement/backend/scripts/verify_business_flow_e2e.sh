@@ -3160,5 +3160,45 @@ cl_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CL_ID")
 check "CL 読戻し (200)" "200" "$cl_read"
 
 echo ""
+echo "--- シナリオ71: 環境・サステナビリティの脱炭素戦略（外部要求と内部コストの相克） ---"
+# 業態: 環境・サステナビリティ（ESG/CSR）
+# 想定人物: サステナビリティ責任者（ESG要求を整理）
+# 業務領域: ステークホルダーからのESG要求・社内課題のKJ分類と、脱炭素戦略の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 短期的な収益（事業拡大）と長期的な環境負荷（脱炭素投資）のトレードオフを
+#          矛盾検出で表面化し、戦略判断の根拠にする（外部要求と内部コストの相克）。
+ES_ID="biz-flow-esg"
+ES_DOC='{"version":1,"id":"'$ES_ID'","title":"脱炭素戦略検討","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"es1","text":"投資家は脱炭素目標の開示を求めている","x":0,"y":0,"textReviewed":true},{"id":"es2","text":"脱炭素投資は短期的な収益を圧迫するという懸念","x":10,"y":0,"textReviewed":true},{"id":"es3","text":"再生可能エネルギーへの切替でコスト低減の余地がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"es-i","cardIds":["es1","es2","es3"]}],"readingOrder":["es-i"]}'
+
+es_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$ES_ID" \
+  -H 'Content-Type: application/json' -d "$ES_DOC")
+check "ES PUT document (作成)" "200" "$es_put"
+
+# ① AI束ね
+es_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"es1","text":"投資家は脱炭素目標の開示を求めている","textReviewed":true},{"id":"es2","text":"脱炭素投資は短期的な収益を圧迫するという懸念","textReviewed":true},{"id":"es3","text":"再生可能エネルギーへの切替でコスト低減の余地がある","textReviewed":true}]}')
+case "$es_groups" in *'"groups":'*) echo "  PASS: ES ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: ES ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+es_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$ES_DOC,\"islandId\":\"es-i\"}")
+case "$es_summary" in *'"groundingIds":["es1","es2","es3"]'*) echo "  PASS: ES ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: ES ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（脱炭素目標の開示要求 vs 短期的な収益圧迫・外部要求と内部コストの相克）
+es_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"es1","text":"投資家は脱炭素目標の開示を求めている","textReviewed":true},"cardB":{"id":"es2","text":"脱炭素投資は短期的な収益を圧迫するという懸念","textReviewed":true}}')
+case "$es_contra" in *'"hasContradiction"'*) echo "  PASS: ES ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: ES ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+es_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$ES_DOC}")
+case "$es_narr" in *'"basedOnReadingOrder":["es-i"]'*) echo "  PASS: ES ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: ES ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+es_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$ES_ID")
+check "ES 読戻し (200)" "200" "$es_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]

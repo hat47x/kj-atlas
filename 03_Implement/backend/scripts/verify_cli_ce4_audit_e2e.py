@@ -178,49 +178,53 @@ def main() -> int:
         _put_document(base_url, doc)
         check("PUT document (200)", 200, 200)
 
-        # The `kj` CLI's context-query: a real admin-scriptable CE4 audit op.
-        # input JSON carries docId + the CE4 hashes; the CLI POSTs to
-        # /docs/{id}/context-audit with channel=cli.
-        input_path = os.path.join(tmp, "cli_input.json")
-        with open(input_path, "w", encoding="utf-8") as fh:
-            json.dump(
-                {
-                    "docId": DOC_ID,
-                    "equivalenceKey": "a" * 64,
-                    "bundleHash": "b" * 64,
-                    "queryCanonicalHash": "a" * 64,
-                },
-                fh,
+        # The `kj` CLI's full CE4 lifecycle: context-query -> context-bundle ->
+        # proposal-diff -> apply. Each is an admin-scriptable op that POSTs to
+        # /docs/{id}/context-audit with channel=cli. proposal/apply require a
+        # sourceBundleHash; apply is forced dry-run by the CLI.
+        eq = "a" * 64
+        bh = "b" * 64
+        src = "c" * 64
+        operations = [
+            ("context-query", "query", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq}),
+            ("context-bundle", "bundle", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq}),
+            ("proposal-diff", "proposal", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src}),
+            ("apply", "apply", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src, "sideEffect": "none"}),
+        ]
+        for cli_cmd, _op, payload in operations:
+            input_path = os.path.join(tmp, f"cli_{cli_cmd}.json")
+            with open(input_path, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh)
+            proc = subprocess.run(
+                [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
+                 cli_cmd, "--input", input_path],
+                cwd=BACKEND_DIR,
+                capture_output=True,
+                text=True,
+                timeout=60,
             )
-        proc = subprocess.run(
-            [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
-             "context-query", "--input", input_path],
-            cwd=BACKEND_DIR,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        check("kj CLI context-query exit", 0, proc.returncode)
-        if proc.returncode != 0:
-            print(proc.stdout[-2000:])
-            print(proc.stderr[-2000:])
+            check(f"kj CLI {cli_cmd} exit", 0, proc.returncode)
+            if proc.returncode != 0:
+                print(proc.stdout[-2000:])
+                print(proc.stderr[-2000:])
 
         time.sleep(1.0)
         events = sink.snapshot()
         cli_events = [
             e for e in events
-            if e.get("eventType") == "query"
-            and e.get("docId") == DOC_ID
+            if e.get("docId") == DOC_ID
             and isinstance(e.get("metadata"), dict)
             and e["metadata"].get("channel") == "cli"
         ]
-        check("audit sink received channel=cli event", 1, len(cli_events))
+        check("audit sink received 4 channel=cli events", 4, len(cli_events))
+        seen_ops = sorted(e["metadata"].get("operation") for e in cli_events)
+        check("channel=cli operations = query/bundle/proposal/apply",
+              ["apply", "bundle", "proposal", "query"], seen_ops)
         if cli_events:
-            meta = cli_events[0]["metadata"]
-            check("metadata.operation=query", "query", meta.get("operation"))
-            check("metadata.command=context-query", "context-query", meta.get("command"))
-            check("metadata.equivalenceKey present (64hex)", 64, len(meta.get("equivalenceKey") or ""))
-            check("metadata.bundleHash present (64hex)", 64, len(meta.get("bundleHash") or ""))
+            query_meta = next((e["metadata"] for e in cli_events if e["metadata"].get("operation") == "query"), None)
+            check("metadata.command=context-query", "context-query", query_meta.get("command") if query_meta else None)
+            check("metadata.equivalenceKey present (64hex)", 64, len(query_meta.get("equivalenceKey") or "") if query_meta else 0)
+            check("metadata.bundleHash present (64hex)", 64, len(query_meta.get("bundleHash") or "") if query_meta else 0)
 
         print(f"=== Result: {PASS} passed, {FAIL} failed ===")
         return 0 if FAIL == 0 else 1
