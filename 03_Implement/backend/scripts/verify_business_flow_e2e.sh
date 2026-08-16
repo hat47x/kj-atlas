@@ -6670,5 +6670,46 @@ gas_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GAS_ID")
 check "GAS 読戻し (200)" "200" "$gas_read"
 
 echo ""
+echo "--- シナリオ154: カジノ・IR（健全性・責任と収益・集客のトレードオフ） ---"
+# 業態: カジノ・IR（統合型リゾート・カジノ運営）
+# 想定人物: カジノ運営責任者／IR施設マネージャー
+# 業務領域: 運営・来場者・健全性・収益への声のKJ分類と、IR施設の運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 依存症対策や入場制限など、健全で責任ある運営（健全性・責任）と売上や集客への圧力
+#          （収益・集客）のトレードオフを矛盾検出（正パス）で表面化し、IR施設の運営改善根拠にする
+#          （健全性と収益の相克・カジノ以外のエンタメ・文化・MICE誘致で地域経済への波及を目指す動きも指摘）。
+IR_ID="biz-flow-casino-ir"
+IR_DOC='{"version":1,"id":"'$IR_ID'","title":"IR施設の運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ir1","text":"依存症対策や入場制限など、健全で責任ある運営を重視する声（健全性・責任）","x":0,"y":0,"textReviewed":true},{"id":"ir2","text":"売上や集客への圧力など、健全性と収益・集客のトレードオフに悩む声（収益・集客）","x":10,"y":0,"textReviewed":true},{"id":"ir3","text":"カジノ以外のエンタメ・文化・MICE誘致で地域経済への波及を目指す動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ir-i","cardIds":["ir1","ir2","ir3"]}],"readingOrder":["ir-i"]}'
+
+ir_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$IR_ID" \
+  -H 'Content-Type: application/json' -d "$IR_DOC")
+check "IR PUT document (作成)" "200" "$ir_put"
+
+# ① AI束ね
+ir_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ir1","text":"依存症対策や入場制限など、健全で責任ある運営を重視する声（健全性・責任）","textReviewed":true},{"id":"ir2","text":"売上や集客への圧力など、健全性と収益・集客のトレードオフに悩む声（収益・集客）","textReviewed":true},{"id":"ir3","text":"カジノ以外のエンタメ・文化・MICE誘致で地域経済への波及を目指す動き","textReviewed":true}]}')
+case "$ir_groups" in *'"groups":'*) echo "  PASS: IR ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: IR ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ir_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$IR_DOC,\"islandId\":\"ir-i\"}")
+case "$ir_summary" in *'"groundingIds":["ir1","ir2","ir3"]'*) echo "  PASS: IR ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: IR ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（健全性・責任 vs 収益・集客・健全性と収益の相克・正パス）
+ir_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ir1","text":"依存症対策や入場制限など、健全で責任ある運営を重視する声（健全性・責任）","textReviewed":true},"cardB":{"id":"ir2","text":"売上や集客への圧力など、健全性と収益・集客のトレードオフに悩む声（収益・集客）","textReviewed":true}}')
+case "$ir_contra" in *'"hasContradiction":true'*) echo "  PASS: IR ③矛盾検出（健全性・責任と収益・集客のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: IR ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ir_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$IR_DOC}")
+case "$ir_narr" in *'"basedOnReadingOrder":["ir-i"]'*) echo "  PASS: IR ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: IR ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ir_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IR_ID")
+check "IR 読戻し (200)" "200" "$ir_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
