@@ -7172,5 +7172,47 @@ golf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GOLF_ID")
 check "GOLF 読戻し (200)" "200" "$golf_read"
 
 echo ""
+echo "--- シナリオ166: 漫画喫茶・ネットカフェ（環境・サービスと稼働・コストのトレードオフ） ---"
+# 業態: 漫画喫茶・ネットカフェ（複合カフェ運営）
+# 想定人物: 店長／運営責任者
+# 業務領域: 設備・滞在環境・サービス・価格への声のKJ分類と、複合カフェ運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 静かで清潔な個室環境と充実したサービス（環境・サービス）と稼働率や人件費への圧力
+#          （稼働・コスト）のトレードオフを矛盾検出（正パス）で表面化し、複合カフェ運営の改善根拠に
+#          する（環境・サービスと稼働の相克・仕事や休憩・滞在の多様な使い方に応える柔軟な料金や
+#          プランを模索する動きも指摘）。
+NETKAFE_ID="biz-flow-netkafe"
+NETKAFE_DOC='{"version":1,"id":"'$NETKAFE_ID'","title":"複合カフェ運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"nk1","text":"静かで清潔な個室環境と充実したサービス（ドリンク・設備）を重視する声（環境・サービス）","x":0,"y":0,"textReviewed":true},{"id":"nk2","text":"稼働率や人件費への圧力など、環境・サービスと稼働・コストのトレードオフに悩む声（稼働・コスト）","x":10,"y":0,"textReviewed":true},{"id":"nk3","text":"仕事や休憩、滞在の多様な使い方に応える柔軟な料金やプランを模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"nk-i","cardIds":["nk1","nk2","nk3"]}],"readingOrder":["nk-i"]}'
+
+nk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$NETKAFE_ID" \
+  -H 'Content-Type: application/json' -d "$NETKAFE_DOC")
+check "NK PUT document (作成)" "200" "$nk_put"
+
+# ① AI束ね
+nk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"nk1","text":"静かで清潔な個室環境と充実したサービス（ドリンク・設備）を重視する声（環境・サービス）","textReviewed":true},{"id":"nk2","text":"稼働率や人件費への圧力など、環境・サービスと稼働・コストのトレードオフに悩む声（稼働・コスト）","textReviewed":true},{"id":"nk3","text":"仕事や休憩、滞在の多様な使い方に応える柔軟な料金やプランを模索する動き","textReviewed":true}]}')
+case "$nk_groups" in *'"groups":'*) echo "  PASS: NK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: NK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+nk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$NETKAFE_DOC,\"islandId\":\"nk-i\"}")
+case "$nk_summary" in *'"groundingIds":["nk1","nk2","nk3"]'*) echo "  PASS: NK ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: NK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（環境・サービス vs 稼働・コスト・環境・サービスと稼働の相克・正パス）
+nk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"nk1","text":"静かで清潔な個室環境と充実したサービス（ドリンク・設備）を重視する声（環境・サービス）","textReviewed":true},"cardB":{"id":"nk2","text":"稼働率や人件費への圧力など、環境・サービスと稼働・コストのトレードオフに悩む声（稼働・コスト）","textReviewed":true}}')
+case "$nk_contra" in *'"hasContradiction":true'*) echo "  PASS: NK ③矛盾検出（環境・サービスと稼働・コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: NK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+nk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$NETKAFE_DOC}")
+case "$nk_narr" in *'"basedOnReadingOrder":["nk-i"]'*) echo "  PASS: NK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: NK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+nk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$NETKAFE_ID")
+check "NK 読戻し (200)" "200" "$nk_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
