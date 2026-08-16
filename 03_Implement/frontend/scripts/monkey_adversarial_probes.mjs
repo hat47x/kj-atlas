@@ -221,6 +221,36 @@ try {
     rec("A9", "ja localeで島の既定名に英語が出ない", !hit, hit ? `画面に "${hit[0]}" が表示された` : "英語の既定名なし");
     await page.close();
   }
+
+  // A10: a role=menu opened from the canvas must expose a name and move
+  // keyboard focus into its enabled menuitems.
+  if (run("A10")) {
+    const page = await open([{ id: "c1", text: "キーボードメニュー対象", x: 220, y: 220 }]);
+    const card = page.getByRole("button", { name: "キーボードメニュー対象" });
+    await card.focus();
+    await page.keyboard.press("Shift+F10");
+    const menu = page.getByRole("menu");
+    await menu.waitFor({ state: "visible" });
+    const menuName = (await menu.getAttribute("aria-label")) || (await menu.getAttribute("aria-labelledby")) || "";
+    const focusedOnOpen = await menu.locator(':scope [role="menuitem"]:focus').innerText().catch(() => "");
+    await page.keyboard.press("ArrowDown");
+    const focusedAfterArrow = await menu.locator(':scope [role="menuitem"]:focus').innerText().catch(() => "");
+    await page.keyboard.press("Escape");
+    const closed = await menu.count() === 0;
+    const focusReturned = await card.evaluate((element) => document.activeElement === element);
+    const focusAfterEscape = await page.evaluate(() => {
+      const active = document.activeElement;
+      return active ? `${active.tagName.toLowerCase()}:${active.getAttribute("aria-label") || (active.textContent ?? "").trim().slice(0, 40)}` : "(none)";
+    });
+    rec(
+      "A10",
+      "カードのコンテキストメニューを名前付き・キーボード操作可能にする",
+      menuName.length > 0 && focusedOnOpen.length > 0 && focusedAfterArrow.length > 0 &&
+        focusedAfterArrow !== focusedOnOpen && closed && focusReturned,
+      `menu名=${menuName || "(なし)"} / open時=${focusedOnOpen || "(なし)"} / ArrowDown後=${focusedAfterArrow || "(なし)"} / Escape閉鎖=${closed} / focus復帰=${focusReturned} (${focusAfterEscape})`
+    );
+    await page.close();
+  }
 } catch (error) {
   rec("EXCEPTION", "実行時例外", false, String(error).slice(0, 300));
 } finally {

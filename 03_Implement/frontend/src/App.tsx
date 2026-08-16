@@ -1222,6 +1222,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
     | null
   >(null);
+  const contextMenuReturnFocusRef = useRef<HTMLElement | null>(null);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -4960,7 +4961,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const handleCardContextMenu = useCallback(
-    (cardId: string, clientX: number, clientY: number) => {
+    (cardId: string, clientX: number, clientY: number, trigger: HTMLElement) => {
+      contextMenuReturnFocusRef.current = trigger;
       setSelectedCardIds((previous) => (previous.includes(cardId) ? previous : [cardId]));
       setContextMenu({ x: clientX, y: clientY, target: { kind: "card", cardId } });
     },
@@ -4969,6 +4971,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleBackgroundContextMenu = useCallback(
     (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      contextMenuReturnFocusRef.current =
+        globalThis.document.activeElement instanceof HTMLElement ? globalThis.document.activeElement : null;
       if (document) {
         const localCardsById = new Map(document.cards.map((card): [string, typeof card] => [card.id, card]));
         const hitIsland = document.islands.find((island) => {
@@ -12563,6 +12567,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 x={contextMenu.x}
                 y={contextMenu.y}
                 items={items}
+                ariaLabel={t("context_menu.label")}
+                returnFocusTo={contextMenuReturnFocusRef.current}
                 onClose={closeContextMenu}
               />
             );

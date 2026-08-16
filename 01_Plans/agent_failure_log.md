@@ -475,6 +475,20 @@ Updated: 2026-08-03
 - 対応: リポジトリ直下からvalidatorとdocs-checkを再実行し、成功を確認した。
 - 再発防止: 複数領域の検証を連結するときは各コマンドの基準ディレクトリを先に揃えるか、領域ごとに実行を分ける。
 
+## 2026-08-16: WSL上のViteが変更通知を拾わず修正前moduleを配信
+
+- 事象: `ContextMenu.tsx`修正後もA10が修正前と同じ結果を返し、通常URLの変換moduleにも旧コードが残っていた。
+- 原因: `/mnt/d`上で動かしたViteのfile watchingが変更通知を拾わず、変換cacheを更新しなかった。クエリを変えた直接取得では新コードを確認できた。
+- 対応: Viteを`--force`付きで再起動して依存・変換cacheを再生成し、同じ実画面操作で修正後挙動を確認した。
+- 再発防止: WSL mount上のhot reload結果がソースと矛盾した場合は、通常URLとcache-busting URLのmodule内容を比較し、`--force`再起動後に検証する。
+
+## 2026-08-16: 混在改行ファイルの一律CRLF化で不要差分を生成
+
+- 事象: `apply_patch`後の混在改行を一律CRLFへ整えた結果、既存のLF行まで変わり、CardViewとUI回帰testに大きな非意味差分が生じた。
+- 原因: HEAD時点でCRLF/LFが混在していたことを確認せず、ファイル単位で改行を統一した。
+- 対応: HEADの行内容と改行形式を照合し、既存行ごとの改行形式を復元して実質差分をCardView 2行、test 14行へ縮小した。
+- 再発防止: 混在改行fileは一律変換せず、`git diff --numstat`で異常増加を確認してから既存行の改行形式を保つ。
+
 ## 2026-08-12: verify_mcp が .ts モジュール import + TS構文で Node 20 から起動不能
 
 - 事象: `verify_mcp.mjs` が `import { interpretProjectionResult } from "../src/mcp_verify_result.ts"` と `as` キャストを含むため、素の `node`（.nvmrc は 20）で `ERR_UNKNOWN_FILE_EXTENSION`／`SyntaxError: Unexpected identifier 'as'` になった。

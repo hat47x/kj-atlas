@@ -262,6 +262,7 @@ describe("UX Operability regression contracts", () => {
   it("UX-MENU-01: menu bar consolidates flat header operations into 6 categories without a net increase in always-visible core actions", () => {
     const appSource = readSource("src/App.tsx");
     const menuBarSource = readSource("src/ui/MenuBar.tsx");
+    const contextMenuSource = readSource("src/ui/ContextMenu.tsx");
     const recentDocumentsDialogSource = readSource("src/ui/RecentDocumentsDialog.tsx");
 
     // AC-1: the slim toolbar's 7 core actions are unchanged (the flat
@@ -313,8 +314,7 @@ describe("UX Operability regression contracts", () => {
     expect(recentDocumentsDialogSource).toContain('t("app.toolbar.open")');
 
     // WAI-ARIA menubar keyboard contract (arrow cycling, Home/End,
-    // Escape-close-with-focus-return) — new code, since neither
-    // ContextMenu.tsx nor CommandPalette.tsx already provided it.
+    // Escape-close-with-focus-return).
     expect(menuBarSource).toContain('role="menubar"');
     expect(menuBarSource).toContain('role="menu"');
     expect(menuBarSource).toContain('aria-haspopup="menu"');
@@ -326,6 +326,16 @@ describe("UX Operability regression contracts", () => {
     expect(menuBarSource).toContain('event.key === "End"');
     expect(menuBarSource).toContain('event.key === "Escape"');
     expect(menuBarSource).toContain("closeAndReturnFocus");
+
+    // Canvas context menus follow the same keyboard-operable menu contract.
+    expect(contextMenuSource).toContain("aria-label={ariaLabel}");
+    expect(contextMenuSource).toContain('event.key === "ArrowDown"');
+    expect(contextMenuSource).toContain('event.key === "ArrowUp"');
+    expect(contextMenuSource).toContain('event.key === "Home"');
+    expect(contextMenuSource).toContain('event.key === "End"');
+    expect(contextMenuSource).toContain("restorePreviousFocus");
+    expect(contextMenuSource).toContain("enabledItems()[0]?.focus()");
+    expect(appSource).toContain("returnFocusTo={contextMenuReturnFocusRef.current}");
 
     // 390px collapse (Round 5 redline): below the fixed matrix's 768px
     // breakpoint, the 6 categories consolidate into a single trigger.

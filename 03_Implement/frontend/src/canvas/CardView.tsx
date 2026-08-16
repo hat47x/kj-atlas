@@ -29,7 +29,7 @@ type CardViewProps = {
   onBeginEdit?: (cardId: string) => void;
   onCommitEdit?: (cardId: string, text: string) => void;
   onCancelEdit?: () => void;
-  onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
+  onCardContextMenu?: (cardId: string, clientX: number, clientY: number, trigger: HTMLElement) => void;
   /** UX-VISUAL-02: deterministic "protection" mark for a lone-wolf card. */
   isProtected?: boolean;
   /** DOMAIN-TRACE-01 AC-3: show the optional #seq badge (default OFF, View toggle). */
@@ -341,7 +341,7 @@ function CardViewComponent({
         }
         event.preventDefault();
         event.stopPropagation();
-        onCardContextMenu(card.id, event.clientX, event.clientY);
+        onCardContextMenu(card.id, event.clientX, event.clientY, event.currentTarget);
       }}
     >
       {/* UX-VISUAL-01 (ADR-0048 D1): state badges live in a normal-flow meta-row

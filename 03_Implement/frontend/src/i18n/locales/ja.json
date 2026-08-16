@@ -682,6 +682,7 @@
   "app.toolbar.save": "保存",
   "app.toolbar.advanced_ui": "詳細",
   "app.toolbar.advanced_ui_hint": "AI・高度な機能の表示を切り替えます",
+  "context_menu.label": "キャンバス操作メニュー",
   "context_menu.new_card_here": "ここに新規カード",
   "context_menu.edit_card": "カードを編集",
   "context_menu.connect": "関係線でつなぐ",
