@@ -8,10 +8,11 @@ credential alone cannot register or disable a model. Secrets are accepted as
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.control_plane_auth import require_control_plane_authorization
@@ -49,6 +50,23 @@ class RegisterProviderRequest(BaseModel):
     baseUrl: str | None = Field(default=None, max_length=2048)
     # Reference only (env var / secret-manager key), never a plaintext value.
     apiKeyRef: str | None = Field(default=None, max_length=256)
+
+    @field_validator("apiKeyRef")
+    @classmethod
+    def _api_key_ref_must_be_a_reference(cls, v: str | None) -> str | None:
+        """AI-MODEL-GOVERNANCE-03 AC-4: apiKeyRef must be a reference to an
+        allowlisted `KJ_ATLAS_*` env var or a `secret:` secret-manager key --
+        never an arbitrary env-var name or a plaintext secret. This keeps
+        plaintext keys out of the registry column (DB), so they cannot leak to
+        API/logs/audit downstream."""
+        if v is None:
+            return v
+        if re.fullmatch(r"KJ_ATLAS_[A-Z][A-Z0-9_]*", v) or re.fullmatch(r"secret:[A-Za-z0-9._/:-]+", v):
+            return v
+        raise ValueError(
+            "apiKeyRef must reference an allowlisted KJ_ATLAS_* env var or a "
+            "'secret:' secret-manager key -- never a plaintext key"
+        )
 
 
 class RegisterModelRequest(BaseModel):

@@ -28,7 +28,7 @@
 - [x] modelの`providerId`と異なるtransportへrequestを送らない（短期fail-closed gate）。
 - [x] 利用者画面に表示されたmodelは、同一session・同一tenant条件で実行前gateを通る。
 - [x] `none`または設定不足provider配下のmodelは実行操作を有効化しない。
-- [ ] `apiKeyRef`の秘密値をDB・API・ログ・監査へ出さない。
+- [x] `apiKeyRef`の秘密値をDB・API・ログ・監査へ出さない。
 - [ ] DeepSeek/localの2providerを同時登録した統合testで正しいtransport選択と不一致拒否を固定する。
 
 ## 検出記録（2026-08-16）
@@ -48,3 +48,12 @@
 - ログについても監査・登録経路でボディを出力しないことを実地確認。
 
 **残るAC-4のDB側**: 登録時 `apiKeyRef` は任意文字列を受理（`max_length=256` のみ）で、平文secretをそのまま `api_key_ref` 列へ格納し得る。**登録時に allowlist済み環境変数名（`KJ_ATLAS_*_API_KEY`）／secret-managerキー参照パターンだけを受理する検証**を追加するのが残作業（並行編集者＝モデルガバナンス当事者との整合を要する）。AC-5（DeepSeek/local 2-provider統合test）も残。
+
+## 対応記録3（iteration 199・AC-4完了）
+
+**AC-4を完了**した（API・監査側は対応記録2、DB側を本対応で追加）:
+
+- **登録時参照検証**（`RegisterProviderRequest._api_key_ref_must_be_a_reference`）: `apiKeyRef` は **allowlist済み `KJ_ATLAS_[A-Z][A-Z0-9_]*` 環境変数名** または **`secret:` プレフィックスのsecret-managerキー参照**のみ受理。**平文secret（`sk-...`）や任意環境変数名は 422** で拒否し、`api_key_ref` 列へ平文が格納されるのを防ぐ（fail-closed・API境界）。
+- **テスト**: `test_provider_api_key_ref_rejects_plaintext_at_registration` を追加 — 平文secret 422・任意env名 422・`KJ_ATLAS_*` 201・`secret:...` 201 を固定。`test_model_governance.py` **16/16 pass**・admin ops E2E **20/20 pass**（CLI provider登録の非後退を確認）。
+
+**残るAC-5**: DeepSeek/local 2-providerの同時登録で正しいtransport選択と不一致拒否を固定する統合テスト。動的dispatchの本実装（registry providerId → transport factory）と併せて並行編集者（モデルガバナンス当事者）との整合を要する。

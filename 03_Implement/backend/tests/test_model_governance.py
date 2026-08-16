@@ -130,6 +130,45 @@ def test_provider_api_key_ref_never_exposed_to_api_or_audit(tmp_path, monkeypatc
                 assert api_key_ref not in field
 
 
+def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 AC-4 (DB side): apiKeyRef must be a reference --
+    a plaintext secret or an arbitrary env-var name is rejected at the API
+    boundary so it is never stored in the registry column."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        base = {"id": "p", "providerKind": "external", "displayName": "P", "baseUrl": "https://example.test"}
+        # Plaintext secret (looks like an API key) -> 422, nothing stored.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "apiKeyRef": "sk-this-is-a-plaintext-secret-12345"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 422, resp.text
+        # Arbitrary env-var name (not KJ_ATLAS_*) -> 422.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "apiKeyRef": "MY_RANDOM_API_KEY"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 422, resp.text
+        # Valid allowlisted KJ_ATLAS_* ref -> 201.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "id": "p2", "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+        # Valid secret-manager ref -> 201.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "id": "p3", "apiKeyRef": "secret:prod/deepseek-key"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+
+
 def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
 
