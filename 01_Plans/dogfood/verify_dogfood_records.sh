@@ -89,13 +89,14 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 432 = 405 + 12 + 7 + 8）
+# 7. 総チェック数の算術照合（マニフェスト主張: 440 = 405 + 12 + 7 + 8 + 8）
 BUSINESS_CHECKS=405
 ADMIN_CHECKS=12
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=8
-TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS))
-check "総チェック算術 (405+12+7+8)" "$TOTAL" "432"
+CLI_CE4_CHECKS=8
+TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS + CLI_CE4_CHECKS))
+check "総チェック算術 (405+12+7+8+8)" "$TOTAL" "440"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then

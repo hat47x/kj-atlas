@@ -215,6 +215,12 @@ if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
   # an explicit SKIP-style exit 2 when absent, not a hard failure.
   check "MCP CE-4 audit e2e (channel=mcp reaches sink)" \
     "$VENV_PYTHON" "$ROOT_DIR/03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py"
+  # `kj` CLI -> CE-4 audit (channel=cli) -> HTTP sink. Self-contained, mirrors
+  # the MCP audit e2e but drives the CLI's context-query (the admin-scriptable
+  # non-Web path, channel=cli). Backend runs keyless (local-dev open mode) —
+  # the CLI carries no X-API-Key, which is exactly the deployment this covers.
+  check "CLI CE-4 audit e2e (channel=cli reaches sink)" \
+    "$VENV_PYTHON" "$ROOT_DIR/03_Implement/backend/scripts/verify_cli_ce4_audit_e2e.py"
 else
   echo "  SKIP: business-flow E2Es — backend venv/alembic.ini not found"
 fi
