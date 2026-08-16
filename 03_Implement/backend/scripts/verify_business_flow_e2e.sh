@@ -6586,5 +6586,47 @@ bet_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BET_ID")
 check "BET 読戻し (200)" "200" "$bet_read"
 
 echo ""
+echo "--- シナリオ152: 税関・通関（コンプライアンス・正確性とスピード・効率のトレードオフ） ---"
+# 業態: 税関・通関（通関業・貿易手続き）
+# 想定人物: 通関士／通関業務責任者
+# 業務領域: 通関手続き・規制対応・顧客（輸出入業者）への声のKJ分類と、通関業務の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 法令順守と正確な申告・規制対応（コンプライアンス・正確性）と迅速な通関やコスト削減への
+#          圧力（スピード・効率）のトレードオフを矛盾検出（正パス）で表面化し、通関業務の改善根拠に
+#          する（正確性とスピードの相克・デジタル手続きの活用や顧客（輸出入業者）への丁寧なサポート
+#          で信頼を築く動きも指摘）。
+CUST_ID="biz-flow-customs"
+CUST_DOC='{"version":1,"id":"'$CUST_ID'","title":"通関業務の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cu1","text":"法令順守と正確な申告・規制対応を最優先する声（コンプライアンス・正確性）","x":0,"y":0,"textReviewed":true},{"id":"cu2","text":"迅速な通関やコスト削減への圧力など、正確性とスピード・効率のトレードオフに悩む声（スピード・効率）","x":10,"y":0,"textReviewed":true},{"id":"cu3","text":"デジタル手続きの活用や顧客（輸出入業者）への丁寧なサポートで信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cust-i","cardIds":["cu1","cu2","cu3"]}],"readingOrder":["cust-i"]}'
+
+cust_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CUST_ID" \
+  -H 'Content-Type: application/json' -d "$CUST_DOC")
+check "CUST PUT document (作成)" "200" "$cust_put"
+
+# ① AI束ね
+cust_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cu1","text":"法令順守と正確な申告・規制対応を最優先する声（コンプライアンス・正確性）","textReviewed":true},{"id":"cu2","text":"迅速な通関やコスト削減への圧力など、正確性とスピード・効率のトレードオフに悩む声（スピード・効率）","textReviewed":true},{"id":"cu3","text":"デジタル手続きの活用や顧客（輸出入業者）への丁寧なサポートで信頼を築く動き","textReviewed":true}]}')
+case "$cust_groups" in *'"groups":'*) echo "  PASS: CUST ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CUST ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cust_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CUST_DOC,\"islandId\":\"cust-i\"}")
+case "$cust_summary" in *'"groundingIds":["cu1","cu2","cu3"]'*) echo "  PASS: CUST ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CUST ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（コンプライアンス・正確性 vs スピード・効率・正確性とスピードの相克・正パス）
+cust_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cu1","text":"法令順守と正確な申告・規制対応を最優先する声（コンプライアンス・正確性）","textReviewed":true},"cardB":{"id":"cu2","text":"迅速な通関やコスト削減への圧力など、正確性とスピード・効率のトレードオフに悩む声（スピード・効率）","textReviewed":true}}')
+case "$cust_contra" in *'"hasContradiction":true'*) echo "  PASS: CUST ③矛盾検出（コンプライアンス・正確性とスピード・効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CUST ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cust_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CUST_DOC}")
+case "$cust_narr" in *'"basedOnReadingOrder":["cust-i"]'*) echo "  PASS: CUST ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CUST ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cust_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CUST_ID")
+check "CUST 読戻し (200)" "200" "$cust_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
