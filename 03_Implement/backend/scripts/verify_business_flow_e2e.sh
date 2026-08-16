@@ -6376,5 +6376,47 @@ shri_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SHRI_ID")
 check "SHRI 読戻し (200)" "200" "$shri_read"
 
 echo ""
+echo "--- シナリオ147: 学校給食（栄養・安全とコスト・効率のトレードオフ） ---"
+# 業態: 学校給食（給食センター・給食運営）
+# 想定人物: 栄養士／給食センター責任者
+# 業務領域: 献立・栄養・食の安全・子どもへの声のKJ分類と、給食運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 子どもの栄養バランスと食の安全（アレルギー対応・衛生管理）を最優先する（安全・栄養）と
+#          食材費や人員への圧力（コスト・効率）のトレードオフを矛盾検出（正パス）で表面化し、
+#          給食運営の改善根拠にする（安全・栄養とコストの相克・食育や地産地消で子どもたちの食への
+#          興味を育てる動きも指摘）。
+SCHOOL_ID="biz-flow-school-lunch"
+SCHOOL_DOC='{"version":1,"id":"'$SCHOOL_ID'","title":"学校給食の運営改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sl1","text":"子どもの栄養バランスと食の安全（アレルギー対応・衛生管理）を最優先する声（安全・栄養）","x":0,"y":0,"textReviewed":true},{"id":"sl2","text":"食材費や人員への圧力など、栄養・安全とコスト・効率のトレードオフに悩む声（コスト・効率）","x":10,"y":0,"textReviewed":true},{"id":"sl3","text":"食育や地産地消、子どもたちの食への興味を育てる動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"school-i","cardIds":["sl1","sl2","sl3"]}],"readingOrder":["school-i"]}'
+
+school_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SCHOOL_ID" \
+  -H 'Content-Type: application/json' -d "$SCHOOL_DOC")
+check "SCHOOL PUT document (作成)" "200" "$school_put"
+
+# ① AI束ね
+school_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sl1","text":"子どもの栄養バランスと食の安全（アレルギー対応・衛生管理）を最優先する声（安全・栄養）","textReviewed":true},{"id":"sl2","text":"食材費や人員への圧力など、栄養・安全とコスト・効率のトレードオフに悩む声（コスト・効率）","textReviewed":true},{"id":"sl3","text":"食育や地産地消、子どもたちの食への興味を育てる動き","textReviewed":true}]}')
+case "$school_groups" in *'"groups":'*) echo "  PASS: SCHOOL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SCHOOL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+school_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SCHOOL_DOC,\"islandId\":\"school-i\"}")
+case "$school_summary" in *'"groundingIds":["sl1","sl2","sl3"]'*) echo "  PASS: SCHOOL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SCHOOL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安全・栄養 vs コスト・効率・安全・栄養とコストの相克・正パス）
+school_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sl1","text":"子どもの栄養バランスと食の安全（アレルギー対応・衛生管理）を最優先する声（安全・栄養）","textReviewed":true},"cardB":{"id":"sl2","text":"食材費や人員への圧力など、栄養・安全とコスト・効率のトレードオフに悩む声（コスト・効率）","textReviewed":true}}')
+case "$school_contra" in *'"hasContradiction":true'*) echo "  PASS: SCHOOL ③矛盾検出（栄養・安全とコスト・効率のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SCHOOL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+school_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SCHOOL_DOC}")
+case "$school_narr" in *'"basedOnReadingOrder":["school-i"]'*) echo "  PASS: SCHOOL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SCHOOL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+school_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SCHOOL_ID")
+check "SCHOOL 読戻し (200)" "200" "$school_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
