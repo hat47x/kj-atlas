@@ -4088,5 +4088,45 @@ tp_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TP_ID")
 check "TP 読戻し (200)" "200" "$tp_read"
 
 echo ""
+echo "--- シナリオ94: 鉄道・駅の混雑と利用者声の整理（混雑と快適のトレードオフ） ---"
+# 業態: 鉄道・駅（鉄道会社）
+# 想定人物: 駅務・設備担当（利用者の声を整理）
+# 業務領域: 混雑・駅施設・バリアフリーへの利用者の声のKJ分類と、駅務・設備改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 混雑緩和への投資（輸送力増強・コスト）と、利用者の快適性（体験・待ち時間）
+#          のトレードオフを矛盾検出で表面化し、設備投資の判断根拠にする（混雑と快適のトレードオフ）。
+RW_ID="biz-flow-railway"
+RW_DOC='{"version":1,"id":"'$RW_ID'","title":"混雑と利用者声","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"rw1","text":"通勤時間帯の混雑が激しく、乗降に時間がかかるという声がある","x":0,"y":0,"textReviewed":true},{"id":"rw2","text":"輸送力増強には設備投資が必要で、運賃改定への懸念がある","x":10,"y":0,"textReviewed":true},{"id":"rw3","text":"駅のバリアフリー化は評価され、利用者満足は高い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"rw-i","cardIds":["rw1","rw2","rw3"]}],"readingOrder":["rw-i"]}'
+
+rw_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$RW_ID" \
+  -H 'Content-Type: application/json' -d "$RW_DOC")
+check "RW PUT document (作成)" "200" "$rw_put"
+
+# ① AI束ね
+rw_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"rw1","text":"通勤時間帯の混雑が激しく、乗降に時間がかかるという声がある","textReviewed":true},{"id":"rw2","text":"輸送力増強には設備投資が必要で、運賃改定への懸念がある","textReviewed":true},{"id":"rw3","text":"駅のバリアフリー化は評価され、利用者満足は高い","textReviewed":true}]}')
+case "$rw_groups" in *'"groups":'*) echo "  PASS: RW ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: RW ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+rw_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$RW_DOC,\"islandId\":\"rw-i\"}")
+case "$rw_summary" in *'"groundingIds":["rw1","rw2","rw3"]'*) echo "  PASS: RW ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: RW ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（混雑緩和投資 vs 運賃懸念・混雑と快適のトレードオフ）
+rw_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"rw1","text":"通勤時間帯の混雑が激しく、乗降に時間がかかるという声がある","textReviewed":true},"cardB":{"id":"rw2","text":"輸送力増強には設備投資が必要で、運賃改定への懸念がある","textReviewed":true}}')
+case "$rw_contra" in *'"hasContradiction"'*) echo "  PASS: RW ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: RW ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+rw_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$RW_DOC}")
+case "$rw_narr" in *'"basedOnReadingOrder":["rw-i"]'*) echo "  PASS: RW ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: RW ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+rw_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$RW_ID")
+check "RW 読戻し (200)" "200" "$rw_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
