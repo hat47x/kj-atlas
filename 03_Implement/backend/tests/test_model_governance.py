@@ -96,6 +96,40 @@ def test_register_list_disable_model_flow(tmp_path, monkeypatch) -> None:
             assert db.get(LLMModelRegistryRow, "deepseek-reasoner").lifecycle_state == "disabled"
 
 
+def test_provider_api_key_ref_never_exposed_to_api_or_audit(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 AC-4: apiKeyRef is a reference (env/secret-manager
+    key), never a plaintext key, and it must not surface in the registry API
+    response or the control-plane audit trail."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    from kj_atlas_api.models import AdminAuditEventRow
+
+    with _client(tmp_path) as (client, session_local):
+        api_key_ref = "KJ_ATLAS_DEEPSEEK_API_KEY"
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek",
+                  "baseUrl": "https://api.deepseek.com", "apiKeyRef": api_key_ref},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+
+        # 1. The registry list response never echoes apiKeyRef (key or value).
+        registry_text = client.get("/admin/provision/models", headers={"X-Admin-Api-Key": _ADMIN_KEY}).text
+        assert "apiKeyRef" not in registry_text
+        assert api_key_ref not in registry_text
+
+        # 2. The control-plane audit records metadata only -- never the
+        #    registration payload (which would carry the secret reference).
+        with session_local() as db:
+            events = db.query(AdminAuditEventRow).all()
+        assert events, "expected at least one admin audit event"
+        for ev in events:
+            for field in (ev.route or "", ev.operation or "", ev.target or ""):
+                assert api_key_ref not in field
+
+
 def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
 

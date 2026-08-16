@@ -38,3 +38,13 @@
 ## 対応記録（2026-08-16）
 
 短期対策として、利用可能モデル一覧とAI実行前gateの双方で、登録provider kindとprocessの実行transportが一致するmodelだけを許可するようにした。不一致modelは一覧から除外し、IDを直接指定しても`model_provider_unavailable`（503）でLLM送信前に拒否する。本issueは複数providerへの動的dispatchとsecret参照解決が残るためOpenを維持する。
+
+## 対応記録2（iteration 197・AC-4の一部進捗）
+
+**AC-4（apiKeyRef非露呈）のAPI・監査側をテストで凍結**した（`test_model_governance.py` に `test_provider_api_key_ref_never_exposed_to_api_or_audit` を追加・15/15 pass）:
+
+- レジストリ一覧応答（`GET /admin/provision/models`）に `apiKeyRef` キーも値も**含まれない**ことを固定（`ProviderItem` は id/providerKind/displayName/lifecycleState のみ・現行実装どおり）。
+- control-plane監査（`record_admin_plane_audit`）が**メタデータのみ**（route/operation/result/status_code/request_id/actor_ref_hash/occurred_at）で、登録ペイロード（apiKeyRef値）を記録しないことを固定。
+- ログについても監査・登録経路でボディを出力しないことを実地確認。
+
+**残るAC-4のDB側**: 登録時 `apiKeyRef` は任意文字列を受理（`max_length=256` のみ）で、平文secretをそのまま `api_key_ref` 列へ格納し得る。**登録時に allowlist済み環境変数名（`KJ_ATLAS_*_API_KEY`）／secret-managerキー参照パターンだけを受理する検証**を追加するのが残作業（並行編集者＝モデルガバナンス当事者との整合を要する）。AC-5（DeepSeek/local 2-provider統合test）も残。
