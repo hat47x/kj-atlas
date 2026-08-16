@@ -4371,5 +4371,45 @@ cf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CF_ID")
 check "CF 読戻し (200)" "200" "$cf_read"
 
 echo ""
+echo "--- シナリオ101: 教育・学習塾の運営（指導の質と料金のトレードオフ） ---"
+# 業態: 教育・学習塾（進学塾/塾）
+# 想定人物: 塾長（保護者・生徒の声を整理）
+# 業務領域: 保護者・生徒からのフィードバック（指導・進路・料金）のKJ分類と、塾運営改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 指導の質の向上（少人数・個別指導）と料金（保護者の負担感）のトレードオフを
+#          矛盾検出で表面化し、塾運営の根拠にする（質と料金のトレードオフ）。
+JU_ID="biz-flow-juku"
+JU_DOC='{"version":1,"id":"'$JU_ID'","title":"塾運営フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ju1","text":"保護者は少人数・個別指導を求めている","x":0,"y":0,"textReviewed":true},{"id":"ju2","text":"個別指導の拡充には料金改定が必要との意見","x":10,"y":0,"textReviewed":true},{"id":"ju3","text":"生徒の志望校合格実績が集客につながっている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ju-i","cardIds":["ju1","ju2","ju3"]}],"readingOrder":["ju-i"]}'
+
+ju_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$JU_ID" \
+  -H 'Content-Type: application/json' -d "$JU_DOC")
+check "JU PUT document (作成)" "200" "$ju_put"
+
+# ① AI束ね
+ju_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ju1","text":"保護者は少人数・個別指導を求めている","textReviewed":true},{"id":"ju2","text":"個別指導の拡充には料金改定が必要との意見","textReviewed":true},{"id":"ju3","text":"生徒の志望校合格実績が集客につながっている","textReviewed":true}]}')
+case "$ju_groups" in *'"groups":'*) echo "  PASS: JU ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: JU ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ju_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$JU_DOC,\"islandId\":\"ju-i\"}")
+case "$ju_summary" in *'"groundingIds":["ju1","ju2","ju3"]'*) echo "  PASS: JU ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: JU ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（個別指導の要望 vs 料金改定・質と料金のトレードオフ）
+ju_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ju1","text":"保護者は少人数・個別指導を求めている","textReviewed":true},"cardB":{"id":"ju2","text":"個別指導の拡充には料金改定が必要との意見","textReviewed":true}}')
+case "$ju_contra" in *'"hasContradiction"'*) echo "  PASS: JU ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: JU ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ju_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$JU_DOC}")
+case "$ju_narr" in *'"basedOnReadingOrder":["ju-i"]'*) echo "  PASS: JU ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: JU ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ju_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$JU_ID")
+check "JU 読戻し (200)" "200" "$ju_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
