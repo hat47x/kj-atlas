@@ -6208,5 +6208,47 @@ cam_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CAM_ID")
 check "CAM 読戻し (200)" "200" "$cam_read"
 
 echo ""
+echo "--- シナリオ143: 医薬品卸（安定供給・品質と効率・コストのトレードオフ） ---"
+# 業態: 医薬品卸（医薬品卸売・配送）
+# 想定人物: 卸売営業／配送責任者
+# 業務領域: 在庫・配送・医療機関との関係・規制への声のKJ分類と、医薬品供給の在り方の検討
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 医薬品の安定供給と安全管理（温度管理・期限管理・品質）の確保（安定供給・品質）と
+#          配送効率や在庫コストへの圧力（効率・コスト）のトレードオフを矛盾検出（正パス）で
+#          表面化し、医薬品供給の在り方の根拠にする（供給と効率の相克・医療機関との密な連携や
+#          薬剤師の支援で信頼を築く動きも指摘）。
+WHOL_ID="biz-flow-wholesale"
+WHOL_DOC='{"version":1,"id":"'$WHOL_ID'","title":"医薬品供給の在り方","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"w1","text":"医薬品の安定供給と安全管理（温度管理・期限管理）を最優先する声（安定供給・品質）","x":0,"y":0,"textReviewed":true},{"id":"w2","text":"配送効率や在庫コストへの圧力など、安定供給と効率・コストのトレードオフに悩む声（効率・コスト）","x":10,"y":0,"textReviewed":true},{"id":"w3","text":"医療機関との密な連携や薬剤師の支援で信頼を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"whol-i","cardIds":["w1","w2","w3"]}],"readingOrder":["whol-i"]}'
+
+whol_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$WHOL_ID" \
+  -H 'Content-Type: application/json' -d "$WHOL_DOC")
+check "WHOL PUT document (作成)" "200" "$whol_put"
+
+# ① AI束ね
+whol_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"w1","text":"医薬品の安定供給と安全管理（温度管理・期限管理）を最優先する声（安定供給・品質）","textReviewed":true},{"id":"w2","text":"配送効率や在庫コストへの圧力など、安定供給と効率・コストのトレードオフに悩む声（効率・コスト）","textReviewed":true},{"id":"w3","text":"医療機関との密な連携や薬剤師の支援で信頼を築く動き","textReviewed":true}]}')
+case "$whol_groups" in *'"groups":'*) echo "  PASS: WHOL ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: WHOL ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+whol_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$WHOL_DOC,\"islandId\":\"whol-i\"}")
+case "$whol_summary" in *'"groundingIds":["w1","w2","w3"]'*) echo "  PASS: WHOL ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: WHOL ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（安定供給・品質 vs 効率・コスト・供給と効率の相克・正パス）
+whol_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"w1","text":"医薬品の安定供給と安全管理（温度管理・期限管理）を最優先する声（安定供給・品質）","textReviewed":true},"cardB":{"id":"w2","text":"配送効率や在庫コストへの圧力など、安定供給と効率・コストのトレードオフに悩む声（効率・コスト）","textReviewed":true}}')
+case "$whol_contra" in *'"hasContradiction":true'*) echo "  PASS: WHOL ③矛盾検出（安定供給・品質と効率・コストのトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: WHOL ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+whol_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$WHOL_DOC}")
+case "$whol_narr" in *'"basedOnReadingOrder":["whol-i"]'*) echo "  PASS: WHOL ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: WHOL ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+whol_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WHOL_ID")
+check "WHOL 読戻し (200)" "200" "$whol_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
