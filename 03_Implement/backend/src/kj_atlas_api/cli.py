@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -26,6 +28,58 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ce4_resolve.add_argument("--source-bundle-hash", required=True)
     ce4_resolve.add_argument("--safe-mode", action="store_true", default=True)
     ce4_resolve.add_argument("--no-safe-mode", action="store_false", dest="safe_mode")
+
+    admin_parser = subparsers.add_parser(
+        "admin",
+        help="Operate the control plane using KJ_ATLAS_ADMIN_API_KEY.",
+    )
+    admin_subparsers = admin_parser.add_subparsers(dest="admin_resource", required=True)
+
+    providers_parser = admin_subparsers.add_parser("providers")
+    providers_subparsers = providers_parser.add_subparsers(
+        dest="admin_action", required=True
+    )
+    provider_register = providers_subparsers.add_parser("register")
+    provider_register.add_argument("--id", required=True)
+    provider_register.add_argument("--kind", required=True)
+    provider_register.add_argument("--display-name", required=True)
+    provider_register.add_argument("--base-url")
+    provider_register.add_argument("--api-key-ref")
+    provider_register.add_argument("--yes", action="store_true")
+
+    models_parser = admin_subparsers.add_parser("models")
+    models_subparsers = models_parser.add_subparsers(dest="admin_action", required=True)
+    models_subparsers.add_parser("list")
+    model_register = models_subparsers.add_parser("register")
+    model_register.add_argument("--id", required=True)
+    model_register.add_argument("--provider-id", required=True)
+    model_register.add_argument("--display-name", required=True)
+    model_register.add_argument("--capabilities")
+    model_register.add_argument("--yes", action="store_true")
+    model_lifecycle = models_subparsers.add_parser("set-lifecycle")
+    model_lifecycle.add_argument("--id", required=True)
+    model_lifecycle.add_argument("--state", choices=("active", "disabled"), required=True)
+    model_lifecycle.add_argument("--yes", action="store_true")
+
+    tenants_parser = admin_subparsers.add_parser("tenants")
+    tenants_subparsers = tenants_parser.add_subparsers(dest="admin_action", required=True)
+    allowlist_get = tenants_subparsers.add_parser("model-allowlist-get")
+    allowlist_get.add_argument("--tenant-id", required=True)
+    allowlist_set = tenants_subparsers.add_parser("model-allowlist-set")
+    allowlist_set.add_argument("--tenant-id", required=True)
+    allowlist_set.add_argument(
+        "--model-id",
+        action="append",
+        default=[],
+        help="Allowed model ID. Repeat for multiple models; omit all to clear.",
+    )
+    allowlist_set.add_argument("--yes", action="store_true")
+
+    audit_parser = admin_subparsers.add_parser("audit")
+    audit_subparsers = audit_parser.add_subparsers(dest="admin_action", required=True)
+    audit_list = audit_subparsers.add_parser("list")
+    audit_list.add_argument("--limit", type=int, default=100)
+    audit_list.add_argument("--cursor")
 
     for command, operation in (
         ("context-query", "query"),
@@ -58,6 +112,170 @@ def _business_plane_headers(*, actor_ref: str | None = None, trace_id: str | Non
     if trace_id:
         headers["x-trace-id"] = trace_id
     return headers
+
+
+def _control_plane_headers(
+    *, actor_ref: str | None = None, trace_id: str | None = None
+) -> dict[str, str]:
+    """Build admin headers without accepting secrets in process arguments."""
+    headers: dict[str, str] = {}
+    admin_api_key = (os.environ.get("KJ_ATLAS_ADMIN_API_KEY") or "").strip()
+    if admin_api_key:
+        headers["x-admin-api-key"] = admin_api_key
+    if actor_ref:
+        headers["x-actor-ref"] = actor_ref
+    if trace_id:
+        headers["x-request-id"] = trace_id
+    return headers
+
+
+def _print_json(payload: object, *, stream: Any | None = None) -> None:
+    print(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True),
+        file=sys.stdout if stream is None else stream,
+    )
+
+
+def _request_json(
+    args: argparse.Namespace,
+    method: str,
+    path: str,
+    *,
+    payload: dict[str, object] | None = None,
+    params: dict[str, object] | None = None,
+) -> object:
+    try:
+        response = httpx.request(
+            method,
+            f"{args.api_base_url.rstrip('/')}{path}",
+            json=payload,
+            params=params,
+            headers=_control_plane_headers(actor_ref=args.actor_ref, trace_id=args.trace_id),
+            timeout=10.0,
+        )
+    except httpx.RequestError as exc:
+        _print_json(
+            {"ok": False, "code": "control_plane_unreachable", "message": str(exc)},
+            stream=sys.stderr,
+        )
+        raise SystemExit(3) from None
+
+    if response.is_error:
+        try:
+            response_payload = response.json()
+        except ValueError:
+            response_payload = {"detail": "Control plane returned a non-JSON error."}
+        detail = response_payload.get("detail", response_payload) if isinstance(response_payload, dict) else response_payload
+        _print_json(
+            {"ok": False, "status": response.status_code, "error": detail},
+            stream=sys.stderr,
+        )
+        raise SystemExit(2)
+    try:
+        return response.json()
+    except ValueError:
+        return {"status": "ok"}
+
+
+def _confirm_admin_write(args: argparse.Namespace, preview: dict[str, object]) -> None:
+    _print_json({"changePreview": preview}, stream=sys.stderr)
+    if args.yes:
+        return
+    if not sys.stdin.isatty():
+        raise SystemExit("admin write requires --yes when stdin is not interactive")
+    answer = input("Apply this control-plane change? [y/N] ").strip().lower()
+    if answer not in {"y", "yes"}:
+        raise SystemExit("admin change cancelled")
+
+
+def _admin_main(args: argparse.Namespace) -> int:
+    resource = args.admin_resource
+    action = args.admin_action
+
+    if resource == "models" and action == "list":
+        _print_json(_request_json(args, "GET", "/admin/provision/models"))
+        return 0
+    if resource == "providers" and action == "register":
+        payload = {
+            "id": args.id,
+            "providerKind": args.kind,
+            "displayName": args.display_name,
+            "baseUrl": args.base_url,
+            "apiKeyRef": args.api_key_ref,
+        }
+        _confirm_admin_write(args, {"operation": "registerProvider", "after": payload})
+        _print_json(_request_json(args, "POST", "/admin/provision/models/providers", payload=payload))
+        return 0
+    if resource == "models" and action == "register":
+        payload = {
+            "id": args.id,
+            "providerId": args.provider_id,
+            "displayName": args.display_name,
+            "capabilities": args.capabilities,
+        }
+        _confirm_admin_write(args, {"operation": "registerModel", "after": payload})
+        _print_json(_request_json(args, "POST", "/admin/provision/models", payload=payload))
+        return 0
+    if resource == "models" and action == "set-lifecycle":
+        registry = _request_json(args, "GET", "/admin/provision/models")
+        models = registry.get("models", []) if isinstance(registry, dict) else []
+        current = next(
+            (item for item in models if isinstance(item, dict) and item.get("id") == args.id),
+            None,
+        )
+        _confirm_admin_write(
+            args,
+            {
+                "operation": "setModelLifecycle",
+                "modelId": args.id,
+                "before": current,
+                "after": {"lifecycleState": args.state},
+            },
+        )
+        model_id = quote(args.id, safe="")
+        _print_json(
+            _request_json(
+                args,
+                "PATCH",
+                f"/admin/provision/models/{model_id}",
+                payload={"lifecycleState": args.state},
+            )
+        )
+        return 0
+    if resource == "tenants" and action == "model-allowlist-get":
+        tenant_id = quote(args.tenant_id, safe="")
+        _print_json(
+            _request_json(
+                args, "GET", f"/admin/provision/models/tenants/{tenant_id}/allowlist"
+            )
+        )
+        return 0
+    if resource == "tenants" and action == "model-allowlist-set":
+        tenant_id = quote(args.tenant_id, safe="")
+        path = f"/admin/provision/models/tenants/{tenant_id}/allowlist"
+        current = _request_json(args, "GET", path)
+        before = current.get("modelIds", []) if isinstance(current, dict) else []
+        after = sorted(args.model_id)
+        _confirm_admin_write(
+            args,
+            {
+                "operation": "setTenantModelAllowlist",
+                "tenantId": args.tenant_id,
+                "before": before,
+                "after": after,
+                "added": sorted(set(after) - set(before)),
+                "removed": sorted(set(before) - set(after)),
+            },
+        )
+        _print_json(_request_json(args, "PUT", path, payload={"modelIds": args.model_id}))
+        return 0
+    if resource == "audit" and action == "list":
+        params: dict[str, object] = {"limit": args.limit}
+        if args.cursor:
+            params["cursor"] = args.cursor
+        _print_json(_request_json(args, "GET", "/admin/provision/audit", params=params))
+        return 0
+    raise SystemExit("unsupported admin command")
 
 
 
@@ -133,6 +351,8 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
+    if args.command == "admin":
+        return _admin_main(args)
     if args.command == "ce4":
         payload = {
             "query": args.query,

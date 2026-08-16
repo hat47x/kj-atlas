@@ -1,5 +1,8 @@
 import { useEffect, type ChangeEvent } from "react";
-import type { AvailableModelItem } from "../api/client";
+import type {
+  AvailableModelItem,
+  AvailableModelUnavailableReason,
+} from "../api/client";
 import { t } from "../i18n/translate";
 
 // AI-MODEL-GOVERNANCE-01 (R2): a per-operation model selector.
@@ -18,6 +21,7 @@ type ModelSelectorProps = {
   dataUiRegion?: string;
   /** Tenant-allowed active models; null = still loading. */
   models: AvailableModelItem[] | null;
+  unavailableReason?: AvailableModelUnavailableReason | null;
 };
 
 const selectStyle = {
@@ -38,7 +42,22 @@ export function reconcileModelSelection(value: string, models: AvailableModelIte
   return "";
 }
 
-export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, models }: ModelSelectorProps) {
+const unavailableReasonTranslationKeys: Record<AvailableModelUnavailableReason, string> = {
+  no_active_models: "model_selector.reason.no_active_models",
+  provider_unavailable: "model_selector.reason.provider_unavailable",
+  tenant_policy_excludes_all: "model_selector.reason.tenant_policy_excludes_all",
+  no_user_selectable_models: "model_selector.reason.no_user_selectable_models",
+};
+
+export function ModelSelector({
+  label,
+  value,
+  onChange,
+  disabled,
+  dataUiRegion,
+  models,
+  unavailableReason,
+}: ModelSelectorProps) {
   useEffect(() => {
     const reconciled = reconcileModelSelection(value, models);
     if (reconciled !== value) {
@@ -62,6 +81,9 @@ export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, 
   }
 
   if (models.length === 0) {
+    const reasonKey = unavailableReason
+      ? unavailableReasonTranslationKeys[unavailableReason]
+      : "model_selector.none_available_help";
     return (
       <label style={{ display: "grid", gap: 4 }} data-ui-region={dataUiRegion}>
         <span style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{label}</span>
@@ -74,7 +96,7 @@ export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, 
           <option value="">{t("model_selector.none_available")}</option>
         </select>
         <span role="status" style={{ maxWidth: 340, fontSize: 11, lineHeight: 1.4, color: "#64748b" }}>
-          {t("model_selector.none_available_help")}
+          {t(reasonKey)}
         </span>
       </label>
     );

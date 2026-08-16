@@ -1,7 +1,7 @@
 # Issue: AI-MODEL-UX-01 利用可能modelが空の理由を利用者画面で判別できない
 
 - Type: UX / Operability
-- Status: Open
+- Status: In Progress
 - Source Issue: 管理UI・API・MCP協調モンキーテスト（2026-08-16）
 - Priority: P2
 - Owner: Maintainer
@@ -23,11 +23,22 @@
 
 ## 受入条件
 
-- [ ] 空集合の主要原因を、情報漏えいしない安定したreason codeで区別できる。
-- [ ] 一般利用者には管理権限を前提としない次の行動が表示される。
-- [ ] 管理者には原因に対応する設定箇所が表示される。
+- [x] 空集合の主要原因を、情報漏えいしない安定したreason codeで区別できる。
+- [x] 一般利用者には管理権限を前提としない次の行動が表示される。
+- [x] 管理者には原因に対応する設定箇所が表示される。
 - [ ] provider不一致、allowlist空、active modelなしをAPI・Edge E2Eで固定する。
 
 ## 検出記録（2026-08-16）
 
 Edge実画面でprovider `none`・利用可能model空を再現し、selectorのdisabled状態と汎用案内は確認できた。一方、現行APIには原因情報がなく、UIだけではこれ以上具体化できないため継続課題として起票した。
+
+## 対応記録（2026-08-16）
+
+`/ai/available-models`へ、秘密値・他tenant情報・内部provider IDを含まない集約reason codeを追加した。
+
+- `no_active_models`
+- `provider_unavailable`
+- `tenant_policy_excludes_all`
+- `no_user_selectable_models`
+
+利用者画面は各理由に応じて「モデル登録・有効化」「AI接続」「tenant allowlist」「model capabilities」のどれを管理者へ確認すべきか表示する。backendの各分岐test、API client契約、selector表示test、型検査は成功した。実ブラウザで4理由すべてを固定するE2Eが残るため`In Progress`とする。

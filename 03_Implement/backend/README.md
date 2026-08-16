@@ -107,6 +107,34 @@ authentication. Keep the secret in the environment; there is intentionally no
 command-line key option because process arguments and shell history are not a
 safe secret transport. An unset value preserves open `local-dev` behavior.
 
+### Control-plane CLI
+
+The same module provides an operator-facing control-plane CLI. It reads the
+bootstrap credential only from `KJ_ATLAS_ADMIN_API_KEY`; the business-plane
+`KJ_ATLAS_API_KEY` is deliberately ignored for every `admin` command. Write
+commands print a change preview and require interactive confirmation, or an
+explicit `--yes` in automation.
+
+```bash
+export KJ_ATLAS_ADMIN_API_KEY='...'
+python -m kj_atlas_api.cli admin models list
+python -m kj_atlas_api.cli admin providers register \
+  --id deepseek --kind deepseek --display-name DeepSeek \
+  --base-url https://api.deepseek.com --api-key-ref KJ_ATLAS_DEEPSEEK_API_KEY
+python -m kj_atlas_api.cli admin models register \
+  --id deepseek-chat --provider-id deepseek --display-name 'DeepSeek Chat' \
+  --capabilities intermediate,generate
+python -m kj_atlas_api.cli admin tenants model-allowlist-set \
+  --tenant-id local-default --model-id deepseek-chat
+python -m kj_atlas_api.cli admin models set-lifecycle \
+  --id deepseek-chat --state disabled
+python -m kj_atlas_api.cli admin audit list --limit 50
+```
+
+Do not place the admin credential in the end-user SPA. The static credential is
+the ADR-0072 bootstrap path; a separately deployed administrator console and
+interactive Stage-B capability session remain separate follow-up work.
+
 PostgreSQL roundtrip test を実行する場合:
 
 ```bash

@@ -8,7 +8,11 @@ import { CRITIQUE_TAGS, KNOWN_EDGE_TYPES, resolveKnownEdgeType } from "../domain
 import type { EdgeType, KnownEdgeType } from "../domain/types";
 import { cardQualityRestoreTarget, currentCardQualityQuestion, type CardQualityAssistState, type CardQualityDecision } from "../domain/card_quality";
 import { DomainStateSummary } from "./DomainStateSummary";
-import type { AvailableModelItem, OpposingViewpointProposal } from "../api/client";
+import type {
+  AvailableModelItem,
+  AvailableModelUnavailableReason,
+  OpposingViewpointProposal,
+} from "../api/client";
 import { ModelSelector } from "./ModelSelector";
 import { DomainStateFilterBar } from "./DomainStateFilterBar";
 import type { DomainStateFilter } from "../domain/domain_state_filter";
@@ -123,6 +127,7 @@ type SidePanelProps = {
   onIslandSummaryModelChange: (model: string) => void;
   /** Tenant-allowed active models (guarded fetch owned by App); null = loading. */
   availableModels: AvailableModelItem[] | null;
+  availableModelsUnavailableReason?: AvailableModelUnavailableReason | null;
   islandSummaryProposal: {
     proposalId: string;
     status: "proposed";
@@ -324,6 +329,7 @@ export function SidePanel({
   islandSummaryModel,
   onIslandSummaryModelChange,
   availableModels,
+  availableModelsUnavailableReason,
   islandSummaryProposal,
   proposalAuditTrail,
   onAdoptIslandSummaryProposal,
@@ -2615,6 +2621,7 @@ export function SidePanel({
                 disabled={isSuggestingIslandSummary}
                 dataUiRegion="model-selector"
                 models={availableModels}
+                unavailableReason={availableModelsUnavailableReason}
               />
               <button
                 type="button"

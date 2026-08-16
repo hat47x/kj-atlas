@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -855,6 +856,12 @@ class AvailableModelItem(BaseModel):
 
 class AvailableModelsResponse(BaseModel):
     models: list[AvailableModelItem]
+    unavailableReason: Literal[
+        "no_active_models",
+        "provider_unavailable",
+        "tenant_policy_excludes_all",
+        "no_user_selectable_models",
+    ] | None = None
 
 
 def _is_user_selectable_model(capabilities: str | None) -> bool:
@@ -898,10 +905,22 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
         if row.lifecycle_state == "active" and _provider_matches_runtime(row.provider_kind)
     }
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
-    allowed = [row for row in active_models if row.provider_id in active_provider_ids]
+    runtime_models = [row for row in active_models if row.provider_id in active_provider_ids]
+    allowed = runtime_models
     if effective is not None:
         allowed = [row for row in allowed if row.id in effective]
-    allowed = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
+    selectable = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
+
+    unavailable_reason = None
+    if not active_models:
+        unavailable_reason = "no_active_models"
+    elif not runtime_models:
+        unavailable_reason = "provider_unavailable"
+    elif effective is not None and not allowed:
+        unavailable_reason = "tenant_policy_excludes_all"
+    elif not selectable:
+        unavailable_reason = "no_user_selectable_models"
+
     return AvailableModelsResponse(
         models=[
             AvailableModelItem(
@@ -910,8 +929,9 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
                 providerId=row.provider_id,
                 capabilities=row.capabilities,
             )
-            for row in allowed
-        ]
+            for row in selectable
+        ],
+        unavailableReason=unavailable_reason,
     )
 
 

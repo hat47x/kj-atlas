@@ -684,3 +684,17 @@ Updated: 2026-08-03
 - 原因: 契約testは`runTenantScopedApiRequest`という表層wrapper名だけを許可し、そのwrapper自身のerror recovery内で使う下位generation guardを表現できなかった。
 - 対応: 表層request wrapperと、その内部復旧専用の`runTenantScopedTask`をgeneration guardの許可構文として列挙し、session identifier必須検査は維持した。
 - 再発防止: 非同期回復経路を追加する際は、runtime guardだけでなく全call siteを検査する静的coverage契約も同時に更新する。
+
+## 2026-08-16: pytestのfd capture一時fileが終了処理前に消失
+
+- 事象: 管理CLI testの初回実行と一時directory変更後の再実行が、test収集前後のcapture終了処理で`FileNotFoundError`となり、対象testが走らなかった。
+- 原因: 当該WSL/DrvFS環境でpytest既定のfd capture用一時fileが終了処理より前に消失した。一時directoryの場所だけを変えても再現した。
+- 対応: file descriptorを使わない`--capture=sys`へ切り替え、製品testの実際の成否まで到達させた。
+- 再発防止: この環境でpytestのcapture終了時に同じ例外が出た場合は、directory変更を繰り返さず`--capture=sys`で再実行する。
+
+## 2026-08-16: CLI JSON出力先を関数定義時のsys.stdoutへ固定
+
+- 事象: 管理CLI一覧のJSON自体は端末へ出たが、`capsys`からは空文字となりtestが1件失敗した。
+- 原因: `_print_json`の既定引数を`sys.stdout`として関数定義時に評価し、test時に差し替えられた標準出力を参照しなかった。
+- 対応: 既定値を`None`にして呼出時の`sys.stdout`を解決するよう変更し、16件成功を確認した。
+- 再発防止: 標準入出力のように実行時差し替えが必要なobjectを関数の既定引数へ直接保持しない。

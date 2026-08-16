@@ -67,4 +67,19 @@ describe("ModelSelector", () => {
     expect(html).toContain("aria-label=\"Model\"");
     expect(html).toContain("role=\"status\"");
   });
+
+  it("explains the safe administrator action for a tenant policy empty state", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(
+      React.createElement(ModelSelector, {
+        label: "Model",
+        value: "",
+        onChange: vi.fn(),
+        models: [],
+        unavailableReason: "tenant_policy_excludes_all",
+      }),
+    );
+    expect(html).toContain("This tenant&#x27;s model policy currently excludes every executable model");
+    expect(html).not.toContain("providerId");
+  });
 });

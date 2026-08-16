@@ -353,6 +353,78 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
         assert [m["id"] for m in filtered] == ["m2"]
 
 
+def test_available_models_explains_empty_registry_without_leaking_details(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    with _client(tmp_path) as (client, _session_local):
+        response = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY})
+        assert response.status_code == 200
+        assert response.json() == {
+            "models": [],
+            "unavailableReason": "no_active_models",
+        }
+
+
+def test_available_models_explains_tenant_policy_and_selectable_capability(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            headers=admin_headers,
+        )
+        for model_id, capabilities in (
+            ("allowed-disabled", "intermediate,generate"),
+            ("judgement-only", "final_judgement"),
+        ):
+            client.post(
+                "/admin/provision/models",
+                json={
+                    "id": model_id,
+                    "providerId": "p",
+                    "displayName": model_id,
+                    "capabilities": capabilities,
+                },
+                headers=admin_headers,
+            )
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["allowed-disabled"]},
+            headers=admin_headers,
+        )
+        client.patch(
+            "/admin/provision/models/allowed-disabled",
+            json={"lifecycleState": "disabled"},
+            headers=admin_headers,
+        )
+
+        policy_empty = client.get(
+            "/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}
+        ).json()
+        assert policy_empty == {
+            "models": [],
+            "unavailableReason": "tenant_policy_excludes_all",
+        }
+
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["judgement-only"]},
+            headers=admin_headers,
+        )
+        not_selectable = client.get(
+            "/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}
+        ).json()
+        assert not_selectable == {
+            "models": [],
+            "unavailableReason": "no_user_selectable_models",
+        }
+
+
 def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -> None:
     """MMR-04: final_judgement-only models are not offered for user selection."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
@@ -420,6 +492,7 @@ def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> N
         listed = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY})
         assert listed.status_code == 200
         assert listed.json()["models"] == []
+        assert listed.json()["unavailableReason"] == "provider_unavailable"
 
         attempted = client.post(
             "/ai/suggest-island-summary",

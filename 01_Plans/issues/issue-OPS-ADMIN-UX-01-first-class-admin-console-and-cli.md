@@ -1,7 +1,7 @@
 # Issue: OPS-ADMIN-UX-01 管理APIを安全に扱う正式CLIと管理コンソールがない
 
 - Type: Operations / UX
-- Status: Open
+- Status: In Progress
 - Source Issue: 管理UI・CLI・利用者UIの協調モンキーテスト（2026-08-16）
 - Priority: P2
 - Owner: Maintainer
@@ -25,10 +25,10 @@
 
 ## 受入条件
 
-- [ ] 管理者が秘密値を引数へ書かずにモデル一覧・登録・無効化・tenant allowlist更新・監査照会を実施できる。
-- [ ] 業務キーでは全管理commandが失敗し、管理キーは業務APIへ横滑りしない。
-- [ ] CLIの無効tenant/model/重複入力は安定したcodeと非0終了で説明され、秘密値を表示しない。
-- [ ] 管理変更が利用者APIと実ブラウザのモデル表示へ反映されるE2Eがある。
+- [x] 管理者が秘密値を引数へ書かずにモデル一覧・登録・無効化・tenant allowlist更新・監査照会を実施できる。
+- [x] 業務キーでは全管理commandが失敗し、管理キーは業務APIへ横滑りしない。
+- [x] CLIの無効tenant/model/重複入力は安定したcodeと非0終了で説明され、秘密値を表示しない。
+- [x] 管理変更が利用者APIと実ブラウザのモデル表示へ反映されるE2Eがある。
 - [ ] 管理コンソール採用時は利用者SPAへ管理credentialを保存・配送しない設計がADR化される。
 
 ## 検出記録（2026-08-16）
@@ -38,3 +38,16 @@
 ## 部分対応記録（2026-08-16）
 
 正式CLIの既存CE4 commandがキー有効backendへ接続できない`SEC-CLI-AUTH-01`を修正し、business-plane keyを環境変数だけから送るよう統一した。これはMCPとの認証協調を回復するが、本issueが求める管理command・確認付きwrite・独立管理consoleは未実装のためOpenを維持する。
+
+## 第2対応記録（2026-08-16）
+
+正式CLIへ次のcontrol-plane commandを追加した。
+
+- `admin providers register`
+- `admin models list/register/set-lifecycle`
+- `admin tenants model-allowlist-get/model-allowlist-set`
+- `admin audit list`
+
+管理credentialは`KJ_ATLAS_ADMIN_API_KEY`からのみ読み、業務キーを管理面へ転用せず、引数で秘密値を受けない。writeは変更previewを標準errorへ出し、対話確認またはautomation用`--yes`を必須とした。実backend E2Eでは、provider/model登録、tenant allowlist設定、利用者APIへの反映、model無効化後の消失、業務キー拒否、secret非表示、監査照会まで20/20成功した。
+
+CLI部分は実装済みだが、Stage-B capability sessionを使う対話loginと、別origin・別bundleの管理consoleが残るため`In Progress`を維持する。

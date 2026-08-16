@@ -62,6 +62,9 @@ TMP_DB="$(mktemp /tmp/kj_admin_ops_XXXXXX.sqlite3)"
 KJ_ATLAS_API_KEY="$BIZ_KEY" \
 KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" \
 KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+KJ_ATLAS_LLM_PROVIDER="local" \
+KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:65534/v1" \
+KJ_ATLAS_LOCAL_LLM_MODEL="seed-local-model" \
   "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_admin_ops_backend.log 2>&1 &
 BACKEND_PID=$!
@@ -141,6 +144,85 @@ if KJ_ATLAS_API_BASE_URL="$BASE_URL" \
 else
   echo "  FAIL: admin self-script (exit non-zero)"
   cat /tmp/kj_admin_self_script.log
+  FAIL=$((FAIL+1))
+fi
+
+# 6. 正式管理CLIでmodel registryとtenant allowlistを変更し、その結果が
+#    business-planeの利用可能model APIへ反映されることを一気通貫で確認する。
+CLI=("$VENV_PYTHON" -m kj_atlas_api.cli --api-base-url "$BASE_URL")
+run_admin_cli() {
+  KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" "${CLI[@]}" "$@"
+}
+
+if run_admin_cli admin providers register \
+  --id admin-cli-local --kind local --display-name "Admin CLI Local" --yes \
+  > /tmp/kj_admin_cli_provider.json 2>/tmp/kj_admin_cli_provider.preview; then
+  echo "  PASS: admin CLI provider register"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin CLI provider register"
+  FAIL=$((FAIL+1))
+fi
+
+if run_admin_cli admin models register \
+  --id admin-cli-model --provider-id admin-cli-local --display-name "Admin CLI Model" \
+  --capabilities intermediate,generate --yes \
+  > /tmp/kj_admin_cli_model.json 2>/tmp/kj_admin_cli_model.preview; then
+  echo "  PASS: admin CLI model register"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin CLI model register"
+  FAIL=$((FAIL+1))
+fi
+
+if run_admin_cli admin tenants model-allowlist-set \
+  --tenant-id local-default --model-id admin-cli-model --yes \
+  > /tmp/kj_admin_cli_allowlist.json 2>/tmp/kj_admin_cli_allowlist.preview; then
+  echo "  PASS: admin CLI tenant allowlist set"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin CLI tenant allowlist set"
+  FAIL=$((FAIL+1))
+fi
+
+available_before=$(curl -s -H "$BIZ_H" "$BASE_URL/ai/available-models" | \
+  "$VENV_PYTHON" -c 'import json,sys; print(",".join(item["id"] for item in json.load(sys.stdin)["models"]))')
+check "admin CLI change reaches business-plane model list" "admin-cli-model" "$available_before"
+
+if run_admin_cli admin models set-lifecycle --id admin-cli-model --state disabled --yes \
+  > /tmp/kj_admin_cli_disable.json 2>/tmp/kj_admin_cli_disable.preview; then
+  echo "  PASS: admin CLI model disable"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin CLI model disable"
+  FAIL=$((FAIL+1))
+fi
+
+available_after=$(curl -s -H "$BIZ_H" "$BASE_URL/ai/available-models" | \
+  "$VENV_PYTHON" -c 'import json,sys; print(",".join(item["id"] for item in json.load(sys.stdin)["models"]))')
+check "disabled model disappears from business-plane model list" "" "$available_after"
+
+# Business-plane key cannot be repurposed by the CLI for control-plane calls.
+if env -u KJ_ATLAS_ADMIN_API_KEY KJ_ATLAS_API_KEY="$BIZ_KEY" \
+  "${CLI[@]}" admin models list >/tmp/kj_admin_cli_denied.out 2>/tmp/kj_admin_cli_denied.err; then
+  echo "  FAIL: admin CLI rejected business-plane-only credential"
+  FAIL=$((FAIL+1))
+else
+  if grep -q 'control_plane_unauthorized' /tmp/kj_admin_cli_denied.err && \
+     ! grep -q "$BIZ_KEY" /tmp/kj_admin_cli_denied.err; then
+    echo "  PASS: admin CLI rejects business-plane-only credential without secret echo"
+    PASS=$((PASS+1))
+  else
+    echo "  FAIL: admin CLI denial contract or secret redaction"
+    FAIL=$((FAIL+1))
+  fi
+fi
+
+if run_admin_cli admin audit list --limit 10 >/tmp/kj_admin_cli_audit.json; then
+  echo "  PASS: admin CLI audit list"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: admin CLI audit list"
   FAIL=$((FAIL+1))
 fi
 

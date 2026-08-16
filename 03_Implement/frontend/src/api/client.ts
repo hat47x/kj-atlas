@@ -652,9 +652,20 @@ export type AvailableModelItem = {
   capabilities?: string | null;
 };
 
+export type AvailableModelUnavailableReason =
+  | "no_active_models"
+  | "provider_unavailable"
+  | "tenant_policy_excludes_all"
+  | "no_user_selectable_models";
+
+export type AvailableModelsResponse = {
+  models: AvailableModelItem[];
+  unavailableReason?: AvailableModelUnavailableReason | null;
+};
+
 export async function fetchAvailableModels(
   requestOptions: TenantScopedRequestOptions = {},
-): Promise<AvailableModelItem[]> {
+): Promise<AvailableModelsResponse> {
   const response = await fetch(`${API_BASE}/ai/available-models`, {
     headers: {
       ...tenantSessionPreconditionHeaders(requestOptions),
@@ -667,8 +678,7 @@ export async function fetchAvailableModels(
       disabledReason: errorDetail.disabledReason,
     });
   }
-  const body = (await response.json()) as { models: AvailableModelItem[] };
-  return body.models;
+  return (await response.json()) as AvailableModelsResponse;
 }
 
 export async function suggestDocumentTitle(

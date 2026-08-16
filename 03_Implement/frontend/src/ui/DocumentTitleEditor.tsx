@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import type { AvailableModelItem } from "../api/client";
+import type { AvailableModelItem, AvailableModelUnavailableReason } from "../api/client";
 import { t } from "../i18n/translate";
 import { ModelSelector } from "./ModelSelector";
 
@@ -20,6 +20,7 @@ export interface DocumentTitleEditorProps {
   documentTitleModel: string;
   onDocumentTitleModelChange: (model: string) => void;
   availableModels: AvailableModelItem[] | null;
+  availableModelsUnavailableReason?: AvailableModelUnavailableReason | null;
 }
 
 export function DocumentTitleEditor({
@@ -34,6 +35,7 @@ export function DocumentTitleEditor({
   documentTitleModel,
   onDocumentTitleModelChange,
   availableModels,
+  availableModelsUnavailableReason,
 }: DocumentTitleEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(documentTitle ?? "");
@@ -215,6 +217,7 @@ export function DocumentTitleEditor({
               disabled={isSuggesting}
               dataUiRegion="model-selector-title"
               models={availableModels}
+              unavailableReason={availableModelsUnavailableReason}
             />
           )}
           {!isReadOnly && providerEnabled && (

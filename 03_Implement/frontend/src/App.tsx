@@ -25,6 +25,7 @@ import {
   unarchiveDocument,
   listDocuments,
   type AvailableModelItem,
+  type AvailableModelUnavailableReason,
   type DocumentListItem,
   type MergeSuggestion,
   type NarrativeIssue,
@@ -1390,6 +1391,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [islandSummaryModel, setIslandSummaryModel] = useState<string>("");
   // Tenant-allowed active models for the selector (guarded fetch, owned here).
   const [availableModels, setAvailableModels] = useState<AvailableModelItem[] | null>(null);
+  const [availableModelsUnavailableReason, setAvailableModelsUnavailableReason] =
+    useState<AvailableModelUnavailableReason | null>(null);
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for document-title
   // generation ("" = auto / platform default).
   const [documentTitleModel, setDocumentTitleModel] = useState<string>("");
@@ -1529,13 +1532,15 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         // fail-closed server-side; refresh the advisory selector immediately
         // so the user does not keep retrying a stale model choice.
         try {
-          const models = await runTenantScopedTask(() => fetchAvailableModels({
+          const result = await runTenantScopedTask(() => fetchAvailableModels({
             tenantSessionContext: verifiedTenantSession,
           }));
-          setAvailableModels(models);
+          setAvailableModels(result.models);
+          setAvailableModelsUnavailableReason(result.unavailableReason ?? null);
         } catch (refreshError) {
           if (!(refreshError instanceof StaleTenantSessionResultError)) {
             setAvailableModels([]);
+            setAvailableModelsUnavailableReason(null);
           }
         }
       }
@@ -2243,11 +2248,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     let cancelled = false;
     void runTenantScopedApiRequest(() => fetchAvailableModels({ tenantSessionContext: verifiedTenantSession }))
-      .then((models) => {
-        if (!cancelled) setAvailableModels(models);
+      .then((result) => {
+        if (!cancelled) {
+          setAvailableModels(result.models);
+          setAvailableModelsUnavailableReason(result.unavailableReason ?? null);
+        }
       })
       .catch(() => {
-        if (!cancelled) setAvailableModels([]);
+        if (!cancelled) {
+          setAvailableModels([]);
+          setAvailableModelsUnavailableReason(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -8969,6 +8980,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         documentTitleModel={documentTitleModel}
         onDocumentTitleModelChange={setDocumentTitleModel}
         availableModels={availableModels}
+        availableModelsUnavailableReason={availableModelsUnavailableReason}
       />
       <SearchBar
         query={searchQuery}
@@ -11735,6 +11747,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               narrativeModel={narrativeModel}
               onNarrativeModelChange={setNarrativeModel}
               availableModels={availableModels}
+              availableModelsUnavailableReason={availableModelsUnavailableReason}
               isChecking={isCheckingNarrative}
               isGenerating={isGeneratingNarrative}
               errorMessage={narrativeCheckError}
@@ -12128,6 +12141,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           islandSummaryModel={islandSummaryModel}
           onIslandSummaryModelChange={setIslandSummaryModel}
           availableModels={availableModels}
+          availableModelsUnavailableReason={availableModelsUnavailableReason}
           opposingViewpointProposal={opposingViewpointProposal}
           isProposingOpposingViewpoint={isProposingOpposingViewpoint}
           onProposeOpposingViewpoint={handleProposeOpposingViewpoint}

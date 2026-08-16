@@ -7,6 +7,7 @@ import {
   changeActiveTenant,
   checkNarrative,
   generateNarrative,
+  fetchAvailableModels,
   getDocument,
   getTenantSessionBootstrapPolicy,
   listDocuments,
@@ -58,6 +59,25 @@ const tenantSessionContext = {
 describe("tenant-scoped document request precondition", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("preserves the safe empty-model reason from the tenant-scoped API", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        models: [],
+        unavailableReason: "tenant_policy_excludes_all",
+      }), { status: 200 }),
+    );
+
+    const result = await fetchAvailableModels({ tenantSessionContext });
+
+    expect(result).toEqual({
+      models: [],
+      unavailableReason: "tenant_policy_excludes_all",
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/ai/available-models", {
+      headers: { "KJ-Atlas-Tenant-Session-Version": "session-v1" },
+    });
   });
 
   it("attaches only the verified opaque version to document reads", async () => {
