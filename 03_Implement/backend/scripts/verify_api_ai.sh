@@ -33,6 +33,14 @@ check() {
   fi
 }
 
+# auth_header is a bash ARRAY so a keyed backend sends a well-formed
+# X-API-Key header (the fail-closed 422/503 boundaries are provider-agnostic
+# but the request still needs to pass HTTP auth on a keyed backend).
+auth_header=()
+if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+fi
+
 reviewed_payload='{"islandId":"i1","doc":{"version":1,"id":"ai-probe","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"reviewed card","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"title":"T","summaryText":"s","summaryReviewed":true}]}}'
 unreviewed_payload='{"islandId":"i1","doc":{"version":1,"id":"ai-probe","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"unreviewed secret","x":0,"y":0}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"title":"T","summaryText":"","summaryReviewed":false}]}}'
 
@@ -41,7 +49,7 @@ echo "=== kj-atlas AI fail-closed verification (base: $BASE_URL) ==="
 # 1. Unreviewed card text must be rejected 422 before any provider call
 #    (SEC-AI-SAFEMODE-01). This holds regardless of provider configuration.
 code=$(curl -s -o /tmp/kj_ai_body.json -w '%{http_code}' -X POST \
-  "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' -d "$unreviewed_payload")
+  "${auth_header[@]}" "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' -d "$unreviewed_payload")
 check "unreviewed text -> 422 (SafeMode boundary)" "422" "$code"
 if [ "$code" = "422" ]; then
   err=$(grep -o '"code":"[^"]*"' /tmp/kj_ai_body.json | head -1)
@@ -53,7 +61,7 @@ fi
 #    fallback). When a provider IS configured, the code differs — but the
 #    request must NOT succeed with a stub/unconfigured provider.
 code=$(curl -s -o /tmp/kj_ai_body.json -w '%{http_code}' -X POST \
-  "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' -d "$reviewed_payload")
+  "${auth_header[@]}" "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' -d "$reviewed_payload")
 if [ "$code" = "503" ]; then
   err=$(grep -o '"code":"[^"]*"' /tmp/kj_ai_body.json | head -1)
   check "provider=none -> 503 provider_unavailable" '"code":"provider_unavailable"' "$err"

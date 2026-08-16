@@ -31,9 +31,11 @@ check() {
   fi
 }
 
-auth_header=""
+# auth_header is a bash ARRAY so a keyed backend sends a well-formed
+# X-API-Key header (the string form word-split into a malformed curl header).
+auth_header=()
 if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header="-H 'X-API-Key: ${KJ_ATLAS_API_KEY}'"
+  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
 fi
 
 # Minimal DocumentV1 payload that passes the A1 contract (PUT returns 2xx).
@@ -59,7 +61,7 @@ JSON
 echo "=== kj-atlas API WRITE verification (base: $BASE_URL, doc: $DOC_ID) ==="
 
 # 1. Create/overwrite the document via PUT /docs/{id}.
-put_code=$(curl -s -o /tmp/kj_write_put.json -w '%{http_code}' ${auth_header} \
+put_code=$(curl -s -o /tmp/kj_write_put.json -w '%{http_code}' "${auth_header[@]}" \
   -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' -d "$payload")
 case "$put_code" in
   200|201)
@@ -73,7 +75,7 @@ case "$put_code" in
 esac
 
 # 2. Read it back and verify the roundtrip (title + card count).
-get_code=$(curl -s -o /tmp/kj_write_get.json -w '%{http_code}' ${auth_header} "$BASE_URL/docs/$DOC_ID")
+get_code=$(curl -s -o /tmp/kj_write_get.json -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/docs/$DOC_ID")
 check "GET /docs/{id} reads back document" "200" "$get_code"
 if [ "$get_code" = "200" ]; then
   title=$(grep -o '"title":"[^"]*"' /tmp/kj_write_get.json | head -1)
@@ -103,11 +105,11 @@ updated_payload="$(cat <<JSON
 }
 JSON
 )"
-update_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+update_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
   -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' -d "$updated_payload")
 check "PUT /docs/{id} updates document" "200" "$update_code"
 
-get_code2=$(curl -s -o /tmp/kj_write_get2.json -w '%{http_code}' ${auth_header} "$BASE_URL/docs/$DOC_ID")
+get_code2=$(curl -s -o /tmp/kj_write_get2.json -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/docs/$DOC_ID")
 if [ "$get_code2" = "200" ]; then
   title2=$(grep -o '"title":"[^"]*"' /tmp/kj_write_get2.json | head -1)
   check "update reflected in title" "\"title\":\"admin write probe (updated)\"" "$title2"
@@ -118,7 +120,7 @@ fi
 # 4. Optimistic concurrency (ETag / If-Match): a GET returns an ETag; a PUT
 #    with the CURRENT ETag succeeds; a PUT with a STALE ETag is rejected 409
 #    (lost-update prevention an admin script relies on).
-curl -s -o /dev/null -D /tmp/kj_write_headers.txt ${auth_header} "$BASE_URL/docs/$DOC_ID"
+curl -s -o /dev/null -D /tmp/kj_write_headers.txt "${auth_header[@]}" "$BASE_URL/docs/$DOC_ID"
 etag=$(grep -i '^etag:' /tmp/kj_write_headers.txt 2>/dev/null | tr -d '\r' | awk '{print $2}')
 if [ -n "$etag" ]; then
   echo "  PASS: GET /docs/{id} returns ETag"
@@ -142,12 +144,12 @@ if [ -n "$etag" ]; then
 }
 JSON
 )"
-  ok_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+  ok_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
     -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
     -H "If-Match: $etag" -d "$cas_payload")
   check "PUT with current If-Match succeeds" "200" "$ok_code"
 
-  stale_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+  stale_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
     -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
     -H 'If-Match: "stale-etag"' -d "$cas_payload")
   check "PUT with stale If-Match rejected (409)" "409" "$stale_code"
@@ -160,15 +162,15 @@ fi
 #    unarchive -> list shows active. 404 for a missing doc. An archived
 #    document is READ-ONLY: PUT is rejected 423 Locked (fail-closed, even
 #    with a current ETag) until unarchived.
-arch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+arch_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" -X POST \
   "$BASE_URL/docs/$DOC_ID/archive")
 check "POST /docs/{id}/archive -> 204" "204" "$arch_code"
 
 arch_headers=/tmp/kj_write_arch_headers.txt
-curl -s -o /dev/null -D "$arch_headers" ${auth_header} "$BASE_URL/docs/$DOC_ID"
+curl -s -o /dev/null -D "$arch_headers" "${auth_header[@]}" "$BASE_URL/docs/$DOC_ID"
 arch_etag=$(grep -i '^etag:' "$arch_headers" 2>/dev/null | tr -d '\r' | awk '{print $2}')
 if [ -n "$arch_etag" ]; then
-  blocked_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+  blocked_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
     -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
     -H "If-Match: $arch_etag" -d "$cas_payload")
   check "PUT on archived doc rejected (423 Locked)" "423" "$blocked_code"
@@ -177,15 +179,15 @@ else
   FAIL=$((FAIL+1))
 fi
 
-unarch_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+unarch_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" -X POST \
   "$BASE_URL/docs/$DOC_ID/unarchive")
 check "POST /docs/{id}/unarchive -> 204" "204" "$unarch_code"
 
 restore_headers=/tmp/kj_write_restore_headers.txt
-curl -s -o /dev/null -D "$restore_headers" ${auth_header} "$BASE_URL/docs/$DOC_ID"
+curl -s -o /dev/null -D "$restore_headers" "${auth_header[@]}" "$BASE_URL/docs/$DOC_ID"
 restore_etag=$(grep -i '^etag:' "$restore_headers" 2>/dev/null | tr -d '\r' | awk '{print $2}')
 if [ -n "$restore_etag" ]; then
-  restored_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} \
+  restored_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" \
     -X PUT "$BASE_URL/docs/$DOC_ID" -H 'Content-Type: application/json' \
     -H "If-Match: $restore_etag" -d "$cas_payload")
   check "PUT after unarchive succeeds (200)" "200" "$restored_code"
@@ -193,7 +195,7 @@ else
   echo "  FAIL: unarchived GET did not return an ETag (restore unverifiable)"
   FAIL=$((FAIL+1))
 fi
-missing_code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} -X POST \
+missing_code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" -X POST \
   "$BASE_URL/docs/verify-missing-archive/archive")
 check "archive of missing doc -> 404" "404" "$missing_code"
 
