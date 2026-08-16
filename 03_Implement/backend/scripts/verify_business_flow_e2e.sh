@@ -7130,5 +7130,47 @@ bakery_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BAKERY_ID"
 check "BAKERY 読戻し (200)" "200" "$bakery_read"
 
 echo ""
+echo "--- シナリオ165: ゴルフ場・練習場（品質・サービスとコスト・稼働のトレードオフ） ---"
+# 業態: ゴルフ場・ゴルフ練習場（ゴルフ場運営）
+# 想定人物: ゴルフ場支配人／コース管理担当
+# 業務領域: コース管理・接客・会員・運営への声のKJ分類と、ゴルフ場運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: コースのメンテナンスと接客・おもてなし・快適なラウンド体験（品質・サービス）とコスト削減や
+#          稼働率への圧力（コスト・稼働）のトレードオフを矛盾検出（正パス）で表面化し、ゴルフ場運営の
+#          改善根拠にする（品質とコストの相克・初心者や若年層向けのプラン・地域のコミュニティとしての
+#          活用を模索する動きも指摘）。
+GOLF_ID="biz-flow-golf"
+GOLF_DOC='{"version":1,"id":"'$GOLF_ID'","title":"ゴルフ場運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"go1","text":"コースのメンテナンスと接客・おもてなし、快適なラウンド体験を重視する声（品質・サービス）","x":0,"y":0,"textReviewed":true},{"id":"go2","text":"コスト削減や稼働率への圧力など、品質・サービスとコスト・稼働のトレードオフに悩む声（コスト・稼働）","x":10,"y":0,"textReviewed":true},{"id":"go3","text":"初心者や若年層向けのプラン、地域のコミュニティとしての活用を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"golf-i","cardIds":["go1","go2","go3"]}],"readingOrder":["golf-i"]}'
+
+golf_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$GOLF_ID" \
+  -H 'Content-Type: application/json' -d "$GOLF_DOC")
+check "GOLF PUT document (作成)" "200" "$golf_put"
+
+# ① AI束ね
+golf_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"go1","text":"コースのメンテナンスと接客・おもてなし、快適なラウンド体験を重視する声（品質・サービス）","textReviewed":true},{"id":"go2","text":"コスト削減や稼働率への圧力など、品質・サービスとコスト・稼働のトレードオフに悩む声（コスト・稼働）","textReviewed":true},{"id":"go3","text":"初心者や若年層向けのプラン、地域のコミュニティとしての活用を模索する動き","textReviewed":true}]}')
+case "$golf_groups" in *'"groups":'*) echo "  PASS: GOLF ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: GOLF ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+golf_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$GOLF_DOC,\"islandId\":\"golf-i\"}")
+case "$golf_summary" in *'"groundingIds":["go1","go2","go3"]'*) echo "  PASS: GOLF ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: GOLF ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（品質・サービス vs コスト・稼働・品質とコストの相克・正パス）
+golf_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"go1","text":"コースのメンテナンスと接客・おもてなし、快適なラウンド体験を重視する声（品質・サービス）","textReviewed":true},"cardB":{"id":"go2","text":"コスト削減や稼働率への圧力など、品質・サービスとコスト・稼働のトレードオフに悩む声（コスト・稼働）","textReviewed":true}}')
+case "$golf_contra" in *'"hasContradiction":true'*) echo "  PASS: GOLF ③矛盾検出（品質・サービスとコスト・稼働のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: GOLF ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+golf_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$GOLF_DOC}")
+case "$golf_narr" in *'"basedOnReadingOrder":["golf-i"]'*) echo "  PASS: GOLF ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: GOLF ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+golf_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$GOLF_ID")
+check "GOLF 読戻し (200)" "200" "$golf_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
