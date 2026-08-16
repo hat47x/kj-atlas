@@ -453,7 +453,7 @@ export async function putDocument(
   };
 }
 
-export type ProviderKind = "none" | "local" | "large-scale";
+export type ProviderKind = "none" | "local" | "large-scale" | "deepseek";
 
 /** OPS-LLM-COST-02/01: the provider-status snapshot (kind + in-process LLM call
  * counts and token usage per provider kind plus "total"). Empty until the

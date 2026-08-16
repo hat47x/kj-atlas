@@ -52,6 +52,27 @@ def test_provider_status_echoes_local_and_resolves_alias() -> None:
         settings.llm_provider = original_provider
 
 
+def test_provider_status_echoes_deepseek() -> None:
+    original_api_key = settings.api_key
+    original_provider = settings.llm_provider
+    original_deepseek_key = settings.deepseek_api_key
+    reset_llm_call_counts()
+
+    settings.api_key = None
+    settings.llm_provider = "deepseek"
+    settings.deepseek_api_key = "test-only-key"
+
+    try:
+        with TestClient(app) as client:
+            response = client.get("/ai/provider-status")
+        assert response.status_code == 200
+        assert response.json() == {"providerKind": "deepseek", "callCounts": {}, "tokenUsage": {}}
+    finally:
+        settings.api_key = original_api_key
+        settings.llm_provider = original_provider
+        settings.deepseek_api_key = original_deepseek_key
+
+
 def test_provider_status_is_a_static_config_echo_not_a_connectivity_check() -> None:
     """PROV-VIS-01 (ADR-0050 D1): this endpoint must not attempt to reach the
     configured local/large-scale endpoint. Setting local provider with no

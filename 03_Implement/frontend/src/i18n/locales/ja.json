@@ -747,6 +747,7 @@
   "view_controls.ai_provider.kind.none": "無効（none）— AI機能は使用しません",
   "view_controls.ai_provider.kind.local": "ローカル（local）",
   "view_controls.ai_provider.kind.large-scale": "大規模（large-scale）",
+  "view_controls.ai_provider.kind.deepseek": "DeepSeek",
   "view_controls.ai_provider.kind.unknown": "取得できません",
   "view_controls.ai_provider.outcome.ok": "直近の呼び出し: 成功",
   "view_controls.ai_provider.outcome.disabled": "直近の呼び出し: 無効設定のため未実行",

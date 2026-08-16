@@ -747,6 +747,7 @@
   "view_controls.ai_provider.kind.none": "Disabled (none) — AI features are not used",
   "view_controls.ai_provider.kind.local": "Local",
   "view_controls.ai_provider.kind.large-scale": "Large-scale",
+  "view_controls.ai_provider.kind.deepseek": "DeepSeek",
   "view_controls.ai_provider.kind.unknown": "Could not be determined",
   "view_controls.ai_provider.outcome.ok": "Last call: succeeded",
   "view_controls.ai_provider.outcome.disabled": "Last call: not attempted (provider disabled)",

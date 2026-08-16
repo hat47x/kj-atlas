@@ -195,8 +195,13 @@ def main() -> int:
             KJ_ATLAS_MCP_API_BASE_URL=base_url,
             KJ_ATLAS_API_KEY=BIZ_KEY,
         )
+        if os.name != "nt" and os.path.isdir("/tmp"):
+            # WSL may inherit Windows TEMP/TMP paths. tsx uses the selected
+            # temp directory for an IPC socket, which is unsupported on drvfs.
+            mcp_env["TMPDIR"] = "/tmp"
+        tsx_cli = os.path.join(MCP_DIR, "node_modules", ".bin", "tsx")
         proc = subprocess.run(
-            ["npm", "run", "verify", "--", DOC_ID, "reviewed-only"],
+            [tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
             cwd=MCP_DIR,
             env=mcp_env,
             capture_output=True,

@@ -36,6 +36,9 @@
 | `QA-MONKEY-28` | QA / P2 | focus脱落判定がEnter/Space/Delete/Backspaceと非同期完了を扱わなかった | 対象キーを拡張し、RAF・短い非同期待ち後の安定状態を判定 |
 | `QA-MONKEY-29` | Accessibility / P1 | focus中の選択カードをDeleteするとfocusがbodyへ落ちた | 文書順の近傍カードへfocusを移すよう修正、A17へ固定 |
 | `QA-MONKEY-30` | Accessibility / P1 | 「サンプルを開く」をEnter実行すると開始パネル消滅後にfocusがbodyへ落ちた | 読込完了後に先頭カードへfocusを移すよう修正、A18へ固定 |
+| `AI-DEEPSEEK-STATUS-01` | Contract / P1 | DeepSeekはruntimeで受理されるがprovider status型が拒否し500になる | backend/frontend/診断bundle/日英表示/仕様を同期し、API・実Edge回帰へ固定 |
+| `MCP-DOGFOOD-12` | QA / P2 | MCP監査E2Eがnpm不在とWSLのWindows TEMPで起動不能 | package-local tsxとLinux一時領域を使うよう修正 |
+| `QA-MONKEY-31` | Accessibility / P1 | ミニマップを折りたたむと置換されたtoggleからfocusがbodyへ落ちた | 置換後toggleへfocusを引き継ぐよう修正、A19へ固定 |
 
 ## ランダムスイープ結果
 
@@ -53,9 +56,11 @@
 
 QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/320）でサンプル開始後、606（en/390）で共有パネルEscape後、8080（en/1440）で編集Enter後のfocus脱落候補を検出した。固定再現の結果、共有パネルと編集Enterは次frame復帰前の過渡状態であり、ハーネスを安定状態判定へ修正した。seed 606と8080は修正後finding 0、seed 505の実欠陥はA18で修正前false・修正後trueを確認した。
 
+管理CLI・MCP・DeepSeek連動を加えた継続探索では、管理API 12/12、CLI→CE-4監査15/15、修正後MCP→CE-4監査8/8、MCP package 61/61を確認した。seed 9091（en/320、500 loop）はfinding 0。seed 10001（ja/1440、500 loop）はミニマップtoggleのfocus脱落1件を検出しA19へ固定した。DeepSeek実APIはAPI key未設定のため未課金の契約・表示経路までを検証対象とし、資格情報の値は探索・記録していない。
+
 ## 固定回帰と自動検査
 
-- adversarial A1〜A18: A15はja/enの双方で取消後focus復帰、A16はEnter確定後focus復帰、A17は削除後の近傍カードfocus、A18はサンプル開始後の先頭カードfocusを確認。
+- adversarial A1〜A19: A15はja/enの双方で取消後focus復帰、A16はEnter確定後focus復帰、A17は削除後の近傍カードfocus、A18はサンプル開始後の先頭カードfocus、A19はミニマップ切替後のtoggle focusを確認。
 - axe smoke: start、選択context、島editor、inline editor、凡例、共有、作業mode、agent export/import、menuの10/10成功。
 - header responsive/keyboard: 390〜1440pxのlayout、panel範囲、Escape focus復帰、shortcutの9/9成功。
 - seed 404修正後: finding 0。未捕捉例外、console error、白画面、SafeMode消失、無名dialog/button/field、横overflow、NaN座標は検出なし。
@@ -72,7 +77,7 @@ KJ_ATLAS_MONKEY_VIEWPORT=1440 \
 KJ_ATLAS_BASE_URL='http://127.0.0.1:4173/?locale=en' \
 node ./scripts/monkey_ui_sweep.mjs
 
-KJ_ATLAS_MONKEY_ONLY=A1,A2,A15,A16,A17,A18 node ./scripts/monkey_adversarial_probes.mjs
+KJ_ATLAS_MONKEY_ONLY=A1,A2,A15,A16,A17,A18,A19 node ./scripts/monkey_adversarial_probes.mjs
 ```
 
 Windows側のEdgeを明示して実行する環境では、`KJ_ATLAS_SCREENSHOT_BROWSER_PATH`に実行ファイルを設定する。`SUSPECT`やfindingは自動的に製品欠陥とはみなさず、固定プローブまたは同seed再実行で再現してから課題化する。

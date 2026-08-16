@@ -26,7 +26,8 @@
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
-  - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）
+  - 値: `none | local | large-scale | deepseek`（後方互換エイリアス: `local_http`, `external`）
+  - `deepseek`では`KJ_ATLAS_DEEPSEEK_API_KEY`が必須。base URLと既定modelは環境変数正本を参照
 - `KJ_ATLAS_LLM_FALLBACK_TO_NONE`
   - 既定値: `true`
   - `true` の場合、`local`/`large-scale` 呼び出し失敗時は `none` 退避として fail-closed（HTTP 501）

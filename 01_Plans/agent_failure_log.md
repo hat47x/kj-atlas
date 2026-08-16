@@ -502,3 +502,17 @@ Updated: 2026-08-03
 - 原因: 検証スクリプトを `.mjs` のまま TS 機能（.ts import・型アサーション）へ移したが、Node 20 は型ストリップなし。さらに **tsx は `.mjs` を esbuild 変換せず Node ネイティブローダーへ渡す**ため、`tsx scripts/verify_mcp.mjs` でも `as` で構文エラーになった。
 - 対応: `verify_mcp.mjs` を `verify_mcp.ts` へリネームし、`package.json` に `"verify": "tsx scripts/verify_mcp.ts"` を追加、README/issue の起動コマンドを `npm run verify --` へ更新。vitest 55 pass・typecheck OK・`npm run verify` 実走行で isError 経路の終了を確認。
 - 再発防止: `.mjs` に TS 構文や `.ts` import を持ち込まない。tsx で動かすエントリは `.ts` にし、素 `node` 起動は `.mjs` のみ。検証スクリプトの起動コマンド変更時は README と起票 issue の両方を更新する。
+
+## 2026-08-16: MCP監査E2Eがnpm不在とWSLのWindows TEMPで起動不能
+
+- 事象: `verify_mcp_ce4_audit_e2e.py`がPATH上の`npm`不在で停止し、Node 20を補った後もtsx IPC socketがdrvfs上のWindows TEMPへ作られて`ENOTSUP`になった。
+- 原因: package-localのtsxが存在するのにnpmを暗黙要求し、WSLへ継承された`TEMP`/`TMP`を無条件に子processへ渡していた。
+- 対応: package-local tsxを直接起動し、非Windowsでは子processの`TMPDIR=/tmp`を明示した。MCP read→CE-4→audit sinkは8/8成功した。
+- 再発防止: Node系E2Eの子processはpackage-local executableを優先し、filesystem socketを使うtoolはWSLの一時領域境界を明示する。
+
+## 2026-08-16: DeepSeek診断バンドルtestで既存builder名を確認せず記述
+
+- 事象: DeepSeek provider typeの回帰test追加時、存在しない`createDiagnosticsBundle`と`input`を参照して型検査・testが停止した。
+- 原因: 対象testの既存importとfixture名を確認せず、別の命名パターンを推測した。
+- 対応: 既存の`buildDiagnosticsBundle`と`BASE_INPUT`へ修正し、近接testを再実行した。
+- 再発防止: 既存testへ追加する場合は先にimport・共通fixture・直前describeを読み、既存helperをそのまま再利用する。

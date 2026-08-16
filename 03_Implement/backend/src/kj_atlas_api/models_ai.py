@@ -25,7 +25,7 @@ class ProviderStatusResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    providerKind: Literal["none", "local", "large-scale"]
+    providerKind: Literal["none", "local", "large-scale", "deepseek"]
     # OPS-LLM-COST-01 (段階2): in-process LLM call counts per provider kind
     # (plus "total"). Referenceable so an operator can see external
     # (large-scale) call volume. Empty until the first LLM call.

@@ -102,3 +102,22 @@ test("View panel shows 'disabled' when the provider is none", async ({ page }) =
   // OPS-LLM-COST-01 (段階2): empty token usage -> no token line either.
   await expect(page.locator('[data-ui-region="llm-token-usage"]')).toHaveCount(0);
 });
+
+test("View panel shows DeepSeek when the configured provider is deepseek", async ({ page }) => {
+  await routeDocument(
+    page,
+    "deepseek",
+    { deepseek: 2, total: 2 },
+    { deepseek: { input: 80, output: 20 }, total: { input: 80, output: 20 } },
+  );
+  await page.goto("/?locale=en");
+
+  const startPanel = page.locator(START_PANEL);
+  await startPanel.getByRole("button", { name: /Open sample|サンプルを開く/ }).click();
+  await expect(startPanel).toBeHidden();
+  await page.getByRole("button", { name: "View", exact: true }).click();
+
+  await expect(page.getByText("DeepSeek", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-ui-region="llm-call-counts"]')).toContainText("deepseek: 2");
+  await expect(page.locator('[data-ui-region="llm-token-usage"]')).toContainText("deepseek: 80/20");
+});

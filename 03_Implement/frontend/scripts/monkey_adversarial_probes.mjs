@@ -469,6 +469,28 @@ try {
     );
     await page.close();
   }
+
+  // A19: collapsing/expanding replaces the focused toggle button. Focus must
+  // follow the replacement so keyboard navigation can continue.
+  if (run("A19")) {
+    const page = await open([{ id: "c1", text: "minimap focus確認", x: 220, y: 220 }]);
+    const collapse = page.getByRole("button", { name: "ミニマップを折りたたむ" });
+    await collapse.focus();
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(200);
+    const expand = page.getByRole("button", { name: "ミニマップを開く" });
+    const collapsedFocus = await expand.evaluate((element) => document.activeElement === element);
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(200);
+    const expandedFocus = await collapse.evaluate((element) => document.activeElement === element);
+    rec(
+      "A19",
+      "ミニマップの折りたたみ・展開後もtoggleへfocusが続く",
+      collapsedFocus && expandedFocus,
+      `折りたたみ後=${collapsedFocus} / 展開後=${expandedFocus}`
+    );
+    await page.close();
+  }
 } catch (error) {
   rec("EXCEPTION", "実行時例外", false, String(error).slice(0, 300));
 } finally {
