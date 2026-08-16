@@ -3565,5 +3565,45 @@ ex_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EX_ID")
 check "EX 読戻し (200)" "200" "$ex_read"
 
 echo ""
+echo "--- シナリオ81: 銀行・窓口の相談記録と営業提案の整理（対応と提案の乖離） ---"
+# 業態: 銀行（窓口・リテール）
+# 想定人物: 支店長／窓口担当（相談記録を整理）
+# 業務領域: 顧客の相談内容・窓口対応・商品提案への反応のKJ分類と、営業方針改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 窓口の親切対応（体験の満足）と、商品提案の一方的さ（顧客ニーズとの
+#          乖離）を矛盾検出で表面化し、顧客本位の営業方針の根拠にする（対応と提案の乖離）。
+BK_ID="biz-flow-bank"
+BK_DOC='{"version":1,"id":"'$BK_ID'","title":"窓口相談記録の整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"bk1","text":"窓口の対応は丁寧で待ち時間も短いと評価されている","x":0,"y":0,"textReviewed":true},{"id":"bk2","text":"商品の提案が一方的で、顧客の状況を聞いてもらえていないとの声がある","x":10,"y":0,"textReviewed":true},{"id":"bk3","text":"定期預金の金利への関心が高く、相談は増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"bk-i","cardIds":["bk1","bk2","bk3"]}],"readingOrder":["bk-i"]}'
+
+bk_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BK_ID" \
+  -H 'Content-Type: application/json' -d "$BK_DOC")
+check "BK PUT document (作成)" "200" "$bk_put"
+
+# ① AI束ね
+bk_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"bk1","text":"窓口の対応は丁寧で待ち時間も短いと評価されている","textReviewed":true},{"id":"bk2","text":"商品の提案が一方的で、顧客の状況を聞いてもらえていないとの声がある","textReviewed":true},{"id":"bk3","text":"定期預金の金利への関心が高く、相談は増えている","textReviewed":true}]}')
+case "$bk_groups" in *'"groups":'*) echo "  PASS: BK ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BK ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+bk_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BK_DOC,\"islandId\":\"bk-i\"}")
+case "$bk_summary" in *'"groundingIds":["bk1","bk2","bk3"]'*) echo "  PASS: BK ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BK ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（親切対応 vs 一方的な提案・対応と提案の乖離）
+bk_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"bk1","text":"窓口の対応は丁寧で待ち時間も短いと評価されている","textReviewed":true},"cardB":{"id":"bk2","text":"商品の提案が一方的で、顧客の状況を聞いてもらえていないとの声がある","textReviewed":true}}')
+case "$bk_contra" in *'"hasContradiction"'*) echo "  PASS: BK ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: BK ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+bk_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BK_DOC}")
+case "$bk_narr" in *'"basedOnReadingOrder":["bk-i"]'*) echo "  PASS: BK ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BK ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+bk_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BK_ID")
+check "BK 読戻し (200)" "200" "$bk_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
