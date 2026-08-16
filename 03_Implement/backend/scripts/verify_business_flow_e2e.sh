@@ -6250,5 +6250,47 @@ whol_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$WHOL_ID")
 check "WHOL 読戻し (200)" "200" "$whol_read"
 
 echo ""
+echo "--- シナリオ144: スポーツ用品・アウトドア（専門性・アドバイスと価格・売上のトレードオフ） ---"
+# 業態: スポーツ用品・アウトドア（スポーツ用品店）
+# 想定人物: 店長／商品バイヤー
+# 業務領域: 商品・試着・アドバイス・価格への声のKJ分類と、店舗運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: スポーツやアウトドアの専門知識に基づくアドバイスと試着・調整（顧客満足・専門性）と
+#          ネット通販や価格競争への対応（価格・売上）のトレードオフを矛盾検出（正パス）で表面化し、
+#          店舗運営の改善根拠にする（専門性と価格の相克・イベントやレッスン・用品の修理・調整で
+#          顧客との長い関係を築く動きも指摘）。
+SPORT_ID="biz-flow-sports"
+SPORT_DOC='{"version":1,"id":"'$SPORT_ID'","title":"スポーツ用品店の店舗運営","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"s1","text":"スポーツやアウトドアの専門知識に基づくアドバイスと試着・調整を重視する声（専門性・アドバイス）","x":0,"y":0,"textReviewed":true},{"id":"s2","text":"ネット通販や価格競争への対応など、専門性と価格・売上のトレードオフに悩む声（価格・売上）","x":10,"y":0,"textReviewed":true},{"id":"s3","text":"イベントやレッスン、用品の修理・調整で顧客との長い関係を築く動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sport-i","cardIds":["s1","s2","s3"]}],"readingOrder":["sport-i"]}'
+
+sport_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SPORT_ID" \
+  -H 'Content-Type: application/json' -d "$SPORT_DOC")
+check "SPORT PUT document (作成)" "200" "$sport_put"
+
+# ① AI束ね
+sport_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"s1","text":"スポーツやアウトドアの専門知識に基づくアドバイスと試着・調整を重視する声（専門性・アドバイス）","textReviewed":true},{"id":"s2","text":"ネット通販や価格競争への対応など、専門性と価格・売上のトレードオフに悩む声（価格・売上）","textReviewed":true},{"id":"s3","text":"イベントやレッスン、用品の修理・調整で顧客との長い関係を築く動き","textReviewed":true}]}')
+case "$sport_groups" in *'"groups":'*) echo "  PASS: SPORT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SPORT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sport_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SPORT_DOC,\"islandId\":\"sport-i\"}")
+case "$sport_summary" in *'"groundingIds":["s1","s2","s3"]'*) echo "  PASS: SPORT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SPORT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（専門性・アドバイス vs 価格・売上・専門性と価格の相克・正パス）
+sport_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"s1","text":"スポーツやアウトドアの専門知識に基づくアドバイスと試着・調整を重視する声（専門性・アドバイス）","textReviewed":true},"cardB":{"id":"s2","text":"ネット通販や価格競争への対応など、専門性と価格・売上のトレードオフに悩む声（価格・売上）","textReviewed":true}}')
+case "$sport_contra" in *'"hasContradiction":true'*) echo "  PASS: SPORT ③矛盾検出（専門性・アドバイスと価格・売上のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: SPORT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sport_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SPORT_DOC}")
+case "$sport_narr" in *'"basedOnReadingOrder":["sport-i"]'*) echo "  PASS: SPORT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SPORT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sport_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SPORT_ID")
+check "SPORT 読戻し (200)" "200" "$sport_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
