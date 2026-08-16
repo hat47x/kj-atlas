@@ -187,6 +187,12 @@ if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
     bash "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
   check "KJ multi-round collaboration E2E (mock LLM)" \
     bash "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
+  # MCP read -> CE-4 audit (channel=mcp) -> HTTP sink. Self-contained: starts
+  # its own audit sink + migrated backend on free ports; runs verify_mcp.ts.
+  # Requires the mcp package's node_modules (npm install) — the script reports
+  # an explicit SKIP-style exit 2 when absent, not a hard failure.
+  check "MCP CE-4 audit e2e (channel=mcp reaches sink)" \
+    "$VENV_PYTHON" "$ROOT_DIR/03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py"
 else
   echo "  SKIP: business-flow E2Es — backend venv/alembic.ini not found"
 fi
