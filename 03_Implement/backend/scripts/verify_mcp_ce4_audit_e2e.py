@@ -31,6 +31,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -125,6 +126,20 @@ def _put_document(base_url: str, doc: dict) -> None:
             raise RuntimeError(f"PUT document failed: HTTP {resp.status}")
 
 
+def _post_json(base_url: str, path: str, body: dict) -> int:
+    req = urllib.request.Request(
+        f"{base_url}{path}",
+        data=json.dumps(body).encode("utf-8"),
+        method="POST",
+        headers={"Content-Type": "application/json", "X-API-Key": BIZ_KEY},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+
+
 def main() -> int:
     if not os.path.isdir(MCP_DIR) or not os.path.exists(os.path.join(MCP_DIR, "node_modules", ".bin", "tsx")):
         print("verify_mcp_ce4_audit_e2e.py: mcp package deps not installed (cd 03_Implement/mcp && npm install)")
@@ -188,6 +203,34 @@ def main() -> int:
         }
         _put_document(base_url, doc)
         check("PUT document (200)", 200, 200)
+
+        # 3b. Register an external-agent proposal on the doc so verify_mcp.ts's
+        #     get_proposal_status sees a REAL CE4 proposal (proposal-only), not
+        #     an empty list -- the generative-AI MCP verification of the full
+        #     proposal lifecycle (proposed -> decided).
+        base_sig = f"{DOC_ID}:{doc['updatedAt']}"
+        _task = {
+            "docId": DOC_ID,
+            "taskId": "mcp-audit-task",
+            "baseDocSignature": base_sig,
+            "sourceBundleHash": "a" * 64,
+            "queryCanonicalHash": "b" * 64,
+            "taskKind": "critique_suggestions",
+            "provenanceLevel": "user_presented_unsigned",
+        }
+        _proposal = {
+            "docId": DOC_ID,
+            "taskId": "mcp-audit-task",
+            "baseDocSignature": base_sig,
+            "sourceBundleHash": "a" * 64,
+            "queryCanonicalHash": "b" * 64,
+            "proposalId": "mcp-audit-proposal",
+            "proposalKind": "critique",
+            "proposalFingerprint": "c" * 64,
+            "provenanceLevel": "user_presented_unsigned",
+        }
+        check("external task register (200)", 200, _post_json(base_url, "/ai/external-tasks/register", _task))
+        check("external proposal register (200)", 200, _post_json(base_url, "/ai/external-proposals/register", _proposal))
 
         # 4. Run the generative-AI MCP client path (verify_mcp.ts) against this
         #    backend. It calls get_context_projection -> triggers the CE-4 emit.
