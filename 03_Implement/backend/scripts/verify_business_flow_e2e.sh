@@ -3361,5 +3361,46 @@ in_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$IN_ID")
 check "IN 読戻し (200)" "200" "$in_read"
 
 echo ""
+echo "--- シナリオ76: 人材・採用の中途採用選考フィードバック整理（直感とスコアの相克） ---"
+# 業態: 人材・採用（中途採用）
+# 想定人物: 人事・採用担当（選考フィードバックを整理）
+# 業務領域: 面接官フィードバック・応募者体験・採用判断の声のKJ分類と、採用プロセス改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 面接官の直感的評価（主観・採用に前向き）と、選考スコアの客観評価
+#          （能力面の懸念）の乖離を矛盾検出で表面化し、採用判断の根拠と基準の
+#          一貫性を高める（直感とスコアの相克）。
+HC_ID="biz-flow-hiring"
+HC_DOC='{"version":1,"id":"'$HC_ID'","title":"中途採用選考フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"hc1","text":"面接官は人柄が良いと直感で前向きに評価した","x":0,"y":0,"textReviewed":true},{"id":"hc2","text":"選考スコアでは専門スキルに懸念が残る","x":10,"y":0,"textReviewed":true},{"id":"hc3","text":"応募者の志望動機は明確で、自社への関心は高い","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"hc-i","cardIds":["hc1","hc2","hc3"]}],"readingOrder":["hc-i"]}'
+
+hc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HC_ID" \
+  -H 'Content-Type: application/json' -d "$HC_DOC")
+check "HC PUT document (作成)" "200" "$hc_put"
+
+# ① AI束ね
+hc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"hc1","text":"面接官は人柄が良いと直感で前向きに評価した","textReviewed":true},{"id":"hc2","text":"選考スコアでは専門スキルに懸念が残る","textReviewed":true},{"id":"hc3","text":"応募者の志望動機は明確で、自社への関心は高い","textReviewed":true}]}')
+case "$hc_groups" in *'"groups":'*) echo "  PASS: HC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+hc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HC_DOC,\"islandId\":\"hc-i\"}")
+case "$hc_summary" in *'"groundingIds":["hc1","hc2","hc3"]'*) echo "  PASS: HC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（直感の前向き評価 vs 選考スコアの懸念・直感とスコアの相克）
+hc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"hc1","text":"面接官は人柄が良いと直感で前向きに評価した","textReviewed":true},"cardB":{"id":"hc2","text":"選考スコアでは専門スキルに懸念が残る","textReviewed":true}}')
+case "$hc_contra" in *'"hasContradiction"'*) echo "  PASS: HC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+hc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HC_DOC}")
+case "$hc_narr" in *'"basedOnReadingOrder":["hc-i"]'*) echo "  PASS: HC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+hc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HC_ID")
+check "HC 読戻し (200)" "200" "$hc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
