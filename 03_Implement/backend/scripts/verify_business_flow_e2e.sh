@@ -3524,5 +3524,46 @@ to_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$TO_ID")
 check "TO 読戻し (200)" "200" "$to_read"
 
 echo ""
+echo "--- シナリオ80: 教育・資格試験の受講生フィードバック整理（期待と結果の乖離） ---"
+# 業態: 教育・資格試験（資格取得スクール）
+# 想定人物: スクール運営者（受講生フィードバックを整理）
+# 業務領域: カリキュラム・講師・試験対策への受講生の声のKJ分類と、講座改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 受講生の学習への期待（合格・スキル向上）と、試験結果・実践での実感
+#          （実態）の乖離を矛盾検出で表面化し、講座・カリキュラム改善の根拠にする
+#          （期待と結果の乖離）。
+EX_ID="biz-flow-exam"
+EX_DOC='{"version":1,"id":"'$EX_ID'","title":"受講生フィードバック整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ex1","text":"受講生は合格とスキル向上への期待を語っている","x":0,"y":0,"textReviewed":true},{"id":"ex2","text":"実践では知識が定着せず、試験結果に反映されていないという声がある","x":10,"y":0,"textReviewed":true},{"id":"ex3","text":"講師の説明は分かりやすいと評価されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ex-i","cardIds":["ex1","ex2","ex3"]}],"readingOrder":["ex-i"]}'
+
+ex_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$EX_ID" \
+  -H 'Content-Type: application/json' -d "$EX_DOC")
+check "EX PUT document (作成)" "200" "$ex_put"
+
+# ① AI束ね
+ex_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ex1","text":"受講生は合格とスキル向上への期待を語っている","textReviewed":true},{"id":"ex2","text":"実践では知識が定着せず、試験結果に反映されていないという声がある","textReviewed":true},{"id":"ex3","text":"講師の説明は分かりやすいと評価されている","textReviewed":true}]}')
+case "$ex_groups" in *'"groups":'*) echo "  PASS: EX ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: EX ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ex_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$EX_DOC,\"islandId\":\"ex-i\"}")
+case "$ex_summary" in *'"groundingIds":["ex1","ex2","ex3"]'*) echo "  PASS: EX ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: EX ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（学習への期待 vs 試験結果・実践での実感・期待と結果の乖離）
+ex_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ex1","text":"受講生は合格とスキル向上への期待を語っている","textReviewed":true},"cardB":{"id":"ex2","text":"実践では知識が定着せず、試験結果に反映されていないという声がある","textReviewed":true}}')
+case "$ex_contra" in *'"hasContradiction"'*) echo "  PASS: EX ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: EX ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ex_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$EX_DOC}")
+case "$ex_narr" in *'"basedOnReadingOrder":["ex-i"]'*) echo "  PASS: EX ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: EX ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ex_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EX_ID")
+check "EX 読戻し (200)" "200" "$ex_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
