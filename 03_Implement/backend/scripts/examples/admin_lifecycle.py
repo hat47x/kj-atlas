@@ -110,6 +110,46 @@ def main() -> int:
     request("GET", "/docs", ADM_KEY, expect_status=401)
     request("GET", "/admin/provision/audit", "wrong-key", expect_status=401)
 
+    # 4. Model governance provisioning (AI-MODEL-GOVERNANCE-01/02, raw HTTP).
+    #    A self-written script can drive the model registry + tenant allowlist
+    #    over the control plane and verify the effect on the business plane —
+    #    the same governance surface the CLI exposes, reached with stdlib only.
+    _ADMIN_MODEL = "script-admin-model"
+    request("GET", "/admin/provision/models", ADM_KEY, expect_status=200)
+    request(
+        "POST", "/admin/provision/models", ADM_KEY,
+        {"id": _ADMIN_MODEL, "providerId": "local", "displayName": "Script Admin Model",
+         "capabilities": "intermediate,generate"},
+        expect_status=201,
+    )
+    # Restrict the tenant allowlist to the script-registered model (registered &
+    # active only; unregistered ids are 422 under the hardened allowlist).
+    request(
+        "PUT", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
+        {"modelIds": [_ADMIN_MODEL]},
+        expect_status=200,
+    )
+    # Business plane reflects the allowlist: only the script-registered model.
+    _, available = request("GET", "/ai/available-models", BIZ_KEY, expect_status=200)
+    _ids = [m["id"] for m in (available or {}).get("models", [])]
+    check("script-registered model appears in business-plane model list", True, _ADMIN_MODEL in _ids)
+    # Disable the model via lifecycle; it disappears from the business plane.
+    request(
+        "PATCH", f"/admin/provision/models/{_ADMIN_MODEL}", ADM_KEY,
+        {"lifecycleState": "disabled"},
+        expect_status=200,
+    )
+    _, available_after = request("GET", "/ai/available-models", BIZ_KEY, expect_status=200)
+    _ids_after = [m["id"] for m in (available_after or {}).get("models", [])]
+    check("disabled script-registered model disappears from business-plane list", True, _ADMIN_MODEL not in _ids_after)
+    # Restore the platform-default allowlist (empty = all active registered) so
+    # the restriction does not leak into later operations.
+    request(
+        "PUT", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
+        {"modelIds": []},
+        expect_status=200,
+    )
+
     print(f"=== admin self-script result: {PASS} passed, {FAIL} failed ===")
     return 0 if FAIL == 0 else 1
 
