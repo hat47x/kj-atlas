@@ -2838,5 +2838,45 @@ cy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CY_ID")
 check "CY 読戻し (200)" "200" "$cy_read"
 
 echo ""
+echo "--- シナリオ63: オンラインコミュニティ運営（発言の自由度と健全性のバランス） ---"
+# 業態: オンラインコミュニティ運営
+# 想定人物: コミュニティマネージャー（運営フィードバックを整理）
+# 業務領域: メンバーからの運営フィードバックのKJ分類と、運営ポリシー改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 発言の自由度（少数意見の保護）と健全性（荒らし対策）のバランスを
+#          矛盾検出で表面化し、運営ポリシーの根拠にする（少数意見の外在化・V2）。
+COM_ID="biz-flow-community"
+COM_DOC='{"version":1,"id":"'$COM_ID'","title":"コミュニティ運営フィードバック","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"co1","text":"少数の批判的な声も削除せず残すべき","x":0,"y":0,"textReviewed":true},{"id":"co2","text":"荒らしや誹謗中傷は即時削除すべき","x":10,"y":0,"textReviewed":true},{"id":"co3","text":"運営ルールが複雑で分かりにくい","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"com-i","cardIds":["co1","co2","co3"]}],"readingOrder":["com-i"]}'
+
+com_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$COM_ID" \
+  -H 'Content-Type: application/json' -d "$COM_DOC")
+check "COM PUT document (作成)" "200" "$com_put"
+
+# ① AI束ね
+com_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"co1","text":"少数の批判的な声も削除せず残すべき","textReviewed":true},{"id":"co2","text":"荒らしや誹謗中傷は即時削除すべき","textReviewed":true},{"id":"co3","text":"運営ルールが複雑で分かりにくい","textReviewed":true}]}')
+case "$com_groups" in *'"groups":'*) echo "  PASS: COM ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: COM ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+com_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$COM_DOC,\"islandId\":\"com-i\"}")
+case "$com_summary" in *'"groundingIds":["co1","co2","co3"]'*) echo "  PASS: COM ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: COM ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（発言の自由度 vs 健全性・表現とモデレーションのバランス）
+com_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"co1","text":"少数の批判的な声も削除せず残すべき","textReviewed":true},"cardB":{"id":"co2","text":"荒らしや誹謗中傷は即時削除すべき","textReviewed":true}}')
+case "$com_contra" in *'"hasContradiction"'*) echo "  PASS: COM ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: COM ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+com_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$COM_DOC}")
+case "$com_narr" in *'"basedOnReadingOrder":["com-i"]'*) echo "  PASS: COM ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: COM ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+com_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$COM_ID")
+check "COM 読戻し (200)" "200" "$com_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
