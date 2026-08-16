@@ -2758,5 +2758,45 @@ au_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AU_ID")
 check "AU 読戻し (200)" "200" "$au_read"
 
 echo ""
+echo "--- シナリオ61: 美容・ヘルスケアの顧客フィードバック整理（主観評価と客観指標の乖離） ---"
+# 業態: 美容・ヘルスケア（美容サロン運営）
+# 想定人物: サロン店長（顧客フィードバックを整理）
+# 業務領域: 施術満足・スタッフ対応・価格への顧客声のKJ分類と、サービス改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 施術効果の主観評価（満足度）と客観指標（再来店率）の乖離を矛盾検出で
+#          表面化し、改善の根拠にする（主観と行動のギャップ）。
+BE_ID="biz-flow-beauty"
+BE_DOC='{"version":1,"id":"'$BE_ID'","title":"顧客フィードバック整理","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"be1","text":"施術満足度は高いという声が多い","x":0,"y":0,"textReviewed":true},{"id":"be2","text":"再来店率は横ばい","x":10,"y":0,"textReviewed":true},{"id":"be3","text":"価格が高いとの声が一部にある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"be-i","cardIds":["be1","be2","be3"]}],"readingOrder":["be-i"]}'
+
+be_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BE_ID" \
+  -H 'Content-Type: application/json' -d "$BE_DOC")
+check "BE PUT document (作成)" "200" "$be_put"
+
+# ① AI束ね
+be_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"be1","text":"施術満足度は高いという声が多い","textReviewed":true},{"id":"be2","text":"再来店率は横ばい","textReviewed":true},{"id":"be3","text":"価格が高いとの声が一部にある","textReviewed":true}]}')
+case "$be_groups" in *'"groups":'*) echo "  PASS: BE ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: BE ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+be_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BE_DOC,\"islandId\":\"be-i\"}")
+case "$be_summary" in *'"groundingIds":["be1","be2","be3"]'*) echo "  PASS: BE ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: BE ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（主観満足 vs 再来店率横ばい・主観と行動のギャップ）
+be_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"be1","text":"施術満足度は高いという声が多い","textReviewed":true},"cardB":{"id":"be2","text":"再来店率は横ばい","textReviewed":true}}')
+case "$be_contra" in *'"hasContradiction"'*) echo "  PASS: BE ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: BE ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+be_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BE_DOC}")
+case "$be_narr" in *'"basedOnReadingOrder":["be-i"]'*) echo "  PASS: BE ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: BE ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+be_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$BE_ID")
+check "BE 読戻し (200)" "200" "$be_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
