@@ -6502,5 +6502,47 @@ dairy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DAIRY_ID")
 check "DAIRY 読戻し (200)" "200" "$dairy_read"
 
 echo ""
+echo "--- シナリオ150: 墓地・霊園（供養・永続性と運営・費用のトレードオフ） ---"
+# 業態: 墓地・霊園（霊園運営・墓苑）
+# 想定人物: 霊園管理者／墓苑スタッフ
+# 業務領域: 墓地の維持・供養・遺族の声・費用への声のKJ分類と、霊園運営の改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction・正パス) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 故人への丁寧な供養と遺族の気持ちに寄り添う対応・永続的な管理（供養・永続性）と
+#          墓地の維持管理コストや料金への対応（運営・費用）のトレードオフを矛盾検出（正パス）で
+#          表面化し、霊園運営の改善根拠にする（供養と運営の相克・樹木葬や散骨など多様な供養の
+#          選択肢・オンライン供養で時代に合う形を模索する動きも指摘）。
+CEMY_ID="biz-flow-cemetery"
+CEMY_DOC='{"version":1,"id":"'$CEMY_ID'","title":"霊園運営の改善","createdAt":"2026-08-17T00:00:00Z","updatedAt":"2026-08-17T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"cy1","text":"故人への丁寧な供養と遺族の気持ちに寄り添う対応、永続的な管理を重視する声（供養・永続性）","x":0,"y":0,"textReviewed":true},{"id":"cy2","text":"墓地の維持管理コストや料金への対応など、供養・永続性と運営・費用のトレードオフに悩む声（運営・費用）","x":10,"y":0,"textReviewed":true},{"id":"cy3","text":"樹木葬や散骨など多様な供養の選択肢、オンライン供養で時代に合う形を模索する動き","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"cemy-i","cardIds":["cy1","cy2","cy3"]}],"readingOrder":["cemy-i"]}'
+
+cemy_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$CEMY_ID" \
+  -H 'Content-Type: application/json' -d "$CEMY_DOC")
+check "CEMY PUT document (作成)" "200" "$cemy_put"
+
+# ① AI束ね
+cemy_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"cy1","text":"故人への丁寧な供養と遺族の気持ちに寄り添う対応、永続的な管理を重視する声（供養・永続性）","textReviewed":true},{"id":"cy2","text":"墓地の維持管理コストや料金への対応など、供養・永続性と運営・費用のトレードオフに悩む声（運営・費用）","textReviewed":true},{"id":"cy3","text":"樹木葬や散骨など多様な供養の選択肢、オンライン供養で時代に合う形を模索する動き","textReviewed":true}]}')
+case "$cemy_groups" in *'"groups":'*) echo "  PASS: CEMY ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: CEMY ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+cemy_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$CEMY_DOC,\"islandId\":\"cemy-i\"}")
+case "$cemy_summary" in *'"groundingIds":["cy1","cy2","cy3"]'*) echo "  PASS: CEMY ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: CEMY ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（供養・永続性 vs 運営・費用・供養と運営の相克・正パス）
+cemy_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"cy1","text":"故人への丁寧な供養と遺族の気持ちに寄り添う対応、永続的な管理を重視する声（供養・永続性）","textReviewed":true},"cardB":{"id":"cy2","text":"墓地の維持管理コストや料金への対応など、供養・永続性と運営・費用のトレードオフに悩む声（運営・費用）","textReviewed":true}}')
+case "$cemy_contra" in *'"hasContradiction":true'*) echo "  PASS: CEMY ③矛盾検出（供養・永続性と運営・費用のトレードオフを正パスで表面化）"; PASS=$((PASS+1));; *) echo "  FAIL: CEMY ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+cemy_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$CEMY_DOC}")
+case "$cemy_narr" in *'"basedOnReadingOrder":["cemy-i"]'*) echo "  PASS: CEMY ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: CEMY ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+cemy_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CEMY_ID")
+check "CEMY 読戻し (200)" "200" "$cemy_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
