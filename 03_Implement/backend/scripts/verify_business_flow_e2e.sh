@@ -3038,5 +3038,45 @@ ag_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AG_ID")
 check "AG 読戻し (200)" "200" "$ag_read"
 
 echo ""
+echo "--- シナリオ68: 航空・運輸の旅客サービス改善（定時運航と顧客体験のトレードオフ） ---"
+# 業態: 航空・運輸（航空会社）
+# 想定人物: 顧客体験マネージャー（旅客フィードバックを整理）
+# 業務領域: 旅客からのフィードバック（機内サービス・遅延対応・予約）のKJ分類と、顧客体験改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 定時運航（オペレーション効率）と丁寧な遅延対応（顧客体験）のトレードオフを
+#          矛盾検出で表面化し、改善の根拠にする（定時性と顧客体験の相克）。
+AV_ID="biz-flow-aviation"
+AV_DOC='{"version":1,"id":"'$AV_ID'","title":"旅客サービス改善","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"av1","text":"定時運航の維持を最優先にすべきとの声","x":0,"y":0,"textReviewed":true},{"id":"av2","text":"遅延時の案内が不十分で顧客が不満","x":10,"y":0,"textReviewed":true},{"id":"av3","text":"機内サービスの充実を求める声がある","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"av-i","cardIds":["av1","av2","av3"]}],"readingOrder":["av-i"]}'
+
+av_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$AV_ID" \
+  -H 'Content-Type: application/json' -d "$AV_DOC")
+check "AV PUT document (作成)" "200" "$av_put"
+
+# ① AI束ね
+av_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"av1","text":"定時運航の維持を最優先にすべきとの声","textReviewed":true},{"id":"av2","text":"遅延時の案内が不十分で顧客が不満","textReviewed":true},{"id":"av3","text":"機内サービスの充実を求める声がある","textReviewed":true}]}')
+case "$av_groups" in *'"groups":'*) echo "  PASS: AV ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: AV ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+av_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$AV_DOC,\"islandId\":\"av-i\"}")
+case "$av_summary" in *'"groundingIds":["av1","av2","av3"]'*) echo "  PASS: AV ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: AV ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（定時運航優先 vs 遅延対応の不満・定時性と顧客体験の相克）
+av_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"av1","text":"定時運航の維持を最優先にすべきとの声","textReviewed":true},"cardB":{"id":"av2","text":"遅延時の案内が不十分で顧客が不満","textReviewed":true}}')
+case "$av_contra" in *'"hasContradiction"'*) echo "  PASS: AV ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: AV ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+av_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$AV_DOC}")
+case "$av_narr" in *'"basedOnReadingOrder":["av-i"]'*) echo "  PASS: AV ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: AV ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+av_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$AV_ID")
+check "AV 読戻し (200)" "200" "$av_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
