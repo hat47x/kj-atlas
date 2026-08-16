@@ -4008,5 +4008,45 @@ ev_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$EV_ID")
 check "EV 読戻し (200)" "200" "$ev_read"
 
 echo ""
+echo "--- シナリオ92: ホテル・旅館の宿泊体験と料金設定の整理（体験と料金の乖離） ---"
+# 業態: ホテル・旅館（宿泊施設運営）
+# 想定人物: ホテル支配人（宿泊客の声を整理）
+# 業務領域: 客室・接客・料金への宿泊客の声のKJ分類と、リピート率改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 宿泊客の体験満足（主観・客室・接客）と、料金設定（客観・単価・稼働率）
+#          の乖離を矛盾検出で表面化し、料金戦略とサービス改善の根拠にする（体験と料金の乖離）。
+HT_ID="biz-flow-hotel"
+HT_DOC='{"version":1,"id":"'$HT_ID'","title":"宿泊体験と料金設定","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"ht1","text":"宿泊客は客室の清潔さと接客の丁寧さを高く評価している","x":0,"y":0,"textReviewed":true},{"id":"ht2","text":"料金が高いとの声があり、リピートをためらう客がいる","x":10,"y":0,"textReviewed":true},{"id":"ht3","text":"朝食の満足度は高く、口コミで予約が増えている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"ht-i","cardIds":["ht1","ht2","ht3"]}],"readingOrder":["ht-i"]}'
+
+ht_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$HT_ID" \
+  -H 'Content-Type: application/json' -d "$HT_DOC")
+check "HT PUT document (作成)" "200" "$ht_put"
+
+# ① AI束ね
+ht_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"ht1","text":"宿泊客は客室の清潔さと接客の丁寧さを高く評価している","textReviewed":true},{"id":"ht2","text":"料金が高いとの声があり、リピートをためらう客がいる","textReviewed":true},{"id":"ht3","text":"朝食の満足度は高く、口コミで予約が増えている","textReviewed":true}]}')
+case "$ht_groups" in *'"groups":'*) echo "  PASS: HT ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: HT ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+ht_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$HT_DOC,\"islandId\":\"ht-i\"}")
+case "$ht_summary" in *'"groundingIds":["ht1","ht2","ht3"]'*) echo "  PASS: HT ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: HT ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（体験満足 vs 料金抵抗・体験と料金の乖離）
+ht_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"ht1","text":"宿泊客は客室の清潔さと接客の丁寧さを高く評価している","textReviewed":true},"cardB":{"id":"ht2","text":"料金が高いとの声があり、リピートをためらう客がいる","textReviewed":true}}')
+case "$ht_contra" in *'"hasContradiction"'*) echo "  PASS: HT ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: HT ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+ht_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$HT_DOC}")
+case "$ht_narr" in *'"basedOnReadingOrder":["ht-i"]'*) echo "  PASS: HT ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: HT ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+ht_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$HT_ID")
+check "HT 読戻し (200)" "200" "$ht_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
