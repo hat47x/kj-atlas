@@ -20,7 +20,6 @@ from kj_atlas_api.models import (
     Base,
     LLMModelRegistryRow,
     LLMProviderRegistryRow,
-    TenantModelAllowlistRow,
     TenantRow,
 )
 from kj_atlas_api.settings import settings
