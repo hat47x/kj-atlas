@@ -3887,5 +3887,46 @@ sm_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SM_ID")
 check "SM 読戻し (200)" "200" "$sm_read"
 
 echo ""
+echo "--- シナリオ89: 証券・投資の顧客相談と商品推奨の整理（推奨とリスク許容の乖離） ---"
+# 業態: 証券・投資（証券会社）
+# 想定人物: 証券営業・相談担当（顧客相談を整理）
+# 業務領域: 投資相談・商品推奨・リスク説明への顧客の声のKJ分類と、顧客本位の営業改善
+# 操作内容: 文書作成 -> AI束ね(suggest-card-groups) -> 島要約(suggest-island-summary)
+#          -> 矛盾検出(detect-contradiction) -> ナラティブ(generate-narrative)
+#          -> 読戻し
+# 注意事項: 営業の商品推奨（販売目標・手数料）と、顧客のリスク許容（安全志向・
+#          損失回避）の乖離を矛盾検出で表面化し、顧客本位の営業の根拠にする
+#          （推奨とリスク許容の乖離）。
+SC_ID="biz-flow-securities"
+SC_DOC='{"version":1,"id":"'$SC_ID'","title":"顧客相談と商品推奨","createdAt":"2026-08-16T00:00:00Z","updatedAt":"2026-08-16T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"sc1","text":"営業は高利回り商品の販売目標を重視している","x":0,"y":0,"textReviewed":true},{"id":"sc2","text":"顧客は損失を恐れ、元本確保を優先したいという声がある","x":10,"y":0,"textReviewed":true},{"id":"sc3","text":"投資相談は丁寧で、相談後の安心感は高いと評価されている","x":20,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"sc-i","cardIds":["sc1","sc2","sc3"]}],"readingOrder":["sc-i"]}'
+
+sc_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$SC_ID" \
+  -H 'Content-Type: application/json' -d "$SC_DOC")
+check "SC PUT document (作成)" "200" "$sc_put"
+
+# ① AI束ね
+sc_groups=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' \
+  -d '{"cards":[{"id":"sc1","text":"営業は高利回り商品の販売目標を重視している","textReviewed":true},{"id":"sc2","text":"顧客は損失を恐れ、元本確保を優先したいという声がある","textReviewed":true},{"id":"sc3","text":"投資相談は丁寧で、相談後の安心感は高いと評価されている","textReviewed":true}]}')
+case "$sc_groups" in *'"groups":'*) echo "  PASS: SC ①束ね"; PASS=$((PASS+1));; *) echo "  FAIL: SC ①束ね"; FAIL=$((FAIL+1));; esac
+
+# ② 島要約
+sc_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$SC_DOC,\"islandId\":\"sc-i\"}")
+case "$sc_summary" in *'"groundingIds":["sc1","sc2","sc3"]'*) echo "  PASS: SC ②島要約"; PASS=$((PASS+1));; *) echo "  FAIL: SC ②島要約"; FAIL=$((FAIL+1));; esac
+
+# ③ 矛盾検出（販売目標 vs リスク許容・推奨とリスク許容の乖離）
+sc_contra=$(curl -s -X POST "$BASE_URL/ai/detect-contradiction" -H 'Content-Type: application/json' \
+  -d '{"cardA":{"id":"sc1","text":"営業は高利回り商品の販売目標を重視している","textReviewed":true},"cardB":{"id":"sc2","text":"顧客は損失を恐れ、元本確保を優先したいという声がある","textReviewed":true}}')
+case "$sc_contra" in *'"hasContradiction"'*) echo "  PASS: SC ③矛盾検出"; PASS=$((PASS+1));; *) echo "  FAIL: SC ③矛盾検出"; FAIL=$((FAIL+1));; esac
+
+# ④ ナラティブ
+sc_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$SC_DOC}")
+case "$sc_narr" in *'"basedOnReadingOrder":["sc-i"]'*) echo "  PASS: SC ④ナラティブ"; PASS=$((PASS+1));; *) echo "  FAIL: SC ④ナラティブ"; FAIL=$((FAIL+1));; esac
+
+# ⑤ 読戻し
+sc_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$SC_ID")
+check "SC 読戻し (200)" "200" "$sc_read"
+
+echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
