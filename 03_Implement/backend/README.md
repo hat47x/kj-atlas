@@ -26,7 +26,8 @@
   - 対応状況と昇格条件: `02_Architecture/database_portability.md`
 - `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
-  - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）
+  - 値: `none | local | large-scale | deepseek`（後方互換エイリアス: `local_http`, `external`）
+  - `deepseek`では`KJ_ATLAS_DEEPSEEK_API_KEY`が必須。base URLと既定modelは環境変数正本を参照
 - `KJ_ATLAS_LLM_FALLBACK_TO_NONE`
   - 既定値: `true`
   - `true` の場合、`local`/`large-scale` 呼び出し失敗時は `none` 退避として fail-closed（HTTP 501）
@@ -98,6 +99,46 @@ cd 03_Implement/backend
 export PYTHONPATH=src
 pytest
 ```
+
+### CE4 CLI authentication
+
+`kj_atlas_api.cli` uses `KJ_ATLAS_API_KEY` for business-plane API
+authentication. Keep the secret in the environment; there is intentionally no
+command-line key option because process arguments and shell history are not a
+safe secret transport. An unset value preserves open `local-dev` behavior.
+
+### Control-plane CLI
+
+The same module provides an operator-facing control-plane CLI. It reads the
+bootstrap credential only from `KJ_ATLAS_ADMIN_API_KEY`; the business-plane
+`KJ_ATLAS_API_KEY` is deliberately ignored for every `admin` command. Write
+commands print a change preview and require interactive confirmation, or an
+explicit `--yes` in automation.
+
+Tenant model-allowlist updates also carry the revision returned by the preview
+read. If another administrator changes the same tenant before the write, the
+CLI exits non-zero with `model_allowlist_conflict` instead of overwriting the
+newer policy.
+
+```bash
+export KJ_ATLAS_ADMIN_API_KEY='...'
+python -m kj_atlas_api.cli admin models list
+python -m kj_atlas_api.cli admin providers register \
+  --id deepseek --kind deepseek --display-name DeepSeek \
+  --base-url https://api.deepseek.com --api-key-ref KJ_ATLAS_DEEPSEEK_API_KEY
+python -m kj_atlas_api.cli admin models register \
+  --id deepseek-chat --provider-id deepseek --display-name 'DeepSeek Chat' \
+  --capabilities intermediate,generate
+python -m kj_atlas_api.cli admin tenants model-allowlist-set \
+  --tenant-id local-default --model-id deepseek-chat
+python -m kj_atlas_api.cli admin models set-lifecycle \
+  --id deepseek-chat --state disabled
+python -m kj_atlas_api.cli admin audit list --limit 50
+```
+
+Do not place the admin credential in the end-user SPA. The static credential is
+the ADR-0072 bootstrap path; a separately deployed administrator console and
+interactive Stage-B capability session remain separate follow-up work.
 
 PostgreSQL roundtrip test を実行する場合:
 

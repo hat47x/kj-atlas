@@ -1,10 +1,11 @@
 import json
 import logging
 import math
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -39,6 +40,8 @@ from kj_atlas_api.models_ai import (
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
     ProposeOpposingViewpointRequest,
+    ProposalStatusItem,
+    ProposalStatusResponse,
     ProviderStatusResponse,
     RefineCardTextRequest,
     RefineCardTextResponse,
@@ -50,6 +53,8 @@ from kj_atlas_api.models_ai import (
     SuggestIslandSummaryResponse,
 )
 from kj_atlas_api.models import (
+    AIProposalDecisionStateRow,
+    AIProposalRow,
     Card,
     MergeSuggestion,
     SuggestLayoutRequest,
@@ -73,6 +78,21 @@ from kj_atlas_api.tenant_session_precondition import (
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
+
+_PROVIDER_KIND_ALIASES = {
+    "local_http": "local",
+    "large_scale": "large-scale",
+    "external": "large-scale",
+}
+
+
+def _canonical_provider_kind(raw_kind: str) -> str:
+    normalized = raw_kind.strip().lower()
+    return _PROVIDER_KIND_ALIASES.get(normalized, normalized)
+
+
+def _provider_matches_runtime(provider_kind: str) -> bool:
+    return _canonical_provider_kind(provider_kind) == _canonical_provider_kind(get_provider().provider_kind)
 
 
 def _audit_llm_trace(
@@ -186,10 +206,13 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
     # is not an active registered model (active provider included) must fail
     # closed before any LLM call. Distinguishes "tenant-restricted" (above)
     # from "does not exist / disabled" (here) for operator triage.
-    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_providers = [row for row in list_providers(db) if row.lifecycle_state == "active"]
+    active_provider_ids = {row.id for row in active_providers}
+    runtime_provider_ids = {row.id for row in active_providers if _provider_matches_runtime(row.provider_kind)}
+    models_by_id = {row.id: row for row in list_models(db)}
     active_registered_ids = {
         row.id
-        for row in list_models(db)
+        for row in models_by_id.values()
         if row.lifecycle_state == "active" and row.provider_id in active_provider_ids
     }
     if model_id not in active_registered_ids:
@@ -205,6 +228,25 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
             detail={
                 "code": "model_not_registered",
                 "message": f"Model '{model_id}' is not an active registered model.",
+            },
+        )
+
+    model = models_by_id[model_id]
+    if model.provider_id not in runtime_provider_ids:
+        logger.warning(
+            "model_provider_unavailable",
+            extra={
+                "tenantId": tenant.tenant_id,
+                "modelId": model_id,
+                "providerId": model.provider_id,
+                "runtimeProviderKind": get_provider().provider_kind,
+            },
+        )
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "model_provider_unavailable",
+                "message": "The model's registered provider is not available in this runtime.",
             },
         )
 
@@ -818,6 +860,12 @@ class AvailableModelItem(BaseModel):
 
 class AvailableModelsResponse(BaseModel):
     models: list[AvailableModelItem]
+    unavailableReason: Literal[
+        "no_active_models",
+        "provider_unavailable",
+        "tenant_policy_excludes_all",
+        "no_user_selectable_models",
+    ] | None = None
 
 
 def _is_user_selectable_model(capabilities: str | None) -> bool:
@@ -855,12 +903,28 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
 
     tenant = _resolve_audit_tenant(request, db)
     active_models = [row for row in list_models(db) if row.lifecycle_state == "active"]
-    active_provider_ids = {row.id for row in list_providers(db) if row.lifecycle_state == "active"}
+    active_provider_ids = {
+        row.id
+        for row in list_providers(db)
+        if row.lifecycle_state == "active" and _provider_matches_runtime(row.provider_kind)
+    }
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
-    allowed = [row for row in active_models if row.provider_id in active_provider_ids]
+    runtime_models = [row for row in active_models if row.provider_id in active_provider_ids]
+    allowed = runtime_models
     if effective is not None:
         allowed = [row for row in allowed if row.id in effective]
-    allowed = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
+    selectable = [row for row in allowed if _is_user_selectable_model(row.capabilities)]
+
+    unavailable_reason = None
+    if not active_models:
+        unavailable_reason = "no_active_models"
+    elif not runtime_models:
+        unavailable_reason = "provider_unavailable"
+    elif effective is not None and not allowed:
+        unavailable_reason = "tenant_policy_excludes_all"
+    elif not selectable:
+        unavailable_reason = "no_user_selectable_models"
+
     return AvailableModelsResponse(
         models=[
             AvailableModelItem(
@@ -869,8 +933,9 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
                 providerId=row.provider_id,
                 capabilities=row.capabilities,
             )
-            for row in allowed
-        ]
+            for row in selectable
+        ],
+        unavailableReason=unavailable_reason,
     )
 
 
@@ -880,11 +945,12 @@ def get_provider_status() -> ProviderStatusResponse:
     kind for display in the View panel. No connectivity check is performed;
     "last known outcome" is tracked client-side from real AI-call results.
     OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
-    from kj_atlas_api.llm.provider import llm_call_counts
+    from kj_atlas_api.llm.provider import llm_call_counts, llm_token_usage
 
     return ProviderStatusResponse(
         providerKind=get_provider().provider_kind,
         callCounts=llm_call_counts(),
+        tokenUsage=llm_token_usage(),
     )
 
 
@@ -1326,6 +1392,60 @@ def record_external_proposal_decision(
     db: Session = Depends(get_db),
 ) -> ProposalDecisionAuditResponse:
     return _record_proposal_decision(payload, request, db, expected_origin="external_agent")
+
+
+@router.get(
+    "/proposals/status",
+    response_model=ProposalStatusResponse,
+    dependencies=[Depends(require_tenant_scoped_api_precondition)],
+)
+def get_proposal_status(
+    docId: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ProposalStatusResponse:
+    """CE4 read-only proposal lifecycle status for a document.
+
+    Lets a generative-AI (via MCP or API) verify that a proposal is still
+    proposal-only or was decided by a human (accepted/rejected/held) --
+    traceability without mutating anything. Read-only by contract
+    (`action="read"`): no proposal or decision is written here.
+    """
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=docId,
+        safe_mode=False,
+        read_only=True,
+    )
+    proposals = (
+        db.query(AIProposalRow)
+        .filter_by(tenant_id=tenant.tenant_id, doc_id=docId)
+        .order_by(AIProposalRow.created_at.asc(), AIProposalRow.proposal_id.asc())
+        .all()
+    )
+    decisions = {
+        row.proposal_id: row
+        for row in db.query(AIProposalDecisionStateRow)
+        .filter_by(tenant_id=tenant.tenant_id, doc_id=docId)
+        .all()
+    }
+    return ProposalStatusResponse(
+        docId=docId,
+        proposals=[
+            ProposalStatusItem(
+                proposalId=row.proposal_id,
+                proposalKind=row.proposal_kind,
+                origin=row.origin,
+                status=decisions[row.proposal_id].status if row.proposal_id in decisions else "proposed",
+                sourceBundleHash=row.source_bundle_hash,
+                createdAt=row.created_at,
+                decidedAt=decisions[row.proposal_id].updated_at if row.proposal_id in decisions else None,
+            )
+            for row in proposals
+        ],
+    )
 
 
 @router.post(

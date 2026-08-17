@@ -33,6 +33,12 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
     # default (which is under review to become fail-closed/False).
     _original_allow_jit = _settings.allow_jit_provisioning
     _settings.allow_jit_provisioning = True
+    # AI-MODEL-GOVERNANCE-02: _assert_model_allowed requires the model's
+    # registered provider to match the runtime provider. The fixture registers
+    # "default" under provider "local", so pin the runtime provider to "local"
+    # (same alignment as test_ai_safemode/test_ai_eval_pipeline etc.).
+    _original_llm_provider = _settings.llm_provider
+    _settings.llm_provider = "local"
     try:
         with TestClient(app) as client:
             client.headers.update({"x-forwarded-user": "ce2-reviewer", "x-auth-provider": "oidc"})
@@ -58,6 +64,7 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
             yield client, session_local
     finally:
         _settings.allow_jit_provisioning = _original_allow_jit
+        _settings.llm_provider = _original_llm_provider
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -163,6 +170,33 @@ def test_record_proposal_decision_rejects_lifecycle_vocab(sqlite_client) -> None
             "/ai/proposals/audit", json=_decision_payload(decision=decision, key=decision)
         )
         assert response.status_code == 422
+
+
+def test_proposal_status_reads_lifecycle_without_mutation(sqlite_client) -> None:
+    """GET /ai/proposals/status is read-only: it reports the proposal lifecycle
+    (proposal-only -> decided) without writing anything -- the read API that a
+    generative-AI MCP verifier consumes."""
+    client, _ = sqlite_client
+    # 1. Before any decision: the fixture-registered proposal is proposal-only.
+    before = client.get("/ai/proposals/status", params={"docId": "doc-1"})
+    assert before.status_code == 200, before.text
+    items = before.json()["proposals"]
+    assert any(
+        p["proposalId"] == "proposal-1"
+        and p["status"] == "proposed"
+        and p["decidedAt"] is None
+        and p["sourceBundleHash"] == "a" * 64
+        for p in items
+    )
+    # 2. A human decision flips the status (CE4 proposal-only -> decided).
+    decision = client.post("/ai/proposals/audit", json=_decision_payload(decision="adopt"))
+    assert decision.status_code == 200, decision.text
+    after = client.get("/ai/proposals/status", params={"docId": "doc-1"})
+    assert after.status_code == 200, after.text
+    decided = next(p for p in after.json()["proposals"] if p["proposalId"] == "proposal-1")
+    assert decided["status"] == "accepted"
+    assert decided["decidedAt"] is not None
+    assert decided["proposalKind"] == "island_summary"
 
 
 def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:

@@ -262,6 +262,7 @@ describe("UX Operability regression contracts", () => {
   it("UX-MENU-01: menu bar consolidates flat header operations into 6 categories without a net increase in always-visible core actions", () => {
     const appSource = readSource("src/App.tsx");
     const menuBarSource = readSource("src/ui/MenuBar.tsx");
+    const contextMenuSource = readSource("src/ui/ContextMenu.tsx");
     const recentDocumentsDialogSource = readSource("src/ui/RecentDocumentsDialog.tsx");
 
     // AC-1: the slim toolbar's 7 core actions are unchanged (the flat
@@ -313,8 +314,7 @@ describe("UX Operability regression contracts", () => {
     expect(recentDocumentsDialogSource).toContain('t("app.toolbar.open")');
 
     // WAI-ARIA menubar keyboard contract (arrow cycling, Home/End,
-    // Escape-close-with-focus-return) — new code, since neither
-    // ContextMenu.tsx nor CommandPalette.tsx already provided it.
+    // Escape-close-with-focus-return).
     expect(menuBarSource).toContain('role="menubar"');
     expect(menuBarSource).toContain('role="menu"');
     expect(menuBarSource).toContain('aria-haspopup="menu"');
@@ -326,6 +326,16 @@ describe("UX Operability regression contracts", () => {
     expect(menuBarSource).toContain('event.key === "End"');
     expect(menuBarSource).toContain('event.key === "Escape"');
     expect(menuBarSource).toContain("closeAndReturnFocus");
+
+    // Canvas context menus follow the same keyboard-operable menu contract.
+    expect(contextMenuSource).toContain("aria-label={ariaLabel}");
+    expect(contextMenuSource).toContain('event.key === "ArrowDown"');
+    expect(contextMenuSource).toContain('event.key === "ArrowUp"');
+    expect(contextMenuSource).toContain('event.key === "Home"');
+    expect(contextMenuSource).toContain('event.key === "End"');
+    expect(contextMenuSource).toContain("restorePreviousFocus");
+    expect(contextMenuSource).toContain("enabledItems()[0]?.focus()");
+    expect(appSource).toContain("returnFocusTo={contextMenuReturnFocusRef.current}");
 
     // 390px collapse (Round 5 redline): below the fixed matrix's 768px
     // breakpoint, the 6 categories consolidate into a single trigger.
@@ -475,6 +485,38 @@ describe("UX Operability regression contracts", () => {
       "setPerspectivePresets(restorePerspectivePresets(metadata.viewState.perspectivePresets))",
     );
     expect(appSource.match(/perspectivePresets,/g)).toHaveLength(5);
+  });
+
+  it("QA-MONKEY-32: title editing and AI candidate adoption remain explicit and keyboard-safe", () => {
+    const titleEditorSource = readSource("src/ui/DocumentTitleEditor.tsx");
+
+    expect(titleEditorSource).toContain('type="button"');
+    expect(titleEditorSource).toContain('t("document_title.edit_aria", { title: displayTitle })');
+    expect(titleEditorSource).toContain('aria-labelledby="document-title-candidates-label"');
+    expect(titleEditorSource).toContain('role="status"');
+    expect(titleEditorSource).toContain('t("document_title.proposal_only_hint")');
+    expect(titleEditorSource).toContain('t("document_title.adopt_candidate", { title: candidate })');
+    expect(titleEditorSource).toContain("focusTitleDisplay();");
+    expect(titleEditorSource).toContain("suggestButtonRef.current?.focus()");
+  });
+
+  it("SEC-AI-SAFEMODE-03: title suggestions exclude unreviewed island titles before certification", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain(".filter((island) => island.titleReviewed === true)");
+    expect(appSource).toContain(".filter((c) => (c as { textReviewed?: boolean }).textReviewed === true)");
+  });
+
+  it("OPS-LLM-COST-03: opening View refreshes the operational provider snapshot", () => {
+    const appSource = readSource("src/App.tsx");
+    const openEffect = appSource.slice(
+      appSource.indexOf("if (!isViewControlsOpen)"),
+      appSource.indexOf("const headerViewControls"),
+    );
+
+    expect(openEffect).toContain("getProviderStatus()");
+    expect(openEffect).toContain("setLlmCallCounts(callCounts)");
+    expect(openEffect).toContain("setLlmTokenUsage(tokenUsage)");
   });
 
   it("routes tenant-scoped AI calls through the stale-session cleanup boundary", () => {
@@ -1074,5 +1116,12 @@ describe("UX Operability regression contracts", () => {
     expect(emptyCanvasHintSource).not.toContain("autoFocus");
     expect(viewControlsPanelSource).toContain("emptyCanvasHintCompleted");
     expect(viewControlsPanelSource).toContain('t("view_controls.onboarding.reset_empty_canvas")');
+  });
+
+  it("shows registry state without enabling AI when the runtime provider is none", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain('providerKind !== null && providerKind !== "none"');
+    expect(appSource).toContain("|| availableModels !== null");
   });
 });

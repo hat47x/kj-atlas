@@ -42,6 +42,52 @@ def _stub_metadata() -> LLMCallMetadata:
     )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _app_db_schema() -> None:
+    """Ensure the shared SQLite DB has the full app schema AND the default
+    registered model, with the runtime provider matching it. _assert_model_allowed
+    (AI-MODEL-GOVERNANCE-02) requires the resolved task default to be an active
+    registered model whose provider matches the runtime; a fresh SQLite DB has
+    neither until seeded."""
+    from sqlalchemy.exc import IntegrityError
+
+    from kj_atlas_api.db import SessionLocal, engine
+    from kj_atlas_api.models import Base
+    from kj_atlas_api.model_registry_repository import register_model, register_provider
+    from kj_atlas_api.settings import settings
+
+    _NOW = "2026-08-15T00:00:00+00:00"
+    original_provider = settings.llm_provider
+    settings.llm_provider = "local"
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        register_provider(
+            db,
+            provider_id="local",
+            provider_kind="local",
+            display_name="Local LLM (test)",
+            base_url=None,
+            api_key_ref=None,
+            occurred_at=_NOW,
+        )
+        register_model(
+            db,
+            model_id="default",
+            provider_id="local",
+            display_name="default",
+            capabilities="intermediate,generate",
+            occurred_at=_NOW,
+        )
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+    finally:
+        db.close()
+    yield
+    settings.llm_provider = original_provider
+
+
 @pytest.fixture(scope="module")
 def eval_doc() -> DocumentV1:
     raw = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
@@ -78,22 +124,24 @@ def test_fixture_has_islands_for_summary(eval_doc: DocumentV1) -> None:
 
 
 def test_deepseek_provider_wired_for_eval_tasks(monkeypatch: pytest.MonkeyPatch) -> None:
-    """When DeepSeek is configured, the eval task names resolve to the model."""
+    """DeepSeek's provider default resolves before the governance gate."""
     from kj_atlas_api.settings import settings
 
+    original_provider = settings.llm_provider
     original_map = settings.llm_task_model_map
+    original_model = settings.deepseek_model
     try:
-        settings.llm_task_model_map = (
-            "refine_card_text=deepseek-chat,"
-            "suggest_island_summary=deepseek-chat"
-        )
-        # resolve_model_for_task should return deepseek-chat for both tasks
+        settings.llm_provider = "deepseek"
+        settings.llm_task_model_map = ""
+        settings.deepseek_model = "deepseek-chat"
         from kj_atlas_api.llm.provider import resolve_model_for_task
 
         assert resolve_model_for_task("refine_card_text") == "deepseek-chat"
         assert resolve_model_for_task("suggest_island_summary") == "deepseek-chat"
     finally:
+        settings.llm_provider = original_provider
         settings.llm_task_model_map = original_map
+        settings.deepseek_model = original_model
 
 
 # --- Mock endpoint-level evaluation flow (L2 criterion ③ rehearsal) ---

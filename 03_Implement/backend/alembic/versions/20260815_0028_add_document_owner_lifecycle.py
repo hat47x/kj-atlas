@@ -27,7 +27,9 @@ def upgrade() -> None:
         "documents",
         sa.Column(
             "lifecycle_state",
-            sa.Text(),
+            # Bounded (PERSISTENT_TEXT_SPECS: 16) so MySQL accepts the
+            # server_default -- a TEXT column cannot have a DEFAULT there.
+            sa.String(length=16),
             nullable=False,
             server_default="active",
         ),
@@ -35,5 +37,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("documents", "lifecycle_state")
+    # lifecycle_state carries a server_default; on SQL Server the default
+    # constraint must be dropped before the column (see 0014 pattern).
+    op.drop_column("documents", "lifecycle_state", mssql_drop_default=True)
     op.drop_column("documents", "created_by")

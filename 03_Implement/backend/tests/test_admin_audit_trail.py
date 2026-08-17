@@ -12,7 +12,7 @@ from contextlib import contextmanager
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app

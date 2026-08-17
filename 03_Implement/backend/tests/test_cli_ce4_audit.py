@@ -61,6 +61,7 @@ def test_build_payload_requires_ce4_hash_keys(missing_key: str) -> None:
 
 def test_main_posts_context_audit_payload_and_headers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     request_log: dict[str, object] = {}
+    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-secret")
 
     def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
         request_log.update({"url": url, "json": json, "headers": headers, "timeout": timeout})
@@ -95,7 +96,11 @@ def test_main_posts_context_audit_payload_and_headers(tmp_path: Path, monkeypatc
 
     assert exit_code == 0
     assert request_log["url"] == "http://localhost:9999/docs/doc-42/context-audit"
-    assert request_log["headers"] == {"x-actor-ref": "user:alice", "x-trace-id": "trace-1"}
+    assert request_log["headers"] == {
+        "x-api-key": "business-secret",
+        "x-actor-ref": "user:alice",
+        "x-trace-id": "trace-1",
+    }
     assert request_log["timeout"] == 5.0
     assert request_log["json"]["operation"] == "proposal"
     assert request_log["json"]["command"] == "proposal-diff"
@@ -103,9 +108,10 @@ def test_main_posts_context_audit_payload_and_headers(tmp_path: Path, monkeypatc
 
 def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     request_log: dict[str, object] = {}
+    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-secret")
 
-    def _fake_post(url: str, json: dict[str, object], timeout: float):
-        request_log.update({"url": url, "json": json, "timeout": timeout})
+    def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
+        request_log.update({"url": url, "json": json, "headers": headers, "timeout": timeout})
         return _DummyResponse(
             {
                 "equivalenceKey": "a" * 64,
@@ -141,7 +147,16 @@ def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.Monke
         "sourceBundleHash": "d" * 64,
         "safeMode": False,
     }
+    assert request_log["headers"] == {"x-api-key": "business-secret"}
     assert request_log["timeout"] == 5.0
+
+
+def test_business_plane_headers_omit_unset_or_blank_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KJ_ATLAS_API_KEY", raising=False)
+    assert cli._business_plane_headers() == {}
+
+    monkeypatch.setenv("KJ_ATLAS_API_KEY", "   ")
+    assert cli._business_plane_headers(actor_ref="operator") == {"x-actor-ref": "operator"}
 
 
 def test_build_payload_prefers_query_canonical_hash_when_present() -> None:
@@ -178,7 +193,7 @@ def test_build_payload_normalizes_ce4_contract_fields_only() -> None:
 
 
 def test_main_ce4_resolve_bundle_fail_closed_when_response_missing_required_field(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_post(url: str, json: dict[str, object], timeout: float):
+    def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
         return _DummyResponse({"bundleHash": "abc"})
 
     monkeypatch.setattr(cli.httpx, "post", _fake_post)
@@ -188,7 +203,7 @@ def test_main_ce4_resolve_bundle_fail_closed_when_response_missing_required_fiel
 
 
 def test_main_ce4_resolve_bundle_fail_closed_when_dry_run_side_effect_is_not_none(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_post(url: str, json: dict[str, object], timeout: float):
+    def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
         return _DummyResponse(
             {
                 "equivalenceKey": "a" * 64,

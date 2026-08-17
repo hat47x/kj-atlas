@@ -43,7 +43,14 @@ await new Promise((r) => jwksServer.listen(JWKS_PORT, "127.0.0.1", r));
 const JWKS_URI = `http://127.0.0.1:${JWKS_PORT}/.well-known/jwks.json`;
 
 // 2. Sign a bearer token.
-const token = await new SignJWT({ sub: "dogfood-client" })
+const token = await new SignJWT({ sub: "dogfood-client", scope: "read:context" })
+  .setProtectedHeader({ alg: "RS256", kid: KID })
+  .setIssuer(TRUSTED_ISSUER)
+  .setAudience(RESOURCE)
+  .setIssuedAt()
+  .setExpirationTime("5m")
+  .sign(privateKey);
+const noScopeToken = await new SignJWT({ sub: "dogfood-client-without-scope" })
   .setProtectedHeader({ alg: "RS256", kid: KID })
   .setIssuer(TRUSTED_ISSUER)
   .setAudience(RESOURCE)
@@ -81,6 +88,20 @@ for (let i = 0; i < 30; i++) {
 await sleep(500);
 
 try {
+  // A cryptographically valid identity is not sufficient: remote AI clients
+  // must also receive the least-privilege read:context authorization scope.
+  const forbidden = await fetch(`http://127.0.0.1:${MCP_PORT}/mcp`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${noScopeToken}` },
+  });
+  if (forbidden.status !== 403) {
+    throw new Error(`scope-less signed token was not rejected: HTTP ${forbidden.status}`);
+  }
+  const challenge = forbidden.headers.get("www-authenticate") || "";
+  if (!challenge.includes("read:context")) {
+    throw new Error(`403 challenge did not advertise read:context: ${challenge}`);
+  }
+
   const client = new Client({ name: "dogfood-http", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${MCP_PORT}/mcp`), {
     requestInit: { headers: { authorization: `Bearer ${token}` } },
@@ -96,7 +117,7 @@ try {
   const text = result.content?.[0]?.text ?? "";
   const projection = JSON.parse(text);
   console.log(`bundleHash: ${projection.bundleHash.slice(0, 12)}…  cards: ${projection.cards.length}`);
-  console.log("HTTP e2e PASSED ✅ (auth + initialize + tools/list + tool call over real backend)");
+  console.log("HTTP e2e PASSED ✅ (scope denial + auth + initialize + tools/list + tool call over real backend)");
   await client.close();
 } finally {
   mcp.kill();

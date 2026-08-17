@@ -27,9 +27,13 @@ check() {
   fi
 }
 
-auth_header=""
+# auth_header is a bash ARRAY so a keyed backend (KJ_ATLAS_API_KEY set) sends a
+# well-formed X-API-Key header; the previous string form ('-H ...' with literal
+# quotes) word-split into a malformed curl header and failed with 401 against a
+# keyed backend (only validated keyless before).
+auth_header=()
 if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header="-H 'X-API-Key: ${KJ_ATLAS_API_KEY}'"
+  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
 fi
 
 echo "=== kj-atlas API verification (base: $BASE_URL) ==="
@@ -62,12 +66,12 @@ code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/version")
 check "/version" "200" "$code"
 
 # 2. /ai/provider-status — read-only provider echo
-code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/ai/provider-status")
+code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/ai/provider-status")
 check "/ai/provider-status" "200" "$code"
 
 # 3. /docs — list the tenant's document metadata (第2反復 canvas-list foundation).
 #    Row metadata only (never card content). 200 with a JSON array.
-code=$(curl -s -o /tmp/kj_docs_list.json -w '%{http_code}' ${auth_header} "$BASE_URL/docs")
+code=$(curl -s -o /tmp/kj_docs_list.json -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/docs")
 check "/docs (list)" "200" "$code"
 if [ "$code" = "200" ]; then
   if head -c1 /tmp/kj_docs_list.json | grep -q '^\['; then
@@ -80,7 +84,7 @@ if [ "$code" = "200" ]; then
 fi
 
 # 3b. /docs/{id} — read a document (sample fixture id)
-code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/docs/doc_phase1_canvas")
+code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/docs/doc_phase1_canvas")
 # 404 is acceptable (document may not be seeded); non-5xx means route works
 if [ "$code" != "500" ] && [ "$code" != "503" ]; then
   echo "  PASS: /docs/{id} route reachable (HTTP $code)"
@@ -95,7 +99,7 @@ fi
 # endpoint is present but Service Unavailable (e.g. local-dev has no SaaS
 # identity resolver and returns 503 by design). Report status classes
 # distinctly so a real outage is not masked as reachable.
-code=$(curl -s -o /dev/null -w '%{http_code}' ${auth_header} "$BASE_URL/session/context")
+code=$(curl -s -o /dev/null -w '%{http_code}' "${auth_header[@]}" "$BASE_URL/session/context")
 case "$code" in
   500)
     echo "  FAIL: /session/context returned 500 (server crash)"

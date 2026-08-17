@@ -454,9 +454,254 @@ Updated: 2026-08-03
 - 対応: fixtureを行頭が明示的な文字列連結へ変更し、長文部分だけを挿入する形へ単純化した。
 - 再発防止: 動的な複数行内容を含むmetadata fixtureではdedentに依存せず、生成後の先頭行とmetadata行がcolumn 0であることが明白な構築方法を使う。
 
+## 2026-08-16: frontend起動時のNode実行PATH確認漏れ
+
+- 事象: モンキーテスト用frontendを`npm run dev`で起動しようとして、`npm: command not found`で停止した。
+- 原因: このDesktopセッションでは通常PATHにNode/npmがなく、ワークスペース同梱runtimeの場所を先に確認していなかった。
+- 対応: 同梱runtimeを取得し、そのNode実行体からViteを直接起動した。
+- 再発防止: Desktop環境でNode系コマンドを使う前にworkspace dependenciesを確認し、同梱Nodeを明示して実行する。
+
+## 2026-08-16: OSが異なるNodeとnode_modulesを組み合わせてVite起動に失敗
+
+- 事象: Windows版の同梱NodeでWSL側に展開済みの`node_modules`からViteを起動し、`@rollup/rollup-win32-x64-msvc`欠損で停止した。
+- 原因: `node_modules`にはLinux向けRollup optional packageだけがあり、Windows Nodeとの実行環境が一致していなかった。
+- 対応: 依存物を破壊的に再展開せず、既存の静的buildをPython HTTP serverで配信し、Windows Edgeを使う既存モンキーハーネスで検証した。
+- 再発防止: Node本体と`node_modules`のOSを起動前に揃える。混在時は既存依存物を書き換えず、静的buildまたは同一OSの隔離環境を使う。
+
+## 2026-08-16: 計画文書検証をfrontend配下から相対実行
+
+- 事象: frontendスクリプトの構文確認と同じ作業ディレクトリで`python 01_Plans/issues/validate_active_issue_memos.py`を続け、file not foundで停止した。
+- 原因: frontend固有コマンドとrepository-root基準コマンドを一つの実行へまとめた際、後半の基準ディレクトリを切り替えなかった。
+- 対応: リポジトリ直下からvalidatorとdocs-checkを再実行し、成功を確認した。
+- 再発防止: 複数領域の検証を連結するときは各コマンドの基準ディレクトリを先に揃えるか、領域ごとに実行を分ける。
+
+## 2026-08-16: WSL上のViteが変更通知を拾わず修正前moduleを配信
+
+- 事象: `ContextMenu.tsx`修正後もA10が修正前と同じ結果を返し、通常URLの変換moduleにも旧コードが残っていた。
+- 原因: `/mnt/d`上で動かしたViteのfile watchingが変更通知を拾わず、変換cacheを更新しなかった。クエリを変えた直接取得では新コードを確認できた。
+- 対応: Viteを`--force`付きで再起動して依存・変換cacheを再生成し、同じ実画面操作で修正後挙動を確認した。
+- 再発防止: WSL mount上のhot reload結果がソースと矛盾した場合は、通常URLとcache-busting URLのmodule内容を比較し、`--force`再起動後に検証する。
+
+## 2026-08-16: 混在改行ファイルの一律CRLF化で不要差分を生成
+
+- 事象: `apply_patch`後の混在改行を一律CRLFへ整えた結果、既存のLF行まで変わり、CardViewとUI回帰testに大きな非意味差分が生じた。
+- 原因: HEAD時点でCRLF/LFが混在していたことを確認せず、ファイル単位で改行を統一した。
+- 対応: HEADの行内容と改行形式を照合し、既存行ごとの改行形式を復元して実質差分をCardView 2行、test 14行へ縮小した。
+- 再発防止: 混在改行fileは一律変換せず、`git diff --numstat`で異常増加を確認してから既存行の改行形式を保つ。
+
+## 2026-08-16: 計画更新JavaScriptの配列要素区切り漏れ
+
+- 事象: モンキーテスト継続計画の更新時、隣接するplan item間のcommaを欠き`SyntaxError`で停止した。
+- 原因: 複数項目を一行へ圧縮して入力し、構文確認が不十分だった。
+- 対応: plan itemを一行ずつ分けてcommaを明示し、同じ計画を正常に更新した。
+- 再発防止: 複数itemのtool入力は整形した複数行で記述し、各object終端のcommaを確認する。
+
 ## 2026-08-12: verify_mcp が .ts モジュール import + TS構文で Node 20 から起動不能
 
 - 事象: `verify_mcp.mjs` が `import { interpretProjectionResult } from "../src/mcp_verify_result.ts"` と `as` キャストを含むため、素の `node`（.nvmrc は 20）で `ERR_UNKNOWN_FILE_EXTENSION`／`SyntaxError: Unexpected identifier 'as'` になった。
 - 原因: 検証スクリプトを `.mjs` のまま TS 機能（.ts import・型アサーション）へ移したが、Node 20 は型ストリップなし。さらに **tsx は `.mjs` を esbuild 変換せず Node ネイティブローダーへ渡す**ため、`tsx scripts/verify_mcp.mjs` でも `as` で構文エラーになった。
 - 対応: `verify_mcp.mjs` を `verify_mcp.ts` へリネームし、`package.json` に `"verify": "tsx scripts/verify_mcp.ts"` を追加、README/issue の起動コマンドを `npm run verify --` へ更新。vitest 55 pass・typecheck OK・`npm run verify` 実走行で isError 経路の終了を確認。
 - 再発防止: `.mjs` に TS 構文や `.ts` import を持ち込まない。tsx で動かすエントリは `.ts` にし、素 `node` 起動は `.mjs` のみ。検証スクリプトの起動コマンド変更時は README と起票 issue の両方を更新する。
+
+## 2026-08-16: MCP監査E2Eがnpm不在とWSLのWindows TEMPで起動不能
+
+- 事象: `verify_mcp_ce4_audit_e2e.py`がPATH上の`npm`不在で停止し、Node 20を補った後もtsx IPC socketがdrvfs上のWindows TEMPへ作られて`ENOTSUP`になった。
+- 原因: package-localのtsxが存在するのにnpmを暗黙要求し、WSLへ継承された`TEMP`/`TMP`を無条件に子processへ渡していた。
+- 対応: package-local tsxを直接起動し、非Windowsでは子processの`TMPDIR=/tmp`を明示した。MCP read→CE-4→audit sinkは8/8成功した。
+- 再発防止: Node系E2Eの子processはpackage-local executableを優先し、filesystem socketを使うtoolはWSLの一時領域境界を明示する。
+
+## 2026-08-16: DeepSeek診断バンドルtestで既存builder名を確認せず記述
+
+- 事象: DeepSeek provider typeの回帰test追加時、存在しない`createDiagnosticsBundle`と`input`を参照して型検査・testが停止した。
+- 原因: 対象testの既存importとfixture名を確認せず、別の命名パターンを推測した。
+- 対応: 既存の`buildDiagnosticsBundle`と`BASE_INPUT`へ修正し、近接testを再実行した。
+- 再発防止: 既存testへ追加する場合は先にimport・共通fixture・直前describeを読み、既存helperをそのまま再利用する。
+
+## 2026-08-16: backend配下からrepository相対のcredential pathを使用
+
+- 事象: 隔離DB migrationをbackend directoryから実行した際、`local/DEEPSEEK_TOKEN.TXT`を相対指定してfile not foundとなり、API送信前に停止した。
+- 原因: 利用者指定pathの基準がrepository rootであることを、作業directory変更後のcommandへ反映しなかった。
+- 対応: repository rootからの絶対pathへ修正し、token値を表示せずmigrationと実API検証を完了した。
+- 再発防止: credential pathは存在確認済みの絶対pathを保持し、subdirectory実行へ相対pathを持ち込まない。
+
+## 2026-08-16: WSLの旧NodeとWindows Edgeを直接組み合わせてbrowser起動に失敗
+
+- 事象: PATH上のNode 12でViteが構文errorとなり、Node 20へ直した後もWSL PlaywrightからWindows Edgeへのremote debugging pipeが開けず停止した。
+- 原因: Node version確認前にViteを起動し、異OS process間でPlaywrightのpipe transportを使おうとした。
+- 対応: 既存Linux node_modulesにはWSL Node 20、Edge automationにはWindows bundled Node + playwright-coreを使い、同一OS内でprocessとtransportを揃えた。
+- 再発防止: Vite開始前にNode majorを確認し、Windows browserはWindows Node側から起動する。
+
+## 2026-08-16: SafeMode回帰testでsource変数のscopeを確認せず追加
+
+- 事象: `ux_operability_regression.test.ts`へ追加したtestが未定義の`appSource`を参照し、1/80件失敗してtypecheckも停止した。
+- 原因: 近傍test内のlocal変数をdescribe共通変数と誤認した。
+- 対応: 新規test内で`readSource("src/App.tsx")`を明示し、81/81件とtypecheckの成功を確認した。
+- 再発防止: 静的source contract test追加時は変数宣言scopeを確認し、新規`it`内で対象sourceを取得する。
+
+## 2026-08-16: browser routeの広いglobがfrontend source moduleを404化
+
+- 事象: UX probeで`**/api/**`をAPI stubとして登録したところ、`/src/api/client.ts`と`/src/api/session_bootstrap_policy.ts`まで一致して404となり、画面が空になった。
+- 原因: URL pathの`/api/`がbackend prefixだけでなくfrontend source directoryにも現れることを考慮しなかった。
+- 対応: route callbackでpathnameが`/api/`から始まる場合だけstubし、`/src/api/`は通常配信へcontinueした。ja/enの実Edge probeを完走した。
+- 再発防止: Vite画面のAPI interceptionはglobだけで判定せず、`new URL(request.url()).pathname.startsWith("/api/")`を併用する。
+
+## 2026-08-16: pytestの出力捕捉用一時ファイルが消失
+
+- 事象: 管理面・認証面の回帰testを通常の出力捕捉付きで実行したところ、終了処理で捕捉用一時ファイルが見つからず`FileNotFoundError`になった。
+- 原因: `/mnt/d`上の実行環境でpytestの一時的な出力捕捉ファイルが終了前に消失した。アプリのassertion失敗ではなかった。
+- 対応: 出力捕捉を無効化する`-s`を付けて同じ46件を再実行し、全件成功を確認した。
+- 再発防止: drvfs上でpytestのcapture終了エラーが出た場合は、対象testを変えず`-s`で再実行し、アプリ不具合と環境不具合を切り分ける。
+
+## 2026-08-16: Edge probeが非表示のモデル選択肢を待ち続けた
+
+- 事象: 管理APIで登録済みのモデル選択肢をEdge実画面で待ったが、API応答は200でも30秒でtimeoutした。
+- 原因: frontendは利用可能モデル一覧とは別に、起動時providerが`none`ならタイトル欄のモデルUI全体を非表示にしていた。動的registryとの協調条件を見落としていた。
+- 対応: 実サービスのaccess logで`/ai/available-models`成功を確認し、画面の表示条件へ動的な利用可能モデルの有無を加えたうえでprobeを再実行する。
+- 再発防止: UI要素のtimeout時は、network応答、state更新、描画条件を順に分離して確認し、API成功だけで表示済みと判断しない。
+
+## 2026-08-16: 回帰testのdescribe表記を推測してpatch不成立
+
+- 事象: Appの表示条件と回帰testを同時更新したpatchが、test側のdescribe文字列の大文字・小文字差で適用されなかった。
+- 原因: 対象行を直前に確認せず、既存の見出し表記を推測した。
+- 対応: App変更とtest変更を分け、testファイルの実際の先頭・末尾を確認して正しい位置へ追加した。
+- 再発防止: 複数ファイルpatchで文脈行が不確かな場合は、対象箇所を先に読み、安定した近傍行を使う。
+
+## 2026-08-16: frontend配下からrepository相対pathを二重指定
+
+- 事象: frontendを作業directoryにした検証commandで`03_Implement/frontend/src/...`を指定し、対象ファイルを読めず後続の型検査が開始されなかった。
+- 原因: repository root基準のpathを、既にfrontendへ移動したcommandへそのまま持ち込んだ。
+- 対応: frontend基準の`src/...`へ直し、型検査と近接43件を完走した。
+- 再発防止: commandの作業directoryと引数pathの基準を実行前に一組として確認する。
+
+## 2026-08-16: select内optionへ通常要素のvisible判定を要求
+
+- 事象: 全モデル無効時の文言がDOMに存在するのに、Edge probeが`option`要素のvisible待機でtimeoutした。
+- 原因: ブラウザがselect内部のoptionを独立した可視要素として扱わないことを考慮せず、文言locatorへvisible条件を使った。
+- 対応: 親selectの可視性・disabled状態・textContentを組み合わせて確認する判定へ変更した。
+- 再発防止: selectの状態確認はoption単体のvisibilityではなく、select本体と選択肢内容を検証する。
+
+## 2026-08-16: Appとtestの文脈を一つのfile patchとして指定
+
+- 事象: Appのprop修正と回帰test更新をまとめたpatchで、testの文脈行をApp側の更新ブロック内に置いたため適用されなかった。
+- 原因: 複数ファイル更新時の`Update File`境界を正しく分けなかった。
+- 対応: Appとtestそれぞれの更新ブロックを明示して再適用した。
+- 再発防止: 複数ファイルpatchは各`Update File`ブロック内の文脈がそのファイル由来かを確認する。
+
+## 2026-08-16: issue statusへvalidator非対応のPlannedを使用
+
+- 事象: 新規issue 2件のStatusを`Planned`として起票し、active issue validatorが拒否した。
+- 原因: repositoryの許可値（Done / Draft / In Progress / Open）を確認せず、一般的な状態名を使った。
+- 対応: 未着手の正式課題を表す`Open`へ修正し、validatorを再実行する。
+- 再発防止: issue起票時は既存templateまたはvalidatorのStatus許可値を先に確認する。
+
+## 2026-08-16: 新規issueの必須metadataと検証levelを不足
+
+- 事象: Status修正後のvalidatorで、2件のSource Issue、1件のRelated ADR/Specが不足し、複合verification levelも拒否された。
+- 原因: 既存issueの見た目だけを踏襲し、validatorが要求する全metadataと単一のlevel列挙値を確認しなかった。
+- 対応: 発見元と関連仕様を追記し、最も包括的な`e2e`へ正規化した。
+- 再発防止: 新規issueは起票直後にvalidatorを単独実行し、必須fieldと列挙値をその場で確定する。
+
+## 2026-08-16: 空のTHREAT_MODEL更新hunkを含めてpatch不成立
+
+- 事象: MCP scope認可の複数file patch末尾に、変更行のない`THREAT_MODEL.md`更新hunkを残してpatch全体が拒否された。
+- 原因: 脅威モデルの挿入位置を確認する前に空のplaceholder hunkを含めた。
+- 対応: 実装・test・READMEのpatchから空hunkを除いて適用し、脅威モデルの該当節を読んで別patchで更新した。
+- 再発防止: `apply_patch`へ渡す全hunkに実際の追加・削除行があることを確認し、挿入位置未確認のplaceholderを含めない。
+
+## 2026-08-16: provider不一致gate追加時に既存の未登録model拒否を移動
+
+- 事象: model providerの実行transport一致判定を追加した際、未登録modelを拒否する`raise`がprovider不一致分岐の後ろへ移動し、未登録IDで`KeyError`になった。
+- 原因: 既存分岐へ新しい判定を挿入するpatchで、2つの`raise`の対応関係を取り違えた。
+- 対応: 未登録判定直後へ403拒否を戻し、provider不一致の503拒否とは独立させ、既存model governance testを再実行した。
+- 再発防止: 認可gate追加時は各拒否理由ごとにlog・status・detailのまとまりを保ち、未登録ID、無効model、provider不一致を個別testで固定する。
+
+## 2026-08-16: backend testをsystem Pythonで起動
+
+- 事象: 回帰testの再実行時に`fastapi`が見つからず、test収集段階で停止した。
+- 原因: repositoryの`.venv`ではなくsystem側の`pytest`を起動した。
+- 対応: backend配下の`.venv/bin/pytest`へ切り替え、同じ対象testを実行した。
+- 再発防止: backend検証commandは明示的に`.venv/bin/pytest`を使い、作業directoryと仮想環境を一組で確認する。
+
+## 2026-08-16: frontendとMCPのtest実行PATHにNode.jsが未設定
+
+- 事象: backendとの並列回帰検証でfrontendとMCPの`npm`が見つからず、2つのjobが開始前に終了した。
+- 原因: このdesktop実行環境ではNode.jsが標準PATHに含まれず、既知のbundled Node.js pathを並列commandへ付与し忘れた。
+- 対応: `/home/hat47x/.nvm/versions/node/v20.20.2/bin`をPATH先頭へ明示して、同じtestと型検査を再実行する。
+- 再発防止: JavaScript系検証はrepositoryごとのcommandだけでなく、desktop環境用Node.js PATH prefixも共通の実行条件として扱う。
+
+## 2026-08-16: SaaS MCP起動拒否確認がtsxのWindows一時socketで先に停止
+
+- 事象: `saas-multitenant`でMCPがtenant-bound資格情報不足を拒否する確認が、`tsx`のIPC socketに対する`ENOTSUP`で先に停止した。
+- 原因: WSL processがWindows側の一時directoryを継承し、drvfs上でUnix socketを作ろうとした。
+- 対応: `TMPDIR=/tmp`を明示して再実行し、アプリ側のfail-closed理由まで到達させる。
+- 再発防止: WSL上で`tsx`を実走行する検証にはNode.js PATHと併せてLinux側`TMPDIR`を指定する。
+
+## 2026-08-16: Edge再確認でViteが変更前の翻訳catalogを返した
+
+- 事象: 空model時の日本語案内を短縮した直後のEdge probeで、画面が変更前の文言を返し検証が失敗した。
+- 原因: WSL上のVite監視とWindows Edgeを跨ぐ実行で、翻訳JSON変更が稼働中serverへ反映されていなかった。
+- 対応: Viteを再起動して同じEdge probeを実行し、短縮後の文言・disabled状態・accessible name・console errorなしを確認した。
+- 再発防止: Windowsブラウザによる最終画像確認は、対象asset変更後にdev serverを再起動してから行う。
+
+## 2026-08-16: active issue validatorへ未対応の個別file引数を指定
+
+- 事象: 新規・更新issueだけを検証しようとして`--files`を渡したが、validatorがそのoptionを持たずusage errorになった。
+- 原因: 別のrepository検証器のinterfaceを類推し、helpまたは実装を確認せず引数を組み立てた。
+- 対応: 対応済みの`--root 01_Plans/issues`で全active issueを検証し、57件成功と`docs_check.py`成功を確認した。
+- 再発防止: repository固有validatorは初回実行前に`--help`またはargument parserを確認し、宣言済みoptionだけを使う。
+
+## 2026-08-16: backend配下からCLI testのrepository相対pathを二重指定
+
+- 事象: CLI認証修正後の近接testで、既にbackendを作業directoryにしているのに`03_Implement/backend/tests/...`を指定し、対象検索で停止した。
+- 原因: repository root基準のpathとcommandの作業directory基準を混在させた。
+- 対応: backend基準の`tests/test_cli_ce4_audit.py`へ直し、10件成功を確認した。
+- 再発防止: 実行前にworking directoryと各path引数を一組で読み、同じdirectory segmentの重複がないことを確認する。
+
+## 2026-08-16: Edge管理変更fixtureが初期一覧の呼出回数を状態として使用
+
+- 事象: 管理変更後のmodel一覧再同期を確認するEdge probeで、選択欄が操作前からdisabledとなりtimeoutした。
+- 原因: 開発時の初期化では一覧APIが複数回呼ばれ得るのに、「1回目だけmodelあり、2回目以降は空」という呼出回数依存fixtureにしていた。
+- 対応: 生成APIが管理変更由来の403を返した時点で明示的状態flagを切り替え、それ以前の一覧呼出しは何回でも同じmodelを返すよう修正した。
+- 再発防止: React初期化を跨ぐbrowser fixtureは呼出回数ではなく、再現対象のdomain eventを状態遷移条件にする。
+
+## 2026-08-16: タイトルfocus修正後のEdge確認を旧Vite assetで実行
+
+- 事象: `aria-label`追加後のEdge probeが変更前のinputを読み、無名inputとbodyへのfocus消失を再検出した。
+- 原因: WSL上のViteがfrontend source変更をWindows Edge側へ反映していなかった。
+- 対応: dev serverを再起動し、変更後assetで再実行した。
+- 再発防止: frontend sourceを変更した後のWindows Edge最終検証は、Viteを再起動してasset世代を揃える。
+
+## 2026-08-16: requestAnimationFrameのfocus復帰前にEdge probeが判定
+
+- 事象: タイトル保存ボタン押下後、表示ボタンは再描画済みだがfocus検査時点では一時的にbodyで、probeが失敗した。
+- 原因: 製品コードは次animation frameでfocusを戻す設計なのに、probeが要素のvisibleだけを待って即時判定した。
+- 対応: active elementがタイトル表示ボタンになる条件を明示的に待ってから判定する。
+- 再発防止: 非同期focus管理のE2Eは要素再描画とfocus commitを別条件として待つ。
+
+## 2026-08-16: frontend全体testのtenant wrapper契約へ内部再同期経路を未登録
+
+- 事象: frontend全体1,463件のうち、管理変更後のmodel一覧再取得がtenant generation guardを通っているにもかかわらず、静的契約testが未guardと判定した。
+- 原因: 契約testは`runTenantScopedApiRequest`という表層wrapper名だけを許可し、そのwrapper自身のerror recovery内で使う下位generation guardを表現できなかった。
+- 対応: 表層request wrapperと、その内部復旧専用の`runTenantScopedTask`をgeneration guardの許可構文として列挙し、session identifier必須検査は維持した。
+- 再発防止: 非同期回復経路を追加する際は、runtime guardだけでなく全call siteを検査する静的coverage契約も同時に更新する。
+
+## 2026-08-16: pytestのfd capture一時fileが終了処理前に消失
+
+- 事象: 管理CLI testの初回実行と一時directory変更後の再実行が、test収集前後のcapture終了処理で`FileNotFoundError`となり、対象testが走らなかった。
+- 原因: 当該WSL/DrvFS環境でpytest既定のfd capture用一時fileが終了処理より前に消失した。一時directoryの場所だけを変えても再現した。
+- 対応: file descriptorを使わない`--capture=sys`へ切り替え、製品testの実際の成否まで到達させた。
+- 再発防止: この環境でpytestのcapture終了時に同じ例外が出た場合は、directory変更を繰り返さず`--capture=sys`で再実行する。
+
+## 2026-08-16: CLI JSON出力先を関数定義時のsys.stdoutへ固定
+
+- 事象: 管理CLI一覧のJSON自体は端末へ出たが、`capsys`からは空文字となりtestが1件失敗した。
+- 原因: `_print_json`の既定引数を`sys.stdout`として関数定義時に評価し、test時に差し替えられた標準出力を参照しなかった。
+- 対応: 既定値を`None`にして呼出時の`sys.stdout`を解決するよう変更し、16件成功を確認した。
+- 再発防止: 標準入出力のように実行時差し替えが必要なobjectを関数の既定引数へ直接保持しない。
+
+## 2026-08-17: 管理競合対応の複数file patchでREADME文脈不一致
+
+- 事象: API仕様・README・issueをまとめて更新するpatchが、READMEの改行位置と一致せず全体適用を拒否された。
+- 原因: 2行に折り返された文を別の行境界として指定し、適用前の該当節を再確認しなかった。
+- 対応: READMEとAPI仕様の実際の行境界を読み直し、既存file更新と新規issue追加を分けて再適用した。
+- 再発防止: 複数fileの文書patchは対象段落を直前に確認し、新規file追加と既存文脈依存更新を分離する。

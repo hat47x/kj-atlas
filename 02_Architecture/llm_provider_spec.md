@@ -44,7 +44,7 @@ This document is the single source of truth for provider abstraction in kj-atlas
 2. `transport` は同一provider内で差し替え可能（例: local + ipc/local + http）であり、provider enumと役割が異なる。
 3. `fixture` は決定論回帰のための特別実行形態で、`none/local/external` と同列に独立管理する必要がある。
 
-> **実装ノート（PROV-CONTRACT-01・2026-07-06）**: `fixture` は概念上の分類であり、`KJ_ATLAS_LLM_PROVIDER` 環境変数の受理値（`none|local|local_http|large-scale|large_scale|external`）には含まれない。Python テストコードから直接インスタンス化される test-only provider であり、実行時に `KJ_ATLAS_LLM_PROVIDER=fixture` を設定しても解決できない。
+> **実装ノート（PROV-CONTRACT-01・2026-07-06）**: `fixture` は概念上の分類であり、`KJ_ATLAS_LLM_PROVIDER` 環境変数の受理値（`none|local|local_http|large-scale|large_scale|external|deepseek`）には含まれない。Python テストコードから直接インスタンス化される test-only provider であり、実行時に `KJ_ATLAS_LLM_PROVIDER=fixture` を設定しても解決できない。
 
 ---
 
@@ -53,7 +53,7 @@ This document is the single source of truth for provider abstraction in kj-atlas
 互換aliasは持たない。接頭辞のない旧 LLM 設定キーは非対応とする。
 
 ```text
-KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external
+KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external|deepseek
 KJ_ATLAS_LLM_ESCALATION_ENABLED=false
 KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=false
 KJ_ATLAS_LOCAL_LLM_BASE_URL=<url-or-socket>
@@ -61,10 +61,14 @@ KJ_ATLAS_LOCAL_LLM_MODEL=<model_id>
 KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL=<allowlisted_endpoint>
 KJ_ATLAS_LARGE_SCALE_LLM_MODEL=<model_id>
 KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
+KJ_ATLAS_DEEPSEEK_API_KEY=<secret>
+KJ_ATLAS_DEEPSEEK_BASE_URL=https://api.deepseek.com
+KJ_ATLAS_DEEPSEEK_MODEL=deepseek-chat
 ```
 
 - `KJ_ATLAS_LLM_PROVIDER=none` を既定値とする。
 - `KJ_ATLAS_LLM_PROVIDER=external` は `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
+- `KJ_ATLAS_LLM_PROVIDER=deepseek` は `KJ_ATLAS_DEEPSEEK_API_KEY` を必須とし、未設定時は起動を拒否する。
 
 ---
 

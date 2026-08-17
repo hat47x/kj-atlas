@@ -35,14 +35,13 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("event_id"),
     )
     op.create_index("ix_admin_audit_events_occurred", "admin_audit_events", ["occurred_at"])
-    op.create_index(
-        "ix_admin_audit_events_route_result",
-        "admin_audit_events",
-        ["route", "result"],
-    )
+    # MySQL/MariaDB key-length limit: composite index over two TEXT columns
+    # exceeds 3072 bytes, so index route alone and filter by result in the row
+    # set.
+    op.create_index("ix_admin_audit_events_route", "admin_audit_events", ["route"])
 
 
 def downgrade() -> None:
-    op.drop_index("ix_admin_audit_events_route_result", table_name="admin_audit_events")
+    op.drop_index("ix_admin_audit_events_route", table_name="admin_audit_events")
     op.drop_index("ix_admin_audit_events_occurred", table_name="admin_audit_events")
     op.drop_table("admin_audit_events")

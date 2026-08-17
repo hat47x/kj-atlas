@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import type { AvailableModelItem } from "../api/client";
+import React, { useCallback, useRef, useState } from "react";
+import type { AvailableModelItem, AvailableModelUnavailableReason } from "../api/client";
 import { t } from "../i18n/translate";
 import { ModelSelector } from "./ModelSelector";
 
@@ -15,10 +15,12 @@ export interface DocumentTitleEditorProps {
     currentTitle: string | undefined,
   ) => Promise<{ candidates: { title: string }[] }>;
   providerEnabled: boolean;
+  modelSelectionVisible: boolean;
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override ("" = auto).
   documentTitleModel: string;
   onDocumentTitleModelChange: (model: string) => void;
   availableModels: AvailableModelItem[] | null;
+  availableModelsUnavailableReason?: AvailableModelUnavailableReason | null;
 }
 
 export function DocumentTitleEditor({
@@ -29,15 +31,23 @@ export function DocumentTitleEditor({
   isReadOnly,
   onSuggestTitle,
   providerEnabled,
+  modelSelectionVisible,
   documentTitleModel,
   onDocumentTitleModelChange,
   availableModels,
+  availableModelsUnavailableReason,
 }: DocumentTitleEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(documentTitle ?? "");
   const [candidates, setCandidates] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
+  const titleDisplayRef = useRef<HTMLButtonElement | null>(null);
+  const suggestButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  const focusTitleDisplay = useCallback(() => {
+    window.requestAnimationFrame(() => titleDisplayRef.current?.focus());
+  }, []);
 
   const handleStartEdit = useCallback(() => {
     if (isReadOnly) return;
@@ -63,12 +73,14 @@ export function DocumentTitleEditor({
       if (e.key === "Enter") {
         e.preventDefault();
         handleSaveEdit();
+        focusTitleDisplay();
       } else if (e.key === "Escape") {
         e.preventDefault();
         handleCancelEdit();
+        focusTitleDisplay();
       }
     },
-    [handleSaveEdit, handleCancelEdit],
+    [focusTitleDisplay, handleSaveEdit, handleCancelEdit],
   );
 
   const handleSuggest = useCallback(async () => {
@@ -101,22 +113,37 @@ export function DocumentTitleEditor({
       onTitleChange(candidate);
       setCandidates([]);
       setEditValue(candidate);
+      focusTitleDisplay();
     },
-    [onTitleChange],
+    [focusTitleDisplay, onTitleChange],
   );
+
+  const handleDismissCandidates = useCallback(() => {
+    setCandidates([]);
+    window.requestAnimationFrame(() => suggestButtonRef.current?.focus());
+  }, []);
 
   const displayTitle = documentTitle || t("document_title.untitled");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
       {isEditing ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
+          onBlur={(event) => {
+            const nextTarget = event.relatedTarget;
+            if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+              return;
+            }
+            handleSaveEdit();
+          }}
+        >
           <input
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            onBlur={handleSaveEdit}
+            aria-label={t("document_title.input_aria")}
             autoFocus
             style={{
               fontSize: 16,
@@ -131,7 +158,10 @@ export function DocumentTitleEditor({
             data-testid="document-title-input"
           />
           <button
-            onClick={handleSaveEdit}
+            onClick={() => {
+              handleSaveEdit();
+              focusTitleDisplay();
+            }}
             style={{
               fontSize: 12,
               padding: "2px 8px",
@@ -147,99 +177,130 @@ export function DocumentTitleEditor({
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <h1
-            onClick={handleStartEdit}
-            title={isReadOnly ? undefined : t("document_title.click_to_edit")}
-            style={{
-              margin: 0,
-              fontSize: 16,
-              lineHeight: 1.25,
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-              cursor: isReadOnly ? "default" : "pointer",
-              borderBottom: isReadOnly ? "none" : "1px dashed transparent",
-              transition: "border-color 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              if (!isReadOnly) (e.target as HTMLElement).style.borderBottomColor = "#94a3b8";
-            }}
-            onMouseLeave={(e) => {
-              if (!isReadOnly) (e.target as HTMLElement).style.borderBottomColor = "transparent";
-            }}
-            data-testid="document-title-display"
-          >
-            {displayTitle}
-          </h1>
-          {!isReadOnly && providerEnabled && (
-            <>
-              <ModelSelector
-                label={t("model_selector.label")}
-                value={documentTitleModel}
-                onChange={onDocumentTitleModelChange}
-                disabled={isSuggesting}
-                dataUiRegion="model-selector-title"
-                models={availableModels}
-              />
+          <h1 style={{ margin: 0, fontSize: 16, lineHeight: 1.25, fontWeight: 700, whiteSpace: "nowrap" }}>
+            {isReadOnly ? (
+              <span data-testid="document-title-display">{displayTitle}</span>
+            ) : (
               <button
-                onClick={handleSuggest}
-                disabled={isSuggesting}
+                ref={titleDisplayRef}
+                type="button"
+                onClick={handleStartEdit}
+                title={t("document_title.click_to_edit")}
+                aria-label={t("document_title.edit_aria", { title: displayTitle })}
                 style={{
-                  fontSize: 11,
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #cbd5e1",
-                  background: "var(--panel, #f8fafc)",
-                  color: "var(--fg, #0f172a)",
-                  cursor: isSuggesting ? "not-allowed" : "pointer",
-                  opacity: isSuggesting ? 0.5 : 1,
+                  background: "transparent",
+                  border: 0,
+                  padding: 0,
+                  font: "inherit",
+                  color: "inherit",
+                  cursor: "pointer",
+                  borderBottom: "1px dashed transparent",
+                  transition: "border-color 0.15s",
                 }}
-                data-testid="suggest-title-button"
+                onMouseEnter={(event) => {
+                  event.currentTarget.style.borderBottomColor = "#94a3b8";
+                }}
+                onMouseLeave={(event) => {
+                  event.currentTarget.style.borderBottomColor = "transparent";
+                }}
+                data-testid="document-title-display"
               >
-                {isSuggesting ? "..." : t("document_title.suggest")}
+                {displayTitle}
               </button>
-            </>
+            )}
+          </h1>
+          {!isReadOnly && modelSelectionVisible && (
+            <ModelSelector
+              label={t("model_selector.label")}
+              value={documentTitleModel}
+              onChange={onDocumentTitleModelChange}
+              disabled={isSuggesting}
+              dataUiRegion="model-selector-title"
+              models={availableModels}
+              unavailableReason={availableModelsUnavailableReason}
+            />
+          )}
+          {!isReadOnly && providerEnabled && (
+            <button
+              ref={suggestButtonRef}
+              onClick={handleSuggest}
+              disabled={isSuggesting}
+              aria-label={isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
+              style={{
+                fontSize: 11,
+                padding: "2px 6px",
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+                background: "var(--panel, #f8fafc)",
+                color: "var(--fg, #0f172a)",
+                cursor: isSuggesting ? "not-allowed" : "pointer",
+                opacity: isSuggesting ? 0.5 : 1,
+              }}
+              data-testid="suggest-title-button"
+            >
+              {isSuggesting ? t("document_title.suggesting") : t("document_title.suggest")}
+            </button>
           )}
         </div>
       )}
 
       {candidates.length > 0 && (
         <div
+          role="region"
+          aria-labelledby="document-title-candidates-label"
           style={{
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             gap: 6,
-            flexWrap: "wrap",
             justifyContent: "center",
             maxWidth: 400,
           }}
           data-testid="title-candidates"
         >
-          {candidates.map((c, i) => (
-            <button
-              key={i}
-              onClick={() => handleAdoptCandidate(c)}
-              style={{
-                fontSize: 12,
-                padding: "3px 10px",
-                borderRadius: 999,
-                border: "1px solid #0f766e",
-                background: "var(--panel, #f8fafc)",
-                color: "#0f766e",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                maxWidth: 280,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-              data-testid={`title-candidate-${i}`}
-            >
-              {c}
-            </button>
-          ))}
+          <div id="document-title-candidates-label" style={{ fontSize: 12, fontWeight: 700 }}>
+            {t("document_title.candidates_label")}
+          </div>
+          <div role="status" aria-live="polite" style={{ fontSize: 11, color: "#475569" }}>
+            {t("document_title.candidates_ready", { count: candidates.length })}
+          </div>
+          <div style={{ fontSize: 11, color: "#475569", textAlign: "center" }}>
+            {t("document_title.proposal_only_hint")}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+            {candidates.map((candidate, index) => (
+              <button
+                key={`${candidate}-${index}`}
+                onClick={() => handleAdoptCandidate(candidate)}
+                aria-label={t("document_title.adopt_candidate", { title: candidate })}
+                title={candidate}
+                style={{
+                  fontSize: 12,
+                  padding: "3px 10px",
+                  borderRadius: 999,
+                  border: "1px solid #0f766e",
+                  background: "var(--panel, #f8fafc)",
+                  color: "#0f766e",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  maxWidth: 280,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                data-testid={`title-candidate-${index}`}
+              >
+                {candidate}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={handleDismissCandidates} style={{ fontSize: 11 }}>
+            {t("document_title.dismiss_candidates")}
+          </button>
         </div>
       )}
 
       {suggestError && (
-        <div style={{ fontSize: 11, color: "#b91c1c" }} data-testid="title-suggest-error">
+        <div role="alert" style={{ fontSize: 11, color: "#b91c1c" }} data-testid="title-suggest-error">
           {suggestError}
         </div>
       )}

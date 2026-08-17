@@ -50,14 +50,16 @@ describe("capability allowlist (fixed snapshot)", () => {
     client = await connectedClient();
   });
 
-  it("tools/list exposes exactly one read-only tool and nothing else", async () => {
+  it("tools/list exposes exactly two read-only tools and nothing else", async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((tool) => tool.name)).toEqual(["get_context_projection"]);
-    expect(tools[0].annotations).toMatchObject({
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-    });
+    expect(tools.map((tool) => tool.name)).toEqual(["get_context_projection", "get_proposal_status"]);
+    for (const tool of tools) {
+      expect(tool.annotations).toMatchObject({
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      });
+    }
   });
 
   it("advertises no resources capability at all -- resources/list is not even a supported method", async () => {
@@ -164,5 +166,59 @@ describe("get_context_projection tool behavior", () => {
 
     stderrSpy.mockRestore();
     stdoutSpy.mockRestore();
+  });
+});
+
+describe("get_proposal_status tool behavior", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns the read-only CE4 proposal lifecycle for a document", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        mockDocResponse(200, {
+          docId: "doc_mcp_fixture",
+          proposals: [
+            {
+              proposalId: "proposal-1",
+              proposalKind: "island_summary",
+              origin: "internal",
+              status: "accepted",
+              sourceBundleHash: "a".repeat(64),
+              createdAt: "2026-08-16T00:00:00Z",
+              decidedAt: "2026-08-16T01:00:00Z",
+            },
+          ],
+        }),
+      ),
+    );
+    const client = await connectedClient();
+
+    const result = await client.callTool({
+      name: "get_proposal_status",
+      arguments: { docId: "doc_mcp_fixture" },
+    });
+
+    expect(result.isError).toBeFalsy();
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    const body = JSON.parse(text);
+    expect(body.docId).toBe("doc_mcp_fixture");
+    expect(body.proposals).toHaveLength(1);
+    expect(body.proposals[0].status).toBe("accepted");
+    expect(body.proposals[0].decidedAt).toBe("2026-08-16T01:00:00Z");
+  });
+
+  it("reports an error rather than crashing when the backend rejects the read", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => mockDocResponse(503, {})));
+    const client = await connectedClient();
+
+    const result = await client.callTool({
+      name: "get_proposal_status",
+      arguments: { docId: "doc_mcp_fixture" },
+    });
+
+    expect(result.isError).toBe(true);
   });
 });

@@ -20,7 +20,6 @@ from kj_atlas_api.models import (
     Base,
     LLMModelRegistryRow,
     LLMProviderRegistryRow,
-    TenantModelAllowlistRow,
     TenantRow,
 )
 from kj_atlas_api.settings import settings
@@ -97,6 +96,79 @@ def test_register_list_disable_model_flow(tmp_path, monkeypatch) -> None:
             assert db.get(LLMModelRegistryRow, "deepseek-reasoner").lifecycle_state == "disabled"
 
 
+def test_provider_api_key_ref_never_exposed_to_api_or_audit(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 AC-4: apiKeyRef is a reference (env/secret-manager
+    key), never a plaintext key, and it must not surface in the registry API
+    response or the control-plane audit trail."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    from kj_atlas_api.models import AdminAuditEventRow
+
+    with _client(tmp_path) as (client, session_local):
+        api_key_ref = "KJ_ATLAS_DEEPSEEK_API_KEY"
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek",
+                  "baseUrl": "https://api.deepseek.com", "apiKeyRef": api_key_ref},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+
+        # 1. The registry list response never echoes apiKeyRef (key or value).
+        registry_text = client.get("/admin/provision/models", headers={"X-Admin-Api-Key": _ADMIN_KEY}).text
+        assert "apiKeyRef" not in registry_text
+        assert api_key_ref not in registry_text
+
+        # 2. The control-plane audit records metadata only -- never the
+        #    registration payload (which would carry the secret reference).
+        with session_local() as db:
+            events = db.query(AdminAuditEventRow).all()
+        assert events, "expected at least one admin audit event"
+        for ev in events:
+            for field in (ev.route or "", ev.operation or "", ev.target or ""):
+                assert api_key_ref not in field
+
+
+def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 AC-4 (DB side): apiKeyRef must be a reference --
+    a plaintext secret or an arbitrary env-var name is rejected at the API
+    boundary so it is never stored in the registry column."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        base = {"id": "p", "providerKind": "external", "displayName": "P", "baseUrl": "https://example.test"}
+        # Plaintext secret (looks like an API key) -> 422, nothing stored.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "apiKeyRef": "sk-this-is-a-plaintext-secret-12345"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 422, resp.text
+        # Arbitrary env-var name (not KJ_ATLAS_*) -> 422.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "apiKeyRef": "MY_RANDOM_API_KEY"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 422, resp.text
+        # Valid allowlisted KJ_ATLAS_* ref -> 201.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "id": "p2", "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+        # Valid secret-manager ref -> 201.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "id": "p3", "apiKeyRef": "secret:prod/deepseek-key"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 201, resp.text
+
+
 def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
 
@@ -114,6 +186,153 @@ def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
 
         got = client.get("/admin/provision/models/tenants/tenant-a/allowlist", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
         assert got["modelIds"] == ["m1", "m3"]
+        assert len(got["revision"]) == 64
+
+
+def test_registry_create_rejects_duplicate_ids_without_overwriting(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        first_provider = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "Original"},
+            headers=headers,
+        )
+        assert first_provider.status_code == 201
+        duplicate_provider = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "deepseek", "displayName": "Replacement"},
+            headers=headers,
+        )
+        assert duplicate_provider.status_code == 409
+        assert duplicate_provider.json()["detail"]["code"] == "provider_already_exists"
+
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p2", "providerKind": "local", "displayName": "P2"},
+            headers=headers,
+        )
+        first_model = client.post(
+            "/admin/provision/models",
+            json={"id": "m", "providerId": "p", "displayName": "Original Model"},
+            headers=headers,
+        )
+        assert first_model.status_code == 201
+        duplicate_model = client.post(
+            "/admin/provision/models",
+            json={"id": "m", "providerId": "p2", "displayName": "Replacement Model"},
+            headers=headers,
+        )
+        assert duplicate_model.status_code == 409
+        assert duplicate_model.json()["detail"]["code"] == "model_already_exists"
+
+        with session_local() as db:
+            assert db.get(LLMProviderRegistryRow, "p").provider_kind == "local"
+            assert db.get(LLMProviderRegistryRow, "p").display_name == "Original"
+            assert db.get(LLMModelRegistryRow, "m").provider_id == "p"
+            assert db.get(LLMModelRegistryRow, "m").display_name == "Original Model"
+
+
+def test_tenant_allowlist_rejects_stale_revision_without_lost_update(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            headers=headers,
+        )
+        for model_id in ("m1", "m2"):
+            client.post(
+                "/admin/provision/models",
+                json={"id": model_id, "providerId": "p", "displayName": model_id},
+                headers=headers,
+            )
+
+        initial = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        first_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1"], "expectedRevision": initial["revision"]},
+            headers=headers,
+        )
+        assert first_write.status_code == 200
+
+        stale_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m2"], "expectedRevision": initial["revision"]},
+            headers=headers,
+        )
+        assert stale_write.status_code == 409
+        assert stale_write.json()["detail"]["code"] == "model_allowlist_conflict"
+        assert stale_write.json()["detail"]["currentRevision"] == first_write.json()["revision"]
+
+        current = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        assert current["modelIds"] == ["m1"]
+
+
+def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "external", "displayName": "P"},
+            headers=headers,
+        )
+        for model_id in ("m1", "m2"):
+            client.post(
+                "/admin/provision/models",
+                json={"id": model_id, "providerId": "p", "displayName": model_id},
+                headers=headers,
+            )
+        client.patch(
+            "/admin/provision/models/m2",
+            json={"lifecycleState": "disabled"},
+            headers=headers,
+        )
+
+        missing_tenant = client.put(
+            "/admin/provision/models/tenants/missing/allowlist",
+            json={"modelIds": ["m1"]},
+            headers=headers,
+        )
+        assert missing_tenant.status_code == 404
+        assert missing_tenant.json()["detail"]["code"] == "tenant_not_found"
+
+        invalid_models = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["missing-model", "m2"]},
+            headers=headers,
+        )
+        assert invalid_models.status_code == 422
+        assert invalid_models.json()["detail"] == {
+            "code": "invalid_model_allowlist",
+            "message": "Every allowlisted model must be registered and active.",
+            "unknownModelIds": ["missing-model"],
+            "inactiveModelIds": ["m2"],
+        }
+
+        duplicate_models = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1", "m1"]},
+            headers=headers,
+        )
+        assert duplicate_models.status_code == 422
+        assert duplicate_models.json()["detail"]["code"] == "duplicate_model_ids"
+
+        current = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            headers=headers,
+        )
+        assert current.status_code == 200
+        assert current.json()["modelIds"] == []
 
 
 def test_admin_surface_requires_control_plane(tmp_path, monkeypatch) -> None:
@@ -277,9 +496,10 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
     """R2: GET /ai/available-models returns the tenant's allowed active models."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         for model_id, state in (("m1", "active"), ("m2", "active"), ("m3", "disabled")):
             client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
@@ -294,13 +514,86 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
         assert [m["id"] for m in filtered] == ["m2"]
 
 
+def test_available_models_explains_empty_registry_without_leaking_details(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    with _client(tmp_path) as (client, _session_local):
+        response = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY})
+        assert response.status_code == 200
+        assert response.json() == {
+            "models": [],
+            "unavailableReason": "no_active_models",
+        }
+
+
+def test_available_models_explains_tenant_policy_and_selectable_capability(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            headers=admin_headers,
+        )
+        for model_id, capabilities in (
+            ("allowed-disabled", "intermediate,generate"),
+            ("judgement-only", "final_judgement"),
+        ):
+            client.post(
+                "/admin/provision/models",
+                json={
+                    "id": model_id,
+                    "providerId": "p",
+                    "displayName": model_id,
+                    "capabilities": capabilities,
+                },
+                headers=admin_headers,
+            )
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["allowed-disabled"]},
+            headers=admin_headers,
+        )
+        client.patch(
+            "/admin/provision/models/allowed-disabled",
+            json={"lifecycleState": "disabled"},
+            headers=admin_headers,
+        )
+
+        policy_empty = client.get(
+            "/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}
+        ).json()
+        assert policy_empty == {
+            "models": [],
+            "unavailableReason": "tenant_policy_excludes_all",
+        }
+
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["judgement-only"]},
+            headers=admin_headers,
+        )
+        not_selectable = client.get(
+            "/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}
+        ).json()
+        assert not_selectable == {
+            "models": [],
+            "unavailableReason": "no_user_selectable_models",
+        }
+
+
 def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -> None:
     """MMR-04: final_judgement-only models are not offered for user selection."""
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
         for model_id, caps in (
             ("intermediate-model", "intermediate,generate"),
             ("judgement-only", "final_judgement"),
@@ -313,3 +606,62 @@ def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -
         assert "intermediate-model" in ids
         assert "mixed-model" in ids  # intermediate tier present -> selectable
         assert "judgement-only" not in ids  # final_judgement-only -> excluded (MMR-04)
+
+
+def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 short-term fail-closed boundary.
+
+    Registry metadata must not cause a local-runtime process to send a model
+    registered under the DeepSeek transport to the local endpoint (or vice
+    versa). The UI list and API execution gate use the same intersection.
+    """
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+
+    doc = {
+        "version": 1,
+        "id": "provider-drift-doc",
+        "title": "provider drift",
+        "createdAt": "2026-08-16T00:00:00Z",
+        "updatedAt": "2026-08-16T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True}],
+        "edges": [],
+        "islands": [{"id": "i1", "cardIds": ["c1"]}],
+        "readingOrder": ["i1"],
+    }
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek"},
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models",
+            json={
+                "id": "deepseek-chat",
+                "providerId": "deepseek",
+                "displayName": "DeepSeek Chat",
+                "capabilities": "intermediate,generate",
+            },
+            headers=admin_headers,
+        )
+
+        listed = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY})
+        assert listed.status_code == 200
+        assert listed.json()["models"] == []
+        assert listed.json()["unavailableReason"] == "provider_unavailable"
+
+        attempted = client.post(
+            "/ai/suggest-island-summary",
+            json={"doc": doc, "islandId": "i1", "model": "deepseek-chat"},
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert attempted.status_code == 503
+        assert attempted.json()["detail"] == {
+            "code": "model_provider_unavailable",
+            "message": "The model's registered provider is not available in this runtime.",
+        }

@@ -141,7 +141,7 @@ type CanvasShellProps = {
   onBeginEditCard?: (cardId: string) => void;
   onCommitEditCard?: (cardId: string, text: string) => void;
   onCancelEditCard?: () => void;
-  onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
+  onCardContextMenu?: (cardId: string, clientX: number, clientY: number, trigger: HTMLElement) => void;
   onBackgroundContextMenu?: (clientX: number, clientY: number, worldX: number, worldY: number) => void;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
   selectedEdgeId?: string | null;

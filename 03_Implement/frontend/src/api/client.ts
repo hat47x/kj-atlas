@@ -453,14 +453,15 @@ export async function putDocument(
   };
 }
 
-export type ProviderKind = "none" | "local" | "large-scale";
+export type ProviderKind = "none" | "local" | "large-scale" | "deepseek";
 
-/** OPS-LLM-COST-02: the provider-status snapshot (kind + in-process LLM call
- * counts per provider kind plus "total"). callCounts is empty until the first
- * LLM call. */
+/** OPS-LLM-COST-02/01: the provider-status snapshot (kind + in-process LLM call
+ * counts and token usage per provider kind plus "total"). Empty until the
+ * first LLM call. */
 export type ProviderStatusSnapshot = {
   providerKind: ProviderKind;
   callCounts: Record<string, number>;
+  tokenUsage: Record<string, { input: number; output: number }>;
 };
 
 /**
@@ -478,7 +479,11 @@ export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
   }
 
   const body = (await response.json()) as ProviderStatusSnapshot;
-  return { providerKind: body.providerKind, callCounts: body.callCounts ?? {} };
+  return {
+    providerKind: body.providerKind,
+    callCounts: body.callCounts ?? {},
+    tokenUsage: body.tokenUsage ?? {},
+  };
 }
 
 export type SuggestLayoutResult = {
@@ -647,9 +652,20 @@ export type AvailableModelItem = {
   capabilities?: string | null;
 };
 
+export type AvailableModelUnavailableReason =
+  | "no_active_models"
+  | "provider_unavailable"
+  | "tenant_policy_excludes_all"
+  | "no_user_selectable_models";
+
+export type AvailableModelsResponse = {
+  models: AvailableModelItem[];
+  unavailableReason?: AvailableModelUnavailableReason | null;
+};
+
 export async function fetchAvailableModels(
   requestOptions: TenantScopedRequestOptions = {},
-): Promise<AvailableModelItem[]> {
+): Promise<AvailableModelsResponse> {
   const response = await fetch(`${API_BASE}/ai/available-models`, {
     headers: {
       ...tenantSessionPreconditionHeaders(requestOptions),
@@ -662,8 +678,7 @@ export async function fetchAvailableModels(
       disabledReason: errorDetail.disabledReason,
     });
   }
-  const body = (await response.json()) as { models: AvailableModelItem[] };
-  return body.models;
+  return (await response.json()) as AvailableModelsResponse;
 }
 
 export async function suggestDocumentTitle(
@@ -683,6 +698,11 @@ export async function suggestDocumentTitle(
       islandTitles,
       cardTexts,
       currentTitle: currentTitle ?? null,
+      // The App passes only human-reviewed title/card context. Carry that
+      // certification across the no-document SafeMode boundary explicitly;
+      // the backend defaults this field to false and otherwise rejects the
+      // request before any provider call.
+      textReviewed: true,
       model: model ?? null,
     }),
   });

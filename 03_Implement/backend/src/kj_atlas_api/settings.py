@@ -659,6 +659,15 @@ class Settings(BaseSettings):
         _validate_canonical_bearer(
             api_key=self.admin_api_key, api_key_key="KJ_ATLAS_ADMIN_API_KEY"
         )
+        if (
+            self.api_key is not None
+            and self.admin_api_key is not None
+            and self.api_key == self.admin_api_key
+        ):
+            raise ValueError(
+                "KJ_ATLAS_API_KEY and KJ_ATLAS_ADMIN_API_KEY must be distinct "
+                "credentials so the business plane cannot authorize control-plane operations."
+            )
         self._validate_production_authentication_configured(normalized_runtime_profile)
 
         # A SQLAlchemy dialect being importable does not mean kj-atlas migrations

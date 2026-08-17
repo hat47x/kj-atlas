@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { t } from "../i18n/translate";
 import type { Card, Island } from "../domain/types";
@@ -42,6 +42,15 @@ export type MinimapProps = {
 export function Minimap({ cards, islands, camera, storageScope, onPan }: MinimapProps) {
   const [isCollapsed, setIsCollapsed] = useState(() => loadMinimapCollapsed(storageScope));
   const [isAutoHidden, setIsAutoHidden] = useState(false);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
+
+  const setCollapsedAndRestoreFocus = (collapsed: boolean) => {
+    setIsCollapsed(collapsed);
+    saveMinimapCollapsed(collapsed, storageScope);
+    window.requestAnimationFrame(() => {
+      toggleButtonRef.current?.focus({ preventScroll: true });
+    });
+  };
 
   useEffect(() => {
     setIsCollapsed(loadMinimapCollapsed(storageScope));
@@ -170,12 +179,10 @@ export function Minimap({ cards, islands, camera, storageScope, onPan }: Minimap
   if (isAutoHidden || isCollapsed) {
     return (
       <button
+        ref={toggleButtonRef}
         type="button"
         data-ui-region="minimap-collapsed-trigger"
-        onClick={() => {
-          setIsCollapsed(false);
-          saveMinimapCollapsed(false, storageScope);
-        }}
+        onClick={() => setCollapsedAndRestoreFocus(false)}
         aria-label={t("minimap.expand")}
         title={t("minimap.expand")}
         style={{
@@ -215,11 +222,9 @@ export function Minimap({ cards, islands, camera, storageScope, onPan }: Minimap
       }}
     >
       <button
+        ref={toggleButtonRef}
         type="button"
-        onClick={() => {
-          setIsCollapsed(true);
-          saveMinimapCollapsed(true, storageScope);
-        }}
+        onClick={() => setCollapsedAndRestoreFocus(true)}
         aria-label={t("minimap.collapse")}
         title={t("minimap.collapse")}
         style={{

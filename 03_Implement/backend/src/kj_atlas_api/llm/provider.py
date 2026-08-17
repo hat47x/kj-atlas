@@ -29,6 +29,10 @@ _LLM_TASK = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 # 段階3 decision (hard/soft limits + auto-downgrade). Exposed read-only via
 # /ai/provider-status.
 _LLM_CALL_COUNTS: dict[str, int] = {}
+# OPS-LLM-COST-01 (段階2): in-process input/output token totals, keyed by the
+# same provider kind + "total". Filled from provider-reported usage; providers
+# that do not report usage contribute 0 tokens.
+_LLM_TOKEN_USAGE: dict[str, dict[str, int]] = {}
 
 
 def _record_llm_call(provider_kind: str) -> None:
@@ -36,14 +40,36 @@ def _record_llm_call(provider_kind: str) -> None:
     _LLM_CALL_COUNTS["total"] = _LLM_CALL_COUNTS.get("total", 0) + 1
 
 
+def _record_llm_usage(
+    provider_kind: str,
+    *,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+) -> None:
+    """Accumulate provider-reported token usage WITHOUT touching the call count
+    (the count is recorded once per attempt by _record_llm_call)."""
+    used_input = max(int(input_tokens or 0), 0)
+    used_output = max(int(output_tokens or 0), 0)
+    for key in (provider_kind, "total"):
+        bucket = _LLM_TOKEN_USAGE.setdefault(key, {"input": 0, "output": 0})
+        bucket["input"] += used_input
+        bucket["output"] += used_output
+
+
 def llm_call_counts() -> dict[str, int]:
     """Snapshot of the in-process LLM call counter (copied, never the live dict)."""
     return dict(_LLM_CALL_COUNTS)
 
 
+def llm_token_usage() -> dict[str, dict[str, int]]:
+    """Snapshot of the in-process token usage totals (copied, never the live dict)."""
+    return {key: dict(value) for key, value in _LLM_TOKEN_USAGE.items()}
+
+
 def reset_llm_call_counts() -> None:
-    """Clear the counter. Ops/tests only — a counter reset is not a runtime event."""
+    """Clear the counters. Ops/tests only — a reset is not a runtime event."""
     _LLM_CALL_COUNTS.clear()
+    _LLM_TOKEN_USAGE.clear()
 
 
 @dataclass(frozen=True)
@@ -107,7 +133,14 @@ def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
     if task in _FINAL_JUDGEMENT_TASKS and settings.llm_high_reasoning_model:
         return settings.llm_high_reasoning_model
 
-    # 4. Default model
+    # 4. Provider default. Resolve this before model-governance checks run in
+    # the route layer. DeepSeekProvider used to translate "default" only after
+    # that gate, so an otherwise valid deepseek-chat registration was rejected
+    # as model_not_registered whenever the caller omitted `model`.
+    if settings.llm_provider.strip().lower() == "deepseek":
+        return settings.deepseek_model
+
+    # 5. Default model
     return settings.local_llm_model or "default"
 
 
@@ -151,6 +184,11 @@ class LLMCallMetadata:
 class LLMResponse:
     raw_text: str
     metadata: LLMCallMetadata
+    # OPS-LLM-COST-01 (段階2): provider-reported token usage, when available
+    # (OpenAI chat-completions `usage`). None means the provider did not report
+    # it; the call counter treats None as 0 tokens.
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
     @property
     def provider(self) -> str:
@@ -704,7 +742,26 @@ def _generate_via_openai_chat(
             metadata,
         )
 
-    return LLMResponse(raw_text=content, metadata=metadata)
+    # OPS-LLM-COST-01 (段階2): OpenAI chat-completions `usage` carries the
+    # actual input/output tokens. Tolerate a missing/odd-shaped usage — the
+    # response is still valid; the counter then records 0 tokens for this call.
+    usage = body.get("usage")
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    if isinstance(usage, dict):
+        raw_in = usage.get("prompt_tokens")
+        raw_out = usage.get("completion_tokens")
+        if isinstance(raw_in, int) and raw_in >= 0:
+            input_tokens = raw_in
+        if isinstance(raw_out, int) and raw_out >= 0:
+            output_tokens = raw_out
+
+    return LLMResponse(
+        raw_text=content,
+        metadata=metadata,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
 
 
 class NoOpProvider(NoneProvider):
@@ -779,10 +836,12 @@ def generate_with_fallback(req: LLMRequest) -> LLMResponse:
     provider = get_provider()
     # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
     # operator can see external (large-scale) call volume; counting the attempt
-    # (before any provider error) is what cost control needs.
+    # (before any provider error) is what cost control needs. Token usage is
+    # recorded after a successful generate (providers that do not report usage
+    # contribute 0 tokens).
     _record_llm_call(provider.provider_kind)
     try:
-        return provider.generate(req)
+        response = provider.generate(req)
     except ProviderRequestError as exc:
         if exc.code == "provider_validation" or not settings.llm_fallback_to_none:
             raise
@@ -800,3 +859,9 @@ def generate_with_fallback(req: LLMRequest) -> LLMResponse:
             f"LLM provider '{exc.metadata.provider_name}' failed ({exc.code}) and fallbacked to none",
             fallback_metadata,
         ) from exc
+    _record_llm_usage(
+        provider.provider_kind,
+        input_tokens=response.input_tokens,
+        output_tokens=response.output_tokens,
+    )
+    return response

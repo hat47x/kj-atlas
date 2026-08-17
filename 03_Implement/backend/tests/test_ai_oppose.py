@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from kj_atlas_api.model_registry_repository import register_model, register_provider
 from kj_atlas_api.routes import ai
 from kj_atlas_api.db import get_db
-from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse
+from kj_atlas_api.llm.provider import LLMResponse
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base, TenantRow
 from kj_atlas_api.settings import settings
@@ -68,10 +68,16 @@ def _client(tmp_path) -> Iterator[TestClient]:
             db.close()
 
     app.dependency_overrides[get_db] = _get_test_db
+    # AI-MODEL-GOVERNANCE-02 provider-match check: the runtime provider must be
+    # the registered one (local). Default llm_provider is "none", which would
+    # make every _assert_model_allowed call 503 model_provider_unavailable.
+    original_provider = settings.llm_provider
+    settings.llm_provider = "local"
     try:
         with TestClient(app) as client:
             yield client
     finally:
+        settings.llm_provider = original_provider
         app.dependency_overrides.clear()
         Base.metadata.drop_all(bind=engine)
         engine.dispose()

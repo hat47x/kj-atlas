@@ -25,6 +25,7 @@ import {
   unarchiveDocument,
   listDocuments,
   type AvailableModelItem,
+  type AvailableModelUnavailableReason,
   type DocumentListItem,
   type MergeSuggestion,
   type NarrativeIssue,
@@ -1222,6 +1223,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }
     | null
   >(null);
+  const contextMenuReturnFocusRef = useRef<HTMLElement | null>(null);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -1281,12 +1283,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   // DOMAIN-TRACE-01 AC-3 (CB-1): the canvas seq badge is DEFAULT OFF.
   const [showSeqNumbers, setShowSeqNumbers] = useState(false);
   // PROV-VIS-01 (ADR-0050 D1): read-only provider visibility. providerKind is
-  // fetched once from the backend config echo; lastAiCallOutcome is tracked
-  // client-side from the actual result of the most recent AI call.
+  // fetched from the backend config echo at startup and whenever the View
+  // panel opens; lastAiCallOutcome is tracked client-side from the actual
+  // result of the most recent AI call.
   const [providerKind, setProviderKind] = useState<ProviderKind | null>(null);
   // OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
   // surfaced read-only in the View panel next to the provider kind.
   const [llmCallCounts, setLlmCallCounts] = useState<Record<string, number>>({});
+  const [llmTokenUsage, setLlmTokenUsage] = useState<Record<string, { input: number; output: number }>>({});
   const [lastAiCallOutcome, setLastAiCallOutcome] = useState<"ok" | AiProviderErrorKind | null>(null);
   // UX-CMDK-01 (ADR-0048 D2, layer 5): command palette. Default OFF, opened
   // only via Cmd/Ctrl+K; no persistent trigger element (CB-1, AC-5).
@@ -1387,6 +1391,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [islandSummaryModel, setIslandSummaryModel] = useState<string>("");
   // Tenant-allowed active models for the selector (guarded fetch, owned here).
   const [availableModels, setAvailableModels] = useState<AvailableModelItem[] | null>(null);
+  const [availableModelsUnavailableReason, setAvailableModelsUnavailableReason] =
+    useState<AvailableModelUnavailableReason | null>(null);
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for document-title
   // generation ("" = auto / platform default).
   const [documentTitleModel, setDocumentTitleModel] = useState<string>("");
@@ -1517,9 +1523,30 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       ) {
         blockStaleTenantSession();
       }
+      if (
+        error instanceof ApiError
+        && ["model_not_allowed", "model_not_registered", "model_provider_unavailable"].includes(error.code ?? "")
+      ) {
+        // An administrator may change provider/model lifecycle or a tenant
+        // allowlist while this page is open. The rejected mutation is already
+        // fail-closed server-side; refresh the advisory selector immediately
+        // so the user does not keep retrying a stale model choice.
+        try {
+          const result = await runTenantScopedTask(() => fetchAvailableModels({
+            tenantSessionContext: verifiedTenantSession,
+          }));
+          setAvailableModels(result.models);
+          setAvailableModelsUnavailableReason(result.unavailableReason ?? null);
+        } catch (refreshError) {
+          if (!(refreshError instanceof StaleTenantSessionResultError)) {
+            setAvailableModels([]);
+            setAvailableModelsUnavailableReason(null);
+          }
+        }
+      }
       throw error;
     }
-  }, [blockStaleTenantSession, runTenantScopedTask]);
+  }, [blockStaleTenantSession, runTenantScopedTask, verifiedTenantSession]);
 
   useEffect(() => {
     return cleanupRuntimeResources;
@@ -1560,10 +1587,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     // the badge simply stays unknown rather than surfacing a spurious error.
     let cancelled = false;
     void getProviderStatus()
-      .then(({ providerKind: kind, callCounts }) => {
+      .then(({ providerKind: kind, callCounts, tokenUsage }) => {
         if (!cancelled) {
           setProviderKind(kind);
           setLlmCallCounts(callCounts);
+          setLlmTokenUsage(tokenUsage);
         }
       })
       .catch(() => {
@@ -1575,6 +1603,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const document = history?.present ?? null;
+  const documentRef = useRef(document);
+  documentRef.current = document;
   const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
 
   // UI-RESILIENCE-01: restore a document preserved by the error boundary
@@ -2218,11 +2248,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   useEffect(() => {
     let cancelled = false;
     void runTenantScopedApiRequest(() => fetchAvailableModels({ tenantSessionContext: verifiedTenantSession }))
-      .then((models) => {
-        if (!cancelled) setAvailableModels(models);
+      .then((result) => {
+        if (!cancelled) {
+          setAvailableModels(result.models);
+          setAvailableModelsUnavailableReason(result.unavailableReason ?? null);
+        }
       })
       .catch(() => {
-        if (!cancelled) setAvailableModels([]);
+        if (!cancelled) {
+          setAvailableModels([]);
+          setAvailableModelsUnavailableReason(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -2528,15 +2564,33 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleSuggestDocumentTitle = useCallback(
     async (islandTitles: string[], cardTexts: string[], currentTitle: string | undefined) => {
-      return runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
-        tenantSessionContext: verifiedTenantSession,
-      }));
+      try {
+        return await runTenantScopedApiRequest(() => suggestDocumentTitle(islandTitles, cardTexts, currentTitle, documentTitleModel, {
+          tenantSessionContext: verifiedTenantSession,
+        }));
+      } catch (error) {
+        if (
+          error instanceof ApiError
+          && ["model_not_allowed", "model_not_registered", "model_provider_unavailable"].includes(error.code ?? "")
+        ) {
+          throw new Error(t("ai.model_policy_changed"));
+        }
+        const fallback = error instanceof ApiError ? error.message : t("app.status.error_detail_unknown");
+        throw new Error(resolveAiProviderErrorMessage(error, fallback));
+      }
     },
     [documentTitleModel, runTenantScopedApiRequest, verifiedTenantSession],
   );
 
   const islandTitlesForSuggestion = useMemo(
-    () => (document?.islands ?? []).map((i) => i.title).filter((t): t is string => !!t),
+    () =>
+      (document?.islands ?? [])
+        // SEC-AI-SAFEMODE-03: title suggestion certifies its payload as
+        // human-reviewed at the API boundary, so unreviewed island titles
+        // must be excluded just like unreviewed card text below.
+        .filter((island) => island.titleReviewed === true)
+        .map((island) => island.title)
+        .filter((title): title is string => !!title),
     [document],
   );
 
@@ -2624,7 +2678,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleTransformChange = useCallback(
     (nextTransform: DocumentV1["transform"]) => {
-      if (!document || isPreviewingSuggestion) {
+      const currentDocument = documentRef.current;
+      if (!currentDocument || isPreviewingSuggestion) {
         return;
       }
 
@@ -2633,7 +2688,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      const current = document.transform;
+      const current = currentDocument.transform;
       if (
         current.panX === nextTransform.panX &&
         current.panY === nextTransform.panY &&
@@ -2657,7 +2712,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         };
       });
     },
-    [document, isPreviewingSuggestion]
+    [isPreviewingSuggestion]
   );
 
   const handleCardMove = useCallback(
@@ -3968,6 +4023,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       openBuiltInSample();
     } finally {
       setIsLoading(false);
+      window.requestAnimationFrame(() => {
+        window.document.querySelector<HTMLElement>("[data-card-id]")?.focus({ preventScroll: true });
+      });
     }
   }, [loadDocument, loadPublicPack, openBuiltInSample]);
 
@@ -4748,6 +4806,11 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
+    const activeElement = window.document.activeElement;
+    const shouldRestoreSelectionContextFocus =
+      activeElement instanceof HTMLElement &&
+      activeElement.closest('[data-panel="selection-context"]') !== null;
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (previousSelectedCardIds.length === 0) {
         return previousSelectedCardIds;
@@ -4757,6 +4820,17 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     });
     setSelectedIslandId(null);
     setSelectedEdgeId(null);
+    if (shouldRestoreSelectionContextFocus) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (window.document.activeElement !== window.document.body) {
+            return;
+          }
+          const selectionContext = window.document.querySelector<HTMLElement>('[data-panel="selection-context"]');
+          selectionContext?.focus({ preventScroll: true });
+        });
+      });
+    }
   }, [isPickingEdgeTarget]);
 
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
@@ -4958,7 +5032,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const handleCardContextMenu = useCallback(
-    (cardId: string, clientX: number, clientY: number) => {
+    (cardId: string, clientX: number, clientY: number, trigger: HTMLElement) => {
+      contextMenuReturnFocusRef.current = trigger;
       setSelectedCardIds((previous) => (previous.includes(cardId) ? previous : [cardId]));
       setContextMenu({ x: clientX, y: clientY, target: { kind: "card", cardId } });
     },
@@ -4967,6 +5042,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const handleBackgroundContextMenu = useCallback(
     (clientX: number, clientY: number, worldX: number, worldY: number) => {
+      contextMenuReturnFocusRef.current =
+        globalThis.document.activeElement instanceof HTMLElement ? globalThis.document.activeElement : null;
       if (document) {
         const localCardsById = new Map(document.cards.map((card): [string, typeof card] => [card.id, card]));
         const hitIsland = document.islands.find((island) => {
@@ -8890,10 +8967,20 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         onTitleChange={handleUpdateDocumentTitle}
         isReadOnly={isReadOnly}
         onSuggestTitle={handleSuggestDocumentTitle}
-        providerEnabled={providerKind !== null && providerKind !== "none"}
+        providerEnabled={
+          providerKind !== null
+          && providerKind !== "none"
+          && availableModels !== null
+          && availableModels.length > 0
+        }
+        modelSelectionVisible={
+          (providerKind !== null && providerKind !== "none")
+          || availableModels !== null
+        }
         documentTitleModel={documentTitleModel}
         onDocumentTitleModelChange={setDocumentTitleModel}
         availableModels={availableModels}
+        availableModelsUnavailableReason={availableModelsUnavailableReason}
       />
       <SearchBar
         query={searchQuery}
@@ -8963,7 +9050,18 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
     if (selectedCardIds.length > 0) {
       const selectedCardIdSet = new Set(selectedCardIds);
+      const activeCardId =
+        window.document.activeElement instanceof HTMLElement
+          ? window.document.activeElement.dataset.cardId
+          : undefined;
+      const activeCardIndex = activeCardId
+        ? document.cards.findIndex((card) => card.id === activeCardId)
+        : -1;
       const nextCards = document.cards.filter((card) => !selectedCardIdSet.has(card.id));
+      const fallbackFocusCardId =
+        activeCardId && selectedCardIdSet.has(activeCardId) && nextCards.length > 0
+          ? nextCards[Math.min(Math.max(activeCardIndex, 0), nextCards.length - 1)]?.id
+          : undefined;
 
       if (nextCards.length === document.cards.length) {
         return;
@@ -9002,6 +9100,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           ? previousSelectedIslandId
           : null
       );
+      if (fallbackFocusCardId) {
+        window.requestAnimationFrame(() => {
+          const fallbackCard = Array.from(
+            window.document.querySelectorAll<HTMLElement>("[data-card-id]")
+          ).find((element) => element.dataset.cardId === fallbackFocusCardId);
+          fallbackCard?.focus({ preventScroll: true });
+        });
+      }
       return;
     }
 
@@ -10758,6 +10864,19 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       return;
     }
 
+    // OPS-LLM-COST-03: counters are in-process operational state, not static
+    // configuration. Refresh when the user opens this read-only surface so a
+    // call made after startup is not misleadingly shown as zero until reload.
+    void getProviderStatus()
+      .then(({ providerKind: kind, callCounts, tokenUsage }) => {
+        setProviderKind(kind);
+        setLlmCallCounts(callCounts);
+        setLlmTokenUsage(tokenUsage);
+      })
+      .catch(() => {
+        // Keep the last known display-only snapshot on a refresh failure.
+      });
+
     const frame = window.requestAnimationFrame(() => {
       viewControlsPanelRef.current?.focus();
     });
@@ -10927,6 +11046,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             onShowSeqNumbersChange={setShowSeqNumbers}
             providerKind={providerKind}
             llmCallCounts={llmCallCounts}
+            llmTokenUsage={llmTokenUsage}
             lastAiCallOutcome={lastAiCallOutcome}
             lodEnabled={lodEnabled}
             onLodEnabledChange={setLodEnabled}
@@ -11627,6 +11747,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               narrativeModel={narrativeModel}
               onNarrativeModelChange={setNarrativeModel}
               availableModels={availableModels}
+              availableModelsUnavailableReason={availableModelsUnavailableReason}
               isChecking={isCheckingNarrative}
               isGenerating={isGeneratingNarrative}
               errorMessage={narrativeCheckError}
@@ -12020,6 +12141,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           islandSummaryModel={islandSummaryModel}
           onIslandSummaryModelChange={setIslandSummaryModel}
           availableModels={availableModels}
+          availableModelsUnavailableReason={availableModelsUnavailableReason}
           opposingViewpointProposal={opposingViewpointProposal}
           isProposingOpposingViewpoint={isProposingOpposingViewpoint}
           onProposeOpposingViewpoint={handleProposeOpposingViewpoint}
@@ -12560,6 +12682,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 x={contextMenu.x}
                 y={contextMenu.y}
                 items={items}
+                ariaLabel={t("context_menu.label")}
+                returnFocusTo={contextMenuReturnFocusRef.current}
                 onClose={closeContextMenu}
               />
             );

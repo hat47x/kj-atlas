@@ -29,7 +29,7 @@ const browser = await chromium.launch({
   executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
 });
 
-async function open(cards, islands) {
+async function open(cards, islands, locale = "ja") {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.route("**/packs/index.json", (r) =>
     r.fulfill({ status: 404, contentType: "application/json", body: "{}" })
@@ -42,7 +42,7 @@ async function open(cards, islands) {
       body: JSON.stringify(doc(cards, islands)),
     })
   );
-  await page.goto("http://127.0.0.1:4173/?locale=ja");
+  await page.goto(`http://127.0.0.1:4173/?locale=${locale}`);
   await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "visible" });
   await page.getByRole("button", { name: /サンプルを開く|Open sample/ }).click();
   await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "hidden" });
@@ -86,6 +86,7 @@ try {
   // A3: context menu must close with Escape (acceptance_check.md 操作感: Escapeで閉じる).
   if (run("A3")) {
     const page = await open([{ id: "c1", text: "右クリック対象", x: 220, y: 220 }]);
+    const baseline = await page.getByRole("menuitem").count();
     await page.getByRole("button", { name: "右クリック対象" }).click({ button: "right" });
     await page.waitForTimeout(300);
     const opened = await page.getByRole("menuitem").count();
@@ -96,8 +97,8 @@ try {
       const a = document.activeElement;
       return a ? `${a.tagName.toLowerCase()}:${(a.getAttribute("aria-label") || (a.textContent ?? "").trim()).slice(0, 30)}` : "(none)";
     });
-    rec("A3", "カードのコンテキストメニューがEscapeで閉じる", opened > 0 && stillOpen === 0,
-      `開いた項目数=${opened} / Escape後=${stillOpen} / Escape後のフォーカス=${focus}`);
+    rec("A3", "カードのコンテキストメニューがEscapeで閉じる", opened > baseline && stillOpen === baseline,
+      `常設項目=${baseline} / 開いた後=${opened} / Escape後=${stillOpen} / Escape後のフォーカス=${focus}`);
     await page.close();
   }
 
@@ -218,6 +219,276 @@ try {
     const asideText = await page.locator("aside").innerText();
     const hit = /Island\s*\d+/.exec(mainText + "\n" + asideText);
     rec("A9", "ja localeで島の既定名に英語が出ない", !hit, hit ? `画面に "${hit[0]}" が表示された` : "英語の既定名なし");
+    await page.close();
+  }
+
+  // A10: a role=menu opened from the canvas must expose a name and move
+  // keyboard focus into its enabled menuitems.
+  if (run("A10")) {
+    const page = await open([{ id: "c1", text: "キーボードメニュー対象", x: 220, y: 220 }]);
+    const card = page.getByRole("button", { name: "キーボードメニュー対象" });
+    await card.focus();
+    await page.keyboard.press("Shift+F10");
+    const menu = page.getByRole("menu");
+    await menu.waitFor({ state: "visible" });
+    const menuName = (await menu.getAttribute("aria-label")) || (await menu.getAttribute("aria-labelledby")) || "";
+    const focusedOnOpen = await menu.locator(':scope [role="menuitem"]:focus').innerText().catch(() => "");
+    await page.keyboard.press("ArrowDown");
+    const focusedAfterArrow = await menu.locator(':scope [role="menuitem"]:focus').innerText().catch(() => "");
+    await page.keyboard.press("Escape");
+    const closed = await menu.count() === 0;
+    const focusReturned = await card.evaluate((element) => document.activeElement === element);
+    const focusAfterEscape = await page.evaluate(() => {
+      const active = document.activeElement;
+      return active ? `${active.tagName.toLowerCase()}:${active.getAttribute("aria-label") || (active.textContent ?? "").trim().slice(0, 40)}` : "(none)";
+    });
+    rec(
+      "A10",
+      "カードのコンテキストメニューを名前付き・キーボード操作可能にする",
+      menuName.length > 0 && focusedOnOpen.length > 0 && focusedAfterArrow.length > 0 &&
+        focusedAfterArrow !== focusedOnOpen && closed && focusReturned,
+      `menu名=${menuName || "(なし)"} / open時=${focusedOnOpen || "(なし)"} / ArrowDown後=${focusedAfterArrow || "(なし)"} / Escape閉鎖=${closed} / focus復帰=${focusReturned} (${focusAfterEscape})`
+    );
+    await page.close();
+  }
+
+  // A11: rapid keyboard collapse/expand must not create a React update loop.
+  if (run("A11")) {
+    const page = await open(
+      [
+        { id: "c1", text: "折りたたみ確認A", x: 220, y: 220 },
+        { id: "c2", text: "折りたたみ確認B", x: 500, y: 220 },
+      ],
+      [{ id: "i1", title: "折りたみ確認島", cardIds: ["c1", "c2"], shape: { kind: "rect", x: 150, y: 160, width: 560, height: 260 } }]
+    );
+    const updateDepthWarnings = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && message.text().includes("Maximum update depth exceeded")) {
+        updateDepthWarnings.push(message.text());
+      }
+    });
+    for (let index = 0; index < 12; index += 1) {
+      const toggle = page.getByRole("button", { name: /島 i1 を(折りたたむ|展開)/ });
+      await toggle.focus();
+      await page.keyboard.press("Space");
+      await page.waitForTimeout(30);
+    }
+    await page.waitForTimeout(300);
+    rec(
+      "A11",
+      "島の折りたたみ・展開をキーボードで反復しても更新loopにならない",
+      updateDepthWarnings.length === 0,
+      `Maximum update depth警告=${updateDepthWarnings.length}`
+    );
+    await page.close();
+  }
+
+  // A12: clearing a selection with Escape must retain a useful keyboard
+  // focus target when the selected-only context action disappears.
+  if (run("A12")) {
+    const page = await open([{ id: "c1", text: "選択解除フォーカス確認", x: 220, y: 220 }]);
+    await page.getByRole("button", { name: "選択解除フォーカス確認" }).click();
+    const focusSelected = page.getByRole("button", { name: "選択中のカードを表示" });
+    await focusSelected.focus();
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    const context = page.locator('[data-panel="selection-context"]');
+    const selectionCleared = await focusSelected.count() === 0;
+    const focusRetained = await context.evaluate((element) => document.activeElement === element);
+    const active = await page.evaluate(() => {
+      const element = document.activeElement;
+      return element ? `${element.tagName.toLowerCase()}:${element.getAttribute("aria-label") || ""}` : "(none)";
+    });
+    rec(
+      "A12",
+      "選択専用ボタン上のEscapeで選択解除後もfocusを維持する",
+      selectionCleared && focusRetained,
+      `選択解除=${selectionCleared} / contextへfocus=${focusRetained} / active=${active}`
+    );
+    await page.close();
+  }
+
+  // A13: focusing a collapsed island and then expanding it reproduced the
+  // random sweep's CanvasShell maximum-update-depth warning.
+  if (run("A13")) {
+    const page = await open(
+      [
+        { id: "c1", text: "focus展開確認A", x: 220, y: 220 },
+        { id: "c2", text: "focus展開確認B", x: 500, y: 220 },
+        { id: "c3", text: "focus展開確認C", x: 740, y: 220 },
+      ],
+      [
+        { id: "base-island", title: "既存島", cardIds: ["c1", "c2"], shape: { kind: "rect", x: 150, y: 160, width: 560, height: 260 } },
+        { id: "i1", title: "focus展開確認島", cardIds: ["c1", "c3"], shape: { kind: "rect", x: 150, y: 160, width: 820, height: 260 } },
+      ]
+    );
+    const updateDepthWarnings = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && message.text().includes("Maximum update depth exceeded")) {
+        updateDepthWarnings.push(message.text());
+      }
+    });
+    const toggle = () => page.getByRole("button", { name: /島 i1 を(折りたたむ|展開)/ });
+    const focus = () => page.getByRole("button", { name: "島 i1 を表示" });
+    await toggle().focus();
+    await page.keyboard.press("Enter");
+    for (let index = 0; index < 1; index += 1) {
+      await focus().focus();
+      await page.keyboard.press("Enter");
+    }
+    await toggle().focus();
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(400);
+    rec(
+      "A13",
+      "折りたたみ島をfocus反復後に展開しても更新loopにならない",
+      updateDepthWarnings.length === 0,
+      `Maximum update depth警告=${updateDepthWarnings.length}`
+    );
+    await page.close();
+  }
+
+  // A14: stabilizing the transform callback must not suppress ordinary user
+  // camera changes from reaching the document's dirty/save flow.
+  if (run("A14")) {
+    const page = await open([{ id: "c1", text: "camera永続化確認", x: 220, y: 220 }]);
+    const save = page.getByRole("banner").getByRole("button", { name: /^(保存|Save)$/ });
+    const disabledBefore = await save.isDisabled();
+    await page.mouse.move(700, 500);
+    await page.mouse.wheel(0, -400);
+    await page.waitForTimeout(300);
+    const enabledAfter = await save.isEnabled();
+    rec(
+      "A14",
+      "通常のwheel zoomが文書の未保存変更として反映される",
+      disabledBefore && enabledAfter,
+      `操作前Save無効=${disabledBefore} / zoom後Save有効=${enabledAfter}`
+    );
+    await page.close();
+  }
+
+  // A15: cancelling inline edit removes the textarea, so focus must return
+  // to the same card instead of falling back to the document body.
+  if (run("A15")) {
+    const results = [];
+    for (const locale of ["ja", "en"]) {
+      const page = await open([{ id: "c1", text: "編集focus復帰確認", x: 220, y: 220 }], undefined, locale);
+      const card = page.getByRole("button", { name: "編集focus復帰確認" });
+      await card.dblclick();
+      const editor = page.getByRole("textbox", { name: /カード本文を編集|Edit card text/ });
+      await editor.fill("取り消す本文");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
+      const originalRestored = await page.getByRole("button", { name: "編集focus復帰確認" }).count() === 1;
+      const focusReturned = await card.evaluate((element) => document.activeElement === element);
+      results.push({ locale, originalRestored, focusReturned });
+      await page.close();
+    }
+    rec(
+      "A15",
+      "カード本文編集をEscape取消すると同じカードへfocusが戻る",
+      results.every((result) => result.originalRestored && result.focusReturned),
+      results.map((result) => `${result.locale}:元本文=${result.originalRestored}/focus=${result.focusReturned}`).join(" / ")
+    );
+  }
+
+  // A16: keyboard commit also removes the textarea; it should preserve the
+  // editing position just like Escape cancellation does.
+  if (run("A16")) {
+    const page = await open([{ id: "c1", text: "編集確定focus確認", x: 220, y: 220 }]);
+    const originalCard = page.getByRole("button", { name: "編集確定focus確認" });
+    await originalCard.dblclick();
+    const editor = page.getByRole("textbox", { name: "カード本文を編集" });
+    await editor.fill("確定後の本文");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(200);
+    const committedCard = page.getByRole("button", { name: "確定後の本文" });
+    const committed = await committedCard.count() === 1;
+    const focusReturned = committed && await committedCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A16",
+      "カード本文編集をEnter確定すると同じカードへfocusが戻る",
+      committed && focusReturned,
+      `本文確定=${committed} / cardへfocus=${focusReturned}`
+    );
+    await page.close();
+  }
+
+  // A17: deleting the currently focused card removes the active element. The
+  // keyboard workflow must continue from a surviving card instead of <body>.
+  if (run("A17")) {
+    const page = await open([
+      { id: "c1", text: "削除focus確認1", x: 220, y: 220 },
+      { id: "c2", text: "削除focus確認2", x: 500, y: 220 },
+    ]);
+    const deletedCard = page.getByRole("button", { name: "削除focus確認1" });
+    await deletedCard.focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(200);
+    const removed = await deletedCard.count() === 0;
+    const survivingCard = page.getByRole("button", { name: "削除focus確認2" });
+    const focusContinues = await survivingCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A17",
+      "focus中のカードをDelete削除すると残存カードへfocusが移る",
+      removed && focusContinues,
+      `削除=${removed} / 残存cardへfocus=${focusContinues}`
+    );
+    await page.close();
+  }
+
+  // A18: the start action replaces the modal and its focused button. The
+  // loaded canvas should receive a useful keyboard position.
+  if (run("A18")) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.route("**/packs/index.json", (r) =>
+      r.fulfill({ status: 404, contentType: "application/json", body: "{}" })
+    );
+    await page.route("**/docs/doc_phase1_canvas", (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { ETag: '"adv"' },
+        body: JSON.stringify(doc([{ id: "c1", text: "開始後focus確認", x: 220, y: 220 }])),
+      })
+    );
+    await page.goto("http://127.0.0.1:4173/?locale=ja");
+    const sampleButton = page.getByRole("button", { name: "サンプルを開く" });
+    await sampleButton.focus();
+    await page.keyboard.press("Enter");
+    await page.locator('[data-panel="start-document-entry"]').waitFor({ state: "hidden" });
+    await page.waitForTimeout(300);
+    const firstCard = page.getByRole("button", { name: "開始後focus確認" });
+    const focusContinues = await firstCard.evaluate((element) => document.activeElement === element);
+    rec(
+      "A18",
+      "サンプルをEnterで開くと最初のカードへfocusが移る",
+      focusContinues,
+      `最初のcardへfocus=${focusContinues}`
+    );
+    await page.close();
+  }
+
+  // A19: collapsing/expanding replaces the focused toggle button. Focus must
+  // follow the replacement so keyboard navigation can continue.
+  if (run("A19")) {
+    const page = await open([{ id: "c1", text: "minimap focus確認", x: 220, y: 220 }]);
+    const collapse = page.getByRole("button", { name: "ミニマップを折りたたむ" });
+    await collapse.focus();
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(200);
+    const expand = page.getByRole("button", { name: "ミニマップを開く" });
+    const collapsedFocus = await expand.evaluate((element) => document.activeElement === element);
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(200);
+    const expandedFocus = await collapse.evaluate((element) => document.activeElement === element);
+    rec(
+      "A19",
+      "ミニマップの折りたたみ・展開後もtoggleへfocusが続く",
+      collapsedFocus && expandedFocus,
+      `折りたたみ後=${collapsedFocus} / 展開後=${expandedFocus}`
+    );
     await page.close();
   }
 } catch (error) {
