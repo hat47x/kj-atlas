@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 E2E_DOC = ROOT / "03_Implement/frontend/docs/e2e_testing.md"
 QA_ISSUE = ROOT / "01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md"
-PRODUCT_QA_ISSUE = ROOT / "01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md"
+PRODUCT_QA_ISSUE = ROOT / "01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md"
 
 
 def _read(path: Path) -> str:
