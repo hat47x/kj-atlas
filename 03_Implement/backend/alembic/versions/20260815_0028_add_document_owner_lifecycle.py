@@ -37,5 +37,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("documents", "lifecycle_state")
+    # lifecycle_state carries a server_default; on SQL Server the default
+    # constraint must be dropped before the column (see 0014 pattern).
+    op.drop_column("documents", "lifecycle_state", mssql_drop_default=True)
     op.drop_column("documents", "created_by")
