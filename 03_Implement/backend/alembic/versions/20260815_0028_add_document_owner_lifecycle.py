@@ -27,7 +27,9 @@ def upgrade() -> None:
         "documents",
         sa.Column(
             "lifecycle_state",
-            sa.Text(),
+            # Bounded (PERSISTENT_TEXT_SPECS: 16) so MySQL accepts the
+            # server_default -- a TEXT column cannot have a DEFAULT there.
+            sa.String(length=16),
             nullable=False,
             server_default="active",
         ),
