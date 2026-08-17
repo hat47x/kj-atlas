@@ -18,7 +18,7 @@ Current normative anchors:
 - [Architecture input/output boundary](../architecture.html#ce0-io-boundary)
 - [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [API Context Query / Bundle endpoints](../api.md#28-context-query--bundle-contractce1-context-foundation)
-- [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
+- [CE1 v1 reconciliation issue](../../01_Plans/issues/done/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
 この文書は形成履歴であり、現在のrequired/optional key、列挙、既定値、endpoint、status/error、SafeMode境界を上書きしない。以下の`固定`、`freeze`、`Decision`は当時の記録である。
 

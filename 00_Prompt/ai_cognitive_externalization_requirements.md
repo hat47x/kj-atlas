@@ -37,7 +37,7 @@ Its goal is not to let AI decide for humans, but to provide an external structur
 > **【2026-08-15 追記】本節を製品の正当化として読んではならない。**
 >
 > 本節が列挙する限界は、能力向上によって縮小する。したがってこれを存在理由に据えると、
-> AI が強くなるほど製品の説明が苦しくなる（`01_Plans/product-trajectory-research-2026-08-15.md` §2.1）。
+> AI が強くなるほど製品の説明が苦しくなる（`01_Plans/research/product-trajectory-research-2026-08-15.md` §2.1）。
 >
 > **正当化の正本は `00_Prompt/cognitive_frame_and_evolution_criteria.md` §1 とする** ——
 > KJ法という認知のフレームで認知を拡張し、その知識蓄積を実現する基盤である、という定義である。

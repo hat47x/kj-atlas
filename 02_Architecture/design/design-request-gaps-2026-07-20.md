@@ -99,7 +99,7 @@
 - 期待成果物: 開始パネル・カード検索のレッドライン。各状態一覧＋viewport（1440/768/390px）＋「主従関係・認知負荷・キーボード動線」で複数案を比較し1案を選定・根拠提示。
 - 受入条件: ドッグフード摩擦（再開導線の欠如）が解消方向に載り、`UI-QUALITY-A11Y-07`のfocus復帰先が定まること。
 - スコープ境界: ⌘Kコマンド検索とカード本文検索を**混同しない**。新規操作を既定表示へ純増させず、置換・包含・モード分離で収める。
-- 添付予定の証跡: `StartPanel`/`SearchBar`の実機スクリーンショット＋`01_Plans/dogfood-log-2026-07-10.md`の該当摩擦参照。
+- 添付予定の証跡: `StartPanel`/`SearchBar`の実機スクリーンショット＋`01_Plans/dogfood/dogfood-log-2026-07-10.md`の該当摩擦参照。
 
 ## 2. 将来着手分（実装ゲート待ち・運用知見待ち）
 
@@ -158,7 +158,7 @@
 - Related: `02_Architecture/design/design-qa-checklist.md`（第1〜8回照合記録。4軸 A.視覚言語/B.状態遷移/C.核の保護/D.a11y・契約と✓/△/✗規約の正本）
 - Related: `02_Architecture/design/master-data-settings-ui-ux-concept.md`（F-1照合の規範元。§3.4/§3.5/§4/§6）
 - Related: `04_Documentation/ui_catalog.md`
-- Related: `01_Plans/dogfood-log-2026-07-10.md`（N-7の再開導線摩擦）
+- Related: `01_Plans/dogfood/dogfood-log-2026-07-10.md`（N-7の再開導線摩擦）
 - Related: 実装（origin/main `2c452dce`）: `03_Implement/frontend/src/ui/{RepresentativeVisualCuePrototypePanel,InquiryJourneyPrototypePanel,AgentTaskExportPanel,AgentResponseImportPanel,TenantSessionControl,TenantChangeConfirmationDialog}.tsx`
 - Related: `01_Plans/adr/ADR-0044`, `ADR-0048`, `ADR-0052`, `ADR-0053`, `ADR-0055`, `ADR-0059`, `ADR-0060`, `ADR-0061`
 - Related issues: `issue-DOMAIN-VISUAL-CUE-01`, `issue-DOMAIN-W-ITERATION-01`, `issue-SAAS-TENANT-01`, `issue-EXT-CONN-02`, `issue-EXT-CONN-03`, `issue-EXT-CONN-04`, `issue-UI-QUALITY-A11Y-07`

@@ -1461,7 +1461,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 
 - ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
 - Issue: `EXT-CONN-03-critique-constraint-export`
-- Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
+- Research: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Spec: `02_Architecture/external_agent_collaboration_spec.html`（§3.3a 制約節の埋め込みプロファイル）
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）
 
