@@ -79,8 +79,14 @@ Its goal is not to let AI decide for humans, but to provide an external structur
 
 が、構造として保持される必要がある。
 
-生成AIはこの「思考の地形」を自前では十分に維持できない。  
-したがって、外部に **認知の足場** を作る必要がある。
+この地形はセッションの外に置かれてはじめて持続する。
+したがって必要なのは、**フレームが要求する形で知識を蓄積する基盤** である
+（`cognitive_frame_and_evolution_criteria.md` §1）。
+
+> 本節を「生成AIには維持できないから外部が要る」と読んではならない。それは §1.1 の追記で
+> 退けた欠損ベースの形式であり、`cognitive_frame_and_evolution_criteria.md` §1.2 が禁じている。
+> 地形を外に置く理由は能力の不足ではなく、**認知の蓄積が跨セッションで参照可能でなければ
+> 拡張にならない**という、認知主体を問わない要件である。
 
 ---
 
@@ -297,15 +303,23 @@ AIはこの投影層を入力として受け取る。
 ## 7.0 CE0 Contract Freeze 参照（Stream B）
 
 本書で扱う契約語彙は、CE0 Contract Freeze の参照専用固定値に従う。
+**凍結内容の正本は `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`（CE-0）である。**
+本節は語彙の対応表であり、凍結の運用（Exit Criteria・衝突検知の閾値・Stream進行）は ADR 側で管理する。
 
 - `CE0-CTX-IF`: ContextQuery/ContextBundle 最小I/F（Query Preview必須、決定論bundle）
 - `CE0-SAFEMODE-IF`: safeMode既定ON、`allowUnreviewedText=false` 既定
 - `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみ
 - `CG-01..05`: WorkingGraph / ContextProjectionGraph / ConsensusGraph の責務分離、`patch + approval` 以外の適用禁止
 
-衝突検知ポリシー: Contract ID collision=0、語彙 collision=0、安全後退（safeMode緩和・auto-apply許容・review自動昇格）=0。
-
 ## 7.1 IR の基本方針
+
+AIに渡す入力は、キャンバスの見た目や雑多な履歴ではなく、**問い合わせ目的に応じて切り出された構造化コンテキスト束** であるべきである。
+
+基本形：
+
+```text
+ContextQuery -> ContextBundle
+```
 
 ## 7.1a Multi-Model Routing 要件（MMR-01〜06）
 
@@ -318,21 +332,18 @@ AIはこの投影層を入力として受け取る。
 - **MMR-03（禁止タスク）**:
   `intermediate` は `accept/reject/merge/finalize/publish` を実行してはならない。
 - **MMR-04（モデル階層）**:
-  `final_judgement` は high-reasoning tier（例: Claude / GPT-5）へルーティングする。
+  `final_judgement` は high-reasoning tier へルーティングする。
+  **どのモデルが high-reasoning tier に該当するかは本書では定めない。**
+  設定は `02_Architecture/runtime_parameter_registry.md` の `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
+  が持ち（同レジストリの当該行は本要件を MMR-04 として参照している）、
+  複雑度とモデルの対応は `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md` が持つ。
+  ここにモデル名を書くと、モデルが更新されるたびに憲法を書き換えることになる。
 - **MMR-05（監査性）**:
   監査ログに `routingStage`（intermediate/final_judgement）、
   `provider/model`、`sourceBundleHash`、`proposalId` を必須記録する。
 - **MMR-06（安全停止）**:
   `final_judgement` 経路が利用不能な場合は auto-publish へフォールバックせず、
   `held` へ遷移して人手確認待ちにする。
-
-AIに渡す入力は、キャンバスの見た目や雑多な履歴ではなく、**問い合わせ目的に応じて切り出された構造化コンテキスト束** であるべきである。
-
-基本形：
-
-```text
-ContextQuery -> ContextBundle
-```
 
 ## 7.2 ContextBundle に最低限含むべき要素
 
@@ -467,9 +478,14 @@ max-nodes 30
 
 ---
 
-# 10. 機能要件（MVP〜拡張）
+# 10. 機能要件
 
-## 10.1 MVPで実装すべきもの
+各機能が**何を満たさなければならないか**を定める。
+**どれをいつ作るかは定めない** —— 実装順序・反復割当・受入条件の正本は
+`01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`（CE-0〜CE-4）である。
+
+以前は本節を「10.1 MVPで実装すべきもの / 10.2 中期拡張」に分けていた。
+分割は release 計画の関心であり、憲法が持つと計画変更のたびに憲法が動く。
 
 ### M1. Context Query Preview
 
@@ -498,8 +514,6 @@ AIに渡る前に、
 
 - contradiction / evidence 構造をもとに、未検討論点や根拠不足箇所を提案
 - 結論ではなく、考えるべき点を提示する
-
-## 10.2 中期拡張
 
 ### M5. AI Patch Proposal Workspace
 
@@ -608,26 +622,17 @@ AI Context Query と AI出力は、必要に応じて
 
 ---
 
-# 15. 今後の設計・実装フェーズ
+# 15. 実行フェーズ
 
-## Phase A：文脈投影の確立
-- ContextQuery / ContextBundle の仕様化
-- Preview UI
-- safeMode制約統合
+**実行フェーズの正本は `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`（CE-0〜CE-4）である。**
+依存順序・Exit Criteria・Stop Conditions・issue分割は同 ADR が持つ（§0 でもそう宣言している）。
 
-## Phase B：低リスクAI支援
-- 島タイトル候補
-- B型文章ドラフト
-- 反対視点候補
+本節にはかつて `Phase A`〜`Phase D` という独立した4段構成があった。削除した理由は次の3点である。
 
-## Phase C：高度化
-- AI Patch Workspace
-- Query Presets
-- AI-aware Perspective
-
-## Phase D：CLI / API 連携
-- Query を API / CLI から呼べるようにする
-- バッチ生成・評価・監査を可能にする
+- **リポジトリ内で本書以外のどこにも存在せず、参照している文書も無かった。** 計画として機能していない。
+- ADR-0028 の `CE-0`〜`CE-4` と**対応表が無く、どちらが有効なのか読んで判断できなかった。**
+  同じ計画に二つの語彙があり、片方だけが正本と宣言されている状態だった。
+- 段階分けは実装の関心である。憲法が持つと、計画を組み替えるたびに憲法を書き換えることになる。
 
 ---
 
@@ -636,12 +641,28 @@ AI Context Query と AI出力は、必要に応じて
 kj-atlas のAI拡張の本質は、AIを賢くすることではない。  
 本質は、
 
-> **生成AIが単独では維持しにくい高度な文脈・対立・保留・根拠の構造を、人間と共有できる外部思考空間として保持すること**
+> **高度な文脈・対立・保留・根拠の構造を、認知主体を跨いで共有できる外部思考空間として保持すること**
 
 にある。
 
 この方向性において、kj-atlas は単なる図解ツールではなく、
 
-> **生成AI時代の高度な情報処理を支える、認知外在化フレームワーク**
+> **KJ法という認知のフレームを適用し、その知識蓄積を担う基盤**
+
+である（`cognitive_frame_and_evolution_criteria.md` §1）。
 
 として位置づけられる。
+
+---
+
+# 17. 変更記録
+
+| 日付 | 変更 | 理由 |
+|---|---|---|
+| 2026-08-15 | §1.1 の正当化を `cognitive_frame_and_evolution_criteria.md` §1 へ移した | 欠損ベースの正当化はAI能力の向上で失効する |
+| 2026-08-16 | §1.2 末尾と §16 に残っていた欠損ベースの記述を是正した | 同書 §1.2 が禁じている形式が憲法層に残っていた |
+| 2026-08-16 | §7.0 から Stream B の衝突検知閾値を除き、正本を ADR-0028 CE-0 とした | 実装ストリームの運用値であり、憲法の条項ではない |
+| 2026-08-16 | §7.1 の本文を復元した | §7.1a（MMR要件）の挿入時に見出しと本文が分断され、§7.1 が空になっていた |
+| 2026-08-16 | MMR-04 から具体モデル名を除いた | モデル更新のたびに憲法を書き換えることになる |
+| 2026-08-16 | §10 の「MVP / 中期拡張」区分を除いた | 何を満たすかは憲法、いつ作るかは計画 |
+| 2026-08-16 | §15 の `Phase A`〜`D` を削除し、ADR-0028 への参照にした | 参照者ゼロで、ADR-0028 の CE-0〜CE-4 と対応表の無い二重の計画だった |
