@@ -755,16 +755,19 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/admin/provision/models/providers` / **POST** `/admin/provision/models`
 
 - プロバイダ/モデルを**動的に登録**（control-plane 認可）。`apiKeyRef` は秘密管理キー参照のみ（平文のAPIキーを保存しない・ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
+- 登録はinsert-only。同一IDの再登録はproviderを`409 provider_already_exists`、modelを`409 model_already_exists`で拒否し、既存rowを暗黙更新しない。起動時seedの冪等upsertとは別契約とする。
 - モデル無効化: `PATCH /admin/provision/models/{model_id}` で `lifecycleState: disabled`。無効モデルへの呼び出しは fail-closed。
 
 **GET** `/admin/provision/models/tenants/{tenant_id}/allowlist`
 
 - AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の参照（fail-closed）。空 = プラットフォーム既定。適用は Phase 2 の実効モデル解決で交差（より狭い方が勝つ）。
+- Responseには`revision`（modelIdsの正規化内容から生成した64桁hex）を含む。管理UI/CLIは更新時にこの値を引き継ぎ、表示後の競合更新を検出する。
 
 **PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
 
 - AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の更新（fail-closed・control-plane 認可）。空 = プラットフォーム既定。
 - 対象tenantが存在しactiveであること、各modelが登録済みかつactiveであること、modelIdsに重複がないことを更新前に検証する。存在しないtenantは404、無効なmodel集合・重複は422とし、部分更新しない。
+- `expectedRevision`を指定した場合、現行revisionと不一致なら`409 model_allowlist_conflict`で更新せず、`currentRevision`を返す。正式CLIは常にGETで取得したrevisionを指定する。互換性期間中は未指定の直接API呼出しを許容するが、管理UI/新規automationは指定必須とする。
 
 **GET** `/healthz`
 

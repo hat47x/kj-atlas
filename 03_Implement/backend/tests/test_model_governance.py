@@ -186,6 +186,94 @@ def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
 
         got = client.get("/admin/provision/models/tenants/tenant-a/allowlist", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
         assert got["modelIds"] == ["m1", "m3"]
+        assert len(got["revision"]) == 64
+
+
+def test_registry_create_rejects_duplicate_ids_without_overwriting(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        first_provider = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "Original"},
+            headers=headers,
+        )
+        assert first_provider.status_code == 201
+        duplicate_provider = client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "deepseek", "displayName": "Replacement"},
+            headers=headers,
+        )
+        assert duplicate_provider.status_code == 409
+        assert duplicate_provider.json()["detail"]["code"] == "provider_already_exists"
+
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p2", "providerKind": "local", "displayName": "P2"},
+            headers=headers,
+        )
+        first_model = client.post(
+            "/admin/provision/models",
+            json={"id": "m", "providerId": "p", "displayName": "Original Model"},
+            headers=headers,
+        )
+        assert first_model.status_code == 201
+        duplicate_model = client.post(
+            "/admin/provision/models",
+            json={"id": "m", "providerId": "p2", "displayName": "Replacement Model"},
+            headers=headers,
+        )
+        assert duplicate_model.status_code == 409
+        assert duplicate_model.json()["detail"]["code"] == "model_already_exists"
+
+        with session_local() as db:
+            assert db.get(LLMProviderRegistryRow, "p").provider_kind == "local"
+            assert db.get(LLMProviderRegistryRow, "p").display_name == "Original"
+            assert db.get(LLMModelRegistryRow, "m").provider_id == "p"
+            assert db.get(LLMModelRegistryRow, "m").display_name == "Original Model"
+
+
+def test_tenant_allowlist_rejects_stale_revision_without_lost_update(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            headers=headers,
+        )
+        for model_id in ("m1", "m2"):
+            client.post(
+                "/admin/provision/models",
+                json={"id": model_id, "providerId": "p", "displayName": model_id},
+                headers=headers,
+            )
+
+        initial = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        first_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1"], "expectedRevision": initial["revision"]},
+            headers=headers,
+        )
+        assert first_write.status_code == 200
+
+        stale_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m2"], "expectedRevision": initial["revision"]},
+            headers=headers,
+        )
+        assert stale_write.status_code == 409
+        assert stale_write.json()["detail"]["code"] == "model_allowlist_conflict"
+        assert stale_write.json()["detail"]["currentRevision"] == first_write.json()["revision"]
+
+        current = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        assert current["modelIds"] == ["m1"]
 
 
 def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path, monkeypatch) -> None:

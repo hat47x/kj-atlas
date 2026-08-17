@@ -49,6 +49,18 @@ const unavailableReasonTranslationKeys: Record<AvailableModelUnavailableReason, 
   no_user_selectable_models: "model_selector.reason.no_user_selectable_models",
 };
 
+export function resolveUnavailableReasonTranslationKey(
+  reason: string | null | undefined,
+): string {
+  if (
+    reason
+    && Object.prototype.hasOwnProperty.call(unavailableReasonTranslationKeys, reason)
+  ) {
+    return unavailableReasonTranslationKeys[reason as AvailableModelUnavailableReason];
+  }
+  return "model_selector.none_available_help";
+}
+
 export function ModelSelector({
   label,
   value,
@@ -81,9 +93,7 @@ export function ModelSelector({
   }
 
   if (models.length === 0) {
-    const reasonKey = unavailableReason
-      ? unavailableReasonTranslationKeys[unavailableReason]
-      : "model_selector.none_available_help";
+    const reasonKey = resolveUnavailableReasonTranslationKey(unavailableReason);
     return (
       <label style={{ display: "grid", gap: 4 }} data-ui-region={dataUiRegion}>
         <span style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{label}</span>

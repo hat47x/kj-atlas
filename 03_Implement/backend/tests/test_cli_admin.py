@@ -86,7 +86,11 @@ def test_allowlist_set_reads_current_state_and_prints_diff(
         payload = kwargs.get("json")
         calls.append((method, url, payload if isinstance(payload, dict) else None))
         if method == "GET":
-            return _Response({"tenantId": "tenant a", "modelIds": ["old-model"]})
+            return _Response({
+                "tenantId": "tenant a",
+                "modelIds": ["old-model"],
+                "revision": "a" * 64,
+            })
         return _Response({"tenantId": "tenant a", "modelIds": ["new-model"]})
 
     monkeypatch.setattr(cli.httpx, "request", _request)
@@ -116,13 +120,14 @@ def test_allowlist_set_reads_current_state_and_prints_diff(
         (
             "PUT",
             "http://127.0.0.1:8000/admin/provision/models/tenants/tenant%20a/allowlist",
-            {"modelIds": ["new-model"]},
+            {"modelIds": ["new-model"], "expectedRevision": "a" * 64},
         ),
     ]
     captured = capsys.readouterr()
     preview = json.loads(captured.err)["changePreview"]
     assert preview["added"] == ["new-model"]
     assert preview["removed"] == ["old-model"]
+    assert preview["expectedRevision"] == "a" * 64
 
 
 def test_admin_error_is_structured_and_never_echoes_secret(

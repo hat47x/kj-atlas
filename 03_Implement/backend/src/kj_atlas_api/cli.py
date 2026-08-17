@@ -255,6 +255,7 @@ def _admin_main(args: argparse.Namespace) -> int:
         path = f"/admin/provision/models/tenants/{tenant_id}/allowlist"
         current = _request_json(args, "GET", path)
         before = current.get("modelIds", []) if isinstance(current, dict) else []
+        expected_revision = current.get("revision") if isinstance(current, dict) else None
         after = sorted(args.model_id)
         _confirm_admin_write(
             args,
@@ -265,9 +266,13 @@ def _admin_main(args: argparse.Namespace) -> int:
                 "after": after,
                 "added": sorted(set(after) - set(before)),
                 "removed": sorted(set(before) - set(after)),
+                "expectedRevision": expected_revision,
             },
         )
-        _print_json(_request_json(args, "PUT", path, payload={"modelIds": args.model_id}))
+        payload: dict[str, object] = {"modelIds": args.model_id}
+        if isinstance(expected_revision, str):
+            payload["expectedRevision"] = expected_revision
+        _print_json(_request_json(args, "PUT", path, payload=payload))
         return 0
     if resource == "audit" and action == "list":
         params: dict[str, object] = {"limit": args.limit}

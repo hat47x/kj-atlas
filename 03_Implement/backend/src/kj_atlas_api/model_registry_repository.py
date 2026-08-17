@@ -42,6 +42,32 @@ def register_provider(
     return row
 
 
+def create_provider(
+    db: Session,
+    *,
+    provider_id: str,
+    provider_kind: str,
+    display_name: str,
+    base_url: str | None = None,
+    api_key_ref: str | None = None,
+    lifecycle_state: str = "active",
+    occurred_at: str,
+) -> LLMProviderRegistryRow:
+    """Insert a provider without the seed path's upsert semantics."""
+    row = LLMProviderRegistryRow(
+        id=provider_id,
+        provider_kind=provider_kind,
+        display_name=display_name,
+        base_url=base_url,
+        api_key_ref=api_key_ref,
+        lifecycle_state=lifecycle_state,
+        created_at=occurred_at,
+        updated_at=occurred_at,
+    )
+    db.add(row)
+    return row
+
+
 def register_model(
     db: Session,
     *,
@@ -62,6 +88,30 @@ def register_model(
         updated_at=occurred_at,
     )
     db.merge(row)
+    return row
+
+
+def create_model(
+    db: Session,
+    *,
+    model_id: str,
+    provider_id: str,
+    display_name: str,
+    capabilities: str | None = None,
+    lifecycle_state: str = "active",
+    occurred_at: str,
+) -> LLMModelRegistryRow:
+    """Insert a model without silently replacing an existing registry row."""
+    row = LLMModelRegistryRow(
+        id=model_id,
+        provider_id=provider_id,
+        display_name=display_name,
+        capabilities=capabilities,
+        lifecycle_state=lifecycle_state,
+        created_at=occurred_at,
+        updated_at=occurred_at,
+    )
+    db.add(row)
     return row
 
 

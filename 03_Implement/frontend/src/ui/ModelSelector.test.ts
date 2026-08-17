@@ -2,7 +2,11 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { setActiveLocale } from "../i18n/translate";
-import { ModelSelector, reconcileModelSelection } from "./ModelSelector";
+import {
+  ModelSelector,
+  reconcileModelSelection,
+  resolveUnavailableReasonTranslationKey,
+} from "./ModelSelector";
 
 // AI-MODEL-GOVERNANCE-01 (R2): the selector is presentational (App owns the
 // guarded fetch). It must never block the operation and always expose the
@@ -81,5 +85,14 @@ describe("ModelSelector", () => {
     );
     expect(html).toContain("This tenant&#x27;s model policy currently excludes every executable model");
     expect(html).not.toContain("providerId");
+  });
+
+  it("falls back safely when the API deploys an unknown reason code first", () => {
+    expect(resolveUnavailableReasonTranslationKey("future_reason")).toBe(
+      "model_selector.none_available_help",
+    );
+    expect(resolveUnavailableReasonTranslationKey(null)).toBe(
+      "model_selector.none_available_help",
+    );
   });
 });

@@ -202,6 +202,24 @@ available_after=$(curl -s -H "$BIZ_H" "$BASE_URL/ai/available-models" | \
   "$VENV_PYTHON" -c 'import json,sys; print(",".join(item["id"] for item in json.load(sys.stdin)["models"]))')
 check "disabled model disappears from business-plane model list" "" "$available_after"
 
+# Two administrators read the same revision. The first write wins; the second
+# stale write must be rejected instead of silently replacing the newer policy.
+allowlist_path="$BASE_URL/admin/provision/models/tenants/local-default/allowlist"
+stale_revision=$(curl -s -H "$ADM_H" "$allowlist_path" | \
+  "$VENV_PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["revision"])')
+first_revision_code=$(curl -s -o /tmp/kj_admin_cli_revision_first.json -w '%{http_code}' \
+  -X PUT "$allowlist_path" -H "$ADM_H" -H 'Content-Type: application/json' \
+  -d '{"modelIds":[],"expectedRevision":"'"$stale_revision"'"}')
+check "first revision-guarded allowlist update succeeds" "200" "$first_revision_code"
+stale_revision_code=$(curl -s -o /tmp/kj_admin_cli_revision_stale.json -w '%{http_code}' \
+  -X PUT "$allowlist_path" -H "$ADM_H" -H 'Content-Type: application/json' \
+  -d '{"modelIds":[],"expectedRevision":"'"$stale_revision"'"}')
+check "stale allowlist update is rejected without lost update" "409" "$stale_revision_code"
+stale_error_code=$("$VENV_PYTHON" -c \
+  'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["detail"]["code"])' \
+  /tmp/kj_admin_cli_revision_stale.json)
+check "stale update returns stable conflict code" "model_allowlist_conflict" "$stale_error_code"
+
 # Business-plane key cannot be repurposed by the CLI for control-plane calls.
 if env -u KJ_ATLAS_ADMIN_API_KEY KJ_ATLAS_API_KEY="$BIZ_KEY" \
   "${CLI[@]}" admin models list >/tmp/kj_admin_cli_denied.out 2>/tmp/kj_admin_cli_denied.err; then

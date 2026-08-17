@@ -51,3 +51,7 @@
 管理credentialは`KJ_ATLAS_ADMIN_API_KEY`からのみ読み、業務キーを管理面へ転用せず、引数で秘密値を受けない。writeは変更previewを標準errorへ出し、対話確認またはautomation用`--yes`を必須とした。実backend E2Eでは、provider/model登録、tenant allowlist設定、利用者APIへの反映、model無効化後の消失、業務キー拒否、secret非表示、監査照会まで20/20成功した。
 
 CLI部分は実装済みだが、Stage-B capability sessionを使う対話loginと、別origin・別bundleの管理consoleが残るため`In Progress`を維持する。
+
+## 第3対応記録（2026-08-17）
+
+管理CLIのallowlist previewとPUTの間に別管理者の更新が入ると、古い内容で上書きする競合を検出した。GET応答へcontent revisionを追加し、正式CLIはPUTへ`expectedRevision`を必ず引き継ぐようにした。不一致は`409 model_allowlist_conflict`として非0終了し、新しい設定を保持する。独立管理consoleでは同じrevision契約を使い、「再読み込みして差分を確認」のUIを提供する。

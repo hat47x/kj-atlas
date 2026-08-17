@@ -115,6 +115,11 @@ bootstrap credential only from `KJ_ATLAS_ADMIN_API_KEY`; the business-plane
 commands print a change preview and require interactive confirmation, or an
 explicit `--yes` in automation.
 
+Tenant model-allowlist updates also carry the revision returned by the preview
+read. If another administrator changes the same tenant before the write, the
+CLI exits non-zero with `model_allowlist_conflict` instead of overwriting the
+newer policy.
+
 ```bash
 export KJ_ATLAS_ADMIN_API_KEY='...'
 python -m kj_atlas_api.cli admin models list

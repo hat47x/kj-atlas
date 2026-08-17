@@ -8,21 +8,24 @@ credential alone cannot register or disable a model. Secrets are accepted as
 
 from __future__ import annotations
 
-import re
 from datetime import datetime, timezone
+from hashlib import sha256
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.control_plane_auth import require_control_plane_authorization
 from kj_atlas_api.db import get_db
 from kj_atlas_api.model_registry_repository import (
+    create_model as persist_new_model,
+    create_provider as persist_new_provider,
     list_models,
     list_providers,
     list_tenant_allowed_model_ids,
-    register_model,
-    register_provider,
     set_model_lifecycle,
     set_tenant_model_allowlist,
 )
@@ -88,6 +91,7 @@ class SetTenantAllowlistRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     modelIds: list[str] = Field(max_length=500)
+    expectedRevision: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
 class ProviderItem(BaseModel):
@@ -140,7 +144,7 @@ def list_model_registry(db: Session = Depends(get_db)) -> RegistryListResponse:
 def create_provider(payload: RegisterProviderRequest, db: Session = Depends(get_db)) -> dict[str, str]:
     """Dynamically register a new model service (provider)."""
     occurred_at = _now_iso()
-    register_provider(
+    persist_new_provider(
         db,
         provider_id=payload.id,
         provider_kind=payload.providerKind,
@@ -149,7 +153,17 @@ def create_provider(payload: RegisterProviderRequest, db: Session = Depends(get_
         api_key_ref=payload.apiKeyRef,
         occurred_at=occurred_at,
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "provider_already_exists",
+                "message": "A provider with this id already exists.",
+            },
+        ) from None
     return {"status": "created", "id": payload.id}
 
 
@@ -159,7 +173,7 @@ def create_model(payload: RegisterModelRequest, db: Session = Depends(get_db)) -
     providers = list_providers(db)
     if not any(row.id == payload.providerId for row in providers):
         raise HTTPException(status_code=404, detail="provider not found")
-    register_model(
+    persist_new_model(
         db,
         model_id=payload.id,
         provider_id=payload.providerId,
@@ -167,7 +181,17 @@ def create_model(payload: RegisterModelRequest, db: Session = Depends(get_db)) -
         capabilities=payload.capabilities,
         occurred_at=_now_iso(),
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "model_already_exists",
+                "message": "A model with this id already exists.",
+            },
+        ) from None
     return {"status": "created", "id": payload.id}
 
 
@@ -190,7 +214,11 @@ def update_model_lifecycle(
 def get_tenant_allowlist(tenant_id: str, db: Session = Depends(get_db)) -> dict[str, object]:
     _require_active_tenant(db, tenant_id=tenant_id)
     model_ids = sorted(list_tenant_allowed_model_ids(db, tenant_id=tenant_id))
-    return {"tenantId": tenant_id, "modelIds": model_ids}
+    return {
+        "tenantId": tenant_id,
+        "modelIds": model_ids,
+        "revision": _allowlist_revision(model_ids),
+    }
 
 
 @router.put("/tenants/{tenant_id}/allowlist")
@@ -199,7 +227,18 @@ def put_tenant_allowlist(
     payload: SetTenantAllowlistRequest,
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    _require_active_tenant(db, tenant_id=tenant_id)
+    _require_active_tenant(db, tenant_id=tenant_id, lock_for_update=True)
+    current_model_ids = sorted(list_tenant_allowed_model_ids(db, tenant_id=tenant_id))
+    current_revision = _allowlist_revision(current_model_ids)
+    if payload.expectedRevision is not None and payload.expectedRevision != current_revision:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "model_allowlist_conflict",
+                "message": "The tenant model allowlist changed after it was read.",
+                "currentRevision": current_revision,
+            },
+        )
     duplicate_model_ids = sorted(
         model_id for model_id in set(payload.modelIds) if payload.modelIds.count(model_id) > 1
     )
@@ -238,11 +277,31 @@ def put_tenant_allowlist(
         occurred_at=_now_iso(),
     )
     db.commit()
-    return {"tenantId": tenant_id, "modelIds": sorted(payload.modelIds)}
+    updated_model_ids = sorted(payload.modelIds)
+    return {
+        "tenantId": tenant_id,
+        "modelIds": updated_model_ids,
+        "revision": _allowlist_revision(updated_model_ids),
+    }
 
 
-def _require_active_tenant(db: Session, *, tenant_id: str) -> TenantRow:
-    tenant = db.get(TenantRow, tenant_id)
+def _allowlist_revision(model_ids: list[str]) -> str:
+    canonical = "\n".join(sorted(model_ids)).encode("utf-8")
+    return sha256(canonical).hexdigest()
+
+
+def _require_active_tenant(
+    db: Session,
+    *,
+    tenant_id: str,
+    lock_for_update: bool = False,
+) -> TenantRow:
+    if lock_for_update:
+        tenant = db.scalar(
+            select(TenantRow).where(TenantRow.id == tenant_id).with_for_update()
+        )
+    else:
+        tenant = db.get(TenantRow, tenant_id)
     if tenant is None:
         raise HTTPException(
             status_code=404,
