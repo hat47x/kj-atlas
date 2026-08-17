@@ -760,6 +760,99 @@ def check_norm_line_references(
                 )
     return findings
 
+
+#: `domain.md` §5 declares retired vocabulary in this exact shape, so the rule
+#: below reads its terms from the document that owns them rather than hardcoding
+#: a list that could drift from the norm it enforces.
+RETIRED_TERM_DECLARATION_RE = re.compile(r"^- `([^`]+)` は旧称です", re.M)
+
+#: A block a document explicitly marks as a historical or prohibition note.
+#: Guessing intent from wording was tried and failed: the rename record in
+#: ADR-0028 D11 and the prohibition statement in architecture.html both name the
+#: retired term legitimately, and no keyword heuristic separated them from the
+#: contract prose that had to change. An explicit marker states the intent
+#: instead of inferring it -- the lesson DX-CANON-INTENT-01 recorded.
+RETIRED_VOCAB_EXEMPT_OPEN = "retired-vocabulary: historical"
+RETIRED_VOCAB_EXEMPT_CLOSE = "/retired-vocabulary"
+
+#: Inline naming-as-retired, e.g. `Consensus Graph（旧称: Core Graph）`. Wrapping
+#: every parenthetical in block markers would be worse than the problem.
+RETIRED_INLINE_MARKERS = ("旧称", "旧 ", "legacy", "旧称:")
+
+#: Scope. `02_Architecture` is where contract vocabulary lives, so that is where
+#: reintroduction does damage. Deliberately NOT scoped to `01_Plans/issues`:
+#: those carry execution records of the rename itself (over 80 occurrences in
+#: `issue-CE0-core-graph-repositioning.md` alone) where the old name is correct.
+#: The rule therefore protects less than `domain.md` §5 states. That gap is real
+#: and is recorded in `issue-DOC-VOCAB-01`.
+RETIRED_VOCAB_SCOPE = ("02_Architecture",)
+RETIRED_VOCAB_RULE_ID = "DC-VOCAB-001"
+
+
+def _retired_terms(root: Path) -> list[str]:
+    domain = root / "00_Prompt" / "domain.md"
+    try:
+        text = domain.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    return RETIRED_TERM_DECLARATION_RE.findall(text)
+
+
+def check_retired_vocabulary(root: Path) -> list[DocsCheckFinding]:
+    """A term `domain.md` retired must not reappear as contract vocabulary."""
+    repository_root = root.resolve()
+    terms = _retired_terms(repository_root)
+    if not terms:
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for scope in RETIRED_VOCAB_SCOPE:
+        base = repository_root / scope
+        if not base.is_dir():
+            continue
+        for source in sorted(base.rglob("*")):
+            if source.suffix not in {".md", ".html"} or not source.is_file():
+                continue
+            try:
+                text = source.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            relative = source.relative_to(repository_root).as_posix()
+            exempt = False
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                if RETIRED_VOCAB_EXEMPT_OPEN in line:
+                    exempt = True
+                    continue
+                if RETIRED_VOCAB_EXEMPT_CLOSE in line:
+                    exempt = False
+                    continue
+                if exempt:
+                    continue
+                for term in terms:
+                    if term not in line:
+                        continue
+                    if any(marker in line for marker in RETIRED_INLINE_MARKERS):
+                        continue
+                    findings.append(
+                        DocsCheckFinding(
+                            rule_id=RETIRED_VOCAB_RULE_ID,
+                            path=relative,
+                            line=line_number,
+                            target=term,
+                            message=(
+                                f"{term!r} is retired vocabulary (00_Prompt/domain.md §5) but is "
+                                "used here as contract vocabulary"
+                            ),
+                            fix_hint=(
+                                "Use the canonical term. If this line is a historical note or the "
+                                f"prohibition itself, wrap it in <!-- {RETIRED_VOCAB_EXEMPT_OPEN} --> "
+                                f"... <!-- {RETIRED_VOCAB_EXEMPT_CLOSE} --> so the intent is stated "
+                                "rather than guessed."
+                            ),
+                        )
+                    )
+    return findings
+
 def check_current_history_headings(
     root: Path, markdown_paths: tuple[Path, ...] = CURRENT_ONLY_PATHS
 ) -> list[DocsCheckFinding]:

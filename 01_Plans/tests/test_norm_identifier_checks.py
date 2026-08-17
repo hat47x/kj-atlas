@@ -12,10 +12,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from docs_contract_checks import (  # noqa: E402
+    RETIRED_VOCAB_EXEMPT_CLOSE,
+    RETIRED_VOCAB_EXEMPT_OPEN,
     check_norm_identifier_resolution,
     check_norm_identifier_uniqueness,
     check_norm_line_references,
     check_prompt_status_vocabulary,
+    check_retired_vocabulary,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -130,6 +133,66 @@ class NormIdentifierCheckTests(unittest.TestCase):
             ROOT, self.md_paths + [probe.relative_to(ROOT)]
         )
         self.assertNotIn("DOM-CORE-02", [f.target for f in findings])
+
+
+class RetiredVocabularyCheckTests(unittest.TestCase):
+    """DC-VOCAB-001: `domain.md` retires a term; nothing used to verify that."""
+
+    #: The probe lives in 02_Architecture because that is the checked scope.
+    PROBE = ROOT / "02_Architecture" / "_retired_vocab_probe.md"
+
+    def _probe(self, body: str) -> None:
+        self.PROBE.write_text(body, encoding="utf-8")
+        self.addCleanup(lambda: self.PROBE.unlink(missing_ok=True))
+
+    def test_baseline_is_clean(self) -> None:
+        findings = check_retired_vocabulary(ROOT)
+        self.assertEqual(
+            [f"{f.path}:{f.line} {f.target}" for f in findings],
+            [],
+            "02_Architecture still uses retired vocabulary as contract prose",
+        )
+
+    def test_retired_term_in_contract_prose_is_detected(self) -> None:
+        self._probe("Core Graph direct write は禁止する。\n")
+        findings = check_retired_vocabulary(ROOT)
+        self.assertTrue(
+            any(f.path.endswith("_retired_vocab_probe.md") for f in findings),
+            "a retired term used as contract prose was not detected",
+        )
+
+    def test_explicitly_marked_history_is_allowed(self) -> None:
+        self._probe(
+            f"<!-- {RETIRED_VOCAB_EXEMPT_OPEN} -->\n"
+            "改名の記録: Core Graph を Consensus Graph へ改めた。\n"
+            f"<!-- {RETIRED_VOCAB_EXEMPT_CLOSE} -->\n"
+        )
+        findings = check_retired_vocabulary(ROOT)
+        self.assertFalse(
+            any(f.path.endswith("_retired_vocab_probe.md") for f in findings),
+            "an explicitly marked historical block was flagged",
+        )
+
+    def test_marker_does_not_leak_past_its_close(self) -> None:
+        """An exemption must not silently cover the rest of the file."""
+        self._probe(
+            f"<!-- {RETIRED_VOCAB_EXEMPT_OPEN} -->\n"
+            "改名の記録: Core Graph -> Consensus Graph\n"
+            f"<!-- {RETIRED_VOCAB_EXEMPT_CLOSE} -->\n"
+            "Core Graph direct write は禁止する。\n"
+        )
+        findings = [
+            f for f in check_retired_vocabulary(ROOT)
+            if f.path.endswith("_retired_vocab_probe.md")
+        ]
+        self.assertEqual([f.line for f in findings], [4])
+
+    def test_inline_naming_as_retired_is_allowed(self) -> None:
+        self._probe("Consensus Graph（旧称: Core Graph）を正本とする。\n")
+        findings = check_retired_vocabulary(ROOT)
+        self.assertFalse(
+            any(f.path.endswith("_retired_vocab_probe.md") for f in findings)
+        )
 
 
 if __name__ == "__main__":

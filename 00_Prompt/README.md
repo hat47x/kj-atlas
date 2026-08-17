@@ -86,6 +86,7 @@
 | `DC-NORM-002` | 他層からの参照が実在する定義へ解決する（`CHK-*` 三要素チェックリスト項目を含む） |
 | `DC-NORM-003` | 憲法層への行番号参照を禁止 |
 | `DC-NORM-004` | Status が統制語彙のちょうど1つ |
+| `DC-VOCAB-001` | `domain.md` §5 が廃止した語彙が `02_Architecture` で契約語彙として使われていない |
 
 `DC-NORM-002` が中核である。識別子を作るだけでは「あるが誰も使わない」状態になる。**参照を検証して初めて機構として成立する。**
 
@@ -119,6 +120,6 @@ python 01_Plans/norm_impact.py DOM-CORE-04
 
 憲法層自身の未解決事項を隠さない（`DOM-SHARE-04`）。
 
-- **旧称 `Core Graph` が下位層で契約語彙として使われ続けている。** `domain.md` は「履歴説明以外では契約語彙として再導入しない」と定めているが、`02_Architecture` の契約定義4箇所と `ADR-0028` が契約文として使っている。**規範が禁じたことが、規範を実装する側で破られている**（`issue-DOC-VOCAB-01`）。
+- **`DC-VOCAB-001` の検査範囲は `domain.md` §5 の主張より狭い。** §5 は層を限定せずに旧称の再導入を禁じているが、検査は `02_Architecture` に限る。旧称はリポジトリ全体に約110箇所あり、大半は改名作業そのものの実行記録（`issue-CE0-core-graph-repositioning.md` 単独で80箇所超）で、そこでは旧称が正しい。**「主張した保護範囲 > 実際の保護範囲」がここでも残っている**（`issue-DOC-VOCAB-01` に範囲と理由を記録）。是正済みの契約文9箇所は `02_Architecture` と `ADR-0028` にあった。
 - **識別子が部分的な文書が3件ある。** `ai_cognitive_externalization_requirements` / `representative_visual_cue_requirements` / `qualitative_card_quality_requirements`。体系が揃っていない。
 - **逆引きの網羅率が低い。** `Norms:` 欄と `01_Plans/norm_impact.py` により逆引きは成立したが、**憲法層の定義56件のうち追跡中は12件**である。残りは「その規範に依拠する計画がまだ無い」のか「書かれていないだけ」なのかを区別できない。欄が任意である以上この曖昧さは残る。網羅率を上げるには、既存 issue への遡及配線が要る。

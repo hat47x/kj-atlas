@@ -341,7 +341,7 @@ review attribution は CE0 契約行列の `REVIEW` 軸を担うが、`CTX` / `S
 | `CE0-CTX-IF` | preview gate 未通過の文脈から review 生成を開始しない。 | `previewConfirmed!=true` で生成開始した場合。 |
 | `CE0-SAFEMODE-IF` | safeMode 既定ON、reviewed-only 既定を緩和しない。 | unreviewed 本文の露出、safeMode 既定値後退。 |
 | `CE0-REVIEW-IF` | `unreviewed | human_reviewed` のみ。昇格は人手のみ。 | AI/自動処理による `human_reviewed` 昇格。 |
-| `CE0-CG-WRITE-IF` | Core Graph direct write 禁止、`patch+approval` のみ許可。 | 直接更新経路を1件でも検出。 |
+| `CE0-CG-WRITE-IF` | Consensus Graph direct write 禁止、`patch+approval` のみ許可。 | 直接更新経路を1件でも検出。 |
 
 ### Freeze discipline
 
