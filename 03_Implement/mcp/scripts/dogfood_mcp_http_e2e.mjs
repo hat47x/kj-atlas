@@ -59,7 +59,7 @@ const noScopeToken = await new SignJWT({ sub: "dogfood-client-without-scope" })
   .sign(privateKey);
 
 // 3. Start the MCP HTTP server as a child process.
-const mcp = spawn("node", ["./node_modules/.bin/tsx", "src/index.ts"], {
+const mcp = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "src/index.ts"], {
   cwd: new URL("..", import.meta.url).pathname,
   env: {
     ...process.env,

@@ -35,7 +35,9 @@ point of the issue.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from secrets import compare_digest
+from typing import TYPE_CHECKING
 
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -45,6 +47,9 @@ from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.settings import settings
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from kj_atlas_api.saas_request_context import TrustedSaasRequestSession
 
 #: Header carrying the stage-A control-plane bearer. Distinct from `x-api-key`
 #: so that a business-plane credential can never satisfy the control plane.
@@ -59,6 +64,22 @@ TENANT_PROVISION_CAPABILITY = "tenant.provision"
 #: production profiles without `KJ_ATLAS_ADMIN_API_KEY` (D3=A), so a production
 #: runtime can never reach the open branch.
 _OPEN_WHEN_UNCONFIGURED_PROFILES = frozenset({"local-dev", "evaluation"})
+
+_CONTROL_PLANE_SUBJECT_STATE = "kj_atlas_control_plane_subject"
+
+
+@dataclass(frozen=True, slots=True)
+class ControlPlaneSubject:
+    """Trusted stage-B attribution carried from authorization to auditing."""
+
+    principal_id: str
+    tenant_id: str
+
+
+def control_plane_subject(request: Request) -> ControlPlaneSubject | None:
+    """Return server-resolved stage-B attribution, never caller headers."""
+    subject = getattr(request.state, _CONTROL_PLANE_SUBJECT_STATE, None)
+    return subject if isinstance(subject, ControlPlaneSubject) else None
 
 
 def _unauthorized() -> HTTPException:
@@ -87,8 +108,10 @@ def _matches_admin_bearer(request: Request) -> bool:
     return compare_digest(normalized, configured)
 
 
-def _has_provision_capability(*, request: Request, db: Session) -> bool:
-    """Stage B: a verified session carrying `tenant.provision`.
+def _resolve_trusted_session(
+    *, request: Request, db: Session
+) -> TrustedSaasRequestSession | None:
+    """Resolve a verified stage-B session when trusted adapters accept it.
 
     Imported lazily because the trusted-SaaS request context pulls in the
     adapter bundle, which is only installed for the SaaS profile.
@@ -96,16 +119,16 @@ def _has_provision_capability(*, request: Request, db: Session) -> bool:
     try:
         from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
     except Exception:  # pragma: no cover - bundle absent in single-tenant builds
-        return False
+        return None
 
     try:
         trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
     except HTTPException:
         # No usable session (missing, untrusted, or precondition failed). Not an
         # error here: stage A may still authorize, and the caller raises 401.
-        return False
+        return None
 
-    return TENANT_PROVISION_CAPABILITY in trusted_session.session.effective_capabilities
+    return trusted_session
 
 
 def require_control_plane_authorization(
@@ -135,8 +158,20 @@ def require_control_plane_authorization(
     if _matches_admin_bearer(request):
         return
 
-    if _has_provision_capability(request=request, db=db):
-        return
+    trusted_session = _resolve_trusted_session(request=request, db=db)
+    if trusted_session is not None:
+        # SEC-ADMIN-PLANE-04: keep attribution in server-owned request state.
+        # In particular, never accept X-Actor-Ref / X-Tenant-Id as audit truth.
+        setattr(
+            request.state,
+            _CONTROL_PLANE_SUBJECT_STATE,
+            ControlPlaneSubject(
+                principal_id=trusted_session.session.principal_id,
+                tenant_id=trusted_session.tenant.tenant_id,
+            ),
+        )
+        if TENANT_PROVISION_CAPABILITY in trusted_session.session.effective_capabilities:
+            return
 
     if settings.admin_api_key is None and profile in _OPEN_WHEN_UNCONFIGURED_PROFILES:
         # Development ergonomics only. Production profiles cannot reach here:

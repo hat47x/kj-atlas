@@ -705,3 +705,43 @@ Updated: 2026-08-03
 - 原因: 2行に折り返された文を別の行境界として指定し、適用前の該当節を再確認しなかった。
 - 対応: READMEとAPI仕様の実際の行境界を読み直し、既存file更新と新規issue追加を分けて再適用した。
 - 再発防止: 複数fileの文書patchは対象段落を直前に確認し、新規file追加と既存文脈依存更新を分離する。
+## 2026-08-17: pytestの出力キャプチャ用一時ファイルが消失
+
+- 事象: 管理監査の対象試験を通常キャプチャ付きで起動したところ、終了処理が一時ファイルを見つけられずテスト結果を確定できなかった。
+- 原因: pytestのグローバル出力キャプチャ用一時ファイルが実行中に消失した。
+- 対応: 出力キャプチャを無効化して同じ対象試験を再実行した。
+- 追記: 通常キャプチャでの再試行でも再発したため、ログレベルを抑えた`-s`実行へ切り替え、39件の通過を確認した。
+- 再発防止: この環境で同症状が出た場合は、対象を変えずに`-s`で再試験してテスト本体の成否を分離する。
+
+## 2026-08-17: trusted session resolverの不成立値が旧booleanのまま残存
+
+- 事象: 認証不成立ケースで`bool`をtrusted sessionとして参照し、管理APIが500になった。
+- 原因: helperの戻り値を`bool`からsessionまたは`None`へ変更した際、例外分岐2箇所の`False`を更新し忘れた。
+- 対応: 不成立分岐を型契約どおり`None`へ統一した。
+- 再発防止: boolean predicateを値resolverへ変更するときは全return分岐を検索し、正負両経路の回帰試験を直後に実行する。
+## 2026-08-17: MCP E2EがPATH上のNode.js v12を選択
+
+- 事象: MCP stdio・HTTP協調試験がtop-level await等の構文エラーとなり、5項目が失敗した。
+- 原因: packageはNode 20を要求する一方、package-local tsxのshebangとHTTP harnessがPATH上のNode.js v12を暗黙選択した。
+- 対応: verifierへ`KJ_ATLAS_NODE_BIN`選択を追加し、tsxもHTTP harnessも選択済みNodeから直接起動するよう統一した。
+- 再発防止: MCP E2EはPATHの偶然へ依存せず、CI・Codex・WSLで適合Node runtimeを明示できる契約にする。
+## 2026-08-17: 適合Nodeを選んでもMCP子processがPATHを再探索
+
+- 事象: Linux Node 20でMCP verifierを起動後、stdio子processは`npx`不在、HTTP子processはPATH上のNode v12を再選択して停止した。
+- 原因: 親harnessだけruntime選択を修正し、TypeScript側の子process起動が`npx`/`node`の名前解決へ残っていた。
+- 対応: 両子processを`process.execPath`とtsx JS entrypointの組合せへ変更し、親子のruntimeを固定した。
+- 再発防止: Node harnessが子Nodeを起動するときはPATH再探索を避け、検証済みの親runtimeを継承する。
+
+## 2026-08-17: Windows NodeとWSL node_modulesのネイティブ依存が不一致
+
+- 事象: Codex同梱Windows NodeでWSL側MCP依存を実行すると、esbuildのplatform mismatchで停止した。
+- 原因: Windows runtimeとLinux用に導入済みのnode_modulesを混在させた。
+- 対応: 公式checksumを確認した一時Linux Node 20へ切り替え、runtimeと依存物のOSを一致させた。
+- 再発防止: `KJ_ATLAS_NODE_BIN`にはnode_modulesを導入したOSと同じplatformのruntimeを指定する。
+
+## 2026-08-17: npxによる一時Node取得を試みたがcommand不在
+
+- 事象: Linux Node 20の一時取得候補として`npx`を呼び出したが、環境にcommandがなく起動しなかった。
+- 原因: PATH上のNode.js v12環境にはnpm/npxが導入されていなかった。
+- 対応: Node公式配布物を一時領域へ直接取得し、SHASUMS256で検証して使用した。
+- 再発防止: runtime復旧手段自体をnpm/npxへ依存させず、利用可能性を先に確認する。

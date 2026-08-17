@@ -25,8 +25,8 @@ const docId = process.argv[2] || "doc_phase1_canvas";
 const constraint = process.argv[3] || "reviewed-only";
 
 const transport = new StdioClientTransport({
-  command: process.platform === "win32" ? "npx.cmd" : "npx",
-  args: ["tsx", "src/index.ts"],
+  command: process.execPath,
+  args: ["node_modules/tsx/dist/cli.mjs", "src/index.ts"],
   cwd: new URL("..", import.meta.url).pathname,
   env: {
     ...process.env,

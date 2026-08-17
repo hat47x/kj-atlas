@@ -270,9 +270,37 @@ def main() -> int:
             # WSL may inherit Windows TEMP/TMP paths. tsx uses the selected
             # temp directory for an IPC socket, which is unsupported on drvfs.
             mcp_env["TMPDIR"] = "/tmp"
-        tsx_cli = os.path.join(MCP_DIR, "node_modules", ".bin", "tsx")
+        node_cli = (
+            (os.environ.get("KJ_ATLAS_NODE_BIN") or "").strip()
+            or shutil.which("node")
+        )
+        if node_cli is None:
+            print("node is required for MCP HTTP e2e")
+            return 2
+        try:
+            node_version = subprocess.run(
+                [node_cli, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            ).stdout.strip()
+            node_major = int(node_version.removeprefix("v").split(".", 1)[0])
+        except (OSError, subprocess.SubprocessError, ValueError):
+            print(f"unable to validate MCP Node runtime: {node_cli}")
+            return 2
+        if node_major < 20:
+            print(
+                "MCP e2e requires Node.js 20+; set KJ_ATLAS_NODE_BIN to a "
+                f"compatible same-platform runtime (selected {node_version})"
+            )
+            return 2
+        # Invoke the JS entrypoint through the selected runtime instead of the
+        # package .bin shebang. This lets WSL callers select a current Linux
+        # runtime without /usr/bin/env falling back to an obsolete PATH entry.
+        tsx_cli = os.path.join("node_modules", "tsx", "dist", "cli.mjs")
         proc = subprocess.run(
-            [tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
+            [node_cli, tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
             cwd=MCP_DIR,
             env=mcp_env,
             capture_output=True,
@@ -287,10 +315,6 @@ def main() -> int:
         # Exercise the remote-client transport against the same real backend.
         # The HTTP harness first proves that a valid signed token without the
         # read:context scope is denied, then completes the authorized tool call.
-        node_cli = shutil.which("node")
-        if node_cli is None:
-            print("node is required for MCP HTTP e2e")
-            return 2
         http_proc = subprocess.run(
             [node_cli, "scripts/dogfood_mcp_http_e2e.mjs", DOC_ID],
             cwd=MCP_DIR,
@@ -345,7 +369,7 @@ def main() -> int:
         #     decision so a generative-AI verifier confirms the CE4 proposal is
         #     now decided (accepted) via the MCP get_proposal_status tool.
         proc2 = subprocess.run(
-            [tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
+            [node_cli, tsx_cli, "scripts/verify_mcp.ts", DOC_ID, "reviewed-only"],
             cwd=MCP_DIR,
             env=mcp_env,
             capture_output=True,

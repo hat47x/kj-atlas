@@ -55,3 +55,15 @@ CLI部分は実装済みだが、Stage-B capability sessionを使う対話login�
 ## 第3対応記録（2026-08-17）
 
 管理CLIのallowlist previewとPUTの間に別管理者の更新が入ると、古い内容で上書きする競合を検出した。GET応答へcontent revisionを追加し、正式CLIはPUTへ`expectedRevision`を必ず引き継ぐようにした。不一致は`409 model_allowlist_conflict`として非0終了し、新しい設定を保持する。独立管理consoleでは同じrevision契約を使い、「再読み込みして差分を確認」のUIを提供する。
+
+## 第4調査記録（2026-08-17）
+
+Stage-B監査のtenant越境読取を`SEC-ADMIN-PLANE-04`で修正し、管理CLI/API 23/23、CLI監査連携15/15、MCP協調16/16、tenant UI component 94/94を確認した。独立管理consoleには次の表示が必要である。
+
+- 常時表示する認証モードbadge（「初期設定キー・全体操作」／「権限session・Tenant A」）。
+- 監査一覧の範囲表示（全体または現在tenant）と、Stage-Bで他tenantを選べないUI。
+- `actorRefHash`を人名のように見せず「照合用fingerprint」と説明する表示。
+- tenant/model変更のpreview、revision競合時の再読込と差分再確認。
+- 利用者SPAとは別origin・別bundleとし、bootstrap keyをbrowser storageへ保存しない構成。
+
+正式CLIは現在bootstrap key経路のみで、Stage-Bの対話loginは未実装である。管理console設計時に同じ短時間sessionをCLI device/browser loginへ共有できるようにする。

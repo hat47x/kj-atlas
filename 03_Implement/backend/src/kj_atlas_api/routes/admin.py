@@ -33,7 +33,10 @@ from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
 )
-from kj_atlas_api.control_plane_auth import require_control_plane_authorization
+from kj_atlas_api.control_plane_auth import (
+    control_plane_subject,
+    require_control_plane_authorization,
+)
 from kj_atlas_api.settings import settings, _validate_trusted_http_endpoint
 from kj_atlas_api.tenant_foundation import ensure_local_default_membership
 from kj_atlas_api.rate_limit import DEFAULT_RATE_LIMITER, client_ip
@@ -535,6 +538,7 @@ class AdminAuditPage(BaseModel):
     dependencies=[Depends(require_control_plane_authorization)],
 )
 def list_admin_audit(
+    request: Request,
     db: Session = Depends(get_db),
     cursor: str | None = Query(default=None, max_length=128),
     limit: int = Query(default=100, ge=1, le=500),
@@ -545,7 +549,15 @@ def list_admin_audit(
     raw IdP identifiers, or raw policy references. Cursor-paginated by event_id
     so a large trail cannot be returned in one unbounded response.
     """
-    rows, next_cursor = list_admin_audit_events(db, cursor=cursor, limit=limit)
+    subject = control_plane_subject(request)
+    rows, next_cursor = list_admin_audit_events(
+        db,
+        cursor=cursor,
+        limit=limit,
+        # Stage A is the global bootstrap operator. Stage B is tenant-scoped
+        # and must not observe another tenant's control-plane metadata.
+        tenant_id=subject.tenant_id if subject is not None else None,
+    )
     return AdminAuditPage(
         events=[
             AdminAuditEventItem(

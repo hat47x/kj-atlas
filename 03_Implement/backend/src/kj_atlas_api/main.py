@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.admin_audit_repository import record_admin_audit_event
+from kj_atlas_api.control_plane_auth import control_plane_subject
 from kj_atlas_api.model_registry_seed import seed_registry_from_env
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import SessionLocal, init_db
@@ -284,8 +285,14 @@ async def record_admin_plane_audit(request: Request, call_next):
         return await call_next(request)
 
     response = await call_next(request)
+    subject = control_plane_subject(request)
     admin_key = request.headers.get("x-admin-api-key")
-    actor_ref_hash = sha256(admin_key.encode("utf-8")).hexdigest()[:16] if admin_key else None
+    actor_source = subject.principal_id if subject is not None else admin_key
+    actor_ref_hash = (
+        sha256(actor_source.encode("utf-8")).hexdigest()[:16]
+        if actor_source
+        else None
+    )
     path = request.url.path
     # Tests override app.state.admin_audit_session_factory with their SQLite
     # sessionmaker so the trail is assertable; production uses the app engine.
@@ -303,6 +310,7 @@ async def record_admin_plane_audit(request: Request, call_next):
                 status_code=response.status_code,
                 request_id=request_id_var.get(),
                 actor_ref_hash=actor_ref_hash,
+                tenant_id=subject.tenant_id if subject is not None else None,
                 occurred_at=datetime.now(timezone.utc).isoformat(),
             )
             db.commit()

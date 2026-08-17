@@ -70,6 +70,7 @@ def list_admin_audit_events(
     *,
     cursor: str | None,
     limit: int,
+    tenant_id: str | None = None,
 ) -> tuple[list[AdminAuditEventRow], str | None]:
     """Return the most recent `limit` events after `cursor`.
 
@@ -84,6 +85,8 @@ def list_admin_audit_events(
         AdminAuditEventRow.occurred_at.desc(),
         AdminAuditEventRow.event_id.desc(),
     )
+    if tenant_id is not None:
+        stmt = stmt.where(AdminAuditEventRow.tenant_id == tenant_id)
     decoded = decode_cursor(cursor) if cursor is not None else None
     if decoded is not None:
         cursor_occurred_at, cursor_event_id = decoded

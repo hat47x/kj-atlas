@@ -744,6 +744,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - SEC-ADMIN-PLANE-03: 制御プレーン操作の監査証跡（allowlist 読取）。`X-Admin-Api-Key`（または provision capability）の control-plane 認可必須。
 - Response: `{ "events": [{ "eventId", "occurredAt", "route", "operation?", "result", "statusCode", "requestId?", "actorRefHash?" }], "nextCursor?" }`。`limit`（既定100・上限500）と `cursor`（前ページの `nextCursor`）で bounded にページング。
+- Stage-A（`X-Admin-Api-Key`）はbootstrap運用者として全体監査を取得する。Stage-B（trusted sessionの`tenant.provision`）はserver解決したactive tenantで絞り込み、他tenantおよびbootstrap行を返さない。caller指定のactor/tenant headerは監査属性・絞り込みに使用しない。
 - allowlist に `tenant_id`・本文・secret・生PII・policyRef生値は含めない（ADR-0035）。
 - 監査記録は fail-open（記録失敗でも管理操作を阻害しない）。
 

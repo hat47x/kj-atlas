@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from hashlib import sha256
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api.db import get_db
+from kj_atlas_api import control_plane_auth
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base, AdminAuditEventRow
 from kj_atlas_api.settings import settings
@@ -82,7 +85,44 @@ def test_allowed_admin_operation_is_recorded(tmp_path, monkeypatch) -> None:
         assert row.status_code == 201
         assert row.actor_ref_hash is not None
         assert len(row.actor_ref_hash) == 16
+        assert row.actor_ref_hash == sha256(_ADMIN_KEY.encode("utf-8")).hexdigest()[:16]
+        assert row.tenant_id is None
         assert row.request_id is not None
+
+
+def test_stage_b_audit_uses_trusted_subject_and_tenant_not_spoofed_headers(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(
+        control_plane_auth,
+        "_resolve_trusted_session",
+        lambda **_: SimpleNamespace(
+            session=SimpleNamespace(
+                principal_id="trusted-operator",
+                effective_capabilities=("tenant.provision",),
+            ),
+            tenant=SimpleNamespace(tenant_id="tenant-a"),
+        ),
+    )
+
+    with _client(tmp_path) as (client, session_local):
+        response = client.post(
+            "/admin/provision/users",
+            json={"provider": "oidc", "externalUid": "stage-b-user"},
+            headers={
+                "X-Actor-Ref": "spoofed-operator",
+                "X-Tenant-Id": "tenant-b",
+            },
+        )
+        assert response.status_code == 201
+
+        row = _audit_rows(session_local)[0]
+        assert row.actor_ref_hash == sha256(b"trusted-operator").hexdigest()[:16]
+        assert row.tenant_id == "tenant-a"
+        assert "spoofed-operator" not in str(row.__dict__)
+        assert "tenant-b" not in str(row.__dict__)
 
 
 def test_denied_admin_operation_is_recorded(tmp_path, monkeypatch) -> None:
@@ -156,6 +196,64 @@ def test_read_api_returns_allowlist_and_paginates(tmp_path, monkeypatch) -> None
         next_body = next_page.json()
         assert len(next_body["events"]) == 2
         assert next_body["nextCursor"] is None
+
+
+def test_stage_b_read_api_is_tenant_scoped_while_stage_a_is_global(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(
+        control_plane_auth,
+        "_resolve_trusted_session",
+        lambda **_: SimpleNamespace(
+            session=SimpleNamespace(
+                principal_id="trusted-operator",
+                effective_capabilities=("tenant.provision",),
+            ),
+            tenant=SimpleNamespace(tenant_id="tenant-a"),
+        ),
+    )
+
+    with _client(tmp_path) as (client, session_local):
+        with session_local() as db:  # type: ignore[attr-defined]
+            for event_id, tenant_id in (
+                ("event-a", "tenant-a"),
+                ("event-b", "tenant-b"),
+                ("event-bootstrap", None),
+            ):
+                db.add(
+                    AdminAuditEventRow(
+                        event_id=event_id,
+                        tenant_id=tenant_id,
+                        actor_ref_hash="0123456789abcdef",
+                        route="/admin/provision/users",
+                        operation="users",
+                        target=None,
+                        result="allowed",
+                        status_code=201,
+                        request_id=f"request-{event_id}",
+                        occurred_at=f"2026-08-17T00:00:0{len(event_id)}+00:00",
+                    )
+                )
+            db.commit()
+
+        tenant_response = client.get("/admin/provision/audit")
+        assert tenant_response.status_code == 200
+        assert [event["eventId"] for event in tenant_response.json()["events"]] == [
+            "event-a"
+        ]
+
+        global_response = client.get(
+            "/admin/provision/audit",
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert global_response.status_code == 200
+        assert {event["eventId"] for event in global_response.json()["events"]} == {
+            "event-a",
+            "event-b",
+            "event-bootstrap",
+        }
 
 
 def test_read_api_requires_control_plane(tmp_path, monkeypatch) -> None:
