@@ -8,6 +8,7 @@
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-TRACE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
+- Norms: `KJT-SIGN-06`（`Card.meta.source` は「出所が追えなくなっている」失敗の徴候への対処）
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

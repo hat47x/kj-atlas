@@ -5,6 +5,7 @@
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`
 - Migrated-from: `01_Plans/value_to_requirements.md`
+- Norms: `DOM-AI-08, DOM-AIOK-01, DOM-AIOK-02`（P-08 の `AI-08-1`/`AI-08-2` がこれらの直接の先行要件）
 
 ## Context
 

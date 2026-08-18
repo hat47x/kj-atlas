@@ -4,6 +4,7 @@
 - Date: 2026-07-10
 - Deciders: Maintainer and product-design review
 - Scope: `03_Implement/frontend/src/ui/BulkOperationsBar.tsx`, `03_Implement/frontend/src/App.tsx`, `01_Plans/issues/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
+- Norms: `DOM-CRIT-06`（違和感の理由をデータとして保存するという前提がなければ、この一括記録機能は成立しない）
 
 ## Context
 

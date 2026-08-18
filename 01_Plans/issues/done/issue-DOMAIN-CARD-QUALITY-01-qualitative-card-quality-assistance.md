@@ -8,6 +8,7 @@
 - Scope: `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-CARD-QUALITY-01`
 - Related ADR/Spec: `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md` P-08, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/schemas.md`
+- Norms: `DOM-AI-08, DOM-AIOK-01, DOM-AIOK-02, KJT-SIGN-11`（AC-7の前後比較・原文復帰は、AIの言い換えが原文を上書きする失敗様態への対処）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

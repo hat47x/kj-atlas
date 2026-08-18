@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/domain/types.ts`（加算フィールド）, `03_Implement/mcp/`（読み取りツール追加）, `02_Architecture/schemas.md` §18（契約正本・固定済み）, `02_Architecture/external_agent_collaboration_spec.html` §3.3a（埋め込みプロファイル・固定済み）
 - Related Backlog: `EXT-CONN-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `02_Architecture/schemas.md` §18（agent-constraints.v1 正本）, `02_Architecture/external_agent_collaboration_spec.html` §3.3a, `01_Plans/issues/issue-EXT-AGENT-01-agent-task-package-export.md`
+- Norms: `DOM-CRIT-05, DOM-CRIT-06, DOM-CRIT-07`（理由不要の違和感を輸出可能にし、制約への重み付け・自動学習を非目標とする）
 - Expected verification level: `unit` + `integration`
 
 ## Requirement meta I/F（共通キー）

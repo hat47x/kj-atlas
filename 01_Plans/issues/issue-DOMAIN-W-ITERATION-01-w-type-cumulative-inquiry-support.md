@@ -8,6 +8,7 @@
 - Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-W-ITERATION-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html`, `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
+- Norms: `WIR-01, WIR-02, WIR-03, WIR-04, WIR-05, WIR-06, WIR-07, WIR-08, WIR-09`（本issueは `w_type_iterative_inquiry_requirements.md` §5 の全9要件の実装追跡であり、いずれか1件が変更されれば本issueの受入条件も変わる）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

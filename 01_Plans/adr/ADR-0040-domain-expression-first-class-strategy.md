@@ -4,6 +4,7 @@
 - Date: 2026-05-31
 - Deciders: Maintainer（委譲された意思決定権限）
 - Scope: `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `03_Implement/frontend/`, `01_Plans/`
+- Norms: `DOM-AI-02, DOM-AI-03`（AIはHold/Critiqueを解消せず保持対象として扱うという緩和禁止条項が、DOMAIN-EXPR全4フェーズの設計を制約する）
 
 ## Context
 
