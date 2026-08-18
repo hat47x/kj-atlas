@@ -19,7 +19,7 @@ Current normative anchors:
 - [Auth and strict provisioning API](../api.md#9-auth-schema-01-api契約jit--strict-provisioning)
 - [Schema contracts](../schemas.md#12-ce1ce2ce4-型契約実装非依存)
 - [Architecture responsibility and trust boundaries](../architecture.html#ce0-boundary)
-- [CE1 v1 reconciliation issue](../../01_Plans/issues/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
+- [CE1 v1 reconciliation issue](../../01_Plans/issues/done/issue-CE1-CONTRACT-01-v1-keyset-and-envelope-reconciliation.md)
 
 この文書は形成履歴であり、現在のrequired/optional key、HTTP envelope、endpoint、status/error、認証、副作用、安全境界を上書きしない。以下の`fixed`、`freeze`、`Decision`、`read-only 正本`は当時の記録である。
 

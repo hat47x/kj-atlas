@@ -8,7 +8,7 @@
 
 ## Context
 
-- 2026-06 の MVP 動作検証と dogfood（`01_Plans/dogfood-log-2026-06-26.md`）で、UI 過密・作業モードの選択コンテキストへの積層・provider=none の劣化扱い・状態バッジと本文の衝突という実利用摩擦が観測された（ADR-0047 の R-1 該当）。
+- 2026-06 の MVP 動作検証と dogfood（`01_Plans/dogfood/dogfood-log-2026-06-26.md`）で、UI 過密・作業モードの選択コンテキストへの積層・provider=none の劣化扱い・状態バッジと本文の衝突という実利用摩擦が観測された（ADR-0047 の R-1 該当）。
 - この摩擦を入力として Claude Design と設計壁打ちを実施し、成果物3点（`02_Architecture/design/kj-atlas UI改善提案.dc.html` / `同 拡張提案.dc.html` / `同 プロトタイプ.dc.html`、2026-07-02 受領）を得た。内容は課題1〜5の改善案、7観点の拡張設計、ショートカット/右クリック/選択・D&D/ズーム体系、KJ法原典（川喜田『発想法』）とグラウンデッド・セオリーへの接地、および反映可否のトリアージを含む。
 - 既存 ADR は配置原則（ADR-0030 段階開示）、画面5領域（ADR-0031）、複雑性予算（ADR-0043 CB-1..4）、UI/UX 品質次元（ADR-0044 UQ-1..6）、性能予算（ADR-0046 PB-1..5）を定めるが、次の3点は未決である:
   1. 状態表示の**視覚言語**（色・形・位置・密度の意味割当）— DOMAIN-EXPR-01/02（Done）はバッジ表示を実装したが、状態が同時に乗る際の一貫規則と本文との衝突回避規則が無い。
@@ -87,4 +87,4 @@ Claude Design 壁打ち成果のうち、以下の3系統を採択する（一�
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（本 ADR は R-1: dogfood/MVP 検証で観測された実利用摩擦を根拠とし、D3 関係記号は R-3/R-4 判定に接続する）
 - Related: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139: ショートカット体系の ADR 化要求）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（軽量運用）
-- Derived-from: `02_Architecture/design/` の壁打ち成果物3点（2026-07-02 受領）および `01_Plans/dogfood-log-2026-06-26.md`
+- Derived-from: `02_Architecture/design/` の壁打ち成果物3点（2026-07-02 受領）および `01_Plans/dogfood/dogfood-log-2026-06-26.md`

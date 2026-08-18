@@ -109,6 +109,6 @@ TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - Related: `02_Architecture/schemas.md` §18（契約正本・2026-07-15 固定）
 - Related: `02_Architecture/external_agent_collaboration_spec.html` §3.3a（埋め込みプロファイル・2026-07-15 固定）
-- Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
+- Related: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`, `issue-EXT-CONN-02-webhook-proposal-ingest.md`
 - Related: `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique→constraint 設計の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）

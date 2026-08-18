@@ -94,6 +94,11 @@
 38. 維持（緩和禁止）: SafeMode 既定ON・漏えい防止・proposal-only・`human_reviewed` 人手昇格・`KJ_ATLAS_LLM_PROVIDER=none` 既定の各不変条件。これらはガバナンスではなくプロダクト本体として維持する。
 39. 再導入: 外部協力者の継続参加、または公開リリースで実ユーザーが付いた時点で、役割分離・Decision Queue・観測スコアカードを段階的に戻す。
 
+### issue補助メモの一時退避運用(2026-08-16 追記)
+
+40. `01_Plans/issues/done/` は、Doneメモの内容をADR/CHANGELOGへ昇華する作業が追いついていない場合の一時退避場所である。rule 18の既定(完了時delete)を維持しつつ、昇華未了のメモを`issues/`直下から分離して可読性を確保する目的にのみ用いる。
+41. `done/`配下のメモは、昇華が完了し次第、通常どおりrule 19の手順で`git rm`する。`done/`は`archive/`(rule 20-21の保持例外)とは異なり、恒久保存の場ではない。
+
 ## Three-Element Verification（ADR-0067 遡及適用）
 
 | 次元 | このADRでの主張 | 他次元への制約 |

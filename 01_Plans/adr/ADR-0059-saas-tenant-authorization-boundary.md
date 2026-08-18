@@ -150,7 +150,7 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 
 ## Traceability
 
-- Research: `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
+- Research: `01_Plans/research/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - Related: `02_Architecture/enterprise_architecture.html`
 - Related: `02_Architecture/data_model_operations_overview.html`
 - Related: `02_Architecture/runtime_parameter_registry.md`

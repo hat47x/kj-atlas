@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
 from issues.issue_memo_status import (
@@ -128,7 +128,7 @@ def extract_dependency_adr_ids(lines: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(refs))
 
 
-def parse_issue(path: Path) -> IssueMemo:
+def parse_issue(path: Path, root: Path) -> IssueMemo:
     # Dependencies are intentionally kept in a dedicated section, which can be
     # well below the metadata header in long-running issue memos. Read the full
     # memo so a long implementation log cannot silently turn a blocked issue
@@ -145,7 +145,7 @@ def parse_issue(path: Path) -> IssueMemo:
     dependency_paths = extract_dependency_paths(lines)
     raw_status = meta.get("Status", "Unknown").strip()
     return IssueMemo(
-        path=str(path.relative_to(path.parents[1]).as_posix()),
+        path=str(path.relative_to(root).as_posix()),
         title=title,
         backlog_id=backlog_id,
         status=parse_issue_status(raw_status) or raw_status,
@@ -296,10 +296,24 @@ def build_actionable_adrs(adrs: list[AdrRecord], issues: list[IssueMemo]) -> lis
 
 
 def collect(root: Path) -> dict[str, object]:
-    issue_files = sorted((root / "issues").glob("issue-*.md"))
+    issue_files = sorted((root / "issues").rglob("issue-*.md"))
     adr_files = sorted((root / "adr").glob("ADR-*.md"))
-    issues = [parse_issue(path) for path in issue_files]
+    issues = [parse_issue(path, root) for path in issue_files]
     adrs = [parse_adr(path) for path in adr_files]
+    # Done memos can live under issues/done/ or issues/archive/; dependency
+    # refs in still-active memos are written relative to issues/ and don't
+    # know which subfolder a graduated memo ended up in, so re-resolve by
+    # filename once here rather than requiring every reference to be rewritten.
+    name_to_path = {Path(issue.path).name: issue.path for issue in issues}
+    issues = [
+        replace(
+            issue,
+            dependency_paths=tuple(
+                name_to_path.get(Path(dep).name, dep) for dep in issue.dependency_paths
+            ),
+        )
+        for issue in issues
+    ]
     errors: list[TriageError] = []
     known_issue_paths = {issue.path for issue in issues}
     known_adr_ids = {adr.adr_id for adr in adrs}

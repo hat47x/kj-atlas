@@ -2,7 +2,7 @@
 
 - Type: Planning
 - Status: Open
-- Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html`（3拡張軸の第3軸・§7-4）, `01_Plans/direction-review-2026-08-13.md` 優先4
+- Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html`（3拡張軸の第3軸・§7-4）, `01_Plans/research/direction-review-2026-08-13.md` 優先4
 - Priority: P3
 - Owner: Maintainer
 - Scope: `01_Plans/issues/`, `02_Architecture/`
