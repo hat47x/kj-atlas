@@ -13,7 +13,7 @@
 
 - 現在の問題: `test_norm_identifier_checks.py` は `ROOT.rglob("*.md")` で対象ファイルを収集し、`{".git", "node_modules", "build"}` のみを除外している。本番の検証経路（`01_Plans/docs_check.py` → `contract_tracked_markdown_paths()`）は `git ls-files` で**追跡ファイルのみ**を対象にしているのに対し、テストは gitignore 対象や未追跡のローカル専用ディレクトリも素通りで拾う。
 
-  実際に `.claude/worktrees/`（`.gitignore` で除外・Claude Codeのエージェントツールが使う一時ワークツリー）内に残っていた孤立した detached-HEAD ワークツリーの古いファイル（`02_Architecture/ai-prompt-core-redesign-2026-07-23.md`、行番号参照 `00_Prompt/kj_technique.md:3` を含む）を `test_baseline_has_no_line_number_references` が検出し、テストを失敗させた。このファイルは `main` にも `git ls-files` にも存在しない。
+  実際に `.claude/worktrees/`（`.gitignore` で除外・Claude Codeのエージェントツールが使う一時ワークツリー）内に残っていた孤立した detached-HEAD ワークツリーの古いファイル（`02_Architecture/ai-prompt-core-redesign-2026-07-23.md`。禁止されている形式の行番号参照を含んでいた）を `test_baseline_has_no_line_number_references` が検出し、テストを失敗させた。このファイルは `main` にも `git ls-files` にも存在しない。
 
 - 利用者または開発への影響: ローカルでテストを実行する開発者が、リポジトリの実際の状態とは無関係な「失敗」を見せられる。CIでは `.claude/worktrees/` 自体が存在しない（gitignore対象のため新規クローンに現れない）ので再現しないが、ローカル実行時の信頼性が下がり、「どうせローカルでは時々落ちる」という学習が起きる。
 
