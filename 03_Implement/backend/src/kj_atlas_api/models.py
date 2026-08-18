@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import Boolean, CheckConstraint, Index, Integer, Text, text
+from sqlalchemy import Boolean, CheckConstraint, Index, Integer, String, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -379,7 +379,10 @@ class SaasAuthSessionRow(Base):
     __tablename__ = "saas_auth_sessions"
     __table_args__ = (
         Index("ix_saas_auth_sessions_principal_id", "principal_id"),
-        Index("ix_saas_auth_sessions_issuer_subject", "issuer", "subject"),
+        # MySQL/MariaDB key-length limit: composite index over two TEXT
+        # columns exceeds 3072 bytes, so index issuer alone (see migration
+        # 0027); subject is filtered in the row set.
+        Index("ix_saas_auth_sessions_issuer", "issuer"),
     )
 
     session_key_hash: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -465,7 +468,7 @@ class DocumentRow(Base):
     # ADR-0073 D2=A: lifecycle is active/archived only — no trash/purge
     # (consistent with ADR-0033 which excludes a delete UI as standard).
     lifecycle_state: Mapped[str] = mapped_column(
-        Text, nullable=False, default="active", server_default="active"
+        String(16), nullable=False, default="active", server_default="active"
     )
 
 
@@ -568,7 +571,10 @@ class AdminAuditEventRow(Base):
     __tablename__ = "admin_audit_events"
     __table_args__ = (
         Index("ix_admin_audit_events_occurred", "occurred_at"),
-        Index("ix_admin_audit_events_route_result", "route", "result"),
+        # MySQL/MariaDB key-length limit: composite index over two TEXT
+        # columns exceeds 3072 bytes, so index route alone (see migration
+        # 0030); result is filtered in the row set.
+        Index("ix_admin_audit_events_route", "route"),
     )
 
     event_id: Mapped[str] = mapped_column(Text, primary_key=True)

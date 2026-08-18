@@ -1,5 +1,8 @@
-import type { ChangeEvent } from "react";
-import type { AvailableModelItem } from "../api/client";
+import { useEffect, type ChangeEvent } from "react";
+import type {
+  AvailableModelItem,
+  AvailableModelUnavailableReason,
+} from "../api/client";
 import { t } from "../i18n/translate";
 
 // AI-MODEL-GOVERNANCE-01 (R2): a per-operation model selector.
@@ -8,8 +11,8 @@ import { t } from "../i18n/translate";
 // tenant-session wrapper and passes the tenant's allowed ACTIVE models here.
 // Offers an "auto" (platform default) option plus each allowed model. "" means
 // auto — the backend falls back to the resolved default. When no models are
-// listed (or they are still loading) the selector collapses to nothing/disabled
-// so the operation is never blocked by model listing.
+// listed, keep a disabled status visible so an operator-side allowlist mistake
+// is distinguishable from a feature that does not support model selection.
 type ModelSelectorProps = {
   label: string;
   value: string;
@@ -18,6 +21,7 @@ type ModelSelectorProps = {
   dataUiRegion?: string;
   /** Tenant-allowed active models; null = still loading. */
   models: AvailableModelItem[] | null;
+  unavailableReason?: AvailableModelUnavailableReason | null;
 };
 
 const selectStyle = {
@@ -31,7 +35,48 @@ const selectStyle = {
   maxWidth: 220,
 } as const;
 
-export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, models }: ModelSelectorProps) {
+export function reconcileModelSelection(value: string, models: AvailableModelItem[] | null): string {
+  if (models === null || value === "" || models.some((model) => model.id === value)) {
+    return value;
+  }
+  return "";
+}
+
+const unavailableReasonTranslationKeys: Record<AvailableModelUnavailableReason, string> = {
+  no_active_models: "model_selector.reason.no_active_models",
+  provider_unavailable: "model_selector.reason.provider_unavailable",
+  tenant_policy_excludes_all: "model_selector.reason.tenant_policy_excludes_all",
+  no_user_selectable_models: "model_selector.reason.no_user_selectable_models",
+};
+
+export function resolveUnavailableReasonTranslationKey(
+  reason: string | null | undefined,
+): string {
+  if (
+    reason
+    && Object.prototype.hasOwnProperty.call(unavailableReasonTranslationKeys, reason)
+  ) {
+    return unavailableReasonTranslationKeys[reason as AvailableModelUnavailableReason];
+  }
+  return "model_selector.none_available_help";
+}
+
+export function ModelSelector({
+  label,
+  value,
+  onChange,
+  disabled,
+  dataUiRegion,
+  models,
+  unavailableReason,
+}: ModelSelectorProps) {
+  useEffect(() => {
+    const reconciled = reconcileModelSelection(value, models);
+    if (reconciled !== value) {
+      onChange(reconciled);
+    }
+  }, [models, onChange, value]);
+
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onChange(event.target.value);
   };
@@ -48,7 +93,23 @@ export function ModelSelector({ label, value, onChange, disabled, dataUiRegion, 
   }
 
   if (models.length === 0) {
-    return null;
+    const reasonKey = resolveUnavailableReasonTranslationKey(unavailableReason);
+    return (
+      <label style={{ display: "grid", gap: 4 }} data-ui-region={dataUiRegion}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{label}</span>
+        <select
+          style={{ ...selectStyle, opacity: 0.65, cursor: "not-allowed" }}
+          disabled
+          value=""
+          aria-label={label}
+        >
+          <option value="">{t("model_selector.none_available")}</option>
+        </select>
+        <span role="status" style={{ maxWidth: 340, fontSize: 11, lineHeight: 1.4, color: "#64748b" }}>
+          {t(reasonKey)}
+        </span>
+      </label>
+    );
   }
 
   return (

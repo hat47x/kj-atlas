@@ -7,6 +7,7 @@ import {
   changeActiveTenant,
   checkNarrative,
   generateNarrative,
+  fetchAvailableModels,
   getDocument,
   getTenantSessionBootstrapPolicy,
   listDocuments,
@@ -19,6 +20,7 @@ import {
   registerExternalAgentProposal,
   registerExternalAgentTask,
   summarizeIslandRelation,
+  suggestDocumentTitle,
   suggestMerges,
   suggestLayout,
   putInquiryBundle,
@@ -57,6 +59,25 @@ const tenantSessionContext = {
 describe("tenant-scoped document request precondition", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("preserves the safe empty-model reason from the tenant-scoped API", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        models: [],
+        unavailableReason: "tenant_policy_excludes_all",
+      }), { status: 200 }),
+    );
+
+    const result = await fetchAvailableModels({ tenantSessionContext });
+
+    expect(result).toEqual({
+      models: [],
+      unavailableReason: "tenant_policy_excludes_all",
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/ai/available-models", {
+      headers: { "KJ-Atlas-Tenant-Session-Version": "session-v1" },
+    });
   });
 
   it("attaches only the verified opaque version to document reads", async () => {
@@ -222,6 +243,36 @@ describe("tenant-scoped document request precondition", () => {
   });
 });
 
+describe("SafeMode AI request certification", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("certifies the reviewed-only title suggestion context", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ candidates: [{ title: "Reviewed title" }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await suggestDocumentTitle(
+      ["Reviewed island"],
+      ["Reviewed card"],
+      "Current title",
+      undefined,
+      { tenantSessionContext },
+    );
+
+    const request = fetchMock.mock.calls[0]?.[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      islandTitles: ["Reviewed island"],
+      cardTexts: ["Reviewed card"],
+      textReviewed: true,
+    });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // TENANT SESSION VERSION CLIENT COVERAGE CONTRACT
 //
@@ -253,7 +304,13 @@ const FRONTEND_SRC_ROOT = resolve(__dirname, "..");
 const CLIENT_MODULE_PATH = "api/client.ts";
 const APP_MODULE_PATH = "App.tsx";
 const OAUTH_CALLBACK_MODULE_PATH = "session/oauth_callback.ts";
-const TENANT_SCOPED_WRAPPER = "runTenantScopedApiRequest(() => ";
+const TENANT_SCOPED_WRAPPERS = [
+  "runTenantScopedApiRequest(() => ",
+  // Calls made inside runTenantScopedApiRequest's own recovery branch cannot
+  // wrap themselves recursively. The lower-level task wrapper is the same
+  // tenant generation guard and is valid only for that internal recovery.
+  "runTenantScopedTask(() => ",
+] as const;
 
 // Request can neither address nor carry a tenant-scoped resource: constant
 // path, no request body, no tenant-scoped request options.
@@ -582,9 +639,9 @@ describe("tenant session version client coverage contract", () => {
           ).match(/tenantSessionContext:\s*(\w+)/)?.[1];
           expect({
             location,
-            wrappedInGenerationGuard: moduleSource
-              .slice(Math.max(0, matchIndex - TENANT_SCOPED_WRAPPER.length), matchIndex)
-              .endsWith(TENANT_SCOPED_WRAPPER),
+            wrappedInGenerationGuard: TENANT_SCOPED_WRAPPERS.some((wrapper) => moduleSource
+              .slice(Math.max(0, matchIndex - wrapper.length), matchIndex)
+              .endsWith(wrapper)),
             passesSessionIdentifier: passedSessionIdentifier !== undefined,
           }).toEqual({ location, wrappedInGenerationGuard: true, passesSessionIdentifier: true });
         }

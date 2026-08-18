@@ -72,7 +72,7 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 | 段 | 経路 | 使う場面 |
 | --- | --- | --- |
-| **A** | `KJ_ATLAS_ADMIN_API_KEY` を `X-Admin-Api-Key` ヘッダーで提示 | **ブートストラップ専用**。IdPが1件も登録されていない状態で使える唯一の経路。静的な秘密であり主体を特定しないため、監査には載りません |
+| **A** | `KJ_ATLAS_ADMIN_API_KEY` を `X-Admin-Api-Key` ヘッダーで提示 | **ブートストラップ専用**。IdPが1件も登録されていない状態で使える唯一の経路。人物は特定できませんが、操作結果と資格情報の短いfingerprintは管理監査へ記録されます |
 | **B** | 検証済みセッションの `tenant.provision` capability | **通常運用**。主体が特定でき監査に載ります。IdP登録後はこちらを使います |
 
 ```bash
@@ -90,6 +90,8 @@ curl -X POST -H "X-Admin-Api-Key: $KJ_ATLAS_ADMIN_API_KEY" \
 - `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY` が必須です。業務面は trusted auth edge の検証済み JWT が担います。
 
 これは `ADR-0062` が外部連携に対して既に採っている「明示選択したのに設定が無ければ起動を止める」方針を、認証そのものへ一貫適用したものです。以前は `enterprise-production` が**既定で完全に無認証のまま起動でき**、構築ミスがそのまま全面公開になりました（`SEC-ADMIN-PLANE-01`）。
+
+業務面キーと管理面キーには**必ず異なる値**を設定してください。同じ値は起動時に拒否されます。ヘッダー名だけを分けても、秘密値が同じなら業務資格情報の保持者が管理面へ横滑りできるためです。
 
 ### アプリ側の保証と前段委譲の責務境界
 

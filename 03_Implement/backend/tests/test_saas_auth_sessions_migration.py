@@ -96,7 +96,7 @@ def test_migration_creates_saas_auth_sessions_table(tmp_path: Path) -> None:
         index_names = {row[1] for row in con.execute("PRAGMA index_list('saas_auth_sessions')")}
         assert {
             "ix_saas_auth_sessions_principal_id",
-            "ix_saas_auth_sessions_issuer_subject",
+            "ix_saas_auth_sessions_issuer",
         } <= index_names
 
         # active_tenant_id may reference an existing tenant...

@@ -9,6 +9,7 @@
 - 同じ進捗をdashboard、decision-pack、READMEへ転記しない。
 - rerun番号、Stream、固定5フェーズ、RACI通知、仮想役職、手動件数同期は使用しない。
 - Done memoは通常のAIコンテキストへ入れず、履歴確認が必要な場合だけ検索する。
+- Done memoの本体は `01_Plans/issues/done/` に置く(ADR/CHANGELOGへの昇華が追いつくまでの一時退避。`ADR-0000` rule 40-41)。保持例外(Retention Reason明記)のみ `01_Plans/issues/archive/` へ移動する。
 - GitHub Issues運用を将来開始する場合は、その時点で必要な移行手順を新たに決める。未使用の移行runbookは維持しない。
 
 ## 起票方法

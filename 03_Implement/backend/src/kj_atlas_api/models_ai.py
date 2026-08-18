@@ -25,11 +25,16 @@ class ProviderStatusResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    providerKind: Literal["none", "local", "large-scale"]
+    providerKind: Literal["none", "local", "large-scale", "deepseek"]
     # OPS-LLM-COST-01 (段階2): in-process LLM call counts per provider kind
     # (plus "total"). Referenceable so an operator can see external
     # (large-scale) call volume. Empty until the first LLM call.
     callCounts: dict[str, int] = Field(default_factory=dict)
+    # OPS-LLM-COST-01 (段階2): in-process input/output token totals per provider
+    # kind (plus "total"). Populated from provider-reported usage (DeepSeek /
+    # OpenAI chat completions `usage`); providers that do not report usage
+    # contribute 0 tokens. Empty until the first LLM call.
+    tokenUsage: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
 class NarrativeIssueReference(BaseModel):
@@ -295,6 +300,32 @@ class ExternalAgentProposalRegistrationResponse(BaseModel):
 
 class ExternalAgentProposalDecisionRequest(ProposalDecisionAuditRequest):
     provenanceLevel: Literal["user_presented_unsigned"]
+
+
+class ProposalStatusItem(BaseModel):
+    """One proposal's lifecycle status for a document (read-only)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str
+    proposalKind: str
+    origin: Literal["internal", "external_agent"]
+    # proposed (no decision yet) | accepted | rejected | held
+    status: Literal["proposed", "accepted", "rejected", "held"]
+    sourceBundleHash: str
+    createdAt: str
+    decidedAt: str | None = None
+
+
+class ProposalStatusResponse(BaseModel):
+    """Read-only proposal lifecycle status for a document. Lets a generative-AI
+    (via MCP or API) verify that a proposal is still proposal-only or was
+    decided by a human -- CE4 traceability without mutating anything."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    docId: str
+    proposals: list[ProposalStatusItem]
 
 
 # ---------------------------------------------------------------------------

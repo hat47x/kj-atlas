@@ -57,6 +57,9 @@ type ViewControlsPanelProps = {
   /** OPS-LLM-COST-02: in-process LLM call counts (per provider kind + total),
    * shown read-only. Empty until the first LLM call. */
   llmCallCounts?: Record<string, number>;
+  /** OPS-LLM-COST-01 (段階2): in-process input/output token totals (per provider
+   * kind + total), shown read-only. Empty until the first LLM call. */
+  llmTokenUsage?: Record<string, { input: number; output: number }>;
   lastAiCallOutcome: "ok" | AiProviderErrorKind | null;
   lodEnabled: boolean;
   onLodEnabledChange: (value: boolean) => void;
@@ -149,6 +152,7 @@ export function ViewControlsPanel({
   onShowSeqNumbersChange,
   providerKind,
   llmCallCounts,
+  llmTokenUsage,
   lastAiCallOutcome,
   lodEnabled,
   onLodEnabledChange,
@@ -720,6 +724,16 @@ export function ViewControlsPanel({
               breakdown: Object.entries(llmCallCounts)
                 .filter(([kind]) => kind !== "total")
                 .map(([kind, count]) => `${kind}: ${count}`)
+                .join(", "),
+            })}
+          </div>
+        ) : null}
+        {llmTokenUsage && Object.keys(llmTokenUsage).length > 0 ? (
+          <div data-ui-region="llm-token-usage" style={{ fontSize: 11, color: "#64748b" }}>
+            {t("view_controls.ai_provider.token_usage", {
+              breakdown: Object.entries(llmTokenUsage)
+                .filter(([kind]) => kind !== "total")
+                .map(([kind, usage]) => `${kind}: ${usage.input}/${usage.output}`)
                 .join(", "),
             })}
           </div>

@@ -29,7 +29,7 @@ type CardViewProps = {
   onBeginEdit?: (cardId: string) => void;
   onCommitEdit?: (cardId: string, text: string) => void;
   onCancelEdit?: () => void;
-  onCardContextMenu?: (cardId: string, clientX: number, clientY: number) => void;
+  onCardContextMenu?: (cardId: string, clientX: number, clientY: number, trigger: HTMLElement) => void;
   /** UX-VISUAL-02: deterministic "protection" mark for a lone-wolf card. */
   isProtected?: boolean;
   /** DOMAIN-TRACE-01 AC-3: show the optional #seq badge (default OFF, View toggle). */
@@ -108,6 +108,7 @@ function CardViewComponent({
   isProtected = false,
   showSeqNumber = false,
 }: CardViewProps) {
+  const cardRootRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -137,6 +138,11 @@ function CardViewComponent({
   };
   const holdStateLabel = holdState ? t(`side_panel.hold_state.${holdState}`) : "";
   const unreviewedDescriptionId = `card-unreviewed-description-${card.id}`;
+  const restoreCardFocus = () => {
+    window.requestAnimationFrame(() => {
+      cardRootRef.current?.focus({ preventScroll: true });
+    });
+  };
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -251,6 +257,7 @@ function CardViewComponent({
 
   return (
     <div
+      ref={cardRootRef}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -319,6 +326,7 @@ function CardViewComponent({
       // While editing, button semantics/aria-pressed/tab-stop move entirely
       // to the textarea below -- the root is not an operable element then.
       role={isEditing ? undefined : "button"}
+      data-card-id={card.id}
       aria-pressed={isEditing ? undefined : isSelected}
       aria-describedby={
         !markerMode && !isEditing && !isTextReviewed ? unreviewedDescriptionId : undefined
@@ -341,7 +349,7 @@ function CardViewComponent({
         }
         event.preventDefault();
         event.stopPropagation();
-        onCardContextMenu(card.id, event.clientX, event.clientY);
+        onCardContextMenu(card.id, event.clientX, event.clientY, event.currentTarget);
       }}
     >
       {/* UX-VISUAL-01 (ADR-0048 D1): state badges live in a normal-flow meta-row
@@ -521,9 +529,11 @@ function CardViewComponent({
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               onCommitEdit?.(card.id, event.currentTarget.value);
+              restoreCardFocus();
             } else if (event.key === "Escape") {
               event.preventDefault();
               onCancelEdit?.();
+              restoreCardFocus();
             }
           }}
           onBlur={(event) => onCommitEdit?.(card.id, event.currentTarget.value)}

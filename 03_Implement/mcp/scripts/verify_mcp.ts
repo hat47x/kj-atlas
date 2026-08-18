@@ -39,14 +39,21 @@ const client = new Client({ name: "kj-atlas-mcp-verify", version: "1.0.0" });
 try {
   await client.connect(transport);
 
-  // 1. List tools — expect exactly one read-only tool.
+  // 1. List tools — expect exactly the two read-only tools (EXT-CONN-01
+  //    allowlist: context projection + CE4 proposal lifecycle status).
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name);
   console.log(`tools/list: ${names.join(", ")}`);
-  if (names.length !== 1 || names[0] !== "get_context_projection") {
-    throw new Error("Expected exactly get_context_projection tool");
+  const expected = ["get_context_projection", "get_proposal_status"];
+  if (names.length !== expected.length || expected.some((name) => !names.includes(name))) {
+    throw new Error(`Expected exactly ${expected.join(", ")} tools, got ${names.join(", ")}`);
   }
-  console.log("  → single read-only tool confirmed ✅");
+  for (const tool of tools) {
+    if (!tool.annotations?.readOnlyHint) {
+      throw new Error(`Tool ${tool.name} is not read-only (EXT-CONN-01 allowlist)`);
+    }
+  }
+  console.log(`  → ${names.length} read-only tools confirmed ✅`);
 
   // 2. Call get_context_projection (safeMode defaults true → no card text).
   console.log(`calling get_context_projection(docId=${docId}, constraint=${constraint}, safeMode=true)`);
@@ -183,6 +190,38 @@ try {
     );
   }
   console.log(`  → bundle deterministic (hash stable across calls) ✅`);
+
+  // 5. CE4 proposal lifecycle (get_proposal_status, read-only): a generative-AI
+  //    verifier confirms a proposal is still proposal-only or was decided by a
+  //    human. A doc with no proposals returns an empty list (200) -- a valid
+  //    signal. This is a read; nothing is mutated.
+  console.log(`calling get_proposal_status(docId=${docId})`);
+  const proposalResult = await client.callTool({
+    name: "get_proposal_status",
+    arguments: { docId },
+  });
+  if (proposalResult.isError) {
+    throw new Error("get_proposal_status returned isError (backend proposal read failed)");
+  }
+  const proposalText = proposalResult.content?.[0]?.text;
+  if (typeof proposalText !== "string") {
+    throw new Error("No text content in proposal status result");
+  }
+  const proposalBody = JSON.parse(proposalText) as {
+    docId: string;
+    proposals: Array<{ proposalId: string; proposalKind: string; status: string; sourceBundleHash: string }>;
+  };
+  if (proposalBody.docId !== docId || !Array.isArray(proposalBody.proposals)) {
+    throw new Error("Unexpected get_proposal_status response shape");
+  }
+  for (const proposal of proposalBody.proposals) {
+    if (!["proposed", "accepted", "rejected", "held"].includes(proposal.status)) {
+      throw new Error(`Unexpected proposal status: ${proposal.status}`);
+    }
+  }
+  console.log(
+    `  → proposals: ${proposalBody.proposals.length} (statuses: ${proposalBody.proposals.map((p) => p.status).join(", ") || "none"}) ✅ (CE4 read-only)`,
+  );
 
   console.log("\nMCP verification PASSED ✅");
   process.exit(0);

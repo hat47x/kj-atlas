@@ -13,10 +13,18 @@ both surfaces.
 
 ## What it exposes
 
-One tool, `get_context_projection({ docId, constraint, safeMode? })`, wrapping
-`buildContextProjection` from the frontend's projection core. `constraint` is
-one of `reviewed-only | evidence | contradiction | summary`. `safeMode`
-defaults to `true` (the safe default) when omitted.
+Two read-only tools:
+
+1. `get_context_projection({ docId, constraint, safeMode? })`, wrapping
+   `buildContextProjection` from the frontend's projection core. `constraint` is
+   one of `reviewed-only | evidence | contradiction | summary`. `safeMode`
+   defaults to `true` (the safe default) when omitted.
+2. `get_proposal_status({ docId })` — the CE4 proposal lifecycle for a
+   document: whether each AI proposal is still proposal-only
+   (`status=proposed`) or was decided by a human
+   (`accepted | rejected | held`, with `decidedAt`). Lets a generative-AI
+   verifier confirm that a proposal was never auto-applied and to trace the
+   human decision, without mutating anything.
 
 **Scope (DOGFOOD-05)**: unreviewed cards are never exposed on any constraint —
 even `safeMode: false` reports `cards=0` for them (`SEC-CONTEXT-PROJECTION-01`
@@ -25,25 +33,23 @@ content, not for initial exploration of unreviewed material. An AI co-worker
 that needs to respect work-state on reviewed cards gets `holdState` metadata
 (DOGFOOD-08); it cannot use this server to read unreviewed content.
 
-No resources, no prompts, no other tools. `tools/list` and the absence of a
-`resources` capability in `initialize`'s response are locked by
-`src/context_projection_tool.test.ts` against a fixed snapshot — see that
-file if a future change appears to add capability.
+No resources, no prompts, no write tools. Both tools carry
+`readOnlyHint: true`; `tools/list` and the absence of a `resources` capability
+in `initialize`'s response are locked by `src/context_projection_tool.test.ts`
+against a fixed snapshot — see that file if a future change appears to add
+capability.
 
 ## Non-goals
 
 - No write/ingest/apply/publish/sampling/elicitation capability, on either
-  transport.
+  transport. The CE-4 audit POST described below is the only outbound call this
+  server makes, and it is a *read audit* (a report of an already-served
+  projection), never a mutation of the document it projected.
 - **Resource server only.** This process never issues tokens, registers
   clients, or runs an authorization/consent endpoint -- it validates bearer
   tokens issued by an already-trusted external IdP (`ADR-0054`, consistent
   with `ADR-0020`'s "never run a production IdP/AS" stance). There is no
   code path for token issuance in this package.
-- No backend contract change: reads are audited locally (structured JSON on
-  stderr, `src/audit_log.ts`) rather than via the backend's
-  `POST /docs/{id}/context-audit` (CE-4) endpoint, whose `channel` enum has no
-  slot for an MCP-originated read yet. Wiring that in is a separate,
-  shared-contract change deferred to a dedicated backend issue.
 
 ## Running
 
@@ -92,7 +98,7 @@ Notes for AI agents using this path:
   (no card text, no issue messages).
 - For the HTTP + OAuth 2.1 resource-server transport, set `KJ_ATLAS_MCP_TRANSPORT=http`
   and the required OAuth env vars (see Transport selection below); tokens must be
-  issued by the configured trusted issuer.
+  issued by the configured trusted issuer and carry the `read:context` scope.
 
 ### Generative-AI verification runbook
 
@@ -116,6 +122,34 @@ exactly this; the scenarios below are what it checks.
 Interpretation rule: an `isError` outcome with `not_found`/`error` is a **valid
 signal** (the target document does not exist), not an MCP-path failure — the
 transport worked, the request reached the server, and the failure was classified.
+
+In addition to the local `mcp-context-read.v1` entry above, every **successful**
+read is reported to the backend's `POST /docs/{id}/context-audit` (CE-4)
+endpoint with `channel="mcp"` (`operation=query`, `command=context-query`,
+`equivalenceKey=queryCanonicalHash`, `bundleHash=projection.bundleHash`,
+`safeMode`, `dryRun=true`, `sideEffect=none`) via `src/audit_log.ts`
+`emitContextAuditEvent`. This closes the former channel-enum gap: an
+MCP-originated read is traceable in the same backend audit trail as
+api/cli/gui callers. The emit is **best-effort** — the synchronous local entry
+is the read's correlation, and a CE-4 POST failure never turns a successful
+read into an error (it logs a structured warning to stderr). A generative-AI
+verifier that needs to assert the backend saw the read can cross-check the
+deployment's audit sink directly; `verify_mcp.ts` itself validates the read
+path, not the sink delivery.
+
+To verify the whole chain (MCP read → CE-4 `channel="mcp"` event → backend →
+configured HTTP audit sink) in one self-contained run, use the dogfood E2E:
+
+```bash
+cd 03_Implement/backend
+.venv/bin/python scripts/verify_mcp_ce4_audit_e2e.py   # expect "Result: 9 passed, 0 failed"
+```
+
+It starts a local audit sink, a migrated backend with
+`KJ_ATLAS_AUDIT_TRANSPORT=http` (plus `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=1`,
+because MCP reads are safeMode=true and the dispatcher drops safe-mode events
+otherwise), runs `verify_mcp.ts` against it, and asserts the sink received the
+`channel="mcp"`/`operation=query` event for the read document.
 
 ### Transport selection
 
@@ -155,9 +189,10 @@ than falling back to an unauthenticated or wildcard-trusting mode:
 Behavior:
 
 - `POST/GET/DELETE /mcp` require a valid bearer token (`Authorization: Bearer
-  <token>`); missing/invalid/expired/wrong-issuer/wrong-audience tokens get a
-  401 with a `WWW-Authenticate: Bearer ... resource_metadata=...` header, via
-  the SDK's `requireBearerAuth`.
+  <token>`) with the `read:context` scope; missing/invalid/expired/wrong-issuer/
+  wrong-audience tokens get 401, while a valid token without the required scope
+  gets 403 `insufficient_scope`. Both responses carry a `WWW-Authenticate`
+  challenge via the SDK's `requireBearerAuth`.
 - `GET /.well-known/oauth-protected-resource` is intentionally unauthenticated
   (RFC 9728 requires this) and returns only non-secret discovery metadata.
 - All routes (including the metadata endpoint) share a 60 requests/minute/IP

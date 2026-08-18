@@ -55,15 +55,18 @@ def upgrade() -> None:
         ["principal_id"],
         unique=False,
     )
+    # MySQL/MariaDB key-length limit: a composite index over two unbounded
+    # TEXT columns exceeds 3072 bytes, so index issuer alone (single TEXT
+    # column indexes are portable) and filter by subject in the row set.
     op.create_index(
-        "ix_saas_auth_sessions_issuer_subject",
+        "ix_saas_auth_sessions_issuer",
         "saas_auth_sessions",
-        ["issuer", "subject"],
+        ["issuer"],
         unique=False,
     )
 
 
 def downgrade() -> None:
-    op.drop_index("ix_saas_auth_sessions_issuer_subject", table_name="saas_auth_sessions")
+    op.drop_index("ix_saas_auth_sessions_issuer", table_name="saas_auth_sessions")
     op.drop_index("ix_saas_auth_sessions_principal_id", table_name="saas_auth_sessions")
     op.drop_table("saas_auth_sessions")

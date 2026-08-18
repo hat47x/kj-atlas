@@ -25,4 +25,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("inquiry_bundles", "revision")
+    # revision carries a server_default; on SQL Server the default constraint
+    # must be dropped before the column (see 0014 pattern).
+    op.drop_column("inquiry_bundles", "revision", mssql_drop_default=True)

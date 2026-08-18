@@ -41,7 +41,7 @@ git diff --check
 3. 手動 smoke test で利用者の主要操作を確認する。
 4. security / SafeMode / 外部サービスとの共有の安全境界が後退していないことを確認する。
 5. data handling の観点で export、share、ログ、外部サービスとの共有の扱いを確認する。
-6. `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md` のG0〜G7と価値ゲートに未解消のBlockerがないことを確認する。
+6. `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md` のG0〜G7と価値ゲートに未解消のBlockerがないことを確認する。
 7. rollback 方針を確認する。
 
 frontend:

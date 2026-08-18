@@ -5,14 +5,15 @@ import {
   CONTEXT_PROJECTION_CONSTRAINTS,
 } from "../../frontend/src/export/context_bundle_projection.js";
 import { DocumentNotFoundError, fetchDocument, fetchDocumentMetadata, type DocumentClientConfig } from "./document_client.js";
-import { computeQueryCanonicalHash, logAuditEntry } from "./audit_log.js";
+import { computeQueryCanonicalHash, emitContextAuditEvent, logAuditEntry } from "./audit_log.js";
 
-// EXT-CONN-01 subslice B: the ONLY capability this server registers. Read-only
+// EXT-CONN-01 subslice B: this is ONE of the read-only capabilities this server
+// registers (with get_proposal_status in proposal_status_tool.ts). Read-only
 // resources.list() and tools.list() are exercised by
 // context_projection_tool.test.ts against a fixed snapshot so a future PR
 // cannot silently add a write/ingest/apply/publish/sampling/elicitation
 // capability without that test visibly changing (Maintainer代理裁可
-// allowlist condition).
+// allowlist condition). Both registered tools are read-only.
 
 export function registerContextProjectionTool(server: McpServer, documentClientConfig: DocumentClientConfig): void {
   server.registerTool(
@@ -67,6 +68,17 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
           queryCanonicalHash,
           bundleHash: projection.bundleHash,
           outcome: "ok",
+        });
+
+        // EXT-CONN-01 channel wiring: make this MCP-originated read visible in
+        // the backend's CE-4 audit trail (channel="mcp"). Best-effort -- the
+        // local entry above is the read's correlation; never fail a successful
+        // read over the additional sink.
+        await emitContextAuditEvent(documentClientConfig, {
+          docId,
+          safeMode,
+          queryCanonicalHash,
+          bundleHash: projection.bundleHash,
         });
 
         return {

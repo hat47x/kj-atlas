@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import type { AvailableModelItem } from "../api/client";
+import type { AvailableModelItem, AvailableModelUnavailableReason } from "../api/client";
 import { ModelSelector } from "./ModelSelector";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
@@ -30,6 +30,7 @@ type NarrativesPanelProps = {
   narrativeModel: string;
   onNarrativeModelChange: (model: string) => void;
   availableModels: AvailableModelItem[] | null;
+  availableModelsUnavailableReason?: AvailableModelUnavailableReason | null;
   isChecking: boolean;
   isGenerating: boolean;
   errorMessage: string | null;
@@ -77,6 +78,7 @@ export function NarrativesPanel({
   narrativeModel,
   onNarrativeModelChange,
   availableModels,
+  availableModelsUnavailableReason,
 }: NarrativesPanelProps) {
   const panelTitleId = useId();
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
@@ -212,6 +214,7 @@ export function NarrativesPanel({
           disabled={isGenerating}
           dataUiRegion="model-selector-narrative"
           models={availableModels}
+          unavailableReason={availableModelsUnavailableReason}
         />
         <button
           type="button"

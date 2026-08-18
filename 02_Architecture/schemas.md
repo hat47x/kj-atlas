@@ -1232,7 +1232,7 @@ ADR-0048 D3 改訂（2026-07-03）採択分。加算原則に従い、全フィ�
 ### 15.4 共有・書き出し境界（AC-4）
 
 - **共有向け書き出し（レビューパック等）では `Card.meta` を既定で含めない**。含める場合は共有前確認の明示トグル「出典参照を含める」（**既定 OFF**）＋警告1行（出典は内部情報を含み得る旨）で opt-in する。
-- 文書スナップショット自体の保存（`PUT /docs`）・バックアップ用途の文書 JSON 書き出しは redaction 対象外（既存の critique 等と同じ扱い。文書の完全な往復が目的のため）。
+- 文書スナップショット自体の保存（`PUT /docs/{doc_id}`）・バックアップ用途の文書 JSON 書き出しは redaction 対象外（既存の critique 等と同じ扱い。文書の完全な往復が目的のため）。
 - SafeMode の固定マスク（未レビュー本文）とは**独立の軸**として管理する。SafeMode の ON/OFF は本トグルの既定（OFF）を変えない。
 
 ### 15.5 後方互換
@@ -1461,7 +1461,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 
 - ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
 - Issue: `EXT-CONN-03-critique-constraint-export`
-- Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
+- Research: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Spec: `02_Architecture/external_agent_collaboration_spec.html`（§3.3a 制約節の埋め込みプロファイル）
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）
 

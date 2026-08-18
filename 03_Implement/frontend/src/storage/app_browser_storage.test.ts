@@ -146,7 +146,6 @@ describe("App browser storage boundary", () => {
     expect(appSource).not.toContain("window.localStorage");
     expect(appSource).toContain("storageScope={appStorage.scope}");
     expect(minimapSource).toContain("loadMinimapCollapsed(storageScope)");
-    expect(minimapSource).toContain("saveMinimapCollapsed(false, storageScope)");
-    expect(minimapSource).toContain("saveMinimapCollapsed(true, storageScope)");
+    expect(minimapSource).toContain("saveMinimapCollapsed(collapsed, storageScope)");
   });
 });

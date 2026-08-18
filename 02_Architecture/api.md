@@ -122,7 +122,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - `sideEffect: "none"`
   - `rejectReasonCode?: "none" | "missing_event" | "equivalence_mismatch" | "dry_run_side_effect" | "safemode_regression"`
   - `command: string`
-  - `channel: "api" | "cli" | "gui"`
+  - `channel: "api" | "cli" | "gui" | "mcp"`
   - `schemaVersion: "ce4.audit.v1"`
 - Response: `{ "status": "accepted" }`
 - Error:
@@ -130,7 +130,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - 422: operation/command不一致、`dryRun` 違反、`sourceBundleHash` 欠損などの契約違反
 - 目的: `query -> bundle -> proposal -> apply` の監査4点を同一 `equivalenceKey` / `bundleHash` で接続し、proposal-only / dry-run の境界を検証する。
 - SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/operation/equivalenceKey/bundleHash`）の重複POSTは、`KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
-- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui"`はGUI以外の呼び出し元（CLI、将来のAgent/MCP連携等）を対等な一級市民として扱うために存在する契約であり、2026-08-06時点で`03_Implement/frontend/src`・`03_Implement/mcp/src`のいずれからも実呼び出しは無い。read-only MCPサーバー（`03_Implement/mcp/`）はこの経路を外部消費者として結線する候補に挙げたが、`channel`enumに`"mcp"`相当のスロットが無いことを理由に意図的に未結線としている（`03_Implement/mcp/src/audit_log.ts`、`03_Implement/mcp/README.md`「Non-goals」節、`issue-EXT-CONN-01-readonly-mcp-server.md` AC-3既知ギャップ）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
+- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui" | "mcp"`はGUI以外の呼び出し元（CLI、MCP経由の生成AI、将来のAgent連携等）を対等な一級市民として扱うために存在する契約である。2026-08-16時点で、read-only MCPサーバー（`03_Implement/mcp/`）が成功した各投影読み取りを`channel: "mcp"`で本エンドポイントへ監査送出する（`03_Implement/mcp/src/audit_log.ts` の `emitContextAuditEvent`）。CLI（`03_Implement/backend/src/kj_atlas_api/cli.py`）は`channel: "cli"`で送出する。監査はbest-effortであり、CE-4送出失敗は読み取り自体を失敗させない（MCP側のローカル監査エントリが読み取りの相関の正本）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
 
 
 ### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）
@@ -324,7 +324,7 @@ Consequences:
 | `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
 | `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
 
-追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
+追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui|mcp`）, `command`, `schemaVersion`.
  `schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
 CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
 
@@ -430,9 +430,16 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **GET** `/ai/provider-status`
 
 - Response: `ProviderStatusResponse`
-  - `providerKind: "none" | "local" | "large-scale"`
+  - `providerKind: "none" | "local" | "large-scale" | "deepseek"`
   - `callCounts: { [providerKind]: number, total: number }` — **OPS-LLM-COST-01（段階2）**: プロセス内の LLM 呼び出し回数（provider種別別＋total）。初回呼び出しまでは空。単一プロセス前提（共有ストアは段階3）。
+  - `tokenUsage: { [providerKind]: { input: number, output: number }, total: {...} }` — **OPS-LLM-COST-01（段階2）**: プロセス内の入力/出力token合計（provider種別別＋total）。provider報告の`usage`（DeepSeek等のOpenAI互換`usage`）から計上し、報告が無いproviderは0。初回呼び出しまでは空。
 - 設定解決後のprovider種別を表示用に返すread-only echoであり、providerへの疎通確認は行わない。`local_http` 設定は `local` に正規化される。
+
+**GET** `/ai/available-models`
+
+- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。active model・active provider・tenant allowlist・現在のprocessで利用可能なprovider transportを交差し、`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタする。`final_judgement` 専用モデルと実行transport不一致modelは除外する。
+- Response: モデルID・表示名・"auto" 既定の選択肢。UI の `ModelSelector` がこの一覧でモデル選択肢を限定する。
+- 一覧取得後に状態が変わった場合を含め、実行APIへtransport不一致model IDを直接指定すると、LLM送信前に503 `model_provider_unavailable`で拒否する。
 
 ### 2.12 AI/LLM生成API
 
@@ -525,6 +532,12 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `recordedAt: string`
 - proposalに対する人間の判断（Adopt/Reject/Hold）をtenant・Document・source bundleへ結合し、生成時registry`ai_proposals`との一致を確認して記録する。未登録IDや別Documentのproposalは404、source bundle不一致は409とする。reviewerはclient入力を信頼せず、serverが認証contextから解決する。追記イベントの正本は`ai_proposal_decision_events`、競合制御用の現在状態は`ai_proposal_decision_states`とする。
 - 同じidempotency keyと同じ内容の再送は同じreceiptを返す。`held`からは`accepted/rejected`へ一度だけ進められ、終端後の変更は409になる。
+
+**GET** `/ai/proposals/status`
+
+- CE4 read-only proposal lifecycle status for a document. Query: `docId`（tenant-scoped precondition 必須）。
+- Response: `ProposalStatusResponse`（`proposalId`・`proposalKind`・`origin`・各 proposal の判定状態など）。
+- generative-AI（MCP/API 経由）が proposal が依然 proposal-only か、人間が判定済み（accepted/rejected/held）かを検証するための traceability。read-only 契約（`action="read"`）で、proposal や判定を一切書き込まない。
 
 **POST** `/ai/external-tasks/register`
 
@@ -706,6 +719,14 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - セッションを終了し、サーバー側のセッション状態を破棄する。204 No Content。
 
+**GET** `/session/login`
+
+- AC-1（ADR-0074）: OAuth broker への authorization-code+PKCE フローを開始する BFF エンドポイント（ブラウザ向けリダイレクト）。`next` クエリを保持し、broker の authorize エンドポイントへ 302。
+
+**GET** `/session/callback`
+
+- AC-1（ADR-0074）: OAuth callback。code を交換し、JWKS パイプラインでトークンを検証してサーバー所有の認証セッション cookie を発行する（ブラウザ向けリダイレクト）。
+
 **POST** `/admin/provision/identity-providers`
 
 - strict provisioning: 外部IdPの登録。provider, issuer, audience を登録する。
@@ -734,11 +755,19 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/admin/provision/models/providers` / **POST** `/admin/provision/models`
 
 - プロバイダ/モデルを**動的に登録**（control-plane 認可）。`apiKeyRef` は秘密管理キー参照のみ（平文のAPIキーを保存しない・ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
+- 登録はinsert-only。同一IDの再登録はproviderを`409 provider_already_exists`、modelを`409 model_already_exists`で拒否し、既存rowを暗黙更新しない。起動時seedの冪等upsertとは別契約とする。
 - モデル無効化: `PATCH /admin/provision/models/{model_id}` で `lifecycleState: disabled`。無効モデルへの呼び出しは fail-closed。
 
-**GET/PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
+**GET** `/admin/provision/models/tenants/{tenant_id}/allowlist`
 
-- AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist（fail-closed）。空 = プラットフォーム既定。適用は Phase 2 の実効モデル解決で交差（より狭い方が勝つ）。
+- AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の参照（fail-closed）。空 = プラットフォーム既定。適用は Phase 2 の実効モデル解決で交差（より狭い方が勝つ）。
+- Responseには`revision`（modelIdsの正規化内容から生成した64桁hex）を含む。管理UI/CLIは更新時にこの値を引き継ぎ、表示後の競合更新を検出する。
+
+**PUT** `/admin/provision/models/tenants/{tenant_id}/allowlist`
+
+- AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の更新（fail-closed・control-plane 認可）。空 = プラットフォーム既定。
+- 対象tenantが存在しactiveであること、各modelが登録済みかつactiveであること、modelIdsに重複がないことを更新前に検証する。存在しないtenantは404、無効なmodel集合・重複は422とし、部分更新しない。
+- `expectedRevision`を指定した場合、現行revisionと不一致なら`409 model_allowlist_conflict`で更新せず、`currentRevision`を返す。正式CLIは常にGETで取得したrevisionを指定する。互換性期間中は未指定の直接API呼出しを許容するが、管理UI/新規automationは指定必須とする。
 
 **GET** `/healthz`
 

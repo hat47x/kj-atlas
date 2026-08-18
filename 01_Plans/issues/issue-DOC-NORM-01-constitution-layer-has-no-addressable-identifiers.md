@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/ai_kj_execution_procedures.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`
-- Related ADR/Spec: `01_Plans/00-prompt-improvement-program-2026-08-15.md`（本issueの根拠。P1〜P3に対応）, `00_Prompt/cognitive_frame_and_evolution_criteria.md`
+- Related ADR/Spec: `01_Plans/research/00-prompt-improvement-program-2026-08-15.md`（本issueの根拠。P1〜P3に対応）, `00_Prompt/cognitive_frame_and_evolution_criteria.md`
 - Norms: `DOM-SHARE-04`
 - Expected verification level: `docs-check`
 
@@ -37,7 +37,7 @@
 
 ### 事実3: 接続の失敗が実際に表面化した
 
-`01_Plans/product-trajectory-research-2026-08-15.md` は不変条件を参照する必要が生じたとき、**`I1`〜`I5` という識別子をその場で発明せざるを得なかった**。文書内でのみ有効な一時的な識別子であり、他から参照できない。
+`01_Plans/research/product-trajectory-research-2026-08-15.md` は不変条件を参照する必要が生じたとき、**`I1`〜`I5` という識別子をその場で発明せざるを得なかった**。文書内でのみ有効な一時的な識別子であり、他から参照できない。
 
 ### 事実4: 憲法層固有の検証が存在しない
 
@@ -57,11 +57,11 @@
 
 `DOMAIN-SCORING-SURFACE-01`（画面に「健全性 N%」が出荷されていた件）はこの帰結の実例である。`domain.md` と `ui_design_handoff.md` が採点を禁じているのに、**禁止と実装を突き合わせる経路が無かった**ため長期間気づかれなかった。
 
-これは `direction-review-2026-08-13.md` §2 が全層で観測した構造——**主張した保護範囲 > 実際の保護範囲**——の憲法層での現れである。
+これは `research/direction-review-2026-08-13.md` §2 が全層で観測した構造——**主張した保護範囲 > 実際の保護範囲**——の憲法層での現れである。
 
 ## 対応方針
 
-`00-prompt-improvement-program-2026-08-15.md` の P1〜P3 を実施する。
+`research/00-prompt-improvement-program-2026-08-15.md` の P1〜P3 を実施する。
 
 - **実施すること**:
   1. **P1**: `domain.md` の §2（基本思想3概念）と §7（AIの禁止事項）へ安定識別子を付す。`DOM-` 接頭辞、`WIR-01` 形式に倣う。AIの禁止事項は**1項目1ID**とする。

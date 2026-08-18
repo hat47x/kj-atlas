@@ -224,7 +224,7 @@ active tenantは認証セッション単位で1つとする。同じセッショ
 - `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - `02_Architecture/design/ui_design_handoff.md`
-- `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
+- `01_Plans/research/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
 - `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`（Accepted）
 - `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`

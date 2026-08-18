@@ -102,3 +102,35 @@ export async function fetchDocumentMetadata(
     return null; // never break the main projection over an advisory metadata fetch
   }
 }
+
+// CE4 proposal lifecycle (read-only): lets a generative-AI verifier confirm
+// whether each AI proposal is still proposal-only (status="proposed") or was
+// decided by a human (accepted/rejected/held, with decidedAt). Read-only by
+// contract (GET /ai/proposals/status); never mutates.
+export type ProposalStatusItem = {
+  proposalId: string;
+  proposalKind: string;
+  origin: string;
+  status: "proposed" | "accepted" | "rejected" | "held";
+  sourceBundleHash: string;
+  createdAt: string;
+  decidedAt?: string | null;
+};
+
+export async function fetchProposalStatus(
+  config: DocumentClientConfig,
+  docId: string,
+): Promise<ProposalStatusItem[]> {
+  const url = `${config.baseUrl}/ai/proposals/status?docId=${encodeURIComponent(docId)}`;
+  const headers: Record<string, string> = {};
+  if (config.apiKey) {
+    headers["X-API-Key"] = config.apiKey;
+  }
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new DocumentFetchError(docId, response.status);
+  }
+  const body = (await response.json()) as { proposals: ProposalStatusItem[] };
+  return body.proposals;
+}

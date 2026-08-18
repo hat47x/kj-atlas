@@ -82,5 +82,5 @@ Round 6 で「以後、新しい画面設計の依頼は原則なし・実装照
 - Related: `02_Architecture/design/design-request-2026-07-round3.md` 〜 `round6.md`
 - Related: `02_Architecture/design/design-qa-checklist.md`（第1〜7回照合記録）
 - Related: `04_Documentation/ui_catalog.md`
-- Related: `01_Plans/dogfood-log-2026-07-10.md`
+- Related: `01_Plans/dogfood/dogfood-log-2026-07-10.md`
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `ADR-0052`, `ADR-0053`

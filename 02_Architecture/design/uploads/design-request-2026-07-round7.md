@@ -38,5 +38,5 @@ Aは項目ごとに ✓/△/✗＋所見（特に A-1 の teal 採否）。Bは�
 
 - P31 の扱い: ✗1件（A-3）と△1件（SafeMode面塗り）は PR #2563 で修正・マージ済み。△（QA-MONKEY-11重なり）は再検証の結果 **QA-MONKEY-12** として独立起票（`01_Plans/issues/issue-QA-MONKEY-12-work-mode-suggest-layout-button-overlap.md`、elementFromPoint による幾何学的証跡つき）。P21 と実装の乖離は **UX-NAV-02**（role=tablist・5タブ化、診断タブ新設）として起票済み。
 - P31 で ✓ 評価だった A-2 開始パネル（再開導線）は、カバレッジ棚卸し（`design-request-gaps-2026-07.md`）の A-2 をクローズする扱いとする。
-- B の背景: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（Proposed）、`01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補: MCP の Linux Foundation 移管・2026-07-28 仕様確定、ChatGPT/Copilot/Claude のMCPクライアント対応、TRACE の57.5%定量根拠、knowledgeplane 対照例、LangChain HITL 3パターン）。
+- B の背景: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（Proposed）、`01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（追補: MCP の Linux Foundation 移管・2026-07-28 仕様確定、ChatGPT/Copilot/Claude のMCPクライアント対応、TRACE の57.5%定量根拠、knowledgeplane 対照例、LangChain HITL 3パターン）。
 - 実装Issue: `EXT-CONN-01/02/03`（いずれも Draft、ADR-0054 Accepted 待ちゲート）。

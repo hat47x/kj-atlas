@@ -22,9 +22,9 @@ export type DiagBrowserFamily = (typeof DIAG_BROWSER_FAMILIES)[number];
 export const DIAG_OS_FAMILIES = ["windows", "macos", "linux", "android", "ios", "other"] as const;
 export type DiagOsFamily = (typeof DIAG_OS_FAMILIES)[number];
 
-// ADR-0053 §許可リスト: provider種別名のみ(none/local/large-scale)。unknown は
+// ADR-0053 §許可リスト: provider種別名のみ(none/local/large-scale/deepseek)。unknown は
 // providerKind 未解決時(App.tsx の PROV-VIS-01 表示ロジックと同じ意味)。
-export const DIAG_PROVIDER_TYPES = ["none", "local", "large-scale", "unknown"] as const;
+export const DIAG_PROVIDER_TYPES = ["none", "local", "large-scale", "deepseek", "unknown"] as const;
 export type DiagProviderType = (typeof DIAG_PROVIDER_TYPES)[number];
 
 export type DiagBundleV1 = {

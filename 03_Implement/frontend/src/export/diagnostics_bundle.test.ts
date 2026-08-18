@@ -135,6 +135,14 @@ describe("isDiagBundleShapeValid: unknown-key rejection", () => {
     expect(isDiagBundleShapeValid({ ...base, runtime: { ...base.runtime, providerType: "openai" } })).toBe(false);
   });
 
+  it("accepts deepseek as a provider type without exposing provider credentials", () => {
+    const bundle = buildDiagnosticsBundle({ ...BASE_INPUT, providerType: "deepseek" });
+
+    expect(bundle.runtime.providerType).toBe("deepseek");
+    expect(isDiagBundleShapeValid(bundle)).toBe(true);
+    expect(JSON.stringify(bundle)).not.toContain("apiKey");
+  });
+
   it("accepts a fully valid bundle produced by the builder", () => {
     const bundle = buildDiagnosticsBundle({
       ...BASE_INPUT,

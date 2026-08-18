@@ -27,7 +27,7 @@
   - 安全な文字種・長さへ検証済みのアプリ revision / ビルド識別子、生成時刻。検証できないrevisionは `unknown` とする
   - 正規化済みのブラウザfamily、任意のmajor version、OS family。生のUserAgentは含めない
   - 障害分類コード（`operations.md` の WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）と、画面が明示的な障害コンテキストとして保持する直近の HTTP status
-  - SafeMode 状態（ON/OFF）と provider 種別名（none / local / large-scale / unknown。エンドポイントURL・モデル名は含めない）
+  - SafeMode 状態（ON/OFF）と provider 種別名（none / local / large-scale / deepseek / unknown。エンドポイントURL・モデル名は含めない）
   - 対象 Document の `version` / `updatedAt` と、カード/島/エッジの**件数のみ**。`Document.id` は含めない
   - アプリ自身のエラーエンベロープのうち、既知のA1契約値 `errorCode` / `contractId` / `occurredAt` のみ。`message` / stack / cause は含めない
 - **禁止リスト（レビュー状態を問わず一切含めない）**:

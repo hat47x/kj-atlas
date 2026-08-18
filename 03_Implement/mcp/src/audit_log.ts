@@ -1,5 +1,6 @@
 import { canonicalizeJson } from "../../frontend/src/domain/patch/patch_fingerprint.js";
 import type { ContextProjectionConstraint } from "../../frontend/src/export/context_bundle_projection.js";
+import type { DocumentClientConfig } from "./document_client.js";
 
 // EXT-CONN-01 subslice B, AC-3: every read gets a bundleHash/queryCanonicalHash
 // correlation. This does NOT call the backend's POST /docs/{id}/context-audit
@@ -49,4 +50,68 @@ export type AuditLogEntry = {
  */
 export function logAuditEntry(entry: AuditLogEntry): void {
   process.stderr.write(`${JSON.stringify(entry)}\n`);
+}
+
+const CE4_AUDIT_SCHEMA_VERSION = "ce4.audit.v1" as const;
+
+/**
+ * EXT-CONN-01 channel wiring (subslice C / dedicated backend issue): report an
+ * MCP-originated read to the backend's POST /docs/{doc_id}/context-audit (CE-4)
+ * endpoint with `channel="mcp"`, so an MCP-projected read is traceable in the
+ * same audit trail as api/cli/gui callers. This closes the gap recorded in the
+ * old "Non-goals" note (channel enum had no mcp slot) -- the backend now accepts
+ * it and api.md documents it.
+ *
+ * Best-effort by design: the read's own correlation is the local AuditLogEntry
+ * above (synchronous, stderr, always written). The CE-4 emit is an additional
+ * backend-visible sink for an already-successful read -- if it fails we record a
+ * structured warning to stderr and continue instead of turning a successful
+ * read into an error.
+ */
+export async function emitContextAuditEvent(
+  config: DocumentClientConfig,
+  input: { docId: string; safeMode: boolean; queryCanonicalHash: string; bundleHash: string },
+): Promise<void> {
+  const url = `${config.baseUrl}/docs/${encodeURIComponent(input.docId)}/context-audit`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (config.apiKey) {
+    headers["X-API-Key"] = config.apiKey;
+  }
+  const body = {
+    operation: "query",
+    safeMode: input.safeMode,
+    equivalenceKey: input.queryCanonicalHash,
+    bundleHash: input.bundleHash,
+    queryHash: input.queryCanonicalHash,
+    dryRun: true,
+    sideEffect: "none",
+    command: "context-query",
+    channel: "mcp",
+    schemaVersion: CE4_AUDIT_SCHEMA_VERSION,
+  };
+  try {
+    const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    if (!response.ok) {
+      process.stderr.write(
+        `${JSON.stringify({
+          schemaVersion: "mcp-context-read.v1",
+          occurredAt: new Date().toISOString(),
+          docId: input.docId,
+          message: "CE-4 audit emit failed (best-effort; local audit entry remains the correlation)",
+          status: response.status,
+          body,
+        })}\n`,
+      );
+    }
+  } catch (error) {
+    process.stderr.write(
+      `${JSON.stringify({
+        schemaVersion: "mcp-context-read.v1",
+        occurredAt: new Date().toISOString(),
+        docId: input.docId,
+        message: "CE-4 audit emit error (best-effort; local audit entry remains the correlation)",
+        error: error instanceof Error ? error.message : String(error),
+      })}\n`,
+    );
+  }
 }

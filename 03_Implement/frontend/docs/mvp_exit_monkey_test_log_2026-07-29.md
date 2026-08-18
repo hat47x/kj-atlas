@@ -84,8 +84,8 @@
 cd 03_Implement/frontend
 node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173 &
 
-SEED=1 ACTIONS=150 VIEWPORT=1440 node ./scripts/monkey_ui_sweep.mjs
-ONLY=A1,A2,A3,A4 node ./scripts/monkey_adversarial_probes.mjs
+KJ_ATLAS_MONKEY_SEED=1 KJ_ATLAS_MONKEY_ACTIONS=150 KJ_ATLAS_MONKEY_VIEWPORT=1440 node ./scripts/monkey_ui_sweep.mjs
+KJ_ATLAS_MONKEY_ONLY=A1,A2,A3,A4 node ./scripts/monkey_adversarial_probes.mjs
 ```
 
 `monkey_ui_sweep.mjs` は違反を、`monkey_adversarial_probes.mjs` は各確認の ok / SUSPECT をJSONで出力する。SUSPECT はそのまま欠陥を意味しない。上記のとおり、確定させる前に個別の再現で切り分ける必要がある。

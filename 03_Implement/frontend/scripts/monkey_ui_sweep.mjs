@@ -27,7 +27,7 @@ const trace = [];
 function finding(kind, detail) {
   const key = `${kind}::${detail}`.slice(0, 400);
   if (findings.some((f) => `${f.kind}::${f.detail}`.slice(0, 400) === key)) return;
-  findings.push({ kind, detail, afterAction: trace.length, recentTrace: trace.slice(-12) });
+  findings.push({ kind, detail, afterAction: trace.length, recentTrace: trace.slice(-200) });
 }
 
 function buildDocument(n) {
@@ -75,7 +75,7 @@ page.on("console", (m) => {
   const text = m.text();
   // 404/500 on routed fixtures are expected noise from the stubbed API.
   if (/Failed to load resource/.test(text)) return;
-  finding("console.error", text.slice(0, 300));
+  finding("console.error", text.slice(0, 1200));
 });
 
 const sample = { value: true };
@@ -158,6 +158,21 @@ function checkInvariants(snap, action) {
     finding("nan-transform", `座標にNaN/Infinityを含む要素が${snap.nanTransforms}件 (after ${action})`);
 }
 
+async function isActionable(locator, options = {}) {
+  try {
+    await locator.click({ ...options, trial: true, timeout: 350 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function clickIfActionable(locator, options = {}) {
+  if (!(await isActionable(locator, options))) return false;
+  await locator.click({ ...options, timeout: 2000 });
+  return true;
+}
+
 const keyActions = [
   "Tab", "Tab", "Tab", "Shift+Tab", "Enter", "Space", "Escape", "Escape",
   "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Home", "End",
@@ -172,20 +187,37 @@ try {
   trace.push("open-sample");
 
   for (let i = 0; i < ACTIONS; i += 1) {
+    const focusBeforeAction = await page.evaluate(() => {
+      const active = document.activeElement;
+      return {
+        bodyFocused: active === document.body || active === null,
+        description: active
+          ? `${active.tagName.toLowerCase()}:${active.getAttribute("aria-label") || (active.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 40)}`
+          : "(none)",
+      };
+    });
     const roll = rnd();
     let action = "";
     try {
       if (roll < 0.5) {
         const key = pick(keyActions);
-        action = `key:${key}`;
+        action = `key:${key}@${focusBeforeAction.description}`;
         await page.keyboard.press(key);
+        // Product focus restoration is intentionally deferred to the next
+        // animation frame after an element closes or is replaced. Async start
+        // actions can also finish after loading, so allow a short bounded wait
+        // for focus to settle before classifying a body transition.
+        await page.evaluate(() => new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined))));
+        if (!focusBeforeAction.bodyFocused) {
+          await page.waitForFunction(() => document.activeElement !== document.body, undefined, { timeout: 1000 }).catch(() => {});
+        }
       } else if (roll < 0.62) {
-        const buttons = await page.locator("header button:visible").all();
+        const buttons = await page.locator("header button:visible:enabled").all();
         if (buttons.length) {
           const b = buttons[Math.floor(rnd() * buttons.length)];
           const name = ((await b.getAttribute("aria-label")) || (await b.innerText()) || "").replace(/\s+/g, " ").trim().slice(0, 24);
           action = `click-header:${name}`;
-          await b.click({ timeout: 2000 });
+          if (!(await clickIfActionable(b))) action = "skip-blocked-header";
         }
       } else if (roll < 0.72) {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
@@ -193,13 +225,18 @@ try {
           const c = cards[Math.floor(rnd() * cards.length)];
           const mods = rnd() < 0.3 ? ["Shift"] : [];
           action = `click-card${mods.length ? "+Shift" : ""}`;
-          await c.click({ timeout: 2000, modifiers: mods });
+          if (!(await clickIfActionable(c, { modifiers: mods }))) action = "skip-blocked-card";
         }
       } else if (roll < 0.78) {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
         if (cards.length) {
           action = "dblclick-card";
-          await cards[Math.floor(rnd() * cards.length)].dblclick({ timeout: 2000 });
+          const card = cards[Math.floor(rnd() * cards.length)];
+          if (await isActionable(card)) {
+            await card.dblclick({ timeout: 2000 });
+          } else {
+            action = "skip-blocked-card";
+          }
         }
       } else if (roll < 0.83) {
         action = "type";
@@ -208,7 +245,8 @@ try {
         const cards = await page.getByRole("button", { name: /モンキー対象カード/ }).all();
         if (cards.length) {
           action = "rightclick-card";
-          await cards[Math.floor(rnd() * cards.length)].click({ button: "right", timeout: 2000 });
+          const card = cards[Math.floor(rnd() * cards.length)];
+          if (!(await clickIfActionable(card, { button: "right" }))) action = "skip-blocked-card";
         }
       } else if (roll < 0.93) {
         const items = await page.getByRole("menuitem").all();
@@ -216,16 +254,17 @@ try {
           const it = items[Math.floor(rnd() * items.length)];
           const name = ((await it.innerText()) || "").replace(/\s+/g, " ").trim().slice(0, 20);
           action = `menuitem:${name}`;
-          await it.click({ timeout: 2000 });
+          if (!(await clickIfActionable(it))) action = "skip-blocked-menuitem";
         } else {
           action = "key:Escape";
           await page.keyboard.press("Escape");
         }
       } else if (roll < 0.96) {
-        const boxes = await page.locator('input[type="checkbox"]:visible').all();
+        const boxes = await page.locator('input[type="checkbox"]:visible:enabled').all();
         if (boxes.length) {
           action = "toggle-checkbox";
-          await boxes[Math.floor(rnd() * boxes.length)].click({ timeout: 2000 });
+          const box = boxes[Math.floor(rnd() * boxes.length)];
+          if (!(await clickIfActionable(box))) action = "skip-blocked-checkbox";
         }
       } else if (roll < 0.985) {
         // drag a random card by a random offset (may land on empty canvas or on the island).
@@ -233,7 +272,7 @@ try {
         if (cards.length) {
           const c = cards[Math.floor(rnd() * cards.length)];
           const box = await c.boundingBox();
-          if (box) {
+          if (box && await isActionable(c)) {
             const dx = Math.floor((rnd() - 0.5) * 400);
             const dy = Math.floor((rnd() - 0.5) * 300);
             action = `drag-card(${dx},${dy})`;
@@ -272,8 +311,8 @@ try {
     if (i % 5 === 0 || roll >= 0.5) {
       const snap = await snapshot();
       checkInvariants(snap, action);
-      if (snap.bodyFocused && /^key:(Tab|Shift\+Tab|Escape)$/.test(action)) {
-        finding("focus-lost-to-body", `${action} の後にフォーカスが<body>へ落ちた`);
+      if (snap.bodyFocused && !focusBeforeAction.bodyFocused && /^key:(Tab|Shift\+Tab|Enter|Space|Escape|Delete|Backspace)@/.test(action)) {
+        finding("focus-lost-to-body", `${action} の後にフォーカスが<body>へ落ちた（操作前=${focusBeforeAction.description}）`);
       }
     }
   }
