@@ -906,10 +906,10 @@ stateDiagram-v2
     </tr>
     <tr>
       <td>文書アーカイブUI</td>
-      <td>✗（標準機能にしない）</td>
-      <td>✗（lifecycle state列なし）</td>
-      <td>✗（APIなし）</td>
-      <td>3/3</td>
+      <td>✓（<code>ADR-0073</code> D2=A で標準機能として採択）</td>
+      <td>✓（<code>lifecycle_state</code> 列実装済み。active/archived の2値）</td>
+      <td>✓（<code>POST /docs/{doc_id}/archive</code>・<code>/unarchive</code> 実装済み）</td>
+      <td>0/3（2026-08-15解消。<code>post-mvp-business-scope-design-program.html</code> §8）</td>
     </tr>
     <tr>
       <td>ユーザー一覧UI</td>

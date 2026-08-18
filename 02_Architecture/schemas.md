@@ -603,20 +603,25 @@ export type VoidEntry = {
 - `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
-#### 3.4.1 DocumentListItemV1（一覧専用の最小射影、DATA-MODEL-OPS-02 D1/AC-2）
+#### 3.4.1 DocumentListItemV1（廃止 — 実装済み契約は §3.4.2）
 
-`GET /docs`（`api.md` §2.4）が返す一覧項目は、`DocumentV1` の部分集合ではなく、次の allowlist 型のみを許可する契約とする。
+**廃止**（`api.md` §2.4 と同時、`post-mvp-business-scope-design-program.html` §8.4）。
+`DATA-MODEL-OPS-02` 時点の契約先行案であり、実装された `GET /docs` は §3.4.2 の型を返す。
+
+#### 3.4.2 DocumentListItem（実装済み、`ADR-0073` D1=C/D2=A）
 
 ```ts
-export type DocumentListItemV1 = {
+export type DocumentListItem = {
   id: string;
   title?: string;
+  createdBy?: string; // 不変の作成者事実。移行文書（未特定）では省略
+  lifecycleState: "active" | "archived";
   updatedAt: string; // ISO 8601
 };
 ```
 
-- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない。
-- 対象集合は「現認可主体がread可能な文書」に限る。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書露出へフォールバックしない。
+- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない（旧 3.4.1 から継承）。
+- **既知の欠落**: 対象集合は tenant-scoped のみで絞り込まれ、`document_access_metadata.visibility` による read 可否の絞り込みは行わない（`post-mvp-business-scope-design-program.html` §8.2 で発見・issue化）。旧 3.4.1 の「read可能な文書のみ」という制約は現時点で満たされていない。
 - `title` は `DocumentV1.title` と同じ optional 契約を継承する（無題文書は省略可）。
 - この型は一覧表示専用の射影であり、`DocumentV1` への書き戻し・保存契約には関与しない。
 
