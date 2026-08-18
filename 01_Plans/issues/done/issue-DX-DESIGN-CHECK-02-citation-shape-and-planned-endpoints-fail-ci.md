@@ -1,7 +1,7 @@
 # Issue: DX-DESIGN-CHECK-02 引用の書き方と「計画中の未実装エンドポイント」がCIを落とすため、警告件数ベースラインが機能していない
 
 - Type: Bug / Process
-- Status: Draft
+- Status: Done
 - Source Issue: `DX-DESIGN-CHECK-01`
 - Priority: P1
 - Owner: Maintainer
@@ -17,7 +17,7 @@
 
   | 種別 | 件数 | 例 |
   |---|---|---|
-  | 引用の省略形（正本には存在する） | 2 | `schemas.md` が `/docs` を PUT で引用。api.md には `/docs/{doc_id}` の PUT がある |
+  | 引用の省略形（正本には存在する） | 2 | `schemas.md` が `PUT /docs` を引用。api.md には `PUT /docs/{doc_id}` がある |
   | 計画中で未契約（issueが将来のAPIを述べている） | 10 | `/admin/audit`（`SEC-ADMIN-PLANE-03`、4回）、`/admin/register-client-secret` 他（`SAAS-TENANT-SESSION-BINDING-01`、3回）、`/ai/available-models`、`/import/documents`、`/ai/propose-island-summary` |
   | 実際の乖離 | **0** | — |
 
@@ -46,9 +46,25 @@
 
 ## 受入条件
 
-- [ ] 親パスでの省略形引用（`/docs` を PUT で引用する類）が警告を出さない（または引用側が是正され、規約が文書化されている）
-- [ ] **本issue自身の上表を `METHOD /path` の形へ戻しても警告が増えない。** 回避しながら書かねばならない状態が解消されていることの確認である
-- [ ] `01_Plans/issues/*` からの未契約エンドポイント参照が `api_endpoints` 警告に計上されない
-- [ ] 上記適用後に `check_design_consistency.py` を実行し、残った警告が**すべて実際の乖離であること**を1件ずつ確認した記録がある
-- [ ] 検出力の確認: api.md に存在しないエンドポイントを `02_Architecture` から参照する probe を置き、警告が出ることを確かめる（消音側だけを検証しない）
-- [ ] ベースラインを引き直し、`main` の CI が緑
+- [x] 親パスでの省略形引用（`/docs` を PUT で引用する類）が警告を出さない（または引用側が是正され、規約が文書化されている）
+- [x] **本issue自身の上表を `METHOD /path` の形へ戻しても警告が増えない。** 回避しながら書かねばならない状態が解消されていることの確認である
+- [x] `01_Plans/issues/*` からの未契約エンドポイント参照が `api_endpoints` 警告に計上されない
+- [x] 上記適用後に `check_design_consistency.py` を実行し、残った警告が**すべて実際の乖離であること**を1件ずつ確認した記録がある
+- [x] 検出力の確認: api.md に存在しないエンドポイントを `02_Architecture` から参照する probe を置き、警告が出ることを確かめる（消音側だけを検証しない）
+- [x] ベースラインを引き直し、`main` の CI が緑
+
+## 完了記録（2026-08-18）
+
+メンテナが `1ab9d5c5`（"fix(ci): resolve design-consistency api_endpoints drift and ruff F401"）で対応済み。
+
+- `01_Plans/issues/*` からの参照を `check_design_consistency.py` の除外対象に追加（コメントで本issueを明示的に参照）。
+- `schemas.md` の `PUT /docs` を `PUT /docs/{doc_id}` へ揃えた。
+- `GET /ai/available-models` を `api.md` へ記載。
+- モックIdPの管理面（`/admin/register-*`, `/admin/trigger-backchannel-*`）を除外（kj-atlas自体のAPIではない）。
+- ベースラインを 4 → 0 へ引き直した。
+
+**受入条件を1件ずつ再検証した**（メンテナのverifiedメモを鵜呑みにせず、自分で再現）。
+
+- AC-2: 本issue上表を一時的に `PUT /docs` / `PUT /docs/{doc_id}` の直接形へ戻し、`check_design_consistency.py` を実行 → 0 warnings（増加なし）。確認後に元へ戻す必要はない——`01_Plans/issues/*` 全体が除外対象になったため、直接形のままで良い。
+- AC-5（検出力）: `02_Architecture/_probe.md` に `api.md` へ存在しない `` `GET /docs/{doc_id}/nonexistent-probe-endpoint-xyz` `` を追加 → `WARN` が正しく発火することを確認（probe削除後に元の 0 warnings へ復帰）。消音側だけでなく検出側も生きていることを確認済み。
+- 現状: `check_design_consistency.py` → 0 errors, 0 warnings。`main` のCIは緑。
