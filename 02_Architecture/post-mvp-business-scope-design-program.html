@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第0版（枠組み＋第1反復） / 作成: 2026-08-10<br>
+  区分: 設計プログラム枠組み / 版: 第1版（枠組み＋第1反復＋第2反復） / 作成: 2026-08-10 / 更新: 2026-08-18<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -335,10 +335,116 @@ stateDiagram-v2
 <h2>7. 次の反復への引き継ぎ</h2>
 
 <ol>
-  <li><strong>第1反復の残作業</strong>: <code>ADR-0072</code> の採択（D1/D2/D3）。§5.2 の profile 差の分離を採択時に反映する。</li>
-  <li><strong>第2反復の起点</strong>: §6 の欠落（<code>documents</code> の所有者・lifecycle）。データ次元の補正が先行し、その後に業務・機能を突き合わせる。</li>
-  <li><strong>チェックリストへの提案</strong>: §3 の「無効化時の振る舞い」を <code>three-element-constraint-checklist.html</code> の必須項目へ追加する。</li>
-  <li><strong>未収集の外部知見</strong>: 類似製品（Miro / Notion / Figma / Slack / Atlassian）の組織モデル・bootstrap手順・共同編集の並行性モデルの比較調査は本版では未実施。第3反復（共同編集の並行性モデル選定）と第5反復（テナント間連携）では、この外部比較なしに判断すべきでない。</li>
+  <li><strong>第1反復の残作業</strong>: <code>ADR-0072</code> の採択（D1/D2/D3）。§5.2 の profile 差の分離を採択時に反映する。<br>
+    → <strong>完了（2026-08-13）。</strong> D1=A+B、D2は profile 差を分離して採択された。</li>
+  <li><strong>第2反復の起点</strong>: §6 の欠落（<code>documents</code> の所有者・lifecycle）。データ次元の補正が先行し、その後に業務・機能を突き合わせる。<br>
+    → <strong>完了（2026-08-15、<code>ADR-0073</code> + <code>issue-DATA-DOC-LIFECYCLE-01</code>）。</strong> 詳細は §8。</li>
+  <li><strong>チェックリストへの提案</strong>: §3 の「無効化時の振る舞い」を <code>three-element-constraint-checklist.html</code> の必須項目へ追加する。<br>
+    → <strong>完了。</strong> <code>CHK-B5</code> として追加済み（本節を判定基準として参照）。</li>
+  <li><strong>未収集の外部知見</strong>: 類似製品（Miro / Notion / Figma / Slack / Atlassian）の組織モデル・bootstrap手順・共同編集の並行性モデルの比較調査は本版では未実施。第3反復（共同編集の並行性モデル選定）と第5反復（テナント間連携）では、この外部比較なしに判断すべきでない。<br>
+    <strong>未着手のまま。</strong></li>
+</ol>
+
+<h2>8. 第2反復: 作業の器の三要素分析</h2>
+
+<p>
+  第2反復の出発点（<code>documents</code> の所有者・生涯）は、本プログラムの初版（第0版）と次版の間に、
+  <code>ADR-0073</code> と <code>issue-DATA-DOC-LIFECYCLE-01</code> として<strong>実装済みになっていた</strong>。
+  したがって本節の役割は空白を設計することではなく、<strong>実装済みのものを三要素法で検証し、見落としを見つけること</strong>である。
+  第1反復が <code>ADR-0072</code> に対して行ったのと同じ検証を、<code>ADR-0073</code> に対して行う。
+</p>
+
+<h3>8.1 決定事項（<code>ADR-0073</code>、Accepted 2026-08-13）</h3>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:8%;">決定</th><th style="width:40%;">内容</th><th>棄却した代替案</th></tr></thead>
+  <tbody>
+    <tr><td><strong>D1=C</strong></td><td>作成者（<code>created_by</code>）は不変の履歴事実。所有はテナントに属し、管理権は capability の話とする。個人への可変な所有列は持たない</td><td>A: 可変な個人所有列（無効化時に孤立する）／B: テナント所有のみ（「自分の文書」が作れない）／D: チーム中間層（<code>ADR-0043</code> の複雑性予算を超える）</td></tr>
+    <tr><td><strong>D2=A</strong></td><td><code>active</code> / <code>archived</code> の2値のみ。<code>trashed</code> / <code>purged</code> は持たない。物理削除UIは非目標（<code>ADR-0033</code> と整合）</td><td>—</td></tr>
+    <tr><td><strong>D3=A</strong></td><td><code>created_by</code> は nullable。移行済み既存文書は作成者「不明」（<code>NULL</code>）のままとし、既定管理者への遡及的な付け替えはしない（記録されていない事実を作らない）</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <strong>D1=C が構造的に持つ副作用: 「ユーザ無効化」の問いが消える。</strong>
+  所有が個人に乗らないため、「無効化された利用者が持っていた文書はどうなるか」という§6が立てた問いは、
+  答えるべき対象そのものが存在しなくなる形で解消された。これは第1反復で見た「循環を解く」型の解決とは異なり、
+  <strong>問いの前提を無くすことで問いを消す</strong>型の解決である。三要素分析としては正しい——
+  「誰が持っているか」を業務要件として立てず、データ設計側から先に断ったことで、業務・機能の両方が追随する必要が無くなった。
+</div>
+
+<h3>8.2 発見した欠落: 一覧・アーカイブAPIが可視性・capabilityを経ない</h3>
+
+<div class="gapbox">
+  <strong>三要素分析で発見した設計上の欠落。</strong><br>
+  単一文書の <code>GET</code>/<code>PUT /docs/{doc_id}</code> は <code>_authorize_request()</code> を経由し、
+  <code>document_access_metadata.visibility</code> と capability を <code>access_control_adapter</code>（PDP）へ照会する。
+  一方、新設された <code>GET /docs</code>（一覧）と <code>POST /docs/{doc_id}/archive</code>・<code>/unarchive</code> は
+  <code>_resolve_request_tenant()</code> のみを呼び、<strong>tenant一致だけを確認して visibility も capability も照会しない</strong>
+  （<code>03_Implement/backend/src/kj_atlas_api/routes/docs.py</code>）。
+  <code>02_Architecture/api.md</code> §2.2 自身がこれを「認可：tenant-scoped」と正直に記載している——嘘は書かれていないが、
+  同ファイル §2.4（<code>DATA-MODEL-OPS-02</code> 契約、実装より前に書かれた）は同じ <code>GET /docs</code> に対して
+  「対象集合：現認可主体が<strong>read可能な文書のみ</strong>」と<strong>逆の契約</strong>を今も記載したままである。
+</div>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">次元</th><th style="width:45%;">主張</th><th>他次元への制約</th></tr></thead>
+  <tbody>
+    <tr class="biz"><td><span class="tag t-biz">業務</span></td><td>テナント内の一利用者が、自分には read 権限の無い <code>Restricted</code> 文書の存在・タイトル・作成者を一覧で知り得て良いか、また他人の文書を archive できて良いかは、業務として決めた記憶が無い</td><td>データ: visibility を「表示可否」ではなく「存在の秘匿」まで含む境界として使うなら、一覧はその境界を素通りしている</td></tr>
+    <tr class="data"><td><span class="tag t-data">データ</span></td><td><code>document_access_metadata.visibility</code>（Public/Unlisted/Org/Restricted）は単一文書の読み取りだけをゲートする設計で作られ、一覧という集合演算を想定していなかった</td><td>機能: 一覧を visibility 対応にするには「1件ずつ認可」ではなく「集合を絞り込む」新しい照会形が要る（既存 <code>_authorize_request</code> は単一 <code>doc_id</code> 前提）</td></tr>
+    <tr class="func"><td><span class="tag t-func">機能</span></td><td><code>_transition_lifecycle</code>（archive/unarchive）はテナント一致のみで 204 を返す。書き込み相当の操作でありながら、<code>PUT</code> が要求する write capability の確認を経ない</td><td>業務: 「管理権は capability」（<code>ADR-0073</code> D1=C）という決定の実体が、archive/unarchive という具体操作には反映されていない</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  この欠落は情報漏出（本文は含まれない。行メタデータのみ）としては小さいが、
+  <strong>「同一テナント内の任意の利用者が、権限外の文書を archive/unarchive できる」</strong>という完全性の問題としては小さくない。
+  修正には「集合に対する認可」という、単一文書向けに作られた <code>_authorize_request</code> の型を拡張する設計判断が要り、
+  第3反復（協働）が扱う「複数主体が同一成果物へ関与するとき何が守られるか」と本質的に同じ問いである。
+  したがって本反復ではこれを<strong><code>issue-SEC-DOC-BOUND-06</code> として起票し、第3反復の入力とする</strong>（§9）。
+</p>
+
+<h3>8.3 権限変更・組織変更（文書の移管）は依然未設計</h3>
+
+<p>
+  §6 が挙げた4項目のうち、一覧・生涯・ユーザ無効化は本反復で解消した（一覧・生涯は実装、無効化はD1=C により問いが消滅）。
+  <strong>「文書をチーム間で移す操作」は未解決のまま残る。</strong>
+  <code>ADR-0073</code> は D1=C の直接の裏返しとしてこれを明示的に非目標としている
+  （「所有者を移す」という直感的操作は無く、管理権は capability 側の話になる）。
+  <code>master-data-settings-ui-ux-concept.md</code> も文書一覧UIから所有者移管を明示的に除外している。
+  これは<strong>設計忘れではなく意図的な保留</strong>であり、チーム中間層を要求する具体的な利用実態が生じるまで、
+  第4反復（成果物の複数化）以降で再検討する。
+</p>
+
+<h3>8.4 記録の是正</h3>
+
+<p>実装が先行し、既存の設計記録が追随していなかった箇所を2件是正する。</p>
+
+<ul>
+  <li><code>02_Architecture/api.md</code> §2.4 と <code>02_Architecture/schemas.md</code> §3.4.1 は
+    <code>DATA-MODEL-OPS-02</code> 時点の契約（visibility対応の一覧、実装は任意）を今も記載している。
+    §2.2 に実装済み契約があるため、§2.4/§3.4.1 は<strong>実装済み契約と矛盾する古い契約案</strong>になっている。</li>
+  <li><code>non-canvas-ui-flow-design.html</code> §9「文書アーカイブUI」の行は
+    業務=✗（標準機能にしない）・データ=✗（lifecycle列なし）・機能=✗（APIなし）・不足=3/3 のままである。
+    <code>ADR-0073</code> D2=A により3点とも解消済みであり、この行は更新されていない。</li>
+</ul>
+
+<h2>9. 第2反復から第3反復への引き継ぎ</h2>
+
+<ol>
+  <li><strong>起票済み</strong>: <code>issue-SEC-DOC-BOUND-06</code>（§8.2 の一覧・archive/unarchive 認可欠落）。単一文書向けの
+    <code>_authorize_request</code> を集合向けに拡張する設計判断を要するため、第3反復（協働）の設計に先行して
+    最低限のテナント外漏出防止（visibility が <code>Restricted</code> の文書を一覧・archive 対象から除く）を固定する。</li>
+  <li><strong>記録の是正</strong>: §8.4 の2箇所（<code>api.md</code> §2.4・<code>schemas.md</code> §3.4.1・
+    <code>non-canvas-ui-flow-design.html</code> §9）を実装済み状態に合わせて更新する。</li>
+  <li><strong>第3反復への入力</strong>: 「集合に対する認可」という型は、公開・共有・共同編集（第3反復の対象）が
+    いずれも必要とする形である。第3反復の設計はこれを個別の場当たり対応ではなく、共通の認可プリミティブとして
+    最初から扱うべきである。</li>
+  <li><strong>未収集の外部知見（第1反復から継続）</strong>: 類似製品比較調査は本版でも未実施。第3反復着手前に対応する。</li>
 </ol>
 
 <h2>Traceability</h2>
@@ -349,8 +455,11 @@ stateDiagram-v2
   <li><code>01_Plans/adr/ADR-0072-control-plane-authorization-separation.md</code> — 第1反復の中核ADR（§5.2で欠落を指摘）</li>
   <li><code>01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md</code> — identity 検証の fail-closed 方針（§5.3の一貫性根拠）</li>
   <li><code>01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md</code> — tenant 境界の正本</li>
-  <li><code>02_Architecture/non-canvas-ui-flow-design.html</code> §9 — 既存の「三者未成立」一覧（§6と一致）</li>
+  <li><code>02_Architecture/non-canvas-ui-flow-design.html</code> §9 — 既存の「三者未成立」一覧（§6と一致。文書アーカイブUI行は§8.4で是正対象と指摘）</li>
   <li><code>02_Architecture/enterprise_architecture.html</code> §06 — plane 分離要求（§2のアクター写像の根拠）</li>
+  <li><code>01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md</code> — 第2反復の中核ADR（§8で検証）</li>
+  <li><code>01_Plans/issues/done/issue-DATA-DOC-LIFECYCLE-01-documents-lack-owner-and-lifecycle.md</code> — 第2反復の実装記録</li>
+  <li><code>03_Implement/backend/src/kj_atlas_api/routes/docs.py</code> — <code>_authorize_request</code> と <code>_resolve_request_tenant</code> の非対称（§8.2の根拠）</li>
   <li><code>02_Architecture/inquiry_journey_model.html</code> — 単独実務者の時間軸方向の設計（§1の対比対象）</li>
   <li><code>02_Architecture/design/master-data-settings-ui-ux-concept.md</code> — 第2反復のマスタ設定の先行設計</li>
 </ul>

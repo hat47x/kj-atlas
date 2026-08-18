@@ -88,14 +88,18 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 ---
 
-### 2.4 List（契約先行固定、実装はMVPでは後回し可）
+### 2.4 List（廃止 — §2.2 の実装済み契約が正本）
 
-**GET** `/docs`
+**廃止**: GET /docs の DATA-MODEL-OPS-02 版契約（`DocumentListItemV1`、2026-08-XX、`post-mvp-business-scope-design-program.html` §8.4）
 
-- Response：`DocumentListItemV1[]`（`02_Architecture/schemas.md` §3.4.1）。返却項目は `id` / `title` / `updatedAt` のallowlistに限り、`cards` / `edges` / `islands` / `narratives` / `evidenceLinks` などの本文・構造フィールドは一覧項目に一切含めない（`DATA-MODEL-OPS-02` D1・AC-2）。
-- 対象集合：現認可主体がread可能な文書のみ。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書一覧へのフォールバックは行わない。
+本節は `GET /docs` の実装より前に書かれた契約先行案であり、`DATA-MODEL-OPS-02` D1・AC-2 として
+「対象集合：現認可主体がread可能な文書のみ」（visibility対応）を要求していた。実際に実装された契約は
+§2.2 の `DocumentListItemV1`（`id`/`title?`/`created_by?`/`lifecycle_state`/`updated_at`、`ADR-0073` D1=C/D2=A）であり、
+**認可はtenant-scopedのみで、本節が要求していたvisibility対応の絞り込みは実装されていない**
+（`post-mvp-business-scope-design-program.html` §8.2 で発見・issue化）。
 
-イントラ想定では一覧があると便利だが、実装自体はMVPでは必須ではない。本節は上記の契約（返却allowlist・対象集合・fail-closed方針）のみを先行固定するものであり、実装着手の可否は別途判断する。
+この欠落が解消されるまで、本節が要求していた「read可能な文書のみ」という制約は**満たされていない**。
+解消後は本節を削除し、§2.2 へ制約を統合する。
 
 
 ### 2.5 Document監査イベント（FB-RM-PUB-05 / CE4）
