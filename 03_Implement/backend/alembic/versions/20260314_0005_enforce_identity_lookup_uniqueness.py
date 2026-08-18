@@ -16,7 +16,21 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def _has_index(inspector: sa.Inspector, table_name: str, index_name: str) -> bool:
+def _has_index(bind: sa.Connection, inspector: sa.Inspector, table_name: str, index_name: str) -> bool:
+    if bind.dialect.name == "sqlite":
+        # SQLAlchemy's SQLite reflection skips expression-based indexes
+        # entirely (SAWarning: "Skipped unsupported reflection of
+        # unsupported reflection of expression-based index ..."), so
+        # inspector.get_indexes() can never see this index and always
+        # reports it missing. Query sqlite_master directly instead --
+        # PRAGMA index_list/sqlite_master do report it by name.
+        row = bind.execute(
+            sa.text(
+                "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = :name"
+            ),
+            {"name": index_name},
+        ).first()
+        return row is not None
     return any(index["name"] == index_name for index in inspector.get_indexes(table_name))
 
 
@@ -59,7 +73,7 @@ def upgrade() -> None:
         return
 
     if not _has_index(
-        inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"
+        bind, inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"
     ):
         op.create_index(
             "uq_user_identities_provider_lower_external_uid",
