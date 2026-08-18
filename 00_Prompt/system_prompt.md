@@ -1,5 +1,7 @@
 # system_prompt — AI開発ポリシー
 
+- Status: Normative
+
 このファイルは、**kj-atlas の開発を支援する生成AIの最上位行動規範**です。
 
 - ここで規定するのは **開発支援AIの振る舞い** です。

@@ -124,7 +124,7 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 
 - LLM出力スキーマ（`LLMRequest.output_schema`）の設計。IR §0.2 の非目標を引き継ぐ。
 - Provider transport の選定。同上。
-- `POST /ai/assess-card-importance` の採点と `00_Prompt/domain.md:88`（「AIは内容を採点せず」）の抵触。`issue-AI-IMPORTANCE-SCORING-01` で採点APIを廃止して解消済み。本ADRが将来提供する`graph_summary`は、順位や等級を持たない構造的観測（中心性・連結成分・矛盾サブグラフ）に限定する。
+- `POST /ai/assess-card-importance` の採点と `DOM-AI-07`（`00_Prompt/domain.md` §7「カード品質を点数・順位・合否で評価する」の禁止。主体を問わない上位規定は `DOM-CORE-04`）の抵触。`issue-AI-IMPORTANCE-SCORING-01` で採点APIを廃止して解消済み。本ADRが将来提供する`graph_summary`は、順位や等級を持たない構造的観測（中心性・連結成分・矛盾サブグラフ）に限定する。
 - IR の上限値（`MAX_CARDS=200` / `MAX_RELATIONS=400` / `MAX_TEXT_CHARS=12000`、§5.1）が現行規模に妥当かの再検討。実装時に代表規模で計測し、必要なら別途起票する。
 
 ## Three-Element Verification（ADR-0067 遡及適用）

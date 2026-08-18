@@ -514,6 +514,345 @@ def check_adr_id_uniqueness(root: Path, markdown_paths: list[Path]) -> list[Docs
     return findings
 
 
+#: Constitution-layer identifiers (DOC-NORM-01). Definitions are headings or
+#: top-level list items; anything else mentioning the token is a reference.
+NORM_ID_RE = re.compile(r"\b(?:(?:DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2}|CHK-[BDFXK]\d)\b")
+NORM_ID_DEFINITION_RE = re.compile(
+    r"^(?:#{2,4}\s+|-\s+\*\*)((?:DOM|KJT|AKP|WIR|VC|CQ)-[A-Z]*-?\d{2})\b", re.M
+)
+#: The three-element checklist (02_Architecture, HTML). Its items are the gate a
+#: design decision must pass, so they are citable the same way norms are. The
+#: per-ADR three-element tables are deliberately NOT given identifiers: those are
+#: reasoning that produced a decision, and 234+ reasoning cells would reproduce
+#: the exists-but-unreferenced failure at scale.
+THREE_ELEMENT_CHECKLIST_PATH = Path("02_Architecture/three-element-constraint-checklist.html")
+CHECKLIST_ID_DEFINITION_RE = re.compile(r"<td>(CHK-[BDFXK]\d)</td>")
+
+#: A line-number reference into the constitution layer, e.g. a doc path with a
+#: trailing colon and digits.
+#: These rot the moment the file is edited, which is why identifiers exist.
+NORM_LINE_REFERENCE_RE = re.compile(r"00_Prompt/[A-Za-z0-9_.-]+\.md:\d+")
+
+NORM_ID_UNIQUENESS_RULE_ID = "DC-NORM-001"
+NORM_ID_RESOLUTION_RULE_ID = "DC-NORM-002"
+NORM_LINE_REFERENCE_RULE_ID = "DC-NORM-003"
+
+
+def _collect_norm_definitions(root: Path) -> dict[str, Path]:
+    """Map every constitution-layer identifier to the file that defines it."""
+    definitions: dict[str, Path] = {}
+    duplicates: list[tuple[str, Path, Path]] = []
+    prompt_dir = root / "00_Prompt"
+    if not prompt_dir.is_dir():
+        return definitions
+    for source in sorted(prompt_dir.rglob("*.md")):
+        relative = source.relative_to(root)
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for identifier in NORM_ID_DEFINITION_RE.findall(text):
+            if identifier in definitions and definitions[identifier] != relative:
+                duplicates.append((identifier, definitions[identifier], relative))
+            else:
+                definitions.setdefault(identifier, relative)
+    checklist = root / THREE_ELEMENT_CHECKLIST_PATH
+    if checklist.is_file():
+        try:
+            checklist_text = checklist.read_text(encoding="utf-8")
+        except OSError:
+            checklist_text = ""
+        for identifier in CHECKLIST_ID_DEFINITION_RE.findall(checklist_text):
+            definitions.setdefault(identifier, THREE_ELEMENT_CHECKLIST_PATH)
+
+    _collect_norm_definitions.duplicates = duplicates  # type: ignore[attr-defined]
+    return definitions
+
+
+#: Controlled Status vocabulary for 00_Prompt (DOC-NORM-01).
+#: Normative  = states rules that bind
+#: Informative = orientation and rationale; binding rules live elsewhere
+#: On-demand  = read only when the situation calls for it
+#: Superseded = retained for history; do not follow
+PROMPT_STATUS_VALUES = ("Normative", "Informative", "On-demand", "Superseded")
+PROMPT_STATUS_RE = re.compile(r"^- Status:[ \t]*(?P<value>.+?)[ \t]*$", re.M)
+PROMPT_STATUS_RULE_ID = "DC-NORM-004"
+
+
+def check_prompt_status_vocabulary(root: Path) -> list[DocsCheckFinding]:
+    """Every 00_Prompt document declares exactly one controlled Status.
+
+    A parenthetical such as `Normative（ADR-0057 Accepted、…で追跡）` is rejected:
+    a status is a controlled value, and a tracking pointer is a different fact.
+    Put the pointer in `- Tracked-by:`.
+    """
+    repository_root = root.resolve()
+    prompt_dir = repository_root / "00_Prompt"
+    if not prompt_dir.is_dir():
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for source in sorted(prompt_dir.glob("*.md")):
+        relative = source.relative_to(repository_root)
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        matches = list(PROMPT_STATUS_RE.finditer(text))
+        if not matches:
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=1,
+                    target="Status",
+                    message="00_Prompt document has no `- Status:` field",
+                    fix_hint=(
+                        "Add `- Status: " + " | ".join(PROMPT_STATUS_VALUES) + "` below the title."
+                    ),
+                )
+            )
+            continue
+
+        if len(matches) > 1:
+            second = text[: matches[1].start()].count("\n") + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=second,
+                    target="Status",
+                    message="00_Prompt document declares Status more than once",
+                    fix_hint="Keep exactly one Status field.",
+                )
+            )
+
+        value = matches[0].group("value").strip()
+        if value not in PROMPT_STATUS_VALUES:
+            line_number = text[: matches[0].start()].count("\n") + 1
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=PROMPT_STATUS_RULE_ID,
+                    path=relative.as_posix(),
+                    line=line_number,
+                    target=value,
+                    message=(
+                        f"Status {value!r} is not one of {'/'.join(PROMPT_STATUS_VALUES)}"
+                    ),
+                    fix_hint=(
+                        "Use a controlled value. Move tracking information (ADR numbers, "
+                        "implementing issues) to a separate `- Tracked-by:` line."
+                    ),
+                )
+            )
+    return findings
+
+def check_norm_identifier_uniqueness(root: Path) -> list[DocsCheckFinding]:
+    """An identifier must name exactly one norm, forever."""
+    repository_root = root.resolve()
+    _collect_norm_definitions(repository_root)
+    duplicates = getattr(_collect_norm_definitions, "duplicates", [])
+    findings: list[DocsCheckFinding] = []
+    for identifier, first, second in duplicates:
+        findings.append(
+            DocsCheckFinding(
+                rule_id=NORM_ID_UNIQUENESS_RULE_ID,
+                path=second.as_posix(),
+                line=1,
+                target=identifier,
+                message=(
+                    f"{identifier} is defined in both {first.as_posix()} and {second.as_posix()}"
+                ),
+                fix_hint=(
+                    "Identifiers are append-only and are never reused. Give the newer norm the "
+                    "next unused number in its prefix."
+                ),
+            )
+        )
+    return findings
+
+
+def check_norm_identifier_resolution(
+    root: Path, markdown_paths: list[Path]
+) -> list[DocsCheckFinding]:
+    """A reference to a norm must resolve to a norm that exists.
+
+    This is the rule the whole identifier scheme exists for. Without it, plans
+    can cite norms that were renamed or never existed, and the constitution
+    cannot be changed with any knowledge of what depends on it.
+    """
+    repository_root = root.resolve()
+    definitions = _collect_norm_definitions(repository_root)
+    if not definitions:
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda p: p.as_posix()):
+        relative = (
+            supplied_path
+            if not supplied_path.is_absolute()
+            else supplied_path.relative_to(repository_root)
+        )
+        source = repository_root / relative
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        if relative == THREE_ELEMENT_CHECKLIST_PATH:
+            continue
+        defined_here = set(NORM_ID_DEFINITION_RE.findall(text))
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in NORM_ID_RE.finditer(line):
+                token = match.group(0)
+                if token in definitions or token in defined_here:
+                    continue
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NORM_ID_RESOLUTION_RULE_ID,
+                        path=relative.as_posix(),
+                        line=line_number,
+                        target=token,
+                        message=f"{token} does not resolve to any norm defined in 00_Prompt",
+                        fix_hint=(
+                            "Cite an identifier that exists, or define it in the owning "
+                            "00_Prompt document. Do not invent per-document identifiers."
+                        ),
+                    )
+                )
+    return findings
+
+
+def check_norm_line_references(
+    root: Path, markdown_paths: list[Path]
+) -> list[DocsCheckFinding]:
+    """Line-number citations into 00_Prompt rot on the next edit."""
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+    for supplied_path in sorted(markdown_paths, key=lambda p: p.as_posix()):
+        relative = (
+            supplied_path
+            if not supplied_path.is_absolute()
+            else supplied_path.relative_to(repository_root)
+        )
+        source = repository_root / relative
+        try:
+            text = source.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in NORM_LINE_REFERENCE_RE.finditer(line):
+                findings.append(
+                    DocsCheckFinding(
+                        rule_id=NORM_LINE_REFERENCE_RULE_ID,
+                        path=relative.as_posix(),
+                        line=line_number,
+                        target=match.group(0),
+                        message=(
+                            f"{match.group(0)} cites 00_Prompt by line number, which breaks on edit"
+                        ),
+                        fix_hint=(
+                            "Cite the norm identifier (e.g. DOM-CORE-02) instead. If the passage "
+                            "has no identifier, add one in the owning document."
+                        ),
+                    )
+                )
+    return findings
+
+
+#: `domain.md` §5 declares retired vocabulary in this exact shape, so the rule
+#: below reads its terms from the document that owns them rather than hardcoding
+#: a list that could drift from the norm it enforces.
+RETIRED_TERM_DECLARATION_RE = re.compile(r"^- `([^`]+)` は旧称です", re.M)
+
+#: A block a document explicitly marks as a historical or prohibition note.
+#: Guessing intent from wording was tried and failed: the rename record in
+#: ADR-0028 D11 and the prohibition statement in architecture.html both name the
+#: retired term legitimately, and no keyword heuristic separated them from the
+#: contract prose that had to change. An explicit marker states the intent
+#: instead of inferring it -- the lesson DX-CANON-INTENT-01 recorded.
+RETIRED_VOCAB_EXEMPT_OPEN = "retired-vocabulary: historical"
+RETIRED_VOCAB_EXEMPT_CLOSE = "/retired-vocabulary"
+
+#: Inline naming-as-retired, e.g. `Consensus Graph（旧称: Core Graph）`. Wrapping
+#: every parenthetical in block markers would be worse than the problem.
+RETIRED_INLINE_MARKERS = ("旧称", "旧 ", "legacy", "旧称:")
+
+#: Scope. `02_Architecture` is where contract vocabulary lives, so that is where
+#: reintroduction does damage. Deliberately NOT scoped to `01_Plans/issues`:
+#: those carry execution records of the rename itself (over 80 occurrences in
+#: `issue-CE0-core-graph-repositioning.md` alone) where the old name is correct.
+#: The rule therefore protects less than `domain.md` §5 states. That gap is real
+#: and is recorded in `issue-DOC-VOCAB-01`.
+RETIRED_VOCAB_SCOPE = ("02_Architecture",)
+RETIRED_VOCAB_RULE_ID = "DC-VOCAB-001"
+
+
+def _retired_terms(root: Path) -> list[str]:
+    domain = root / "00_Prompt" / "domain.md"
+    try:
+        text = domain.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    return RETIRED_TERM_DECLARATION_RE.findall(text)
+
+
+def check_retired_vocabulary(root: Path) -> list[DocsCheckFinding]:
+    """A term `domain.md` retired must not reappear as contract vocabulary."""
+    repository_root = root.resolve()
+    terms = _retired_terms(repository_root)
+    if not terms:
+        return []
+
+    findings: list[DocsCheckFinding] = []
+    for scope in RETIRED_VOCAB_SCOPE:
+        base = repository_root / scope
+        if not base.is_dir():
+            continue
+        for source in sorted(base.rglob("*")):
+            if source.suffix not in {".md", ".html"} or not source.is_file():
+                continue
+            try:
+                text = source.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            relative = source.relative_to(repository_root).as_posix()
+            exempt = False
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                if RETIRED_VOCAB_EXEMPT_OPEN in line:
+                    exempt = True
+                    continue
+                if RETIRED_VOCAB_EXEMPT_CLOSE in line:
+                    exempt = False
+                    continue
+                if exempt:
+                    continue
+                for term in terms:
+                    if term not in line:
+                        continue
+                    if any(marker in line for marker in RETIRED_INLINE_MARKERS):
+                        continue
+                    findings.append(
+                        DocsCheckFinding(
+                            rule_id=RETIRED_VOCAB_RULE_ID,
+                            path=relative,
+                            line=line_number,
+                            target=term,
+                            message=(
+                                f"{term!r} is retired vocabulary (00_Prompt/domain.md §5) but is "
+                                "used here as contract vocabulary"
+                            ),
+                            fix_hint=(
+                                "Use the canonical term. If this line is a historical note or the "
+                                f"prohibition itself, wrap it in <!-- {RETIRED_VOCAB_EXEMPT_OPEN} --> "
+                                f"... <!-- {RETIRED_VOCAB_EXEMPT_CLOSE} --> so the intent is stated "
+                                "rather than guessed."
+                            ),
+                        )
+                    )
+    return findings
+
 def check_current_history_headings(
     root: Path, markdown_paths: tuple[Path, ...] = CURRENT_ONLY_PATHS
 ) -> list[DocsCheckFinding]:

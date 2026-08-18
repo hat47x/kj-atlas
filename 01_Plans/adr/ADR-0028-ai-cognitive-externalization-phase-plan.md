@@ -42,7 +42,7 @@
 
 - Fixed Contracts:
   - AIは候補生成器（自動確定禁止）
-  - Core Graph 直接更新禁止（patch提案経由のみ）
+  - Consensus Graph 直接更新禁止（patch提案経由のみ）
   - safeMode既定ON・未レビュー出力の既定抑止
   - Human context と AI projection context の分離
 - 成果物:
@@ -97,7 +97,7 @@
   - AI-aware Perspective Mode（人間向け視座と分離）
 - 検証:
   - 部分採用/保留/廃棄が可逆
-  - Perspective切替がCore Graphを変更しない
+  - Perspective切替が Consensus Graph を変更しない
 
 #### CE-4: API/CLI/監査統合
 
@@ -146,9 +146,14 @@
   - `llm_input_ir_spec.md` / `llm_quality_strategy.md` / `review_attribution.md` の契約空白を抽出。
   - Contract IDs を `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF` として予約。
 - CE0-B（Docs）
-  - safeMode既定ON・未レビュー保護・Core Graph直接更新禁止を Architecture 文書へ追記。
+  - safeMode既定ON・未レビュー保護・Consensus Graph直接更新禁止を Architecture 文書へ追記。
 - CE0-C（Verify）
-  - ドリフト検知: `rg -n "safeMode|unreviewed|Core Graph|projection" 00_Prompt 01_Plans/adr 02_Architecture 04_Documentation`
+  - ドリフト検知: `rg -n "safeMode|unreviewed|Consensus Graph|projection" 00_Prompt 01_Plans/adr 02_Architecture 04_Documentation`
+    <!-- retired-vocabulary: historical — 旧称の再出現そのものを検知対象にする -->
+  - 旧称の再出現検知: `rg -n "Core Graph" 02_Architecture` が、履歴注記として明示された箇所以外を返さないこと。
+    正規の検証は `DC-VOCAB-001`（`docs_contract_checks.py`）が行う。
+    **旧称を検索語にしていた従来のコマンドは、改名が正しく行われると何も返さなくなり黙って通る。**
+    <!-- /retired-vocabulary -->
 - CE0-D（Record）
   - issue メモへ Contract IDs / Stop Conditions / 未確定論点（Pending）を記録。
 
@@ -202,7 +207,7 @@
   - 複数パッチ並置・部分採用・保留・廃棄の状態遷移を定義。
 - CE3-B（Implement）
   - Patch Workspace UI と Query Presets を追加。
-  - AI-aware Perspective を表示レイヤに限定（Core Graph非破壊）。
+  - AI-aware Perspective を表示レイヤに限定（Consensus Graph 非破壊）。
 - CE3-C（Verify）
   - 部分採用後のロールバック復元をE2Eで確認。
   - Presetによる query 再現性（同preset=同query）を確認。
@@ -301,6 +306,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - `UNC-CE-01-01`: Query Preview UI配置（サイド/モーダル/固定）
 - `UNC-CE-01-02`: bundle token budget 初期値（8k相当を初期提案）
 
+<!-- retired-vocabulary: historical — 改名を決定した記録。ここでは旧称が正しい -->
 ### D11. Core Graph再考
 
 追加指示を受け、Core Graphの役割を再検討し以下を決定する。
@@ -326,6 +332,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 1. **Working Graph(s)**: 主体ごとの探索・仮説・未確定保持グラフ。
 2. **Context Projection Graph**: Working Graphから問い合わせ目的に投影する構造化コンテキスト。
 3. **Consensus Graph（旧 Core Graph）**: 合意・適用済み結果を保持する統合グラフ。
+<!-- /retired-vocabulary -->
 
 #### D11-4. 整合原則（KJ法構造との整合）
 
@@ -507,7 +514,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 
 ### Context
 - HIL-RS の可逆統合は、認知外在化要件上の ContextQuery / ContextBundle / proposal-only 統治と同じ安全境界に置かれる。
-- AI出力は探索候補であり、Core Graph / Consensus Graph / `human_reviewed` を直接更新する権限を持たない。
+- AI出力は探索候補であり、Consensus Graph / `human_reviewed` を直接更新する権限を持たない。
 
 ### Decision
 - HIL-RS proposal は ContextBundle の `sourceBundleHash` と `proposalId` を持ち、出所・切り詰め・根拠・矛盾・保留の監査に接続できる場合だけ下流へ渡す。

@@ -7,13 +7,16 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/types.ts`, `void_detection.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `03_Implement/backend/src/kj_atlas_api/models.py`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `00_Prompt/kj_technique.md`（§4 空白の列挙・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `KJT-INSPECT-03`, `KJT-SIGN-04`
 - Expected verification level: `integration`
 
 ## 課題
 
 方法論の正本は空白の列挙を「この技法の最大の産物のひとつ」とし、空白ゼロを失敗の徴候としている。
 
-> `00_Prompt/kj_technique.md:159-167`
+> `KJT-INSPECT-03` 空白を見つける（`00_Prompt/kj_technique.md` §4）
+>
+> 未実装の帰結として `KJT-SIGN-04`（空白の指摘がゼロ件）が検出不能である。
 > **空白を見つける（この技法の最大の産物のひとつ）**
 > 配置すると、「ここに本来あるべき束が無い」という空白が見える。
 > 空白を必ず言語化して列挙する。「見当たらなかった」で済ませない。

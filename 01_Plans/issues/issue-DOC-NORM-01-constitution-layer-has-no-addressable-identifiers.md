@@ -1,12 +1,13 @@
 # Issue: DOC-NORM-01 憲法層の不変条件に識別子が無く、計画から参照・検証・追跡ができない
 
 - Type: Documentation quality
-- Status: Draft
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
 - Scope: `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/ai_kj_execution_procedures.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`
 - Related ADR/Spec: `01_Plans/research/00-prompt-improvement-program-2026-08-15.md`（本issueの根拠。P1〜P3に対応）, `00_Prompt/cognitive_frame_and_evolution_criteria.md`
+- Norms: `DOM-SHARE-04`
 - Expected verification level: `docs-check`
 
 ## 課題
@@ -29,7 +30,10 @@
 
 ### 事実2: 行番号参照が発生している
 
-識別子が無いため、`00_Prompt/domain.md:88` のような**行番号による参照が3件**存在する。行番号は編集で腐るため、**無いより悪い参照**である。
+識別子が無いため、憲法層のファイルを行番号で指す参照が複数存在する。行番号は編集で腐るため、**無いより悪い参照**である。
+
+**これは仮定ではない。** 本issueの作業で `domain.md` へ識別子を追記した時点で既存の行番号参照はすべてずれ、
+引用している文と指し先が食い違う状態になった。`DC-NORM-003` はこの失敗様態そのものを禁じる。
 
 ### 事実3: 接続の失敗が実際に表面化した
 
@@ -76,13 +80,13 @@
 
 ## 受入条件
 
-- [ ] AC-1: `domain.md` の §2 の3概念と §7 の禁止事項に、一意な識別子が付与されている。既存の散文の意味が変わっていない。
-- [ ] AC-2: `kj_technique.md` の §3・§4・§5・§6 の各検査・各徴候に識別子が付与されている。
-- [ ] AC-3: `docs_check` が `00_Prompt` の Status 語彙を検証し、統制外の値で落ちる。
-- [ ] AC-4: `docs_check` が `00_Prompt` 全体で識別子の重複を検出して落ちる。
-- [ ] AC-5: **他層から `DOM-*` / `KJT-*` 等を参照したとき、実在しない識別子で落ちる。** 存在する識別子では通る。
-- [ ] AC-6: `00_Prompt/*.md:NN` 形式の行番号参照を検出して落ちる。既存3件を識別子参照へ置換する。
-- [ ] AC-7: **能力カナリア** — 実在しない識別子への参照を意図的に入れると AC-5 が落ちることを、ミューテーションで確認する（`DOGFOOD-METRIC-01` 案A）。
+- [x] AC-1: `domain.md` の §2 の3概念と §7 の禁止事項に、一意な識別子が付与されている。既存の散文の意味が変わっていない。
+- [x] AC-2: `kj_technique.md` の §3・§4・§5・§6 の各検査・各徴候に識別子が付与されている。
+- [x] AC-3: `docs_check` が `00_Prompt` の Status 語彙を検証し、統制外の値で落ちる。
+- [x] AC-4: `docs_check` が `00_Prompt` 全体で識別子の重複を検出して落ちる。
+- [x] AC-5: **他層から `DOM-*` / `KJT-*` 等を参照したとき、実在しない識別子で落ちる。** 存在する識別子では通る。
+- [x] AC-6: 行番号参照を検出して落ちる。既存の該当箇所を識別子または節参照へ置換した（実測8件。当初「3件」としたのは計測漏れ）。
+- [x] AC-7: **能力カナリア** — 実在しない識別子への参照を意図的に入れると AC-5 が落ちることを、ミューテーションで確認する（`DOGFOOD-METRIC-01` 案A）。
 
 ## 検証
 

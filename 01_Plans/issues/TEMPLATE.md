@@ -9,6 +9,7 @@
 - Owner: Maintainer
 - Scope: `<paths>`
 - Related ADR/Spec: `<ADRまたは正本文書>`
+- Norms: `<DOM-CORE-02, KJT-INSPECT-02 等。依拠または抵触する憲法層の識別子。無ければ省略可>`
 - Expected verification level: `<docs-check / unit / integration / e2e>`
 
 ## 三要素整合（ADR-0067。新規設計判断を含む場合のみ、任意）

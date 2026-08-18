@@ -7,13 +7,16 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `models_ai.py`, `routes/ai.py`, `03_Implement/frontend/src/domain/types.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `api/client.ts`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `00_Prompt/kj_technique.md`（§5 A/B照合・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `KJT-INSPECT-04`, `KJT-SIGN-09`
 - Expected verification level: `integration`
 
 ## 課題
 
 方法論の正本は A/B 照合を**双方向**で行い、結果を**件数で報告**することを要求している。
 
-> `00_Prompt/kj_technique.md:180-186`
+> `KJT-INSPECT-04` A型とB型を突き合わせる（`00_Prompt/kj_technique.md` §5）
+>
+> 方向と件数を持たないため `KJT-SIGN-09`（B型がA型より論理的に整いすぎている）を件数で報告できない。
 > 必ず双方向に照合する。
 > - **B型にあってA型に無いもの** → 図に無いことを書いた。根拠がない。図に足すか、文から削る。
 > - **A型にあってB型で落ちたもの** → 語れなかった束がある。なぜ語れないのかを問う。

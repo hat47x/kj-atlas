@@ -71,6 +71,34 @@ def test_migration_rejects_case_insensitive_external_uid_duplicates(tmp_path: Pa
     assert "Detected case-insensitive duplicates in user_identities" in blocked_upgrade.stderr
 
 
+def test_migration_is_idempotent_when_index_already_exists(tmp_path: Path) -> None:
+    """inspector.get_indexes() cannot see this expression index on SQLite
+    (SAWarning: "Skipped unsupported reflection of expression-based
+    index ..."), so the existence check that guarded op.create_index() used
+    to always report the index missing. On a database where the index was
+    already created by some other means, upgrading to head then failed with
+    "index ... already exists" instead of skipping the create. Query
+    sqlite_master directly to detect it instead.
+    """
+    db_path = tmp_path / "preexisting_identity_idx.sqlite3"
+
+    upgrade_to_0004 = _run_alembic(db_path, "upgrade", "20260313_0004")
+    assert upgrade_to_0004.returncode == 0, upgrade_to_0004.stderr
+
+    con = sqlite3.connect(db_path)
+    try:
+        con.execute(
+            "CREATE UNIQUE INDEX uq_user_identities_provider_lower_external_uid "
+            "ON user_identities (lower(provider), lower(external_uid))"
+        )
+        con.commit()
+    finally:
+        con.close()
+
+    upgrade_to_head = _run_alembic(db_path, "upgrade", "head")
+    assert upgrade_to_head.returncode == 0, upgrade_to_head.stderr
+
+
 def test_migration_downgrade_drops_case_insensitive_index(tmp_path: Path) -> None:
     db_path = tmp_path / "downgrade_identity_idx.sqlite3"
 

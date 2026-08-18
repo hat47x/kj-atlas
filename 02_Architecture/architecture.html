@@ -280,7 +280,10 @@ flowchart LR
       <li><code>human_reviewed</code> 状態をAIが自動付与してはならない。</li>
       <li>safeMode既定ON時、未レビュー本文をAI入力へ含めてはならない。</li>
       <li><code>mode=autonomous</code> でも proposal-only を維持し、監査4点セット（query / bundle / proposal / apply）欠損時は失敗扱いとする。</li>
-      <li><code>Core Graph</code> を契約語彙へ再導入してはならない（履歴注記用途のみ許可）。</li>
+      <!-- retired-vocabulary: historical — 禁止規則そのものが対象語を名指しする必要がある -->
+      <li><code>Core Graph</code> を契約語彙へ再導入してはならない（履歴注記用途のみ許可）。
+          検証は <code>DC-VOCAB-001</code> が行う。</li>
+      <!-- /retired-vocabulary -->
     </ul>
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">5.4 Go/NoGo Key（実装着手ゲート）</h3>
