@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `00_Prompt/qualitative_card_quality_requirements.md` §5, `00_Prompt/ai_cognitive_externalization_requirements.md`, `03_Implement/frontend/src/domain/`
 - Related ADR/Spec: `00_Prompt/kj_technique.md` §3, `02_Architecture/value_traceability.md` §2.1（V2 構造化）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+- Norms: `KJT-SIGN-01, KJT-INSPECT-01`（`inspectIslandTitle()` は転写検査そのものの実装であり、普遍語表札という失敗の徴候を検出する）
 - Expected verification level: `e2e`
 
 ## 課題

@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/`, `04_Documentation/data_handling.md`, `04_Documentation/security.md`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `PRODUCT-UX-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-QA-MONKEY-01-safemode-export-boundary.md`, `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
+- Norms: `DOM-SHARE-02, DOM-SHARE-03`（share/export preflightがhold・対立・矛盾を明示するreadiness blockを持つ）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

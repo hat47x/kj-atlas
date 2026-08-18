@@ -4,6 +4,7 @@
 - Date: 2026-06-10
 - Deciders: Maintainer（委譲された意思決定権限）
 - Scope: `01_Plans/`, `02_Architecture/value_traceability.md`, `03_Implement/`
+- Norms: `DOM-AI-02, DOM-AI-03, DOM-AI-04, DOM-AI-05, DOM-AI-06`（CVI-7が`DOM-AI-02`/`DOM-AI-03`、CVI-4が`DOM-AI-04`、CVI-3が`DOM-AI-05`、CVI-2が`DOM-AI-06`の実体を成す単一の砦である）
 
 ## Context
 

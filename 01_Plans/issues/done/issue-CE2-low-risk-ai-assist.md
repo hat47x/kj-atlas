@@ -4,6 +4,7 @@
 - Status: Done
 - Priority: P1
 - Owner: Stream F（CE2 Open化準備専任 / proposal-only）
+- Norms: `DOM-AI-05, DOM-AI-06`（`reviewState` を `unreviewed | human_reviewed` の閉集合とし、AI提案は常に `unreviewed` 固定・自動昇格禁止）
 - Open gate status: **Not opened**（Approval Record `approved_at/approved_by/decision/evidence` が `TBD/missing`。本文「Human Tasks Before Open Review」参照。実装着手は人間のApproval Record充足後に再評価）
 
 ## Done 2026-06-20

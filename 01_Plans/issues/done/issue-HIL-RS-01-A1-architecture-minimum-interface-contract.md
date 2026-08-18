@@ -8,6 +8,7 @@
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `ADR-0039`
+- Norms: `DOM-AI-05, DOM-AI-06`（`HIL_RS_APPLY_JUDGEMENT_V1` は人間承認後の適用のみを許し、AIによる`human_reviewed`昇格を禁じる契約である）
 - Expected verification level: `docs-check`
 
 ## A1 Done 2026-06-20

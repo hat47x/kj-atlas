@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ106）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
 - Related ADR/Spec: `01_Plans/issues/issue-DOGFOOD-06-verification-paths-abnormal-case-coverage.md`（検証は正常系も異常系も assert する）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ1〜106・622 checks）
+- Norms: `KJT-SIGN-05`（`hasContradiction:false` 固定のモックは、対立が検出できないまま「調和的にまとまった」ことにされる失敗様態そのものを検証不能にしていた）
 - Expected verification level: `e2e`
 
 ## 課題

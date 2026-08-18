@@ -4,6 +4,7 @@
 - Date: 2026-07-20
 - Deciders: Product Owner / UX Lead / Security Officer / Project Maintainers
 - Scope: `00_Prompt/representative_visual_cue_requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
+- Norms: `DOM-AIOK-06, DOM-AI-10`（自動生成・自動採用の禁止、候補確認と人間による採用の必須化が本ADRの決定を構成する）
 
 ## 背景
 

@@ -4,6 +4,7 @@
 - Date: 2026-07-15
 - Deciders: Project Maintainers（ユーザー委任による方針確定）
 - Scope: `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`
+- Norms: `WIR-01, WIR-02, WIR-03, WIR-04, WIR-05, WIR-06, WIR-07, WIR-08, WIR-09`（本ADRは `w_type_iterative_inquiry_requirements.md` §5 の全9要件を確定させる決定である）
 
 ## 背景
 

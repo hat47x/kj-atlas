@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/export/context_bundle_projection.ts`（`ProjectedCard`）, `03_Implement/mcp/src/context_projection_tool.ts`
 - Related ADR/Spec: `00_Prompt/domain.md`（保留・違和感）, `issue-DOGFOOD-05`（MCP未レビュー不可視）, `01_Plans/dogfood/adopting-org-patterns.md` §3.5
+- Norms: `DOM-SHARE-02`（`ProjectedCard` に `holdState` を含めるか否かが、この共有隣接プロジェクションの決定そのもの）
 - Expected verification level: `unit`
 
 ## 課題
