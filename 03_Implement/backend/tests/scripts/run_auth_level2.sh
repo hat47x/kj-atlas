@@ -4,6 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 LOG_DIR="${ROOT_DIR}/.artifacts/auth-level2"
 export KJ_ATLAS_LEVEL2_DIAG_DIR="${KJ_ATLAS_LEVEL2_DIAG_DIR:-${LOG_DIR}/legacy-federation}"
+# A CI runner can reuse its workspace across job attempts, so a sqlite file
+# left over from a prior run can already be at head. alembic then re-applies
+# 20260314_0005's index creation, which fails with "already exists" because
+# that migration's own SQLite existence check cannot see expression-based
+# indexes via reflection. Wiping this directory first keeps the run hermetic
+# regardless of what the runner left behind.
+rm -rf "${LOG_DIR}"
 mkdir -p "${LOG_DIR}" "${KJ_ATLAS_LEVEL2_DIAG_DIR}"
 
 export KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT="${KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT:-18000}"
