@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第4版（枠組み＋第1〜第5反復＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
+  区分: 設計プログラム枠組み / 版: 第5版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -828,13 +828,44 @@ stateDiagram-v2
   <li><strong>意図的に対応しないこと</strong>: 「別テナントのIdPを個人単位で信頼する」新しい認可プリミティブの
     設計・実装（§15.1のとおり、まず非同期の受け渡し（既存bundle export/import）で実際の需要のどこまでが
     満たされるかを確認してからでないと、過剰設計になりかねない）。</li>
-  <li><strong>未着手のまま残る反復</strong>: §4表が定義する本来の「第4反復（外部境界・生成AI/MCP/CLI）」の
-    スコープ起票は、§13の注記のとおり本プログラムでは未着手である。3拡張軸の第3軸（境界の外部化）は
-    第3・第4・第5反復の3つに分解されるが、本プログラムがissueとして起票したのは第3反復
-    （<code>issue-PGM-ITER-03-01</code>）と第5反復（<code>issue-PGM-ITER-05-01</code>）のみである。
-    生成AI/MCP/CLIの権限・証跡設計自体は<code>EXT-CONN-*</code>系issueで別途進んでいる可能性があり、
-    本プログラムの反復番号と一致するかは未確認のまま次回へ引き継ぐ。</li>
+  <li><strong>→ 確認完了（2026-08-20、§17参照）</strong>: §4表が定義する本来の「第4反復（外部境界・
+    生成AI/MCP/CLI）」は、本プログラムがissueとして起票していないだけで、
+    <code>EXT-CONN-*</code>・<code>SEC-MCP-*</code>・<code>SEC-CLI-*</code>系issueで別途、既に相応の
+    深さまで進んでいたことを確認した。詳細は§17。</li>
 </ol>
+
+<h2>17. 「本来の第4反復」（外部境界: 生成AI・MCP・CLI）の状況確認</h2>
+
+<p>
+  §13の注記および§16項目3で引き継いだ疑問——§4表が定義する第4反復（外部境界: 生成AI・MCP・CLI）は
+  本プログラムでは一度もissueとして起票されていないが、実装が本当に手つかずなのか——を確認した。
+  結論: <strong>手つかずではなく、本プログラムの外側で既に相応の深さまで進んでいる。</strong>
+  新しい設計判断を要する欠落は見つからなかったため、本節は三要素分析ではなく状況確認として記録する。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:22%;">領域</th><th style="width:38%;">状況</th><th>根拠</th></tr></thead>
+  <tbody>
+    <tr><td>MCPサーバ（read-only）</td><td>実装済み・Done</td><td><code>issue-EXT-CONN-01-readonly-mcp-server.md</code></td></tr>
+    <tr><td>MCPのscope強制</td><td>2026-08-16に欠落を発見・修正済み（HTTP MCPが<code>read:context</code>を認可へ使っていなかった）</td><td><code>issue-SEC-MCP-SCOPE-01-http-mcp-did-not-enforce-read-scope.md</code></td></tr>
+    <tr><td>CLI認証</td><td>欠落を発見・修正済み</td><td><code>issue-SEC-CLI-AUTH-01-ce4-cli-could-not-authenticate-to-keyed-backend.md</code></td></tr>
+    <tr><td>saas-multitenant下のMCP</td><td><strong>意図的にfail-closed</strong>——tenant-bound credential未実装のため起動前に拒否する（黙って動くのではなく明示的に拒否）</td><td><code>03_Implement/mcp/src/document_client.ts</code> <code>validateMcpRuntimeProfile()</code></td></tr>
+    <tr><td>今後の機能（webhook・critique export・evidence trail）</td><td>Draft（未承認の設計段階）</td><td><code>issue-EXT-CONN-02/03/04</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  本節の確認で1点、SEC-DOC-BOUND-06/SEC-INQUIRY-BOUND-01と同型の懸念（MCPは個々の利用者ではなく共有の
+  <code>X-API-Key</code>で backend を呼ぶため、<code>GET /docs</code>一覧の可視性フィルタが
+  <code>requesting_user_id</code>を要求する現行実装（§11.2）の下でMCP経由の文書メタデータ取得が
+  Restrictedを常に除外してしまわないか）を検証したが、<strong>これは新しい欠落ではない</strong>——
+  この経路が問題になり得る唯一のプロファイル（<code>saas-multitenant</code>）で、MCPは
+  tenant-bound credentialが無いことを理由に既に起動そのものを拒否している。したがって
+  <code>local-dev</code>／<code>evaluation</code>（現行の唯一の対応プロファイル）では実害が無く、
+  新規issueの起票は不要と判断する。
+</p>
 
 <h2>Traceability</h2>
 
@@ -862,6 +893,8 @@ stateDiagram-v2
   <li><code>01_Plans/issues/done/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§15で三要素分析）</li>
   <li><code>01_Plans/issues/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — §15.2で発見した外部比較調査の不足を引き継ぐ新issue</li>
   <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1）</li>
+  <li><code>01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md</code>, <code>issue-SEC-MCP-SCOPE-01-http-mcp-did-not-enforce-read-scope.md</code>, <code>issue-SEC-CLI-AUTH-01-ce4-cli-could-not-authenticate-to-keyed-backend.md</code>, <code>issue-EXT-CONN-02/03/04-*.md</code> — 「本来の第4反復」（外部境界）の既存進捗（§17）</li>
+  <li><code>03_Implement/mcp/src/document_client.ts</code>（<code>validateMcpRuntimeProfile</code>） — saas-multitenant下でMCPが起動を拒否する根拠（§17）</li>
   <li>外部ソース（本版§10.2〜10.4の一次情報）:
     <a href="https://www.notion.com/help/intro-to-teamspaces">Notion Teamspaces</a>、
     <a href="https://developers.google.com/workspace/cloud-search/docs/reference/sdk/com/google/enterprise/cloudsearch/sdk/indexing/Acl">Google Cloud Search ACL indexing</a>、
