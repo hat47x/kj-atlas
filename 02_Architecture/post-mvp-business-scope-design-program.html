@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第2版（枠組み＋第1〜第3反復＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-19<br>
+  区分: 設計プログラム枠組み / 版: 第3版（枠組み＋第1〜第4反復＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -561,6 +561,11 @@ stateDiagram-v2
 
 <h3>11.1 並行性モデル: <code>ADR-0076</code> D1 の採択を提案し、D2 に判断基準を追加する</h3>
 
+<div class="note">
+  <strong>採択記録（2026-08-20）:</strong> 本節の提案どおり<code>ADR-0076</code>のStatusを
+  Proposed→Acceptedへ更新した（D1=A採択。D2へ下記の判断基準を追加）。以下は提案時点の記述のまま残す。
+</div>
+
 <p>
   §10.1 の検証済み知見と、kj-atlasが既にサーバ権威・単一正本であるという事実の一致から、
   <strong>D1=A（サーバ権威LWW＋既存CAS拡張）の採択を提案する。</strong> 新しい並行制御機構を導入せず、
@@ -590,6 +595,12 @@ stateDiagram-v2
 </div>
 
 <h3>11.2 集合に対する認可: <code>issue-SEC-DOC-BOUND-06</code> の一覧フィルタを設計する</h3>
+
+<div class="note">
+  <strong>実装記録（2026-08-19）:</strong> 下表のとおり一覧へvisibilityフィルタを実装し、
+  <code>issue-SEC-DOC-BOUND-06</code>の受入条件を全て満たしてDoneとした
+  （<code>01_Plans/issues/done/issue-SEC-DOC-BOUND-06-list-and-archive-bypass-visibility-and-capability.md</code>）。
+</div>
 
 <p>
   §10.3 の知見（ACLをコンテンツと一緒に索引し、クエリ時にローカルでフィルタする）を適用する。
@@ -646,9 +657,9 @@ stateDiagram-v2
 <h2>12. 第3反復から第4・第5反復への引き継ぎ</h2>
 
 <ol>
-  <li><strong>採択が必要</strong>: <code>ADR-0076</code>（D1=A採択を提案。D2へ§11.1の判断基準追加を提案）。</li>
-  <li><strong>実施すること</strong>: <code>issue-SEC-DOC-BOUND-06</code> の残作業（一覧のvisibilityフィルタ、§11.2の表のとおり）。
-    これで同issueの受入条件が全て満たせる見込み。</li>
+  <li><strong>→ 完了（2026-08-20）</strong>: <code>ADR-0076</code>（D1=A採択。D2へ§11.1の判断基準追加）。</li>
+  <li><strong>→ 完了（2026-08-19）</strong>: <code>issue-SEC-DOC-BOUND-06</code> の残作業（一覧のvisibilityフィルタ、§11.2の表のとおり）。
+    同issueの受入条件が全て満たされ、Doneとして<code>01_Plans/issues/done/</code>へ移動済み。</li>
   <li><strong>意図的に対応しないこと</strong>: ユーザ間コラボレーションの個別招待UI（§11.3）。
     外部PDPへの委譲が既存の設計であり、具体的な需要が出るまで再検討しない。</li>
   <li><strong>第4反復（成果物の複数化）への入力</strong>: 第4反復は <code>issue-PGM-ITER-04-01</code>
@@ -660,6 +671,83 @@ stateDiagram-v2
     という設計方針は、複数組織が絡む第5反復ではそのまま使えない可能性がある——他組織のPDPをどちらの
     テナントが信頼するかという、第1反復のbootstrap問題と同型の循環が生じ得るため、第5反復の着手時に
     再確認する。</li>
+</ol>
+
+<h2>13. 第4反復: 成果物の複数化の三要素分析</h2>
+
+<p>
+  第4反復の対象は3拡張軸の第2軸「成果物の複数化」であり、問いは「単独実務者の成果物（現行
+  <code>DocumentV1</code>）が複数化・多様化するとき何を守るか」である（<code>issue-PGM-ITER-04-01</code>で
+  起票済み・Open）。同issueは「現行は単一文書が成果物の中心」と課題設定していたが、三要素分析に着手する
+  前に実装状況を確認した結果、<strong>この前提は本反復の起票時点で既に成立していなかった</strong>ことが
+  判明した。
+</p>
+
+<h3>13.1 発見: 「成果物の複数化」は<code>DOMAIN-W-ITERATION-01</code>により反復番号の外で先行実装済み</h3>
+
+<p>
+  <code>issue-DOMAIN-W-ITERATION-01</code>（W型累積KJ法支援、In Progress）は、<code>ADR-0057</code>の
+  採択済み設計目標に基づき、<code>DocumentV1</code>と分離した第2の成果物型
+  <code>InquiryBundleV1</code>（探究bundle: <code>InquiryJourneyV1</code>・不変<code>RoundSnapshotV1</code>DAG・
+  自己完結bundle）を実装し、2026-08-06のチェックポイントで<code>/inquiry-bundles/*</code>への
+  tenant-scoped backend永続化（save/read/delete、CAS、削除監査）まで完了させている。
+  AC-4〜AC-10・AC-6a・AC-12・AC-13は完了済みで、単一実務者の成果物は<strong>すでに複数化している</strong>
+  （<code>DocumentV1</code>＝日常編集する可変作業文書、<code>InquiryBundleV1</code>＝ラウンド単位の
+  不変成果DAG、の2型が並行して永続化される）。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">次元</th><th style="width:45%;">確認した事実</th><th>他次元への制約</th></tr></thead>
+  <tbody>
+    <tr class="biz"><td><span class="tag t-biz">業務</span></td><td>単独実務者が1つの探究の中で複数ラウンドの中間成果を持ち歩くjourneyは実装・E2E検証済み（停止・再開・分岐・系譜・引継ぎ）</td><td>データ: journeyは<code>DocumentV1</code>から派生するが、両者の関係はクライアント側payload内の参照であり、サーバ側に外部キー等の関係は存在しない</td></tr>
+    <tr class="data"><td><span class="tag t-data">データ</span></td><td><code>InquiryBundleRow</code>（<code>tenant_id, journey_id</code>複合PK）は<code>DocumentV1</code>ストレージと完全に独立。backendは内容を解釈しない不透明payloadとして保存する（意図的判断。§13.2で検証）</td><td>機能: 一覧・検索・関係表示のAPIは無い（journey_id前提のGET/PUT/DELETEのみ）。複数成果物を横断する一覧UIを作る場合は新規契約が要る</td></tr>
+    <tr class="func"><td><span class="tag t-func">機能</span></td><td><code>/inquiry-bundles/*</code>は<code>ETag</code>/<code>If-Match</code>によるCASを実装済み——<code>ADR-0076</code>で採択したD1（サーバ権威LWW＋既存CAS拡張）と型として一致する。第3反復の並行性モデルを第4反復のために再設計する必要はない</td><td>業務: 409時の再適用はdocument同様フロントエンド側の責務として残る</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>13.2 発見した欠落: <code>InquiryBundleV1</code>には所有者・可視性の境界が無い</h3>
+
+<div class="gapbox">
+  <strong>三要素分析の結論: <code>InquiryBundleRow</code>はテナント境界のみを持ち、第2反復（<code>ADR-0073</code>）が
+  <code>DocumentV1</code>へ確立した所有者・可視性・capabilityの境界を持たない。</strong><br>
+  <code>InquiryBundleRow</code>の主キーは<code>(tenant_id, journey_id)</code>のみで、<code>created_by</code>や
+  <code>visibility</code>に相当する列は存在しない（<code>models.py</code>のdocstring:
+  「backend deliberately does not interpret the bundle contract」）。この結果、<strong>同一テナント内の
+  任意の利用者が、journey_idを知る（または推測する）任意の他利用者の探究bundleを読み書き削除できる</strong>
+  ——第2反復で<code>DocumentV1</code>に確立した「作成者は不変事実・管理権はcapability」という原則が、
+  第2の成果物型には及んでいない。<br><br>
+  <strong>これは見落としではなく、記録された意図的判断である。</strong><code>issue-DOMAIN-W-ITERATION-01</code>の
+  AC-11は「残る部分共有・履歴削除の境界は未完了（別issueで追跡）」と明記しており、可視性境界が未完了である
+  ことは既に認識されている。ただし<strong>その「別issue」は実際には起票されていない</strong>——本反復の
+  三要素分析で発見した記録上の欠落である。<br><br>
+  現状のリスクは<code>local-dev</code>（単一利用者前提）では小さいが、SaaS profile（同一テナントに複数
+  利用者が属する）では実質的な境界の欠落である。
+</div>
+
+<h3>13.3 結論: 第4反復のスコープは起票済みissueの受入条件を満たし、新たな依存を1件追加する</h3>
+
+<p>
+  <code>issue-PGM-ITER-04-01</code> AC-1（三要素分析での起票）・AC-2（第2反復への依存の明記）は本節で満たす。
+  第2反復への依存は当初issueが想定した「documents所有/lifecycleの上に成果物関係を載せるか」ではなく、
+  <strong>「<code>DocumentV1</code>用に確立した所有者・可視性モデルを、既に実装済みの第2の成果物型
+  （<code>InquiryBundleV1</code>）へ遡って適用するか」という順序が逆の依存</strong>として判明した。
+  この依存は§14で新規issueとして引き継ぐ。
+</p>
+
+<h2>14. 第4反復から第5反復への引き継ぎ</h2>
+
+<ol>
+  <li><strong>起票が必要</strong>: §13.2で発見した<code>InquiryBundleV1</code>の所有者・可視性境界の欠落。
+    <code>issue-SEC-INQUIRY-BOUND-01</code>として起票する（本反復はスコープ起票のみであり、実装は
+    別issueへ委ねる——境界方針の決定にはvisibility列の追加可否を含むデータ設計判断が要り、
+    <code>issue-PGM-ITER-04-01</code>自身が「実施しないこと: 実装」と定めた範囲を超えるため）。</li>
+  <li><strong>意図的に対応しないこと</strong>: 複数成果物を横断する一覧・検索UI・関係表示の新規API契約
+    （§13.1で確認したとおり、具体的な需要が無く現時点では不要）。</li>
+  <li><strong>第5反復（テナント間連携）への入力</strong>: §13.2の境界欠落は、テナント内に留まらず
+    複数テナント間の連携を扱う第5反復ではさらに影響が大きくなる可能性がある——他テナントの利用者が
+    自テナントのjourney_idを推測・共有された場合の扱いを、第5反復着手時に再確認する。</li>
 </ol>
 
 <h2>Traceability</h2>
@@ -677,11 +765,15 @@ stateDiagram-v2
   <li><code>03_Implement/backend/src/kj_atlas_api/routes/docs.py</code> — <code>_authorize_request</code> と <code>_resolve_request_tenant</code> の非対称（§8.2の根拠）</li>
   <li><code>02_Architecture/inquiry_journey_model.html</code> — 単独実務者の時間軸方向の設計（§1の対比対象）</li>
   <li><code>02_Architecture/design/master-data-settings-ui-ux-concept.md</code> — 第2反復のマスタ設定の先行設計</li>
-  <li><code>01_Plans/issues/issue-SEC-DOC-BOUND-06-list-and-archive-bypass-visibility-and-capability.md</code> — 第2反復で発見・archive/unarchiveのみ部分対応、一覧フィルタは§11.2で設計</li>
+  <li><code>01_Plans/issues/done/issue-SEC-DOC-BOUND-06-list-and-archive-bypass-visibility-and-capability.md</code> — 第2反復で発見・第3反復で一覧フィルタも完了しDone</li>
   <li><code>01_Plans/issues/done/issue-PGM-ITER-03-01-collaboration-concurrency-external-comparison.md</code> — 外部比較調査issue（§10の出典）</li>
   <li><code>02_Architecture/collaboration-concurrency-comparison-2026-08-14.html</code> — 外部比較調査本体（3票反証検証済み）</li>
-  <li><code>01_Plans/adr/ADR-0076-collaboration-concurrency-model.md</code> — 第3反復の並行性モデルADR（Proposed。§11.1で採択を提案）</li>
-  <li><code>01_Plans/issues/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§12で本反復との関係を記録）</li>
+  <li><code>01_Plans/adr/ADR-0076-collaboration-concurrency-model.md</code> — 第3反復の並行性モデルADR（§11.1で採択を提案し2026-08-20にAccepted）</li>
+  <li><code>01_Plans/issues/issue-PGM-ITER-04-01-artifact-multiplicity-scoping.md</code> — 第4反復スコープ（§13で三要素分析）</li>
+  <li><code>01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md</code> — 第4反復の対象が先行実装済みである根拠（§13.1）</li>
+  <li><code>02_Architecture/inquiry_journey_model.html</code>, <code>01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md</code> — <code>InquiryBundleV1</code>の設計正本（§13.1）</li>
+  <li><code>03_Implement/backend/src/kj_atlas_api/models.py</code>（<code>InquiryBundleRow</code>） — 所有者・可視性列の欠落の根拠（§13.2）</li>
+  <li><code>01_Plans/issues/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§12・§14で本反復との関係を記録）</li>
   <li>外部ソース（本版§10.2〜10.4の一次情報）:
     <a href="https://www.notion.com/help/intro-to-teamspaces">Notion Teamspaces</a>、
     <a href="https://developers.google.com/workspace/cloud-search/docs/reference/sdk/com/google/enterprise/cloudsearch/sdk/indexing/Acl">Google Cloud Search ACL indexing</a>、
