@@ -364,6 +364,38 @@ def test_client_supplied_roles_groups_never_reach_the_pdp(tmp_path) -> None:
     assert captured_auth.groups == ()
 
 
+def test_archive_denied_by_adapter(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: archive is write-equivalent (it locks the document via
+    the ADR-0073 D2=A 423 gate) and must be denied the same way PUT is."""
+    with _sqlite_client(tmp_path) as client:
+        seed_resp = client.put("/docs/doc-archive-denied", json=_sample_payload("doc-archive-denied"))
+        assert seed_resp.status_code == 200, seed_resp.text
+
+        client.app.state.access_control_adapter = DenyAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+        response = client.post("/docs/doc-archive-denied/archive")
+
+    assert response.status_code == 403
+    assert "blocked:write" in response.json()["detail"]
+
+
+def test_unarchive_denied_by_adapter(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: unarchive must pass the same capability check as
+    archive/PUT, not just a tenant-match check."""
+    with _sqlite_client(tmp_path) as client:
+        seed_resp = client.put("/docs/doc-unarchive-denied", json=_sample_payload("doc-unarchive-denied"))
+        assert seed_resp.status_code == 200, seed_resp.text
+        archive_resp = client.post("/docs/doc-unarchive-denied/archive")
+        assert archive_resp.status_code == 204, archive_resp.text
+
+        client.app.state.access_control_adapter = DenyAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+        response = client.post("/docs/doc-unarchive-denied/unarchive")
+
+    assert response.status_code == 403
+    assert "blocked:write" in response.json()["detail"]
+
+
 def test_server_derived_roles_from_provisioned_user(tmp_path) -> None:
     """SEC-AUTH-ATTRIB-01: roles set via admin provisioning are carried by the
     identity resolution (server-side), not read from client headers."""

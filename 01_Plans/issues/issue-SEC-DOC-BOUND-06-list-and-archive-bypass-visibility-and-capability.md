@@ -1,7 +1,7 @@
 # Issue: SEC-DOC-BOUND-06 `GET /docs` 一覧と archive/unarchive が visibility・capability を経ない
 
 - Type: Security / Bug
-- Status: Draft
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -42,9 +42,27 @@
 
 ## 受入条件
 
-- [ ] `visibility=Restricted` で自分が対象外の文書が、`GET /docs` の一覧に現れない
-- [ ] `visibility=Restricted` で write capability の無い利用者が、`POST /docs/{doc_id}/archive` で 403（または同等の拒否）を受け取る
-- [ ] 既存の `Public`/`Unlisted`/対象内の `Org`・`Restricted` 文書は一覧・archive/unarchive とも従来通り動作する（回帰なし）
-- [ ] `api.md` §2.2 の認可記述が実装と一致する
-- [ ] `api.md` §2.4・`schemas.md` §3.4.1（廃止マーカー付き旧契約）を削除する
-- [ ] 検出力の確認: 上記フィルタ・チェックを一時的に無効化した状態でテストが失敗することを確認する（テストが実装の欠落を検出できることの確認）
+- [ ] `visibility=Restricted` で自分が対象外の文書が、`GET /docs` の一覧に現れない（未対応。§対応記録参照）
+- [x] `visibility=Restricted` で write capability の無い利用者が、`POST /docs/{doc_id}/archive` で 403（または同等の拒否）を受け取る
+- [x] 既存の `Public`/`Unlisted`/対象内の `Org`・`Restricted` 文書は archive/unarchive とも従来通り動作する（回帰なし。一覧は未変更のため該当なし）
+- [ ] `api.md` §2.2 の認可記述が実装と一致する（一覧のvisibilityフィルタ対応後にまとめて更新）
+- [ ] `api.md` §2.4・`schemas.md` §3.4.1（廃止マーカー付き旧契約）を削除する（一覧のvisibilityフィルタ対応後）
+- [x] 検出力の確認: archive/unarchiveの認可チェックを一時的に無効化した状態でテストが失敗することを確認する（`DenyAllAdapter`で403 → 204へ後退することを確認済み）
+
+## 対応記録（2026-08-18・部分対応）
+
+**archive/unarchive のみ対応した。一覧のvisibilityフィルタは未対応のまま残す。**
+
+- `_transition_lifecycle()`（`archive_document`/`unarchive_document` が呼ぶ）を、`_resolve_request_tenant()` のみから
+  `_authorize_request(action="write", ...)` へ切り替えた。`put_document` と同じ認可経路を通るようになった。
+- この変更は `PUT`/`GET` が既に確立している認可契約（`_authorize_request`）を**そのまま再利用**するだけであり、
+  新しい設計判断を要しない。したがって第3反復を待たずに対応した。
+- 一方、`list_documents()` の visibility フィルタは対応していない。理由: 単一文書向けの `_authorize_request`
+  （1リクエスト・1 doc_id・外部PDPへの1回のHTTP照会）を一覧（最大500件）にそのまま適用すると、
+  1リクエストあたり最大500回の外部PDP呼び出しが発生し、レイテンシとPDP負荷の観点で許容できない。
+  正しい解決には「集合に対する認可」という新しい照会形が要り、これは個別の場当たり対応ではなく
+  第3反復（協働）の設計として最初から扱うべきと判断した（`post-mvp-business-scope-design-program.html` §9-3）。
+- 検証: `test_docs_access_control_integration.py` に `test_archive_denied_by_adapter`・
+  `test_unarchive_denied_by_adapter` を追加。修正前のコードに対して一時的に適用し、
+  403 を期待する箇所が実際に 204（無認可で成功）を返すことを確認したうえで、修正を戻して緑化した。
+  既存56件（一覧・archive関連含む）・access-control-integration19件は回帰なし。

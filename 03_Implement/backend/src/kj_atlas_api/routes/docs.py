@@ -464,7 +464,17 @@ def list_documents(
 
 
 def _transition_lifecycle(request: Request, db: Session, doc_id: str, state: Literal["active", "archived"]) -> Response:
-    tenant = _resolve_request_tenant(request=request, db=db)
+    # SEC-DOC-BOUND-06: archive/unarchive is a write-equivalent operation (it
+    # locks/unlocks PUT via the ADR-0073 D2=A 423 gate) and must pass the same
+    # capability check PUT does. It must not rely on tenant match alone.
+    _, _, tenant = _authorize_request(
+        request,
+        db,
+        action="write",
+        doc_id=doc_id,
+        safe_mode=False,
+        read_only=False,
+    )
     changed = DatabaseDocumentContentStore(db).set_lifecycle_state(tenant=tenant, doc_id=doc_id, state=state)
     if not changed:
         raise HTTPException(status_code=404, detail="Document not found")
