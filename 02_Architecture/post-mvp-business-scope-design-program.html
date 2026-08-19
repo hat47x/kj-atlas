@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第3版（枠組み＋第1〜第4反復＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
+  区分: 設計プログラム枠組み / 版: 第4版（枠組み＋第1〜第5反復＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -675,6 +675,17 @@ stateDiagram-v2
 
 <h2>13. 第4反復: 成果物の複数化の三要素分析</h2>
 
+<div class="note">
+  <strong>用語整理（2026-08-20、本節と§14執筆時に発見）:</strong> <code>issue-PGM-ITER-04-01</code>自身の
+  「第4反復」という呼称は、§4の反復計画表と厳密には一致しない——§4表では第4反復は「外部境界
+  （生成AI・MCP・CLI）」であり、「成果物の複数化」は§1の3拡張軸では第2軸（＝第2反復・
+  <code>ADR-0073</code>が既に対応済み）にあたる。<code>issue-PGM-ITER-04-01</code>は3拡張軸と5反復計画という
+  本書内の2つの分類軸を混在させたまま起票されていた。本節の内容（<code>InquiryBundleV1</code>の
+  先行実装確認・所有者境界の欠落発見）自体の妥当性は番号の付け違いに影響されないため、既存の章番号・
+  issueは変更せず、この事実だけを記録する。§4表が定義する「本来の第4反復（外部境界・生成AI/MCP/CLI）」の
+  スコープ起票は、本プログラムでは未着手のまま残る。
+</div>
+
 <p>
   第4反復の対象は3拡張軸の第2軸「成果物の複数化」であり、問いは「単独実務者の成果物（現行
   <code>DocumentV1</code>）が複数化・多様化するとき何を守るか」である（<code>issue-PGM-ITER-04-01</code>で
@@ -750,6 +761,81 @@ stateDiagram-v2
     自テナントのjourney_idを推測・共有された場合の扱いを、第5反復着手時に再確認する。</li>
 </ol>
 
+<h2>15. 第5反復: 組織間連携の三要素分析</h2>
+
+<p>
+  第5反復の対象は§4表の「組織間（テナント間連携）」であり、<code>issue-PGM-ITER-05-01</code>で
+  起票済み・Openである（本反復の番号は§4表と一致する。§13の注記のとおり第4反復のような混在はない）。
+  問いは「信頼境界をまたぐ協働をどう成立させるか」。§2のアクターモデル分析は既に「他組織の協働者」を
+  <strong>capabilityでは表現できず、構造的に新規</strong>と結論している。本節はこれを三要素分析として
+  展開する。
+</p>
+
+<h3>15.1 業務設計: 「連携」の実体を、非同期の受け渡しと同一視してよい範囲を先に切り分ける</h3>
+
+<p>
+  「テナント間連携」という要件キーワードは、即座に「ライブの共同編集を組織を越えて行う」ことを意味すると
+  早合点しがたい。<code>ADR-0057</code>の探究bundleは、既に<strong>SafeMode適用済みの自己完結成果物を
+  ファイルとして書き出し、受け手側で再取込む</strong>という非同期の受け渡し経路を実装済みである
+  （§13.1）。これは組織境界を越えて「成果を渡す」需要の一部を、<strong>どちらのテナントも他方のIdPを
+  信頼する必要なしに</strong>既に満たしている——受け手は自分のテナント内で新しい探究として取り込むだけで
+  よい。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">次元</th><th style="width:45%;">主張</th><th>他次元への制約</th></tr></thead>
+  <tbody>
+    <tr class="biz"><td><span class="tag t-biz">業務</span></td><td>「組織を越えて成果を渡す」journeyと「組織を越えてライブに共同編集する」journeyは別物であり、前者は既存のexport/import bundleで大部分満たせる可能性がある</td><td>データ: 前者だけなら新しい信頼境界の設計は不要——既存の<code>InquiryBundleV1</code>のimport/exportを流用できる</td></tr>
+    <tr class="data"><td><span class="tag t-data">データ</span></td><td>後者（ライブ共同編集）を求める場合のみ、§2が指摘した「別テナントのIdPに属する利用者」という構造的差異に直面する</td><td>機能: <code>resolve_verified_claim_tenant_context()</code>は claim の<code>tenant_id</code>に対して<code>tenant_identity_providers</code>が active であることを要求する——ゲスト個人単位の信頼ではなく<strong>テナント単位のIdP全部信頼</strong>という粗い粒度しか現状は持たない</td></tr>
+    <tr class="func"><td><span class="tag t-func">機能</span></td><td>ゲスト個別の信頼を粗いIdP全部信頼から分離する新しい認可プリミティブが要る（すべての利用者を招くのではなく特定個人だけを招く）</td><td>業務: この分離ができない限り「特定の1人だけを他組織から招く」は「相手組織のIdP全体を信頼する」と等しくなり、通常は許容できないリスク粒度になる</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>15.2 発見した欠落: <code>PGM-ITER-03-01</code>の外部比較調査は「境界を越える共有」を扱っていない</h3>
+
+<div class="gapbox">
+  <strong>三要素分析の結論: <code>issue-PGM-ITER-05-01</code> AC-2 が前提とする依存関係は、
+  部分的にしか成立しない。</strong><br>
+  <code>issue-PGM-ITER-05-01</code>は「<code>PGM-ITER-03-01</code>（外部比較調査）の結果が第5反復にも
+  適用される」ことをAC-2として要求しているが、実際に完了した調査（§10・<code>collaboration-concurrency-
+  comparison-2026-08-14.html</code>）の対象は<strong>共同編集の並行性モデル</strong>と
+  <strong>組織モデル・bootstrap手順</strong>（§10.2・§10.4、いずれも単一組織内の話）であり、
+  <strong>組織の境界を越えた共有・連携の仕組み</strong>（Slack Connect の共有チャンネル、Microsoft 365の
+  B2Bゲストアクセス、Google Workspaceの外部共有、Notionのcross-workspace共有等）は調査対象に含まれて
+  いなかった。<br><br>
+  したがって §10.1（並行性モデル）は「ライブ共同編集を組織を越えて行う」場合に限り再利用できるが、
+  §10.2・§10.4は組織間信頼の設計には直接使えない。<strong>AC-2は字面としては満たせるが
+  （PGM-ITER-03-01は存在し第3反復に適用されている）、第5反復が本当に必要とする「組織境界を越えた
+  共有パターンの比較」はまだ調査されていない。</strong>
+</div>
+
+<h3>15.3 結論: 本反復はスコープを起票し、不足する外部調査を新規issueへ切り出す</h3>
+
+<p>
+  <code>issue-PGM-ITER-05-01</code> AC-1（三要素分析での起票）は本節・§2で満たす。AC-2は上記の限定付きで
+  満たす（依存関係を正確に明記した）。実装（新しい信頼プリミティブの設計）は、§15.1が示すとおり
+  「ライブ共同編集」が実際に必要とされるかどうかにも依存するため、本反復では着手しない。
+  不足する外部比較調査は<code>issue-PGM-ITER-05-02</code>として別途起票する。
+</p>
+
+<h2>16. 第5反復から反復計画全体への引き継ぎ</h2>
+
+<ol>
+  <li><strong>起票が必要</strong>: §15.2で発見した調査不足（組織境界を越えた共有パターンの外部比較）を
+    <code>issue-PGM-ITER-05-02</code>として起票する。</li>
+  <li><strong>意図的に対応しないこと</strong>: 「別テナントのIdPを個人単位で信頼する」新しい認可プリミティブの
+    設計・実装（§15.1のとおり、まず非同期の受け渡し（既存bundle export/import）で実際の需要のどこまでが
+    満たされるかを確認してからでないと、過剰設計になりかねない）。</li>
+  <li><strong>未着手のまま残る反復</strong>: §4表が定義する本来の「第4反復（外部境界・生成AI/MCP/CLI）」の
+    スコープ起票は、§13の注記のとおり本プログラムでは未着手である。3拡張軸の第3軸（境界の外部化）は
+    第3・第4・第5反復の3つに分解されるが、本プログラムがissueとして起票したのは第3反復
+    （<code>issue-PGM-ITER-03-01</code>）と第5反復（<code>issue-PGM-ITER-05-01</code>）のみである。
+    生成AI/MCP/CLIの権限・証跡設計自体は<code>EXT-CONN-*</code>系issueで別途進んでいる可能性があり、
+    本プログラムの反復番号と一致するかは未確認のまま次回へ引き継ぐ。</li>
+</ol>
+
 <h2>Traceability</h2>
 
 <ul>
@@ -773,7 +859,9 @@ stateDiagram-v2
   <li><code>01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md</code> — 第4反復の対象が先行実装済みである根拠（§13.1）</li>
   <li><code>02_Architecture/inquiry_journey_model.html</code>, <code>01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md</code> — <code>InquiryBundleV1</code>の設計正本（§13.1）</li>
   <li><code>03_Implement/backend/src/kj_atlas_api/models.py</code>（<code>InquiryBundleRow</code>） — 所有者・可視性列の欠落の根拠（§13.2）</li>
-  <li><code>01_Plans/issues/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§12・§14で本反復との関係を記録）</li>
+  <li><code>01_Plans/issues/done/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§15で三要素分析）</li>
+  <li><code>01_Plans/issues/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — §15.2で発見した外部比較調査の不足を引き継ぐ新issue</li>
+  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1）</li>
   <li>外部ソース（本版§10.2〜10.4の一次情報）:
     <a href="https://www.notion.com/help/intro-to-teamspaces">Notion Teamspaces</a>、
     <a href="https://developers.google.com/workspace/cloud-search/docs/reference/sdk/com/google/enterprise/cloudsearch/sdk/indexing/Acl">Google Cloud Search ACL indexing</a>、
