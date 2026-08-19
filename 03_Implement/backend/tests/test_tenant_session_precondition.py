@@ -14,7 +14,12 @@ from kj_atlas_api.active_tenant_session import require_current_tenant_session_ve
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app as main_app
 from kj_atlas_api.control_plane_auth import require_control_plane_authorization
-from kj_atlas_api.routes.docs import _authorize_request, _resolve_request_tenant, _transition_lifecycle
+from kj_atlas_api.routes.docs import (
+    _authorize_request,
+    _resolve_request_identity_and_tenant,
+    _resolve_request_tenant,
+    _transition_lifecycle,
+)
 from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
 from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
@@ -189,6 +194,13 @@ _TENANT_SCOPED_BOUNDARY_CALLS = frozenset(
         # applies), via these two shared helpers.
         _resolve_request_tenant,
         _transition_lifecycle,
+        # SEC-DOC-BOUND-06: list_documents calls this instead of
+        # _resolve_request_tenant so it also gets the caller's user_id for the
+        # visibility filter. It performs the identical tenant/session
+        # boundary check internally (_resolve_request_tenant is now a
+        # thin wrapper around it) -- listed separately because this AST scan
+        # only sees the endpoint's own direct calls, not its callees' calls.
+        _resolve_request_identity_and_tenant,
     }
 )
 

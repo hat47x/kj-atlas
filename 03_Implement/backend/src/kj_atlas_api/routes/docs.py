@@ -411,6 +411,18 @@ def _resolve_request_tenant(*, request: Request, db: Session) -> TenantContext:
     """Resolve the tenant for a request that has no document id (e.g. a list).
     Mirrors the single-tenant / SaaS branches of _authorize_request without the
     per-document resource/decision parts."""
+    return _resolve_request_identity_and_tenant(request=request, db=db)[1]
+
+
+def _resolve_request_identity_and_tenant(
+    *, request: Request, db: Session
+) -> tuple[str | None, TenantContext]:
+    """Like _resolve_request_tenant, but also returns the caller's user_id.
+
+    SEC-DOC-BOUND-06: the list endpoint needs the caller's identity to apply
+    the visibility filter (§11.2 of post-mvp-business-scope-design-program.html)
+    without a per-document PDP round-trip.
+    """
     tenant_scoped_session_required = tenant_session_precondition_required(request)
     if tenant_scoped_session_required:
         trusted_session = resolve_trusted_saas_request_session(request=request, db=db)
@@ -418,18 +430,19 @@ def _resolve_request_tenant(*, request: Request, db: Session) -> TenantContext:
             request=request,
             current_version=trusted_session.session.tenant_session_version,
         )
-        return trusted_session.tenant
+        return trusted_session.identity.user_id, trusted_session.tenant
     identity = resolve_identity_context(db=db, request=request)
     resolver: TenantContextResolver = getattr(
         request.app.state,
         "tenant_context_resolver",
         SingleTenantContextResolver(),
     )
-    return resolver.resolve(
+    tenant = resolver.resolve(
         db=db,
         user_id=identity.user_id,
         claim=identity.verified_tenant_claim,
     )
+    return identity.user_id, tenant
 
 
 @router.get("", response_model=list[DocumentListItem])
@@ -447,14 +460,37 @@ def list_documents(
     SafeMode-scoped GET /docs/{doc_id}). Payload-independent and tenant-scoped.
     `createdBy` filters to one creator ("my documents").
 
+    SEC-DOC-BOUND-06: `Restricted` documents (and documents with no access
+    metadata row at all -- absence defaults to Restricted, mirroring
+    ServerOwnedDocumentResourceResolver) are excluded unless the caller
+    created them -- but only when a real (non-noop) access_control_adapter
+    is configured. The default adapter (no adapter configured at all, or the
+    "noop" name) always allows GET/PUT /docs/{doc_id} regardless of
+    visibility -- apply_tenant_boundary_guard is the sole gate in that mode.
+    Filtering the list by visibility there would make the list *more*
+    restrictive than the single-document read path it is a foundation for,
+    not more correct. This is a local, conservative filter on the
+    already-stored `visibility` column -- it does not consult the external
+    PDP, so it is not a substitute for precise per-grantee authorization.
+    `Public`/`Unlisted`/`Org` need no further check: `Org`'s meaning
+    ("visible within the tenant") is already satisfied by the tenant
+    scoping below.
+
     SEC-DOC-BOUND-05: keyset pagination. `limit` (1..500, default 500) bounds
     the response; when more rows follow, `X-Next-Cursor` carries the opaque
     `"{updated_at}:{id}"` cursor for the next page. The response stays a bare
     array, so existing clients are unaffected.
     """
-    tenant = _resolve_request_tenant(request=request, db=db)
+    requesting_user_id, tenant = _resolve_request_identity_and_tenant(request=request, db=db)
+    adapter = getattr(request.app.state, "access_control_adapter", None)
+    adapter_is_real = adapter is not None and getattr(adapter, "name", None) != "noop"
     items, has_more = DatabaseDocumentContentStore(db).list_documents(
-        tenant=tenant, created_by=created_by, cursor=cursor, limit=limit
+        tenant=tenant,
+        created_by=created_by,
+        cursor=cursor,
+        limit=limit,
+        requesting_user_id=requesting_user_id if adapter_is_real else None,
+        apply_visibility_filter=adapter_is_real,
     )
     if has_more and items:
         # SEC-DOC-BOUND-05: updated_at is ISO (contains colons), so URL-encode
