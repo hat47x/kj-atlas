@@ -603,12 +603,12 @@ export type VoidEntry = {
 - `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
-#### 3.4.1 DocumentListItemV1（廃止 — 実装済み契約は §3.4.2）
+#### 3.4.1（廃止）
 
-**廃止**（`api.md` §2.4 と同時、`post-mvp-business-scope-design-program.html` §8.4）。
-`DATA-MODEL-OPS-02` 時点の契約先行案であり、実装された `GET /docs` は §3.4.2 の型を返す。
+`DocumentListItemV1`（`DATA-MODEL-OPS-02` 時点の契約先行案）はここにあった。実装された `GET /docs` は
+§3.4.2 の型を返すため廃止した（`api.md` §2.2、`SEC-DOC-BOUND-06`）。番号は再利用しない。
 
-#### 3.4.2 DocumentListItem（実装済み、`ADR-0073` D1=C/D2=A）
+#### 3.4.2 DocumentListItem（実装済み、`ADR-0073` D1=C/D2=A・`SEC-DOC-BOUND-06`）
 
 ```ts
 export type DocumentListItem = {
@@ -621,7 +621,9 @@ export type DocumentListItem = {
 ```
 
 - `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない（旧 3.4.1 から継承）。
-- **既知の欠落**: 対象集合は tenant-scoped のみで絞り込まれ、`document_access_metadata.visibility` による read 可否の絞り込みは行わない（`post-mvp-business-scope-design-program.html` §8.2 で発見・issue化）。旧 3.4.1 の「read可能な文書のみ」という制約は現時点で満たされていない。
+- 対象集合は tenant-scoped であることに加え、`access_control_adapter` が既定の `noop` 以外の場合は
+  `document_access_metadata.visibility` でも絞り込む（`Restricted` はメタデータ欠落時を含め作成者本人にのみ返す）。
+  `noop`（既定）の場合は単一文書の `GET`/`PUT` も visibility を参照しないため、一覧も絞り込まない。
 - `title` は `DocumentV1.title` と同じ optional 契約を継承する（無題文書は省略可）。
 - この型は一覧表示専用の射影であり、`DocumentV1` への書き戻し・保存契約には関与しない。
 
