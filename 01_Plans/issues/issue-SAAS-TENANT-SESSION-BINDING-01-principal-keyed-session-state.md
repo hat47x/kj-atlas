@@ -154,6 +154,32 @@ anti-CSRF・logout revocation・cutover）を記す内容へ改めた。
 **引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）と `_resolve_from_auth_session_cookie()` の
 テスト、および AC-1 本体の欠落（解決した session 識別子を `ResolvedIdentity` へ伝播させる導線）。
 
+### Implementation checkpoint 2026-08-20: cookie-fallback 経路のテストを追加
+
+前記 checkpoint で「引き続き未着手」とした `_resolve_from_auth_session_cookie()` を
+`tests/test_trusted_auth_edge_cookie_fallback.py`（10件）で被覆した。ADR-0074 決定2/3 の
+fail-closed 契約——提示された cookie が「生存中で tenant に束縛された session」を指さない場合は
+identity ではなく 401 で終わること——を凍結する。
+
+- 成功経路: 有効 cookie が principal / provider / subject と `VerifiedTenantClaim`
+  （tenant_id・issuer・audience・subject・identity_provider_id）を解決すること。
+- fail-closed 経路: cookie不在（`missing_token`）/ store未配線（`missing_token`）/
+  未知cookie値・revoked済み・idle超過（いずれも `session_invalid`）/
+  `active_tenant_id` がNULL（`session_invalid`）。
+- **鍵依存性**: 別の鍵で発行された cookie は解決しない（keyed hash が実際に照会経路上にあることの
+  確認。決定2）。
+- **issuer解決不能は 503 `configuration_error`**（401ではない）——配備設定の誤りを per-request の
+  認可失敗として扱わない。
+- **bearer優先の固定**: bearer header がある限り `resolve()` は cookie 分岐に到達しない
+  （前掲の「bearer優先の現行SPAでは新経路が使われない」という限界をテストとして明示した）。
+
+**変異検査**: 本関数固有の guard（`active_tenant_id is None` の fail-closed 判定）を無効化すると
+対応するテストだけが失敗することを確認し、復元後に作業ツリーがクリーンであることを検証した。
+auth関連4ファイル計41件の回帰なし。
+
+**引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）のテストと、AC-1本体の欠落
+（解決した session 識別子を `ResolvedIdentity` へ伝播させる導線）。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。
