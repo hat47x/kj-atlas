@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from urllib.parse import urlencode, urlsplit
 
 import jwt
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -282,3 +282,28 @@ def handle_callback(
         path="/",
     )
     return redirect
+
+
+def revoke_auth_session_cookie(*, request: Request, response: Response) -> None:
+    """ADR-0074 decision 6: logout revokes the session that was presented.
+
+    Revoking the row without clearing the cookie would keep re-presenting a
+    dead credential; clearing the cookie without revoking the row would leave
+    a live session that any retained copy of the cookie could still use. Both
+    happen here, and the cookie is cleared even when the store is unconfigured,
+    since clearing is always safe.
+    """
+    raw_session_id = request.cookies.get(_AUTH_SESSION_COOKIE)
+    store = getattr(request.app.state, "saas_auth_session_store", None)
+    hash_key = getattr(request.app.state, "saas_auth_session_hash_key", None)
+    if raw_session_id and store is not None and hash_key is not None:
+        store.revoke_auth_session(
+            session_key_hash=derive_session_key_hash(raw_session_id, key=hash_key)
+        )
+    response.delete_cookie(
+        key=_AUTH_SESSION_COOKIE,
+        httponly=True,
+        secure=tenant_session_cookie_is_secure(request.app.state.runtime_profile),
+        samesite="strict",
+        path="/",
+    )

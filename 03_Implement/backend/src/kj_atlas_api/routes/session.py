@@ -14,7 +14,11 @@ from kj_atlas_api.active_tenant_session import (
     require_current_tenant_session_version,
 )
 from kj_atlas_api.db import get_db
-from kj_atlas_api.oauth_bff import handle_callback, initiate_login
+from kj_atlas_api.oauth_bff import (
+    handle_callback,
+    initiate_login,
+    revoke_auth_session_cookie,
+)
 from kj_atlas_api.runtime_bootstrap import (
     TenantSessionBootstrapMode,
     resolve_tenant_session_bootstrap_mode,
@@ -161,8 +165,13 @@ def session_callback(
 
 @router.post("/logout", status_code=204)
 def logout_session(request: Request, response: Response) -> None:
-    """Expire the app tenant-session cookie without requiring a live JWT."""
+    """Expire the tenant-session cookie and revoke the BFF auth session.
+
+    ADR-0074 decision 6: logout revokes the presented session, so neither the
+    auth-session row nor its cookie outlives the other.
+    """
     clear_active_tenant_session_cookie(request=request, response=response)
+    revoke_auth_session_cookie(request=request, response=response)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
 

@@ -209,6 +209,34 @@ auth関連4ファイル計41件の回帰なし。
 **引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）のテスト、bearer経路での `sid` claim読み取り、
 `POST /session/logout` でのcookie削除とrevoke、およびAC-2以降。
 
+### Implementation checkpoint 2026-08-20: logout がBFF sessionを失効させるよう是正（決定6）
+
+前記 checkpoint で挙げた「`POST /session/logout` が `Kj-Atlas-Auth-Session` cookie を削除せず
+`revoke_auth_session` も呼ばないため logout 後も BFF session が生存する」を修正した。これにより
+`revoke_auth_session` に初めて呼び出し元がついた。
+
+- `oauth_bff.revoke_auth_session_cookie()` を追加し `logout_session` から呼ぶ。**行の失効と cookie の
+  削除を両方行う**——行だけ失効させると死んだ credential を提示し続け、cookie だけ削除すると保持された
+  複製で生存中の session を使える。どちらか片方だけでは穴が残る。
+- store 未配線（single-tenant profile）でも cookie 削除は行う（削除は常に安全）。
+- 失効対象は**提示された session のみ**（決定6）。
+
+**テスト5件**（`tests/test_oauth_bff_logout_revocation.py`）:
+
+- logout が提示された session を失効させること。
+- logout が cookie を削除すること（`Max-Age=0`・`HttpOnly`）。
+- **同一 principal の別 login は失効しないこと**（決定6。1つのブラウザからの logout が全 device を
+  ログアウトさせない）。
+- cookie 不在時・store 未配線時にも例外を出さず cookie 削除を行うこと。
+- 変異検査: revoke 呼び出しを無効化して元の欠陥を再現すると、失効系2件だけが失敗し cookie 削除系3件は
+  通ることを確認した。
+
+**回帰**: logout / oauth / session 該当 **178 passed・0 failed**（既存の
+`test_saas_oauth_login_e2e::test_logout_clears_session` を含む）。
+
+**引き続き未着手**: `oauth_bff` の login/callback 経路のテスト、bearer 経路での `sid` claim 読み取り、
+AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cutover）。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。
