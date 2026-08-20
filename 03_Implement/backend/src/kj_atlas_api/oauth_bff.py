@@ -3,7 +3,8 @@ login. GET /session/login starts an authorization-code+PKCE flow against the
 broker; GET /session/callback exchanges the code, verifies the returned
 token against the same JWKS pipeline the bearer path uses
 (trusted_auth_edge.py), and mints a server-owned Kj-Atlas-Auth-Session
-cookie. See ac1_final_design.md SS5/SS6 for the exact error/cookie contract.
+cookie. ADR-0074 decisions 2/5 and 回答案2 define the cookie attributes and
+the anti-CSRF contract this flow must satisfy.
 """
 
 from __future__ import annotations
@@ -57,8 +58,8 @@ def _oauth_error(status_code: int, code: str, message: str) -> HTTPException:
 
 
 def _validate_next_path(raw: str | None) -> str:
-    """Same-origin only (ac1_final_design.md SS5) -- anything else is discarded
-    in favor of "/" rather than rejecting the login attempt outright."""
+    """Same-origin only -- anything else is discarded in favor of "/" rather
+    than rejecting the login attempt outright (open-redirect guard)."""
     if not raw or len(raw) > _MAX_NEXT_PATH_LENGTH:
         return "/"
     if "\r" in raw or "\n" in raw:
@@ -107,7 +108,7 @@ def _parse_pending_cookie(raw: str | None) -> _PendingLogin | None:
 
 
 def initiate_login(*, request: Request, next_query: str | None) -> RedirectResponse:
-    """GET /session/login: start an authorization-code+PKCE flow (ac1_final_design.md SS5)."""
+    """GET /session/login: start an authorization-code+PKCE flow (ADR-0074 decision 1)."""
     authorize_endpoint = settings.saas_oauth_broker_http_authorize_endpoint
     client_id = settings.saas_oauth_broker_http_client_id
     redirect_uri = settings.saas_oauth_broker_http_redirect_uri
@@ -204,8 +205,8 @@ def handle_callback(
     state: str | None,
     error: str | None,
 ) -> RedirectResponse:
-    """GET /session/callback (ac1_final_design.md SS5): exchange the code,
-    verify the token, and mint the auth-session cookie."""
+    """GET /session/callback: exchange the code, verify the token, and mint the
+    auth-session cookie (ADR-0074 decisions 1/2)."""
     pending = _parse_pending_cookie(request.cookies.get(_OAUTH_PENDING_COOKIE))
     if pending is None:
         raise _oauth_error(400, "oauth_login_not_pending", "No pending OAuth login was found.")

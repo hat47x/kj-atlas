@@ -209,7 +209,7 @@ if settings.runtime_profile == "saas-multitenant":
 
     # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): oauth_bff.py's
     # handle_callback and the resolver's cookie-fallback branch must agree on
-    # this key -- computed once and shared, matching ac1_final_design.md SS7.
+    # this key -- computed once and shared (ADR-0074 decision 2: keyed hash).
     _saas_auth_session_hash_key = _saas_auth_session_hash_key_bytes()
     app.state.saas_oauth_broker_config = _saas_oauth_broker_config()
     app.state.saas_auth_session_store = _saas_auth_session_store

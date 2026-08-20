@@ -92,9 +92,9 @@ class DatabaseSaasAuthStateStore:
             db.execute(select(SaasTenantSessionRow.principal_id).limit(1))
 
 
-# ADR-0074 decision 3 / AC-1 (ac1_final_design.md SS2): fixed, non-configurable
-# lifetimes -- no settings field exists for either, matching the design's
-# literal "+12h" / "60min" values rather than inventing tunables AC-1 doesn't
+# ADR-0074 decision 3 / 回答案2: fixed, non-configurable lifetimes -- no
+# settings field exists for either, matching the ADR's proposed literal 12h
+# absolute / 60min idle values rather than inventing tunables AC-1 doesn't
 # need yet.
 _ABSOLUTE_SESSION_LIFETIME = timedelta(hours=12)
 _IDLE_TIMEOUT = timedelta(minutes=60)
@@ -103,7 +103,7 @@ _IDLE_TIMEOUT = timedelta(minutes=60)
 @dataclass(frozen=True, slots=True)
 class ResolvedAuthSession:
     """The subset of a live SaasAuthSessionRow the identity resolver needs to
-    reconstruct a VerifiedTenantClaim (ac1_final_design.md SS4)."""
+    reconstruct a VerifiedTenantClaim (ADR-0074 decision 3)."""
 
     principal_id: str
     issuer: str

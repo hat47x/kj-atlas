@@ -40,7 +40,7 @@ _JWKS_MAX_RESPONSE_BYTES = 128 * 1024
 # Allowed JWK key types. HMAC ('oct') is always rejected.
 _ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
 # ADR-0074 decision 1/3: the BFF-issued opaque session cookie, read only when
-# no bearer token is present (AC-1 cookie-fallback branch, ac1_final_design.md SS4).
+# no bearer token is present (AC-1 cookie-fallback branch, ADR-0074 decision 2).
 _AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
 
 
@@ -102,10 +102,11 @@ def _resolve_identity_provider(db: Session, issuer: str, audience: str) -> Ident
 
 
 def _resolve_identity_provider_by_issuer(db: Session, issuer: str) -> IdentityProviderRow:
-    """Look up the single active identity provider for an issuer (no audience
-    to filter on -- an auth-session row only carries the issuer, ac1_final_design.md
-    SS4). Zero or more than one match is a deployment-configuration error, not a
-    per-request authorization decision, so it fails closed with 503 rather than 401.
+    """Look up the single active identity provider for an issuer (no audience to
+    filter on -- an auth-session row only carries the issuer, per ADR-0074
+    decision 3). Zero or more than one match is a deployment-configuration error,
+    not a per-request authorization decision, so it fails closed with 503 rather
+    than 401.
     """
     providers = (
         db.query(IdentityProviderRow)
@@ -445,7 +446,7 @@ class JwtSaasIdentityContextResolver:
         )
 
     def _resolve_from_auth_session_cookie(self, *, db: Session, request: Request) -> ResolvedIdentity:
-        """AC-1 cookie-fallback branch (ac1_final_design.md SS4): no bearer token
+        """AC-1 cookie-fallback branch (ADR-0074 decisions 2/3): no bearer token
         present, try the BFF-issued Kj-Atlas-Auth-Session cookie instead.
 
         The resolved row is re-verified against ClaimBasedTenantContextResolver

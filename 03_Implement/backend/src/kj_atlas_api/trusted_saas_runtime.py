@@ -71,7 +71,7 @@ class TrustedSaasRuntimePolicy:
     tenant_claim_name: str = "tenant_ref"
     # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074): BFF OAuth broker + auth-
     # session hash key. Settings does format-only validation (settings.py);
-    # requiredness for saas-multitenant lives here (ac1_final_design.md SS3).
+    # requiredness for saas-multitenant lives here.
     saas_oauth_broker_http_authorize_endpoint: str | None = None
     saas_oauth_broker_http_token_endpoint: str | None = None
     saas_oauth_broker_http_redirect_uri: str | None = None
