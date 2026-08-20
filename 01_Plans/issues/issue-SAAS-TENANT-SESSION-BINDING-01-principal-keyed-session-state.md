@@ -128,6 +128,32 @@ session識別子のフィールドが無く、`resolve_active_tenant_session_ver
 `ac1_final_design.md`のSS2〜SS7を、出荷コードのコメント11箇所から参照していた（前セッションの
 作業用ファイルと推測される）。参照先を実在の正本（`ADR-0074`の決定番号・回答案）へ振り替えた。
 
+### Implementation checkpoint 2026-08-20: auth-session store と cookie hashing のテストを追加
+
+上記「記録の是正」で欠落として挙げた「`oauth_bff`・cookie-fallback経路・auth-session storeのテストが
+ゼロ」のうち、**store層とcookie hashing層を `tests/test_saas_auth_session_store.py`（9件）で被覆した**。
+ADR-0074 決定2/3 の fail-closed 契約を凍結する。
+
+- `derive_session_key_hash()`: 決定性・鍵依存性（別鍵→別hash）・生cookie値がhash出力に残らないこと。
+- `resolve_auth_session()` の fail-closed 4経路: 未知hash / revoked済み / 絶対期限（12h）超過 /
+  idle timeout（60min）超過 のいずれも `None` を返す。
+- sliding idle window: 期限内の resolve が `last_used_at` を更新し、次の idle 窓が延びること。
+- **ADR-0074 決定3の核心的性質**: 同一 principal の独立した2 login のうち一方を revoke しても他方は
+  生存する（行の同一性が principal ではなく login session であること）。AC-5 の前提にあたる。
+- `preflight()` が未migration DBで `OperationalError` を送出すること。
+
+**変異検査で有効性を確認した**: 3つの fail-closed guard（revoked判定・絶対期限判定・idle判定）を1つずつ
+無効化すると、それぞれ対応するテストだけが失敗することを確認した（無効化しない状態では9件全pass）。
+関連5ファイル計30件の回帰なし。
+
+**あわせて是正した記録の齟齬**: `SaasAuthSessionRow` の docstring が「Expand-only: nothing constructs
+or reads this table yet」と記載していたが、`DatabaseSaasAuthSessionStore` が既に読み書きしており事実と
+異なっていた。現状（BFF loginで書き込み・cookie fallbackで読み取り）と残作業（CAS active-tenant更新・
+anti-CSRF・logout revocation・cutover）を記す内容へ改めた。
+
+**引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）と `_resolve_from_auth_session_cookie()` の
+テスト、および AC-1 本体の欠落（解決した session 識別子を `ResolvedIdentity` へ伝播させる導線）。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。
