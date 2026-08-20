@@ -86,6 +86,48 @@ ADR-0074決定3の列構成で、server-owned auth sessionテーブルを追加�
 
 **まだ実装していないもの**: AC-1（trusted auth edgeのsession識別子解決）〜AC-9の全て。今回は器（テーブル）を追加しただけであり、このテーブルへ実際に書き込む経路（BFF cookie発行、hashing、CAS更新）は未着手。
 
+### 記録の是正 2026-08-20: AC-1はすでに大部分が実装済みだった
+
+着手時に実装状態を確認したところ、**上記2件のcheckpointが「まだ実装していないもの: AC-1〜AC-9の全て」と
+記録した後、別セッションがAC-1の大部分を実装・コミットしていた**（`f37ef851`、11ファイル）。本節はその
+記録の齟齬を是正する。
+
+**すでに実装・コミット済み（HEAD時点）**:
+
+- `oauth_bff.py`: BFFのOAuth経路（`GET /session/login`のauthorization-code+PKCE開始、
+  `GET /session/callback`のcode交換・token検証・`Kj-Atlas-Auth-Session` cookie発行）。
+- `auth_session_hash.py`: `derive_session_key_hash()`（cookie生値ではなくkeyed HMAC-SHA256を保存）。
+- `DatabaseSaasAuthSessionStore`（`saas_auth_state.py`）: `create_auth_session` /
+  `resolve_auth_session`（revoked・絶対期限12h・idle 60minをfail-closedで判定し`last_used_at`をslide）/
+  `revoke_auth_session` / `preflight`。
+- `JwtSaasIdentityContextResolver._resolve_from_auth_session_cookie()`（`trusted_auth_edge.py`）:
+  bearer token不在時にcookieから session を解決するfallback経路。
+- settings・preflight・`main.py`の結線（`KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY`等）。
+
+**AC-1の文言に対して残っている欠落**: AC-1は「principalとは別のserver-trusted認証セッション識別子を
+**解決する**」ことを要求するが、現状は解決した`session_key_hash`を**store照会に使った直後に捨てている**。
+`ResolvedIdentity`（`auth_context.py`）にも`TrustedSaasRequestSession`（`saas_request_context.py`）にも
+session識別子のフィールドが無く、`resolve_active_tenant_session_version()`は依然`principal_id`だけで
+呼ばれる。したがってAC-2以降（session単位でのactive tenant保存・version共有）へ接続する導線が無い。
+
+**その他の未達**:
+
+1. bearer token経路は session 識別子を一切解決しない。`sid` claimは`src/`のどこでも読まれていない
+   （mock IdP側は発行済み）。`resolve()`はbearer headerがあればcookieを見ないため、
+   bearer優先の現行SPAでは新経路が使われない。
+2. `SaasAuthSessionRow.tenant_session_version`は書き込み専用で、`resolve_auth_session`は返さず、
+   rotateする経路も無い。`revoke_auth_session`は呼び出し元がゼロ。
+3. `POST /session/logout`は`Kj-Atlas-Auth-Session` cookieを削除せず`revoke_auth_session`も呼ばないため、
+   logout後もBFF sessionが生存する。
+4. **`oauth_bff`・cookie-fallback経路・`DatabaseSaasAuthSessionStore`のテストがゼロ**
+   （`test_oauth_broker_client.py`のみ）。`DatabaseActiveTenantSessionPersister`にも単体テストが無い。
+5. callbackは version を principal単位storeから取るため、同一principalの2 sessionが同じ
+   `tenant_session_version`で開始する（AC-5と矛盾する）。
+
+**あわせて是正した実装側の欠陥**: 上記コミットは、リポジトリに存在しない設計文書
+`ac1_final_design.md`のSS2〜SS7を、出荷コードのコメント11箇所から参照していた（前セッションの
+作業用ファイルと推測される）。参照先を実在の正本（`ADR-0074`の決定番号・回答案）へ振り替えた。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。
