@@ -364,6 +364,176 @@ def test_client_supplied_roles_groups_never_reach_the_pdp(tmp_path) -> None:
     assert captured_auth.groups == ()
 
 
+def test_archive_denied_by_adapter(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: archive is write-equivalent (it locks the document via
+    the ADR-0073 D2=A 423 gate) and must be denied the same way PUT is."""
+    with _sqlite_client(tmp_path) as client:
+        seed_resp = client.put("/docs/doc-archive-denied", json=_sample_payload("doc-archive-denied"))
+        assert seed_resp.status_code == 200, seed_resp.text
+
+        client.app.state.access_control_adapter = DenyAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+        response = client.post("/docs/doc-archive-denied/archive")
+
+    assert response.status_code == 403
+    assert "blocked:write" in response.json()["detail"]
+
+
+def test_unarchive_denied_by_adapter(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: unarchive must pass the same capability check as
+    archive/PUT, not just a tenant-match check."""
+    with _sqlite_client(tmp_path) as client:
+        seed_resp = client.put("/docs/doc-unarchive-denied", json=_sample_payload("doc-unarchive-denied"))
+        assert seed_resp.status_code == 200, seed_resp.text
+        archive_resp = client.post("/docs/doc-unarchive-denied/archive")
+        assert archive_resp.status_code == 204, archive_resp.text
+
+        client.app.state.access_control_adapter = DenyAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+        response = client.post("/docs/doc-unarchive-denied/unarchive")
+
+    assert response.status_code == 403
+    assert "blocked:write" in response.json()["detail"]
+
+
+def _provision(client: TestClient, *, external_uid: str) -> None:
+    provision = client.post(
+        "/admin/provision/users",
+        json={"provider": "oidc", "externalUid": external_uid, "displayName": external_uid},
+    )
+    assert provision.status_code == 201, provision.text
+
+
+def _insert_access_metadata(tmp_path, *, doc_id: str, visibility: str) -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from kj_atlas_api.models import DocumentAccessMetadataRow
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'docs_access_control.sqlite3'}")
+    session_local = sessionmaker(bind=engine)
+    with session_local() as db:
+        db.add(
+            DocumentAccessMetadataRow(
+                tenant_id="local-default",
+                doc_id=doc_id,
+                visibility=visibility,
+                policy_binding_id=None if visibility in ("Public", "Unlisted") else "policy-1",
+                policy_version="v1",
+                updated_at="2026-08-19T00:00:00Z",
+            )
+        )
+        db.commit()
+    engine.dispose()
+
+
+def test_list_hides_restricted_documents_from_non_creators_when_adapter_is_real(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: with a real (non-noop) adapter configured, a
+    Restricted document is hidden from the list for anyone but its creator."""
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        _provision(client, external_uid="alpha")
+        _provision(client, external_uid="beta")
+
+        put_resp = client.put(
+            "/docs/doc-restricted-list",
+            json=_sample_payload("doc-restricted-list"),
+            headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"},
+        )
+        assert put_resp.status_code == 200, put_resp.text
+        _insert_access_metadata(tmp_path, doc_id="doc-restricted-list", visibility="Restricted")
+
+        as_creator = client.get(
+            "/docs", headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"}
+        )
+        as_other = client.get(
+            "/docs", headers={"x-forwarded-user": "beta", "x-auth-provider": "oidc"}
+        )
+
+    assert "doc-restricted-list" in {item["id"] for item in as_creator.json()}
+    assert "doc-restricted-list" not in {item["id"] for item in as_other.json()}
+
+
+def test_list_hides_documents_with_no_access_metadata_row_when_adapter_is_real(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: absence of a document_access_metadata row defaults
+    to Restricted for the list filter too, mirroring
+    ServerOwnedDocumentResourceResolver's single-document default."""
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        _provision(client, external_uid="alpha")
+        _provision(client, external_uid="beta")
+
+        put_resp = client.put(
+            "/docs/doc-no-metadata-list",
+            json=_sample_payload("doc-no-metadata-list"),
+            headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"},
+        )
+        assert put_resp.status_code == 200, put_resp.text
+        # Deliberately no _insert_access_metadata call: no row at all.
+
+        as_creator = client.get(
+            "/docs", headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"}
+        )
+        as_other = client.get(
+            "/docs", headers={"x-forwarded-user": "beta", "x-auth-provider": "oidc"}
+        )
+
+    assert "doc-no-metadata-list" in {item["id"] for item in as_creator.json()}
+    assert "doc-no-metadata-list" not in {item["id"] for item in as_other.json()}
+
+
+def test_list_shows_public_and_org_documents_to_everyone_when_adapter_is_real(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: Public/Unlisted/Org need no ownership check -- Org's
+    "visible within the tenant" is already satisfied by tenant scoping."""
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        _provision(client, external_uid="alpha")
+        _provision(client, external_uid="beta")
+
+        for doc_id, visibility in (("doc-public-list", "Public"), ("doc-org-list", "Org")):
+            put_resp = client.put(
+                f"/docs/{doc_id}",
+                json=_sample_payload(doc_id),
+                headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"},
+            )
+            assert put_resp.status_code == 200, put_resp.text
+            _insert_access_metadata(tmp_path, doc_id=doc_id, visibility=visibility)
+
+        as_other = client.get(
+            "/docs", headers={"x-forwarded-user": "beta", "x-auth-provider": "oidc"}
+        )
+
+    other_ids = {item["id"] for item in as_other.json()}
+    assert "doc-public-list" in other_ids
+    assert "doc-org-list" in other_ids
+
+
+def test_list_does_not_filter_by_visibility_when_adapter_is_noop_or_unset(tmp_path) -> None:
+    """SEC-DOC-BOUND-06: the visibility filter must not activate when
+    visibility is a no-op for single-document read/write too (no adapter, or
+    the default noop adapter) -- otherwise the list would become *more*
+    restrictive than GET/PUT /docs/{doc_id}, not more correct."""
+    with _sqlite_client(tmp_path) as client:
+        # Default app state: no override -- this is the NoopAccessControlAdapter,
+        # not None, which is exactly the case this test guards.
+        _provision(client, external_uid="alpha")
+        _provision(client, external_uid="beta")
+
+        put_resp = client.put(
+            "/docs/doc-restricted-noop",
+            json=_sample_payload("doc-restricted-noop"),
+            headers={"x-forwarded-user": "alpha", "x-auth-provider": "oidc"},
+        )
+        assert put_resp.status_code == 200, put_resp.text
+        _insert_access_metadata(tmp_path, doc_id="doc-restricted-noop", visibility="Restricted")
+
+        as_other = client.get(
+            "/docs", headers={"x-forwarded-user": "beta", "x-auth-provider": "oidc"}
+        )
+
+    assert "doc-restricted-noop" in {item["id"] for item in as_other.json()}
+
+
 def test_server_derived_roles_from_provisioned_user(tmp_path) -> None:
     """SEC-AUTH-ATTRIB-01: roles set via admin provisioning are carried by the
     identity resolution (server-side), not read from client headers."""

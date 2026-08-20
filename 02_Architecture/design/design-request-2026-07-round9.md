@@ -77,7 +77,7 @@ R9-B固有の境界:
 
 **現状**: `StartPanel`は左上固定のモーダル的パネルで、SafeMode/文書ID/保存状態の表示、「新規作成」「サンプルを開く」「ファイルから読み込み」「review pack import」の4アクション（190px以上のボタングリッド）、および「最近使った文書」がある場合のみ表示される簡易セレクト＋「前回の文書を開く」ボタンで構成されます。`SearchBar`はカード本文検索で、キャンバスヘッダーに常設される別コンポーネントです（StartPanelの開閉とは独立）。
 
-ドッグフード記録（`01_Plans/dogfood-log-2026-07-10.md`）: 「再読込後に直前の文書へ自動復帰しない。スタートパネルの文書一覧から選び直す動線になる」という摩擦（低優先、未解消）。関連issue `issue-UI-QUALITY-A11Y-07` は、StartPanelを閉じた後の再オープン導線が現在まったく存在しない（`setIsStartPanelVisible(true)`は初期化以外どこからも呼ばれない）ため、focus復帰先の設計判断ができずに保留中です。
+ドッグフード記録（`01_Plans/dogfood/dogfood-log-2026-07-10.md`）: 「再読込後に直前の文書へ自動復帰しない。スタートパネルの文書一覧から選び直す動線になる」という摩擦（低優先、未解消）。関連issue `issue-UI-QUALITY-A11Y-07` は、StartPanelを閉じた後の再オープン導線が現在まったく存在しない（`setIsStartPanelVisible(true)`は初期化以外どこからも呼ばれない）ため、focus復帰先の設計判断ができずに保留中です。
 
 **設計論点**:
 
@@ -142,5 +142,5 @@ R9-Bでは、Round 8と同じ架空文書を使って構いません（一貫性
 - Related: `02_Architecture/design/design-qa-checklist.md`（4軸✓/△/✗規約の正本）
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（Status: Proposed）
 - Related: `02_Architecture/external_agent_collaboration_spec.html`
-- Related: `01_Plans/dogfood-log-2026-07-10.md`（N-7の再開導線摩擦）
+- Related: `01_Plans/dogfood/dogfood-log-2026-07-10.md`（N-7の再開導線摩擦）
 - Related issues: `issue-UI-QUALITY-A11Y-07-start-panel-focus-return.md`, `issue-QA-MONKEY-03-search-state-document-scope.md`

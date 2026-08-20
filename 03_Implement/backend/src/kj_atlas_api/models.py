@@ -370,10 +370,11 @@ class SaasAuthSessionRow(Base):
     back-channel-logout fallback revokes by issuer+subject directly, without
     a join.
 
-    Expand-only: nothing constructs or reads this table yet. Application
-    wiring (BFF cookie issuance, CAS active-tenant updates, anti-CSRF,
-    cutover from SaasTenantSessionRow) is later SAAS-TENANT-SESSION-BINDING-01
-    work.
+    Written by ``DatabaseSaasAuthSessionStore`` on BFF login (oauth_bff.py)
+    and read by the cookie fallback in trusted_auth_edge.py. Still
+    outstanding SAAS-TENANT-SESSION-BINDING-01 work: CAS active-tenant
+    updates, anti-CSRF, logout revocation, and cutover from
+    SaasTenantSessionRow.
     """
 
     __tablename__ = "saas_auth_sessions"

@@ -47,4 +47,4 @@
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（追記 2026-07-12 B-2）
 - Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`（トレイル解決の投影基盤）
-- Related: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（役割B）
+- Related: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（役割B）

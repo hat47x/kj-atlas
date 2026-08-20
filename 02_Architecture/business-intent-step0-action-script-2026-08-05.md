@@ -272,6 +272,6 @@ Task 2 の応答3件を受け取ったら、次の5基準で判定し、`01_Plan
 - Related: `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`（ドッグフード枠組み）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-1 成立の条件）
 - Related: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`（段階ごとの問いの正本）
-- Related: `01_Plans/dogfood-log-2026-07-10.md`（記録様式の先例）
+- Related: `01_Plans/dogfood/dogfood-log-2026-07-10.md`（記録様式の先例）
 - Related: 外部提供の KJ 技法文書（2026-08-05、リポジトリ外）。カード化・束ね・表札・空白列挙・失敗徴候の検査群を §4 の受入条件として採用した
 - Related issues: `issue-ENV-ARCH-02-dead-legacy-env-deadline-scaffolding.md`（C1）, `issue-DX-CLEANUP-06-diffpanel-component-appears-dead.md`（C2）, `issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`（C3）, `issue-DX-CI-PNPM-01-incomplete-pnpm-migration-reverted.md`（予備）

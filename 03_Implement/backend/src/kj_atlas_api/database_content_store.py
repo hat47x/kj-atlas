@@ -5,7 +5,7 @@ from typing import Literal
 from urllib.parse import unquote
 from uuid import uuid4
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.content_store import (
@@ -24,6 +24,7 @@ from kj_atlas_api.models import (
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
     CanvasRevisionRow,
+    DocumentAccessMetadataRow,
     DocumentListItem,
     DocumentRow,
     InquiryBundleRow,
@@ -227,6 +228,8 @@ class DatabaseDocumentContentStore:
         created_by: str | None = None,
         cursor: str | None = None,
         limit: int = 500,
+        requesting_user_id: str | None = None,
+        apply_visibility_filter: bool = False,
     ) -> tuple[list[DocumentListItem], bool]:
         """List the tenant's document metadata (第2反復: キャンバス一覧の土台).
 
@@ -236,6 +239,18 @@ class DatabaseDocumentContentStore:
         SafeMode-scoped read path. `created_by` filters to one creator ("my
         documents"); NULL rows are never matched (migrated docs are "unknown").
 
+        SEC-DOC-BOUND-06: `Restricted` documents — and documents with no
+        `document_access_metadata` row at all, which defaults to Restricted
+        the same way `ServerOwnedDocumentResourceResolver` does — are excluded
+        unless `requesting_user_id` matches `created_by`. This is a local
+        filter on the already-stored `visibility` column, not a per-grantee
+        PDP query: it is a conservative approximation, not precise
+        authorization. `Public`/`Unlisted`/`Org` pass unconditionally; `Org`'s
+        meaning ("visible within the tenant") is already satisfied by the
+        tenant scoping below. When `requesting_user_id` is None (no
+        authenticated identity resolved), the filter degrades to "only
+        Public/Unlisted/Org", matching the same fail-closed default.
+
         SEC-DOC-BOUND-05: keyset pagination. Ordered by (updated_at DESC, id
         ASC); `cursor` is the opaque `"{updated_at}:{id}"` of the previous
         page's last row. Returns (items, has_more) — has_more is True when a
@@ -243,6 +258,21 @@ class DatabaseDocumentContentStore:
         """
         apply_database_tenant_context(db=self._db, tenant=tenant)
         query = select(DocumentRow).where(DocumentRow.tenant_id == tenant.tenant_id)
+        if apply_visibility_filter:
+            query = query.outerjoin(
+                DocumentAccessMetadataRow,
+                (DocumentAccessMetadataRow.tenant_id == DocumentRow.tenant_id)
+                & (DocumentAccessMetadataRow.doc_id == DocumentRow.id),
+            )
+            visible_without_ownership = DocumentAccessMetadataRow.visibility.in_(
+                ("Public", "Unlisted", "Org")
+            )
+            if requesting_user_id is not None:
+                query = query.where(
+                    or_(visible_without_ownership, DocumentRow.created_by == requesting_user_id)
+                )
+            else:
+                query = query.where(visible_without_ownership)
         if created_by is not None:
             query = query.where(DocumentRow.created_by == created_by)
         if cursor is not None:

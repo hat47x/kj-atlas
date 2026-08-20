@@ -1,6 +1,7 @@
 # W型累積KJ法による反復的探究支援要件
 
-- Status: Normative（ADR-0057 Accepted、実装はDOMAIN-W-ITERATION-01で追跡）
+- Status: Normative
+- Tracked-by: `ADR-0057`（Accepted）, `DOMAIN-W-ITERATION-01`（実装）
 - Updated: 2026-07-15
 - Scope: 6ラウンド累積KJ法、ラウンド間の引継ぎ、停止・再開、分岐、AI支援
 - Decision tracking: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`

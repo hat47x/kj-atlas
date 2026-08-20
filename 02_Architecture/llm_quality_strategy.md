@@ -213,7 +213,7 @@ CE0 契約行列は品質戦略より上位の固定境界として扱い、Laye
 ### Context
 
 - CE0 は contract-only freeze であり、実装可否とは独立して判定できる必要がある。
-- `safeMode default ON` / `unreviewed protection` / `Core Graph direct write prohibition` の後退は品質差ではなく契約違反とみなす。
+- `safeMode default ON` / `unreviewed protection` / `Consensus Graph direct write prohibition` の後退は品質差ではなく契約違反とみなす。
 
 ### Decision
 

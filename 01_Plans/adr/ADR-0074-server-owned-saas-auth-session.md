@@ -43,7 +43,7 @@
 2. SPA の Bearer 直接送信を廃止し、HttpOnly cookie ＋ anti-CSRF へ移行（Decision 2/5）
 3. logout は提示 session のみ失効。全 session logout は明示的な別操作（Decision 6）
 
-`direction-review-2026-08-13.md` が「session model is principal-scoped, not session-scoped」として記録した問題群（別browser/deviceで切替とlogoutが干渉する、次のrequestでJWTのclaim tenantへ戻り得る、cookieがDB行と照合されない、行が失効しない）はすべて 1 の帰結であり、本採択がその根本対策にあたる。
+`research/direction-review-2026-08-13.md` が「session model is principal-scoped, not session-scoped」として記録した問題群（別browser/deviceで切替とlogoutが干渉する、次のrequestでJWTのclaim tenantへ戻り得る、cookieがDB行と照合されない、行が失効しない）はすべて 1 の帰結であり、本採択がその根本対策にあたる。
 
 ## Decision（採択済み）
 

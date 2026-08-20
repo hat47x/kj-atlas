@@ -603,20 +603,27 @@ export type VoidEntry = {
 - `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
-#### 3.4.1 DocumentListItemV1（一覧専用の最小射影、DATA-MODEL-OPS-02 D1/AC-2）
+#### 3.4.1（廃止）
 
-`GET /docs`（`api.md` §2.4）が返す一覧項目は、`DocumentV1` の部分集合ではなく、次の allowlist 型のみを許可する契約とする。
+`DocumentListItemV1`（`DATA-MODEL-OPS-02` 時点の契約先行案）はここにあった。実装された `GET /docs` は
+§3.4.2 の型を返すため廃止した（`api.md` §2.2、`SEC-DOC-BOUND-06`）。番号は再利用しない。
+
+#### 3.4.2 DocumentListItem（実装済み、`ADR-0073` D1=C/D2=A・`SEC-DOC-BOUND-06`）
 
 ```ts
-export type DocumentListItemV1 = {
+export type DocumentListItem = {
   id: string;
   title?: string;
+  createdBy?: string; // 不変の作成者事実。移行文書（未特定）では省略
+  lifecycleState: "active" | "archived";
   updatedAt: string; // ISO 8601
 };
 ```
 
-- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない。
-- 対象集合は「現認可主体がread可能な文書」に限る。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書露出へフォールバックしない。
+- `cards` / `edges` / `islands` / `narratives` / `evidenceLinks` / `relationSummaries` など `DocumentV1` の本文・構造フィールドは、空配列であっても一覧項目に含めない（旧 3.4.1 から継承）。
+- 対象集合は tenant-scoped であることに加え、`access_control_adapter` が既定の `noop` 以外の場合は
+  `document_access_metadata.visibility` でも絞り込む（`Restricted` はメタデータ欠落時を含め作成者本人にのみ返す）。
+  `noop`（既定）の場合は単一文書の `GET`/`PUT` も visibility を参照しないため、一覧も絞り込まない。
 - `title` は `DocumentV1.title` と同じ optional 契約を継承する（無題文書は省略可）。
 - この型は一覧表示専用の射影であり、`DocumentV1` への書き戻し・保存契約には関与しない。
 
@@ -1461,7 +1468,7 @@ ADR-0054「後段が前段の安全原則を弱めることはない」に従い
 
 - ADR: `ADR-0054-external-connection-layer-staged-introduction.md`（段階3）, `ADR-0049-external-flat-rate-agent-collaboration.md`（安全境界の正本）, `ADR-0041-core-value-invariants-single-guard.md`（CVI-2 proposal-only）
 - Issue: `EXT-CONN-03-critique-constraint-export`
-- Research: `01_Plans/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
+- Research: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（追補A3: TRACE 定量根拠）
 - Spec: `02_Architecture/external_agent_collaboration_spec.html`（§3.3a 制約節の埋め込みプロファイル）
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（CRITIQUE_TAGS / AgentProposalDecisionEntry）, `03_Implement/frontend/src/domain/hil_rs_payload.ts`（内部 critique 収集の前例）, `03_Implement/frontend/src/export/context_bundle_projection.ts`（外部読み取り面の安全境界前例）
 

@@ -80,7 +80,7 @@ def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
 
 def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
     rows: list[ActiveMemoRow] = []
-    for memo_path in sorted(root.glob("issue-*.md")):
+    for memo_path in sorted(root.rglob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
         status = parse_issue_status(extract_field_value(text, "Status"))
         if status not in ACTIVE_ISSUE_STATUSES:
@@ -164,8 +164,9 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
             errors.append(f"{row.memo}: missing or empty Priority value")
 
         for dep in extract_dependency_paths(text):
-            dep_path = root / Path(dep).name
-            if not dep_path.exists():
+            name = Path(dep).name
+            candidates = (root / name, root / "done" / name, root / "archive" / name)
+            if not any(candidate.exists() for candidate in candidates):
                 errors.append(f"{row.memo}: dependency path not found `{dep}`")
 
         if row.status != "Draft" and row.source == "TBD":
@@ -187,7 +188,7 @@ def validate_status_contract(root: Path) -> list[str]:
     errors: list[str] = []
     requirement_paths: dict[str, list[str]] = {}
 
-    for memo_path in sorted(root.glob("issue-*.md")):
+    for memo_path in sorted(root.rglob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
         raw_status = extract_field_value(text, "Status")
         status = parse_issue_status(raw_status)

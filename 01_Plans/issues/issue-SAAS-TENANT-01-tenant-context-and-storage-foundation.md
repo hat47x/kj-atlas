@@ -2,7 +2,7 @@
 
 - Type: Security / Feature
 - Status: In Progress
-- Source Issue: User request 2026-07-16 / `01_Plans/research-2026-07-16-saas-tenant-authorization-boundary.md`
+- Source Issue: User request 2026-07-16 / `01_Plans/research/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - Priority: P1
 - Owner: Maintainer
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/mcp/`, deploy/runtime settings and tests

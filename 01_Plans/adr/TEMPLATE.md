@@ -4,6 +4,7 @@
 - Date: YYYY-MM-DD
 - Deciders: <Project Maintainers / Team / Individual>
 - Scope: `<directory_or_layer>`
+- Norms: `<DOM-CORE-02, KJT-INSPECT-02 等。依拠または抵触する憲法層の識別子。無ければ省略可>`
 
 ## Context
 

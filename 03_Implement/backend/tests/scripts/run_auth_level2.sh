@@ -4,7 +4,30 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 LOG_DIR="${ROOT_DIR}/.artifacts/auth-level2"
 export KJ_ATLAS_LEVEL2_DIAG_DIR="${KJ_ATLAS_LEVEL2_DIAG_DIR:-${LOG_DIR}/legacy-federation}"
+rm -rf "${LOG_DIR}"
 mkdir -p "${LOG_DIR}" "${KJ_ATLAS_LEVEL2_DIAG_DIR}"
+
+# CI sets KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db at the step level, so
+# the default below never applies there -- the file this alembic upgrade
+# actually targets is ./kj_atlas.db relative to this script's cwd
+# (03_Implement/backend), not .artifacts/auth-level2/. That file is shared,
+# by literal env value, with the two pytest steps that run immediately
+# before this one in the same job. When it survives from an earlier step
+# already migrated, alembic (seeing no/stale alembic_version bookkeeping in
+# whatever created it) walks the chain from scratch and collides with
+# tables/indexes that already exist. Delete whatever sqlite file this run's
+# KJ_ATLAS_DATABASE_URL points at before touching it, so this step always
+# starts from a state alembic has never seen, regardless of what an earlier
+# step in the same job left behind.
+_existing_database_url="${KJ_ATLAS_DATABASE_URL:-}"
+if [[ "${_existing_database_url}" == sqlite:///* ]]; then
+  _sqlite_path="${_existing_database_url#sqlite:///}"
+  case "${_sqlite_path}" in
+    /*) : ;;
+    *) _sqlite_path="${ROOT_DIR}/${_sqlite_path}" ;;
+  esac
+  rm -f "${_sqlite_path}"
+fi
 
 export KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT="${KJ_ATLAS_AUTH_LEVEL2_BACKEND_PORT:-18000}"
 export KJ_ATLAS_AUTH_LEVEL2_SP_PORT="${KJ_ATLAS_AUTH_LEVEL2_SP_PORT:-18080}"

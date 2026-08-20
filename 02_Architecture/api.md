@@ -68,13 +68,19 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 - Response：`DocumentListItem[]`、`updated_at` 降順
   - `{ id, title?, created_by?, lifecycle_state, updated_at }`
   - `created_by` は不変の作成者事実（未特定の移行文書は省略）。`lifecycle_state` は `active` / `archived`（ADR-0073 D2=A）。
-- 認可：tenant-scoped（信頼済み session / resolver で解決した tenant の文書のみ）。
+- 認可（`SEC-DOC-BOUND-06`）：tenant-scoped であることに加え、`access_control_adapter` が既定の `noop` 以外
+  （実質的なPDPが構成されている）場合は `document_access_metadata.visibility` でも絞り込む。
+  `Public`/`Unlisted`/`Org` は無条件、`Restricted`（メタデータ行が無い場合も含む）は作成者本人にのみ返す。
+  PDPへの追加照会は行わない——ローカルの `visibility` 列だけで判定する保守的な近似であり、
+  厳密な対象者判定の代替ではない。`noop`（既定）の場合、単一文書の `GET`/`PUT` も visibility を参照しないため、
+  一覧も絞り込まない（一覧だけを単一文書より厳しくしない）。
 
 **POST** `/docs/{doc_id}/archive` / **POST** `/docs/{doc_id}/unarchive`（ADR-0073 D2=A）
 
 - `archive`: `lifecycle_state` を `archived` に遷移。`unarchive`: `active` に戻す。
 - Response：204。存在しない文書は 404。
-- 認可：tenant-scoped（文書はテナント所有・管理権は capability）。
+- 認可（`SEC-DOC-BOUND-06`）：`GET`/`PUT /docs/{doc_id}` と同じ `_authorize_request(action="write")` を経由する
+  （tenant-scopedのみではない）。
 
 ---
 
@@ -88,17 +94,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 ---
 
-### 2.4 List（契約先行固定、実装はMVPでは後回し可）
-
-**GET** `/docs`
-
-- Response：`DocumentListItemV1[]`（`02_Architecture/schemas.md` §3.4.1）。返却項目は `id` / `title` / `updatedAt` のallowlistに限り、`cards` / `edges` / `islands` / `narratives` / `evidenceLinks` などの本文・構造フィールドは一覧項目に一切含めない（`DATA-MODEL-OPS-02` D1・AC-2）。
-- 対象集合：現認可主体がread可能な文書のみ。認証構成でowner/ACL解決ができない場合はfail-closed（エラー応答）とし、全文書一覧へのフォールバックは行わない。
-
-イントラ想定では一覧があると便利だが、実装自体はMVPでは必須ではない。本節は上記の契約（返却allowlist・対象集合・fail-closed方針）のみを先行固定するものであり、実装着手の可否は別途判断する。
-
-
-### 2.5 Document監査イベント（FB-RM-PUB-05 / CE4）
+### 2.4 Document監査イベント（FB-RM-PUB-05 / CE4）
 
 Document 本体の標準CRUDとは別に、共有・Context操作の監査連携点を持つ。監査送信は本体処理を阻害しない fail-open dispatcher 方針を維持するが、各リクエスト自体は SafeMode/readOnly/access-control の判定対象になる。
 

@@ -341,7 +341,7 @@ return "\n".join(
 - **I5〔J〕 少数意見保護**: 馴染まないカード/少数の声が黙殺されていない（`ADR-0048:49`）。混在時は warnings か本文で緊張を提示。
 - **I6〔J〕 矛盾の検出**: メンバー間に矛盾があるとき warnings に反映（`llm_quality_strategy.md:43` missing contradictions）。
 - **I7〔J〕 register**: 推量寄りの日本語（断定しすぎない）。
-- **I8〔J〕 転写検査**: `summaryText` が他の島の要約としても成立してしまわないか（分類名化していないか。`00_Prompt/kj_technique.md:3` 転写検査）。
+- **I8〔J〕 転写検査**: `summaryText` が他の島の要約としても成立してしまわないか（分類名化していないか。`00_Prompt/kj_technique.md §3` 転写検査）。
 
 ### 3.3 generate narrative
 - **G-N1〔D〕** `text` 非空（`ai.py:292`）。

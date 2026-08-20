@@ -3,7 +3,8 @@ login. GET /session/login starts an authorization-code+PKCE flow against the
 broker; GET /session/callback exchanges the code, verifies the returned
 token against the same JWKS pipeline the bearer path uses
 (trusted_auth_edge.py), and mints a server-owned Kj-Atlas-Auth-Session
-cookie. See ac1_final_design.md SS5/SS6 for the exact error/cookie contract.
+cookie. ADR-0074 decisions 2/5 and 回答案2 define the cookie attributes and
+the anti-CSRF contract this flow must satisfy.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from dataclasses import dataclass
 from urllib.parse import urlencode, urlsplit
 
 import jwt
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -57,8 +58,8 @@ def _oauth_error(status_code: int, code: str, message: str) -> HTTPException:
 
 
 def _validate_next_path(raw: str | None) -> str:
-    """Same-origin only (ac1_final_design.md SS5) -- anything else is discarded
-    in favor of "/" rather than rejecting the login attempt outright."""
+    """Same-origin only -- anything else is discarded in favor of "/" rather
+    than rejecting the login attempt outright (open-redirect guard)."""
     if not raw or len(raw) > _MAX_NEXT_PATH_LENGTH:
         return "/"
     if "\r" in raw or "\n" in raw:
@@ -107,7 +108,7 @@ def _parse_pending_cookie(raw: str | None) -> _PendingLogin | None:
 
 
 def initiate_login(*, request: Request, next_query: str | None) -> RedirectResponse:
-    """GET /session/login: start an authorization-code+PKCE flow (ac1_final_design.md SS5)."""
+    """GET /session/login: start an authorization-code+PKCE flow (ADR-0074 decision 1)."""
     authorize_endpoint = settings.saas_oauth_broker_http_authorize_endpoint
     client_id = settings.saas_oauth_broker_http_client_id
     redirect_uri = settings.saas_oauth_broker_http_redirect_uri
@@ -204,8 +205,8 @@ def handle_callback(
     state: str | None,
     error: str | None,
 ) -> RedirectResponse:
-    """GET /session/callback (ac1_final_design.md SS5): exchange the code,
-    verify the token, and mint the auth-session cookie."""
+    """GET /session/callback: exchange the code, verify the token, and mint the
+    auth-session cookie (ADR-0074 decisions 1/2)."""
     pending = _parse_pending_cookie(request.cookies.get(_OAUTH_PENDING_COOKIE))
     if pending is None:
         raise _oauth_error(400, "oauth_login_not_pending", "No pending OAuth login was found.")
@@ -281,3 +282,28 @@ def handle_callback(
         path="/",
     )
     return redirect
+
+
+def revoke_auth_session_cookie(*, request: Request, response: Response) -> None:
+    """ADR-0074 decision 6: logout revokes the session that was presented.
+
+    Revoking the row without clearing the cookie would keep re-presenting a
+    dead credential; clearing the cookie without revoking the row would leave
+    a live session that any retained copy of the cookie could still use. Both
+    happen here, and the cookie is cleared even when the store is unconfigured,
+    since clearing is always safe.
+    """
+    raw_session_id = request.cookies.get(_AUTH_SESSION_COOKIE)
+    store = getattr(request.app.state, "saas_auth_session_store", None)
+    hash_key = getattr(request.app.state, "saas_auth_session_hash_key", None)
+    if raw_session_id and store is not None and hash_key is not None:
+        store.revoke_auth_session(
+            session_key_hash=derive_session_key_hash(raw_session_id, key=hash_key)
+        )
+    response.delete_cookie(
+        key=_AUTH_SESSION_COOKIE,
+        httponly=True,
+        secure=tenant_session_cookie_is_secure(request.app.state.runtime_profile),
+        samesite="strict",
+        path="/",
+    )

@@ -635,7 +635,7 @@ A2 contract test では次を機械判定する。
 | `CE0-SAFEMODE-IF` | SAFEMODE | safeMode 既定 `ON`（`meta.safe_mode=true`）を必須とし、`reviewFilter=reviewedOnly` を既定境界として保持する。 | safeMode OFF 入力、unreviewed 混入、既定値緩和は fail-closed。 |
 | `CE0-REVIEW-IF` | REVIEW | `reviewState` は `unreviewed | human_reviewed` のみ。AI による自動昇格を禁止。 | `unreviewed -> human_reviewed` が人手以外経路で発生したら fail。 |
 
-### Core Graph write boundary（CE0-CG-WRITE-IF）
+### Consensus Graph write boundary（CE0-CG-WRITE-IF）
 
 - `ConsensusGraph` への direct write は禁止。
 - AI/worker/API は proposal を生成しても、適用は `patch + approval` のみ許可。
@@ -644,7 +644,7 @@ A2 contract test では次を機械判定する。
 ### Freeze invariants
 
 1. Contract ID の追加・改名・削除は禁止（重複定義 0 を維持）。
-2. safeMode 既定ON・unreviewed 保護・Core Graph direct write 禁止の3点は同時成立が必須。
+2. safeMode 既定ON・unreviewed 保護・Consensus Graph direct write 禁止の3点は同時成立が必須。
 3. 本節で扱う契約は CE1 以降の実装進捗に依存せず、read-only 参照で運用する。
 
 ## Stream B Bridge Freeze Note（2026-05-17）

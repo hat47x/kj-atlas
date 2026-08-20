@@ -7,6 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/view/outline_quality.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/i18n/locales/ja.json`, `03_Implement/frontend/src/domain/view/recommendations.ts`, `03_Implement/frontend/src/domain/view/structural_metrics.ts`
 - Related ADR/Spec: `02_Architecture/design/ui_design_handoff.md`, `00_Prompt/kj_technique.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`
+- Norms: `DOM-CORE-04`, `DOM-AI-07`, `KJT-SIGN-03`
 - Expected verification level: `unit`
 
 ## 課題
@@ -44,7 +45,7 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 方法論の正本は逆を述べている。
 
-> `00_Prompt/kj_technique.md:109`
+> `00_Prompt/kj_technique.md` §2 束ねる（グループ編成）。孤立カードをゼロにすることは `KJT-SIGN-03` が失敗の徴候として挙げている
 > 孤立した1枚が最も重要なことがある。
 
 さらに `kj_technique.md:195` は**孤立カードがゼロであること自体を失敗の徴候**として挙げている。つまり Q007 は、方法論が「探索が足りない証拠」と呼ぶ状態へ利用者を誘導している。`suggestedAction` には "when they should be" という留保が付いているが、**所見（finding）として提示されている時点で「解消すべきもの」という枠組みを与えている**。

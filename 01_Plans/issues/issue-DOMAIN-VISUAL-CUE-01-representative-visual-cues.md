@@ -8,6 +8,7 @@
 - Scope: `00_Prompt/representative_visual_cue_requirements.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `02_Architecture/architecture.html`, `02_Architecture/representative_visual_cue_evaluation.md`, `02_Architecture/data_model_operations_overview.html`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/import/`
 - Related Backlog: `DOMAIN-VISUAL-CUE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `00_Prompt/representative_visual_cue_requirements.md`
+- Norms: `DOM-AIOK-06, DOM-AI-10`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

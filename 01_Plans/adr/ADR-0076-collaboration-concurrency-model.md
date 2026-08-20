@@ -1,8 +1,8 @@
 # ADR-0076: 共同編集（第3反復）の並行性モデルをサーバ権威LWW＋既存CASに定める
 
-- Status: Proposed
+- Status: Accepted（2026-08-20、D1=A採択。D2へ判断基準を追加）
 - Date: 2026-08-15
-- Deciders: Maintainer（未採択。採択は保守者の明示判断）
+- Deciders: Maintainer（委譲された意思決定権限）
 - Scope: 第3反復（共同編集）の並行性モデル。`03_Implement/backend`（楽観的並行制御・revision）と将来の共同編集実装
 - Related: `02_Architecture/collaboration-concurrency-comparison-2026-08-14.html`（外部比較調査）, `01_Plans/issues/issue-PGM-ITER-03-01-collaboration-concurrency-external-comparison.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 
@@ -37,6 +37,11 @@ kj-atlas は**サーバ権威・単一正本**のWebアプリである（backend
 
 - A を採る場合、カーソル/プレゼンス表示と、編集中の他クライアントへの変更伝播（WebSocket等）を導入するか、保存時同期に留めるか。
 - 最初は**保存時同期**（既存の ETag/CAS）で十分であり、リアルタイムプレゼンスは同時利用の実測後に判断する。
+- **判断基準の追加（`post-mvp-business-scope-design-program.html` §11.1、採択時）**: 保存時同期（文書単位の
+  楽観的ロック・409拒否）である限り、後着は拒否されるだけで何も無条件に上書きされないため、`DOM-CORE-01`
+  （保留）・`DOM-CORE-03`（可逆性）・`DOM-CRIT-06/07`（違和感の非破棄）と衝突しない。**プロパティ単位の
+  リアルタイム同期・マージへ進める場合は、その方式が保留・違和感・少数意見を無条件上書きで失わないことを、
+  実装前に確認する。** Figma型の性質単位LWWはこの確認を経ずに採用してはならない。
 
 ### D3: ボード所有とロール
 
@@ -50,17 +55,18 @@ kj-atlas は**サーバ権威・単一正本**のWebアプリである（backend
 | **データ設計** | 並行編集の合流点は server-owned revision（既存）を正本とし、クライアント側CRDT状態を永続正本にしない | payload内部の整合性をクライアントのmerge結果に委ねない |
 | **機能設計** | 共同編集のAPI契約は既存の ETag/If-Match CAS を拡張し、新規並行制御を導入しない | 別クライアントの更新後に stale write を 409 で拒否する（既存契約） |
 
-## 決定（未採択）
+## 決定（採択済み）
 
-D1=A（サーバ権威LWW＋既存CAS拡張）を**推奨**する。理由:
+D1=A（サーバ権威LWW＋既存CAS拡張）を**採択する**。理由:
 1. kj-atlas は既にサーバ権威・単一正本であり、Figma と同型の構成。
 2. 既存の ETag/If-Match CAS（document・inquiry bundle）を共同編集へ拡張するだけで、新規並行制御機構を導入しない。
 3. SafeMode・tenant境界・未レビュー非表示はサーバ側に集中しており、クライアントCRDTを導入するとこの集中を崩す。
 4. Confluence式の保存時手動merge（C）は履歴破損リスクがあり不採用。
 
-**採択は保守者の明示判断を要する**（第3反復は 第2反復 の後に来るため、着工は第2反復の機能次元完了後が適切）。
+D2は上記のとおり判断基準を追加して採択する。第2反復の機能次元（`SEC-DOC-BOUND-06`）は完了済みであり、
+第3反復（協働）の着工前提を満たしている。
 
-## 採択後の実装範囲（本ADRが採択された場合）
+## 実装範囲
 
 - 第3反復: 既存 CAS を共同編集へ拡張（同時編集時の revision 管理・409 拒否）。保存時同期から開始し、リアルタイムプレゼンスは実測後に判断。
 - 非目標: クライアントCRDTの導入・P2P/E2EE（要件が出た場合に別ADRで再検討）。

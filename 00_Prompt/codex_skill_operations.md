@@ -1,5 +1,7 @@
 # Codex Skill Operations
 
+- Status: Informative
+
 対象読者: kj-atlas に Codex や AI エージェントで貢献する開発者、レビュー担当者。
 
 目的: 公開文書として、AI エージェント作業時に守る最小ルールと正本への導線を示します。

@@ -9,7 +9,7 @@ API = ROOT / "02_Architecture/api.md"
 ADR_0033 = ROOT / "01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md"
 DATA_MODEL_ISSUE = (
     ROOT
-    / "01_Plans/issues/"
+    / "01_Plans/issues/done/"
     / "issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md"
 )
 

@@ -2,7 +2,7 @@
 
 - Status: Normative
 - Updated: 2026-08-15
-- 根拠: `01_Plans/product-trajectory-research-2026-08-15.md`
+- 根拠: `01_Plans/research/product-trajectory-research-2026-08-15.md`
 - 関係: `domain.md`（不変条件の正本）、`ai_cognitive_externalization_requirements.md`（本書は同書 §1.1 の正当化を差し替える）
 
 本書は、**この製品が何のために存在し、変化する環境の中で何を変えてよく何を変えてはならないか**を定める。個別の設計判断は行わない。判断の基準を定める。

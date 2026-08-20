@@ -105,8 +105,15 @@ def _restore_sqlite_expression_indexes() -> None:
     if bind.dialect.name != "sqlite":
         return
     index_name = "uq_user_identities_provider_lower_external_uid"
-    indexes = sa.inspect(bind).get_indexes("user_identities")
-    if not any(index["name"] == index_name for index in indexes):
+    # inspector.get_indexes() cannot see expression-based indexes on SQLite
+    # (SAWarning: "Skipped unsupported reflection of expression-based
+    # index ..."), so it always reports this one missing even when it
+    # already exists. Query sqlite_master directly, which does report it.
+    row = bind.execute(
+        sa.text("SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = :name"),
+        {"name": index_name},
+    ).first()
+    if row is None:
         op.create_index(
             index_name,
             "user_identities",
