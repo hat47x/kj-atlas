@@ -62,7 +62,7 @@ CVI/CB/UQ/PB と同じ形式で、**IC（Integrity/Consistency）次元**を定�
 | IC-8 | 凍結仕様間の語彙一致（例: LLM投入IR↔キャンバス関係語彙） | **意味** | なし（`AI-REL-VOCAB-DRIFT-01`で個別修正のみ） | **未**（自動検査なし） |
 | IC-9 | 同一不変条件の全実装面カバレッジ（例: 反スコアリングがbackend/frontend両方に効くか） | **意味** | 一部（`test_ai_anti_scoring_contract.py`はbackendのみ。`DOMAIN-SCORING-SURFACE-01`で発覚） | **薄い**（片面のみ自動検査） |
 | IC-10 | `DocumentV1`内の関数従属性（例: カード→島の所属一意性） | **意味** | なし | **未**（F-5、`AI-IR-PROJECTION-01`の前提条件として記録済みだが未解消） |
-| IC-11 | ADR/issue間の相互参照（ファイル名・ID）の正確性 | 構造 | 部分的（`triage_actionable_plans.py`は依存関係の存在検査のみ） | **薄い**（本セッションでもADR-0041のファイル名誤記を発見・修正した実例あり） |
+| IC-11 | ADR/issue間のバッククォート引用パスの正確性 | 構造 | なし（`DC-LNK-001`はMarkdownリンク構文のみが対象で、`01_Plans`の実際の引用慣習＝コードスパンを検査していない） | **未（自動検査なし・機械検査は可能）**。初回監査で244件の不整合を実測し、`DX-DOC-09`を起票した（2026-08-21） |
 
 **「充足」列が構造系（IC-1〜7）に集中し、意味系（IC-8〜10）が薄い／未であるという非対称が、この索引の主要な発見である。** これはCVI/UQ/PBの索引化パターン（`ADR-0044`）をそのまま踏襲しており、「薄い／未の次元のみを改善issue化する」（`ADR-0039`）という既存運用にそのまま乗る。
 
@@ -106,7 +106,7 @@ UQ（`ADR-0044`）とPB（`ADR-0046`）は既にUI操作性・応答性を包括
 
 1. `value_traceability.md` に「§2.10 整合性予算（IC）正本対応表」としてIC-1〜11の表を追記する。
 2. `PRODUCT-QA-01` のG7判定条件に「意味的整合性監査パス（IC-8〜11が変更範囲に触れる場合）」を追記する。
-3. IC-9（`DOMAIN-SCORING-SURFACE-01`）とIC-10（F-5、`AI-IR-PROJECTION-01`の前提）は既に個別issueで追跡中のため、新規issueは起票しない。IC-8とIC-11は、次回監査パスの実行時に対応要否を判断する（現時点でBlocker/Majorに該当する実害は確認していない）。
+3. IC-9（`DOMAIN-SCORING-SURFACE-01`）とIC-10（F-5、`AI-IR-PROJECTION-01`の前提）は既に個別issueで追跡中のため、新規issueは起票しない。**IC-11は本ADR起票直後に初回監査パスを実際に実行し、244件の不整合を実測、`DX-DOC-09`を起票した**（構造的ドリフトであり機械検査可能なため、意味的ドリフトの類型とは対応方針が異なる。IC-11の非目標欄・§D2記述を参照）。IC-8は次回監査パスの実行時に対応要否を判断する（現時点でBlocker/Majorに該当する実害は確認していない）。
 4. 次回リリース候補時に、UQ/PB充足度の再確認（D3）を実施する。
 
 ## Three-Element Verification（ADR-0067 遡及適用）
@@ -126,5 +126,6 @@ UQ（`ADR-0044`）とPB（`ADR-0046`）は既にUI操作性・応答性を包括
 - Related: `01_Plans/issues/issue-DOMAIN-SCORING-SURFACE-01-health-percentage-and-lone-card-defect-contradict-invariants.md`（IC-9の実例、In Progress）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（IC-10 = F-5の出典）
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（IC-8の実例の発見経路）
+- Related: `01_Plans/issues/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと実装課題、Draft）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（物量抑制方針。新規自動検査を作らない根拠）
 - Related: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
