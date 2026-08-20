@@ -1,7 +1,7 @@
 # Issue: DOC-NORM-03 `validate_active_issue_memos.py` が active issue の配置ミスを「ファイル欠落」と誤報告する
 
 - Type: Bug / Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -29,6 +29,26 @@
 
 ## 受入条件
 
-- [ ] `issues/done/` 配下に active status の memo を一時的に置いても、`validate_rows()` が正しくファイルを発見し「missing memo file」を誤報しない
-- [ ] 既存の `01_Plans/issues/tests/`（存在する場合）または新規テストで、上記シナリオを mutation として固定する
-- [ ] `python 01_Plans/issues/validate_active_issue_memos.py` が既存の正常な状態で変わらず通ることを確認
+- [x] `issues/done/` 配下に active status の memo を一時的に置いても、`validate_rows()` が正しくファイルを発見し「missing memo file」を誤報しない
+- [x] 既存の `01_Plans/issues/tests/`（存在する場合）または新規テストで、上記シナリオを mutation として固定する
+- [x] `python 01_Plans/issues/validate_active_issue_memos.py` が既存の正常な状態で変わらず通ることを確認
+
+## 対応記録（2026-08-21）
+
+`discover_active_rows()` の `memo` フィールドを `memo_path.name`（bare filename）から
+`memo_path.relative_to(root).as_posix()`（発見時の相対パス）へ変更した。`validate_rows()` は
+`root / row.memo` のままで、`done/xxx.md` も正しく解決されるようになる。`row.memo` を使う他の全箇所
+（エラーメッセージ整形）は識別子としての使用のみで、相対パス化によりむしろ診断がより明確になった
+（「どのファイルか」が`done/`を含めて分かる）。
+
+「done/配下にactive statusのmemoがある」ことを別診断として明示する対応方針の任意項目は、本issueの
+必須ACには含まれないため実施しなかった。
+
+- 新規テスト2件（`test_discover_active_rows_records_the_done_subdirectory`・
+  `test_validate_finds_an_active_memo_left_in_done`）を追加し、`issue-DX-DESIGN-CHECK-02`の事故と
+  同型のシナリオ（`done/`配下のactive status memo）を固定した。
+- 変異検査: `memo=memo_path.name`（修正前のロジック）へ戻すと両テストが
+  `missing memo file: issue-misplaced.md` で失敗することを確認し、復元後に再度15件全passを確認した。
+- 検証: `python -m pytest 01_Plans/issues/tests/test_validate_active_issue_memos.py`（15 passed）、
+  `python 01_Plans/issues/validate_active_issue_memos.py`（実repoで`ok: validated 59 active issue memos`）、
+  `ruff check`・`03_Implement/backend/scripts/check_design_consistency.py`（0 errors, 0 warnings）。

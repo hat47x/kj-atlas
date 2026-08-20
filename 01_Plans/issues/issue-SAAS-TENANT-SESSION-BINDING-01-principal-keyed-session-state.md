@@ -237,6 +237,34 @@ auth関連4ファイル計41件の回帰なし。
 **引き続き未着手**: `oauth_bff` の login/callback 経路のテスト、bearer 経路での `sid` claim 読み取り、
 AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cutover）。
 
+### Implementation checkpoint 2026-08-21: oauth_bff の login/callback 経路のテストを追加
+
+前記 checkpoint で残していた `oauth_bff` のHTTP経路を `tests/test_oauth_bff_login_flow.py`（37件）で
+被覆した。**テストのみの追加であり出荷コードは変更していない。**
+
+- **open-redirect ガード**（`_validate_next_path`）: protocol-relative（`//evil`）・絶対URL・
+  scheme付き（`javascript:`）・先頭スラッシュなし・CR/LF注入・過長・空 をいずれも `/` へ落とすこと。
+  同一originの宛先（query・fragment付きを含む）は保持すること。
+- **PKCE**（`_generate_pkce_pair`）: challenge が verifier の unpadded S256 であること（RFC 7636）。
+  誤った導出はローカルでは失敗せずbroker側で全交換が拒否されるだけなので、構成を直接固定する。
+  login ごとに verifier が再利用されないこと。
+- **pending cookie の fail-closed パース**: 不正JSON・非dict・欠損/空/型違いのフィールドをすべて
+  `None` にすること。
+- **`GET /session/login`**: broker未設定で503。redirect が `code_challenge_method=S256` を持ち、
+  **redirect の `state` が cookie に保存された `state` と一致すること**（不一致ならcallbackのstate検査が
+  原理的に成立しない）。敵対的な `next` は破棄されること。
+- **`GET /session/callback` のガード順序**: pending cookie不在 / broker拒否 / state不一致（None・空・
+  別値）/ code欠落 → いずれも400。broker設定欠落は **503**（client error として扱わない）。
+- state比較が `hmac.compare_digest` であること（早期リターンしない）をソース検査で固定。
+
+**変異検査の所見（正直な記録）**: open-redirect ガードの1層目（先頭スラッシュ検査）を無効化すると
+`evil.example/path` が素通りしてテストが落ちる。一方 **2層目（`parsed.scheme or parsed.netloc`）を
+無効化しても何も落ちない**——1層目を通過した値は必ず「スラッシュ1個で始まる」ため scheme も netloc も
+持ち得ず、この行は到達不能である（実測でも到達する入力は無かった）。将来1層目を変更した際の余裕として
+残置し、到達不能である旨をテストファイルに明記した。**被覆済みとは主張しない。**
+
+**引き続き未着手**: bearer経路での `sid` claim 読み取り、AC-2以降。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。

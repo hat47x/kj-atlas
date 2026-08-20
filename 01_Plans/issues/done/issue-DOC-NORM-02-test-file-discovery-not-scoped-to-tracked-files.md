@@ -1,7 +1,7 @@
 # Issue: DOC-NORM-02 `test_norm_identifier_checks.py` のファイル探索が追跡ファイルに限定されていない
 
 - Type: Bug / Process
-- Status: Draft
+- Status: Done
 - Source Issue: `DOC-NORM-01`
 - Priority: P3
 - Owner: Maintainer
@@ -28,6 +28,24 @@
 
 ## 受入条件
 
-- [ ] `test_norm_identifier_checks.py` が `git ls-files` 相当の追跡ファイル一覧を使う（またはそれと同等の除外を行う）
-- [ ] `.claude/worktrees/` 配下に本規則へ違反するファイルを置いた状態でテストを実行しても、baseline系テストが失敗しない
-- [ ] 既存の12テスト全てが変更後も同じ意味で pass する（mutation系のprobeファイル配置場所は `01_Plans/`・`00_Prompt/` のままで良い——これらは追跡対象ディレクトリなので変更不要）
+- [x] `test_norm_identifier_checks.py` が `git ls-files` 相当の追跡ファイル一覧を使う（またはそれと同等の除外を行う）
+- [x] `.claude/worktrees/` 配下に本規則へ違反するファイルを置いた状態でテストを実行しても、baseline系テストが失敗しない
+- [x] 既存の12テスト全てが変更後も同じ意味で pass する（mutation系のprobeファイル配置場所は `01_Plans/`・`00_Prompt/` のままで良い——これらは追跡対象ディレクトリなので変更不要）
+
+## 対応記録（2026-08-21）
+
+`_markdown_paths()` を `docs_contract_checks.tracked_markdown_paths()`（`git ls-files -z -- '*.md'`）へ
+置き換えた。ミューテーション系テストは全て探索結果へprobeパスを明示的に追加しているため、
+`cls.md_paths`（baseline専用）の変更のみで影響が閉じる。
+
+- 新規テスト `test_untracked_worktree_file_does_not_affect_the_baseline` を追加し、本issueが実際に
+  観測した事象（`.claude/worktrees/`配下の孤立ファイルが禁止形式の行番号参照を含み、baselineを
+  失敗させた）を再現・固定した。probeが実際にgitignore対象であることも`git check-ignore`で確認する。
+- 変異検査: 修正前のロジック（`ROOT.rglob`）へ戻すと新規テストが失敗することを確認した。
+- **実際に repo に残っていた本物の孤立ファイル**
+  （`.claude/worktrees/eloquent-dhawan-42f2fa/02_Architecture/ai-prompt-core-redesign-2026-07-23.md`）を
+  削除せずそのままにした状態で `python 01_Plans/docs_check.py` を実行し、**`docs-check passed`**
+  （本セッションで初めてクリーンに通過）を確認した。
+- 検証: `python -m pytest 01_Plans/tests/test_norm_identifier_checks.py`（17 passed）、
+  `ruff check`（対象2ファイル）all passed、
+  `03_Implement/backend/scripts/check_design_consistency.py`（0 errors, 0 warnings）。

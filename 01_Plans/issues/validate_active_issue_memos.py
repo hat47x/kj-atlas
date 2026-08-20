@@ -79,6 +79,13 @@ def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
 
 
 def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
+    """DOC-NORM-03: `memo` carries the path relative to `root`, not the bare
+    filename. `root.rglob` already finds memos anywhere under `root`
+    (including `done/`), but `validate_rows()` re-resolves `root / row.memo`
+    to check existence -- a bare filename makes that re-resolution assume the
+    memo sits directly under `root` and misreport a real, discovered file in
+    `done/` as missing.
+    """
     rows: list[ActiveMemoRow] = []
     for memo_path in sorted(root.rglob("issue-*.md")):
         text = memo_path.read_text(encoding="utf-8")
@@ -88,7 +95,7 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
         rows.append(
             ActiveMemoRow(
                 backlog=memo_path.stem.removeprefix("issue-"),
-                memo=memo_path.name,
+                memo=memo_path.relative_to(root).as_posix(),
                 status=status,
                 source=extract_field_value(text, "Source Issue") or "",
             )
