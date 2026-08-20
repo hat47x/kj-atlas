@@ -92,9 +92,13 @@ def _request(cookie: str | None = None, bearer: str | None = None) -> Request:
     return Request(scope={"type": "http", "method": "GET", "path": "/", "headers": headers})
 
 
-def _login(store: DatabaseSaasAuthSessionStore, tenant: str | None = "tenant-a") -> None:
+def _login(
+    store: DatabaseSaasAuthSessionStore,
+    tenant: str | None = "tenant-a",
+    raw: str = RAW_SESSION,
+) -> None:
     store.create_auth_session(
-        session_key_hash=derive_session_key_hash(RAW_SESSION, key=HASH_KEY),
+        session_key_hash=derive_session_key_hash(raw, key=HASH_KEY),
         principal_id="user-1",
         issuer=ISSUER,
         subject="subject-1",
@@ -214,6 +218,32 @@ def test_unresolvable_issuer_is_a_configuration_error_not_an_auth_failure(edge) 
 
     assert exc.value.status_code == 503
     assert exc.value.code == "configuration_error"
+
+
+def test_cookie_path_surfaces_a_session_identifier_distinct_from_the_principal(edge) -> None:
+    """AC-1 proper: the auth edge must not merely consume the session identifier
+    internally, it must surface it, so session-scoped state (AC-2 onward) can key
+    on the login session instead of the principal."""
+    _login(edge.store)
+
+    identity = edge.resolver.resolve(db=edge.db, request=_request(cookie=RAW_SESSION))
+
+    assert identity.auth_session_key_hash == derive_session_key_hash(RAW_SESSION, key=HASH_KEY)
+    assert identity.auth_session_key_hash != identity.user_id
+
+
+def test_two_logins_of_one_principal_surface_distinct_session_identifiers(edge) -> None:
+    """ADR-0074 decision 3 / AC-5 prerequisite: same user, two browsers, two
+    independent session identities."""
+    second_raw = "second-browser-opaque-session"
+    _login(edge.store)
+    _login(edge.store, raw=second_raw)
+
+    first = edge.resolver.resolve(db=edge.db, request=_request(cookie=RAW_SESSION))
+    second = edge.resolver.resolve(db=edge.db, request=_request(cookie=second_raw))
+
+    assert first.user_id == second.user_id == "user-1"
+    assert first.auth_session_key_hash != second.auth_session_key_hash
 
 
 def test_a_bearer_header_takes_precedence_over_a_valid_cookie(edge) -> None:

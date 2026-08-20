@@ -33,7 +33,9 @@
 
 ## 受入条件
 
-- [ ] AC-1: trusted auth edgeが、principalとは別のserver-trusted認証セッション識別子を解決する。
+- [x] AC-1: trusted auth edgeが、principalとは別のserver-trusted認証セッション識別子を解決する。
+  — 2026-08-20、BFF cookie経路で `ResolvedIdentity.auth_session_key_hash` として解決・公開する。
+  bearer経路はNoneのまま（ADR-0074決定1/2がbrowserからbearerを廃す方針のため意図的）。
 - [ ] AC-2: 共有ストアが認証セッション識別子、active tenant、`tenantSessionVersion`を同一行または同一原子境界で保持する。
 - [ ] AC-3: tenant切替後の次の`GET /session/context`とtenant-scoped APIが、再発行されていない旧tenant claimではなく保存済みactive tenantを正本として選択先tenantを解決する。
 - [ ] AC-4: 同じ認証セッションの複数タブはversionを共有し、一方の切替で他方のstale requestがresource lookup前に409となる。
@@ -179,6 +181,33 @@ auth関連4ファイル計41件の回帰なし。
 
 **引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）のテストと、AC-1本体の欠落
 （解決した session 識別子を `ResolvedIdentity` へ伝播させる導線）。
+
+### Implementation checkpoint 2026-08-20: AC-1 完了（session識別子の公開）
+
+前記 checkpoint で「AC-1本体の欠落」とした点を解消した。**解決した session 識別子を捨てずに
+`ResolvedIdentity` へ公開する**。
+
+- `ResolvedIdentity` へ `auth_session_key_hash: str | None = None` を追加した（末尾・既定値つきの
+  純粋な加算であり、既存の構築箇所に変更を要さない）。
+- `_resolve_from_auth_session_cookie()` がこれを設定する。`TrustedSaasRequestSession` は既に
+  `ResolvedIdentity` を保持しているため、`session.identity.auth_session_key_hash` として
+  そのまま到達でき、追加の配線を要さない。
+- **意図的にAC-2の判断へ踏み込んでいない**: どのstoreを正本とするか（`saas_tenant_sessions` からの
+  cutover）・CAS更新・anti-CSRF は本変更の範囲外。AC-1は「識別子を解決する」ことのみを要求しており、
+  その利用先の設計はAC-2以降に属する。
+
+**テスト（前掲のcookie-fallbackテストへ2件追加、計12件）**:
+
+- 公開された識別子が keyed hash と一致し、かつ principal（`user_id`）と**異なる**こと。
+- 同一principalの2 loginが**異なる**識別子を得ること（ADR-0074決定3・AC-5の前提）。
+- 変異検査: 公開の配線（`auth_session_key_hash=session_key_hash`）を削除すると上記2件だけが
+  失敗することを確認し、復元後に作業ツリーがクリーンであることを検証した。
+
+**回帰**: auth / session / tenant / identity に該当する **419 passed・7 skipped・0 failed**
+（`ResolvedIdentity` はauth全体の中核型のため広めに実行した）。
+
+**引き続き未着手**: `oauth_bff` のHTTP経路（login/callback）のテスト、bearer経路での `sid` claim読み取り、
+`POST /session/logout` でのcookie削除とrevoke、およびAC-2以降。
 
 ## 検証計画
 

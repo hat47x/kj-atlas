@@ -495,6 +495,7 @@ class JwtSaasIdentityContextResolver:
                 external_uid=resolved_session.subject,
             ),
             verified_tenant_claim=verified_tenant_claim,
+            auth_session_key_hash=session_key_hash,
         )
 
     def _fetch_jwks_keys(self, provider: IdentityProviderRow) -> list[dict[str, object]]:
