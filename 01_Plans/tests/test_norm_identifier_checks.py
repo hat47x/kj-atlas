@@ -5,6 +5,8 @@ run against a deliberately broken input and must produce a finding, then against
 the real repository and must be clean.
 """
 
+import shutil
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -19,6 +21,7 @@ from docs_contract_checks import (  # noqa: E402
     check_norm_line_references,
     check_prompt_status_vocabulary,
     check_retired_vocabulary,
+    tracked_markdown_paths,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,11 +29,15 @@ PROMPT = ROOT / "00_Prompt"
 
 
 def _markdown_paths() -> list[Path]:
-    return sorted(
-        p.relative_to(ROOT)
-        for p in ROOT.rglob("*.md")
-        if not any(part in {".git", "node_modules", "build"} for part in p.parts)
-    )
+    """Match the production discovery path (docs_check.py) exactly.
+
+    DOC-NORM-02: this used to be ROOT.rglob("*.md") excluding only
+    {.git, node_modules, build}, which also picked up gitignored/untracked
+    local directories such as .claude/worktrees/ (detached-HEAD agent
+    worktrees). A stale file left behind there could fail this suite even
+    though it is absent from `git ls-files` and from every real checkout.
+    """
+    return sorted(tracked_markdown_paths(ROOT))
 
 
 class NormIdentifierCheckTests(unittest.TestCase):
@@ -65,6 +72,30 @@ class NormIdentifierCheckTests(unittest.TestCase):
             [f"{f.path}:{f.line} {f.target}" for f in findings],
             [],
         )
+
+    def test_untracked_worktree_file_does_not_affect_the_baseline(self) -> None:
+        """DOC-NORM-02: reproduces the exact false positive -- a stale,
+        gitignored agent worktree containing a forbidden line-number
+        citation must not make the tracked-file baseline fail."""
+        worktree_dir = ROOT / ".claude" / "worktrees" / "_docnorm02_probe" / "02_Architecture"
+        worktree_dir.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(worktree_dir.parents[0], ignore_errors=True))
+        stale = worktree_dir / "stale.md"
+        stale.write_text("行番号参照: `00_Prompt/domain.md:3` を見よ。\n", encoding="utf-8")
+        self.assertEqual(
+            subprocess.run(
+                ["git", "-C", str(ROOT), "check-ignore", "-q", str(stale)],
+                check=False,
+            ).returncode,
+            0,
+            ".claude/worktrees/ must be gitignored for this probe to be meaningful",
+        )
+
+        md_paths = _markdown_paths()
+
+        self.assertNotIn(stale.relative_to(ROOT), md_paths)
+        findings = check_norm_line_references(ROOT, md_paths)
+        self.assertEqual([f"{f.path}:{f.line} {f.target}" for f in findings], [])
 
     def test_baseline_status_vocabulary_is_clean(self) -> None:
         findings = check_prompt_status_vocabulary(ROOT)

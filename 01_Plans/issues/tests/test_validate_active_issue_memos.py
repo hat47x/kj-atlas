@@ -284,6 +284,50 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             rows = discover_active_rows(root)
             self.assertEqual(["issue-doc.md"], [row.memo for row in rows])
 
+    def test_discover_active_rows_records_the_done_subdirectory(self) -> None:
+        """DOC-NORM-03 reproduction: an active-status memo misplaced under
+        done/ (as happened once with issue-DX-DESIGN-CHECK-02) must be
+        discovered with a path validate_rows() can actually re-resolve,
+        not just a bare filename that only resolves directly under root."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "done").mkdir()
+            (root / "done" / "issue-misplaced.md").write_text(
+                "- Status: Draft\n- Source Issue: TBD\n",
+                encoding="utf-8",
+            )
+            rows = discover_active_rows(root)
+            self.assertEqual(["done/issue-misplaced.md"], [row.memo for row in rows])
+
+    def test_validate_finds_an_active_memo_left_in_done(self) -> None:
+        """The bug this reproduces: validate_rows() used to reconstruct
+        root / "issue-misplaced.md" (dropping the done/ prefix discovery
+        already found), so it reported a real, readable file as a
+        "missing memo file" instead of validating its contents."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "done").mkdir()
+            (root / "done" / "issue-misplaced.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process
+                    - Status: Draft
+                    - Source Issue: TBD
+                    - Priority: P1
+                    - Scope: `01_Plans/`
+                    - Related ADR/Spec: `ADR-0001`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+
+        self.assertFalse(
+            any("missing memo file" in err for err in errors),
+            f"a memo discovered in done/ was misreported as missing: {errors}",
+        )
+
     def test_validate_detects_missing_dependency_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
