@@ -40,6 +40,12 @@ class ResolvedIdentity:
     # None for single-tenant profile (header mode). Populated by
     # JwtSaasIdentityContextResolver when a broker-issued JWT is verified.
     verified_tenant_claim: VerifiedTenantClaim | None = None
+    # SAAS-TENANT-SESSION-BINDING-01 AC-1 (ADR-0074 decision 3): the
+    # server-trusted auth-session identifier, deliberately distinct from the
+    # principal so two logins of the same user are never one session. Set only
+    # on the BFF cookie path; None for bearer tokens and single-tenant header
+    # mode. Downstream session-scoped state must key on this, not user_id.
+    auth_session_key_hash: str | None = None
 
 
 class SaasIdentityContextResolver(Protocol):
