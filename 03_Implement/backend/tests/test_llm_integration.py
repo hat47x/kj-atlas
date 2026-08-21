@@ -76,7 +76,8 @@ class TestMockLLMIntegration:
     def test_mock_island_summary_valid_json(self):
         data = json.loads(
             _generate(MOCK_URL, "suggest_island_summary", "island test"))
-        assert "summaryText" in data
+        assert "candidates" in data
+        assert all("summaryText" in c and "groundingIds" in c for c in data["candidates"])
 
     def test_mock_island_relation_valid_json(self):
         data = json.loads(

@@ -95,7 +95,7 @@ def test_propose_island_summary_returns_proposal_without_auto_apply(sqlite_clien
     original_generate = ai.generate_with_fallback
 
     class _StubResponse:
-        raw_text = '{"summaryText":"new summary","groundingIds":["c1"]}'
+        raw_text = '{"candidates":[{"summaryText":"new summary","groundingIds":["c1"]}]}'
 
     ai.generate_with_fallback = lambda _: _StubResponse()
     try:
@@ -110,6 +110,8 @@ def test_propose_island_summary_returns_proposal_without_auto_apply(sqlite_clien
     assert body["sourceBundleHash"] == "a" * 64
     assert body["diff"]["before"] == "old summary"
     assert isinstance(body["diff"]["after"], str) and body["diff"]["after"].strip() != ""
+    assert body["diff"]["candidates"][0]["summaryText"] == "new summary"
+    assert body["diff"]["candidates"][0]["groundingIds"] == ["c1"]
     with session_local() as db:
         registered = db.get(AIProposalRow, ("local-default", "doc-1", body["proposalId"]))
         assert registered is not None

@@ -494,8 +494,10 @@ class Settings(BaseSettings):
         # SEC-DOC-BOUND-01: bound card count as a secondary defense (the byte
         # ceiling already bounds total size; this bounds pathological card
         # counts that stay under 20 MiB via tiny card texts). Generous default
-        # (10,000) — realistic KJ canvases are tens to low hundreds of cards.
-        default=10_000,
+        # (50,000) — cumulative multi-round KJ canvases reach tens of thousands
+        # of cards (meta-dogfooding, 2026-08-17); 50k gives headroom over a
+        # 20,000-card target while staying far below the byte ceiling.
+        default=50_000,
         validation_alias="KJ_ATLAS_MAX_DOCUMENT_CARDS",
     )
     allow_unreviewed_ai_text: bool = Field(

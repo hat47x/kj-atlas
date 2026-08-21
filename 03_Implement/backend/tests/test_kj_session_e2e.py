@@ -153,7 +153,7 @@ class TestKJSessionBusinessFlow:
             '- id="b", text="Export enables sharing"'
         )
         summary = _call("suggest_island_summary", island_prompt)
-        assert "summaryText" in summary
+        assert "candidates" in summary
 
         rel = _call("summarize_island_relation", "Relation between A and B. Return JSON.")
         assert "text" in rel

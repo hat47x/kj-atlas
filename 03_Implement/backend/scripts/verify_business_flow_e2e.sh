@@ -94,9 +94,19 @@ put_code=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$DOC_ID
   -H 'Content-Type: application/json' -d "$DOC")
 check "PUT document (作成)" "200" "$put_code"
 
-# 3b. 読戻し（保存確認）。
+# 3b. 読戻し（保存確認）＋ 階層島 parentIslandId の往復保持（DOGFOOD-32 / schemas.md §9）。
 get_code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$DOC_ID")
-check "GET document (読戻し)" "200" "$get_code"
+HIER_DOC='{"version":1,"id":"biz-hier","title":"階層","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[],"edges":[],"islands":[{"id":"h1","cardIds":[]},{"id":"h2","cardIds":[],"parentIslandId":"h1"}],"readingOrder":["h1"]}'
+curl -s -o /dev/null -X PUT "$BASE_URL/docs/biz-hier" -H 'Content-Type: application/json' -d "$HIER_DOC"
+hier_back=$(curl -s "$BASE_URL/docs/biz-hier")
+hier_ok=$(echo "$hier_back" | grep -cF '"parentIslandId":"h1"')
+if [ "$get_code" = "200" ] && [ "$hier_ok" -ge 1 ]; then
+  echo "  PASS: GET document (読戻し) + parentIslandId 往復保持"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: GET document (読戻し) + parentIslandId (get=$get_code hier=$hier_back)"
+  FAIL=$((FAIL+1))
+fi
 
 # 3c. 文面整え（refine-card-text、ローカルLLM経由）。
 refined=$(curl -s -X POST "$BASE_URL/ai/refine-card-text" -H 'Content-Type: application/json' \
@@ -112,19 +122,22 @@ case "$refined" in
     ;;
 esac
 
-# 3d. 島の表札AI提案（suggest-island-summary、メンバーカードのみ grounding）。
+# 3d. 島の表札AI提案（suggest-island-summary、メンバーカードのみ grounding。
+#     ADR-0077: 複数候補（candidates）を返し、その候補[0]の接地 = メンバーカード。
+#     DOGFOOD-34: 違和感（critiqueText）を渡すと候補に反映される（壁打ち往復）。
 summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
   -d "{\"doc\":$DOC,\"islandId\":\"i1\"}")
-case "$summary" in
-  *'"groundingIds":["c1","c2","c3"]'*)
-    echo "  PASS: suggest-island-summary groundingIds = member cards"
+summary_crit=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$DOC,\"islandId\":\"i1\",\"critiqueText\":\"表現が強すぎる\"}")
+if echo "$summary" | grep -qF '"candidates":[' \
+   && echo "$summary" | grep -qF '"groundingIds":["c1","c2","c3"]' \
+   && echo "$summary_crit" | grep -qF '違和感を反映'; then
+    echo "  PASS: suggest-island-summary candidates + groundingIds + 壁打ち"
     PASS=$((PASS+1))
-    ;;
-  *)
-    echo "  FAIL: suggest-island-summary (got $summary)"
+else
+    echo "  FAIL: suggest-island-summary (summary=$summary crit=$summary_crit)"
     FAIL=$((FAIL+1))
-    ;;
-esac
+fi
 
 # 3e. ナラティブ草稿（generate-narrative、reading order を spine に）。
 narrative=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' \
@@ -7335,6 +7348,51 @@ case "$cruise_narr" in *'"basedOnReadingOrder":["cruise-i"]'*) echo "  PASS: CRU
 # ⑤ 読戻し
 cruise_read=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/docs/$CRUISE_ID")
 check "CRUISE 読戻し (200)" "200" "$cruise_read"
+
+echo ""
+echo "--- シナリオ170: 高度ドッグフーディング・第1ラウンド200枚（実物大のカード化→束ね→島統合→叙述化） ---"
+# 業態: ソフトウェア開発組織（kj-atlas プロダクト改善）
+# 想定人物: プロダクトオーナー（kj-atlas自身の改善観察を200枚にカード化）
+# 業務領域: 第1ラウンドで200枚のカードを作り、実物大のキャンバスで束ね・島統合・叙述化・A/B照合まで行う
+# 操作内容: 文書作成(200枚・丁寧な実観察カード) -> 読戻し(200枚保持)
+#          -> card-groups(200枚→10領域) -> 島要約(接地10件キャップ) -> ナラティブ -> A/B照合
+# 注意事項: kj_technique.md §1「数百枚は正常」。card-groups は DOGFOOD-31 で100→1000枚へ緩和済み。
+#          接地は10件上限（品質ガード）で、モックが代表10件へキャップする。
+BIG_ID="biz-flow-200cards"
+# 200枚の丁寧な実観察カードを生成スクリプトから読み込む（kj-atlas自身の改善機会・10領域×20枚）。
+BIG_DOC="$("$VENV_PYTHON" "$SCRIPT_DIR/generate_kj_atlas_improvement_cards.py")"
+
+# ① 文書作成（200枚）
+big_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BIG_ID" \
+  -H 'Content-Type: application/json' -d "$BIG_DOC")
+check "BIG PUT document 200枚 (作成)" "200" "$big_put"
+
+# ② 読戻し（200枚保持）
+big_read=$(curl -s "$BASE_URL/docs/$BIG_ID")
+big_card_count=$(echo "$big_read" | "$VENV_PYTHON" -c "import json,sys; print(len(json.load(sys.stdin)['cards']))")
+check "BIG 読戻し 200枚保持" "200" "$big_card_count"
+
+# ③ card-groups 200枚 → 10領域（DOGFOOD-31 緩和後・全カードを欠落なく束ねる）
+big_cards=$(echo "$BIG_DOC" | "$VENV_PYTHON" -c "import json,sys; d=json.load(sys.stdin); print(json.dumps({'cards':[{'id':c['id'],'text':c['text'],'textReviewed':True} for c in d['cards']]}, ensure_ascii=False))")
+big_grp=$(curl -s -X POST "$BASE_URL/ai/suggest-card-groups" -H 'Content-Type: application/json' -d "$big_cards")
+big_grp_count=$(echo "$big_grp" | "$VENV_PYTHON" -c "import json,sys; d=json.load(sys.stdin); g=d.get('groups',[]); print(len(g))" 2>/dev/null)
+big_grp_total=$(echo "$big_grp" | "$VENV_PYTHON" -c "import json,sys; d=json.load(sys.stdin); print(sum(len(x.get('cardIds',[])) for x in d.get('groups',[])))" 2>/dev/null)
+check "BIG ③card-groups 200枚 → 10領域" "10" "$big_grp_count"
+check "BIG ③b 束ね総カード数 200（欠落なし）" "200" "$big_grp_total"
+
+# ④ 島要約（200枚島・接地10件キャップで成立）
+big_summary=$(curl -s -X POST "$BASE_URL/ai/suggest-island-summary" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BIG_DOC,\"islandId\":\"all-i\"}")
+case "$big_summary" in *'"summaryText"'*'"groundingIds"'*) echo "  PASS: BIG ④島要約（200枚島・接地キャップ）"; PASS=$((PASS+1));; *) echo "  FAIL: BIG ④島要約（${big_summary:0:150}）"; FAIL=$((FAIL+1));; esac
+
+# ⑤ ナラティブ（200枚規模で読み順を叙述）
+big_narr=$(curl -s -X POST "$BASE_URL/ai/generate-narrative" -H 'Content-Type: application/json' -d "{\"doc\":$BIG_DOC}")
+case "$big_narr" in *'"basedOnReadingOrder":["all-i"]'*) echo "  PASS: BIG ⑤ナラティブ（200枚規模）"; PASS=$((PASS+1));; *) echo "  FAIL: BIG ⑤ナラティブ（${big_narr:0:120}）"; FAIL=$((FAIL+1));; esac
+
+# ⑥ A/B照合（200枚規模で島の取りこぼしを検出）
+big_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
+  -d "{\"doc\":$BIG_DOC,\"narrativeText\":\"（草稿）200枚のカードを束ね、kj-atlasの改善を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"all-i\"]}")
+case "$big_ab" in *'"direction":"a_missing_in_b"'*'"aMissingInB":1'*) echo "  PASS: BIG ⑥A/B照合（200枚規模・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: BIG ⑥A/B照合（${big_ab:0:150}）"; FAIL=$((FAIL+1));; esac
 
 echo ""
 echo "=== Result: $PASS passed, $FAIL failed ==="

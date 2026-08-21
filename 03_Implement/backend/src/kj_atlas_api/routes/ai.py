@@ -466,6 +466,16 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
                 "The new placard must address why each objecting card disagrees, or the summary is not a true advocacy for the island.",
             ]
         )
+    # DOGFOOD-34 (壁打ち): a free-text human 違和感 extends the return check —
+    # the regenerated candidates must ADDRESS the objection, not ignore it.
+    if payload.critiqueText:
+        lines.extend(
+            [
+                "The user raised this objection (違和感) to the current placard:",
+                f"    {payload.critiqueText}",
+                "Regenerate the candidates so each one ADDRESSES this objection. Do not repeat the placard the user objected to.",
+            ]
+        )
     # ADR-0069: the placard should reflect the island's position in the logical
     # structure — its typed relations to OTHER islands (causal / negation / ...).
     island_relations: list[str] = []
@@ -481,9 +491,11 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
             "If evidence is weak, sparse, or contradictory, include warnings.",
             "Return strict JSON only. No markdown. No extra text.",
             "Use this exact schema:",
-            '{"summaryText":string,"groundingIds":[string,...],"warnings":[string,...]?}',
-            "groundingIds must contain 1-10 unique card ids chosen from the input cards.",
-            "Prefer the strongest supporting card ids.",
+            '{"candidates":[{"summaryText":string,"groundingIds":[string,...]},...],"warnings":[string,...]?}',
+            "Produce 1-3 distinct placard candidates. Each candidate is a DIFFERENT advocacy (志) for the island, not a paraphrase of the others.",
+            "Each candidate's groundingIds must contain 1-10 unique card ids chosen from the input cards.",
+            "Prefer the strongest supporting card ids for each candidate.",
+            "The first candidate is the primary advocacy and must reflect the island's strongest shared appeal.",
             f'Island id="{island.id}", title={json.dumps(island.title or "")}',
             "Relations to other islands (the placard may reflect them):",
             *(island_relations or ["- (none)"]),
@@ -520,22 +532,26 @@ def _parse_island_summary_response(
         raise HTTPException(status_code=422, detail="islandId does not exist")
 
     member_card_ids = set(target_island.cardIds)
-    grounding_ids = response.groundingIds
 
-    if len(grounding_ids) > 10:
-        raise HTTPException(
-            status_code=422, detail="LLM response groundingIds must contain at most 10 ids"
-        )
-    if len(set(grounding_ids)) != len(grounding_ids):
-        raise HTTPException(
-            status_code=422, detail="LLM response groundingIds must not contain duplicates"
-        )
+    # ADR-0077: 接地（representative cards≤10）と凝縮（志）は候補単位で分離。
+    # 品質ガード（≤10・重複なし・メンバー限定）は候補ごとに強制する。
+    for candidate in response.candidates:
+        grounding_ids = candidate.groundingIds
 
-    for card_id in grounding_ids:
-        if card_id not in member_card_ids:
+        if len(grounding_ids) > 10:
             raise HTTPException(
-                status_code=422, detail="LLM response groundingIds included non-member card id"
+                status_code=422, detail="LLM response groundingIds must contain at most 10 ids"
             )
+        if len(set(grounding_ids)) != len(grounding_ids):
+            raise HTTPException(
+                status_code=422, detail="LLM response groundingIds must not contain duplicates"
+            )
+
+        for card_id in grounding_ids:
+            if card_id not in member_card_ids:
+                raise HTTPException(
+                    status_code=422, detail="LLM response groundingIds included non-member card id"
+                )
 
     return response
 
@@ -1068,6 +1084,7 @@ def propose_island_summary(
             islandId=payload.islandId,
             allowUnreviewedText=payload.allowUnreviewedText,
             model=payload.model,
+            critiqueText=payload.critiqueText,
         ),
         request,
         db,
@@ -1088,8 +1105,12 @@ def propose_island_summary(
             "targetId": payload.islandId,
             "field": "summaryText",
             "before": target_island.summaryText,
-            "after": summary_result.summaryText,
-            "groundingIds": summary_result.groundingIds,
+            # ADR-0077: primary candidate (candidates[0]) becomes the single
+            # adoptable summary. DOGFOOD-34 (Phase 2b): carry the FULL candidate
+            # list so the UI can offer alternatives (candidates[0] = after).
+            "after": summary_result.candidates[0].summaryText,
+            "groundingIds": summary_result.candidates[0].groundingIds,
+            "candidates": [c.model_dump() for c in summary_result.candidates],
             "warnings": summary_result.warnings,
         },
         rationale="AI generated proposal only. Human decision is required before any apply.",

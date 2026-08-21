@@ -475,9 +475,11 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `islandId: string` — 対象の島ID
   - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
   - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
+  - `critiqueText?: string` — 壁打ち（DOGFOOD-34）。現行表札への違和感。指定時はそれを踏まえた代替候補を返す（任意・後方互換）
 - Response: `SuggestIslandSummaryResponse`
-  - `summaryText: string` — 表札候補文
-  - `groundingIds: string[]` — 根拠としたメンバーカードのID
+  - `candidates: IslandSummaryCandidate[]` — 表札候補（1〜3件）。各候補は接地（代表カード）と凝縮（志）を分離して持つ（ADR-0077）
+    - `summaryText: string` — 凝縮・志（述語を伴う代弁文。分類名・名詞止めでないこと）
+    - `groundingIds: string[]` — 接地・根拠としたメンバーカードのID（1〜10件・重複なし・メンバー限定）
   - `warnings?: string[]`
 - 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
 - **DX-CLEANUP-07 案B**: この直接 route はフロントエンドの直接呼び出し元を持たない（UI は proposal-only の `POST /ai/proposals/island-summary` を使用）。**後方互換・外部 API クライアント用に維持**する。`suggest_island_summary` 関数本体は proposal route の内部実装として再利用されている。
@@ -488,10 +490,11 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `doc: DocumentV1`
   - `islandId: string`
   - `sourceBundleHash: string` — context bundleのハッシュ
+  - `critiqueText?: string` — 壁打ち（DOGFOOD-34）。現行表札への違和感（任意・後方互換）
 - Response: `ProposalEnvelope`
   - `type: "island_summary"`
   - `proposalId: string`
-  - `diff: ProposalDiff` — `entityType: "island_summary"`, `field: "summaryText"`
+  - `diff: ProposalDiff` — `entityType: "island_summary"`, `field: "summaryText"`, `after`（candidates[0]）／`groundingIds`／`candidates?: IslandSummaryCandidate[]`（全候補・壁打ち用・DOGFOOD-34）
   - `status: "proposed"`
   - `reviewState: "unreviewed"`
 - `/ai/suggest-island-summary` のproposalラッパー。人間の明示的Adopt/Reject/Hold操作を経て文書へ反映される。
