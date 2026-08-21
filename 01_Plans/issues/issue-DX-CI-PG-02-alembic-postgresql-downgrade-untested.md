@@ -1,7 +1,7 @@
 # Issue: DX-CI-PG-02 alembic downgrade()のPostgreSQL経路がCIで一切実行されない
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,13 +22,51 @@
 
 ## 受入条件
 
-- [ ] PostgreSQL経路のdowngrade検証方針（既存6テストのパラメータ化 or 往復テスト追加）が決定される。
-- [ ] 決定に応じてCIまたはテストが更新され、`20260717_0007`〜`20260717_0012`のPostgreSQL専用downgrade分岐が実際に一度は実行されることが確認できる。
+- [x] PostgreSQL経路のdowngrade検証方針（既存6テストのパラメータ化 or 往復テスト追加）が決定される。
+- [x] 決定に応じてCIまたはテストが更新され、`20260717_0007`〜`20260717_0012`のPostgreSQL専用downgrade分岐が実際に一度は実行されることが確認できる。
 
 ## 検証計画
 
 - 実行する確認: 実装する場合、`cd 03_Implement/backend && python -m pytest -m postgres -q`（PostgreSQLサービス起動時）。
 - 期待結果: PostgreSQL経路でのdowngrade実行が失敗なく完了し、既存のSQLite向けdowngradeテストと同等の表明（drop検証等）が通過する。
+
+## 対応記録（2026-08-21）
+
+第三の方針（c）を採った: 既存6テストのパラメータ化（a）でも、`downgrade base`往復テストの新規追加（b）でもなく、
+**既存の`test_oracle_portability.py`/`test_mysql_family_portability.py`/`test_mssql_portability.py`/
+`test_cockroachdb_portability.py`と同じ「DB engine別の専用portabilityテストファイル」という確立済みの
+規約に倣い、`test_postgres_migration_downgrade_matrix.py`を新規追加した**。理由:
+
+- 4つの他DB engineはいずれもこの規約で0007の downgrade（1ホップ）を検証しているが、**flagshipであり
+  既にCI serviceが起動しているPostgreSQLだけがこの規約から漏れていた**——(a)/(b)より、既存規約への
+  整合を優先した。
+- `alembic downgrade`は指定先まで**間に挟まる全migrationのdowngrade()を順に実行する**ため、
+  `head`から`20260716_0006`への**1ホップ**で0012→0011→0010→0009→0008→0007の6件すべての
+  postgres専用分岐を実行できる。6テストへの個別パラメータ化（a）は不要だった。
+- `.github/workflows/ci.yml`は変更不要——postgres serviceと`pytest -m postgres`ステップは既に存在し、
+  新規テストは既存の`KJ_ATLAS_RUN_PG_TESTS`/`KJ_ATLAS_DATABASE_URL`/`KJ_ATLAS_TEST_POSTGRES_CONTAINER`
+  契約にそのまま乗る。CI実行時間への追加影響は新規テスト1件の実行時間（ローカル実測 約75秒）のみ。
+- 共有`kj_atlas` DB（同一CI jobの他のpostgres-markedテストが前提とするスキーマ）を乱さないため、
+  `test_postgres_backup_restore.py`と同じ「`postgres`メンテナンスDBへの管理接続からisolatedな
+  databaseを作成・破棄する」パターンを踏襲した。
+
+**ローカルのDocker PostgreSQL 16-alpineコンテナ（CI設定と同一）で実機検証した**:
+
+- 初回実行: 1 passed（約77秒）。
+- **変異検査**: (1) 0009 downgradeの`documents`側`DISABLE ROW LEVEL SECURITY`行を削除 → 対応する
+  assertionが正確にその行で失敗することを確認。(2) 0007 downgradeの`subject`列drop呼び出しを
+  無効化 → 対応するassertionが正確にその行で失敗することを確認。両方とも復元後に元migrationファイルが
+  `git status`でクリーンであることを確認した。
+- **クリーンアップの信頼性を実機で発見・修正**: 変異検査による失敗実行のうち約半数で、isolated
+  databaseが削除されずに残留することを発見した（`DROP DATABASE`が`pg_terminate_backend`の直後でも
+  Postgres側のbackendプロセス終了と競合し得るため）。5回・短いbackoff付きのretryを追加し、
+  同じ失敗シナリオを再現して残留ゼロを確認した。
+- 既存のSQLite向け関連テスト13件（`test_identity_provider_binding_migration.py`等5ファイル＋
+  `test_alembic_lineage.py`）に回帰がないことを確認した。
+- `ruff check`: All checks passed。
+
+**Scope欄の補足**: `.github/workflows/ci.yml`と既存6テストファイルは実際には変更していない
+（新規ファイル1件の追加のみ）。上記のとおり既存CI契約へそのまま乗るため。
 
 ## 補足
 
