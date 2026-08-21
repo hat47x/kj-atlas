@@ -1,6 +1,20 @@
 from datetime import datetime
 from typing import Literal
 
+# DX-CI-BACKEND-DT-01: the ~19 Pydantic `datetime` fields below (createdAt,
+# reviewedAt, auditRecordedAt, occurredAt, decidedAt, shelvedAt, generatedAt,
+# updatedAt) are deliberately plain `datetime`, not `AwareDatetime`. Nothing in
+# this codebase compares or arithmetic-operates on two of these fields, or on
+# one of these against an aware value such as `datetime.now(timezone.utc)`
+# (confirmed by repository-wide audit); every current use is round-trip
+# storage of a client-supplied ISO string. `AwareDatetime` would newly reject
+# offset-less ("naive") input, and whether any already-stored payload_json
+# contains such values is unconfirmed -- changing the type without that
+# compatibility check first could turn currently-accepted data into a
+# validation failure. Revisit if code that compares or computes across these
+# fields is ever added; that is the point at which naive/aware mixing would
+# actually produce wrong results rather than accepted-but-unenforced data.
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import Boolean, CheckConstraint, Index, Integer, String, Text, text
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
