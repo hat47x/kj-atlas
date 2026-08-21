@@ -16,6 +16,7 @@ from fastapi import Request
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import Session, sessionmaker
 
+import kj_atlas_api.trusted_auth_edge as trusted_auth_edge
 from kj_atlas_api.auth_session_hash import derive_session_key_hash
 from kj_atlas_api.jwks_store import JwksStore
 from kj_atlas_api.models import Base, IdentityProviderRow, SaasAuthSessionRow, TenantRow
@@ -146,6 +147,26 @@ def test_resolver_without_an_auth_session_store_cannot_use_the_cookie(edge) -> N
 def test_unknown_cookie_value_is_rejected(edge) -> None:
     with pytest.raises(JwtIdentityError) as exc:
         edge.resolver.resolve(db=edge.db, request=_request(cookie="never-issued"))
+
+    assert exc.value.status_code == 401
+    assert exc.value.code == "session_invalid"
+
+
+def test_oversized_cookie_is_rejected_before_hashing_or_lookup(edge, monkeypatch) -> None:
+    """AC-6: an oversized presented value fails closed without ever reaching
+    the hash/store-lookup step -- not merely because an oversized value
+    happens to be unknown (an unknown-but-in-bounds value would 401 the
+    same way, so this pins the length check specifically)."""
+    _login(edge.store)
+    oversized = "x" * 257
+
+    def _fail_if_called(*_args, **_kwargs):
+        raise AssertionError("derive_session_key_hash must not be called for an oversized cookie")
+
+    monkeypatch.setattr(trusted_auth_edge, "derive_session_key_hash", _fail_if_called)
+
+    with pytest.raises(JwtIdentityError) as exc:
+        edge.resolver.resolve(db=edge.db, request=_request(cookie=oversized))
 
     assert exc.value.status_code == 401
     assert exc.value.code == "session_invalid"
