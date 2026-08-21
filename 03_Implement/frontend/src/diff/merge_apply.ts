@@ -6,9 +6,24 @@ import { validateDocument } from "../import/schema_validation";
 import type { MergeItem, MergeItemRef } from "./merge_items";
 import { createMergeAuditEntry, type MergeAuditEntry, type MergeAuditSource } from "../domain/view/audit_log";
 import { detectPatchConflicts } from "../domain/patch/conflict_detect";
+import { t } from "../i18n/translate";
 
 const MERGE_SELECTED_ITEMS_SOFT_LIMIT = 200;
 const MERGE_SELECTED_ITEMS_HARD_LIMIT = 1000;
+
+// detectPatchConflicts() (conflict_detect.ts) returns ConflictItem.reason as a
+// stable internal value -- conflict_detect.test.ts asserts it directly -- not
+// display prose. Translate only here, at presentation, from that fixed set.
+const CONFLICT_REASON_KEYS: Record<string, string> = {
+  "both modified": "app.status.comparison.conflict_reason.both_modified",
+  "delete vs update": "app.status.comparison.conflict_reason.delete_vs_update",
+  "update vs delete": "app.status.comparison.conflict_reason.update_vs_delete",
+};
+
+function translateConflictReason(reason: string): string {
+  const key = CONFLICT_REASON_KEYS[reason];
+  return key ? t(key) : reason;
+}
 
 type MergeDiagnostic = {
   code: string;
@@ -56,7 +71,10 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV
     if (item.kind === "evidence.add") {
       const link = (incomingDoc.evidenceLinks ?? []).find((entry) => entry.id === item.entityRef.id);
       if (!link) {
-        errors.push({ code: "M001", message: `Selected evidence.add ${item.entityRef.id} does not exist in incoming document.` });
+        errors.push({
+          code: "M001",
+          message: t("app.status.comparison.merge_error.evidence_add_missing_incoming", { id: item.entityRef.id }),
+        });
         continue;
       }
 
@@ -67,7 +85,10 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV
 
         const incomingCard = incomingDoc.cards.find((card) => card.id === cardId);
         if (!incomingCard) {
-          errors.push({ code: "M002", message: `evidence.add ${item.entityRef.id} depends on missing card ${cardId}.` });
+          errors.push({
+            code: "M002",
+            message: t("app.status.comparison.merge_error.evidence_add_missing_card", { id: item.entityRef.id, cardId }),
+          });
           continue;
         }
 
@@ -75,7 +96,13 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV
         if (!selectedMap.has(synthetic.id)) {
           selectedMap.set(synthetic.id, synthetic);
           selectedRefKeys.add(`card:${cardId}`);
-          warnings.push({ code: "M101", message: `Auto-included prerequisite card.add ${cardId} for evidence.add ${item.entityRef.id}.` });
+          warnings.push({
+            code: "M101",
+            message: t("app.status.comparison.merge_warning.auto_included_card_for_evidence_add", {
+              cardId,
+              id: item.entityRef.id,
+            }),
+          });
         }
       }
     }
@@ -92,7 +119,10 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV
         if (incomingHasLink) {
           errors.push({
             code: "M003",
-            message: `card.remove ${item.entityRef.id} requires dependent evidence.remove ${link.id} (still present in incoming document).`,
+            message: t("app.status.comparison.merge_error.card_remove_missing_evidence_remove", {
+              id: item.entityRef.id,
+              linkId: link.id,
+            }),
           });
           continue;
         }
@@ -101,7 +131,13 @@ function selectWithAutoPrerequisites(baseDoc: DocumentV1, incomingDoc: DocumentV
         if (!selectedMap.has(synthetic.id)) {
           selectedMap.set(synthetic.id, synthetic);
           selectedRefKeys.add(evidenceRefKey);
-          warnings.push({ code: "M102", message: `Auto-included evidence.remove ${link.id} for card.remove ${item.entityRef.id}.` });
+          warnings.push({
+            code: "M102",
+            message: t("app.status.comparison.merge_warning.auto_included_evidence_remove_for_card_remove", {
+              linkId: link.id,
+              id: item.entityRef.id,
+            }),
+          });
         }
       }
     }
@@ -253,7 +289,13 @@ export function preflightMerge(baseDoc: DocumentV1, selectedItems: MergeItem[], 
   }
 
   if (selectedItems.length > MERGE_SELECTED_ITEMS_HARD_LIMIT) {
-    errors.push({ code: "M004", message: `Selected merge items (${selectedItems.length}) exceed hard limit (${MERGE_SELECTED_ITEMS_HARD_LIMIT}).` });
+    errors.push({
+      code: "M004",
+      message: t("app.status.comparison.merge_error.selection_exceeds_hard_limit", {
+        count: selectedItems.length,
+        limit: MERGE_SELECTED_ITEMS_HARD_LIMIT,
+      }),
+    });
   }
 
   if (errors.length > 0) {
@@ -274,7 +316,10 @@ export function preflightMerge(baseDoc: DocumentV1, selectedItems: MergeItem[], 
 
   const warnings: MergeDiagnostic[] = [...prereqPlan.warnings, ...lint.issues.filter((issue) => issue.severity !== "error").map((issue) => ({ code: issue.code, message: issue.message }))];
   if (selectedItems.length > MERGE_SELECTED_ITEMS_SOFT_LIMIT) {
-    warnings.push({ code: "M103", message: `Large merge selection (${selectedItems.length} items). Review carefully before applying.` });
+    warnings.push({
+      code: "M103",
+      message: t("app.status.comparison.merge_warning.large_selection", { count: selectedItems.length }),
+    });
   }
 
   return { ok: true, patchOrPlan: patch, warnings, selectedItems: prereqPlan.selectedItems };
@@ -298,14 +343,26 @@ export function applyMergeTransaction(
   }
 
   if (preflight.warnings.length > 0 && !options?.allowWarnings) {
-    return { ok: false, errors: [{ code: "M105", message: "Merge preflight has warnings. Explicit confirmation required." }, ...preflight.warnings] };
+    return {
+      ok: false,
+      errors: [
+        { code: "M105", message: t("app.status.comparison.merge_error.warnings_require_confirmation") },
+        ...preflight.warnings,
+      ],
+    };
   }
 
   const conflicts = detectPatchConflicts(snapshotDoc, currentDoc, preflight.patchOrPlan);
   if (conflicts.conflicts.length > 0) {
     return {
       ok: false,
-      errors: conflicts.conflicts.map((conflict) => ({ code: "M006", message: `Conflict on ${conflict.entityKey}: ${conflict.reason}` })),
+      errors: conflicts.conflicts.map((conflict) => ({
+        code: "M006",
+        message: t("app.status.comparison.merge_error.conflict", {
+          entityKey: conflict.entityKey,
+          reason: translateConflictReason(conflict.reason),
+        }),
+      })),
     };
   }
 
