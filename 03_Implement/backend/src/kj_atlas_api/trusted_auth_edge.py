@@ -42,6 +42,9 @@ _ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
 # ADR-0074 decision 1/3: the BFF-issued opaque session cookie, read only when
 # no bearer token is present (AC-1 cookie-fallback branch, ADR-0074 decision 2).
 _AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
+# SAAS-TENANT-SESSION-BINDING-01 AC-6: generous headroom over the real
+# secrets.token_urlsafe(32) length (~43 chars), not a tight format check.
+_MAX_AUTH_SESSION_COOKIE_LENGTH = 256
 
 
 # ---------------------------------------------------------------------------
@@ -461,6 +464,13 @@ class JwtSaasIdentityContextResolver:
         if not raw_session_id:
             logger.info("auth edge: missing bearer token")
             raise JwtIdentityError(status_code=401, code="missing_token")
+        if len(raw_session_id) > _MAX_AUTH_SESSION_COOKIE_LENGTH:
+            # SAAS-TENANT-SESSION-BINDING-01 AC-6: an oversized presented value
+            # fails closed before it is hashed or looked up. A real cookie is
+            # secrets.token_urlsafe(32) (~43 chars); this bound is generous
+            # headroom, not a tight format check.
+            logger.info("auth edge: oversized auth session cookie")
+            raise JwtIdentityError(status_code=401, code="session_invalid")
 
         session_key_hash = derive_session_key_hash(raw_session_id, key=self._auth_session_hash_key)
         resolved_session = self._auth_session_store.resolve_auth_session(session_key_hash=session_key_hash)

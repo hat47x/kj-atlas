@@ -36,13 +36,16 @@
 - [x] AC-1: trusted auth edgeが、principalとは別のserver-trusted認証セッション識別子を解決する。
   — 2026-08-20、BFF cookie経路で `ResolvedIdentity.auth_session_key_hash` として解決・公開する。
   bearer経路はNoneのまま（ADR-0074決定1/2がbrowserからbearerを廃す方針のため意図的）。
-- [ ] AC-2: 共有ストアが認証セッション識別子、active tenant、`tenantSessionVersion`を同一行または同一原子境界で保持する。
+- [x] AC-2: 共有ストアが認証セッション識別子、active tenant、`tenantSessionVersion`を同一行または同一原子境界で保持する。
+  — 2026-08-22、schema自体は`20260813_0027`で既に同一行。AC-3のcheckpointで呼び出し元（`resolve_active_tenant_session_version`/`persist_active_tenant_selection`）が実際にその行をCAS読み書きするよう配線し、cookie/BFF経路で完全に達成した。
 - [x] AC-3: tenant切替後の次の`GET /session/context`とtenant-scoped APIが、再発行されていない旧tenant claimではなく保存済みactive tenantを正本として選択先tenantを解決する。
   — 2026-08-22、cookie/BFF経路（`auth_session_key_hash`が解決される経路）に限り達成。読み取り側はAC-1時点で`VerifiedTenantClaim`が`SaasAuthSessionRow.active_tenant_id`から毎request再構築されていたため既に成立、書き込み側（switch時の書き戻し）を本checkpointで配線した。bearer経路は`sid` claim読取が未着手のため対象外のまま（別限界として既記載）。
 - [x] AC-4: 同じ認証セッションの複数タブはversionを共有し、一方の切替で他方のstale requestがresource lookup前に409となる。
   — 2026-08-22、cookie/BFF経路（`auth_session_key_hash`が解決される経路）に限り統合テストで確認。
-- [ ] AC-5: 同じprincipalの異なる2認証セッションはactive tenantとversionを共有せず、一方の切替・logoutが他方を失効させない。
-- [ ] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
+- [x] AC-5: 同じprincipalの異なる2認証セッションはactive tenantとversionを共有せず、一方の切替・logoutが他方を失効させない。
+  — 既存テストで確認済み: `test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same_principal`（切替の非干渉）、`test_revoking_one_login_session_does_not_affect_another_of_the_same_principal`（revokeの非干渉）、logout側は`test_oauth_bff_logout_revocation.py`の「同一principalの別loginは失効しないこと」で確認済み。
+- [x] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
+  — 2026-08-22。欠損/不正/共有ストア不達は既存テストで確認済み。membership停止は`_active_membership_context`が毎request無条件に再検証するため既に成立（`test_context_rechecks_active_tenant_membership`）。**過大（oversized）は本checkpointで新規に修正**——生cookie値の長さ上限チェックが存在しなかったため`_MAX_AUTH_SESSION_COOKIE_LENGTH`（256）を追加し、hash算出・store照会より前にfail-closedするようにした。bearer経路の`sid` claim読取は別限界として文書化済みのまま。
 - [ ] AC-7: migrationのupgrade/downgrade、複数worker CAS、tenant切替→次request、別session分離のintegration testが通る。
 - [ ] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
 - [ ] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
@@ -328,6 +331,20 @@ route経由で証明するが、**真の並行race（事前checkとpersistの間
 必要性を示さないのは想定どおり。復元後、両ファイル合計48件全pass。
 
 **回帰**: auth/session/tenant/identity該当 **478 passed・7 skipped・0 failed**（新規1件を含む）。
+
+### Implementation checkpoint 2026-08-22（続き）: AC-2/AC-5達成の確認とAC-6の過大cookie fail-closedを修正
+
+AC-2はAC-3のcheckpointで実質的に達成済みだったため（schemaは`20260813_0027`から同一行、AC-3で呼び出し元がCASで読み書きするよう配線済み）checkboxを是正した。AC-5は既存テストが既に非干渉を確認済みだったためcheckboxを是正した。
+
+AC-6の4条件（session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止）を個別に再確認したところ、**「過大（oversized）」だけ実装が欠けていた**——提示された生cookie値に長さ上限が無く、任意長の文字列がそのままhash算出・store照会へ渡っていた（実害は限定的——`derive_session_key_hash`はHMACなので任意長を安全に処理し、ASGIサーバ側のheader size上限が実質的な歯止めになっていた可能性が高いが、application層としての意図的なfail-closedではなかった）。
+
+- `trusted_auth_edge.py`: `_MAX_AUTH_SESSION_COOKIE_LENGTH = 256`（実cookie値は`secrets.token_urlsafe(32)`で約43文字、十分な余裕を持つ上限）を追加し、超過時はhash算出前に401 `session_invalid`でfail-closedする。
+
+**変異検査で自分のテストの弱さを発見した（正直な記録）**: 最初に書いたテスト（`"x"*257`を渡して401/`session_invalid`を確認）は、ガードを無効化しても**検知できなかった**——`"x"*257`はどのみち未知のhashとして`session_invalid`（401）で拒否されるため、「過大だから拒否された」のか「未知だから拒否された」のかを区別できていなかった。`monkeypatch`で`derive_session_key_hash`を「呼ばれたら即失敗」に差し替え、hash算出に**到達する前に**拒否されることを直接確認するテストへ書き直した。その後の変異検査（ガード無効化）は正しくこのテストのみを失敗させ、復元後13件全pass。
+
+**回帰**: auth/session/tenant/identity該当 **479 passed・7 skipped・0 failed**（新規1件を含む）。
+
+**引き続き未着手**: AC-7（複数worker/instance統合テスト。schema・CAS・switch・session分離は既に個別checkpointで確認済みだが、複数worker/複数instance同時実行という条件そのものは未検証）、AC-8（`SAAS-TENANT-01`/`OPS-SAAS-SCALE-01`/API文書の達成表現同期）、AC-9（cookie/anti-CSRF方針の最終決定——現状、session-keyed経路は追加cookieを発行しない設計にしたため、AC-9の「採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する」側に近いが、既存のprincipal-keyed経路（bearer flow）が使う`Kj-Atlas-Tenant-Session-Version`cookie自体の扱いはこのissueの範囲でまだ判断していない）。
 
 ## 検証計画
 
