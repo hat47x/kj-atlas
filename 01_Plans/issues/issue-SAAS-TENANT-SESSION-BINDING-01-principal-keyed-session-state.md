@@ -39,7 +39,8 @@
 - [ ] AC-2: 共有ストアが認証セッション識別子、active tenant、`tenantSessionVersion`を同一行または同一原子境界で保持する。
 - [x] AC-3: tenant切替後の次の`GET /session/context`とtenant-scoped APIが、再発行されていない旧tenant claimではなく保存済みactive tenantを正本として選択先tenantを解決する。
   — 2026-08-22、cookie/BFF経路（`auth_session_key_hash`が解決される経路）に限り達成。読み取り側はAC-1時点で`VerifiedTenantClaim`が`SaasAuthSessionRow.active_tenant_id`から毎request再構築されていたため既に成立、書き込み側（switch時の書き戻し）を本checkpointで配線した。bearer経路は`sid` claim読取が未着手のため対象外のまま（別限界として既記載）。
-- [ ] AC-4: 同じ認証セッションの複数タブはversionを共有し、一方の切替で他方のstale requestがresource lookup前に409となる。
+- [x] AC-4: 同じ認証セッションの複数タブはversionを共有し、一方の切替で他方のstale requestがresource lookup前に409となる。
+  — 2026-08-22、cookie/BFF経路（`auth_session_key_hash`が解決される経路）に限り統合テストで確認。
 - [ ] AC-5: 同じprincipalの異なる2認証セッションはactive tenantとversionを共有せず、一方の切替・logoutが他方を失効させない。
 - [ ] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
 - [ ] AC-7: migrationのupgrade/downgrade、複数worker CAS、tenant切替→次request、別session分離のintegration testが通る。
@@ -301,6 +302,32 @@ AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cu
 **回帰**: auth/session/tenant/identity該当 **475 passed・7 skipped・0 failed**（新規8件を含む）。
 
 **引き続き未着手**: AC-4（同一session複数タブでの実際のstale-request 409確認、統合テストとして）、AC-6残り（bearer経路でのsid claim読取自体は別限界として文書化済み・未着手）、AC-7（複数worker・複数instanceでのintegration test）、AC-8（文書同期）、AC-9（cookie/anti-CSRF方針の最終決定）。
+
+### Implementation checkpoint 2026-08-22（続き）: AC-4 の統合テストを追加
+
+`test_session_context_routes.py`へ、`auth_session_key_hash`を持つ識別子で`GET /session/context`→
+`POST /session/active-tenant`（tab 1）→同じ旧versionでの`POST /session/active-tenant`（tab 2、stale）
+を実際のroute stack経由で確認する統合テスト1件を追加した。`StaticIdentityResolver`に
+`auth_session_key_hash`フィールドを追加し、`app.state.saas_auth_session_store`へ実際の
+`DatabaseSaasAuthSessionStore`を配線した（既存の`RecordingActiveTenantPersister`等のstubは
+`auth_session_key_hash=None`の既存テストに対して無変更）。
+
+- tab 1のswitchが`SaasAuthSessionRow`のCASを実際に更新すること（`active_tenant_id`・
+  `tenant_session_version`とも）を直接DB読取で確認。
+- tab 2（旧versionを提示）が409 `tenant_session_changed`で拒否され、行が変化しないことを確認。
+
+**変異検査で判明した所見（正直な記録）**: `_persist_session_keyed_selection`のCAS失敗判定
+（`if not rotated: raise`）を無効化しても、この統合テストは失敗しなかった——`routes/session.py`の
+`require_current_tenant_session_version()`が`persist_active_tenant_selection()`より**先に**呼ばれ、
+提示versionと現在versionの不一致を検出して409を返すため、CAS層へ到達する前に拒否される。
+一方、同じ無効化は`test_active_tenant_session_keyed.py`の単体テストでは正しく検出された
+（そちらは`_persist_session_keyed_selection`を直接呼ぶため、事前check層を経由しない）。
+したがって本統合テストは「連続した2 requestでstaleが409になる」というAC-4の文言を実際の
+route経由で証明するが、**真の並行race（事前checkとpersistの間のTOCTOU窓）に対するCASの必要性は
+単体テスト側が担っている**——両テストは異なる層を検証しており、統合テストがCAS層自体の
+必要性を示さないのは想定どおり。復元後、両ファイル合計48件全pass。
+
+**回帰**: auth/session/tenant/identity該当 **478 passed・7 skipped・0 failed**（新規1件を含む）。
 
 ## 検証計画
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException, Request, Response
@@ -18,8 +19,9 @@ from kj_atlas_api.active_tenant_session import (
 from kj_atlas_api.auth_context import ResolvedIdentity
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
+from kj_atlas_api.models import Base, SaasAuthSessionRow, TenantMembershipRow, TenantRow, UserRow
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
 from kj_atlas_api.session_context import CapabilitySnapshot
 from kj_atlas_api.tenant_context import (
     SingleTenantContextResolver,
@@ -34,6 +36,10 @@ TIMESTAMP = "2026-07-17T00:00:00Z"
 @dataclass
 class StaticIdentityResolver:
     principal_id: str | None = "user-1"
+    # SAAS-TENANT-SESSION-BINDING-01 AC-4: set to route through the
+    # session-keyed active-tenant persister path instead of the
+    # principal-keyed one.
+    auth_session_key_hash: str | None = None
 
     def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:  # noqa: ARG002
         actor_ref = (
@@ -54,6 +60,7 @@ class StaticIdentityResolver:
                 groups=("secret-group",),
                 trace_id=None,
             ),
+            auth_session_key_hash=self.auth_session_key_hash,
         )
 
 
@@ -859,6 +866,70 @@ def test_active_tenant_change_normalizes_unexpected_persistence_failure(
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "active_tenant_update_unavailable"
     assert "secret session store failure" not in response.text
+
+
+def test_active_tenant_change_uses_the_session_keyed_store_and_rejects_a_stale_second_tab(
+    tmp_path,
+) -> None:
+    """AC-2/AC-4: when auth_session_key_hash is present (BFF cookie flow),
+    version reads/writes go through SaasAuthSessionRow instead of the
+    principal-keyed table -- so a second tab presenting the pre-switch
+    version is rejected by the very row the first tab's switch updated,
+    before any resource is touched, and it never silently wins."""
+    with _session_client(tmp_path) as fixture:
+        client, session_local, identity_resolver, _, _ = fixture
+        client.app.state.saas_auth_session_store = DatabaseSaasAuthSessionStore(session_local)
+        session_key_hash = "test-session-hash-1"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        with session_local() as db:
+            db.add(
+                SaasAuthSessionRow(
+                    session_key_hash=session_key_hash,
+                    principal_id="user-1",
+                    issuer="https://idp.example.test",
+                    subject="subject-1",
+                    active_tenant_id="tenant-a",
+                    tenant_session_version="tab-v1",
+                    created_at=now_iso,
+                    last_used_at=now_iso,
+                    absolute_expires_at="2999-01-01T00:00:00+00:00",
+                    revoked_at=None,
+                )
+            )
+            db.commit()
+        identity_resolver.auth_session_key_hash = session_key_hash
+
+        context = client.get("/session/context")
+        assert context.status_code == 200
+        assert context.json()["tenantSessionVersion"] == "tab-v1"
+
+        tab_one = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-b", "expectedTenantSessionVersion": "tab-v1"},
+        )
+        assert tab_one.status_code == 200
+        new_version = tab_one.json()["tenantSessionVersion"]
+        assert new_version != "tab-v1"
+
+        with session_local() as db:
+            row = db.get(SaasAuthSessionRow, session_key_hash)
+        assert row is not None
+        assert row.active_tenant_id == "tenant-b"
+        assert row.tenant_session_version == new_version
+
+        # Tab 2 still holds the pre-switch version.
+        tab_two_stale = client.post(
+            "/session/active-tenant",
+            json={"tenantId": "tenant-a", "expectedTenantSessionVersion": "tab-v1"},
+        )
+        assert tab_two_stale.status_code == 409
+        assert tab_two_stale.json()["detail"]["code"] == "tenant_session_changed"
+
+        with session_local() as db:
+            row_after = db.get(SaasAuthSessionRow, session_key_hash)
+        assert row_after is not None
+        assert row_after.active_tenant_id == "tenant-b"
+        assert row_after.tenant_session_version == new_version
 
 
 def test_active_tenant_change_preserves_trusted_antiforgery_rejection(
