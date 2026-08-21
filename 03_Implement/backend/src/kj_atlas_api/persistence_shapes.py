@@ -251,6 +251,9 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     ),
     "inquiry_bundles.payload_json": CONTENT_OBJECT,
     "inquiry_bundles.updated_at": TIMESTAMP,
+    # SEC-INQUIRY-BOUND-01: same shape as documents.created_by -- an
+    # immutable external id, nullable for bundles that predate this column.
+    "inquiry_bundles.created_by": EXTERNAL_ID,
     "tenant_identity_providers.tenant_id": INTERNAL_ID,
     "tenant_identity_providers.identity_provider_id": INTERNAL_ID,
     "tenant_identity_providers.external_tenant_ref": EXTERNAL_ID,
