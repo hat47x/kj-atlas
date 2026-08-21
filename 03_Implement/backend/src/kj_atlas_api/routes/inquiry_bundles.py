@@ -11,7 +11,7 @@ from kj_atlas_api.content_store import ContentBlob
 from kj_atlas_api.database_content_store import DatabaseBundleContentStore
 from kj_atlas_api.db import get_db
 from kj_atlas_api.inquiry_bundle_repository import get_inquiry_bundle_row
-from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow
+from kj_atlas_api.models import InquiryBundleDeletionAuditEventRow, InquiryBundleRow
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.tenant_session_precondition import (
@@ -119,6 +119,25 @@ def _parse_single_cas_revision(if_match: str) -> int:
     return revision
 
 
+def _deny_if_not_owner(row: InquiryBundleRow, principal_id: str | None) -> None:
+    """SEC-INQUIRY-BOUND-01: enforce created_by only when both the stored
+    value and the requester are known. A NULL created_by (bundle predates
+    this column) or a None principal_id (single-tenant/local-dev, no
+    identity to compare against) both keep today's tenant-wide access
+    unchanged -- this is an additive check for newly created bundles only,
+    not a retroactive lock on existing data."""
+    if row.created_by is None or principal_id is None:
+        return
+    if row.created_by != principal_id:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "inquiry_bundle_not_owner",
+                "message": "This inquiry bundle belongs to a different user.",
+            },
+        )
+
+
 class _InquirySession:
     """Resolved tenant + principal for inquiry-bundle storage (G5: W型
     single-tenant 化 — SaaS and single-tenant resolve to the same shape)."""
@@ -211,6 +230,7 @@ def put_inquiry_bundle(
             journey_id=journey_id,
             updated_at=recorded_at,
             content=content,
+            created_by=trusted_session.principal_id,
         )
         db.commit()
         return Response(
@@ -221,6 +241,11 @@ def put_inquiry_bundle(
     if if_match is not None:
         # Update-only path: a single canonical expected revision, atomic CAS.
         expected_revision = _parse_single_cas_revision(if_match)
+        existing = get_inquiry_bundle_row(
+            db, tenant=trusted_session.tenant, journey_id=journey_id
+        )
+        if existing is not None:
+            _deny_if_not_owner(existing, trusted_session.principal_id)
         if not store.update_cas(
             tenant=trusted_session.tenant,
             journey_id=journey_id,
@@ -263,6 +288,7 @@ def get_inquiry_bundle(
     row = get_inquiry_bundle_row(db, tenant=trusted_session.tenant, journey_id=journey_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Inquiry bundle not found")
+    _deny_if_not_owner(row, trusted_session.principal_id)
     response.headers["ETag"] = _format_etag(row.revision)
     return json.loads(row.payload_json)
 
@@ -285,6 +311,9 @@ def delete_inquiry_bundle_route(
             },
         )
     expected_revision = _parse_single_cas_revision(if_match)
+    existing = get_inquiry_bundle_row(db, tenant=trusted_session.tenant, journey_id=journey_id)
+    if existing is not None:
+        _deny_if_not_owner(existing, trusted_session.principal_id)
     if not DatabaseBundleContentStore(db).delete_cas(
         tenant=trusted_session.tenant,
         journey_id=journey_id,

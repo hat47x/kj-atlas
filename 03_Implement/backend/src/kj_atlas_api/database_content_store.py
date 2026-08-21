@@ -383,9 +383,13 @@ class DatabaseBundleContentStore:
         journey_id: str,
         updated_at: str,
         content: ContentBlob,
+        created_by: str | None = None,
     ) -> ReplaceableBundleContent:
         """DATA-INQUIRY-CONCURRENCY-01 (案A): create with revision 1. The caller
-        must guarantee the row does not already exist (If-None-Match: *)."""
+        must guarantee the row does not already exist (If-None-Match: *).
+
+        SEC-INQUIRY-BOUND-01: created_by is a creation-time fact (ADR-0073
+        pattern) -- never set or changed on update_cas/delete_cas."""
         apply_database_tenant_context(db=self._db, tenant=tenant)
         row = InquiryBundleRow(
             tenant_id=tenant.tenant_id,
@@ -393,6 +397,7 @@ class DatabaseBundleContentStore:
             payload_json=content.text,
             updated_at=updated_at,
             revision=1,
+            created_by=created_by,
         )
         self._db.add(row)
         return ReplaceableBundleContent(row=row, content=content)

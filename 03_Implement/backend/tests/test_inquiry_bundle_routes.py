@@ -32,12 +32,14 @@ TIMESTAMP = "2026-08-06T00:00:00Z"
 
 @dataclass
 class StaticIdentityResolver:
+    user_id: str = "user-1"
+
     def resolve(self, *, db: Session, request: Request) -> ResolvedIdentity:  # noqa: ARG002
         return ResolvedIdentity(
-            user_id="user-1",
-            reviewer_ref="user:user-1",
-            owner_ref="user:user-1",
-            auth_context=AuthContext(actor_ref="user:user-1", user_id="user-1"),
+            user_id=self.user_id,
+            reviewer_ref=f"user:{self.user_id}",
+            owner_ref=f"user:{self.user_id}",
+            auth_context=AuthContext(actor_ref=f"user:{self.user_id}", user_id=self.user_id),
         )
 
 
@@ -47,7 +49,6 @@ class MutableTenantResolver:
     resolved_by: str = "verified_claim"
 
     def resolve(self, *, db: Session, user_id: str | None, claim: object = None) -> TenantContext:
-        assert user_id == "user-1"
         if self.resolved_by in {"verified_claim", "trusted_host_mapping"}:
             return select_active_tenant_context(
                 db=db,
@@ -355,6 +356,124 @@ def test_single_tenant_resolution_stores_bundle(tmp_path) -> None:
         )
 
     assert response.status_code == 201
+
+
+def _seed_second_user(session_local, *, tenant_id: str = "tenant-a") -> None:
+    """SEC-INQUIRY-BOUND-01: a second provisioned identity, distinct from the
+    fixture's default "user-1", sharing the same tenant membership so a
+    denial can only be attributed to the new owner check -- not to tenant or
+    membership scoping, which existing tests already cover separately."""
+    with session_local() as db:
+        db.add(
+            UserRow(
+                id="user-2",
+                display_name=None,
+                email=None,
+                lifecycle_state="active",
+                created_at=TIMESTAMP,
+                updated_at=TIMESTAMP,
+            )
+        )
+        db.add(
+            UserIdentityRow(
+                user_id="user-2",
+                provider="oidc",
+                external_uid="user-2",
+                identity_provider_id=None,
+                created_at=TIMESTAMP,
+            )
+        )
+        db.add(
+            TenantMembershipRow(
+                tenant_id=tenant_id,
+                user_id="user-2",
+                lifecycle_state="active",
+                created_at=TIMESTAMP,
+                updated_at=TIMESTAMP,
+            )
+        )
+        db.commit()
+
+
+_AS_USER_2 = {"x-forwarded-user": "user-2", "x-auth-provider": "oidc"}
+
+
+def test_create_sets_created_by_from_the_trusted_session(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        assert _create(client, "journey-1", {"version": 1}).status_code == 201
+
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.created_by == "user-1"
+
+
+def test_get_put_delete_deny_a_bundle_owned_by_another_user(tmp_path) -> None:
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        _seed_second_user(session_local)
+        assert _create(client, "journey-1", {"version": 1}).status_code == 201
+
+        get_denied = client.get("/inquiry-bundles/journey-1", headers=_AS_USER_2)
+        assert get_denied.status_code == 403
+        assert get_denied.json()["detail"]["code"] == "inquiry_bundle_not_owner"
+
+        put_denied = client.post(
+            "/inquiry-bundles/journey-1",
+            json={"version": 2},
+            headers={"If-Match": '"1"', **_AS_USER_2},
+        )
+        assert put_denied.status_code == 403
+        assert put_denied.json()["detail"]["code"] == "inquiry_bundle_not_owner"
+
+        delete_denied = client.delete(
+            "/inquiry-bundles/journey-1", headers={"If-Match": '"1"', **_AS_USER_2}
+        )
+        assert delete_denied.status_code == 403
+        assert delete_denied.json()["detail"]["code"] == "inquiry_bundle_not_owner"
+
+        # Nothing was mutated by any of the three denied attempts.
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "journey-1"))
+        assert row is not None
+        assert row.revision == 1
+        assert json.loads(row.payload_json) == {"version": 1}
+
+        # The actual owner is unaffected.
+        owner_get = client.get("/inquiry-bundles/journey-1")
+        assert owner_get.status_code == 200
+        assert owner_get.json() == {"version": 1}
+
+
+def test_pre_migration_bundle_with_no_created_by_keeps_tenant_wide_access(tmp_path) -> None:
+    """created_by is only enforced when it is actually set (SEC-INQUIRY-BOUND-01
+    decision: enforce for newly created bundles only, do not retroactively
+    lock existing bundles that predate this column)."""
+    with _client(tmp_path) as fixture:
+        client, session_local, _ = fixture
+        _seed_second_user(session_local)
+        assert _create(client, "legacy-journey", {"version": 1}).status_code == 201
+        with session_local() as db:
+            row = db.get(InquiryBundleRow, ("tenant-a", "legacy-journey"))
+            assert row is not None
+            row.created_by = None
+            db.commit()
+
+        get_as_other_user = client.get("/inquiry-bundles/legacy-journey", headers=_AS_USER_2)
+        assert get_as_other_user.status_code == 200
+
+        put_as_other_user = client.post(
+            "/inquiry-bundles/legacy-journey",
+            json={"version": 2},
+            headers={"If-Match": '"1"', **_AS_USER_2},
+        )
+        assert put_as_other_user.status_code == 204
+
+        delete_as_other_user = client.delete(
+            "/inquiry-bundles/legacy-journey", headers={"If-Match": '"2"', **_AS_USER_2}
+        )
+        assert delete_as_other_user.status_code == 204
 
 
 def test_etag_known_in_one_tenant_cannot_touch_another_tenants_bundle(tmp_path) -> None:

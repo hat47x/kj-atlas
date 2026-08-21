@@ -625,6 +625,12 @@ class InquiryBundleRow(Base):
     journey_id: Mapped[str] = mapped_column(Text, primary_key=True)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+    # SEC-INQUIRY-BOUND-01: server-owned creation-time fact (ADR-0073's
+    # documents.created_by pattern). NULL for bundles created before this
+    # column existed -- deliberately never backfilled (same reasoning as
+    # ADR-0073), and the owner check enforces only against a non-NULL value,
+    # so pre-migration bundles keep today's tenant-wide access unchanged.
+    created_by: Mapped[str | None] = mapped_column(Text, nullable=True)
     # DATA-INQUIRY-CONCURRENCY-01 (案A): server-owned monotonic revision for
     # optimistic-concurrency (If-Match) on update/delete. Client-agnostic.
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")

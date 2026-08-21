@@ -1,7 +1,7 @@
 # Issue: SEC-INQUIRY-BOUND-01 InquiryBundleV1にDocumentV1同等の所有者・可視性境界が無い
 
 - Type: Security / Data model
-- Status: Open
+- Status: Done
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §13.2（第4反復三要素分析で発見）, `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` AC-11
 - Priority: P2
 - Owner: Maintainer
@@ -46,10 +46,53 @@ interpret the bundle contract"）だが、`issue-DOMAIN-W-ITERATION-01` AC-11 �
 
 ## 受入条件
 
-- [ ] AC-1: 探究bundleの所有者・可視性の既定方針が三要素分析で決定される。
-- [ ] AC-2: データ設計（列追加方式）が決定され、`ADR-0057`または新規ADRに記録される。
-- [ ] AC-3: 決定に基づき、`/inquiry-bundles/*`の認可境界が実装され、backend testで
+- [x] AC-1: 探究bundleの所有者・可視性の既定方針が三要素分析で決定される。
+- [x] AC-2: データ設計（列追加方式）が決定され、`ADR-0057`または新規ADRに記録される。
+- [x] AC-3: 決定に基づき、`/inquiry-bundles/*`の認可境界が実装され、backend testで
   他利用者からのアクセス拒否が検証される。
+
+## 対応記録（2026-08-22）
+
+Maintainerとの三要素牽制（AC-1）: **業務設計**——探究bundleは本人の思考の器であり、既定は
+`DocumentV1`（`ADR-0073`）と同じ「作成者所有」に揃える。共同編集の需要は現時点で確認されていない。
+**データ設計**——`InquiryBundleRow`へ`created_by`（不変事実、nullable）のみを追加し、
+`document_access_metadata`型の可視性列は追加しない（opaque payload契約を維持したまま所有者だけを
+足す最小変更、issue自身の対応方針§2が示した選択肢のうち最小のもの）。既存（migration前）bundleは
+`created_by = NULL`のままとし、**遡ってbackfillしない**（`ADR-0073`のdocuments.created_byと同じ
+判断）。**機能設計**——GET/PUT(update)/DELETEへ所有者チェックを追加するが、
+`created_by IS NULL`（既存bundle）または`principal_id IS NULL`（single-tenant/local-dev、
+比較対象の識別子が無い）のいずれかが真なら常に許可し、**新規に作成されたbundleにのみ**適用する
+（既存データを遡って締め出さない、というMaintainer確認済みの追加決定）。
+
+- `models.py`: `InquiryBundleRow.created_by: Mapped[str | None]`（nullable、ADR-0073と同型）。
+- Alembic `20260822_0032`（`inquiry_bundles`へ`created_by`列を追加。upgrade/downgrade/reupgrade
+  cycleを確認済み）。
+- `persistence_shapes.py`: `inquiry_bundles.created_by`を`documents.created_by`と同じ`EXTERNAL_ID`
+  shapeで登録（未登録だと起動時に`RuntimeError`でfail-closed——既存の`PERSISTENT_TEXT_SPECS`不変条件）。
+- `database_content_store.py`: `DatabaseBundleContentStore.create()`へ`created_by`パラメータを追加
+  （`DatabaseDocumentContentStore.save()`と同じパターン。`update_cas`/`delete_cas`は変更しない——
+  作成後は不変事実のため）。
+- `routes/inquiry_bundles.py`: `_deny_if_not_owner()`を追加し、GET・PUT(If-Match経路、CAS実行前に
+  既存行を読んで判定)・DELETE(If-Match経路、同様)へ適用。PUT(If-None-Match=*経路、新規作成)は
+  `created_by=trusted_session.principal_id`を設定するのみで判定は不要（作成者は常に自分自身）。
+
+**テスト4件を追加**（`test_inquiry_bundle_routes.py`）: 作成時にcreated_byが設定されること、
+他利用者からのGET/PUT/DELETEが403 `inquiry_bundle_not_owner`で拒否されnothing mutatedであること、
+所有者自身は影響を受けないこと、created_byがNULLの既存bundleは他利用者からも
+アクセス可能（テナント全体アクセスが変わらない）ことの4件。テストharnessは単一利用者前提の
+既存fixtureだったため、`StaticIdentityResolver`をmutable化し`MutableTenantResolver`の
+過度に厳格な`assert user_id == "user-1"`を除去して第2利用者を導入した
+（このrouteの`_trusted_session()`は本fixtureではsingle-tenant/header経路
+`x-forwarded-user`を通ることを確認したうえで、その経路に沿って第2利用者を導入した）。
+
+**変異検査**: `_deny_if_not_owner`の比較を無効化し、他利用者拒否テスト1件のみが失敗する
+ことを確認、復元後14件（新規4+既存10）全pass。
+
+**回帰**: inquiry/persistence該当 **52 passed・0 failed**。migration upgrade→downgrade→
+reupgrade cycle成功。`ruff check`・`check_design_consistency.py`（0 errors・0 warnings）pass。
+
+三要素牽制の記録先は本issue自体とする（`ADR-0057`への補遺は、可視性列を採用しない
+最小変更である本決定の重さに対して過大と判断し、見送った）。
 
 ## 検証
 
