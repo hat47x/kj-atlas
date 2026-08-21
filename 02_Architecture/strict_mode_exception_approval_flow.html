@@ -53,7 +53,7 @@
       本書が正本（新規設計文書はHTML単独。<code>AGENTS.md</code> §3）。適用範囲: 組織運用で <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> を一時的に緩和する場合だけ適用する。個人OSSの日常開発・通常復旧の承認フローではない。2者承認を用意できない場合は例外を有効化せず、strict設定を維持する。
     </p>
     <p style="font-size:12px; line-height:1.6; color:#94a3b8; margin:10px 0 0;">
-      Owner: Security Officer / System Owner / Platform Operator ・ Scope: <code>enterprise_architecture.md</code>, <code>04_Documentation/operations.md</code>, <code>security.md</code>, <code>security_operational_guidelines.md</code>, <code>acceptance_check.md</code>, <code>03_Implement/frontend/docs/e2e_testing.md</code> ・ Related issue: <code>issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md</code>
+      Owner: Security Officer / System Owner / Platform Operator ・ Scope: <code>enterprise_architecture.html</code>, <code>04_Documentation/operations.md</code>, <code>security.md</code>, <code>security_operational_guidelines.md</code>, <code>acceptance_check.md</code>, <code>03_Implement/frontend/docs/e2e_testing.md</code> ・ Related issue: <code>issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md</code>
     </p>
   </header>
 
@@ -275,7 +275,7 @@ sequenceDiagram
     <figure style="margin:14px 0 0;">
       <pre class="mermaid">
 flowchart LR
-    A["本書<br/>Q1〜Q10採択確定"] --> B["enterprise_architecture.md<br/>§4.5へ同期"]
+    A["本書<br/>Q1〜Q10採択確定"] --> B["enterprise_architecture.html<br/>§4.5へ同期"]
     B --> C["operations.md<br/>Runbookテンプレへ反映"]
     C --> D["security.md<br/>停止条件・監査項目へ反映"]
     D --> E["issue-AUTH-OPS-03<br/>Draft → Open"]
@@ -289,7 +289,7 @@ flowchart LR
       <tbody>
         <tr><td>Draft</td><td>D1〜D4 のうち1つでも未確定</td><td>未確定項目の列挙</td></tr>
         <tr><td>Open</td><td>D1〜D4確定、反映先未同期</td><td>本書 §04 の固定値</td></tr>
-        <tr><td>In Progress</td><td><code>enterprise_architecture.md</code> / <code>operations.md</code> / <code>security.md</code> へ同期開始</td><td>同期差分への参照</td></tr>
+        <tr><td>In Progress</td><td><code>enterprise_architecture.html</code> / <code>operations.md</code> / <code>security.md</code> へ同期開始</td><td>同期差分への参照</td></tr>
         <tr><td>Done</td><td>3文書同期 + issue README/decision-pack が整合</td><td>docs-check結果と最終要約</td></tr>
       </tbody>
     </table>

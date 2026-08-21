@@ -752,3 +752,17 @@ Updated: 2026-08-03
 - 原因: ブランチの先端は`main`の祖先ではない一方、内容は後続コミットで取り込まれており、同一ファイルの履歴だけが分岐していた。
 - 対応: 現在の`main`側の後続チェックポイントを保持し、cookie-fallbackテストはsession識別子の追加2ケースを含む版を採用して全マージを完了した。
 - 再発防止: squash済みブランチを履歴上も統合する必要がある場合は、Active issue memoと後続テストの競合を事前に想定し、同等パッチだけでなく後続の仕様・テストを保持する解決を確認する。
+
+## 2026-08-22: 共有 `.git/config` の `core.worktree` が `/mnt/...` へ汚染され、worktree内の全git操作が失敗
+
+- 事象: worktree（`.claude/worktrees/agent-a86af82074b4143b1`）内で `git rev-parse --show-toplevel` を含む全git操作（Windows Git Bash側も含む）が `fatal: Invalid path '/mnt': No such file or directory` で失敗した。セッション開始直後の `git status`/`git log` は成功していたため、途中で発生した。`git config --unset core.worktree`（`--file` 明示指定含む）も、repository discoveryが先に失敗するため実行できなかった。
+- 原因: 共有される本体 `.git/config`（`C:\GIT\kj-atlas\.git\config`）の `[core]` セクションに `worktree = /mnt/c/GIT/kj-atlas/.claude/worktrees/agent-a86af82074b4143b1` という不正な行が混入していた。Windows git が書くべき値ではなく、WSL側のgit操作（本セッションまたは並行する別セッション）が書き込んだとみられる。`extensions.worktreeConfig=true` のため、本来この設定は per-worktree の `config.worktree` に置くべきだが、共有ファイルに書かれたため全worktreeに影響した。
+- 対応: `git`/Edit経由では本体 `.git/config`（worktree外パス）への書き込みがサンドボックスにより拒否されたため、PowerShellの`Get-Content`/`Set-Content`で該当行のみを直接除去した（`git config`系コマンドは前述の理由で使えない）。除去後は本worktreeも含め全git操作が復旧した。
+- 再発防止: worktree配下で`git config`書き込みを伴うWSL操作（`git worktree`系サブコマンドの再実行等）を行わない。git操作が`Invalid path '/mnt'`で失敗した場合は、まず共有`.git/config`の`core.worktree`を確認する。
+
+## 2026-08-22: WSL側pythonツール（`01_Plans/docs_check.py`等）をWindows git worktreeに対して実行できない
+
+- 事象: 上記の共有config汚染を修復した後も、`wsl.exe -e bash -c "cd /mnt/c/.../worktrees/<id> && git status"`（および同ディレクトリでの`python3 01_Plans/docs_check.py`）が `fatal: not a git repository: .../<id>/C:/GIT/kj-atlas/.git/worktrees/<id>` で失敗した。worktreeの`.git`ポインタファイルは `gitdir: C:/GIT/kj-atlas/.git/worktrees/<id>`（Windows git が作成した絶対パス表記）であり、WSL側のLinux gitはこれを絶対パスとして認識できず、cwdへの相対パスとして連結してしまう。
+- 誤った対処（一度試して失敗）: `export GIT_DIR=/mnt/c/.../.git/worktrees/<id> GIT_WORK_TREE=/mnt/c/.../worktrees/<id>` をシェル全体に対して設定してから`docs_check.py`を実行すると、discoveryは通るが、**`docs_check.py`が内部で起動する`01_Plans/tests`のpytestスイートが `git -C /tmp/tmpXXXX ...` の形で独立したフィクスチャ用一時リポジトリを操作するsubprocessを多数生成し、それらが親プロセスの`GIT_DIR`/`GIT_WORK_TREE`を継承してしまい、`-C`の対象を無視して本worktreeを操作しようとして失敗する**（`pathspec 'tracked.md' did not match any files`等、無関係な5件のテスト失敗が発生した）。
+- 正しい対処: worktree自身の`.git`ポインタファイル（worktree内にあるため編集許可の対象）を、WSL実行の直前だけ `gitdir: /mnt/c/GIT/kj-atlas/.git/worktrees/<id>`（WSLパス表記）へ書き換え、WSL側コマンドを実行し、**完了を待ってから**（`pgrep -f docs_check.py`等でプロセス終了を確認してから）`gitdir: C:/GIT/kj-atlas/.git/worktrees/<id>`（Windowsパス表記）へ書き戻す。この方式はプロセス環境変数を汚染しないため、内部で生成されるsubprocessの`-C`指定を阻害しない。書き戻しを忘れるとWindows Git Bash側の`git`が同じ理由で全滅するため、必ずtry/finally相当（完了確認 → 書き戻し）で運用する。
+- 再発防止: WindowsホストでWSL側のPythonツール（docs_check.py等）を実行する必要がある場合、環境変数によるGIT_DIR/GIT_WORK_TREEのグローバル上書きではなく、worktree自身の`.git`ポインタファイルを一時的に書き換える方式を使う。実行後は必ずWindows形式へ戻し、`git status`（Windows側）で復旧を確認する。
