@@ -243,6 +243,7 @@ def change_active_tenant(
             previous_tenant=trusted_session.tenant,
             selected_tenant=selected_session.tenant_context,
             expected_tenant_session_version=payload.expectedTenantSessionVersion,
+            auth_session_key_hash=trusted_session.identity.auth_session_key_hash,
         )
         session_response = _session_response(
             replace(selected_session, tenant_session_version=next_version)

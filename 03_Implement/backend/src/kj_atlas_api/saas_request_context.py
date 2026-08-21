@@ -163,6 +163,7 @@ def resolve_trusted_saas_request_session(
         request=request,
         principal_id=principal_id,
         active_tenant=tenant,
+        auth_session_key_hash=identity.auth_session_key_hash,
     )
     session = build_tenant_session_context(
         db=db,

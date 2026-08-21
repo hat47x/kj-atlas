@@ -37,7 +37,8 @@
   — 2026-08-20、BFF cookie経路で `ResolvedIdentity.auth_session_key_hash` として解決・公開する。
   bearer経路はNoneのまま（ADR-0074決定1/2がbrowserからbearerを廃す方針のため意図的）。
 - [ ] AC-2: 共有ストアが認証セッション識別子、active tenant、`tenantSessionVersion`を同一行または同一原子境界で保持する。
-- [ ] AC-3: tenant切替後の次の`GET /session/context`とtenant-scoped APIが、再発行されていない旧tenant claimではなく保存済みactive tenantを正本として選択先tenantを解決する。
+- [x] AC-3: tenant切替後の次の`GET /session/context`とtenant-scoped APIが、再発行されていない旧tenant claimではなく保存済みactive tenantを正本として選択先tenantを解決する。
+  — 2026-08-22、cookie/BFF経路（`auth_session_key_hash`が解決される経路）に限り達成。読み取り側はAC-1時点で`VerifiedTenantClaim`が`SaasAuthSessionRow.active_tenant_id`から毎request再構築されていたため既に成立、書き込み側（switch時の書き戻し）を本checkpointで配線した。bearer経路は`sid` claim読取が未着手のため対象外のまま（別限界として既記載）。
 - [ ] AC-4: 同じ認証セッションの複数タブはversionを共有し、一方の切替で他方のstale requestがresource lookup前に409となる。
 - [ ] AC-5: 同じprincipalの異なる2認証セッションはactive tenantとversionを共有せず、一方の切替・logoutが他方を失効させない。
 - [ ] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
@@ -284,6 +285,22 @@ AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cu
 **回帰**: auth/session/tenant/identity該当 **467 passed・7 skipped・0 failed**（15分47秒）。
 
 **引き続き未着手**: AC-3（`resolve_trusted_saas_request_session()`が保存済みactive tenantを正本として使う配線）、AC-4〜5の実挙動確認（配線後でなければ統合的に確認できない）、AC-6の残り（session id欠損・不正・過大、store不達のfail-closed——現状は`resolve_active_tenant_session_version()`がまだ`principal_id`だけで呼ばれているため未達）、AC-7（integration test）、AC-8（文書同期）、AC-9（cookie/anti-CSRF方針）。
+
+### Implementation checkpoint 2026-08-22（続き）: AC-3 配線 — 保存済みactive tenantを正本にする
+
+前checkpointの続きとして着手した。**発見**: cookie-fallback経路（`trusted_auth_edge.py::_resolve_from_auth_session_cookie`）は、実は既に`VerifiedTenantClaim.tenant_id`を`SaasAuthSessionRow.active_tenant_id`から**毎request再構築**していた（AC-1実装時点から）。つまりAC-3の**読み取り側**はcookie経路に限りAC-1時点で既に成立していた。欠けていたのは(a)切替の**書き込み側**——`persist_active_tenant_selection()`が選択tenantを`SaasAuthSessionRow`へ書き戻していなかった——と、(b)version読み取り側の一貫性——`resolve_active_tenant_session_version()`が別テーブル（`saas_tenant_sessions`、principal単位）のversionを返していたため、CASの基準点が実際に更新される行と一致しなかった、の2点。
+
+- `active_tenant_session.py`: `resolve_active_tenant_session_version()`/`persist_active_tenant_selection()`へ`auth_session_key_hash: str | None = None`を追加。非Noneの場合は`app.state.saas_auth_session_store`から直接読み書きする新経路（`_resolve_session_keyed_version`/`_persist_session_keyed_selection`）へ分岐し、既存のprincipal単位persisterには一切触れない（AC-6: fallback禁止）。store未配線・session不明はいずれも既存のエラーコード（503 `session_context_unavailable`/`active_tenant_update_unavailable`、409 `tenant_session_changed`）でfail-closed。session-keyed書き込みは別cookieを発行しない（提示された`Kj-Atlas-Auth-Session`自体が束縛のため）。
+- `saas_request_context.py`/`routes/session.py`: `identity.auth_session_key_hash`を両関数へ配線。
+- `oauth_bff.py::handle_callback`: 初期`tenant_session_version`の生成元を、principal単位store（`saas_auth_state_store.current_or_create_session_version`）から独立した`_new_session_version()`へ変更した。従来はprincipalが同じなら2つの独立loginが同じ初期versionを共有していた（AC-5の趣旨に反する残存結合）。`auth_state_store`はこの関数から完全に不要になったため削除した。
+
+**テスト8件を追加**（`test_active_tenant_session_keyed.py`、新規）: session-keyed版本読取の成功/store未配線/session不明（いずれもprincipal_idへfallbackしないことを明記）、session-keyed CAS書込の成功（行が実際に更新されること）/stale version拒否（行が変化しないこと）/store未配線/cookie未発行、および`auth_session_key_hash`省略時に既存persisterへ配線されることを固定する回帰1件。
+
+**変異検査**: session不明時のfail-closed guardを一時的に無効化し、対応するテストのみが失敗することを確認、復元後23件（新規8+既存persister15）全pass。
+
+**回帰**: auth/session/tenant/identity該当 **475 passed・7 skipped・0 failed**（新規8件を含む）。
+
+**引き続き未着手**: AC-4（同一session複数タブでの実際のstale-request 409確認、統合テストとして）、AC-6残り（bearer経路でのsid claim読取自体は別限界として文書化済み・未着手）、AC-7（複数worker・複数instanceでのintegration test）、AC-8（文書同期）、AC-9（cookie/anti-CSRF方針の最終決定）。
 
 ## 検証計画
 
