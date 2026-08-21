@@ -265,6 +265,26 @@ AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cu
 
 **引き続き未着手**: bearer経路での `sid` claim 読み取り、AC-2以降。
 
+### Implementation checkpoint 2026-08-22: AC-2 のstore層CAS実装（呼び出し元の配線は次段）
+
+利用者からAC-2以降着手の承認を得て着手した。**本checkpointはAC-2の文字どおりの要求（「共有ストアが認証セッション識別子、active tenant、tenantSessionVersionを同一行または同一原子境界で保持する」）をstore層で満たす。まだ呼び出し元（`saas_request_context.py`・`routes/session.py`）は配線していない**——AC-3（保存済みactive tenantを正本として選択先tenantを解決する）は次のcheckpointに分離する。schema自体は既存のexpand migration（`20260813_0027`）で`SaasAuthSessionRow`に`active_tenant_id`・`tenant_session_version`が既に同一行にあり、今回追加したのは、その行へ**原子的にCAS更新する経路**である。
+
+- `ResolvedAuthSession`（`saas_auth_state.py`）へ`tenant_session_version`を追加した。`resolve_auth_session()`が既存のfail-closed判定（revoked・絶対期限・idle）を通過した行からこれを返す。
+- `DatabaseSaasAuthSessionStore.rotate_active_tenant()`を追加した。`session_key_hash`と現在の`tenant_session_version`を条件にした単一`UPDATE`で`active_tenant_id`と`tenant_session_version`を同時に書き換える。`revoked_at IS NULL`も条件に含めるため、revoke後のCASは常に失敗する（AC-6の前提: revoke後は自己復活できない）。version不一致（他タブが先に切替済み）もCAS失敗として扱う（AC-4の前提）。
+
+**テスト4件を追加**（`test_saas_auth_session_store.py`、既存9件+今回追加4件=13件）:
+
+- 一致するversionでのCAS成功（両列が同時に更新されること）。
+- 不一致versionでのCAS失敗（AC-4: 行が変化しないこと）。
+- revoked済み行でのCAS失敗（AC-6: 一致するversionでも復活しないこと）。
+- 同一principalの独立した2 sessionのうち一方をrotateしても他方に影響しないこと（AC-5前提）。
+
+**変異検査**: CAS条件から`revoked_at.is_(None)`を一時的に除去し、revoked-session-CASテストのみが失敗することを確認した（他12件は無傷）。復元後に13件全pass。
+
+**回帰**: auth/session/tenant/identity該当 **467 passed・7 skipped・0 failed**（15分47秒）。
+
+**引き続き未着手**: AC-3（`resolve_trusted_saas_request_session()`が保存済みactive tenantを正本として使う配線）、AC-4〜5の実挙動確認（配線後でなければ統合的に確認できない）、AC-6の残り（session id欠損・不正・過大、store不達のfail-closed——現状は`resolve_active_tenant_session_version()`がまだ`principal_id`だけで呼ばれているため未達）、AC-7（integration test）、AC-8（文書同期）、AC-9（cookie/anti-CSRF方針）。
+
 ## 検証計画
 
 - DB storeを共有する2 app/worker instanceで、同一sessionのCAS競合と切替後contextを確認する。

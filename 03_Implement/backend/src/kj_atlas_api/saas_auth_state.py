@@ -109,6 +109,7 @@ class ResolvedAuthSession:
     issuer: str
     subject: str
     active_tenant_id: str | None
+    tenant_session_version: str
 
 
 class DatabaseSaasAuthSessionStore:
@@ -165,10 +166,45 @@ class DatabaseSaasAuthSessionStore:
                 issuer=row.issuer,
                 subject=row.subject,
                 active_tenant_id=row.active_tenant_id,
+                tenant_session_version=row.tenant_session_version,
             )
             row.last_used_at = now.isoformat()
             db.commit()
             return resolved
+
+    def rotate_active_tenant(
+        self,
+        *,
+        session_key_hash: str,
+        expected_version: str,
+        new_active_tenant_id: str,
+        new_version: str,
+    ) -> bool:
+        """ADR-0074 decision 3 / AC-2: atomically swap the active tenant and
+        tenant_session_version on the same row the session identifier lives
+        on, so a stale reader's CAS fails instead of racing a concurrent
+        switch on another tab of the same login session (AC-4). A revoked
+        session can never win the CAS (AC-6): revocation must be permanent,
+        not something a stale in-flight switch resurrects.
+        """
+        with self._session_factory() as db:
+            result = db.execute(
+                update(SaasAuthSessionRow)
+                .where(
+                    SaasAuthSessionRow.session_key_hash == session_key_hash,
+                    SaasAuthSessionRow.tenant_session_version == expected_version,
+                    SaasAuthSessionRow.revoked_at.is_(None),
+                )
+                .values(
+                    active_tenant_id=new_active_tenant_id,
+                    tenant_session_version=new_version,
+                )
+            )
+            if result.rowcount != 1:
+                db.rollback()
+                return False
+            db.commit()
+            return True
 
     def revoke_auth_session(self, *, session_key_hash: str) -> None:
         with self._session_factory() as db:

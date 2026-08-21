@@ -117,6 +117,7 @@ def test_created_session_resolves_with_the_stored_identity_and_active_tenant(tmp
     assert resolved.issuer == _ISSUER
     assert resolved.subject == "subject-1"
     assert resolved.active_tenant_id == "tenant-a"
+    assert resolved.tenant_session_version == "version-1"
 
 
 def test_unknown_session_key_hash_resolves_to_none(tmp_path) -> None:
@@ -187,6 +188,101 @@ def test_revoking_one_login_session_does_not_affect_another_of_the_same_principa
 
     assert store.resolve_auth_session(session_key_hash=browser_a) is None
     assert store.resolve_auth_session(session_key_hash=browser_b) is not None
+
+
+def test_rotate_active_tenant_succeeds_on_matching_version_and_updates_both_columns(
+    tmp_path,
+) -> None:
+    """AC-2: active tenant and tenant_session_version move together on the
+    same row/atomic boundary the session identifier lives on."""
+    store, factory = _store(tmp_path)
+    _seed_tenant(factory, "tenant-a")
+    _seed_tenant(factory, "tenant-b")
+    key_hash = derive_session_key_hash("session-rotate", key=_KEY)
+    _create(store, key_hash, active_tenant_id="tenant-a")
+
+    ok = store.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-b",
+        new_version="version-2",
+    )
+
+    assert ok is True
+    resolved = store.resolve_auth_session(session_key_hash=key_hash)
+    assert resolved is not None
+    assert resolved.active_tenant_id == "tenant-b"
+    assert resolved.tenant_session_version == "version-2"
+
+
+def test_rotate_active_tenant_fails_closed_on_stale_expected_version(tmp_path) -> None:
+    """AC-4: a stale tab presenting an already-superseded version must not
+    win the CAS, and must not silently mutate the row it lost against."""
+    store, factory = _store(tmp_path)
+    _seed_tenant(factory, "tenant-a")
+    _seed_tenant(factory, "tenant-b")
+    key_hash = derive_session_key_hash("session-stale", key=_KEY)
+    _create(store, key_hash, active_tenant_id="tenant-a")
+
+    ok = store.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="not-the-current-version",
+        new_active_tenant_id="tenant-b",
+        new_version="version-2",
+    )
+
+    assert ok is False
+    resolved = store.resolve_auth_session(session_key_hash=key_hash)
+    assert resolved is not None
+    assert resolved.active_tenant_id == "tenant-a"
+    assert resolved.tenant_session_version == "version-1"
+
+
+def test_rotate_active_tenant_fails_closed_on_a_revoked_session(tmp_path) -> None:
+    """AC-6: revocation must be permanent -- a revoked session's own current
+    version must not let it resurrect itself via CAS."""
+    store, factory = _store(tmp_path)
+    _seed_tenant(factory, "tenant-a")
+    _seed_tenant(factory, "tenant-b")
+    key_hash = derive_session_key_hash("session-revoked-cas", key=_KEY)
+    _create(store, key_hash, active_tenant_id="tenant-a")
+    store.revoke_auth_session(session_key_hash=key_hash)
+
+    ok = store.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-b",
+        new_version="version-2",
+    )
+
+    assert ok is False
+
+
+def test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same_principal(
+    tmp_path,
+) -> None:
+    """ADR-0074 decision 3 / AC-5 prerequisite: independent logins of the same
+    principal never share an active_tenant_id/tenant_session_version generation."""
+    store, factory = _store(tmp_path)
+    _seed_tenant(factory, "tenant-a")
+    _seed_tenant(factory, "tenant-b")
+    browser_a = derive_session_key_hash("session-browser-a-rotate", key=_KEY)
+    browser_b = derive_session_key_hash("session-browser-b-rotate", key=_KEY)
+    _create(store, browser_a, principal_id="principal-shared", active_tenant_id="tenant-a")
+    _create(store, browser_b, principal_id="principal-shared", active_tenant_id="tenant-a")
+
+    ok = store.rotate_active_tenant(
+        session_key_hash=browser_a,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-b",
+        new_version="version-2",
+    )
+
+    assert ok is True
+    other = store.resolve_auth_session(session_key_hash=browser_b)
+    assert other is not None
+    assert other.active_tenant_id == "tenant-a"
+    assert other.tenant_session_version == "version-1"
 
 
 def test_preflight_fails_when_the_auth_session_table_is_missing(tmp_path) -> None:
