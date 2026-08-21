@@ -631,6 +631,7 @@ export type IslandSummaryProposal = {
     after: string;
     groundingIds: string[];
     warnings?: string[];
+    candidates?: { summaryText: string; groundingIds: string[] }[];
   };
   rationale: string;
 };
@@ -728,6 +729,7 @@ export async function proposeIslandSummary(
   sourceBundleHash: string,
   model: string | undefined,
   requestOptions: TenantScopedRequestOptions = {},
+  critiqueText?: string,
 ): Promise<IslandSummaryProposal> {
   const response = await fetch(`${API_BASE}/ai/proposals/island-summary`, {
     method: "POST",
@@ -735,7 +737,7 @@ export async function proposeIslandSummary(
       "Content-Type": "application/json",
       ...tenantSessionPreconditionHeaders(requestOptions),
     },
-    body: JSON.stringify({ doc, islandId, sourceBundleHash, model: model ?? null }),
+    body: JSON.stringify({ doc, islandId, sourceBundleHash, model: model ?? null, critiqueText: critiqueText ?? null }),
   });
 
   if (!response.ok) {

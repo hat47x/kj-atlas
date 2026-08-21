@@ -120,7 +120,7 @@ type SidePanelProps = {
   onProposeOpposingViewpoint: (cardId: string) => void;
   onDismissOpposingViewpointProposal: () => void;
   onSummaryReviewedChange: (value: boolean) => void;
-  onSuggestIslandSummary: () => void;
+  onSuggestIslandSummary: (critiqueText?: string) => void;
   // AI-MODEL-GOVERNANCE-01 (R2): per-operation model override for the island
   // summary suggestion ("" = auto / platform default).
   islandSummaryModel: string;
@@ -131,10 +131,10 @@ type SidePanelProps = {
   islandSummaryProposal: {
     proposalId: string;
     status: "proposed";
-    diff: { after: string };
+    diff: { after: string; candidates?: { summaryText: string; groundingIds: string[] }[] };
   } | null;
   proposalAuditTrail: string[];
-  onAdoptIslandSummaryProposal: () => void;
+  onAdoptIslandSummaryProposal: (candidateIndex: number, critiqueText?: string) => void;
   onRejectIslandSummaryProposal: () => void;
   onHoldIslandSummaryProposal: () => void;
   isSuggestingIslandSummary: boolean;
@@ -482,6 +482,8 @@ export function SidePanel({
   const cardQualityAssistTriggerRef = useRef<HTMLButtonElement>(null);
   const [cardQualityTextDraft, setCardQualityTextDraft] = useState("");
   const [summaryDraft, setSummaryDraft] = useState("");
+  const [islandSummaryCritique, setIslandSummaryCritique] = useState("");
+  const [selectedIslandSummaryCandidateIndex, setSelectedIslandSummaryCandidateIndex] = useState(0);
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
@@ -2625,7 +2627,7 @@ export function SidePanel({
               />
               <button
                 type="button"
-                onClick={onSuggestIslandSummary}
+                onClick={() => onSuggestIslandSummary()}
                 disabled={isSuggestingIslandSummary}
                 style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
               >
@@ -2639,8 +2641,50 @@ export function SidePanel({
                 {t("side_panel.summary.ai_proposal")} <strong>{islandSummaryProposal.proposalId}</strong> ({islandSummaryProposal.status})
               </div>
               <div style={{ fontSize: 12, color: "#1e293b" }}>{t("side_panel.summary.patch_preview")}: {islandSummaryProposal.diff.after}</div>
+              {islandSummaryProposal.diff.candidates && islandSummaryProposal.diff.candidates.length > 1 ? (
+                <div style={{ fontSize: 12, color: "#334155" }}>
+                  <div style={{ fontWeight: 600, marginBottom: 2 }}>{t("side_panel.summary.candidates")}</div>
+                  <div style={{ display: "grid", gap: 4 }}>
+                    {islandSummaryProposal.diff.candidates.map((candidate, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setSelectedIslandSummaryCandidateIndex(index)}
+                        style={{
+                          textAlign: "left",
+                          border: index === selectedIslandSummaryCandidateIndex ? "1px solid #1d4ed8" : "1px solid #cbd5e1",
+                          borderRadius: 6,
+                          padding: "4px 8px",
+                          backgroundColor: index === selectedIslandSummaryCandidateIndex ? "#dbeafe" : "#ffffff",
+                          color: "#0f172a",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {candidate.summaryText}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div style={{ display: "grid", gap: 6 }}>
+                <input
+                  type="text"
+                  value={islandSummaryCritique}
+                  onChange={(event) => setIslandSummaryCritique(event.target.value)}
+                  placeholder={t("side_panel.summary.critique_placeholder")}
+                  style={{ width: "100%", padding: "4px 6px", fontSize: 12 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => onSuggestIslandSummary(islandSummaryCritique.trim() || undefined)}
+                  disabled={isSuggestingIslandSummary}
+                  style={{ width: "100%", cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+                >
+                  {t("side_panel.summary.regenerate")}
+                </button>
+              </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button type="button" onClick={onAdoptIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.adopt")}</button>
+                <button type="button" onClick={() => onAdoptIslandSummaryProposal(selectedIslandSummaryCandidateIndex, islandSummaryCritique.trim() || undefined)} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.adopt")}</button>
                 <button type="button" onClick={onHoldIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.hold")}</button>
                 <button type="button" onClick={onRejectIslandSummaryProposal} disabled={isRecordingIslandSummaryDecision} style={{ flex: 1 }}>{t("side_panel.summary.reject")}</button>
               </div>
