@@ -1,7 +1,7 @@
 # Issue: DX-BACKEND-DT-01 Pydantic datetimeフィールドがtimezone-aware強制になっていない
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -22,12 +22,31 @@
 
 ## 受入条件
 
-- [ ] 該当フィールドの型方針が決定される。
+- [x] 該当フィールドの型方針が決定される。
 
 ## 検証計画
 
 - 実行する確認: 変更する場合、`python3 -m pytest`（backend、該当モデルを使う全テスト）。
 - 期待結果: 既存の保存・読込フローに回帰がないことを確認する。
+
+## 対応記録（2026-08-21）
+
+「現状のプレーン`datetime`のままとする理由を文書化する」を選択した（型変更は行わない）。理由:
+
+- 型変更（`AwareDatetime`化）は、既存の保存済みデータ（`payload_json`等に含まれるnaiveな文字列を
+  含む可能性）との互換性が未確認のまま行うと、現在受理できているデータを拒否する破壊的変更になり得る。
+  この確認自体には相応の調査コストがかかる一方、変更しない場合の実害は現時点で0件（比較・演算箇所が
+  リポジトリ全体に存在しないことを本issue自身が既に確認済み）。
+- 文書化のみであれば、コストと実害のどちらも増やさずに「将来この型を変更・比較コードを追加する人が
+  同じ調査をやり直さずに済む」という本issueの実質的な価値を確保できる。
+
+`models.py`の`datetime` importの直後に、対象フィールド一覧・現状維持の理由・再検討すべき条件
+（比較/演算コードが追加された時点）を記すコメントを追加した。挙動の変更は無い。
+
+検証: `ruff check`（All checks passed）、`python -c "import kj_atlas_api.models"`（import成功、
+構文・実行時エラー無し）。「比較・演算箇所が無い」という本issue自身の主張を、対象フィールド名
+（`reviewedAt`/`auditRecordedAt`/`occurredAt`/`decidedAt`/`shelvedAt`/`generatedAt`）への比較演算子
+使用箇所の検索で独立に再確認し、該当無しを確認した。
 
 ## 補足
 
