@@ -239,15 +239,15 @@ def handle_callback(
         raise _oauth_error(401, "oauth_token_invalid", "The broker-issued token failed verification.") from None
 
     auth_session_store = getattr(request.app.state, "saas_auth_session_store", None)
-    auth_state_store = getattr(request.app.state, "saas_auth_state_store", None)
     hash_key = getattr(request.app.state, "saas_auth_session_hash_key", None)
-    if auth_session_store is None or auth_state_store is None or hash_key is None:
+    if auth_session_store is None or hash_key is None:
         raise _oauth_error(503, "session_persist_unavailable", "Session persistence is unavailable.")
 
-    tenant_session_version = auth_state_store.current_or_create_session_version(
-        principal_id=user_id,
-        new_version=_new_session_version(),
-    )
+    # ADR-0074 decision 3 / AC-5: generate a fresh version for this login
+    # session rather than borrowing the principal-keyed store's current value
+    # -- two independent logins of the same principal must not start out
+    # sharing a generation.
+    tenant_session_version = _new_session_version()
 
     raw_session_id = secrets.token_urlsafe(32)
     session_key_hash = derive_session_key_hash(raw_session_id, key=hash_key)

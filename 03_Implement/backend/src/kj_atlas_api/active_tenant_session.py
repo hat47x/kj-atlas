@@ -4,13 +4,14 @@ import hmac
 import logging
 import re
 import secrets
+from collections.abc import Callable
 from threading import Lock
 from typing import Protocol, cast
 
 from fastapi import HTTPException, Request, Response
 
 from kj_atlas_api.tenant_context import TenantContext
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
+from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore, DatabaseSaasAuthStateStore
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +93,46 @@ def _active_tenant_update_unavailable() -> HTTPException:
     )
 
 
+def _session_keyed_auth_store(
+    request: Request, *, unavailable: Callable[[], HTTPException]
+) -> DatabaseSaasAuthSessionStore:
+    store = getattr(request.app.state, "saas_auth_session_store", None)
+    if store is None:
+        raise unavailable()
+    return cast(DatabaseSaasAuthSessionStore, store)
+
+
+def _resolve_session_keyed_version(*, request: Request, auth_session_key_hash: str) -> str:
+    """AC-2/AC-3: for a server-owned auth session, tenant_session_version lives
+    on the same SaasAuthSessionRow as active_tenant_id -- read it from there so
+    the CAS baseline used by a later switch matches the row the switch itself
+    updates. AC-6: a store miss (unknown/revoked/expired session) fails closed;
+    it must never fall back to the principal-keyed store below.
+    """
+    store = _session_keyed_auth_store(request, unavailable=_session_context_unavailable)
+    try:
+        resolved = store.resolve_auth_session(session_key_hash=auth_session_key_hash)
+    except Exception:
+        logger.warning(
+            "auth session store raised resolving active tenant version", exc_info=True
+        )
+        raise _session_context_unavailable() from None
+    if resolved is None:
+        raise _session_context_unavailable()
+    return canonical_tenant_session_version(resolved.tenant_session_version)
+
+
 def resolve_active_tenant_session_version(
     *,
     request: Request,
     principal_id: str,
     active_tenant: TenantContext,
+    auth_session_key_hash: str | None = None,
 ) -> str:
+    if auth_session_key_hash is not None:
+        return _resolve_session_keyed_version(
+            request=request, auth_session_key_hash=auth_session_key_hash
+        )
     persister = getattr(request.app.state, "active_tenant_session_persister", None)
     if persister is None:
         raise _session_context_unavailable()
@@ -131,6 +166,39 @@ def require_current_tenant_session_version(
         raise _tenant_session_changed()
 
 
+def _persist_session_keyed_selection(
+    *,
+    request: Request,
+    auth_session_key_hash: str,
+    selected_tenant: TenantContext,
+    expected_tenant_session_version: str,
+) -> str:
+    """AC-2/AC-3: CAS-write the switch onto the same SaasAuthSessionRow the
+    cookie-fallback identity resolver reads active_tenant_id from, so the very
+    next request (which rebuilds VerifiedTenantClaim from that row) sees the
+    new tenant without needing a reissued token. No separate version cookie
+    is set here -- the presented Kj-Atlas-Auth-Session cookie is already the
+    binding, and the new version is returned in the JSON body like the
+    principal-keyed path.
+    """
+    store = _session_keyed_auth_store(request, unavailable=_active_tenant_update_unavailable)
+    expected = canonical_tenant_session_version(expected_tenant_session_version)
+    new_version = canonical_tenant_session_version(_new_session_version())
+    try:
+        rotated = store.rotate_active_tenant(
+            session_key_hash=auth_session_key_hash,
+            expected_version=expected,
+            new_active_tenant_id=selected_tenant.tenant_id,
+            new_version=new_version,
+        )
+    except Exception:
+        logger.warning("auth session store raised persisting active tenant", exc_info=True)
+        raise _active_tenant_update_unavailable() from None
+    if not rotated:
+        raise _tenant_session_changed()
+    return new_version
+
+
 def persist_active_tenant_selection(
     *,
     request: Request,
@@ -139,7 +207,15 @@ def persist_active_tenant_selection(
     previous_tenant: TenantContext,
     selected_tenant: TenantContext,
     expected_tenant_session_version: str,
+    auth_session_key_hash: str | None = None,
 ) -> str:
+    if auth_session_key_hash is not None:
+        return _persist_session_keyed_selection(
+            request=request,
+            auth_session_key_hash=auth_session_key_hash,
+            selected_tenant=selected_tenant,
+            expected_tenant_session_version=expected_tenant_session_version,
+        )
     persister = getattr(request.app.state, "active_tenant_session_persister", None)
     if persister is None:
         raise _active_tenant_update_unavailable()
