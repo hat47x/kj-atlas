@@ -29,6 +29,30 @@ describe("parseDocumentJson", () => {
     }
   });
 
+  test("formats schema validation failures with translated (default locale ja) prose, not the hardcoded English original", () => {
+    const result = parseDocumentJson(JSON.stringify({ ...BASE, cards: "not-an-array-or-map" }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe(
+        "文書の検証に失敗しました:\n- [V001] cards: 文書のcardsは配列またはオブジェクトのマップである必要があります。",
+      );
+      expect(result.error).not.toContain("Document validation failed");
+      expect(result.error).not.toContain("Document cards must be an array or object map.");
+    }
+  });
+
+  test("translates the '...and N more' suffix when validation collects more than 6 errors", () => {
+    // FB-RM-I18N-05: seven invalid cards produce seven V002 errors, past the
+    // 6-line formatValidationErrors() cap, to exercise the suffix branch.
+    const invalidCards = Array.from({ length: 7 }, (_, index) => ({ id: `bad-${index}`, text: 42 }));
+    const result = parseDocumentJson(JSON.stringify({ ...BASE, cards: invalidCards }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("- 他1件");
+      expect(result.error).not.toContain("...and 1 more");
+    }
+  });
+
   test("keeps valid parentIslandId hierarchy", () => {
     const result = parseWithIslands([
       { id: "root", cardIds: ["c1"] },

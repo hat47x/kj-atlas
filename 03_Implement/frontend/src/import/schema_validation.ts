@@ -5,6 +5,7 @@ import { DEFAULT_VIEW_PRESETS } from "../domain/view/presets";
 import { isLocale } from "../i18n/translate";
 import { PERSPECTIVE_MODE_VALUES } from "../domain/view/perspective";
 import { DEFAULT_VIEW_VISIBILITY } from "../domain/policy/publish_visibility";
+import { t } from "../i18n/translate";
 
 export type ValidationError = {
   code: `V${string}`;
@@ -52,41 +53,41 @@ function collectDocumentPreflightErrors(input: Record<string, unknown>): Validat
   const errors: ValidationError[] = [];
 
   if (!("cards" in input)) {
-    errors.push({ code: "V001", path: "cards", message: "Document must include cards (array or map).", severity: "error" });
+    errors.push({ code: "V001", path: "cards", message: t("app.status.import.validation.cards_field_missing"), severity: "error" });
   } else if (!Array.isArray(input.cards) && !isRecord(input.cards)) {
-    errors.push({ code: "V001", path: "cards", message: "Document cards must be an array or object map.", severity: "error" });
+    errors.push({ code: "V001", path: "cards", message: t("app.status.import.validation.cards_field_wrong_type"), severity: "error" });
   }
 
   const cards = toCardArray(input.cards);
   if (Array.isArray(cards)) {
     cards.forEach((card, index) => {
       if (!isRecord(card)) {
-        errors.push({ code: "V002", path: `cards[${index}]`, message: "Card must be an object.", severity: "error" });
+        errors.push({ code: "V002", path: `cards[${index}]`, message: t("app.status.import.validation.card_not_object"), severity: "error" });
         return;
       }
 
       if (typeof card.id !== "string" || card.id.trim().length === 0) {
-        errors.push({ code: "V002", path: `cards[${index}].id`, message: "Card id must be a non-empty string.", severity: "error" });
+        errors.push({ code: "V002", path: `cards[${index}].id`, message: t("app.status.import.validation.card_id_invalid"), severity: "error" });
       }
 
       if (typeof card.text !== "string") {
-        errors.push({ code: "V002", path: `cards[${index}].text`, message: "Card text must be a string.", severity: "error" });
+        errors.push({ code: "V002", path: `cards[${index}].text`, message: t("app.status.import.validation.card_text_invalid"), severity: "error" });
       }
     });
   }
 
   if (input.islands !== undefined) {
     if (!Array.isArray(input.islands)) {
-      errors.push({ code: "V003", path: "islands", message: "Islands must be an array when provided.", severity: "error" });
+      errors.push({ code: "V003", path: "islands", message: t("app.status.import.validation.islands_not_array"), severity: "error" });
     } else {
       input.islands.forEach((island, index) => {
         if (!isRecord(island)) {
-          errors.push({ code: "V003", path: `islands[${index}]`, message: "Island must be an object.", severity: "error" });
+          errors.push({ code: "V003", path: `islands[${index}]`, message: t("app.status.import.validation.island_not_object"), severity: "error" });
           return;
         }
 
         if (typeof island.id !== "string" || island.id.trim().length === 0) {
-          errors.push({ code: "V003", path: `islands[${index}].id`, message: "Island id must be a non-empty string.", severity: "error" });
+          errors.push({ code: "V003", path: `islands[${index}].id`, message: t("app.status.import.validation.island_id_invalid"), severity: "error" });
         }
 
         const hasShape = isRecord(island.shape);
@@ -101,7 +102,9 @@ function collectDocumentPreflightErrors(input: Record<string, unknown>): Validat
           errors.push({
             code: "V003",
             path: `islands[${index}]`,
-            message: `Island '${typeof island.id === "string" ? island.id : `#${index}`}' has no geometry. It will render using card bounds fallback.`,
+            message: t("app.status.import.validation.island_missing_geometry", {
+              islandId: typeof island.id === "string" ? island.id : `#${index}`,
+            }),
             severity: "warn",
           });
         }
@@ -112,19 +115,33 @@ function collectDocumentPreflightErrors(input: Record<string, unknown>): Validat
   return errors;
 }
 
+// validateImportedDocument() (domain/validate.ts) returns one of a fixed set
+// of English strings. Exact-match each one (rather than the previous
+// substring match, which mis-routed e.g. "...id, transform, cards..." to the
+// transform branch and could not distinguish two different messages sharing a
+// branch) so each gets its own translation, not just its own path/code.
+const UPGRADE_ERROR_TRANSLATIONS: Record<string, { path: string; code: ValidationError["code"]; key: string }> = {
+  "Imported data must be a JSON object.": { path: "document", code: "V001", key: "app.status.import.validation.imported_data_not_object" },
+  "Document version is required.": { path: "version", code: "V001", key: "app.status.import.validation.version_required" },
+  "Unsupported document version. Only numeric version 1 is supported.": { path: "version", code: "V001", key: "app.status.import.validation.version_unsupported" },
+  "Document must include id, transform, cards, edges, and islands.": { path: "document", code: "V001", key: "app.status.import.validation.required_fields_missing" },
+  "Document id must be a string.": { path: "document", code: "V001", key: "app.status.import.validation.id_not_string" },
+  "Document transform must include numeric panX, panY, and zoom.": { path: "transform", code: "V001", key: "app.status.import.validation.transform_invalid" },
+  "Document cards must be an array of {id, text, x, y}.": { path: "cards", code: "V002", key: "app.status.import.validation.cards_shape_invalid" },
+  "Document edges must be an array.": { path: "document", code: "V001", key: "app.status.import.validation.edges_not_array" },
+  "Document islands must be an array.": { path: "document", code: "V001", key: "app.status.import.validation.islands_field_not_array" },
+};
+
 function mapUpgradeErrorToValidationError(error: string): ValidationError {
-  if (error.toLowerCase().includes("transform")) {
-    return { code: "V001", path: "transform", message: error, severity: "error" };
+  const mapped = UPGRADE_ERROR_TRANSLATIONS[error];
+  if (mapped) {
+    return { code: mapped.code, path: mapped.path, message: t(mapped.key), severity: "error" };
   }
 
-  if (error.toLowerCase().includes("version")) {
-    return { code: "V001", path: "version", message: error, severity: "error" };
-  }
-
-  if (error.toLowerCase().includes("cards")) {
-    return { code: "V002", path: "cards", message: error, severity: "error" };
-  }
-
+  // Safety net for a message added to validateImportedDocument() without a
+  // matching entry above: degrade to the untranslated original rather than
+  // silently drop the error (matches this function's pre-existing behavior
+  // for every message, before this table existed).
   return { code: "V001", path: "document", message: error, severity: "error" };
 }
 
@@ -135,7 +152,7 @@ export function validateDocument(
   if (!isRecord(input)) {
     return {
       ok: false,
-      errors: [{ code: "V001", path: "document", message: "Document must be a JSON object.", severity: "error" }],
+      errors: [{ code: "V001", path: "document", message: t("app.status.import.validation.document_must_be_object"), severity: "error" }],
     };
   }
 
@@ -163,7 +180,10 @@ export function validateDocument(
       linkErrors.push({
         code: "V004",
         path: `evidenceLinks[${index}].fromCardId`,
-        message: `Evidence link '${link.id}' points to unknown fromCardId '${link.fromCardId}'.`,
+        message: t("app.status.import.validation.evidence_link_unknown_from_card", {
+          linkId: link.id,
+          cardId: link.fromCardId,
+        }),
         severity: endpointSeverity,
       });
     }
@@ -172,7 +192,10 @@ export function validateDocument(
       linkErrors.push({
         code: "V005",
         path: `evidenceLinks[${index}].toCardId`,
-        message: `Evidence link '${link.id}' points to unknown toCardId '${link.toCardId}'.`,
+        message: t("app.status.import.validation.evidence_link_unknown_to_card", {
+          linkId: link.id,
+          cardId: link.toCardId,
+        }),
         severity: endpointSeverity,
       });
     }

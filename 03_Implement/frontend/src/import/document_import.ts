@@ -7,8 +7,11 @@ function formatValidationErrors(errors: ValidationError[]): string {
     .slice(0, 6)
     .map((error) => `- [${error.code}] ${error.path}: ${error.message}`)
     .join("\n");
-  const suffix = errors.length > 6 ? `\n- ...and ${errors.length - 6} more` : "";
-  return `Document validation failed:\n${details}${suffix}`;
+  const suffix =
+    errors.length > 6
+      ? `\n- ${t("app.status.import.validation_failed_more_suffix", { count: errors.length - 6 })}`
+      : "";
+  return `${t("app.status.import.validation_failed_header")}\n${details}${suffix}`;
 }
 
 export function parseDocumentJson(rawText: string): { ok: true; document: DocumentV1 } | { ok: false; error: string } {

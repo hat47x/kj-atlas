@@ -81,6 +81,13 @@ describe("selective merge", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toContain("[SCHEMA:incoming]");
+      // FB-RM-I18N-05: the wrapped schema message must be real translated
+      // prose (via t(), default locale ja), not the untranslated English
+      // literal that used to be hardcoded here, and not the bare i18n key
+      // (which is what a missing/malformed template degrades to).
+      expect(result.reason).not.toContain("Card text must be a string.");
+      expect(result.reason).not.toContain("app.status.import.validation.card_text_invalid");
+      expect(result.reason).toContain("カードのtextは文字列である必要があります。");
     }
   });
 
@@ -94,7 +101,14 @@ describe("selective merge", () => {
     const first = applyMergeTransaction(base, base, base, incoming, selected);
     expect(first.ok).toBe(false);
     if (!first.ok) {
-      expect(first.errors.some((error) => error.code === "M105")).toBe(true);
+      const m105 = first.errors.find((error) => error.code === "M105");
+      expect(m105).toBeTruthy();
+      // FB-RM-I18N-05: both the M105 error and the M102 warning it carries
+      // must be real translated (default locale ja) prose, not the
+      // hardcoded English these used to be, and not a bare i18n key.
+      expect(m105?.message).toBe("マージの事前確認で警告があります。明示的な確認が必要です。");
+      const m102 = first.errors.find((error) => error.code === "M102");
+      expect(m102?.message).toBe("card.remove c1 のためevidence.remove e1 を自動的に含めました。");
     }
 
     const second = applyMergeTransaction(base, base, base, incoming, selected, { allowWarnings: true });
