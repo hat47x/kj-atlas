@@ -1,5 +1,6 @@
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, SuggestLayoutRequest, Transform
 from kj_atlas_api.models_ai import (
@@ -366,6 +367,19 @@ def test_suggest_card_groups_prompt_aligned_with_bundling_procedures() -> None:
     assert "similarity of what they are appealing for" in prompt
     assert "2-3 cards (rarely 4)" in prompt
     assert "Do not force a card into a bundle" in prompt
+
+
+def test_suggest_card_groups_card_cap_is_1000() -> None:
+    """DOGFOOD-31: freeze the card-groups input cap at 1000 cards. Exactly 1000
+    validate; 1001 is rejected by the Pydantic constraint."""
+    from kj_atlas_api.models_ai import _CardRef
+
+    cards = [_CardRef(id=f"c{i}", text=f"card {i}") for i in range(1000)]
+    request = SuggestCardGroupsRequest(cards=cards)
+    assert len(request.cards) == 1000
+
+    with pytest.raises(ValidationError):
+        SuggestCardGroupsRequest(cards=[*cards, _CardRef(id="c1000", text="overflow")])
 
 
 def test_island_summary_prompt_includes_placard_checks() -> None:
