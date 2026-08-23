@@ -84,8 +84,8 @@ def build_text_for_task(task: str, prompt: str) -> str:
         card_entries = _CARD_LINE_ID_TEXT.findall(prompt)
         by_category: dict[str, list[str]] = {}
         for card_id, text in card_entries:
-            match = re.search(r"（([^（）]+)）", text)
-            cat = match.group(1) if match else "その他"
+            cats = re.findall(r"（([^（）]+)）", text)
+            cat = cats[-1] if cats else "その他"
             by_category.setdefault(cat, []).append(card_id)
         suggestions = []
         for cat, ids in by_category.items():
@@ -106,7 +106,12 @@ def build_text_for_task(task: str, prompt: str) -> str:
         # the target island's members, and a [:3] truncation silently caps the
         # E2E to 3-card islands, so realistic multi-card islands (4+ cards) could
         # never be frozen with full grounding assertions (iteration 178, DOGFOOD-13).
-        grounding = member_ids if member_ids else []
+        # Cap at 10 to match the backend's groundingIds quality guard
+        # (routes/ai.py: a placard grounds to a representative subset, not all
+        # members of a very large island). Small islands (<=10) still ground all
+        # members; large islands (>10) ground the first 10 as the representative
+        # subset (iteration 240, DOGFOOD-31).
+        grounding = member_ids[:10] if member_ids else []
         # Reference the member card themes in the placard text so the E2E can
         # freeze that the 表札 (island advocacy) is grounded in the island's
         # content, not just the groundingIds (iteration 193, DOGFOOD-29).
@@ -119,22 +124,36 @@ def build_text_for_task(task: str, prompt: str) -> str:
                 text = json.loads(f'"{raw_text}"')
             except ValueError:
                 text = raw_text
-            match = re.search(r"（([^（）]+)）", text)
-            if match and match.group(1) not in themes:
-                themes.append(match.group(1))
+            cats = re.findall(r"（([^（）]+)）", text)
+            if cats and cats[-1] not in themes:
+                themes.append(cats[-1])
         theme_text = ", ".join(themes)
-        summary_text = (
-            f"（モック）{theme_text}をテーマとするメンバーカードに基づく下書き要約です。レビュー前の暫定です。"
-            if theme_text
-            else "（モック）メンバーカードに基づく下書き要約です。レビュー前の暫定です。"
-        )
-        return json.dumps(
+        base = theme_text if theme_text else "メンバーカード"
+        # DOGFOOD-34 (壁打ち): when the user supplied a 違和感, reflect that the
+        # regenerated candidates ADDRESS it (deterministic marker for E2E).
+        critique_suffix = ""
+        if re.search(r"raised this objection \(違和感\) to the current placard", prompt):
+            critique_suffix = "（違和感を反映）"
+        # ADR-0077: return multiple placard candidates (1-3) so the E2E can
+        # freeze the condensation layer (核融合法). candidates[0] keeps the
+        # primary grounding (member_ids[:10], above) so the existing
+        # `"groundingIds":[...]` assertions stay intact; alternatives ground to
+        # a different representative subset.
+        candidates = [
             {
-                "summaryText": summary_text,
+                "summaryText": f"（モック）{base}をテーマとするメンバーカードに基づく下書き要約です。レビュー前の暫定です。{critique_suffix}",
                 "groundingIds": grounding,
-                "warnings": [],
-            }
-        )
+            },
+            {
+                "summaryText": f"（モック）{base}という共通の訴えを軸に志を汲み取った別案です。レビュー前の暫定です。{critique_suffix}",
+                "groundingIds": member_ids[:3] if len(member_ids) >= 3 else member_ids,
+            },
+            {
+                "summaryText": f"（モック）{base}の観点から島の訴えを一言で表す候補です。レビュー前の暫定です。{critique_suffix}",
+                "groundingIds": member_ids[-3:] if len(member_ids) >= 3 else member_ids,
+            },
+        ]
+        return json.dumps({"candidates": candidates, "warnings": []})
 
     if task == "summarize_island_relation":
         # Echo the allowed grounding ids (iteration 180, DOGFOOD-15): the mock
@@ -253,8 +272,8 @@ def build_text_for_task(task: str, prompt: str) -> str:
         # (iteration 185, DOGFOOD-20).
         by_category: dict[str | None, list[str]] = {}
         for card_id, text in card_entries:
-            match = re.search(r"（([^（）]+)）", text)
-            cat = match.group(1) if match else None
+            cats = re.findall(r"（([^（）]+)）", text)
+            cat = cats[-1] if cats else None
             by_category.setdefault(cat, []).append(card_id)
         if len(by_category) >= 2:
             groups = [

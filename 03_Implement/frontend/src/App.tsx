@@ -72,7 +72,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type CritiqueInput, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary, type ReproposalDiff } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { answerCardQualityQuestion, beginCardQualityRewrite, cardQualityRestoreTarget, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
 import { validateDocument } from "./import/schema_validation";
@@ -3142,7 +3142,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     }
   }, [document, isProposingOpposingViewpoint, runTenantScopedApiRequest, verifiedTenantSession]);
 
-  const handleSuggestIslandSummary = useCallback(async () => {
+  const handleSuggestIslandSummary = useCallback(async (critiqueText?: string) => {
     if (!document || !selectedIslandId || isSuggestingIslandSummary) {
       return;
     }
@@ -3165,6 +3165,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         `${document.id}:${document.updatedAt}`,
         islandSummaryModel,
         { tenantSessionContext: verifiedTenantSession },
+        critiqueText,
       ));
       setIslandSummaryProposal(proposal);
       setStatusMessage(t("app.status.island_summary.ready_unreviewed"));
@@ -3186,20 +3187,63 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     verifiedTenantSession,
   ]);
 
-  const handleAdoptIslandSummaryProposal = useCallback(async () => {
+  const handleAdoptIslandSummaryProposal = useCallback(async (candidateIndex: number, critiqueText?: string) => {
     if (!document || !selectedIslandId || !islandSummaryProposal || isRecordingIslandSummaryDecision) {
       return;
     }
-    const nextDocument = updateIslandSummaryWithHistory(
+    // DOGFOOD-34 (Phase 2b): adopt the user-selected candidate; fall back to
+    // the primary (diff.after) when the candidate is missing (older proposal).
+    const selectedCandidate = islandSummaryProposal.diff.candidates?.[candidateIndex];
+    const summaryText = selectedCandidate?.summaryText ?? islandSummaryProposal.diff.after;
+    const groundingIds = selectedCandidate?.groundingIds ?? islandSummaryProposal.diff.groundingIds;
+    let nextDocument = updateIslandSummaryWithHistory(
       document,
       selectedIslandId,
       {
-        summaryText: islandSummaryProposal.diff.after,
+        summaryText,
         summaryReviewed: false,
-        summaryGrounding: islandSummaryProposal.diff.groundingIds,
+        summaryGrounding: groundingIds,
       },
       { changeKind: "ai" }
     );
+    // DOGFOOD-35: persist the 壁打ち (wall-hitting) trail — the human critique
+    // and the re-proposal diff — so the adopted summary stays explainable and
+    // reversible (ADR-0040 DOMAIN-EXPR-03). Critique is user-authored (not
+    // unreviewed card text), so this does not relax SafeMode.
+    const trimmedCritique = critiqueText?.trim();
+    if (trimmedCritique) {
+      const iteration = (document.critiqueInputs?.length ?? 0) + 1;
+      const critique: CritiqueInput = {
+        schemaVersion: "1.0.0",
+        critiqueId: crypto.randomUUID(),
+        targetRef: `island:${selectedIslandId}`,
+        critiqueType: "feels_off",
+        createdAt: new Date().toISOString(),
+        iteration,
+        comment: trimmedCritique,
+      };
+      const reproposal: ReproposalDiff = {
+        schemaVersion: "1.0.0",
+        proposalId: islandSummaryProposal.proposalId,
+        basedOnIteration: iteration,
+        diffOps: [
+          {
+            opId: crypto.randomUUID(),
+            opType: "relabel",
+            targetRef: `island:${selectedIslandId}`,
+            before: islandSummaryProposal.diff.before != null ? { summaryText: islandSummaryProposal.diff.before } : null,
+            after: { summaryText },
+          },
+        ],
+        traceKey: `${islandSummaryProposal.proposalId}:${critique.critiqueId}`,
+        rationale: trimmedCritique,
+      };
+      nextDocument = {
+        ...nextDocument,
+        critiqueInputs: [...(nextDocument.critiqueInputs ?? []), critique],
+        reproposalDiffs: [...(nextDocument.reproposalDiffs ?? []), reproposal],
+      };
+    }
     setIsRecordingIslandSummaryDecision(true);
     try {
       const idempotencyKey = crypto.randomUUID();
@@ -12135,8 +12179,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
             handleIslandSummaryReviewedChange(selectedIsland.id, value);
           }}
-          onSuggestIslandSummary={() => {
-            void handleSuggestIslandSummary();
+          onSuggestIslandSummary={(critiqueText) => {
+            void handleSuggestIslandSummary(critiqueText);
           }}
           islandSummaryModel={islandSummaryModel}
           onIslandSummaryModelChange={setIslandSummaryModel}
@@ -12148,8 +12192,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           onDismissOpposingViewpointProposal={() => setOpposingViewpointProposal(null)}
           islandSummaryProposal={islandSummaryProposal}
           proposalAuditTrail={proposalAuditTrail}
-          onAdoptIslandSummaryProposal={() => {
-            void handleAdoptIslandSummaryProposal();
+          onAdoptIslandSummaryProposal={(candidateIndex, critiqueText) => {
+            void handleAdoptIslandSummaryProposal(candidateIndex, critiqueText);
           }}
           onRejectIslandSummaryProposal={() => {
             void handleRejectIslandSummaryProposal();

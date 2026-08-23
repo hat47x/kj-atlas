@@ -102,13 +102,29 @@ class SuggestIslandSummaryRequest(BaseModel):
     allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
     model: str | None = Field(default=None, max_length=256)
+    # DOGFOOD-34 (壁打ち): user's free-text 違和感 on the current placard.
+    # Optional; when present the model regenerates candidates that address it.
+    critiqueText: str | None = Field(default=None, max_length=1000)
+
+
+class _IslandSummaryCandidate(BaseModel):
+    """一つの表札候補。接地（代表カード）と凝縮（志）を分離して持つ。
+
+    ADR-0077: 核融合法の凝縮は単発の自動採否ではなく、複数候補の「志」を
+    人間が壁打ちで洗練して adopt する。groundingIds（接地・品質ガード）と
+    summaryText（凝縮・志）は別概念で、候補ごとに接地が異なり得る。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    summaryText: str = Field(min_length=1)
+    groundingIds: list[str] = Field(min_length=1, max_length=10)
 
 
 class SuggestIslandSummaryResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    summaryText: str = Field(min_length=1)
-    groundingIds: list[str] = Field(min_length=1)
+    candidates: list[_IslandSummaryCandidate] = Field(min_length=1, max_length=3)
     warnings: list[str] | None = None
 
 
@@ -163,6 +179,10 @@ class ProposalDiff(BaseModel):
     after: str = Field(min_length=1)
     groundingIds: list[str] = Field(min_length=1)
     warnings: list[str] | None = None
+    # DOGFOOD-34 (Phase 2b): the full placard candidates (1-3) so the UI can
+    # offer alternatives. candidates[0] matches after/groundingIds (the primary
+    # adopt target). Optional for backward compatibility with older proposals.
+    candidates: list[_IslandSummaryCandidate] | None = None
 
 
 class ProposalEnvelope(BaseModel):
@@ -218,6 +238,8 @@ class ProposeIslandSummaryRequest(BaseModel):
     allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
     model: str | None = Field(default=None, max_length=256)
+    # DOGFOOD-34 (壁打ち): user's free-text 違和感 on the current placard.
+    critiqueText: str | None = Field(default=None, max_length=1000)
 
 
 class ProposalDecisionAuditRequest(BaseModel):
@@ -363,7 +385,10 @@ class SuggestCardGroupsRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    cards: list[_CardRef] = Field(min_length=2, max_length=100)
+    cards: list[_CardRef] = Field(min_length=2, max_length=1000)
+    # DOGFOOD-31: real KJ round-1 can produce hundreds of cards (kj_technique.md
+    # §1「数百枚は正常」). The previous 100-card cap blocked the first-pass
+    # grouping of a 200-card round; align with max_document_cards (10,000).
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).

@@ -201,7 +201,7 @@ def test_suggest_island_summary_endpoint_mock_eval(
     def _fake_generate(req):
         assert req.task == "suggest_island_summary"
         return LLMResponse(
-            raw_text='{"summaryText": "高齢者の買い物困難が深刻化している", "groundingIds": ["c01", "c02", "c03"], "warnings": []}',
+            raw_text='{"candidates": [{"summaryText": "高齢者の買い物困難が深刻化している", "groundingIds": ["c01", "c02", "c03"]}], "warnings": []}',
             metadata=_stub_metadata(),
         )
 
@@ -211,8 +211,8 @@ def test_suggest_island_summary_endpoint_mock_eval(
         resp = client.post("/ai/suggest-island-summary", json=payload)
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body["summaryText"] == "高齢者の買い物困難が深刻化している"
-    assert body["groundingIds"] == ["c01", "c02", "c03"]
+    assert body["candidates"][0]["summaryText"] == "高齢者の買い物困難が深刻化している"
+    assert body["candidates"][0]["groundingIds"] == ["c01", "c02", "c03"]
 
 
 def test_suggest_island_summary_eval_covers_all_fixture_islands(
@@ -231,7 +231,7 @@ def test_suggest_island_summary_eval_covers_all_fixture_islands(
         island_id = req.prompt.split('id="', 1)[1].split('"', 1)[0] if 'id="' in req.prompt else island_members["i1"][0]
         member = island_members.get(island_id, ["c01"])[0]
         return LLMResponse(
-            raw_text=f'{{"summaryText": "島の表札候補", "groundingIds": ["{member}"], "warnings": []}}',
+            raw_text=f'{{"candidates": [{{"summaryText": "島の表札候補", "groundingIds": ["{member}"]}}], "warnings": []}}',
             metadata=_stub_metadata(),
         )
 

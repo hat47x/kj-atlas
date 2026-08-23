@@ -72,7 +72,7 @@ def _doc_with_cards(cards: list[dict]) -> dict:
 
 
 def _stub_generate(_req):
-    return type("R", (), {"raw_text": '{"summaryText":"new","groundingIds":["c1"]}'})()
+    return type("R", (), {"raw_text": '{"candidates":[{"summaryText":"new","groundingIds":["c1"]}]}'})()
 
 
 def test_rejects_unreviewed_text_by_default(monkeypatch) -> None:

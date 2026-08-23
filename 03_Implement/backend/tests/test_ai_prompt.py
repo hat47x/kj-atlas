@@ -1,4 +1,6 @@
+import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, SuggestLayoutRequest, Transform
 from kj_atlas_api.models_ai import (
@@ -17,6 +19,7 @@ from kj_atlas_api.routes.ai import (
     _build_refine_card_text_prompt,
     _build_suggest_card_groups_prompt,
     _parse_generate_narrative_response,
+    _parse_island_summary_response,
     _parse_narrative_check_response,
 )
 
@@ -366,6 +369,19 @@ def test_suggest_card_groups_prompt_aligned_with_bundling_procedures() -> None:
     assert "Do not force a card into a bundle" in prompt
 
 
+def test_suggest_card_groups_card_cap_is_1000() -> None:
+    """DOGFOOD-31: freeze the card-groups input cap at 1000 cards. Exactly 1000
+    validate; 1001 is rejected by the Pydantic constraint."""
+    from kj_atlas_api.models_ai import _CardRef
+
+    cards = [_CardRef(id=f"c{i}", text=f"card {i}") for i in range(1000)]
+    request = SuggestCardGroupsRequest(cards=cards)
+    assert len(request.cards) == 1000
+
+    with pytest.raises(ValidationError):
+        SuggestCardGroupsRequest(cards=[*cards, _CardRef(id="c1000", text="overflow")])
+
+
 def test_island_summary_prompt_includes_placard_checks() -> None:
     doc = _sample_payload().doc
     payload = SuggestIslandSummaryRequest(
@@ -456,3 +472,73 @@ def test_island_summary_prompt_includes_island_relations() -> None:
 
     assert "Relations to other islands" in prompt
     assert 'this island --related--> island "i2"' in prompt
+
+
+def test_parse_island_summary_response_accepts_multiple_candidates() -> None:
+    """ADR-0077: the response is a list of candidates, each with its own
+    grounding (≤10, unique, member-only)."""
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    parsed = _parse_island_summary_response(
+        '{"candidates":['
+        '{"summaryText":"a","groundingIds":["c1","c2"]},'
+        '{"summaryText":"b","groundingIds":["c1"]}'
+        ']}',
+        payload,
+    )
+
+    assert len(parsed.candidates) == 2
+    assert parsed.candidates[0].summaryText == "a"
+    assert parsed.candidates[0].groundingIds == ["c1", "c2"]
+    assert parsed.candidates[1].groundingIds == ["c1"]
+
+
+def test_parse_island_summary_response_rejects_non_member_grounding_per_candidate() -> None:
+    """ADR-0077: grounding is validated per candidate — a non-member id in ANY
+    candidate is rejected, not just the primary one."""
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    with pytest.raises(HTTPException):
+        _parse_island_summary_response(
+            '{"candidates":['
+            '{"summaryText":"a","groundingIds":["c1"]},'
+            '{"summaryText":"b","groundingIds":["c9"]}'  # c9 is not a member
+            ']}',
+            payload,
+        )
+
+
+def test_parse_island_summary_response_rejects_legacy_single_summary() -> None:
+    """ADR-0077: the legacy single summaryText/groundingIds shape is rejected
+    (extra="forbid" requires the `candidates` field)."""
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    with pytest.raises(HTTPException):
+        _parse_island_summary_response(
+            '{"summaryText":"a","groundingIds":["c1"]}', payload
+        )
+
+
+def test_island_summary_prompt_includes_critique_when_provided() -> None:
+    """DOGFOOD-34 (壁打ち): a free-text 違和感 is folded into the prompt so the
+    regenerated candidates must address it."""
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1", critiqueText="表現が強すぎる")
+
+    prompt = _build_island_summary_prompt(payload)
+
+    assert "raised this objection (違和感)" in prompt
+    assert "表現が強すぎる" in prompt
+    assert "ADDRESSES this objection" in prompt
+
+
+def test_island_summary_prompt_omits_critique_block_when_absent() -> None:
+    doc = _sample_payload().doc
+    payload = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    prompt = _build_island_summary_prompt(payload)
+
+    assert "raised this objection" not in prompt

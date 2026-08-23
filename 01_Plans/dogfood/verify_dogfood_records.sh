@@ -28,15 +28,15 @@ echo "=== Dogfooding 記録の構造照合 ==="
 # 1. 業務フローE2Eスクリプトのシナリオヘッダ数（マニフェスト主張: 97）
 #    シナリオ1=初期フロー（ヘッダechoなし）・シナリオ4=別スクリプトのため、
 #    総シナリオ99 とは一致しない（マニフェスト §1 に注記）。
-EXPECT_HEADERS=167
+EXPECT_HEADERS=168
 ACTUAL_HEADERS=$(grep -c -e "--- シナリオ" "$ROOT/03_Implement/backend/scripts/verify_business_flow_e2e.sh")
 check "業務フローE2E シナリオヘッダ数 == $EXPECT_HEADERS" "$ACTUAL_HEADERS" "$EXPECT_HEADERS"
 
-# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ169・チェック1019）
-if grep -q -e "シナリオ169・チェック1019" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
-  check "シナリオドキュメント カバレッジ集約 (シナリオ169・チェック1019)" "ok" "ok"
+# 2. シナリオドキュメントのカバレッジ集約ヘッダ（シナリオ170・チェック1026）
+if grep -q -e "シナリオ170・チェック1026" "$ROOT/01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md"; then
+  check "シナリオドキュメント カバレッジ集約 (シナリオ170・チェック1026)" "ok" "ok"
 else
-  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ169・チェック1019)"
+  echo "  FAIL: シナリオドキュメント カバレッジ集約 (シナリオ170・チェック1026)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -70,7 +70,8 @@ for issue in \
   "issue-DOGFOOD-27-contradiction-explanation-not-grounded-in-pair.md" \
   "issue-DOGFOOD-28-relation-summary-text-not-grounded-in-islands.md" \
   "issue-DOGFOOD-29-island-placard-text-not-grounded-in-theme.md" \
-  "issue-DOGFOOD-30-layout-island-and-reading-order-preservation-unverified.md"; do
+  "issue-DOGFOOD-30-layout-island-and-reading-order-preservation-unverified.md" \
+  "issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md"; do
   if [ -f "$ROOT/01_Plans/issues/$issue" ] && grep -q "^\- Status: Done" "$ROOT/01_Plans/issues/$issue"; then
     check "課題 $issue" "Done" "Done"
   else
@@ -108,14 +109,14 @@ for entry in \
   fi
 done
 
-# 7. 総チェック数の算術照合（マニフェスト主張: 1077 = 1019 + 20 + 7 + 16 + 15）
-BUSINESS_CHECKS=1019
+# 7. 総チェック数の算術照合（マニフェスト主張: 1084 = 1026 + 20 + 7 + 16 + 15）
+BUSINESS_CHECKS=1026
 ADMIN_CHECKS=20
 MULTI_ROUND_CHECKS=7
 MCP_CE4_CHECKS=16
 CLI_CE4_CHECKS=15
 TOTAL=$((BUSINESS_CHECKS + ADMIN_CHECKS + MULTI_ROUND_CHECKS + MCP_CE4_CHECKS + CLI_CE4_CHECKS))
-check "総チェック算術 (1019+20+7+16+15)" "$TOTAL" "1077"
+check "総チェック算術 (1026+20+7+16+15)" "$TOTAL" "1084"
 
 # 8. マニフェスト自身の存在
 if [ -f "$SCRIPT_DIR/DOGFOODING_MANIFEST.md" ]; then
