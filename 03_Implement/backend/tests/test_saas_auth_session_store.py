@@ -285,6 +285,45 @@ def test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same
     assert other.tenant_session_version == "version-1"
 
 
+def test_two_worker_instances_share_and_atomically_rotate_active_tenant(tmp_path) -> None:
+    """AC-7: two independent DatabaseSaasAuthSessionStore instances (each with
+    its own engine/connection pool, standing in for two app/worker processes)
+    sharing one DB file see the same row, and a CAS race between them has
+    exactly one winner -- mirroring the existing multi-instance proof for the
+    principal-keyed store (test_saas_auth_state.py) at the session-keyed
+    store's own CAS method."""
+    worker_a, factory = _store(tmp_path, name="shared-session.db")
+    worker_b, _ = _store(tmp_path, name="shared-session.db")
+    _seed_tenant(factory, "tenant-a")
+    _seed_tenant(factory, "tenant-b")
+    _seed_tenant(factory, "tenant-c")
+    key_hash = derive_session_key_hash("session-multi-worker", key=_KEY)
+    _create(worker_a, key_hash, active_tenant_id="tenant-a")
+
+    observed_by_b = worker_b.resolve_auth_session(session_key_hash=key_hash)
+    assert observed_by_b is not None
+    assert observed_by_b.tenant_session_version == "version-1"
+
+    assert worker_a.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-b",
+        new_version="version-2",
+    )
+    # worker_b raced on the same stale expected_version and loses.
+    assert not worker_b.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-c",
+        new_version="version-3",
+    )
+
+    resolved = worker_b.resolve_auth_session(session_key_hash=key_hash)
+    assert resolved is not None
+    assert resolved.active_tenant_id == "tenant-b"
+    assert resolved.tenant_session_version == "version-2"
+
+
 def test_preflight_fails_when_the_auth_session_table_is_missing(tmp_path) -> None:
     engine = create_engine(f"sqlite:///{tmp_path / 'unmigrated.db'}")
     factory = sessionmaker(bind=engine, class_=Session)
