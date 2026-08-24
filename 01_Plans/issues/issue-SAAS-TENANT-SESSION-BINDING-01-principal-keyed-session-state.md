@@ -46,7 +46,8 @@
   — 既存テストで確認済み: `test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same_principal`（切替の非干渉）、`test_revoking_one_login_session_does_not_affect_another_of_the_same_principal`（revokeの非干渉）、logout側は`test_oauth_bff_logout_revocation.py`の「同一principalの別loginは失効しないこと」で確認済み。
 - [x] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
   — 2026-08-22。欠損/不正/共有ストア不達は既存テストで確認済み。membership停止は`_active_membership_context`が毎request無条件に再検証するため既に成立（`test_context_rechecks_active_tenant_membership`）。**過大（oversized）は本checkpointで新規に修正**——生cookie値の長さ上限チェックが存在しなかったため`_MAX_AUTH_SESSION_COOKIE_LENGTH`（256）を追加し、hash算出・store照会より前にfail-closedするようにした。bearer経路の`sid` claim読取は別限界として文書化済みのまま。
-- [ ] AC-7: migrationのupgrade/downgrade、複数worker CAS、tenant切替→次request、別session分離のintegration testが通る。
+- [x] AC-7: migrationのupgrade/downgrade、複数worker CAS、tenant切替→次request、別session分離のintegration testが通る。
+  — 2026-08-22。4項目とも既存・新規のtestで個別に確認済み（単一の統合テストではなく、各項目を最も直接に検証するテストへ分担）: migration upgrade/downgradeは`test_saas_auth_sessions_migration.py`（2026-08-13）、複数worker CASは本checkpointで追加した`test_two_worker_instances_share_and_atomically_rotate_active_tenant`、tenant切替→次requestは`test_session_context_routes.py`のAC-3/4統合テスト、別session分離は`test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same_principal`と`test_oauth_bff_logout_revocation.py`。
 - [x] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
   — 2026-08-22。`SAAS-TENANT-01`のAC-6注記を是正（BFF cookie経路は解決済み、現行SPAのBearer経路は対象外と明記、ACは`[~]`のまま維持）。`api.md` §10.1の2箇所（原子化未完了の記述）へ「BFF cookie経路は解決済み・Bearer経路は対象外」の是正注記を追加。`OPS-SAAS-SCALE-01` AC-1（principal単位版のCAS）・AC-3（本番gate未充足の明記）は既に正確だったため変更なし。「AC-13」は`SAAS-TENANT-01`に存在しない（`AC-6`のみが該当）——本issue起票時の参照誤りと判断し、`AC-6`のみを対象とした。
 - [ ] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
@@ -346,6 +347,18 @@ AC-6の4条件（session ID欠損・不正・過大、共有ストア不達、�
 **回帰**: auth/session/tenant/identity該当 **479 passed・7 skipped・0 failed**（新規1件を含む）。
 
 **引き続き未着手**: AC-7（複数worker/instance統合テスト。schema・CAS・switch・session分離は既に個別checkpointで確認済みだが、複数worker/複数instance同時実行という条件そのものは未検証）、AC-8（`SAAS-TENANT-01`/`OPS-SAAS-SCALE-01`/API文書の達成表現同期）、AC-9（cookie/anti-CSRF方針の最終決定——現状、session-keyed経路は追加cookieを発行しない設計にしたため、AC-9の「採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する」側に近いが、既存のprincipal-keyed経路（bearer flow）が使う`Kj-Atlas-Tenant-Session-Version`cookie自体の扱いはこのissueの範囲でまだ判断していない）。
+
+### Implementation checkpoint 2026-08-22（続き）: AC-7 複数worker CAS integration testを追加
+
+残っていた4項目のうち、複数worker/instance同時実行の条件そのものだけが未検証だった（他3項目は既存testで個別に確認済み——checkboxの注記を参照）。`test_saas_auth_state.py`の`test_two_instances_share_and_atomically_rotate_session_version`（principal単位storeの既存の多worker CAS証明）と同型のtestを、session-keyed storeの`rotate_active_tenant()`に対して追加した。
+
+- `test_saas_auth_session_store.py`: `test_two_worker_instances_share_and_atomically_rotate_active_tenant`——同一DBファイルを指す2つの独立した`DatabaseSaasAuthSessionStore`インスタンス（別々のengine/connection pool＝別workerを模す）が同じ行を観測し、片方のCAS成功後にもう片方が同じ旧versionでCASを試みると失敗することを確認する。
+
+**変異検査**: CAS条件のversion一致チェックを一時的に除去すると、この新規testと既存のstale-version testの両方が正しく失敗することを確認し、復元後14件全pass。
+
+**回帰**: auth/session/tenant/identity該当 **480 passed・7 skipped・0 failed**（新規1件を含む）。
+
+**引き続き未着手**: AC-9のみ（cookie/anti-CSRF方針の最終決定。Maintainerの判断待ち）。
 
 ## 検証計画
 
