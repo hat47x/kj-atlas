@@ -47,7 +47,8 @@
 - [x] AC-6: session ID欠損・不正・過大、共有ストア不達、保存tenantのmembership停止はfail-closedとなり、principal単位やtoken claimへfallbackしない。
   — 2026-08-22。欠損/不正/共有ストア不達は既存テストで確認済み。membership停止は`_active_membership_context`が毎request無条件に再検証するため既に成立（`test_context_rechecks_active_tenant_membership`）。**過大（oversized）は本checkpointで新規に修正**——生cookie値の長さ上限チェックが存在しなかったため`_MAX_AUTH_SESSION_COOKIE_LENGTH`（256）を追加し、hash算出・store照会より前にfail-closedするようにした。bearer経路の`sid` claim読取は別限界として文書化済みのまま。
 - [ ] AC-7: migrationのupgrade/downgrade、複数worker CAS、tenant切替→次request、別session分離のintegration testが通る。
-- [ ] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
+- [x] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
+  — 2026-08-22。`SAAS-TENANT-01`のAC-6注記を是正（BFF cookie経路は解決済み、現行SPAのBearer経路は対象外と明記、ACは`[~]`のまま維持）。`api.md` §10.1の2箇所（原子化未完了の記述）へ「BFF cookie経路は解決済み・Bearer経路は対象外」の是正注記を追加。`OPS-SAAS-SCALE-01` AC-1（principal単位版のCAS）・AC-3（本番gate未充足の明記）は既に正確だったため変更なし。「AC-13」は`SAAS-TENANT-01`に存在しない（`AC-6`のみが該当）——本issue起票時の参照誤りと判断し、`AC-6`のみを対象とした。
 - [ ] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
 
 ## 非目標
