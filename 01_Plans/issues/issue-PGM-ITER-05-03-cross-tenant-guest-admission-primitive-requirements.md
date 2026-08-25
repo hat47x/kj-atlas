@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `01_Plans/adr/`（新規ADR候補）, `03_Implement/backend/src/kj_atlas_api/tenant_context.py`, `03_Implement/backend/src/kj_atlas_api/models.py`（`tenant_identity_providers`・新規テーブル候補）
-- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`, `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`, `01_Plans/adr/ADR-0080-idp-independent-guest-admission-primitive.md`, `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`
 - Expected verification level: `integration`
 
 ## 課題
@@ -39,10 +39,10 @@
 
 ## 受入条件
 
-- [ ] AC-1: 上記4要求への対応方針が三要素分析（`ADR-0067`）で決定され、着工前チェックリストを通過する。
-- [ ] AC-2: 決定内容が新規ADRとして起票され、Maintainerの承認（Accepted）を得る。
-- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。
-- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。
+- [x] AC-1: 上記4要求への対応方針が三要素分析（`ADR-0067`）で決定され、着工前チェックリストを通過する。— 2026-08-25、`ADR-0080`（Proposed）とこのADRを反映した`post-mvp-business-scope-design-program.html` §19、`three-element-constraint-checklist.html`の適用記録を参照。D1（ゲスト本人確認）・D2（信頼レコードの形）・D3（既定拒否・既定ゼロ件の保証層）・D4（取り消しの独立性）の4論点を、基本チェック・クロスチェックを通した三要素分析として決定した。
+- [ ] AC-2: 決定内容が新規ADRとして起票され、Maintainerの承認（Accepted）を得る。— **部分**: `ADR-0080`として起票済み（起票はAC-1と同時に完了）。Maintainerの承認（Accepted）は未実施のため、本ACは未チェックのまま維持する。
+- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— `ADR-0080`がAcceptedになるまで着手しない（本issue「実施しないこと」）。
+- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— AC-3と同様、ADR Accepted後。
 
 ## 検証
 
