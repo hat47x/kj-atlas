@@ -3,7 +3,7 @@
 > ドッグフーディング iteration 44（カスタマーサポート品質管理シナリオ）で実機検証により発見。
 
 - Type: Security
-- Status: In Progress
+- Status: Done
 - Source Issue: `SEC-AI-SAFEMODE-01`（Done・6ルート配線の残余）
 - Priority: P1
 - Owner: Maintainer
@@ -47,8 +47,8 @@
 
 - [x] 案a を採択: 3ルートが未レビュー文で 422（`unreviewed_text_not_allowed`）を返し、レビュー済み文で 200 を返すことを integration テストで固定した。— `models_ai.py` に `textReviewed`（既定 false = fail-closed）＋`allowUnreviewedText` を追加。`routes/ai.py` に `_reject_unreviewed_cards` を追加し3ルートへ配線。`test_ai_safemode.py` に5テスト追加（**9 pass**）。api.md にフィールドと fail-closed 既定を明記。呼出側（`verify_business_flow_e2e.sh` シナリオ1〜3・`verify_kj_multi_round.sh`・`run_ai_eval.py`・`test_ai_eval_pipeline.py`）へ `textReviewed: true` を追加し、E2E に未レビュー→422 の負例を固定（**15/15 pass**）。
 - [x] **iteration 48 で更に2ルートの穴を発見・修正**（カバレッジカナリアで全量検査へ拡張）: ① `suggest-document-title`（文書非依存・`cardTexts` をLLMへ送るがレビュー検査なし）→ `textReviewed`＋`allowUnreviewedText` 追加・`_reject_unreviewed_cards` 配線。② `summarize-island-relation`（`ai_relations.py`・**doc 文脈なのに** `_reject_unreviewed_text` 未配線 — SEC-AI-SAFEMODE-01 の6ルート配線の盲点）→ `allowUnreviewedText` 追加・`_reject_unreviewed_text` 配線。**`test_ai_safemode.py` に「全コンテンツAIルートのカバレッジカナリア」を追加**（`_CONTENT_ROUTE_CASES` 10ルート×未レビュー→422。新ルート追加時の穴を構造的に検出）。E2E シナリオ7 で未レビュー→422 を固定（**29/29 pass**）。
-- [ ] 案b（適用範囲外の文書化）は 案a 採択により不要。
-- [ ] SEC-AI-SAFEMODE-01 の既存6ルートの回帰を壊さないことをフルスイートで確認する。
+- [x] 案b（適用範囲外の文書化）は 案a 採択により不要。— 案a採択済みのため対応不要と判断（本項目自体はチェックリストとしての要否確認）。
+- [x] SEC-AI-SAFEMODE-01 の既存6ルートの回帰を壊さないことをフルスイートで確認する。— 2026-08-25、`test_ai_safemode.py`（20 passed）と`ai`/`safemode`/`safe_mode`該当の広域スイート（281 passed・2 skipped・0 failed）で確認した。
 
 ## 検証計画
 
