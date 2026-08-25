@@ -1,7 +1,7 @@
 # Issue: PGM-ITER-05-02 組織境界を越えた共有パターンの外部比較調査
 
 - Type: Planning / Research
-- Status: Open
+- Status: Done
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §15.2（第5反復三要素分析で発見）, `01_Plans/issues/done/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md`
 - Priority: P3
 - Owner: Maintainer
@@ -38,8 +38,10 @@
 
 ## 受入条件
 
-- [ ] AC-1: 類似製品の組織境界を越えた共有・連携パターンの比較調査が完了し、設計正本として記録される。
-- [ ] AC-2: 比較結果が第5反復の認可プリミティブ設計（ADR化）の判断材料を供給する。
+- [x] AC-1: 類似製品の組織境界を越えた共有・連携パターンの比較調査が完了し、設計正本として記録される。
+  - 2026-08-25: `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html` として記録。Slack Connect / Microsoft Entra ID B2B collaboration / Google Workspace 外部共有 / Notion cross-workspace共有の4製品を、ゲスト個人単位の信頼と組織（IdP）単位の信頼の分離・招待承認フロー・取り消し失効の3観点で比較した。
+- [x] AC-2: 比較結果が第5反復の認可プリミティブ設計（ADR化）の判断材料を供給する。
+  - 2026-08-25: 同文書 §3-4 で `tenant_context.py` の `resolve_verified_claim_tenant_context()` が要求する「テナント単位のIdP全部信頼」という粒度と、4製品が持つ個人単位の信頼プリミティブとのギャップを識別し、新規プリミティブの設計・実装は行わずに判断材料として供給した。
 
 ## 検証
 
