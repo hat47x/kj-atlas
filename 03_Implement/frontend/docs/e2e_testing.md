@@ -241,6 +241,25 @@ cd 03_Implement/frontend
 node ./node_modules/@playwright/test/cli.js test e2e/pub_visibility_i18n_readonly_flow.spec.ts --reporter=line
 ```
 
+### 実backend必須suiteの境界（AI-MODEL-UX-01）
+
+`e2e/ai_model_ux_available_models_reason.spec.ts` は、`GET /ai/available-models` の `unavailableReason`（`no_active_models` / `provider_unavailable` / `tenant_policy_excludes_all`）が実backendのmodel registry・provider・tenant allowlist状態から実際に導かれ、ModelSelectorの案内文言へ正しく反映されることを固定するsuiteです。他のe2e specとは逆に、page.routeでは固定せず、`/admin/provision/models/**` 管理APIで実registryを変更し、reloadで再取得させます。
+
+`KJ_ATLAS_E2E_REAL_BACKEND=1` を設定しない限り全ケースskipするため、`npm run e2e` / `npm run e2e:mock` の既定実行は本suiteの影響を受けません。実行するには、SQLite代替E2Eの手順（本書冒頭）でbackendを起動したうえで:
+
+```bash
+cd 03_Implement/backend
+PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" python -m alembic upgrade head
+PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" KJ_ATLAS_LLM_PROVIDER=none \
+  python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+
+cd 03_Implement/frontend
+KJ_ATLAS_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
+  e2e/ai_model_ux_available_models_reason.spec.ts --reporter=line --workers=1
+```
+
+`no_active_models` のケースは空のmodel registryを前提とするため、backendは毎回フレッシュなSQLiteファイルで起動してください（前回実行のfixture登録が残っていると誤ってfailします）。ローカル-devプロファインは無設定で管理面が開いているため、`KJ_ATLAS_API_KEY` / `KJ_ATLAS_ADMIN_API_KEY` は不要です。第4のreason（`no_user_selectable_models`）はissue memoの受入条件が明示する3件（provider不一致・allowlist空・active modelなし）に含まれないため、本suiteでは対象外です。
+
 ## 関連文書
 
 - [導入手順](../../../04_Documentation/installation.md)
