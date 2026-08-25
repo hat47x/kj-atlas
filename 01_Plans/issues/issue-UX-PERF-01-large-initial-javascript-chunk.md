@@ -25,9 +25,9 @@
 ## 受入条件
 
 - [ ] 現行main chunkの上位moduleと操作可能化時間を基準値として記録する。
-- [ ] 採用する分割境界が初期主要操作を含まず、失敗時に再試行可能である。
-- [ ] 代表条件で操作可能化時間または初期転送・parse量が改善する。
-- [ ] keyboard focus、SafeMode、未保存Document、AI proposal-onlyが回帰しない。
+- [x] 採用する分割境界が初期主要操作を含まず、失敗時に再試行可能である。
+- [x] 代表条件で操作可能化時間または初期転送・parse量が改善する。
+- [x] keyboard focus、SafeMode、未保存Document、AI proposal-onlyが回帰しない。
 - [ ] production build、frontend E2E、低速条件の性能probeが成功する。
 
 ## 検証計画
@@ -107,3 +107,141 @@ render前サイズを取得。
 
 **次のステップ（未着手）**: 実端末・低速条件でのTime-to-Interactive基準値計測（AC-1残り）、および
 上記観察を踏まえた分割境界の評価と決定（対応方針3・4、AC-2〜5）。いずれもMaintainerの方針判断を要する。
+
+## 対応記録（2026-08-25・AC-2〜3の分割実装、AC-4の回帰検証）
+
+2026-08-21記録の観察（`SharePanel`・`PatchWorkspacePanel`・`InquiryJourneyPrototypePanel`・
+`RepresentativeVisualCuePrototypePanel`・`AgentResponseImportPanel`・`DiagnosticsBundlePanel`の6件が
+分割候補）を実装した。対応方針3・4を実施し、AC-2・AC-3・AC-4を満たす（詳細は各ACの節を参照）。
+AC-1（実端末・低速条件でのTime-to-Interactive計測）とAC-5の「低速条件の性能probe」は依然未着手
+のため、両ACともチェックしない。
+
+### 実装
+
+- `App.tsx`の6箇所の静的import（`import { X } from "./ui/X"`）を`React.lazy(() => import("./ui/X").then(m => ({ default: m.X })))`へ変更。コンポーネント本体のみを遅延化し、随伴するtype/value export
+  （`DomainExpressionShareSummary`、`ImportedProposalReview`、`boundResolvedAgentImportedProposalReviews`）
+  は静的importのまま維持した。
+- 新規`03_Implement/frontend/src/ui/LazyPanelBoundary.tsx`: 6箇所で共有する`<Suspense>`+
+  再試行付きErrorBoundaryのラッパー。`aria-busy="true"`のloading表示（`LazyPanelFallback`）と、
+  chunk読込失敗時に再試行を提示する`LazyPanelErrorBoundary`を持つ。汎用抽象化はせず、この6箇所専用。
+- `AgentResponseImportPanel`・`DiagnosticsBundlePanel`（`isOpen`を自身の内部で判定して`null`を返す
+  常時マウント型のオーバーレイ）は、`useMountOnceOpened(isOpen)`フックで初回オープンまで
+  `LazyPanelBoundary`自体のマウントを遅らせている。理由: このフックなしでは、閉じている間も
+  Suspenseの読込フォールバックが初期表示時に一瞬（低速環境では長く）表面化し、かつ
+  chunk取得が「開いた時」ではなく「初期表示時」に発生してしまい、対応方針の意図（初期操作に
+  不要な機能は明示操作時にのみ読込む）に反する。初回オープン後は従来通りマウントされ続けるため、
+  `DiagnosticsBundlePanel`の分類コード・HTTPステータス入力など内部状態のクローズ後保持は変更していない。
+  `PatchWorkspacePanel`・`InquiryJourneyPrototypePanel`・`RepresentativeVisualCuePrototypePanel`は
+  `WorkModePanel`自身が`isOpen`でchildrenの描画自体を止めているため、追加のガードは不要だった。
+- `AgentResponseImportPanel`のみ、追加のリファクタが必要だった:
+  `boundResolvedAgentImportedProposalReviews`・`ImportedProposalReview`・`ImportedProposalStatus`を
+  `ui/AgentResponseImportPanel.tsx`から`import/agent_response_import.ts`へ移動した。理由:
+  `App.tsx`が同一ファイルから値（`boundResolvedAgentImportedProposalReviews`）を静的importし続けると、
+  Rollupは「静的importが1本でも到達しているモジュールは、別の場所での動的importと無関係に
+  同じchunkへ統合する」ため、`React.lazy()`化してもmain chunkから分離されない
+  （`npm run build`自身がこの警告を出した: "AgentResponseImportPanel.tsx is dynamically imported ...
+  but also statically imported ... dynamic import will not move module into another chunk"）。
+  分離後は独立chunk（5.78KB / gzip 2.00KB）になった。
+
+### AC-2（採用する分割境界が初期主要操作を含まず、失敗時に再試行可能である）— チェック
+
+- 分割境界: 6件はいずれも「カード作成・編集」という初期主要操作の経路上にない
+  （`SharePanel`はexport/share、他5件はWork ModeまたはAdvanced UI配下の高度機能）。
+  実ブラウザでの新規文書作成・カード追加は本変更と無関係に即時動作することを確認した
+  （後述の検証を参照）。
+- 失敗時の再試行: 実装当初は「ErrorBoundaryの状態をリセットしてSuspenseに同じ
+  `import()`を再試行させる」だけの単純な1段retryだったが、Playwright（実Chromium、
+  `vite dev`・productionの`vite preview`両方）でネットワーク層のリクエストを検証した結果、
+  **ブラウザのモジュールレジストリは同一URLへの失敗した動的importを永続的にキャッシュし、
+  同じ`import()`を再度呼んでもネットワークへの新規リクエストは一切発生しない**ことを実測で確認した
+  （`page.route()`でchunkのfetchを1回だけabortし、後で許可に切り替えてから「再試行」を押しても
+  リクエスト数が増えないことをrequestイベントで直接カウントして確認）。これはこのissueが名指しする
+  「低速回線でのchunk取得失敗」シナリオそのものであり、単純な状態リセットのretryは実質機能しない
+  ことが分かったため、2段retryへ変更した:
+  1段目（初回失敗時）は状態リセットのみ（モジュールが既に読み込み済みで、失敗原因が
+     import()自体ではない一時的なrender例外だった場合はこれで復旧する）。
+  2段目（1段目のretryが再び同じ場所で失敗した場合）は`window.confirm()`で確認の上、
+     `window.location.reload()`によるページ全体の再読込に切り替える（新しいモジュール
+     レジストリで初めて実際に新規fetchが発生する）。confirmを挟むのは、この再読込が
+     当該パネルだけでなく文書全体の未保存変更にも影響するため。
+  この2段retryを、production build（`vite preview`）に対しPlaywrightで実際に
+  「1回目失敗→retryでも同URLは失敗のまま→2段目のconfirm→accept→reload→
+  ネットワーク復旧後に実際にパネルが正常表示される」まで一巡させて確認した。
+
+### AC-3（代表条件で操作可能化時間または初期転送・parse量が改善する）— チェック（転送量側のみ）
+
+`npm run build`（`vite v5.4.21`、WSL `~/kjnative-fe`、Node 20、2026-08-21と同条件）:
+
+| ファイル | 変更前（2026-08-21記録） | 変更後 |
+|---|---|---|
+| main chunk (`dist/assets/index-*.js`) | 1,377.88 KB / gzip 378.13 KB | 1,271.65 KB / gzip 355.68 KB |
+
+差分: raw -106.23KB（-7.7%）、gzip -22.45KB（-5.9%）。分離された6chunk:
+
+| chunk | raw | gzip |
+|---|---|---|
+| `SharePanel` | 36.57 KB | 7.57 KB |
+| `InquiryJourneyPrototypePanel` | 41.66 KB | 10.52 KB |
+| `PatchWorkspacePanel` | 13.14 KB | 3.90 KB |
+| `RepresentativeVisualCuePrototypePanel` | 8.30 KB | 3.56 KB |
+| `DiagnosticsBundlePanel` | 6.87 KB | 2.68 KB |
+| `AgentResponseImportPanel` | 5.78 KB | 2.00 KB |
+
+実端末・低速条件での操作可能化時間（AC-1が求めるTime-to-Interactive計測）は今回も未計測のまま
+（AC-1は引き続き未チェック）。AC-3は「操作可能化時間または初期転送・parse量」のうち後者のみを、
+production build出力の実測比較で満たす。
+
+### AC-4（keyboard focus、SafeMode、未保存Document、AI proposal-onlyが回帰しない）— チェック
+
+- keyboard focus: `SharePanel`（`isOpen`のトグルで自身がopen/close focusを管理）と
+  `DiagnosticsBundlePanel`（`useMountOnceOpened`でガードされる側）それぞれについて、
+  ad-hoc Playwright specで「openで所定要素にfocus」「closeでtriggerへfocus復帰」を実際の
+  ブラウザで確認した（非committed、検証後削除）。既存committed specでも
+  `diagnostics_bundle.spec.ts`「Escape closes the panel, returns focus to the trigger」、
+  `pre_share_summary_gate.spec.ts`「Back/Escape ... returns focus to the export button」、
+  `work_mode_tabs.spec.ts`のstaged Escape focusテストが変更後も成功した。
+  **注記**: 手動検証で使ったブラウザツール（Claude Browser pane）は`document.visibilityState`が
+  `"hidden"`のままで`requestAnimationFrame`が発火しない環境だったため、rAFに依存する
+  focus移動をそのツールだけでは確認できなかった（`SharePanel`・`DiagnosticsBundlePanel`の
+  open/close focusはいずれも内部で`requestAnimationFrame`を使う）。これは当該ツールの
+  制約であり本変更のバグではないと判断した根拠は、同一シナリオをPlaywright（実Chromium、
+  visible pageとして動作）で実行すると期待通りfocusが移動したことで確認した。
+- SafeMode: 新規文書作成後、ヘッダーに「セーフモード: ON」、選択パネルに
+  「SafeMode ON: 1件の未レビュー項目は共有時に非表示になります」が表示されることを確認した
+  （デフォルトON、本変更はSafeModeのロジックに触れていない）。
+- 未保存Document: 新規文書作成→カード追加が本変更と無関係に即時動作することを確認した。
+  `DiagnosticsBundlePanel`の内部状態（HTTPステータス入力値）がclose→reopenで保持されることを
+  ad-hoc Playwright specで確認し、`useMountOnceOpened`導入前の「常時マウント」動作と同等であることを
+  検証した。
+- AI proposal-only: 本変更はいずれのパネルの内部ロジックも変更していない（読込方式のみ変更）。
+  既存の`agent_response_import.spec.ts`のうちバックエンド非依存の1件
+  （re-pasting the same response does not create duplicate proposals）は成功した。
+  バックエンド依存の2件（audit registration等がバックエンドを要する）は今回の検証環境
+  （バックエンド未起動）では変更前・変更後の両方で同一に失敗することを、変更前コードへ
+  一時的に戻して同条件で再実行し確認した（本変更による回帰ではない）。
+
+### 検証内容
+
+- WSL `~/kjnative-fe`へ`03_Implement/frontend/src`を同期し、`npm run typecheck`
+  （エラー0件）、`npm run test`（vitest全件: 1547 passed / 1 failed / 2 test files failed
+  ── 失敗2件は`04_Documentation`・`02_Architecture`をリポジトリルート相対で参照するテストが
+  frontendサブツリーのみをコピーした検証環境に存在しないディレクトリを探す既知の環境起因で、
+  本変更と無関係。新規追加は`LazyPanelBoundary.test.ts`11件）を実行した。
+- `npm run build`成功（上記の表のとおりmain chunk縮小・6chunk分離を確認）。
+- Playwright E2E: `work_mode_tabs.spec.ts`・`ce3_patch_workspace.spec.ts`・
+  `agent_response_import.spec.ts`・`diagnostics_bundle.spec.ts`・
+  `representative_visual_cue_prototype.spec.ts`・`pre_share_summary_gate.spec.ts`・
+  `first_value_share_preflight.spec.ts`・`tenant_session_multitab.spec.ts`・
+  `inquiry_end_confirmation.spec.ts`ほかを実行。バックエンド未起動環境由来と判断した3件の失敗
+  （`agent_response_import.spec.ts`×2、`ce3_patch_workspace.spec.ts`×1）は、変更前コードで同条件
+  再実行し同一に失敗することを確認済み。他は全件成功。
+- ad-hoc（非committed、検証後削除）Playwright specで、production build（`vite preview`）に対し
+  SharePanelのfocus管理、DiagnosticsBundlePanelの状態保持とfocus管理、および2段retryの
+  end-to-endフロー（chunk fetch失敗→retry→reload確認→復旧後の正常表示）を確認した。
+
+### 残課題（未着手）
+
+- AC-1: 実端末・低速条件でのTime-to-Interactive基準値計測（引き続き未着手）。
+- AC-5の低速条件性能probe: 上記と同様、専用のネットワークthrottling E2E計測機構が未構築。
+- `jszip`の主chunk・`bundle_zip.worker`重複、両ロケールJSON常時同梱は2026-08-21記録のまま未着手
+  （本対応のscope外）。

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
 import {
@@ -83,17 +83,12 @@ import { SidePanel } from "./ui/SidePanel";
 import { RepresentativeVisualCueAssetScopeProvider } from "./ui/RepresentativeVisualCueAssetScope";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { WorkModeTabs } from "./ui/WorkModeTabs";
-import { InquiryJourneyPrototypePanel } from "./ui/InquiryJourneyPrototypePanel";
-import { RepresentativeVisualCuePrototypePanel } from "./ui/RepresentativeVisualCuePrototypePanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
-import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { WorkModePanel } from "./ui/WorkModePanel";
 import { AgentTaskExportPanel } from "./ui/AgentTaskExportPanel";
-import { AgentResponseImportPanel, boundResolvedAgentImportedProposalReviews, type ImportedProposalReview } from "./ui/AgentResponseImportPanel";
-import { DiagnosticsBundlePanel } from "./ui/DiagnosticsBundlePanel";
 import { RecentDocumentsDialog } from "./ui/RecentDocumentsDialog";
 import { DocumentTitleEditor } from "./ui/DocumentTitleEditor";
 import { EmptyCanvasHint } from "./ui/EmptyCanvasHint";
@@ -129,6 +124,8 @@ import {
   buildExternalProposalAuditId,
   fingerprintAgentProposal,
   parseAgentResponse,
+  boundResolvedAgentImportedProposalReviews,
+  type ImportedProposalReview,
   type AgentResponseImportMode,
   type ParsedAgentProposal,
 } from "./import/agent_response_import";
@@ -203,7 +200,7 @@ import { StartPanel } from "./ui/StartPanel";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
-import { SharePanel, type DomainExpressionShareSummary } from "./ui/SharePanel";
+import { type DomainExpressionShareSummary } from "./ui/SharePanel";
 import { getSafeModeIndicator } from "./ui/safe_mode_status";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { buildPatchForExport } from "./domain/patch/patch_generate";
@@ -251,6 +248,31 @@ import {
   TenantSessionBlockedView,
   TenantSessionLoadingView,
 } from "./ui/TenantSessionBootstrapGate";
+import { LazyPanelBoundary, useMountOnceOpened } from "./ui/LazyPanelBoundary";
+
+// UX-PERF-01: advanced-feature panels not needed for the initial card
+// creation/editing workflow are code-split out of the main chunk. Each
+// resolves its module on first render via React.lazy; LazyPanelBoundary
+// (Suspense + a small retry-on-failure ErrorBoundary, ./ui/LazyPanelBoundary)
+// covers the async load at every render site below.
+const SharePanel = lazy(() =>
+  import("./ui/SharePanel").then((module) => ({ default: module.SharePanel })),
+);
+const PatchWorkspacePanel = lazy(() =>
+  import("./ui/workspace/PatchWorkspacePanel").then((module) => ({ default: module.PatchWorkspacePanel })),
+);
+const InquiryJourneyPrototypePanel = lazy(() =>
+  import("./ui/InquiryJourneyPrototypePanel").then((module) => ({ default: module.InquiryJourneyPrototypePanel })),
+);
+const RepresentativeVisualCuePrototypePanel = lazy(() =>
+  import("./ui/RepresentativeVisualCuePrototypePanel").then((module) => ({ default: module.RepresentativeVisualCuePrototypePanel })),
+);
+const AgentResponseImportPanel = lazy(() =>
+  import("./ui/AgentResponseImportPanel").then((module) => ({ default: module.AgentResponseImportPanel })),
+);
+const DiagnosticsBundlePanel = lazy(() =>
+  import("./ui/DiagnosticsBundlePanel").then((module) => ({ default: module.DiagnosticsBundlePanel })),
+);
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 // UX-VISUAL-02 (ADR-0048 D3): an island at or below this member count is a
@@ -1186,6 +1208,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const agentTaskExportTriggerRef = useRef<HTMLButtonElement>(null);
   const [isDiagnosticsBundleOpen, setIsDiagnosticsBundleOpen] = useState(false);
   const diagnosticsBundleTriggerRef = useRef<HTMLButtonElement>(null);
+  const hasOpenedDiagnosticsBundlePanel = useMountOnceOpened(isDiagnosticsBundleOpen);
   const [isRecentDocumentsDialogOpen, setIsRecentDocumentsDialogOpen] = useState(false);
   const recentDocumentsDialogTriggerRef = useRef<HTMLElement | null>(null);
   // 第2反復: the tenant's full canvas list (GET /docs), fetched when the
@@ -1206,6 +1229,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const [agentTaskScopeConfirmed, setAgentTaskScopeConfirmed] = useState(false);
   const [isAgentResponseImportOpen, setIsAgentResponseImportOpen] = useState(false);
   const agentResponseImportTriggerRef = useRef<HTMLButtonElement>(null);
+  const hasOpenedAgentResponseImportPanel = useMountOnceOpened(isAgentResponseImportOpen);
   const [agentResponsePastedText, setAgentResponsePastedText] = useState("");
   const [agentResponseImportMode, setAgentResponseImportMode] = useState<AgentResponseImportMode>("lenient");
   const [agentResponseParseErrors, setAgentResponseParseErrors] = useState<string[]>([]);
@@ -11216,6 +11240,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   const domainExpressionShareSummary = useMemo(() => buildDomainExpressionShareSummary(document), [document]);
 
   const headerShareControls = (
+    <LazyPanelBoundary>
     <SharePanel
       isOpen={isSharePanelOpen}
       isAdvancedUiEnabled={isAdvancedUiEnabled}
@@ -11351,6 +11376,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }}
       structuralDiffSection={structuralDiffPanel}
     />
+    </LazyPanelBoundary>
   );
 
   // UX-MENU-01 (ADR-0048 D2, collapse-layer 3): every item below delegates to
@@ -11646,6 +11672,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 auditEvents={mergeDecisionAuditEvents}
                 onExportAuditEvents={handleExportMergeDecisionAuditEvents}
               />
+              <LazyPanelBoundary>
               <PatchWorkspacePanel
                 isReadOnly={isReadOnly}
                 storageScope={appStorage.scope}
@@ -11683,6 +11710,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                   }));
                 }}
               />
+              </LazyPanelBoundary>
             </>
           ),
         },
@@ -11730,6 +11758,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           id: "inquiry",
           label: t("work_mode.tab.inquiry"),
           content: (
+            <LazyPanelBoundary>
             <InquiryJourneyPrototypePanel
               document={document}
               onRestoreDocument={(snapshotDocument) => applyDocumentChange(snapshotDocument)}
@@ -11738,12 +11767,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               runTenantScopedApiRequest={runTenantScopedApiRequest}
               verifiedTenantSession={verifiedTenantSession}
             />
+            </LazyPanelBoundary>
           ),
         },
         {
           id: "visual-cue",
           label: t("work_mode.tab.visual_cue"),
-          content: <RepresentativeVisualCuePrototypePanel />,
+          content: <LazyPanelBoundary><RepresentativeVisualCuePrototypePanel /></LazyPanelBoundary>,
         },
         {
           id: "diagnostics",
@@ -12772,6 +12802,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         void handleDownloadAgentTaskJson();
       }}
     />
+    {hasOpenedAgentResponseImportPanel ? (
+    <LazyPanelBoundary>
     <AgentResponseImportPanel
       isOpen={isAgentResponseImportOpen}
       onClose={() => setIsAgentResponseImportOpen(false)}
@@ -12788,6 +12820,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       onReject={handleRejectAgentImportedProposal}
       onExportPatchFile={handleExportAgentImportedProposalPatchFile}
     />
+    </LazyPanelBoundary>
+    ) : null}
+    {hasOpenedDiagnosticsBundlePanel ? (
+    <LazyPanelBoundary>
     <DiagnosticsBundlePanel
       isOpen={isDiagnosticsBundleOpen}
       onClose={() => setIsDiagnosticsBundleOpen(false)}
@@ -12806,6 +12842,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           : null
       }
     />
+    </LazyPanelBoundary>
+    ) : null}
     <RecentDocumentsDialog
       isOpen={isRecentDocumentsDialogOpen}
       onClose={() => setIsRecentDocumentsDialogOpen(false)}

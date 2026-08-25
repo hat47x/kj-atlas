@@ -4,6 +4,7 @@ import type { PatchOp, PatchV1 } from "../domain/patch/patch_types";
 import { parsePatchOp } from "../domain/patch/patch_apply";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
+import type { AgentResponseProvenance } from "../storage/agent_task_ledger";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
 // §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
@@ -282,4 +283,41 @@ export function parseAgentResponse(rawInput: string, mode: AgentResponseImportMo
     },
     warnings: allWarnings,
   };
+}
+
+// UX-PERF-01: moved from ui/AgentResponseImportPanel.tsx. App.tsx's
+// AgentResponseImportPanel component is React.lazy()-loaded (code-split
+// out of the main chunk); a static import of this bounding helper from
+// the same module would have pulled the whole panel back into the main
+// chunk (Rollup merges a module into any chunk that statically reaches
+// it, regardless of a separate dynamic import elsewhere), so the
+// non-component exports live here instead, where App.tsx can keep
+// importing them statically without defeating the split.
+export type ImportedProposalStatus = "pending" | "adopted" | "rejected";
+
+export type ImportedProposalReview = ParsedAgentProposal & {
+  reviewKey: string;
+  taskId: string;
+  auditProposalId?: string;
+  sourceBundleHash?: string;
+  provenance: AgentResponseProvenance;
+  status: ImportedProposalStatus;
+  orphaned: boolean;
+  patchSignatureMismatch?: boolean;
+};
+
+// FB-RM-UX-02: bound the review list without ever dropping unresolved work.
+// A pending review must survive (the user still has to act on it); only the
+// most recent `resolvedLimit` adopted/rejected entries are retained, so the
+// DOM/heap cannot grow without limit across repeated agent-response imports.
+export function boundResolvedAgentImportedProposalReviews(
+  reviews: ImportedProposalReview[],
+  resolvedLimit = 50,
+): ImportedProposalReview[] {
+  const pending: ImportedProposalReview[] = [];
+  const resolved: ImportedProposalReview[] = [];
+  for (const review of reviews) {
+    (review.status === "pending" ? pending : resolved).push(review);
+  }
+  return [...pending, ...resolved.slice(-Math.max(resolvedLimit, 0))];
 }
