@@ -1,7 +1,7 @@
 # Issue: DOC-NORM-01 憲法層の不変条件に識別子が無く、計画から参照・検証・追跡ができない
 
 - Type: Documentation quality
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -87,6 +87,10 @@
 - [x] AC-5: **他層から `DOM-*` / `KJT-*` 等を参照したとき、実在しない識別子で落ちる。** 存在する識別子では通る。
 - [x] AC-6: 行番号参照を検出して落ちる。既存の該当箇所を識別子または節参照へ置換した（実測8件。当初「3件」としたのは計測漏れ）。
 - [x] AC-7: **能力カナリア** — 実在しない識別子への参照を意図的に入れると AC-5 が落ちることを、ミューテーションで確認する（`DOGFOOD-METRIC-01` 案A）。
+
+## 対応記録（2026-08-22・再検証）
+
+AC-1〜7は全てチェック済みだったが、Statusが`In Progress`のまま更新されていなかった。issue自身の「検証」節にある4コマンドを再実行し全て通過することを確認した（`docs_check.py`: passed、`pytest 01_Plans/tests/`: 107 passed・7 subtests passed、`check_design_consistency.py --baseline`: 0 errors・0 warnings、`git diff --check`: エラーなし）。Statusを`Done`へ更新し、`done/`へ移動する。
 
 ## 検証
 
