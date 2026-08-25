@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第5版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見） / 作成: 2026-08-10 / 更新: 2026-08-20<br>
+  区分: 設計プログラム枠組み / 版: 第6版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見＋第5反復要求確定） / 作成: 2026-08-10 / 更新: 2026-08-25<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -867,6 +867,38 @@ stateDiagram-v2
   新規issueの起票は不要と判断する。
 </p>
 
+<h2>18. 第5反復への要求確定（2026-08-25、Maintainer直接指示）</h2>
+
+<p>
+  §16項目2は「新しい認可プリミティブの設計・実装は、実際の需要が確認できるまで着手しない」とし、
+  その需要確認は非同期の受け渡し（既存bundle export/import）の実運用フィードバックを想定していた。
+  しかし<code>issue-PGM-ITER-05-02</code>（外部比較調査）完了の直後、Maintainerから実運用フィードバックを
+  待たずに直接、以下4点が確定要求として示された。したがって§16項目2の「着手を待つ」前提は本節で解消し、
+  次の反復（認可プリミティブの三要素分析・ADR化）へ直接引き継ぐ。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:8%;">#</th><th style="width:52%;">要求</th><th>PGM-ITER-05-02の対応する発見</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>組織間だけでなく、小規模の<strong>個人間</strong>利用もサポートする</td><td>Slackのゲストアカウント・Google Workspaceのvisitor sharing・Notionは、いずれも組織対組織ではなく個人単位の付与を基本とする</td></tr>
+    <tr><td>2</td><td>行政・企業等が、市民や外部協力者のような<strong>組織IdP外のユーザー</strong>を受け入れられる</td><td>Microsoft Entra B2B の「特定の外部ユーザーのみ許可」はIdP信頼を狭めるだけでIdP自体は必須のまま——要求2はこれを満たさない。IdPを一切要求しないGoogleのvisitor sharing・Notion・Slackゲストアカウントが対応する先例</td></tr>
+    <tr><td>3</td><td>組織IdP外ユーザーの受付可否を、<strong>テナント全体より詳細な単位</strong>で制御できる</td><td>Google Workspaceのtrust rulesは「検証済みドメイン全体」と「個人アドレスを含むグループ」を条件として選べる——テナント単位のon/offだけではない粒度の先例</td></tr>
+    <tr><td>4</td><td><strong>既定は拒否</strong>。既定の共有対象ドキュメントは<strong>0件</strong></td><td>4製品いずれも、招待・許可の明示的な行為なしに何かが見える設計にはなっていない（§0結論表）——既定拒否・既定ゼロ件は本調査が確認した先例と整合する</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  要求2は§15.1・§15.2が組み立てた分析の射程を超える——これまでの分析は「別テナントの<em>IdP</em>を
+  個人単位で信頼する」プリミティブを前提にしていたが、要求2は<strong>IdPそのものを持たない個人</strong>
+  （市民・外部協力者）を対象に含む。したがって次の反復が三要素分析すべき対象は、
+  「<code>tenant_identity_providers</code>の粒度を細かくする」ことではなく、
+  <strong>IdP認証を経由しない個人単位の招待・許可プリミティブそのものの新設</strong>である。
+  この4要求を確定した受入条件として<code>issue-PGM-ITER-05-03</code>を起票する（本節を根拠として参照）。
+  新しいプリミティブの設計そのもの（<code>AGENTS.md</code> §1.1の三要素牽制・ADR化）は本反復では着手しない。
+</p>
+
 <h2>Traceability</h2>
 
 <ul>
@@ -891,8 +923,10 @@ stateDiagram-v2
   <li><code>02_Architecture/inquiry_journey_model.html</code>, <code>01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md</code> — <code>InquiryBundleV1</code>の設計正本（§13.1）</li>
   <li><code>03_Implement/backend/src/kj_atlas_api/models.py</code>（<code>InquiryBundleRow</code>） — 所有者・可視性列の欠落の根拠（§13.2）</li>
   <li><code>01_Plans/issues/done/issue-PGM-ITER-05-01-cross-tenant-collaboration-scoping.md</code> — 第5反復スコープ（§15で三要素分析）</li>
-  <li><code>01_Plans/issues/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — §15.2で発見した外部比較調査の不足を引き継ぐ新issue</li>
-  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1）</li>
+  <li><code>01_Plans/issues/done/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — §15.2で発見した外部比較調査の不足を引き継いだissue（2026-08-25完了・Done）</li>
+  <li><code>02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html</code> — 外部比較調査本体（§18の根拠）</li>
+  <li><code>01_Plans/issues/issue-PGM-ITER-05-03-cross-tenant-guest-admission-primitive-requirements.md</code> — §18で確定した4要求を受入条件として起票した新issue</li>
+  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1・§18）</li>
   <li><code>01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md</code>, <code>issue-SEC-MCP-SCOPE-01-http-mcp-did-not-enforce-read-scope.md</code>, <code>issue-SEC-CLI-AUTH-01-ce4-cli-could-not-authenticate-to-keyed-backend.md</code>, <code>issue-EXT-CONN-02/03/04-*.md</code> — 「本来の第4反復」（外部境界）の既存進捗（§17）</li>
   <li><code>03_Implement/mcp/src/document_client.ts</code>（<code>validateMcpRuntimeProfile</code>） — saas-multitenant下でMCPが起動を拒否する根拠（§17）</li>
   <li>外部ソース（本版§10.2〜10.4の一次情報）:
