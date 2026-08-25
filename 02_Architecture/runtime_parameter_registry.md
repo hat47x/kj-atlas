@@ -209,6 +209,8 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_SCREENSHOT_BASE_URL` | screenshot capture script | `http://<host>:<port>/?locale=ja`（host/portから導出） | 撮影対象ページのbase URL |
 | `KJ_ATLAS_SCREENSHOT_OUTPUT_DIR` | screenshot capture script | `04_Documentation/assets/screenshots` | 生成画像の出力先 |
 | `KJ_ATLAS_SCREENSHOT_BROWSER_PATH` | screenshot capture script | 未設定（Playwright管理browserを使用） | 同梱Chromiumが利用できない環境向けのbrowser実体パス代替 |
+| `KJ_ATLAS_E2E_REAL_BACKEND` | Playwright e2e (`ai_model_ux_available_models_reason.spec.ts`) | 未設定 | 実backend（mockではない）必須のE2E specを明示的に実行するopt-in flag（`"1"`で有効化）。未設定時は該当specをskipし、backend未起動でも既定の`npm run e2e`を壊さない |
+| `KJ_ATLAS_E2E_BACKEND_URL` | Playwright e2e (`ai_model_ux_available_models_reason.spec.ts`) | `http://127.0.0.1:8000` | 上記specがfixture設定（`/admin/provision/models/**`）を直接叩く先のbackend base URL |
 
 ## Validation rules
 
