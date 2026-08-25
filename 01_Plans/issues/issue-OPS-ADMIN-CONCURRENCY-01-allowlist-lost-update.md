@@ -28,8 +28,12 @@
 - [x] PostgreSQL等の対応RDBでtenant row lockを取得して比較する。
 - [ ] 直接APIの無条件PUTを廃止し、revisionを必須化する。
 - [ ] 独立管理consoleで競合差分・再読込UXを固定する。
-- [ ] PostgreSQL実DBで2transactionを並行させる競合E2EをCIへ追加する。
+- [x] PostgreSQL実DBで2transactionを並行させる競合E2EをCIへ追加する。— 2026-08-25、`test_model_governance_postgres_concurrency.py`。隔離Postgres DBで実際に重なる2スレッド（writer A/B）を使い、writer Bの`SELECT ... FOR UPDATE`がwriter Aのcommitまで実際にブロックすること（`unblocked_after_a_committed`）、ブロック解除後にAの書き込みを観測すること、その結果readしたrevisionが事前revisionと一致しないこと（＝実際にPUTすればconflictになる）を確認した。変異検査で`with_for_update()`を一時除去し、対応テストのみが失敗することを確認、復元後19件全pass（CIの`Backend lint + test`ジョブ内`Test (PostgreSQL)`ステップで自動実行）。
 
 ## 部分対応記録（2026-08-17）
 
 APIのrevision契約、409、row lock、CLIの自動引継ぎ、逐次stale revision testを実装した。既存automationとの移行互換性のため未指定PUTは現時点で許容しており、issueは`In Progress`を維持する。
+
+## 部分対応記録2（2026-08-25）
+
+PostgreSQL実DBでの並行E2E（上記チェックリスト参照）を追加した。残るAC（直接APIの無条件PUT廃止・独立管理consoleの競合差分UX）は、既存automationとの互換性という運用判断とUI実装を要するため未着手のまま、issueは引き続き`In Progress`を維持する。
