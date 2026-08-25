@@ -734,7 +734,10 @@ stateDiagram-v2
   ことは既に認識されている。ただし<strong>その「別issue」は実際には起票されていない</strong>——本反復の
   三要素分析で発見した記録上の欠落である。<br><br>
   現状のリスクは<code>local-dev</code>（単一利用者前提）では小さいが、SaaS profile（同一テナントに複数
-  利用者が属する）では実質的な境界の欠落である。
+  利用者が属する）では実質的な境界の欠落である。<br><br>
+  <strong>2026-08-25是正:</strong> 本節が発見した欠落は§14項目1のとおり<code>issue-SEC-INQUIRY-BOUND-01</code>
+  として起票され、2026-08-22に解決済み（Done）。<code>issue-DOMAIN-W-ITERATION-01</code>のAC-11も
+  この解決を反映して完了とした。
 </div>
 
 <h3>13.3 結論: 第4反復のスコープは起票済みissueの受入条件を満たし、新たな依存を1件追加する</h3>
@@ -750,10 +753,11 @@ stateDiagram-v2
 <h2>14. 第4反復から第5反復への引き継ぎ</h2>
 
 <ol>
-  <li><strong>起票が必要</strong>: §13.2で発見した<code>InquiryBundleV1</code>の所有者・可視性境界の欠落。
-    <code>issue-SEC-INQUIRY-BOUND-01</code>として起票する（本反復はスコープ起票のみであり、実装は
-    別issueへ委ねる——境界方針の決定にはvisibility列の追加可否を含むデータ設計判断が要り、
-    <code>issue-PGM-ITER-04-01</code>自身が「実施しないこと: 実装」と定めた範囲を超えるため）。</li>
+  <li><strong>起票済み・解決済み（2026-08-25追記）</strong>: §13.2で発見した<code>InquiryBundleV1</code>の
+    所有者・可視性境界の欠落。<code>issue-SEC-INQUIRY-BOUND-01</code>として起票し（本反復はスコープ起票のみ
+    であり、実装は別issueへ委ねる——境界方針の決定にはvisibility列の追加可否を含むデータ設計判断が要り、
+    <code>issue-PGM-ITER-04-01</code>自身が「実施しないこと: 実装」と定めた範囲を超えるため）、
+    2026-08-22にDoneとなった。</li>
   <li><strong>意図的に対応しないこと</strong>: 複数成果物を横断する一覧・検索UI・関係表示の新規API契約
     （§13.1で確認したとおり、具体的な需要が無く現時点では不要）。</li>
   <li><strong>第5反復（テナント間連携）への入力</strong>: §13.2の境界欠落は、テナント内に留まらず
