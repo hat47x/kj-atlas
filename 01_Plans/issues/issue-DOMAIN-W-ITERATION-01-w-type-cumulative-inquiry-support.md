@@ -92,7 +92,7 @@
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
 - [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
-- [ ] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。— **保持期限・expiry・purgeは DATA-INQUIRY-RETENTION-01 案A（自動期限なし・明示DELETEまで永続）を採択**し、非保証を api.md / UI / 運用文書に明記した。残る部分共有・履歴削除の境界は未完了（別issueで追跡）。
+- [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。— **保持期限・expiry・purgeは DATA-INQUIRY-RETENTION-01 案A（自動期限なし・明示DELETEまで永続）を採択**し、非保証を api.md / UI / 運用文書に明記した。**2026-08-25是正**: 「残る部分共有・履歴削除の境界は未完了（別issueで追跡）」としていたが、その追跡issueは当時実際には起票されていなかった（`post-mvp-business-scope-design-program.html` §13.2が発見・記録）。`issue-SEC-INQUIRY-BOUND-01`として2026-08-22に起票・解決済み——`InquiryBundleRow.created_by`（不変事実、新規bundleのみ適用、既存bundleは遡及締出ししない）を追加し、GET・PUT（update経路）・DELETEすべてに所有者チェックを適用した。これにより部分共有（読取に所有者確認が必須）・履歴削除（DELETEに所有者確認が必須）の認可境界が永続契約として定義されたため、本ACを完了とする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
 
@@ -114,8 +114,9 @@
 
 ## 依存関係
 
-- `01_Plans/issues/issue-DATA-INQUIRY-RETENTION-01-backend-expiry-and-purge-policy.md`（AC-11の保持期限・purge。方針決定と実装が前提）
-- `01_Plans/issues/issue-DATA-INQUIRY-CONCURRENCY-01-unconditional-bundle-replace-and-delete.md`（長期停止・再開時のlost update防止）
+- `01_Plans/issues/done/issue-DATA-INQUIRY-RETENTION-01-backend-expiry-and-purge-policy.md`（AC-11の保持期限・purge。Done、案A採択済み）
+- `01_Plans/issues/done/issue-DATA-INQUIRY-CONCURRENCY-01-unconditional-bundle-replace-and-delete.md`（長期停止・再開時のlost update防止。Done）
+- `01_Plans/issues/done/issue-SEC-INQUIRY-BOUND-01-inquiry-bundle-lacks-owner-visibility-boundary.md`（AC-11の所有者・可視性境界。Done）
 
 ### Phase 0 実装証跡（2026-07-15）
 
@@ -302,6 +303,15 @@ The independent backend lifecycle boundary is now implemented for tenant-scoped 
 - 正本とfrontendは5 MiBを警告境界、20 MiBを絶対拒否上限としていたが、backend routeだけが5 MiBを絶対上限として413を返していた。このためfrontendで正当にexportできる5〜20 MiBのbundleをbackendへ保存できなかった。
 - backend絶対上限を20 MiBへ同期し、5 MiB超のpayloadが保存できること、20 MiB超のJSON payloadが本文を保存せず413 `inquiry_bundle_too_large`となることをroute testで固定した。5 MiB警告は利用者へ表示するfrontend責務のままで、backendが警告状態を永続化する契約は追加していない。
 - この修正は保持期限・purgeを実装しないためAC-11は未完了のままとする。
+
+### AC-11是正チェックポイント（2026-08-25）
+
+`issue-SEC-INQUIRY-BOUND-01`の解決により、AC-11が名指しする残る境界（部分共有・履歴削除）を完了とした。
+本issueの受入条件（AC-1〜AC-13）はこれで全件`[x]`となったが、`Status`は`In Progress`を維持する。
+理由: §6タスク分解のT9（Phase 3 AI支援を別issueへ分割するかの判断、実使用フィードバック待ち）とT10
+（常設タブ化時のメニュー配置、Claude Design実機照合待ち）が、いずれも本issue内の作業では解決できない
+外部トリガー（実使用フィードバック、外部デザインレビュー）待ちのまま残っているため。この2点はAGENTS.md
+のガバナンス上、Maintainerまたは実利用の到来を待つ以外に前進させる手段がない。
 
 ## Traceability
 
