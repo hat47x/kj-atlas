@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/cli.py`, new admin frontend or separately deployed console, operator documentation
-- Related ADR/Spec: `ADR-0072`, `SEC-ADMIN-PLANE-03`, `AI-MODEL-GOVERNANCE-01`
+- Related ADR/Spec: `ADR-0072`, `ADR-0079`, `SEC-ADMIN-PLANE-03`, `AI-MODEL-GOVERNANCE-01`
 - Expected verification level: `e2e`
 
 ## 課題
@@ -67,3 +67,7 @@ Stage-B監査のtenant越境読取を`SEC-ADMIN-PLANE-04`で修正し、管理CL
 - 利用者SPAとは別origin・別bundleとし、bootstrap keyをbrowser storageへ保存しない構成。
 
 正式CLIは現在bootstrap key経路のみで、Stage-Bの対話loginは未実装である。管理console設計時に同じ短時間sessionをCLI device/browser loginへ共有できるようにする。
+
+## 第5対応記録（2026-08-25）
+
+AC-5（管理コンソール採用時のcredential分離設計のADR化）へ`ADR-0079`（Proposed）を起票した。管理コンソールという独立フロントエンド資産が`ADR-0072`の二段認可（bootstrap専用静的bearer／IdP登録後capability claim）をどう保持・伝送・破棄すべきかを、三要素牽制（ADR-0067）で検証し、D1=着手条件・D2=console自身の認証情報ライフサイクル・D3=bundle/origin/capability分離の3論点として整理した。推奨はD1=A（本ADR採択まで着手しない）・D2=A（静的bearerは一度限りの交換専用、consoleはbrowser storageへ書かない）・D3=A（別bundle・別origin）。採択判断はMaintainerに委ねるため、AC-5は`ADR-0079`のAccepted待ちとして未チェックのまま維持する。
