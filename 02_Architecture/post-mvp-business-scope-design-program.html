@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第6版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見＋第5反復要求確定） / 作成: 2026-08-10 / 更新: 2026-08-25<br>
+  区分: 設計プログラム枠組み / 版: 第7版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見＋第5反復要求確定＋認可プリミティブADR化） / 作成: 2026-08-10 / 更新: 2026-08-25<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -899,6 +899,33 @@ stateDiagram-v2
   新しいプリミティブの設計そのもの（<code>AGENTS.md</code> §1.1の三要素牽制・ADR化）は本反復では着手しない。
 </p>
 
+<h2>19. 認可プリミティブの三要素分析・ADR化（2026-08-25）</h2>
+
+<p>
+  §18が引き継いだ「次の反復」を実行した。<code>issue-PGM-ITER-05-03</code>のAC-1・AC-2に従い、
+  IdP認証を経由しない個人単位の招待・許可プリミティブを、着工前チェックリスト
+  （<code>three-element-constraint-checklist.html</code>）を通した三要素分析として実施し、
+  結果を<code>ADR-0080</code>（Proposed）へ起票した。
+</p>
+
+<div class="wrap">
+<table>
+  <thead><tr><th style="width:10%;">論点</th><th style="width:50%;">推奨</th><th>根拠</th></tr></thead>
+  <tbody>
+    <tr><td>D1: ゲスト本人確認</td><td>単回・短命の署名付きリンク→<code>ADR-0074</code>型server-owned sessionへ交換</td><td>Notion・Googleのvisitor sharing先例。IdP必須の案は要求2に反するため却下</td></tr>
+    <tr><td>D2: 信頼レコードの形</td><td>新規<code>guest_invitations</code>・<code>guest_document_grants</code>の2テーブル。<code>tenant_identity_providers</code>とは独立</td><td><code>tenant_identity_providers</code>を流用する案は、要求2・3が指摘した粒度混在を別の場所で再生産するため却下</td></tr>
+    <tr><td>D3: 既定拒否・既定ゼロ件</td><td>一致する<code>guest_document_grants</code>行がある場合のみ許可する構造的deny-by-default</td><td>既存のtenant境界fail-closed方針（RLS等）と同型</td></tr>
+    <tr><td>D4: 取り消しの独立性</td><td>招待した側のテナントが単独で状態遷移させ、ゲスト側の応答を待たない</td><td>Microsoft Entra B2Bの先例と一致</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  三要素分析の詳細（各論点の選択肢・trade-off・Three-Element Verification表）は<code>ADR-0080</code>本体を正本とし、
+  本節では重複させない。着工（プリミティブの実装）は同ADRがMaintainerによりAcceptedとなった後に限る
+  （<code>issue-PGM-ITER-05-03</code>「実施しないこと」）。
+</p>
+
 <h2>Traceability</h2>
 
 <ul>
@@ -926,7 +953,8 @@ stateDiagram-v2
   <li><code>01_Plans/issues/done/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — §15.2で発見した外部比較調査の不足を引き継いだissue（2026-08-25完了・Done）</li>
   <li><code>02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html</code> — 外部比較調査本体（§18の根拠）</li>
   <li><code>01_Plans/issues/issue-PGM-ITER-05-03-cross-tenant-guest-admission-primitive-requirements.md</code> — §18で確定した4要求を受入条件として起票した新issue</li>
-  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1・§18）</li>
+  <li><code>01_Plans/adr/ADR-0080-idp-independent-guest-admission-primitive.md</code> — §19の三要素分析結果（Proposed。D1〜D4の決定はこのADRを正本とする）</li>
+  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code>（<code>resolve_verified_claim_tenant_context</code>） — テナント単位IdP全部信頼の根拠（§15.1・§18・§19）</li>
   <li><code>01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md</code>, <code>issue-SEC-MCP-SCOPE-01-http-mcp-did-not-enforce-read-scope.md</code>, <code>issue-SEC-CLI-AUTH-01-ce4-cli-could-not-authenticate-to-keyed-backend.md</code>, <code>issue-EXT-CONN-02/03/04-*.md</code> — 「本来の第4反復」（外部境界）の既存進捗（§17）</li>
   <li><code>03_Implement/mcp/src/document_client.ts</code>（<code>validateMcpRuntimeProfile</code>） — saas-multitenant下でMCPが起動を拒否する根拠（§17）</li>
   <li>外部ソース（本版§10.2〜10.4の一次情報）:
