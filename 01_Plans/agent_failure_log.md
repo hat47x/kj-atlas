@@ -773,3 +773,10 @@ Updated: 2026-08-03
 - 原因: このリポジトリのPlaywright specは大半が`page.route()`でネットワークを完全に固定する前提（`docs/e2e_testing.md`「再現性・flaky対策」）だが、一部specは全リクエストをmockしていないため、`vite.config.ts`のデフォルトproxy（`/api` -> `127.0.0.1:8000`）経由で実backendが「たまたま起動していると」その実データが混入する。
 - 対応: 実backend fixtureのテストを実行した直後に必ずbackendプロセスを停止し（PIDファイル経由で`kill`、パターンマッチの`pkill -f`は自分自身のコマンドライン文字列と誤マッチして自プロセスを巻き込むことがあるため使わない）、backendなしで全suiteを再実行して同じ2specが成功することを確認した。
 - 再発防止: 実backend必須のE2E specを検証した後は、無関係な既存suiteの回帰確認へ進む前に必ずfixture backendを停止する。`pkill -f <pattern>`は、そのコマンド自体の起動コマンドライン（`bash -c "..."`の引数文字列）に同じ`<pattern>`が含まれる場合、自分の親プロセスを誤って巻き込むことがあるため、起動時に記録したPIDファイルへの`kill $(cat pidfile)`を使う。
+
+## 2026-08-25: `~/kjnative-fe`（`03_Implement/frontend`だけをrsyncしたWSL-native copy）で`npx vitest run`すると、リポジトリ直下の他ディレクトリを参照する2テストが無関係に失敗する
+
+- 事象: DATA-INQUIRY-CONCURRENCY-01 AC-9のE2E追加後、`~/kjnative-fe`で全体unit testを流したところ、`src/import/external_agent_workflow_doc.test.ts`（`Could not find repo root (04_Documentation) walking up from .../src/import`）と`src/domain/representative_visual_cue_prototype.test.ts`（`ENOENT .../02_Architecture/design/representative_visual_cue/phase0_scenarios.json`）の2件が失敗した。当該PRのdiffは新規e2e specファイル1本のみ（`git status --porcelain`で確認）で、これらのテストが参照するsrc/fixtureは一切変更していない。
+- 原因: この2テストはリポジトリ直下の`04_Documentation`・`02_Architecture`（`03_Implement/frontend`の外、複数階層上）を実行時に探索/読み込みする。既存の運用メモ（`place-impl-files-under-03-implement`等）が想定する「`03_Implement/frontend`だけをrsyncする」コピー方式は、この2テストが前提とするリポジトリ全体のディレクトリ構造（`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`が`03_Implement`の兄弟として存在する）を`~/kjnative-fe`側に用意しない。
+- 対応: 本件はテスト対象コードのpre-existing gapであり、当該PRの変更（e2eスペック追加のみ）とは無関係と判断してそのまま報告した。フルのリポジトリ構成を要する検証が必要な場合は、`03_Implement/frontend`だけでなくリポジトリ全体（または少なくとも`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`）を同じ相対位置でWSL側に用意する必要がある。
+- 再発防止: `~/kjnative-fe`でVitestが失敗した場合、まず`git status --porcelain`で自分のdiffが当該失敗テストのfixture/srcに触れているか確認する。触れていなければ、失敗テストがリポジトリ直下の他ディレクトリ（`04_Documentation`/`02_Architecture`等）を参照していないかを疑い、rsyncがフロントエンドだけを切り出したコピーであることに起因する既知のギャップとして扱う。
