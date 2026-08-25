@@ -1,7 +1,7 @@
 # Issue: DOMAIN-SCORING-SURFACE-01 利用者の図解に「健全性 N%」が表示されており、孤立カードが欠陥として扱われている
 
 - Type: Product Invariant
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-IMPORTANCE-SCORING-01`, `DX-CANON-INTENT-01`
 - Priority: P1
 - Owner: Maintainer
@@ -100,7 +100,7 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 - [x] AC-3: Q007 が孤立カードを欠陥として提示していない。孤立カードがゼロの場合の注意喚起が方法論（`kj_technique.md:195`）に従って存在する。— Q007 を `info` の中立事実へ変更（`suggestedAction` 撤去・`kj_technique.md:109`「孤立した1枚が最も重要なことがある」を明記）。ゼロ枚時は新コード **Q009**（`warn`・forced-grouping の失敗徴候）を発行。
 - [x] AC-4: `recommendations.ts` / `structural_metrics.ts` の数値提示が棚卸しされ、採択案に従っている。— 棚卸し結果: `connectivityScore` は表示（SidePanel metrics・`diagnostics.md`）から撤去（内部計算は維持・`structural_metrics.test.ts` は継続）。`recommendations.impactLevel` / `priority` は内部ソート用に維持し、表示（バッジ・エクスポートタグ・高影響フィルタ）を撤去。Q005 は `info` の中立観察へ変更（島の独立性を価値とする方法論 §4 と整合）。
 - [x] AC-5: UI層への反スコアリング検査がテストで固定されている（書き出し境界の既存検査と同形式）。— `worker_golden.test.ts` に `diagnosticsMd`（SidePanel表示・診断追記・bundle export の表面）が `/score|rank|confidence|priority|readiness|優先度の数値|点数|順位/i` に一致しないことを固定。`outlineReport` に `health` が存在しないことも固定。
-- [ ] AC-6: `AI-IMPORTANCE-SCORING-01` へ、同一不変条件の防御がクライアント側に及んでいなかった事実を追記する（判断の取り消しではなく記録の正確化として）。— **本issueの対応記録に追記する形で実施（下記）**。AI-IMPORTANCE-SCORING-01 への追記は後述。
+- [x] AC-6: `AI-IMPORTANCE-SCORING-01` へ、同一不変条件の防御がクライアント側に及んでいなかった事実を追記する（判断の取り消しではなく記録の正確化として）。— `01_Plans/issues/done/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`「記録の正確化（2026-08-13、DOMAIN-SCORING-SURFACE-01 AC-6）」節として追記済みであることを確認した。
 
 ## 対応記録（2026-08-13）
 
@@ -114,6 +114,10 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 - テスト: `worker_golden.test.ts` に UI 反スコアリング検査を追加。ゴールデンフィクスチャ `diagnostics.md` を更新。`outline_quality.test.ts` / `translate.test.ts` を更新。フロントエンド全 1439 tests pass、typecheck・build 成功。
 
 検証: `cd 03_Implement/frontend && npm run test && npm run typecheck && npm run build`、`python 01_Plans/docs_check.py`（pass）。
+
+## 対応記録2（2026-08-25・再検証・Close out）
+
+AC-1〜5は2026-08-13の対応記録で完了済み、AC-6は`AI-IMPORTANCE-SCORING-01`側への追記として既に実施済み（本issue起票時の記述漏れ）だったが、Statusが`In Progress`のまま残っていた。`outline_quality.ts`に`health`フィールドが存在しないこと・`Q009`が存在することをコード上で再確認し、`01_Plans/docs_check.py`が通過することを確認した。Statusを`Done`へ更新し、`done/`へ移動する。
 
 ## 検証
 

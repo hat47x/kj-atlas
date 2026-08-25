@@ -123,7 +123,7 @@ UQ（`ADR-0044`）とPB（`ADR-0046`）は既にUI操作性・応答性を包括
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（CB）, `ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ）, `ADR-0046-responsiveness-performance-budget.md`（PB）
 - Related: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G0〜G7・V0〜V4、監査パスの実行場所）
 - Related: `02_Architecture/value_traceability.md`（IC表の追記先）
-- Related: `01_Plans/issues/issue-DOMAIN-SCORING-SURFACE-01-health-percentage-and-lone-card-defect-contradict-invariants.md`（IC-9の実例、In Progress）
+- Related: `01_Plans/issues/done/issue-DOMAIN-SCORING-SURFACE-01-health-percentage-and-lone-card-defect-contradict-invariants.md`（IC-9の実例、Done）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（IC-10 = F-5の出典）
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（IC-8の実例の発見経路）
 - Related: `01_Plans/issues/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと実装課題、Draft）
