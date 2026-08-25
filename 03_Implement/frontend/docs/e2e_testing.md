@@ -260,6 +260,25 @@ KJ_ATLAS_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
 
 `no_active_models` のケースは空のmodel registryを前提とするため、backendは毎回フレッシュなSQLiteファイルで起動してください（前回実行のfixture登録が残っていると誤ってfailします）。ローカル-devプロファインは無設定で管理面が開いているため、`KJ_ATLAS_API_KEY` / `KJ_ATLAS_ADMIN_API_KEY` は不要です。第4のreason（`no_user_selectable_models`）はissue memoの受入条件が明示する3件（provider不一致・allowlist空・active modelなし）に含まれないため、本suiteでは対象外です。
 
+### 実backend必須suiteの境界（DATA-INQUIRY-CONCURRENCY-01 AC-9）
+
+`e2e/inquiry_bundle_backend_conflict.spec.ts` は、`POST /inquiry-bundles/{journey_id}` の実CAS競合（stale `If-Match` → 409）が、実browserの`InquiryJourneyPrototypePanel`で偽の保存成功表示にならず、`conflict_backend`のコンフリクト文言を表示し、自動retry/自動mergeでローカル編集や観測済みrevisionを黙って書き換えないことを固定するsuiteです。ブラウザ自身の保存に加えて、`request`フィクスチャで同じjourneyへ直接2本目のPUT（正しい`If-Match`）を送り、実際にサーバー側のrevisionを進める、という2クライアント構成でしか再現できない競合を検証します。
+
+AI-MODEL-UX-01のsuiteと同じ`KJ_ATLAS_E2E_REAL_BACKEND`ゲート・同じSQLite代替E2E起動手順を再利用します（新しいenv varは導入していません）。journeyIdはテストごとに`crypto.randomUUID()`由来の値を新規生成するため、`no_active_models`のケースのようなフレッシュDB前提はなく、他のfixtureが残っているbackendへそのまま実行できます。
+
+```bash
+cd 03_Implement/backend
+PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" python -m alembic upgrade head
+PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" KJ_ATLAS_LLM_PROVIDER=none \
+  python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+
+cd 03_Implement/frontend
+KJ_ATLAS_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
+  e2e/inquiry_bundle_backend_conflict.spec.ts --reporter=line --workers=1
+```
+
+DELETEの`If-Match`競合（同issueのAC-3/AC-5）は対象外です。パネルにdelete操作のUIがなく（`deleteInquiryBundle`はclient.tsにのみ実装）、backend側のCASは`test_inquiry_bundle_routes.py`で既に確認済みのため、UIフックのない機能をE2Eで新規に作らない判断です。
+
 ## 関連文書
 
 - [導入手順](../../../04_Documentation/installation.md)
