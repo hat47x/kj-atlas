@@ -85,10 +85,23 @@ async function adminPost(
   }
 }
 
+// OPS-ADMIN-CONCURRENCY-01 AC-4: expectedRevision is required (the
+// unconditional-PUT compatibility window is over), so read the current
+// revision first -- the same GET-then-PUT sequence the official admin CLI
+// already performs for `model-allowlist-set`.
 async function setTenantAllowlist(request: APIRequestContext, modelIds: string[]): Promise<void> {
+  const current = await request.get(
+    `${BACKEND_URL}/admin/provision/models/tenants/${TENANT_ID}/allowlist`,
+  );
+  if (current.status() !== 200) {
+    throw new Error(
+      `GET allowlist expected 200, got ${current.status()}: ${await current.text()}`,
+    );
+  }
+  const { revision } = (await current.json()) as { revision: string };
   const response = await request.put(
     `${BACKEND_URL}/admin/provision/models/tenants/${TENANT_ID}/allowlist`,
-    { data: { modelIds } },
+    { data: { modelIds, expectedRevision: revision } },
   );
   if (response.status() !== 200) {
     throw new Error(

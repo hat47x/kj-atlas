@@ -2184,9 +2184,13 @@ mg_reg=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/admin/provisi
 check "MG ③モデル登録(restricted)" "201" "$mg_reg"
 
 # ④ テナント許容リストを [restricted] に制限（default を除外・local-dev の control-plane は無キーで開放）
+# OPS-ADMIN-CONCURRENCY-01 AC-4: 直接APIは expectedRevision 必須（無条件PUTは廃止）。
+mg_allow_revision=$(curl -s "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" | \
+  "$VENV_PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["revision"])')
 mg_allow=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
   "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
-  -H 'Content-Type: application/json' -d '{"modelIds":["restricted"]}')
+  -H 'Content-Type: application/json' \
+  -d '{"modelIds":["restricted"],"expectedRevision":"'"$mg_allow_revision"'"}')
 check "MG ④テナント許容リスト設定(制限)" "200" "$mg_allow"
 
 # ⑤ 一覧が制限を反映（default は選択候補から消え・restricted のみ残る）
@@ -2207,9 +2211,13 @@ case "$mg_block" in *'"model_not_allowed"'*) echo "  PASS: MG ⑤b code=model_no
 # ⑥ 許容リストをプラットフォーム既定（空=active登録済み全許可）へ復元。
 #    scenario 47 の制限が後続シナリオのモデル検査（card-groups/refine 等）を
 #    汚染しないよう、状態を後片付けする（admin での空リスト設定=既定復帰）。
+# OPS-ADMIN-CONCURRENCY-01 AC-4: 直接APIは expectedRevision 必須（無条件PUTは廃止）。
+mg_restore_revision=$(curl -s "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" | \
+  "$VENV_PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["revision"])')
 mg_restore=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
   "$BASE_URL/admin/provision/models/tenants/local-default/allowlist" \
-  -H 'Content-Type: application/json' -d '{"modelIds":[]}')
+  -H 'Content-Type: application/json' \
+  -d '{"modelIds":[],"expectedRevision":"'"$mg_restore_revision"'"}')
 check "MG ⑥許容リスト復元(空=既定)" "200" "$mg_restore"
 
 echo ""

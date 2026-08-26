@@ -767,7 +767,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 - AI-MODEL-GOVERNANCE-01（R3）: テナントの利用可能モデル allowlist の更新（fail-closed・control-plane 認可）。空 = プラットフォーム既定。
 - 対象tenantが存在しactiveであること、各modelが登録済みかつactiveであること、modelIdsに重複がないことを更新前に検証する。存在しないtenantは404、無効なmodel集合・重複は422とし、部分更新しない。
-- `expectedRevision`を指定した場合、現行revisionと不一致なら`409 model_allowlist_conflict`で更新せず、`currentRevision`を返す。正式CLIは常にGETで取得したrevisionを指定する。互換性期間中は未指定の直接API呼出しを許容するが、管理UI/新規automationは指定必須とする。
+- `expectedRevision`は必須（OPS-ADMIN-CONCURRENCY-01 AC-4、2026-08-26のMaintainer決定：意図的な破壊的変更・移行期間なし）。未指定は`428 Precondition Required`（`{"code": "model_allowlist_expected_revision_required", "message": "..."}`）で拒否し、更新しない。`inquiry_bundles.py`のPUT/DELETEが`If-Match`欠落時に返す428と同じ契約形状。指定した`expectedRevision`が現行revisionと不一致なら`409 model_allowlist_conflict`で更新せず、`currentRevision`を返す（この不一致検出の挙動自体は変更していない）。正式CLIは常にGETで取得したrevisionを指定するため、この変更による影響を受けない。
 
 **GET** `/healthz`
 
