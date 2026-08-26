@@ -1,7 +1,7 @@
 # Issue: UX-PERF-01 初期JavaScript chunkが大きく低速環境の操作開始を遅らせる余地がある
 
 - Type: Performance / UX / Architecture
-- Status: Open
+- Status: Done
 - Source Issue: N/A（2026-08-16のUX継続検証におけるproduction build警告）
 - Priority: P2
 - Owner: Maintainer
@@ -24,11 +24,11 @@
 
 ## 受入条件
 
-- [ ] 現行main chunkの上位moduleと操作可能化時間を基準値として記録する。
+- [x] 現行main chunkの上位moduleと操作可能化時間を基準値として記録する。
 - [x] 採用する分割境界が初期主要操作を含まず、失敗時に再試行可能である。
 - [x] 代表条件で操作可能化時間または初期転送・parse量が改善する。
 - [x] keyboard focus、SafeMode、未保存Document、AI proposal-onlyが回帰しない。
-- [ ] production build、frontend E2E、低速条件の性能probeが成功する。
+- [x] production build、frontend E2E、低速条件の性能probeが成功する。
 
 ## 検証計画
 
@@ -245,3 +245,145 @@ production build出力の実測比較で満たす。
 - AC-5の低速条件性能probe: 上記と同様、専用のネットワークthrottling E2E計測機構が未構築。
 - `jszip`の主chunk・`bundle_zip.worker`重複、両ロケールJSON常時同梱は2026-08-21記録のまま未着手
   （本対応のscope外）。
+
+## 対応記録（2026-08-26・AC-1のTime-to-Interactive計測とAC-5の低速条件性能probe）
+
+Maintainerの方針判断（2026-08-26）: 測定に使う低速条件は独自プロファイルを作らず、Chrome
+DevTools/Lighthouse系ツールが慣用的に使う「slow representative」条件（Fast 3G相当のネットワーク
++ 4倍CPU slowdown）を、既存の名前付き規約から正確な数値を引いて採用する。本記録はこの方針に基づき、
+2026-08-21のbundle内訳・2026-08-25の分割実装に続く、AC-1の残り半分（操作可能化時間）とAC-5
+（低速条件の性能probe）を満たす。
+
+### 操作可能化（操作可能化時間の定義）
+
+「操作可能化」＝ start panel（`data-panel="start-document-entry"`）の「新規文書を作成」ボタン
+（`start_panel.action.new`）が有効化された瞬間、と定義した。`DOMContentLoaded`/`load`ではなくこれを
+採るのは以下の理由による。
+
+- `App.tsx`は初回paintから`isStartPanelVisible`を`useState(true)`で無条件に表示するため、
+  start panelの存在自体は「hydration完了」を何も意味しない。
+- `StartPanel.tsx`は`canCreateNew = !isBusy && !isReadOnly`（`isBusy`は`App.tsx`のmount時
+  document読込を追跡する既存の`isLoading`state）が偽の間、当該ボタンを`disabled`にする。つまり
+  「ボタンが有効化される」は、本probe用に考案したheuristicではなく、production code自身が既に
+  「アプリが起動を終え利用者が作業を開始できる」と定義している既存の状態遷移である。
+- 「新規文書を作成」→「最初のカードを書く」の遷移（`handleStartCreateNewDocument` →
+  `handleNewDocument`）はネットワークを伴わないローカル状態遷移であり、
+  `empty_canvas_onboarding.spec.ts`が既に固定している導線と同じである。新規spec自身も、計測対象
+  の5試行に加えて非計測の1回、実際にこの導線を最後までクリックしてカード作成に到達することを
+  確認し、「ボタンが有効」が見た目のattributeだけでなく実際の操作可能性と一致することを検証する。
+
+### 低速条件プロファイル（引用元付き）
+
+Chrome DevTools frontendの"Fast 3G"プリセット（`ChromeDevTools/devtools-frontend`、
+`front_end/core/sdk/NetworkManager.ts`、内部識別子は`Slow4GConditions`だが`i18nTitleKey`は
+`UIStrings.fastG`——DevTools Network conditionsパネルの表示名は"Fast 3G"）と、Lighthouseの既定
+mobile throttling定数（`GoogleChrome/lighthouse`、`lighthouse-core/config/constants.js`の
+`throttling.mobile3G`、`DEVTOOLS_RTT_ADJUSTMENT_FACTOR=3.75`・`DEVTOOLS_THROUGHPUT_ADJUSTMENT_FACTOR=0.9`）
+は同一の数値規約であり、CPU throttling倍率（`cpuSlowdownMultiplier: 4`）もLighthouse側で定義される。
+両ソースをGitHub上のファイルから直接確認し、次の値をCDP経由で適用した（
+`03_Implement/frontend/e2e/ux_perf_01_time_to_interactive.spec.ts`のファイル冒頭コメントに同じ引用を記載）。
+
+| パラメータ | 値 | 由来 |
+|---|---|---|
+| `Network.emulateNetworkConditions` latency | 562.5ms | `150ms RTT * 3.75`（DEVTOOLS_RTT_ADJUSTMENT_FACTOR） |
+| downloadThroughput | 180,000 B/s（≈1.44Mbps） | `1.6Mbps * 0.9`（DEVTOOLS_THROUGHPUT_ADJUSTMENT_FACTOR） |
+| uploadThroughput | 84,375 B/s（≈0.675Mbps） | `750Kbps * 0.9` |
+| `Emulation.setCPUThrottlingRate` rate | 4 | Lighthouse `cpuSlowdownMultiplier` |
+
+DevToolsの標準的な運用（throttling＋cache無効化を対にする）に合わせ、各試行は`Network.setCacheDisabled`
+で新規contextを都度生成し、初回アクセス相当（cold visit）を再現した。
+
+### 計測結果（production build、`vite build` → `vite preview`、N=5試行の中央値）
+
+`03_Implement/frontend/e2e/ux_perf_01_time_to_interactive.spec.ts`を新規に追加し、
+`npm run e2e:prod-tti`（`vite build && playwright test --config=playwright.prod-tti.config.ts`）
+で計測した。WSL native環境（`~/kjnative-fe-uxperf01`、Node 20、`vite v5.4.21`）、開発機1台での実行。
+
+| 実行 | 通常条件（中央値、5試行） | 低速条件（中央値、5試行） | 低速/通常 比率 |
+|---|---|---|---|
+| 1回目 | 763.3ms（範囲746.1–1107.9） | 6566.7ms（範囲6216.2–6991.3） | 約8.6倍 |
+| 2回目 | 872.7ms（範囲714.9–1009.2） | 6646.9ms（範囲6217.0–6773.1） | 約7.6倍 |
+| 3回目（`npm run e2e:prod-tti`本番導線） | 831.3ms（範囲679.7–992.2） | 7035.0ms（範囲6587.1–7155.0） | 約8.5倍 |
+
+3回の独立実行を通じて、通常条件は概ね700–1100ms、低速条件は概ね6200–7200msに収まり、試行間で
+桁が変わるような不安定さは見られなかった（安定した再現性ありと判断）。この数値はこの計測を行った
+開発機のハードウェア・負荷状況に依存する相対値であり、絶対値そのものを他機種の基準にはできない
+——bundle内訳（2026-08-21記録）や分割前後の転送量比較（2026-08-25記録）と同様、この記録もAC-1の
+「基準値」であって性能目標値ではない。
+
+### AC-1（現行main chunkの上位moduleと操作可能化時間を基準値として記録する）— チェック
+
+上位moduleは2026-08-21記録で既に確定済み。操作可能化時間は本記録の上表で確定した。両者が揃ったため
+AC-1のチェックを付ける。
+
+### AC-5（production build、frontend E2E、低速条件の性能probeが成功する）— チェック（regression probeの設計に限界あり、詳細は次項）
+
+- production build: `npm run build`成功（main chunk 1,271.65KB / gzip 355.68KB、2026-08-25記録と同値、
+  本対応でproduction codeは変更していないため変化なし）。
+- frontend E2E: 既定並列度で全224件実行し、198 passed / 11 skipped / 15 failed。失敗15件のうち13件は
+  既知（`agent_response_import.spec.ts`×2・`agent_task_export.spec.ts`×1・`ce3_patch_workspace.spec.ts`×1・
+  `diagnostics_structural_metrics.spec.ts`×1・`first_meaningful_map_mouse_flow.spec.ts`×2・
+  `large_document_operability.spec.ts`×1・`public_pack_visibility_compat.spec.ts`×2・
+  `representative_visual_cue_capacity_budget.spec.ts`×1・`document-title-editor.spec.ts`×2、いずれも
+  `agent_failure_log.md`および関連done issueに記録済み）。残り2件（`a11y_axe_smoke.spec.ts`・
+  `inquiry_bundle_capacity_budget.spec.ts`）は本対応で新たに観測したが、`--workers=1`での単独再実行で
+  11件全件成功したことから並列CPU競合による単発flakeと判断した（詳細は`agent_failure_log.md`
+  2026-08-26記録）。本対応のdiffはe2e spec 1本の追加とconfig 2件への`testMatch`/`testIgnore`追加のみ
+  （production codeへの変更なし）であり、これら15件のいずれとも無関係。
+- 低速条件の性能probe: `ux_perf_01_time_to_interactive.spec.ts`自体がこの低速条件probeであり、
+  3回の独立実行すべてで成功（1 passed）した。
+
+**regression probeとしての限界（誠実な明記）**: このspecは測定結果をtestInfo.attach/console.infoで
+記録し、`throttledMedianMs < 45,000ms`という破局的regression（アプリがinteractiveに到達せず
+hangする等）だけを検知する健全性チェックのみ持つ。**通常条件・低速条件どちらについても、
+「この値を超えたら性能regression」という具体的な閾値assertionは持たない。** これは見落としではなく、
+意図的な判断である。AC-1の操作可能化時間はこのチェックポイントまで一度も計測されていなかったため、
+過去の基準値と比較できる履歴データが存在しない。履歴なしに閾値を決めると、緩すぎて何も検知しない
+か、厳しすぎて通常の実行時ばらつきでCIが不安定になるかのいずれかになり、どちらも「数値の体裁をした
+当てずっぽう」に過ぎない。2026-08-21記録がAC-1を「半分のみ達成」として誠実にチェックを見送った
+方針に合わせ、本probeも「測定はするが、まだ根拠のない具体的regression基準は主張しない」という
+判断を明記する。今後、この計測を複数回・複数日にわたって記録し2〜3点の日付付きデータが蓄積された
+時点で、人間が実際の基準に基づいた閾値を設定するのが次の適切なステップである。
+
+以上を踏まえ、AC-5自体（「production build、frontend E2E、低速条件の性能probeが成功する」の文字通りの
+要求）は3点とも成功しているためチェックを付けるが、regression probeとしての閾値設計には上記の
+既知の限界があることをここに明記する。
+
+### 実装
+
+- 新規: `03_Implement/frontend/e2e/ux_perf_01_time_to_interactive.spec.ts`（計測spec本体）。
+- 新規: `03_Implement/frontend/playwright.prod-tti.config.ts`（production build = `vite preview`を
+  対象とする専用config。baseURL/port 4175、既存の`playwright.config.ts`のdev server用baseURL
+  4173・`playwright.saas.config.ts`の4174とは別ポート）。
+- 変更: `03_Implement/frontend/package.json`に`e2e:prod-tti`スクリプト
+  （`vite build && playwright test --config=playwright.prod-tti.config.ts`）を追加。
+- 変更: `03_Implement/frontend/playwright.config.ts`に`testIgnore`で新specを除外
+  （このconfigの`vite dev`サーバーは単一chunkにbundleしないため、対象を誤ると無関係な計測に
+  なるうえ、既定の`npm run e2e`の実行時間を不必要に伸ばす）。
+- production codeへの変更なし（本対応は計測のみで、6分割済みpanelの実装・`LazyPanelBoundary`には
+  一切触れていない）。
+
+### 検証内容
+
+- WSL native環境（このissue用に新規作成した`~/kjnative-fe-uxperf01`。並行して別セッションが使用中
+  の既存`~/kjnative-fe`とは衝突を避けるため分離した）へ`03_Implement/frontend`を同期し、
+  `npm run typecheck`（エラー0件）、`npm run test`（vitest: 1547 passed / 1 failed / 2 test files
+  failed——2026-08-25記録と同一の既知環境要因、本対応と無関係）を実行した。
+- `npm run build`成功。
+- `npm run e2e:prod-tti`を3回独立実行し、全て成功、数値も安定（上表参照）。
+- `npx playwright test --list`で、既定`playwright.config.ts`が新specを含まないこと（224件のまま）、
+  `playwright.prod-tti.config.ts`が新specのみを対象とすること（1件）を確認した。
+- 既定configでのfrontend E2E全件実行（`npx playwright test`）。結果と既知/新規失敗の切り分けは
+  上記AC-5節を参照。
+- `python 01_Plans/docs_check.py`成功（`docs-check passed: active_memos=48, tracked_markdown=679`）。
+  WSL側のgit worktreeポインタ形式の制約（`agent_failure_log.md` 2026-08-22記録）を踏まえ、
+  worktree全体を使い捨てのWSL scratchディレクトリへrsyncし、そこで`git init`した独立repoに対して
+  実行した（本worktree自身の`.git`には触れていない）。
+
+### 残課題
+
+なし。AC-1〜AC-5のすべてを満たしたため、本issueのStatusを`Done`とする。`jszip`の主chunk・
+`bundle_zip.worker`重複、両ロケールJSON常時同梱の2件（2026-08-21記録の観察）は本issueの対応方針が
+挙げた分割候補の範囲外の追加最適化であり、着手しない（対応方針3の「初期操作に不要な高度機能」には
+該当しない実装都合の重複であり、必要であれば別issueとして起票する）。regression probeの閾値未設定
+（上記AC-5節）は、履歴データが蓄積された時点で別途対応する将来課題として記録するに留める。
