@@ -1,7 +1,7 @@
 # Issue: OPS-ADMIN-UX-01 管理APIを安全に扱う正式CLIと管理コンソールがない
 
 - Type: Operations / UX
-- Status: In Progress
+- Status: Done
 - Source Issue: 管理UI・CLI・利用者UIの協調モンキーテスト（2026-08-16）
 - Priority: P2
 - Owner: Maintainer
@@ -29,7 +29,7 @@
 - [x] 業務キーでは全管理commandが失敗し、管理キーは業務APIへ横滑りしない。
 - [x] CLIの無効tenant/model/重複入力は安定したcodeと非0終了で説明され、秘密値を表示しない。
 - [x] 管理変更が利用者APIと実ブラウザのモデル表示へ反映されるE2Eがある。
-- [ ] 管理コンソール採用時は利用者SPAへ管理credentialを保存・配送しない設計がADR化される。
+- [x] 管理コンソール採用時は利用者SPAへ管理credentialを保存・配送しない設計がADR化される。— 2026-08-26、`ADR-0079`がAccepted（D1=A、D2=A、D3=A）。
 
 ## 検出記録（2026-08-16）
 
@@ -71,3 +71,9 @@ Stage-B監査のtenant越境読取を`SEC-ADMIN-PLANE-04`で修正し、管理CL
 ## 第5対応記録（2026-08-25）
 
 AC-5（管理コンソール採用時のcredential分離設計のADR化）へ`ADR-0079`（Proposed）を起票した。管理コンソールという独立フロントエンド資産が`ADR-0072`の二段認可（bootstrap専用静的bearer／IdP登録後capability claim）をどう保持・伝送・破棄すべきかを、三要素牽制（ADR-0067）で検証し、D1=着手条件・D2=console自身の認証情報ライフサイクル・D3=bundle/origin/capability分離の3論点として整理した。推奨はD1=A（本ADR採択まで着手しない）・D2=A（静的bearerは一度限りの交換専用、consoleはbrowser storageへ書かない）・D3=A（別bundle・別origin）。採択判断はMaintainerに委ねるため、AC-5は`ADR-0079`のAccepted待ちとして未チェックのまま維持する。
+
+## 第6対応記録（2026-08-26・Done）
+
+`ADR-0079`がMaintainerによりAccepted（D1=A、D2=A、D3=A）となり、AC-5を完了とした。全5件のACが満たされたため`Status`を`Done`とする。
+
+Maintainerは同時に、**独立管理コンソール（Web UI）自体の構築には現時点では着手しない**という判断を示した（正式CLIで運用に支障はないため）。`ADR-0079`が定めたcredential分離設計は、将来コンソールを構築する際の拘束条件として有効であり続ける。コンソール構築に着手する場合は、本issueを再開するのではなく新規issueを起票し、`ADR-0079`への準拠を受入条件へ含めること。

@@ -53,7 +53,7 @@
 
 <h1>post-MVP 業務全体設計プログラム</h1>
 <p class="meta">
-  区分: 設計プログラム枠組み / 版: 第7版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見＋第5反復要求確定＋認可プリミティブADR化） / 作成: 2026-08-10 / 更新: 2026-08-25<br>
+  区分: 設計プログラム枠組み / 版: 第8版（枠組み＋第1〜第5反復＋「本来の第4反復」状況確認＋外部知見＋第5反復要求確定＋認可プリミティブADR化・Accepted） / 作成: 2026-08-10 / 更新: 2026-08-26<br>
   方法論: <code>ADR-0067</code> 三要素牽制設計法 / チェックリスト: <code>02_Architecture/three-element-constraint-checklist.html</code>
 </p>
 
@@ -886,7 +886,7 @@ stateDiagram-v2
   <thead><tr><th style="width:8%;">#</th><th style="width:52%;">要求</th><th>PGM-ITER-05-02の対応する発見</th></tr></thead>
   <tbody>
     <tr><td>1</td><td>組織間だけでなく、小規模の<strong>個人間</strong>利用もサポートする</td><td>Slackのゲストアカウント・Google Workspaceのvisitor sharing・Notionは、いずれも組織対組織ではなく個人単位の付与を基本とする</td></tr>
-    <tr><td>2</td><td>行政・企業等が、市民や外部協力者のような<strong>組織IdP外のユーザー</strong>を受け入れられる</td><td>Microsoft Entra B2B の「特定の外部ユーザーのみ許可」はIdP信頼を狭めるだけでIdP自体は必須のまま——要求2はこれを満たさない。IdPを一切要求しないGoogleのvisitor sharing・Notion・Slackゲストアカウントが対応する先例</td></tr>
+    <tr><td>2</td><td>行政・企業等が、市民や外部協力者のような<strong>受入先テナント自身の企業IdPに属さないユーザー</strong>を受け入れられる（<strong>2026-08-26補正</strong>: 受入先テナント自身のIdPは不要だが、ゲスト自身は何らかのIdP——自組織のIdPまたは汎用個人アカウント——を持つことを前提とする。「いかなるIdPも要求しない」ことまでは求めない）</td><td>Microsoft Entra B2B の「特定の外部ユーザーのみ許可」（ゲスト自身の所属組織IdPで認証）が主要な先例。Google/Notion/Slackのゲスト機構（IdP自体を要求しない、より緩い経路）は将来拡張の選択肢として`ADR-0080`が保留する</td></tr>
     <tr><td>3</td><td>組織IdP外ユーザーの受付可否を、<strong>テナント全体より詳細な単位</strong>で制御できる</td><td>Google Workspaceのtrust rulesは「検証済みドメイン全体」と「個人アドレスを含むグループ」を条件として選べる——テナント単位のon/offだけではない粒度の先例</td></tr>
     <tr><td>4</td><td><strong>既定は拒否</strong>。既定の共有対象ドキュメントは<strong>0件</strong></td><td>4製品いずれも、招待・許可の明示的な行為なしに何かが見える設計にはなっていない（§0結論表）——既定拒否・既定ゼロ件は本調査が確認した先例と整合する</td></tr>
   </tbody>
@@ -894,30 +894,31 @@ stateDiagram-v2
 </div>
 
 <p>
-  要求2は§15.1・§15.2が組み立てた分析の射程を超える——これまでの分析は「別テナントの<em>IdP</em>を
-  個人単位で信頼する」プリミティブを前提にしていたが、要求2は<strong>IdPそのものを持たない個人</strong>
-  （市民・外部協力者）を対象に含む。したがって次の反復が三要素分析すべき対象は、
-  「<code>tenant_identity_providers</code>の粒度を細かくする」ことではなく、
-  <strong>IdP認証を経由しない個人単位の招待・許可プリミティブそのものの新設</strong>である。
+  要求2は§15.1・§15.2が組み立てた分析の射程を超える——これまでの分析は「別テナントの<em>IdP全体</em>を
+  信頼する」プリミティブ（<code>tenant_identity_providers</code>の粒度を細かくする方向）を前提にしていたが、
+  要求2（2026-08-26補正後）が求めるのは<strong>受入先テナント自身のIdPとは独立に、ゲスト個人単位で
+  信頼を表現できるプリミティブ</strong>である。ゲスト自身が何らかのIdP（自組織のIdPまたは汎用個人
+  アカウント）を持つことは前提としてよい。したがって次の反復が三要素分析すべき対象は、
+  <strong>受入先テナントのIdP全体信頼から独立した、個人単位の招待・許可プリミティブそのものの新設</strong>である。
   この4要求を確定した受入条件として<code>issue-PGM-ITER-05-03</code>を起票する（本節を根拠として参照）。
   新しいプリミティブの設計そのもの（<code>AGENTS.md</code> §1.1の三要素牽制・ADR化）は本反復では着手しない。
 </p>
 
-<h2>19. 認可プリミティブの三要素分析・ADR化（2026-08-25）</h2>
+<h2>19. 認可プリミティブの三要素分析・ADR化（2026-08-25、2026-08-26 Accepted）</h2>
 
 <p>
   §18が引き継いだ「次の反復」を実行した。<code>issue-PGM-ITER-05-03</code>のAC-1・AC-2に従い、
-  IdP認証を経由しない個人単位の招待・許可プリミティブを、着工前チェックリスト
+  受入先テナントのIdP全体信頼から独立した個人単位の招待・許可プリミティブを、着工前チェックリスト
   （<code>three-element-constraint-checklist.html</code>）を通した三要素分析として実施し、
-  結果を<code>ADR-0080</code>（Proposed）へ起票した。
+  結果を<code>ADR-0080</code>へ起票した。2026-08-26、保守者により以下の補正を経てAcceptedとなった。
 </p>
 
 <div class="wrap">
 <table>
-  <thead><tr><th style="width:10%;">論点</th><th style="width:50%;">推奨</th><th>根拠</th></tr></thead>
+  <thead><tr><th style="width:10%;">論点</th><th style="width:50%;">採択内容</th><th>根拠</th></tr></thead>
   <tbody>
-    <tr><td>D1: ゲスト本人確認</td><td>単回・短命の署名付きリンク→<code>ADR-0074</code>型server-owned sessionへ交換</td><td>Notion・Googleのvisitor sharing先例。IdP必須の案は要求2に反するため却下</td></tr>
-    <tr><td>D2: 信頼レコードの形</td><td>新規<code>guest_invitations</code>・<code>guest_document_grants</code>の2テーブル。<code>tenant_identity_providers</code>とは独立</td><td><code>tenant_identity_providers</code>を流用する案は、要求2・3が指摘した粒度混在を別の場所で再生産するため却下</td></tr>
+    <tr><td>D1: ゲスト本人確認</td><td>単一方式ではなく多方式対応——A1: ゲスト自身の所属組織IdPへの連携（Microsoft Entra B2B型）、A2: 汎用個人アカウント（Google/Microsoft/GitHub等）。「いかなるIdPも要求しない」方式は不採用。いずれも<code>ADR-0074</code>型server-owned sessionへ交換</td><td>保守者指示による補正（原案は単回リンクのみを推奨）。要求2の文言も「受入先テナント自身のIdPは不要、ゲスト自身のIdPは前提」へ補正</td></tr>
+    <tr><td>D2: 信頼レコードの形</td><td>新規<code>guest_principals</code>（招待〜redeem〜失効の1ライフサイクル）・<code>guest_document_grants</code>の2テーブル。<code>tenant_identity_providers</code>とは独立。関数従属性再検査（<code>functional-dependency-integrity-2026-08-06.html</code>の枠組みを適用）により、原案の`guest_invitations`単独では「招待手続き」と「redeem後identity」の2つのFDが1テーブルへ混在する欠陥を発見し、1実体として統合・改称した</td><td><code>tenant_identity_providers</code>を流用する案は、要求2・3が指摘した粒度混在を別の場所で再生産するため却下。サロゲートキー`guest_principal_id`は、識別属性がpending時（email）とredeem後（issuer+subject）で変わるため必要と判断（`UserRow`/`UserIdentityRow`分離と同型の必要性）</td></tr>
     <tr><td>D3: 既定拒否・既定ゼロ件</td><td>一致する<code>guest_document_grants</code>行がある場合のみ許可する構造的deny-by-default</td><td>既存のtenant境界fail-closed方針（RLS等）と同型</td></tr>
     <tr><td>D4: 取り消しの独立性</td><td>招待した側のテナントが単独で状態遷移させ、ゲスト側の応答を待たない</td><td>Microsoft Entra B2Bの先例と一致</td></tr>
   </tbody>
@@ -925,9 +926,9 @@ stateDiagram-v2
 </div>
 
 <p>
-  三要素分析の詳細（各論点の選択肢・trade-off・Three-Element Verification表）は<code>ADR-0080</code>本体を正本とし、
-  本節では重複させない。着工（プリミティブの実装）は同ADRがMaintainerによりAcceptedとなった後に限る
-  （<code>issue-PGM-ITER-05-03</code>「実施しないこと」）。
+  三要素分析・関数従属性再検査の詳細（各論点の選択肢・trade-off・Three-Element Verification表・テーブル定義）は
+  <code>ADR-0080</code>本体を正本とし、本節では重複させない。着工（プリミティブの実装）はADR Acceptedにより解禁された
+  （<code>issue-PGM-ITER-05-03</code> AC-3・AC-4）。
 </p>
 
 <h2>Traceability</h2>

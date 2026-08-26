@@ -1,9 +1,14 @@
 # ADR-0079: 独立管理コンソールを採用する場合のcredential分離設計
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-25
+- Accepted: 2026-08-26（**D1=A / D2=A / D3=A**。保守者による明示承認。仮承認ではない）
 - Deciders: Maintainer
 - Scope: `03_Implement/frontend`（将来の管理コンソール、採用する場合）、`03_Implement/backend/src/kj_atlas_api/control_plane_auth.py`、`02_Architecture/enterprise_architecture.html`、`THREAT_MODEL.md`
+
+## 採択記録（2026-08-26）
+
+保守者の明示承認により Proposed → Accepted。採択内容は推奨どおり **D1=A / D2=A / D3=A**。管理コンソール自体の構築着手は本ADRとは別判断とし、現時点では見送る（`issue-OPS-ADMIN-UX-01`側に記録）。
 
 ## Context
 
@@ -75,7 +80,7 @@ D2=Bは理論上より安全に見えるが、`ADR-0072`が「D2=Aの実装は2�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-OPS-ADMIN-UX-01-first-class-admin-console-and-cli.md`（AC-5）
+- Implementation: `01_Plans/issues/done/issue-OPS-ADMIN-UX-01-first-class-admin-console-and-cli.md`（AC-5。Done）
 - Related: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`（D1=A+Bの二段。本ADRが前提とする）
 - Related: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 - Related: `02_Architecture/enterprise_architecture.html` §06（plane分離要求）
