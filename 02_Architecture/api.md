@@ -754,7 +754,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 **POST** `/admin/provision/models/providers` / **POST** `/admin/provision/models`
 
-- プロバイダ/モデルを**動的に登録**（control-plane 認可）。`apiKeyRef` は秘密管理キー参照のみ（平文のAPIキーを保存しない・ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
+- プロバイダ/モデルを**動的に登録**（control-plane 認可）。modelの`providerId`がrequest単位のtransportを決め、一覧表示と実行gateは同じprovider利用可否を用いる。`baseUrl`はtrusted HTTP endpoint契約（HTTPはloopbackのみ）に従う。`apiKeyRef` はprovider用途別の明示allowlistまたは`secret:`参照のみで、平文や他用途の環境変数を保存・解決しない（ADR-0035）。`capabilities` は `intermediate`/`final_judgement` 等のタグ。
 - 登録はinsert-only。同一IDの再登録はproviderを`409 provider_already_exists`、modelを`409 model_already_exists`で拒否し、既存rowを暗黙更新しない。起動時seedの冪等upsertとは別契約とする。
 - モデル無効化: `PATCH /admin/provision/models/{model_id}` で `lifecycleState: disabled`。無効モデルへの呼び出しは fail-closed。
 

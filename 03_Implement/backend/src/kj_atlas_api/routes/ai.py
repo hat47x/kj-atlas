@@ -17,9 +17,12 @@ from kj_atlas_api.llm.provider import (
     LLMRequest,
     ProviderDisabledError,
     ProviderRequestError,
+    RegisteredProviderConfig,
     build_audit_fields,
+    build_registered_provider,
     generate_with_fallback,
     get_provider,
+    registered_provider_available,
     resolve_model_for_task,
 )
 from kj_atlas_api.models_ai import (
@@ -78,22 +81,6 @@ from kj_atlas_api.tenant_session_precondition import (
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
-
-_PROVIDER_KIND_ALIASES = {
-    "local_http": "local",
-    "large_scale": "large-scale",
-    "external": "large-scale",
-}
-
-
-def _canonical_provider_kind(raw_kind: str) -> str:
-    normalized = raw_kind.strip().lower()
-    return _PROVIDER_KIND_ALIASES.get(normalized, normalized)
-
-
-def _provider_matches_runtime(provider_kind: str) -> bool:
-    return _canonical_provider_kind(provider_kind) == _canonical_provider_kind(get_provider().provider_kind)
-
 
 def _audit_llm_trace(
     request: Request,
@@ -161,7 +148,11 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
     )
 
 
-def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
+def _assert_model_allowed(
+    request: Request,
+    db: Session,
+    model_id: str,
+) -> RegisteredProviderConfig | None:
     """AI-MODEL-GOVERNANCE-01 R3 + AI-MODEL-GOVERNANCE-02: enforce the tenant
     model allowlist AND that the model is an active registered model.
 
@@ -208,7 +199,7 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
     # from "does not exist / disabled" (here) for operator triage.
     active_providers = [row for row in list_providers(db) if row.lifecycle_state == "active"]
     active_provider_ids = {row.id for row in active_providers}
-    runtime_provider_ids = {row.id for row in active_providers if _provider_matches_runtime(row.provider_kind)}
+    providers_by_id = {row.id: row for row in active_providers}
     models_by_id = {row.id: row for row in list_models(db)}
     active_registered_ids = {
         row.id
@@ -232,14 +223,25 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
         )
 
     model = models_by_id[model_id]
-    if model.provider_id not in runtime_provider_ids:
+    provider_row = providers_by_id[model.provider_id]
+    config = RegisteredProviderConfig(
+        provider_id=provider_row.id,
+        provider_kind=provider_row.provider_kind,
+        base_url=provider_row.base_url,
+        api_key_ref=provider_row.api_key_ref,
+        model_id=model.id,
+    )
+    try:
+        build_registered_provider(config)
+        return config
+    except ProviderRequestError:
         logger.warning(
             "model_provider_unavailable",
             extra={
                 "tenantId": tenant.tenant_id,
                 "modelId": model_id,
                 "providerId": model.provider_id,
-                "runtimeProviderKind": get_provider().provider_kind,
+                "registeredProviderKind": provider_row.provider_kind,
             },
         )
         raise HTTPException(
@@ -248,7 +250,7 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
                 "code": "model_provider_unavailable",
                 "message": "The model's registered provider is not available in this runtime.",
             },
-        )
+        ) from None
 
 
 def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> None:
@@ -919,11 +921,24 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
 
     tenant = _resolve_audit_tenant(request, db)
     active_models = [row for row in list_models(db) if row.lifecycle_state == "active"]
-    active_provider_ids = {
-        row.id
-        for row in list_providers(db)
-        if row.lifecycle_state == "active" and _provider_matches_runtime(row.provider_kind)
-    }
+    active_provider_ids = set()
+    for row in list_providers(db):
+        if row.lifecycle_state != "active":
+            continue
+        provider_models = [model for model in active_models if model.provider_id == row.id]
+        if any(
+            registered_provider_available(
+                RegisteredProviderConfig(
+                    provider_id=row.id,
+                    provider_kind=row.provider_kind,
+                    base_url=row.base_url,
+                    api_key_ref=row.api_key_ref,
+                    model_id=model.id,
+                )
+            )
+            for model in provider_models
+        ):
+            active_provider_ids.add(row.id)
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
     runtime_models = [row for row in active_models if row.provider_id in active_provider_ids]
     allowed = runtime_models
@@ -1039,13 +1054,15 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_island_summary"))
+    model_id = payload.model or resolve_model_for_task("suggest_island_summary")
+    provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
                 prompt=_build_island_summary_prompt(payload),
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -1185,14 +1202,16 @@ def propose_opposing_viewpoint(
     if next((card for card in payload.doc.cards if card.id == payload.targetCardId), None) is None:
         raise HTTPException(status_code=422, detail="targetCardId does not exist")
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("propose_opposing_viewpoint"))
+    model_id = payload.model or resolve_model_for_task("propose_opposing_viewpoint")
+    provider_config = _assert_model_allowed(request, db, model_id)
 
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="propose_opposing_viewpoint",
                 prompt=_build_opposing_viewpoint_prompt(payload),
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -1476,13 +1495,15 @@ def get_proposal_status(
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("generate_narrative"))
+    model_id = payload.model or resolve_model_for_task("generate_narrative")
+    provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
                 prompt=_build_generate_narrative_prompt(payload),
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -1605,14 +1626,16 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
     _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
+    model_id = payload.model or resolve_model_for_task("refine_card_text")
+    provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="refine_card_text",
                 prompt=_build_refine_card_text_prompt(payload),
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -1630,14 +1653,16 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
     _reject_unreviewed_cards(payload.cards, payload.allowUnreviewedText)
+    model_id = payload.model or resolve_model_for_task("suggest_card_groups")
+    provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_card_groups",
                 prompt=_build_suggest_card_groups_prompt(payload),
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -1678,8 +1703,9 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
     _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
+    model_id = payload.model or resolve_model_for_task("suggest_document_title")
+    provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
@@ -1687,7 +1713,8 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Reques
                 prompt=_build_suggest_document_title_prompt(payload),
                 temperature=0.4,
                 max_tokens=300,
-                model=payload.model,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:

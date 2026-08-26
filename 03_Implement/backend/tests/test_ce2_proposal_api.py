@@ -47,7 +47,15 @@ def sqlite_client(tmp_path) -> Iterator[tuple[TestClient, sessionmaker]]:
                 # AI-MODEL-GOVERNANCE-02: the proposal route resolves the default
                 # model and _assert_model_allowed now requires an active registered
                 # model, so register the provider + default model (as env seed does).
-                register_provider(db, provider_id="local", provider_kind="local", display_name="Local LLM (test)", base_url=None, api_key_ref=None, occurred_at="2026-08-11T00:00:00Z")
+                register_provider(
+                    db,
+                    provider_id="local",
+                    provider_kind="local",
+                    display_name="Local LLM (test)",
+                    base_url="http://127.0.0.1:11434",
+                    api_key_ref=None,
+                    occurred_at="2026-08-11T00:00:00Z",
+                )
                 register_model(db, model_id="default", provider_id="local", display_name="default", capabilities="intermediate,generate", occurred_at="2026-08-11T00:00:00Z")
                 db.commit()
                 db.add(

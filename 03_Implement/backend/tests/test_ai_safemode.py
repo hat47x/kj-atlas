@@ -12,6 +12,12 @@ from kj_atlas_api.routes import ai
 from kj_atlas_api.settings import settings
 
 
+@pytest.fixture(autouse=True)
+def _isolate_safemode_from_model_governance(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This module exercises content-release gates, not registry availability."""
+    monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: None)
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _app_db_schema() -> None:
     """Ensure the shared SQLite DB has the full app schema AND the default

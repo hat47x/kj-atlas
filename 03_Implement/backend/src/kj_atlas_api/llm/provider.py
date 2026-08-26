@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import re
 import socket
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from urllib import error, request
 from uuid import uuid4
 
 from kj_atlas_api.settings import settings
+from kj_atlas_api.settings import _validate_trusted_http_endpoint
 from kj_atlas_api.trusted_http import open_trusted_http
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,17 @@ def reset_llm_call_counts() -> None:
     _LLM_TOKEN_USAGE.clear()
 
 
+@dataclass(frozen=True, slots=True)
+class RegisteredProviderConfig:
+    """Non-secret registry projection used to select one request transport."""
+
+    provider_id: str
+    provider_kind: str
+    base_url: str | None
+    api_key_ref: str | None
+    model_id: str
+
+
 @dataclass(frozen=True)
 class LLMRequest:
     task: str
@@ -80,6 +93,9 @@ class LLMRequest:
     max_tokens: int = 2000
     # ADR-0065: optional model override (highest priority).
     model: str | None = None
+    # AI-MODEL-GOVERNANCE-03: server-resolved registry dispatch target. This is
+    # internal-only and contains a credential reference, never the secret.
+    registered_provider: RegisteredProviderConfig | None = None
 
 
 # AI-ROUTE-01 MMR-01: tasks that are pure transformation (never a human
@@ -583,6 +599,184 @@ class DeepSeekProvider:
         )
 
 
+class RegisteredHTTPProvider:
+    """Registry-bound local/large-scale provider for a single model."""
+
+    def __init__(self, config: RegisteredProviderConfig, *, provider_kind: str) -> None:
+        self.provider_name = config.provider_id
+        self.provider_kind = provider_kind
+        self._base_url = config.base_url
+        self._model_id = config.model_id
+
+    def generate(self, req: LLMRequest) -> LLMResponse:
+        return _generate_via_http(
+            req,
+            base_url=self._base_url,
+            model_id=self._model_id,
+            provider_kind=self.provider_kind,
+            provider_name=self.provider_name,
+            missing_base_url_message="Registered provider destination is unavailable",
+            missing_model_message="Registered provider model is unavailable",
+        )
+
+
+class RegisteredDeepSeekProvider:
+    """Registry-bound DeepSeek transport without persisting or exposing its key."""
+
+    provider_kind = "deepseek"
+
+    def __init__(self, config: RegisteredProviderConfig, *, api_key: str) -> None:
+        self.provider_name = config.provider_id
+        self._base_url = config.base_url
+        self._model_id = config.model_id
+        self._api_key = api_key
+
+    def generate(self, req: LLMRequest) -> LLMResponse:
+        if not self._base_url:
+            metadata = _new_metadata(
+                provider_kind=self.provider_kind,
+                provider_name=self.provider_name,
+                model_id=self._model_id,
+                transport="http",
+            )
+            raise ProviderRequestError.unavailable(
+                "Registered provider destination is unavailable",
+                metadata,
+            )
+        return _generate_via_openai_chat(
+            req,
+            base_url=self._base_url,
+            model_id=self._model_id,
+            api_key=self._api_key,
+            provider_name=self.provider_name,
+            provider_kind=self.provider_kind,
+        )
+
+
+_REGISTERED_PROVIDER_KIND_ALIASES = {
+    "local_http": "local",
+    "large_scale": "large-scale",
+    "external": "large-scale",
+}
+_REGISTERED_ENV_API_KEY_REFS = frozenset({"KJ_ATLAS_DEEPSEEK_API_KEY"})
+
+
+def canonical_registered_provider_kind(raw_kind: str) -> str:
+    normalized = raw_kind.strip().lower()
+    return _REGISTERED_PROVIDER_KIND_ALIASES.get(normalized, normalized)
+
+
+def registered_api_key_ref_supported(api_key_ref: str | None) -> bool:
+    return (
+        api_key_ref is None
+        or api_key_ref in _REGISTERED_ENV_API_KEY_REFS
+        or bool(api_key_ref.startswith("secret:"))
+    )
+
+
+def _resolve_registered_api_key(api_key_ref: str | None) -> str | None:
+    if (
+        api_key_ref is None
+        or api_key_ref.startswith("secret:")
+        or api_key_ref not in _REGISTERED_ENV_API_KEY_REFS
+    ):
+        # Secret-manager integration is deliberately not guessed. Until an
+        # adapter is configured, a secret: reference remains unavailable.
+        return None
+    value = os.environ.get(api_key_ref)
+    if value is None and api_key_ref == "KJ_ATLAS_DEEPSEEK_API_KEY":
+        # Pydantic settings may have loaded this from an env file before a test
+        # or embedding host normalised process.environ.
+        value = settings.deepseek_api_key
+    if (
+        value is None
+        or not value
+        or any(character.isspace() for character in value)
+        or any(not character.isprintable() for character in value)
+    ):
+        return None
+    return value
+
+
+def build_registered_provider(config: RegisteredProviderConfig) -> LLMProvider:
+    """Resolve registry providerId -> transport, failing closed on bad config."""
+    kind = canonical_registered_provider_kind(config.provider_kind)
+    base_url = config.base_url
+    if base_url is None and kind == "local" and canonical_registered_provider_kind(
+        settings.llm_provider
+    ) == "local":
+        base_url = settings.local_llm_base_url
+    if base_url is None and kind == "deepseek" and canonical_registered_provider_kind(
+        settings.llm_provider
+    ) == "deepseek":
+        base_url = settings.deepseek_base_url
+    effective_config = RegisteredProviderConfig(
+        provider_id=config.provider_id,
+        provider_kind=config.provider_kind,
+        base_url=base_url,
+        api_key_ref=config.api_key_ref,
+        model_id=config.model_id,
+    )
+    metadata = _new_metadata(
+        provider_kind=kind or "unknown",
+        provider_name=config.provider_id,
+        model_id=config.model_id,
+        transport="none" if kind not in {"local", "large-scale", "deepseek"} else "http",
+    )
+    if kind not in {"local", "large-scale", "deepseek"}:
+        raise ProviderRequestError.unavailable(
+            "Registered provider kind is unsupported",
+            metadata,
+        )
+    if base_url is None:
+        raise ProviderRequestError.unavailable(
+            "Registered provider destination is unavailable",
+            metadata,
+        )
+    try:
+        _validate_trusted_http_endpoint(
+            endpoint=base_url,
+            endpoint_key="registered provider base URL",
+        )
+    except ValueError:
+        raise ProviderRequestError.unavailable(
+            "Registered provider destination is unavailable",
+            metadata,
+        ) from None
+
+    if kind == "deepseek":
+        api_key = _resolve_registered_api_key(config.api_key_ref)
+        if api_key is None:
+            raise ProviderRequestError.unavailable(
+                "Registered provider credential is unavailable",
+                metadata,
+            )
+        return RegisteredDeepSeekProvider(effective_config, api_key=api_key)
+
+    if kind == "large-scale":
+        if not settings.llm_large_scale_opt_in or not settings.llm_escalation_enabled:
+            raise ProviderRequestError.unavailable(
+                "Registered large-scale provider is disabled by policy",
+                metadata,
+            )
+        hostname = (urlparse(base_url).hostname or "").lower()
+        if hostname not in _normalize_allowlist(settings.large_scale_llm_allowlist):
+            raise ProviderRequestError.unavailable(
+                "Registered large-scale destination is not allowlisted",
+                metadata,
+            )
+
+    return RegisteredHTTPProvider(effective_config, provider_kind=kind)
+
+
+def registered_provider_available(config: RegisteredProviderConfig) -> bool:
+    try:
+        build_registered_provider(config)
+    except ProviderRequestError:
+        return False
+    return True
+
+
 def _generate_via_openai_chat(
     req: LLMRequest,
     *,
@@ -832,8 +1026,16 @@ def get_provider() -> LLMProvider:
     return _DEFAULT_REGISTRY.resolve(settings.llm_provider)
 
 
-def generate_with_fallback(req: LLMRequest) -> LLMResponse:
-    provider = get_provider()
+def generate_with_fallback(
+    req: LLMRequest,
+    *,
+    provider: LLMProvider | None = None,
+) -> LLMResponse:
+    provider = provider or (
+        build_registered_provider(req.registered_provider)
+        if req.registered_provider is not None
+        else get_provider()
+    )
     # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
     # operator can see external (large-scale) call volume; counting the attempt
     # (before any provider error) is what cost control needs. Token usage is

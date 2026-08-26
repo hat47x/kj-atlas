@@ -788,3 +788,30 @@ Updated: 2026-08-03
 - 原因: いずれもCPU負荷に敏感な処理（axe-core解析、long-task計測）に対する時間閾値assertで、既定の並列worker数（CPUコア数依存）でフルsuiteを流した際のCPU競合によるものと判断した。`inquiry_bundle_capacity_budget.spec.ts`自身も`MAX_PARALLEL_CI_LONG_TASK_MS`というコメント付き定数で「並列実行時は緩めの閾値を使う」設計を明示しており、単発の並列競合flakeは想定済みの挙動である。本PRのdiff（新規e2e spec 1本 + config 2件の`testIgnore`/`testMatch`追加 + issue/agent_failure_log更新のみ、production codeへの変更なし）はこの2specの対象コードに触れていない。
 - 対応: 両ファイルを`--workers=1`で単独再実行し、11件（`a11y_axe_smoke.spec.ts`10件 + `inquiry_bundle_capacity_budget.spec.ts`1件）全件成功を確認した。並列競合flakeであり、本PRによる回帰ではないと判断した。
 - 再発防止: フルsuiteの並列実行で、既知13件のリスト以外の失敗が出た場合は、即座に回帰と断定せず、まず対象specだけ`--workers=1`で単独再実行して切り分ける。axe-core解析やlong-task計測など時間閾値を持つspecは、並列CPU競合による単発flakeの可能性を優先的に疑う。
+## 2026-08-26: model governance一覧テストが配送先未設定providerを利用可能と仮定
+
+- 事象: registry providerIdによる動的dispatch追加後、`available-models`関連3件が空一覧／`provider_unavailable`となった。
+- 原因: 旧テストは`baseUrl`のないlocal providerを登録しながら利用可能モデルとして期待しており、AI-MODEL-GOVERNANCE-03の「設定不足providerは有効化しない」受入条件と矛盾していた。
+- 対応: 利用可能性を検証する3テストへ明示的なloopback `baseUrl`を追加し、未設定時のfail-closed実装は維持した。
+- 再発防止: provider availabilityの正例fixtureは配送先と必要credential参照を必須入力とし、設定不足は負例として分離する。
+- 追記: 後続のproposal統合試験でも同じ旧fixtureにより2件が503となったため、`test_ai_oppose.py`と`test_ce2_proposal_api.py`のlocal providerにもloopback `baseUrl`を明示し、17件全件成功を確認した。
+## 2026-08-26: 同形のprovider登録を誤って別テストだけ更新
+
+- 事象: 設定不足fixture修正後の再試験で、`test_available_models_reflects_tenant_allowlist`だけ同じ失敗が残った。
+- 原因: 一行形式の同形登録が複数あり、文脈の狭いpatchが別テストの登録へ一致して対象箇所を更新できていなかった。
+- 対応: 対象test関数名を含む文脈でpatchし、該当登録へloopback `baseUrl`を追加した。
+- 再発防止: 重複fixtureの機械修正は変更後に対象関数周辺を直接再表示し、意図した出現箇所を確認する。
+
+## 2026-08-26: model governance変更がSafeMode・AI評価テストの責務へ侵入
+
+- 事象: model registryから実providerを解決する変更後、SafeMode・AI評価・provider statusの回帰試験で15件が、本来期待する422／mock成功ではなく`model_provider_unavailable`の503となった。
+- 原因: 非governanceテストが共有DBとprocess-wide provider設定へ暗黙依存し、route側も解決済みproviderを`generate_with_fallback`の追加keyword引数で渡したため、既存の一引数stub契約を壊していた。
+- 対応: 登録provider設定を`LLMRequest`へ保持して生成関数内部で解決し、一引数stubとの互換性を維持した。SafeMode・評価テストはmodel gateを明示的に隔離し、未レビュー本文の拒否をprovider解決より先に実施した。
+- 再発防止: 認証・content gate・model governance・transportの横断境界は各suiteで対象外の境界を明示的にstubし、生成関数の呼出形状を変更する場合は全stub利用箇所を先に検索する。
+
+## 2026-08-26: pytest終了時にcapture用一時ファイルが消失
+
+- 事象: Ruff成功後にAI route 3 suiteを通常captureで実行すると、試験終了時の`tmpfile.truncate()`が`FileNotFoundError`となり、結果集計前にpytest自体が終了コード1となった。
+- 原因: 実行環境の共有一時領域でpytest capture用ファイルが試験中に消失した。テストassertionの失敗ではなくpytest後処理の障害だった。
+- 対応: 専用`TMPDIR`を作成し、`-s`でcaptureを無効化して同じ35件を再実行し、全件成功を確認した。
+- 再発防止: pytestがcapture後処理で一時ファイル消失を報告した場合は、対象suiteを専用`TMPDIR`かつ`-s`で再実行し、テスト失敗と実行基盤障害を切り分ける。

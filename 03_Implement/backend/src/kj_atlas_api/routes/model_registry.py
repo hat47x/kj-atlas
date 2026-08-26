@@ -20,6 +20,10 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.control_plane_auth import require_control_plane_authorization
 from kj_atlas_api.db import get_db
+from kj_atlas_api.llm.provider import (
+    canonical_registered_provider_kind,
+    registered_api_key_ref_supported,
+)
 from kj_atlas_api.model_registry_repository import (
     create_model as persist_new_model,
     create_provider as persist_new_provider,
@@ -30,6 +34,7 @@ from kj_atlas_api.model_registry_repository import (
     set_tenant_model_allowlist,
 )
 from kj_atlas_api.models import TenantRow
+from kj_atlas_api.settings import _validate_trusted_http_endpoint
 
 router = APIRouter(
     prefix="/admin/provision/models",
@@ -54,20 +59,49 @@ class RegisterProviderRequest(BaseModel):
     # Reference only (env var / secret-manager key), never a plaintext value.
     apiKeyRef: str | None = Field(default=None, max_length=256)
 
+    @field_validator("providerKind")
+    @classmethod
+    def _provider_kind_must_be_supported(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if canonical_registered_provider_kind(normalized) not in {
+            "local",
+            "large-scale",
+            "deepseek",
+        }:
+            raise ValueError("providerKind is not supported")
+        return normalized
+
+    @field_validator("baseUrl")
+    @classmethod
+    def _base_url_must_be_trusted(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        try:
+            _validate_trusted_http_endpoint(
+                endpoint=value,
+                endpoint_key="baseUrl",
+            )
+        except ValueError:
+            raise ValueError("baseUrl is not a trusted HTTP endpoint") from None
+        return value
+
     @field_validator("apiKeyRef")
     @classmethod
     def _api_key_ref_must_be_a_reference(cls, v: str | None) -> str | None:
         """AI-MODEL-GOVERNANCE-03 AC-4: apiKeyRef must be a reference to an
-        allowlisted `KJ_ATLAS_*` env var or a `secret:` secret-manager key --
+        explicitly allowlisted env var or a `secret:` secret-manager key --
         never an arbitrary env-var name or a plaintext secret. This keeps
         plaintext keys out of the registry column (DB), so they cannot leak to
         API/logs/audit downstream."""
         if v is None:
             return v
-        if re.fullmatch(r"KJ_ATLAS_[A-Z][A-Z0-9_]*", v) or re.fullmatch(r"secret:[A-Za-z0-9._/:-]+", v):
+        if registered_api_key_ref_supported(v) and (
+            v == "KJ_ATLAS_DEEPSEEK_API_KEY"
+            or re.fullmatch(r"secret:[A-Za-z0-9._/:-]+", v)
+        ):
             return v
         raise ValueError(
-            "apiKeyRef must reference an allowlisted KJ_ATLAS_* env var or a "
+            "apiKeyRef must reference an explicitly allowlisted provider key or a "
             "'secret:' secret-manager key -- never a plaintext key"
         )
 

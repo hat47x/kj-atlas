@@ -1,7 +1,7 @@
 # Issue: AI-MODEL-GOVERNANCE-03 モデルregistryのproviderIdが実行transport選択に使われない
 
 - Type: Correctness / Security
-- Status: Open
+- Status: Done
 - Source Issue: `AI-MODEL-GOVERNANCE-01`横断モンキーテスト（2026-08-16）
 - Priority: P1
 - Owner: Maintainer
@@ -29,7 +29,7 @@
 - [x] 利用者画面に表示されたmodelは、同一session・同一tenant条件で実行前gateを通る。
 - [x] `none`または設定不足provider配下のmodelは実行操作を有効化しない。
 - [x] `apiKeyRef`の秘密値をDB・API・ログ・監査へ出さない。
-- [ ] DeepSeek/localの2providerを同時登録した統合testで正しいtransport選択と不一致拒否を固定する。
+- [x] DeepSeek/localの2providerを同時登録した統合testで正しいtransport選択と不一致拒否を固定する。
 
 ## 検出記録（2026-08-16）
 
@@ -57,3 +57,13 @@
 - **テスト**: `test_provider_api_key_ref_rejects_plaintext_at_registration` を追加 — 平文secret 422・任意env名 422・`KJ_ATLAS_*` 201・`secret:...` 201 を固定。`test_model_governance.py` **16/16 pass**・admin ops E2E **20/20 pass**（CLI provider登録の非後退を確認）。
 
 **残るAC-5**: DeepSeek/local 2-providerの同時登録で正しいtransport選択と不一致拒否を固定する統合テスト。動的dispatchの本実装（registry providerId → transport factory）と併せて並行編集者（モデルガバナンス当事者）との整合を要する。
+
+なお、この時点の`KJ_ATLAS_*` prefix許可は、実際に参照を解決するAC-5実装時に用途外secretへ到達し得ると判明した。最終仕様では`SEC-AI-PROVIDER-CREDENTIAL-01`により明示allowlistへ置き換えている。
+
+## 対応記録4（2026-08-26・AC-5完了）
+
+modelの`providerId`からactive provider rowを解決し、request単位でlocal／DeepSeek／large-scale transportを構築する動的dispatchを実装した。`/ai/available-models`と実行前gateは同じregistry設定（lifecycle、tenant allowlist、base URL、credential参照、large-scale policy）から利用可否を判定する。process-wide `KJ_ATLAS_LLM_PROVIDER`はenv seedと後方互換の既定経路に残るが、registry modelの配送先選択には使わない。
+
+統合testではprocess既定を`none`にしたままlocalとDeepSeekを同時登録し、両modelが一覧へ現れ、local modelだけがloopback `/generate`へ、DeepSeek modelだけがOpenAI互換 `/v1/chat/completions`へ送られることを固定した。別providerのmodel ID・credentialが混線しないこともrequest payload／Authorization headerで確認した。
+
+実装中に検出した配送先登録境界とcredential参照allowlistの不備は、`SEC-AI-PROVIDER-DEST-01`および`SEC-AI-PROVIDER-CREDENTIAL-01`として別起票し、同時に修正した。

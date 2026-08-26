@@ -31,6 +31,12 @@ from kj_atlas_api.routes import ai
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ai_eval_kj_document.json"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_eval_pipeline_from_model_governance(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This module exercises evaluation plumbing, not registry availability."""
+    monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: None)
+
+
 def _stub_metadata() -> LLMCallMetadata:
     return LLMCallMetadata(
         provider_kind="deepseek",

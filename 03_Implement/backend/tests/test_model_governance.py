@@ -7,6 +7,8 @@ surface.
 
 from __future__ import annotations
 
+import io
+import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -150,6 +152,14 @@ def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkey
         resp = client.post(
             "/admin/provision/models/providers",
             json={**base, "apiKeyRef": "MY_RANDOM_API_KEY"},
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert resp.status_code == 422, resp.text
+        # A different KJ_ATLAS secret is still forbidden: prefix matching must
+        # never let a model provider retrieve the control-plane credential.
+        resp = client.post(
+            "/admin/provision/models/providers",
+            json={**base, "apiKeyRef": "KJ_ATLAS_ADMIN_API_KEY"},
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 422, resp.text
@@ -483,7 +493,16 @@ def test_allowlist_enforced_on_ai_route(tmp_path, monkeypatch) -> None:
 
     with _client(tmp_path) as (client, _session_local):
         admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers=admin_headers)
+        client.post(
+            "/admin/provision/models/providers",
+            json={
+                "id": "p",
+                "providerKind": "local",
+                "displayName": "P",
+                "baseUrl": "http://127.0.0.1:11434",
+            },
+            headers=admin_headers,
+        )
         for model_id in ("m1", "m2"):
             client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers=admin_headers)
         initial_revision = client.get(
@@ -588,7 +607,16 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
 
     with _client(tmp_path) as (client, _session_local):
         admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers=admin_headers)
+        client.post(
+            "/admin/provision/models/providers",
+            json={
+                "id": "p",
+                "providerKind": "local",
+                "displayName": "P",
+                "baseUrl": "http://127.0.0.1:11434",
+            },
+            headers=admin_headers,
+        )
         for model_id, state in (("m1", "active"), ("m2", "active"), ("m3", "disabled")):
             client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers=admin_headers)
         client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers=admin_headers)
@@ -632,7 +660,12 @@ def test_available_models_explains_tenant_policy_and_selectable_capability(tmp_p
         admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
         client.post(
             "/admin/provision/models/providers",
-            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            json={
+                "id": "p",
+                "providerKind": "local",
+                "displayName": "P",
+                "baseUrl": "http://127.0.0.1:11434",
+            },
             headers=admin_headers,
         )
         for model_id, capabilities in (
@@ -695,7 +728,16 @@ def test_available_models_excludes_final_judgement_only(tmp_path, monkeypatch) -
     monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        client.post(
+            "/admin/provision/models/providers",
+            json={
+                "id": "p",
+                "providerKind": "local",
+                "displayName": "P",
+                "baseUrl": "http://127.0.0.1:11434",
+            },
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
         for model_id, caps in (
             ("intermediate-model", "intermediate,generate"),
             ("judgement-only", "final_judgement"),
@@ -767,3 +809,166 @@ def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> N
             "code": "model_provider_unavailable",
             "message": "The model's registered provider is not available in this runtime.",
         }
+
+
+def test_registered_local_and_deepseek_models_dispatch_to_their_own_transports(
+    tmp_path, monkeypatch
+) -> None:
+    """AI-MODEL-GOVERNANCE-03 AC-5: providerId selects transport per model."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "none")
+    monkeypatch.setattr(settings, "llm_fallback_to_none", False)
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "integration-secret")
+
+    destinations: list[tuple[str, str, str | None]] = []
+
+    class _Response:
+        def __init__(self, body: dict[str, object]) -> None:
+            self._body = io.BytesIO(json.dumps(body).encode("utf-8"))
+
+        def read(self, size: int = -1) -> bytes:
+            return self._body.read(size)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def _fake_http(req, timeout_seconds):  # noqa: ANN001
+        payload = json.loads(req.data.decode("utf-8"))
+        destinations.append(
+            (req.full_url, payload["model"], req.headers.get("Authorization"))
+        )
+        if req.full_url == "http://127.0.0.1:11434/generate":
+            return _Response(
+                {"text": '{"refinedText":"local result","reasoning":"ok"}'}
+            )
+        if req.full_url == "https://api.deepseek.example/v1/chat/completions":
+            return _Response(
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": '{"refinedText":"deepseek result","reasoning":"ok"}'
+                            }
+                        }
+                    ]
+                }
+            )
+        raise AssertionError(f"unexpected destination: {req.full_url}")
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_http)
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        for provider in (
+            {
+                "id": "local-a",
+                "providerKind": "local",
+                "displayName": "Local A",
+                "baseUrl": "http://127.0.0.1:11434",
+            },
+            {
+                "id": "deepseek-a",
+                "providerKind": "deepseek",
+                "displayName": "DeepSeek A",
+                "baseUrl": "https://api.deepseek.example",
+                "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY",
+            },
+        ):
+            response = client.post(
+                "/admin/provision/models/providers",
+                json=provider,
+                headers=admin_headers,
+            )
+            assert response.status_code == 201, response.text
+        for model_id, provider_id in (
+            ("local-model", "local-a"),
+            ("deepseek-model", "deepseek-a"),
+        ):
+            response = client.post(
+                "/admin/provision/models",
+                json={
+                    "id": model_id,
+                    "providerId": provider_id,
+                    "displayName": model_id,
+                    "capabilities": "intermediate,generate",
+                },
+                headers=admin_headers,
+            )
+            assert response.status_code == 201, response.text
+
+        available = client.get(
+            "/ai/available-models",
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert available.status_code == 200
+        assert {item["id"] for item in available.json()["models"]} == {
+            "local-model",
+            "deepseek-model",
+        }
+
+        for model_id, expected_text in (
+            ("local-model", "local result"),
+            ("deepseek-model", "deepseek result"),
+        ):
+            response = client.post(
+                "/ai/refine-card-text",
+                json={
+                    "cardText": "alpha",
+                    "textReviewed": True,
+                    "model": model_id,
+                },
+                headers={"X-API-Key": _BUSINESS_KEY},
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["refinedText"] == expected_text
+
+    assert destinations == [
+        ("http://127.0.0.1:11434/generate", "local-model", None),
+        (
+            "https://api.deepseek.example/v1/chat/completions",
+            "deepseek-model",
+            "Bearer integration-secret",
+        ),
+    ]
+
+
+def test_provider_registration_rejects_unsafe_destination_and_unknown_kind(
+    tmp_path, monkeypatch
+) -> None:
+    """SEC-AI-PROVIDER-DEST-01: registry values cannot create a new SSRF sink."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+
+    with _client(tmp_path) as (client, session_local):
+        unsafe = "http://169.254.169.254/latest"
+        response = client.post(
+            "/admin/provision/models/providers",
+            json={
+                "id": "unsafe",
+                "providerKind": "local",
+                "displayName": "Unsafe",
+                "baseUrl": unsafe,
+            },
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert response.status_code == 422
+        assert unsafe not in response.text
+
+        response = client.post(
+            "/admin/provision/models/providers",
+            json={
+                "id": "unknown",
+                "providerKind": "shell",
+                "displayName": "Unknown",
+            },
+            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+        )
+        assert response.status_code == 422
+
+        with session_local() as db:  # type: ignore[attr-defined]
+            assert db.get(LLMProviderRegistryRow, "unsafe") is None
+            assert db.get(LLMProviderRegistryRow, "unknown") is None

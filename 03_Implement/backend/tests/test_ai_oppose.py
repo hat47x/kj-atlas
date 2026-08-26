@@ -56,7 +56,15 @@ def _client(tmp_path) -> Iterator[TestClient]:
         # _assert_model_allowed now requires an active registered model, so the
         # fixture must register the provider + default model (as the env seed
         # does in production).
-        register_provider(db, provider_id="local", provider_kind="local", display_name="Local LLM (test)", base_url=None, api_key_ref=None, occurred_at=_NOW)
+        register_provider(
+            db,
+            provider_id="local",
+            provider_kind="local",
+            display_name="Local LLM (test)",
+            base_url="http://127.0.0.1:11434",
+            api_key_ref=None,
+            occurred_at=_NOW,
+        )
         register_model(db, model_id="default", provider_id="local", display_name="default", capabilities="intermediate,generate", occurred_at=_NOW)
         db.commit()
 
