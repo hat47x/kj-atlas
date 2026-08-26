@@ -228,9 +228,23 @@ def put_tenant_allowlist(
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     _require_active_tenant(db, tenant_id=tenant_id, lock_for_update=True)
+    if payload.expectedRevision is None:
+        # AC-4 (OPS-ADMIN-CONCURRENCY-01): the compatibility window for an
+        # unconditional PUT is over (Maintainer decision, 2026-08-26) -- a
+        # direct API caller must tell us what revision it read, exactly like
+        # inquiry_bundles.py's PUT/DELETE require If-Match. Without this, a
+        # caller that skips expectedRevision would silently reintroduce the
+        # lost-update race the row lock + revision check exist to close.
+        raise HTTPException(
+            status_code=428,
+            detail={
+                "code": "model_allowlist_expected_revision_required",
+                "message": "expectedRevision is required to update the tenant model allowlist.",
+            },
+        )
     current_model_ids = sorted(list_tenant_allowed_model_ids(db, tenant_id=tenant_id))
     current_revision = _allowlist_revision(current_model_ids)
-    if payload.expectedRevision is not None and payload.expectedRevision != current_revision:
+    if payload.expectedRevision != current_revision:
         raise HTTPException(
             status_code=409,
             detail={
