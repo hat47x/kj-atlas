@@ -16,22 +16,39 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import pytest
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from starlette.requests import Request
 
+from kj_atlas_api.access_control import AuthContext
+from kj_atlas_api.auth_context import ResolvedIdentity, resolve_identity_context
+from kj_atlas_api.control_plane_auth import (
+    ADMIN_API_KEY_HEADER,
+    require_control_plane_authorization,
+)
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
 from kj_atlas_api.observability import (
+    ACTOR_REF_HASH_LENGTH,
     REQUEST_ID_HEADER,
     JsonLogFormatter,
     RequestIdFilter,
+    actor_ref_hash_var,
+    bind_actor_ref_hash,
+    compute_actor_ref_hash,
     configure_logging,
     request_id_var,
     resolve_inbound_request_id,
 )
+from kj_atlas_api.session_context import CapabilitySnapshot
 from kj_atlas_api.settings import Settings, settings
+from kj_atlas_api.tenant_context import select_active_tenant_context
+from kj_atlas_api.tenant_session_precondition import require_tenant_scoped_api_precondition
+
+_SEED_TIMESTAMP = "2026-08-26T00:00:00Z"
 
 
 @contextmanager
@@ -201,6 +218,364 @@ def test_unauthorized_body_carries_the_request_id(tmp_path, monkeypatch) -> None
         resp = client.get("/docs/anything")
     assert resp.status_code == 401
     assert resp.json()["requestId"] == resp.headers[REQUEST_ID_HEADER]
+
+
+# ---------------------------------------------------------------------------
+# Actor pseudo-identifier (残作業, decided 2026-08-26): a one-way fingerprint of
+# the acting principal, attached to logs the same way requestId is. The audit
+# trail already has this (SEC-ADMIN-PLANE-03's actorRefHash); this is that same
+# computation, reused, for the general log stream.
+# ---------------------------------------------------------------------------
+
+
+def test_compute_actor_ref_hash_is_stable_and_opaque() -> None:
+    """Same principal -> same hash, every time -- this is what makes
+    "these log lines are the same actor" correlation possible at all."""
+    first = compute_actor_ref_hash("user-123")
+    second = compute_actor_ref_hash("user-123")
+    assert first == second
+    assert first is not None
+    assert len(first) == ACTOR_REF_HASH_LENGTH
+    assert all(character in "0123456789abcdef" for character in first)
+
+
+def test_compute_actor_ref_hash_differs_between_principals() -> None:
+    assert compute_actor_ref_hash("user-123") != compute_actor_ref_hash("user-456")
+
+
+@pytest.mark.parametrize("empty", [None, ""])
+def test_compute_actor_ref_hash_is_none_for_no_principal(empty: str | None) -> None:
+    assert compute_actor_ref_hash(empty) is None
+
+
+def test_compute_actor_ref_hash_does_not_leak_the_principal() -> None:
+    """One-way: security.md forbids a real subject identifier in logs.
+
+    The hash must never contain, equal, or otherwise echo the source value --
+    hashing something is not the same as redacting it, and this pins that the
+    computation actually discards the input rather than encoding it.
+    """
+    principal_id = "user-alice@example.invalid"
+    hashed = compute_actor_ref_hash(principal_id)
+    assert hashed is not None
+    assert hashed != principal_id
+    assert principal_id not in hashed
+    assert "alice" not in hashed
+    assert "example" not in hashed
+
+
+def test_bind_actor_ref_hash_sets_the_contextvar_to_the_computed_hash() -> None:
+    token = actor_ref_hash_var.set(None)
+    try:
+        bind_actor_ref_hash("user-123")
+        assert actor_ref_hash_var.get() == compute_actor_ref_hash("user-123")
+    finally:
+        actor_ref_hash_var.reset(token)
+
+
+def test_actor_ref_hash_is_rendered_in_json_output_when_bound() -> None:
+    token = actor_ref_hash_var.set("deadbeefcafef00d")
+    try:
+        assert _format({"msg": "event"})["actorRefHash"] == "deadbeefcafef00d"
+    finally:
+        actor_ref_hash_var.reset(token)
+
+
+def test_actor_ref_hash_is_absent_from_json_output_when_unbound() -> None:
+    """Matches requestId's own convention: the key is omitted, not nulled."""
+    assert "actorRefHash" not in _format({"msg": "event"})
+
+
+def test_actor_ref_hash_appears_in_the_human_readable_format_too() -> None:
+    try:
+        configure_logging(level="INFO", json_format=False)
+        handler = logging.getLogger().handlers[0]
+        assert "%(actorRefHash)s" in handler.formatter._fmt
+    finally:
+        configure_logging(level=settings.log_level, json_format=settings.log_json)
+
+
+def _identity_request(headers: dict[str, str]) -> Request:
+    encoded = [(key.lower().encode("ascii"), value.encode("ascii")) for key, value in headers.items()]
+    return Request(scope={"type": "http", "method": "GET", "path": "/", "headers": encoded})
+
+
+@contextmanager
+def _identity_db(tmp_path) -> Iterator:
+    engine = create_engine(f"sqlite:///{tmp_path / 'auth_context_actor_ref_hash.sqlite3'}")
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+    db = session_local()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+def test_single_tenant_header_identity_binds_actor_ref_hash(tmp_path, monkeypatch) -> None:
+    """The single-tenant header-based resolver: `resolve_identity_context`
+    (auth_context.py), called directly from `_authorize_request` (docs.py) and
+    `_resolve_audit_tenant` (ai.py) -- not via FastAPI `Depends`, so there is no
+    thread-pool boundary to worry about here."""
+    monkeypatch.setattr(settings, "allow_jit_provisioning", True)
+    with _identity_db(tmp_path) as db:
+        identity = resolve_identity_context(
+            db=db, request=_identity_request({"x-forwarded-user": "alice"})
+        )
+        first_hash = actor_ref_hash_var.get()
+        assert identity.user_id is not None
+        assert first_hash == compute_actor_ref_hash(identity.user_id)
+        assert "alice" not in first_hash
+
+        # Same principal presenting again (a second, later request in
+        # production) -> the same hash, which is what makes cross-request log
+        # correlation for one actor actually work.
+        second_identity = resolve_identity_context(
+            db=db, request=_identity_request({"x-forwarded-user": "alice"})
+        )
+        assert second_identity.user_id == identity.user_id
+        assert actor_ref_hash_var.get() == first_hash
+
+
+def test_single_tenant_anonymous_request_does_not_bind_actor_ref_hash(tmp_path) -> None:
+    """No auth header presented -> no principal -> explicitly cleared, not left
+    over from whatever the previous call in this process happened to bind."""
+    token = actor_ref_hash_var.set("stale-hash-from-a-previous-caller")
+    try:
+        with _identity_db(tmp_path) as db:
+            identity = resolve_identity_context(db=db, request=_identity_request({}))
+        assert identity.user_id is None
+        assert actor_ref_hash_var.get() is None
+    finally:
+        actor_ref_hash_var.reset(token)
+
+
+class _StaticIdentityResolver:
+    """Stands in for the SaaS trusted-session identity resolver (auth edge)."""
+
+    def __init__(self, principal_id: str) -> None:
+        self._principal_id = principal_id
+
+    def resolve(self, *, db, request) -> ResolvedIdentity:  # noqa: ARG002
+        return ResolvedIdentity(
+            user_id=self._principal_id,
+            reviewer_ref=None,
+            owner_ref=None,
+            auth_context=AuthContext(
+                actor_ref=None,
+                user_id=self._principal_id,
+                provider="test-idp",
+                external_uid="ext-1",
+                roles=(),
+                groups=(),
+                trace_id=None,
+            ),
+        )
+
+
+class _StaticTenantResolver:
+    """Delegates to `select_active_tenant_context` (not a made-up membership_id):
+    `recheck_trusted_tenant_context` independently recomputes the opaque
+    membership id from `(tenant_id, user_id)` and rejects a mismatch, so a
+    resolver returning an arbitrary membership_id here would always be denied
+    as untrusted."""
+
+    def __init__(self, *, tenant_id: str) -> None:
+        self._tenant_id = tenant_id
+
+    def resolve(self, *, db, user_id, claim=None):  # noqa: ARG002
+        return select_active_tenant_context(
+            db=db,
+            user_id=user_id,
+            tenant_id=self._tenant_id,
+            resolved_by="verified_claim",
+        )
+
+
+class _StaticCapabilityResolver:
+    def resolve(self, *, db, principal_id, tenant) -> CapabilitySnapshot:  # noqa: ARG002
+        return CapabilitySnapshot(effective_capabilities=("document.read",), capability_version="v1")
+
+
+class _StaticActiveTenantSessionPersister:
+    def __init__(self, version: str) -> None:
+        self._version = version
+
+    def current_version(self, *, request, principal_id, active_tenant):  # noqa: ARG002
+        return self._version
+
+    def persist(self, **_kwargs):
+        return self._version
+
+
+def _install_actor_ref_hash_reset(app_under_test: FastAPI) -> None:
+    """Mirror `main.py`'s `assign_request_id`: reset the contextvar to `None`
+    at the start of every request on this throwaway app.
+
+    Without this, these minimal test apps have no equivalent of the real
+    app's outermost middleware, and a value bound while handling one request
+    can otherwise still be observed while handling a later, unrelated one in
+    the same process (the ASGI test transport does not guarantee a fresh
+    context per request the way a real per-connection task would).
+    """
+
+    @app_under_test.middleware("http")
+    async def _reset_actor_ref_hash(request, call_next):  # noqa: ANN001
+        token = actor_ref_hash_var.set(None)
+        try:
+            return await call_next(request)
+        finally:
+            actor_ref_hash_var.reset(token)
+
+
+def test_saas_trusted_session_precondition_binds_actor_ref_hash_for_the_endpoint(
+    tmp_path,
+) -> None:
+    """`require_tenant_scoped_api_precondition` is the *only* place several
+    routes (ai_relations.py, context.py, several ai.py routes) resolve a
+    principal at all -- and it runs as a FastAPI `Depends(...)`, not a direct
+    call. This proves the `async def` conversion actually matters: if FastAPI
+    ran a plain `def` version of this dependency in a thread-pool worker (a
+    *copied* context), `resolve_trusted_saas_request_session`'s
+    `bind_actor_ref_hash` call would set that copy and vanish -- the endpoint
+    below, reading the contextvar in the main context, would see `None` even
+    for a fully authenticated SaaS caller.
+    """
+    engine = create_engine(f"sqlite:///{tmp_path / 'precondition_actor_ref_hash.sqlite3'}")
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+    with session_local() as db:
+        db.add(
+            UserRow(
+                id="user-saas-actor",
+                display_name="SaaS Actor",
+                email=None,
+                lifecycle_state="active",
+                created_at=_SEED_TIMESTAMP,
+                updated_at=_SEED_TIMESTAMP,
+            )
+        )
+        db.add(
+            TenantRow(
+                id="tenant-a",
+                display_name="Tenant A",
+                lifecycle_state="active",
+                created_at=_SEED_TIMESTAMP,
+                updated_at=_SEED_TIMESTAMP,
+            )
+        )
+        db.add(
+            TenantMembershipRow(
+                tenant_id="tenant-a",
+                user_id="user-saas-actor",
+                lifecycle_state="active",
+                created_at=_SEED_TIMESTAMP,
+                updated_at=_SEED_TIMESTAMP,
+            )
+        )
+        db.commit()
+
+    def _get_test_db():
+        db = session_local()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app_under_test = FastAPI()
+    _install_actor_ref_hash_reset(app_under_test)
+    app_under_test.state.runtime_profile = "saas-multitenant"
+    app_under_test.dependency_overrides[get_db] = _get_test_db
+    app_under_test.state.saas_identity_context_resolver = _StaticIdentityResolver(
+        "user-saas-actor"
+    )
+    app_under_test.state.tenant_context_resolver = _StaticTenantResolver(tenant_id="tenant-a")
+    app_under_test.state.tenant_capability_resolver = _StaticCapabilityResolver()
+    app_under_test.state.active_tenant_session_persister = _StaticActiveTenantSessionPersister(
+        "session-v1"
+    )
+
+    @app_under_test.get(
+        "/guarded",
+        dependencies=[Depends(require_tenant_scoped_api_precondition)],
+    )
+    def guarded() -> dict[str, object]:
+        return {"actorRefHash": actor_ref_hash_var.get()}
+
+    try:
+        with TestClient(app_under_test) as client:
+            response = client.get(
+                "/guarded",
+                headers={"KJ-Atlas-Tenant-Session-Version": "session-v1"},
+            )
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert response.status_code == 200
+    assert response.json()["actorRefHash"] == compute_actor_ref_hash("user-saas-actor")
+
+
+def test_control_plane_bearer_key_binds_actor_ref_hash_for_the_endpoint(monkeypatch) -> None:
+    """Mirrors the test above for the admin plane's stage-A bearer-key path.
+
+    Same source `record_admin_plane_audit` (main.py) already uses as the
+    fallback for the audit trail's actorRefHash when there is no trusted
+    session: the static bootstrap credential is not a person, but a stable
+    fingerprint of it still lets an operator tell log lines from the same
+    bootstrap caller apart from a later real subject.
+    """
+    monkeypatch.setattr(settings, "admin_api_key", "control-plane-bootstrap-key")
+
+    app_under_test = FastAPI()
+    _install_actor_ref_hash_reset(app_under_test)
+    app_under_test.state.runtime_profile = "local-dev"
+    app_under_test.dependency_overrides[get_db] = lambda: object()
+
+    @app_under_test.get(
+        "/guarded",
+        dependencies=[Depends(require_control_plane_authorization)],
+    )
+    def guarded() -> dict[str, object]:
+        return {"actorRefHash": actor_ref_hash_var.get()}
+
+    with TestClient(app_under_test) as client:
+        response = client.get(
+            "/guarded",
+            headers={ADMIN_API_KEY_HEADER: "control-plane-bootstrap-key"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["actorRefHash"] == compute_actor_ref_hash(
+        "control-plane-bootstrap-key"
+    )
+
+
+def test_control_plane_missing_credential_leaves_actor_ref_hash_unbound(monkeypatch) -> None:
+    """The dev-mode "open when unconfigured" branch: no credential presented,
+    so nothing to attribute -- stays anonymous rather than binding a hash of
+    nothing."""
+    monkeypatch.setattr(settings, "admin_api_key", None)
+
+    app_under_test = FastAPI()
+    _install_actor_ref_hash_reset(app_under_test)
+    app_under_test.state.runtime_profile = "local-dev"
+    app_under_test.dependency_overrides[get_db] = lambda: object()
+
+    @app_under_test.get(
+        "/guarded",
+        dependencies=[Depends(require_control_plane_authorization)],
+    )
+    def guarded() -> dict[str, object]:
+        return {"actorRefHash": actor_ref_hash_var.get()}
+
+    with TestClient(app_under_test) as client:
+        response = client.get("/guarded")
+
+    assert response.status_code == 200
+    assert response.json()["actorRefHash"] is None
 
 
 # ---------------------------------------------------------------------------

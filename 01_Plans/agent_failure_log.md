@@ -815,3 +815,24 @@ Updated: 2026-08-03
 - 原因: 実行環境の共有一時領域でpytest capture用ファイルが試験中に消失した。テストassertionの失敗ではなくpytest後処理の障害だった。
 - 対応: 専用`TMPDIR`を作成し、`-s`でcaptureを無効化して同じ35件を再実行し、全件成功を確認した。
 - 再発防止: pytestがcapture後処理で一時ファイル消失を報告した場合は、対象suiteを専用`TMPDIR`かつ`-s`で再実行し、テスト失敗と実行基盤障害を切り分ける。
+
+## 2026-08-26: `core.worktree`汚染が別worktree IDで再発。既存remedyをそのまま適用して復旧
+
+- 事象: OPS-OBSERV-01の擬似識別子実装中、`03_Implement/backend`のtest venvをWSL（`/mnt/c/...`）へ構築している間に、Windows Git Bash側の`git status`等が全滅（`fatal: Invalid path '/mnt': No such file or directory`）。
+- 原因: 共有`.git/config`に別worktreeを指す`core.worktree`が書き込まれ、複数worktreeに影響した。
+- 対応: 既存手順に従い、共有設定の該当行のみを除去して復旧した。
+- 再発防止: `Invalid path '/mnt'`が出たら共有`.git/config`の`core.worktree`を確認し、異常な設定を除去する。
+
+## 2026-08-26: `contextvars.ContextVar`をテスト内の別々の`FastAPI()`+`TestClient`インスタンス間で使うと値が漏れる
+
+- 事象: `actorRefHash`のテストで、後続の未認証ケースに前のケースの値が残り、assertionが失敗した。
+- 原因: 素のテスト用`FastAPI()`には、本番のリクエスト開始時リセットミドルウェアがなかった。
+- 対応: テストアプリに、開始時resetと`finally`での復元を行う同等のミドルウェアを追加した。
+- 再発防止: contextvar機能を素の`FastAPI()`テストアプリで検証する場合、本番最外周のリセットを模倣する。
+
+## 2026-08-27: `core.worktree`汚染が再発。`docs_check.py`の一括実行を分割
+
+- 事象: backend検証中にWindows Bash側の`git diff --stat`が`Invalid path '/mnt'`で失敗した。
+- 原因: 共有`.git/config`の`core.worktree`に当該worktreeパスが書き込まれていた。また、`GIT_DIR`/`GIT_WORK_TREE`越しの`docs_check.py`一括実行は子プロセスへ環境を継承し、一時repo試験へ影響した。
+- 対応: 異常な設定行を除去し、docsチェック本体と埋め込みunittestを環境変数なしの別実行へ分割した。
+- 再発防止: WSLからのdocsチェックは`GIT_DIR`/`GIT_WORK_TREE`を設定したシェルで一括実行しない。

@@ -51,7 +51,7 @@ def require_tenant_session_request_precondition(
     )
 
 
-def require_tenant_scoped_api_precondition(
+async def require_tenant_scoped_api_precondition(
     request: Request,
     db: Session = Depends(get_db),
 ) -> None:
@@ -59,6 +59,15 @@ def require_tenant_scoped_api_precondition(
 
     Local profiles remain compatible. SaaS requests resolve the trusted session
     first and reject a missing or stale version before endpoint processing.
+
+    OPS-OBSERV-01: `async def`, not `def`, is deliberate -- see
+    `control_plane_auth.require_control_plane_authorization`'s docstring for
+    why. This is the *only* place several routes (ai_relations.py, context.py,
+    and a number of ai.py routes) resolve a principal at all; if this ran in a
+    thread-pool worker, `resolve_trusted_saas_request_session`'s
+    `bind_actor_ref_hash` call would set a copied context that the route
+    handler's own logging never sees, and those routes' logs would silently
+    stay anonymous even for an authenticated SaaS caller.
     """
     if not tenant_session_precondition_required(request):
         return

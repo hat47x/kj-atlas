@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.active_tenant_session import resolve_active_tenant_session_version
 from kj_atlas_api.auth_context import ResolvedIdentity, SaasIdentityContextResolver
+from kj_atlas_api.observability import bind_actor_ref_hash
 from kj_atlas_api.session_context import (
     TenantCapabilityResolver,
     TenantSessionContext,
@@ -106,6 +107,13 @@ def resolve_trusted_saas_request_session(
             code="tenant_admin_auth_unavailable",
             message="Trusted SaaS identity resolution is unavailable.",
         )
+
+    # OPS-OBSERV-01: bind as soon as the principal is validated, before tenant
+    # resolution or the capability check -- both of which can still deny this
+    # request -- so a denial is attributable in the general log stream the same
+    # way it already is in admin_audit_events for the control-plane callers of
+    # this function.
+    bind_actor_ref_hash(principal_id)
 
     tenant_resolver: TenantContextResolver = getattr(
         request.app.state,

@@ -1,7 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from hashlib import sha256
 from pathlib import Path
 from secrets import compare_digest
 from uuid import uuid4
@@ -41,6 +40,8 @@ from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.observability import (
     INBOUND_TRACE_HEADER,
     REQUEST_ID_HEADER,
+    actor_ref_hash_var,
+    compute_actor_ref_hash,
     configure_logging,
     new_request_id,
     request_id_var,
@@ -288,11 +289,11 @@ async def record_admin_plane_audit(request: Request, call_next):
     subject = control_plane_subject(request)
     admin_key = request.headers.get("x-admin-api-key")
     actor_source = subject.principal_id if subject is not None else admin_key
-    actor_ref_hash = (
-        sha256(actor_source.encode("utf-8")).hexdigest()[:16]
-        if actor_source
-        else None
-    )
+    # OPS-OBSERV-01: same computation the general log stream now uses
+    # (observability.bind_actor_ref_hash), kept as one shared helper so this
+    # table's actorRefHash and a log line's actorRefHash for the same actor
+    # can never silently diverge.
+    actor_ref_hash = compute_actor_ref_hash(actor_source)
     path = request.url.path
     # Tests override app.state.admin_audit_session_factory with their SQLite
     # sessionmaker so the trail is assertable; production uses the app engine.
@@ -346,15 +347,27 @@ async def assign_request_id(request: Request, call_next):
     id is echoed in the response header and, for the error handlers below, in the
     body: without it the user has nothing to quote and the operator has nothing
     to grep.
+
+    Also resets `actor_ref_hash_var` to `None` for every request, outermost, for
+    the same reason a fresh request id is minted here rather than left over from
+    whatever ran before: a persistent-context caller (the sync TestClient's
+    background loop; conceivably a keep-alive worker) must not let one request's
+    resolved actor bleed into the next request's log lines. Whichever
+    identity-resolution path fires later in this request (single-tenant header,
+    SaaS trusted session, control-plane subject) calls
+    `observability.bind_actor_ref_hash` to overwrite this; a request where none
+    of them fire stays anonymous.
     """
     inbound = resolve_inbound_request_id(request.headers.get(INBOUND_TRACE_HEADER))
     request_id = inbound or new_request_id()
     token = request_id_var.set(request_id)
+    actor_token = actor_ref_hash_var.set(None)
     request.state.request_id = request_id
     try:
         response = await call_next(request)
     finally:
         request_id_var.reset(token)
+        actor_ref_hash_var.reset(actor_token)
     response.headers[REQUEST_ID_HEADER] = request_id
     return response
 

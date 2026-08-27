@@ -16,6 +16,7 @@ from kj_atlas_api.identity_binding import (
     resolve_user_identity,
 )
 from kj_atlas_api.models import UserIdentityRow, UserRow
+from kj_atlas_api.observability import bind_actor_ref_hash
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
@@ -187,6 +188,11 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
                 actor_ref=actor_ref,
             )
         )
+        # OPS-OBSERV-01: no principal to resolve on this path (no auth header
+        # presented). Bind explicitly rather than relying on the middleware's
+        # default so a second, later call to this function in the same request
+        # cannot leave a stale hash from an earlier, different call.
+        bind_actor_ref_hash(None)
         return ResolvedIdentity(
             user_id=None,
             reviewer_ref=resolution.reviewer_ref,
@@ -295,6 +301,9 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         aal=aal,
         auth_time=auth_time,
     )
+    # OPS-OBSERV-01: single-tenant header-based path resolved a principal --
+    # every log line for the rest of this request now carries its fingerprint.
+    bind_actor_ref_hash(user_id)
     return ResolvedIdentity(
         user_id=user_id,
         reviewer_ref=resolution.reviewer_ref,

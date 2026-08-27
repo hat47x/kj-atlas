@@ -433,9 +433,10 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 **GET** `/ai/available-models`
 
-- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。active model・active provider・tenant allowlist・現在のprocessで利用可能なprovider transportを交差し、`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタする。`final_judgement` 専用モデルと実行transport不一致modelは除外する。
+- テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。active model・active provider・tenant allowlistを交差し、`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタする。`final_judgement` 専用モデルは除外する。
+- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: 各modelは自身が登録された `providerId` の `providerKind` が実行可能（必須設定が揃っている）かどうかで判定する。判定は `KJ_ATLAS_LLM_PROVIDER`（プロセス全体の既定値）と model 自身の `providerKind` が一致するかではなく、その `providerKind` 単独の設定完全性（例: `deepseek` なら `KJ_ATLAS_DEEPSEEK_API_KEY`）で行う。したがって、`KJ_ATLAS_LLM_PROVIDER=local` のプロセスでも、`KJ_ATLAS_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelも同時に一覧へ含まれる。ただし `KJ_ATLAS_LLM_PROVIDER=none` はプロセス全体のkill switchであり、この場合はどの `providerKind` の設定完全性に関わらず一覧は常に空になる。
 - Response: モデルID・表示名・"auto" 既定の選択肢。UI の `ModelSelector` がこの一覧でモデル選択肢を限定する。
-- 一覧取得後に状態が変わった場合を含め、実行APIへtransport不一致model IDを直接指定すると、LLM送信前に503 `model_provider_unavailable`で拒否する。
+- 一覧取得後に状態が変わった場合を含め、実行APIへ利用不可なmodel IDを直接指定すると、LLM送信前に503 `model_provider_unavailable`で拒否する（一覧と実行gateは同一の判定関数を使うため乖離しない）。
 
 ### 2.12 AI/LLM生成API
 
@@ -443,7 +444,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - tenant-scoped precondition必須（§10 参照）
 - proposal-only: AI出力は候補生成に留まり、人間の明示操作なしに文書へ反映されない
 - **SafeMode は API 境界で強制（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う全エンドポイント（suggest-layout / suggest-merges / suggest-island-summary / generate-narrative / check-narrative / proposals/island-summary）は、未レビューカード（`textReviewed ≠ true`）を含む場合に **422 `unreviewed_text_not_allowed`** で拒否する。`allowUnreviewedText=true` かつ profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ緩和（監査へ記録）
-- `KJ_ATLAS_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す
+- `KJ_ATLAS_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す。AI-MODEL-GOVERNANCE-03以降もこれは無条件のkill switchであり、registryに他のproviderが設定済みでも動的dispatchは一切行われない
+- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: `model` を受け取るエンドポイント（suggest-island-summary / propose-opposing-viewpoint / generate-narrative / refine-card-text / suggest-card-groups / suggest-document-title）は、その model が registry 上で登録された `providerId` の `providerKind` へ直接dispatchする（`ProviderRegistry.resolve(providerKind)`）。`KJ_ATLAS_LLM_PROVIDER` と model の `providerKind` が異なっていても、その `providerKind` 自身の設定が完全なら実行できる。`model` を受け取らないエンドポイント（suggest-layout / suggest-merges / check-narrative / detect-contradiction）は従来どおり `KJ_ATLAS_LLM_PROVIDER` の既定transportを使う。`apiKeyRef` は登録時の参照検証（AC-4）を経た上で、実際の資格情報は引き続き `KJ_ATLAS_*_API_KEY` 環境変数から解決する（registry行の値を直接使う経路は追加しない）
 - モデル選択は操作別モデルレベル定義（AGENTS.md §1.2）に従う
 
 **POST** `/ai/suggest-layout`
