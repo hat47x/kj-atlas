@@ -780,3 +780,17 @@ Updated: 2026-08-03
 - 原因: この2テストはリポジトリ直下の`04_Documentation`・`02_Architecture`（`03_Implement/frontend`の外、複数階層上）を実行時に探索/読み込みする。既存の運用メモ（`place-impl-files-under-03-implement`等）が想定する「`03_Implement/frontend`だけをrsyncする」コピー方式は、この2テストが前提とするリポジトリ全体のディレクトリ構造（`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`が`03_Implement`の兄弟として存在する）を`~/kjnative-fe`側に用意しない。
 - 対応: 本件はテスト対象コードのpre-existing gapであり、当該PRの変更（e2eスペック追加のみ）とは無関係と判断してそのまま報告した。フルのリポジトリ構成を要する検証が必要な場合は、`03_Implement/frontend`だけでなくリポジトリ全体（または少なくとも`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`）を同じ相対位置でWSL側に用意する必要がある。
 - 再発防止: `~/kjnative-fe`でVitestが失敗した場合、まず`git status --porcelain`で自分のdiffが当該失敗テストのfixture/srcに触れているか確認する。触れていなければ、失敗テストがリポジトリ直下の他ディレクトリ（`04_Documentation`/`02_Architecture`等）を参照していないかを疑い、rsyncがフロントエンドだけを切り出したコピーであることに起因する既知のギャップとして扱う。
+
+## 2026-08-26: `core.worktree`汚染が別worktree IDで再発。既存remedyをそのまま適用して復旧
+
+- 事象: OPS-OBSERV-01の擬似識別子実装中、`03_Implement/backend`のtest venvをWSL（`/mnt/c/...`）へ構築している間に、Windows Git Bash側の`git status`等が全滅（`fatal: Invalid path '/mnt': No such file or directory`）。セッション開始時の`git status`/`git checkout -b`は成功していたため、途中で発生した。
+- 原因: 2026-08-22ログと同じ症状だが、汚染元パスは**自分のworktree（`agent-a8ab9b888d872f559`）ではなく別のworktree（`agent-a1aa2185fd5b40ac7`）**を指す`core.worktree = /mnt/c/GIT/kj-atlas/.claude/worktrees/agent-a1aa2185fd5b40ac7`が共有`.git/config`に書き込まれていた。並行稼働している別セッションがWSL側から`git`操作を行った際の副作用と推測される（自分のセッションはこの行を書いていない）。共有`.git/config`は複数worktreeが同時参照するため、一方の汚染が他方の`git`操作を無条件に止める。
+- 対応: 2026-08-22の「正しい対処」をそのまま適用して復旧した。(1) `git config --unset`はrepository discoveryが先に失敗するため使えず、Bashツールで`sed -i`により該当1行のみ直接除去（Editツールは共有`.git/config`への書き込みを拒否したため、Bashでのテキスト編集が唯一の経路だった）。(2) 復旧確認後、`01_Plans/docs_check.py`をWSLから実行する必要があったため、worktree自身の`.git`ポインタファイルを一時的に`gitdir: /mnt/c/...`表記へ書き換え→WSL側コマンド完了を確認→`gitdir: C:/...`表記へ書き戻す、という既存手順をそのまま踏襲した。両方とも初回適用で問題なく復旧し、Windows側`git status`で確認した。
+- 再発防止: 既存の2026-08-22エントリの手順は汚染元worktreeが自分と異なる場合でも有効。`git`操作が`Invalid path '/mnt'`で失敗したら、まず共有`.git/config`の`core.worktree`を確認し、それがどのworktree IDを指しているかに関わらず該当行を除去してよい（このリポジトリでは`extensions.worktreeConfig = true`によりworktree別設定は本来`.git/worktrees/<id>/config.worktree`へ入るべきで、共有`.git/config`に`core.worktree`が存在すること自体が異常）。
+
+## 2026-08-26: `contextvars.ContextVar`をテスト内の別々の`FastAPI()`+`TestClient`インスタンス間で使うと値が漏れる
+
+- 事象: OPS-OBSERV-01の`actorRefHash`（主体の擬似識別子、contextvar経由でログへ注入）のテストで、`FastAPI()`を新規生成して`with TestClient(app_under_test) as client:`する自己完結型テストを3本連続で実行したところ、2本目以降が前のテストで bind された値（"e2a43cdc0172b999"など）を「未認証だから値が無いはず」の箇所で観測し、assertionが失敗した。理論上は「新しいOSスレッド/新しいTaskはcontextvarのデフォルトから始まる（`contextvars.copy_context()`は呼び出し元スレッドの現在値のコピーであり、コピー先での`.set()`は呼び出し元へ伝播しない）」と考えていたが、実際には別々の`TestClient`インスタンス間（＝別々のASGI transport呼び出し）でcontextvarの値が持続してしまった。
+- 原因: 本番の`main.py`は`assign_request_id`ミドルウェアが**リクエストごとに明示的に`actor_ref_hash_var.set(None)`してから`finally`で`reset`する**ことで、スレッド/Task再利用の有無に関わらず後続リクエストへの汚染を防いでいる。テスト用に作った素の`FastAPI()`インスタンスにはこの防御ミドルウェアが無いため、httpx/anyioのTestClient実装がスレッドやeventloopを再利用する経路（詳細な機構は未特定だが、経験的に再利用が起きている）で値が漏れた。
+- 対応: 各テストの`app_under_test`に、`main.py`と同じ「リクエスト開始時に`None`へreset→`finally`で元へ戻す」ミドルウェアを追加した（`test_observability.py`の`_install_actor_ref_hash_reset`）。追加後は3本とも安定して成功した。
+- 再発防止: contextvarを使う機能を**本番コードから切り離した素の`FastAPI()`テストアプリ**で検証する場合、本番の最外周ミドルウェアが持つ「リクエスト開始時のリセット」を模倣するミドルウェアを必ず追加する。本番の`main.app`を使う既存テスト（`_client`fixture経由）はこの防御が既に効いているため対象外。「新しいTestClient/新しいスレッドだから値は引き継がれないはず」という直感だけでテスト分離を仮定しない。

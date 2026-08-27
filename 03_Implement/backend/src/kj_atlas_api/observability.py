@@ -19,6 +19,18 @@ a project this size, but every procedure in them terminates in "read the logs" o
 
 This module supplies both. It deliberately does not add a metrics dependency --
 that is a separate decision recorded in the issue's 論点 section.
+
+A third piece, added later (OPS-OBSERV-01 残作業, decided 2026-08-26): a
+one-way pseudo-identifier for the acting principal, attached to every log line
+the same way `requestId` is. `04_Documentation/security.md` forbids raw
+subject identifiers (`subject`, `external_tenant_ref`, ...) in application
+logs; that policy is unchanged. What was missing was the same completion the
+audit trail already has -- SEC-ADMIN-PLANE-03's `admin_audit_events` table
+carries `actorRefHash`, a truncated SHA-256 of the resolved principal id, so an
+operator can tell "the same actor did both of these things" without ever
+seeing who that actor is. `compute_actor_ref_hash` below is that same
+computation, shared so the admin-audit path and the general log path can't
+drift into two different hashes for the same principal.
 """
 
 from __future__ import annotations
@@ -28,12 +40,55 @@ import logging
 import logging.config
 import uuid
 from contextvars import ContextVar
+from hashlib import sha256
 
 #: Set per request by `RequestIdMiddleware` and read by the log filter. A
 #: ContextVar rather than a header lookup so that any `logger.*` call anywhere in
 #: the request's call stack is correlated without threading an id through every
 #: signature.
 request_id_var: ContextVar[str | None] = ContextVar("kj_atlas_request_id", default=None)
+
+#: Set once a request's principal is resolved -- by whichever identity path
+#: fired (single-tenant header resolver, SaaS trusted session, control-plane
+#: subject) -- and read by the same log filter as `request_id_var`. Requests
+#: where no path resolves a principal (health checks, unauthenticated
+#: single-tenant requests) never call `bind_actor_ref_hash`, so this stays at
+#: its default of `None` and the field is simply absent from those log lines.
+actor_ref_hash_var: ContextVar[str | None] = ContextVar("kj_atlas_actor_ref_hash", default=None)
+
+#: Matches the truncation `record_admin_plane_audit` (main.py) already uses for
+#: the admin audit trail's `actorRefHash` -- kept as one constant so the two
+#: call sites cannot silently diverge.
+ACTOR_REF_HASH_LENGTH = 16
+
+
+def compute_actor_ref_hash(principal_id: str | None) -> str | None:
+    """One-way fingerprint of an already-resolved principal id.
+
+    Same algorithm and truncation as the admin audit trail's `actorRefHash`
+    (SEC-ADMIN-PLANE-03), described in ADR-0079 as a "照合用fingerprint": it
+    lets an operator correlate log lines from the same actor without the log
+    ever carrying a reversible subject identifier. `None`/empty input means
+    "no principal resolved" and returns `None` rather than hashing an empty
+    string, so "anonymous" is never mistaken for a real (if unlikely) hash
+    collision.
+    """
+    if not principal_id:
+        return None
+    return sha256(principal_id.encode("utf-8")).hexdigest()[:ACTOR_REF_HASH_LENGTH]
+
+
+def bind_actor_ref_hash(principal_id: str | None) -> None:
+    """Record the acting principal's fingerprint for the rest of this request.
+
+    Call this as soon as a request's principal is resolved -- from any of the
+    identity-resolution paths, whichever one actually fires for a given
+    request. `main.py`'s `assign_request_id` middleware resets this to `None`
+    at the start of every request, so a later call here is what makes it
+    non-null; a request where nothing calls this stays anonymous.
+    """
+    actor_ref_hash_var.set(compute_actor_ref_hash(principal_id))
+
 
 #: Response header and accepted inbound header. `x-trace-id` is honoured for
 #: continuity with the existing PDP payload field, which already carries a
@@ -69,6 +124,7 @@ _STANDARD_RECORD_FIELDS = frozenset(
         "thread",
         "threadName",
         "requestId",
+        "actorRefHash",
     }
 )
 
@@ -97,14 +153,18 @@ _REDACTED_PLACEHOLDER = "[redacted]"
 
 
 class RequestIdFilter(logging.Filter):
-    """Attach the current request id to every record.
+    """Attach the current request id and actor pseudo-identifier to every record.
 
     Applied as a filter rather than inside the formatter so that a future
-    non-JSON formatter still gets the field.
+    non-JSON formatter still gets both fields. `actorRefHash` is `None` for any
+    record emitted outside a request that resolved a principal (health checks,
+    unauthenticated single-tenant requests, background/startup code) -- that is
+    the expected, common case, not an error.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.requestId = request_id_var.get()
+        record.actorRefHash = actor_ref_hash_var.get()
         return True
 
 
@@ -127,6 +187,10 @@ class JsonLogFormatter(logging.Formatter):
         request_id = getattr(record, "requestId", None)
         if request_id:
             payload["requestId"] = request_id
+
+        actor_ref_hash = getattr(record, "actorRefHash", None)
+        if actor_ref_hash:
+            payload["actorRefHash"] = actor_ref_hash
 
         for key, value in record.__dict__.items():
             if key in _STANDARD_RECORD_FIELDS or key.startswith("_"):
@@ -156,9 +220,13 @@ def configure_logging(*, level: str, json_format: bool) -> None:
         formatter = {"()": f"{__name__}.JsonLogFormatter"}
     else:
         formatter = {
-            # Human-readable fallback. `requestId` is included so that the
-            # correlation path works even when JSON output is turned off.
-            "format": "%(asctime)s %(levelname)s %(name)s [%(requestId)s] %(message)s"
+            # Human-readable fallback. `requestId` and `actorRefHash` are
+            # included so both correlation paths work even when JSON output is
+            # turned off. Unlike the JSON formatter (which omits the key
+            # entirely when there is no principal), %-formatting can't
+            # conditionally drop a field, so an anonymous request reads
+            # literally as "actor=None" here.
+            "format": "%(asctime)s %(levelname)s %(name)s [%(requestId)s] [actor=%(actorRefHash)s] %(message)s"
         }
 
     logging.config.dictConfig(

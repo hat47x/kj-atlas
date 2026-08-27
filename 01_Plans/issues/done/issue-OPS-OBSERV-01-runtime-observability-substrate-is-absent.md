@@ -1,7 +1,7 @@
 # Issue: OPS-OBSERV-01 全ての運用手順が「ログを見る」で終わるが、そのログに情報が無い
 
 - Type: Operations
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -80,7 +80,7 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 
 ## 論点（保守者判断が必要な理由）
 
-- **主体の擬似識別子を持つか。** 現行方針は「ログに主体識別子を出さない」であり妥当だが、代替の擬似識別子を用意していないため、実質「主体の帰属が一切分からない」状態になっている。監査イベントは既に `actorRefHash`（SHA-256 24桁）を使っているので、**同じハッシュをログにも使う**のが一貫する。方針変更ではなく方針の完成として扱える。**2026-08-26決定: 出す**（保守者確認済み）。実装は未着手（下記「残作業」参照）。
+- **主体の擬似識別子を持つか。** 現行方針は「ログに主体識別子を出さない」であり妥当だが、代替の擬似識別子を用意していないため、実質「主体の帰属が一切分からない」状態になっている。監査イベントは既に `actorRefHash`（SHA-256 先頭16桁）を使っているので、**同じハッシュをログにも使う**のが一貫する。方針変更ではなく方針の完成として扱える。**2026-08-26決定: 出す**（保守者確認済み）。**2026-08-26実装済み**（下記「残作業」「対応記録（2026-08-26）」参照）。
 - **メトリクス基盤を入れるか、入れるとして何を。** `ADR-0039`（個人OSSの運用規模）との整合が要る。`/metrics` を足すだけなら依存は `prometheus_client` 1つだが、収集・保存・可視化は運用者側の責務になる。**2026-08-26決定: 導入しない。** `ADR-0039`の個人OSS運用規模との整合を優先し、規模拡大・複数テナント並行運用でのスケールアウト判断を非目標として明示する（`04_Documentation/observability.md`へ反映済み）。
 - **監査イベントのローカル永続化との関係。** `DATA-MAINT-05` / `DATA-MAINT-06`（両方 Draft）が扱う。本issueの1〜4は監査とは独立に進められるが、5（観測ガイド）は監査の照会経路が決まらないと完成しない。
 
@@ -93,11 +93,11 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 - [x] AC-5: `03_Implement/backend/README.md` の構造化ログ記述を事実へ合わせた（`extra` 経由であること、以前は出力されていなかったこと、レベル変更方法）。
 - [x] AC-6: `04_Documentation/observability.md` を追加し、`operations.md` の「ログを見る」節と `04_Documentation/README.md` の公開一覧から参照した。**まだ観測できないこと**（メトリクス皆無、監査イベントが既定で捨てられること、ローカル保存と照会APIの不在、ログのローテーション未設定）も明記した。※管理面操作の監査は `SEC-ADMIN-PLANE-03`（マージ時点で実装済み・`GET /admin/provision/audit`）に委譲しているため観測ガイドからは「未監査」を削除した。
 
-## 残作業（本issueを In Progress のまま残す理由）
+## 残作業
 
-- **メトリクス基盤は導入しないと決定した（2026-08-26）。** `04_Documentation/observability.md`へ非目標として明記済み。本項目はこれで解消した。
-- **主体の擬似識別子は決定済み（出す）だが実装は未着手（2026-08-26）。** ログへ`actorRefHash`相当の擬似識別子を出力するコード変更が残っている。
-- **監査イベントのローカル永続化との接続は未着手**（`DATA-MAINT-05` / `DATA-MAINT-06`）。観測ガイドの「まだ観測できないこと」節は、これが決まったら更新する。
+- ~~メトリクス基盤は導入しないと決定した（2026-08-26）。~~ `04_Documentation/observability.md`へ非目標として明記済み。解消済み。
+- [x] **主体の擬似識別子（2026-08-26実装）。** `actor_ref_hash_var`（`observability.py`）を追加し、single-tenant ヘッダー認証（`auth_context.resolve_identity_context`）・SaaS trusted session（`saas_request_context.resolve_trusted_saas_request_session`）・control-plane（`control_plane_auth.require_control_plane_authorization`）のいずれかが主体を解決した時点で bind する。ログ行には既存の `requestId` と同じ仕組み（contextvar → logging filter）で `actorRefHash` が付く。計算そのもの（SHA-256先頭16桁）は admin audit trail の `actorRefHash` と同じ関数 `observability.compute_actor_ref_hash` を共有するよう `main.py` 側も揃えた（二重実装の解消）。詳細は「対応記録（2026-08-26）」を参照。
+- **監査イベントのローカル永続化との接続は未着手**（`DATA-MAINT-05` / `DATA-MAINT-06`）。これらは別issueで扱う。観測ガイドの「まだ観測できないこと」節はこの制約を明記済み。本issueを閉じる判断については「対応記録（2026-08-26）」のクローズ判断を参照。
 
 ## 検証
 
@@ -121,6 +121,25 @@ curl -s http://127.0.0.1:8000/api/readyz     # DB停止時に非200
 - **AC-6（観測ガイド）**: `04_Documentation/observability.md` を新設（ログ形式・相関IDの突き合わせ手順・ヘルスチェックの意味）。operations.md / diagnostics.md / SUPPORT.md の /healthz 記述へ liveness と /readyz の注記を追加し、operations.md の「ログを見る」節から参照。
 
 検証: `tests/test_observability.py`（14 tests: formatter・requestId・readyz の成功/DB停止/schema不一致）、tenant-session exemption へ `/readyz`・`/version` を追加、docs-check pass、実走行で `/healthz` 200・`/readyz` 200・`/version` が `KJ_ATLAS_APP_REVISION` を反映・`X-Request-Id` ヘッダを確認。フル backend suite は実行中。
+
+## 対応記録（2026-08-26）
+
+論点だった2項目のうち、主体の擬似識別子を実装した（メトリクス基盤は前回までに「導入しない」で解消済み）。
+
+- **実装**: `observability.py` に `actor_ref_hash_var`（contextvar）・`compute_actor_ref_hash`（SHA-256 先頭16桁、admin audit trail の `actorRefHash` と同一計算）・`bind_actor_ref_hash` を追加。既存の `RequestIdFilter`／`JsonLogFormatter` を拡張して `requestId` と同じ経路（contextvar → logging filter → formatter）で `actorRefHash` をログ行へ載せる。人間可読書式にも `[actor=...]` として追加。
+- **主体解決3経路すべてから bind**: (1) single-tenant ヘッダー認証 `auth_context.resolve_identity_context`（直接呼び出しなので thread-pool の懸念なし）。(2) SaaS trusted session `saas_request_context.resolve_trusted_saas_request_session`（principal_id を検証した直後、テナント解決や capability チェックより前に bind するため、拒否されたリクエストも attributable）。(3) control-plane `control_plane_auth.require_control_plane_authorization`（stage-A bearer key はキー自体をハッシュ化、stage-B trusted session は (2) 経由）。
+- **`async def` への変更が必要だった理由**: `require_control_plane_authorization` と `tenant_session_precondition.require_tenant_scoped_api_precondition` は FastAPI `Depends(...)` として使われる。素の `def` のままだと FastAPI がスレッドプール（コピーされたcontext）で実行するため、その中で `bind_actor_ref_hash` を呼んでもコピー先だけが更新され、呼び出し元のリクエストコンテキストには伝播しない。両関数を `async def` に変えることで同一タスクのコンテキスト上で実行されるようにした（内部で呼ぶ同期関数の呼び出し自体には影響なし。既存呼び出し元はすべて `Depends(...)` 経由のみで直接呼び出しは無かったことを確認済み）。
+- **重複排除**: `main.py` の `record_admin_plane_audit` が個別に持っていた `sha256(...).hexdigest()[:16]` を `observability.compute_actor_ref_hash` の呼び出しへ置き換えた（挙動は完全に同一）。監査テーブル側のセマンティクス・スキーマは変更していない。
+- **ログ行の例**:
+  ```json
+  {"timestamp":"2026-08-26T09:12:33+0000","level":"INFO","logger":"kj_atlas_api.ai","message":"llm_generate","requestId":"9f2c1d...","actorRefHash":"a1b2c3d4e5f6a7b8","task":"refine_card_text"}
+  ```
+- **ドキュメント**: `04_Documentation/observability.md` の「ログに出ないもの」節を訂正し、`actorRefHash` の説明（一方向ハッシュ・照合用fingerprint・主体解決できないリクエストでは出ない）を追加した。「主体を特定する手段がログには無い」という記述は「主体そのもの（誰か）の特定はできないが、同じ actor による複数ログ行の束ねはできる」に訂正した。
+- **検証**: `tests/test_observability.py` へ `compute_actor_ref_hash`（安定性・一意性・非可逆性・None扱い）、filter/formatter（bound時に出る・unbound時に出ない・人間可読書式）、3つの主体解決経路それぞれが実際に bind することを直接検証するテストを追加（SaaS/control-planeの2件は実際に `Depends(...)` を通したFastAPI実行で確認 — `async def` 変更の効果そのものを検証する目的）。フル backend suite を実行して regression が無いことを確認（実行結果は本file差分と同時にPRへ記録）。
+
+### クローズ判断
+
+残る唯一の未完了項目「監査イベントのローカル永続化との接続」は `DATA-MAINT-05` / `DATA-MAINT-06`（両方 Draft）で扱うと本issue自身が明記しており、この2issueのスコープであって本issueをブロックする作業ではない。本issueの対応方針1〜6と論点2項目（メトリクス非導入・主体の擬似識別子）はすべて解消したため、Status を `Done` とする。観測ガイドの「まだ観測できないこと」節は、監査の永続化・照会が未着手であることを既に明記しており、本issueをDoneにしても情報が失われるわけではない（`DATA-MAINT-05`/`06` が進捗すれば、その issue 側で観測ガイドを更新する）。
 
 ## 補足
 

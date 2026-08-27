@@ -43,6 +43,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
+from kj_atlas_api.observability import bind_actor_ref_hash
 from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
 from kj_atlas_api.settings import settings
 
@@ -131,7 +132,7 @@ def _resolve_trusted_session(
     return trusted_session
 
 
-def require_control_plane_authorization(
+async def require_control_plane_authorization(
     request: Request,
     db: Session = Depends(get_db),
 ) -> None:
@@ -140,6 +141,15 @@ def require_control_plane_authorization(
     Replaces `require_single_tenant_provisioning_surface`, which gated on the
     runtime profile rather than on authorization and therefore made SaaS
     bootstrap impossible (D2).
+
+    OPS-OBSERV-01: `async def`, not `def`, is deliberate. FastAPI runs a plain
+    `def` dependency in a thread-pool worker against a *copied* context
+    (`anyio.to_thread.run_sync`); a `bind_actor_ref_hash` call made from a sync
+    version of this function would set that copy and then vanish when the
+    worker returns, never reaching the route handler's own logging. Staying an
+    `async def` keeps this on the request's one task/context, which is what
+    makes the general log stream's `actorRefHash` actually correlate with
+    `admin_audit_events`'s for the same request.
     """
     try:
         # Resolved for its validation side effect: an unknown profile must not
@@ -156,12 +166,22 @@ def require_control_plane_authorization(
         ) from None
 
     if _matches_admin_bearer(request):
+        # Same fallback source `record_admin_plane_audit` (main.py) already
+        # uses for the audit trail's actorRefHash when there is no trusted
+        # session: the static bootstrap credential is not a person (D1), but a
+        # stable fingerprint of it still lets an operator tell "these log lines
+        # are the same bootstrap caller" apart from a later real subject.
+        bind_actor_ref_hash(request.headers.get(ADMIN_API_KEY_HEADER))
         return
 
     trusted_session = _resolve_trusted_session(request=request, db=db)
     if trusted_session is not None:
         # SEC-ADMIN-PLANE-04: keep attribution in server-owned request state.
         # In particular, never accept X-Actor-Ref / X-Tenant-Id as audit truth.
+        # (bind_actor_ref_hash for this principal already happened inside
+        # resolve_trusted_saas_request_session, as soon as it validated
+        # principal_id -- before the capability check below, so a denial is
+        # attributable too.)
         setattr(
             request.state,
             _CONTROL_PLANE_SUBJECT_STATE,
