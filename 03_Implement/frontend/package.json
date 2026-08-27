@@ -20,7 +20,8 @@
     "test:i18n-regression": "vitest run src/i18n/view_locale_resolution.test.ts src/i18n/document_locale_invariance.test.ts",
     "verify:integrity": "node ./scripts/verify_artifact_integrity.mjs",
     "e2e:mock": "playwright test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts",
-    "e2e:regression-harness": "./scripts/run_e2e_regression.sh"
+    "e2e:regression-harness": "./scripts/run_e2e_regression.sh",
+    "e2e:prod-tti": "vite build && playwright test --config=playwright.prod-tti.config.ts"
   },
   "dependencies": {
     "jszip": "3.10.1",

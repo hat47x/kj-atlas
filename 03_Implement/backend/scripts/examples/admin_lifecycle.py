@@ -124,9 +124,16 @@ def main() -> int:
     )
     # Restrict the tenant allowlist to the script-registered model (registered &
     # active only; unregistered ids are 422 under the hardened allowlist).
+    # OPS-ADMIN-CONCURRENCY-01 AC-4: expectedRevision is required (no more
+    # unconditional PUT), so read the current revision first -- exactly what
+    # the official CLI's model-allowlist-set already does.
+    _, allowlist_before = request(
+        "GET", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
+        expect_status=200,
+    )
     request(
         "PUT", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
-        {"modelIds": [_ADMIN_MODEL]},
+        {"modelIds": [_ADMIN_MODEL], "expectedRevision": (allowlist_before or {}).get("revision")},
         expect_status=200,
     )
     # Business plane reflects the allowlist: only the script-registered model.
@@ -144,9 +151,13 @@ def main() -> int:
     check("disabled script-registered model disappears from business-plane list", True, _ADMIN_MODEL not in _ids_after)
     # Restore the platform-default allowlist (empty = all active registered) so
     # the restriction does not leak into later operations.
+    _, allowlist_current = request(
+        "GET", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
+        expect_status=200,
+    )
     request(
         "PUT", "/admin/provision/models/tenants/local-default/allowlist", ADM_KEY,
-        {"modelIds": []},
+        {"modelIds": [], "expectedRevision": (allowlist_current or {}).get("revision")},
         expect_status=200,
     )
 

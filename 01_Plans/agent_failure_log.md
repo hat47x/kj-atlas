@@ -766,6 +766,7 @@ Updated: 2026-08-03
 - 誤った対処（一度試して失敗）: `export GIT_DIR=/mnt/c/.../.git/worktrees/<id> GIT_WORK_TREE=/mnt/c/.../worktrees/<id>` をシェル全体に対して設定してから`docs_check.py`を実行すると、discoveryは通るが、**`docs_check.py`が内部で起動する`01_Plans/tests`のpytestスイートが `git -C /tmp/tmpXXXX ...` の形で独立したフィクスチャ用一時リポジトリを操作するsubprocessを多数生成し、それらが親プロセスの`GIT_DIR`/`GIT_WORK_TREE`を継承してしまい、`-C`の対象を無視して本worktreeを操作しようとして失敗する**（`pathspec 'tracked.md' did not match any files`等、無関係な5件のテスト失敗が発生した）。
 - 正しい対処: worktree自身の`.git`ポインタファイル（worktree内にあるため編集許可の対象）を、WSL実行の直前だけ `gitdir: /mnt/c/GIT/kj-atlas/.git/worktrees/<id>`（WSLパス表記）へ書き換え、WSL側コマンドを実行し、**完了を待ってから**（`pgrep -f docs_check.py`等でプロセス終了を確認してから）`gitdir: C:/GIT/kj-atlas/.git/worktrees/<id>`（Windowsパス表記）へ書き戻す。この方式はプロセス環境変数を汚染しないため、内部で生成されるsubprocessの`-C`指定を阻害しない。書き戻しを忘れるとWindows Git Bash側の`git`が同じ理由で全滅するため、必ずtry/finally相当（完了確認 → 書き戻し）で運用する。
 - 再発防止: WindowsホストでWSL側のPythonツール（docs_check.py等）を実行する必要がある場合、環境変数によるGIT_DIR/GIT_WORK_TREEのグローバル上書きではなく、worktree自身の`.git`ポインタファイルを一時的に書き換える方式を使う。実行後は必ずWindows形式へ戻し、`git status`（Windows側）で復旧を確認する。
+- 追記（2026-08-26）: worktreeの`.git`ポインタファイルを書き換えず済ませる、より単純な代替策を確認した。`rsync -a --exclude .git --exclude node_modules ...`でworktree全体（除外: `.git`/`node_modules`/`dist`等の重量ディレクトリ）をWSL側の使い捨てディレクトリへコピーし、そこで`git init && git add -A && git commit`して独立した一時repoを作る。`docs_check.py`はこの一時repo内で実行すれば、worktree本体のポインタファイルには一切触れない。手元の未commit変更も反映したい場合はcommit前にrsyncし直せばよい。ポインタファイルの書き換え/復旧が不要なため、finally忘れによる復旧漏れのリスクがない分、こちらを優先してよい。
 
 ## 2026-08-25: 実backend E2E fixtureを起動したまま全Playwright suiteを流すと無関係なmockテストが汚染される
 
@@ -780,6 +781,13 @@ Updated: 2026-08-03
 - 原因: この2テストはリポジトリ直下の`04_Documentation`・`02_Architecture`（`03_Implement/frontend`の外、複数階層上）を実行時に探索/読み込みする。既存の運用メモ（`place-impl-files-under-03-implement`等）が想定する「`03_Implement/frontend`だけをrsyncする」コピー方式は、この2テストが前提とするリポジトリ全体のディレクトリ構造（`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`が`03_Implement`の兄弟として存在する）を`~/kjnative-fe`側に用意しない。
 - 対応: 本件はテスト対象コードのpre-existing gapであり、当該PRの変更（e2eスペック追加のみ）とは無関係と判断してそのまま報告した。フルのリポジトリ構成を要する検証が必要な場合は、`03_Implement/frontend`だけでなくリポジトリ全体（または少なくとも`00_Prompt`/`01_Plans`/`02_Architecture`/`04_Documentation`）を同じ相対位置でWSL側に用意する必要がある。
 - 再発防止: `~/kjnative-fe`でVitestが失敗した場合、まず`git status --porcelain`で自分のdiffが当該失敗テストのfixture/srcに触れているか確認する。触れていなければ、失敗テストがリポジトリ直下の他ディレクトリ（`04_Documentation`/`02_Architecture`等）を参照していないかを疑い、rsyncがフロントエンドだけを切り出したコピーであることに起因する既知のギャップとして扱う。
+
+## 2026-08-26: 既定並列度でのフルPlaywright suite実行時、`a11y_axe_smoke.spec.ts`・`inquiry_bundle_capacity_budget.spec.ts`がCPU競合で単発flakeする
+
+- 事象: UX-PERF-01のTTI測定spec追加後、無関係確認のためproduction-code変更なしで全224件（`npx playwright test`、workerはデフォルト並列数）を実行したところ、既知の13件（`agent_response_import.spec.ts`×2・`agent_task_export.spec.ts`×1・`ce3_patch_workspace.spec.ts`×1・`diagnostics_structural_metrics.spec.ts`×1・`first_meaningful_map_mouse_flow.spec.ts`×2・`large_document_operability.spec.ts`×1・`public_pack_visibility_compat.spec.ts`×2・`representative_visual_cue_capacity_budget.spec.ts`×1・`document-title-editor.spec.ts`×2、いずれも既存issueで既知）に加え、`a11y_axe_smoke.spec.ts`（"start panel has no automatable a11y violations"、`AxeBuilder.analyze()`が30000ms timeout）と`inquiry_bundle_capacity_budget.spec.ts`（`maxLongTaskMs`が`MAX_PARALLEL_CI_LONG_TASK_MS=150`を188msで超過）の2件が新たに失敗した（計15 failed）。
+- 原因: いずれもCPU負荷に敏感な処理（axe-core解析、long-task計測）に対する時間閾値assertで、既定の並列worker数（CPUコア数依存）でフルsuiteを流した際のCPU競合によるものと判断した。`inquiry_bundle_capacity_budget.spec.ts`自身も`MAX_PARALLEL_CI_LONG_TASK_MS`というコメント付き定数で「並列実行時は緩めの閾値を使う」設計を明示しており、単発の並列競合flakeは想定済みの挙動である。本PRのdiff（新規e2e spec 1本 + config 2件の`testIgnore`/`testMatch`追加 + issue/agent_failure_log更新のみ、production codeへの変更なし）はこの2specの対象コードに触れていない。
+- 対応: 両ファイルを`--workers=1`で単独再実行し、11件（`a11y_axe_smoke.spec.ts`10件 + `inquiry_bundle_capacity_budget.spec.ts`1件）全件成功を確認した。並列競合flakeであり、本PRによる回帰ではないと判断した。
+- 再発防止: フルsuiteの並列実行で、既知13件のリスト以外の失敗が出た場合は、即座に回帰と断定せず、まず対象specだけ`--workers=1`で単独再実行して切り分ける。axe-core解析やlong-task計測など時間閾値を持つspecは、並列CPU競合による単発flakeの可能性を優先的に疑う。
 
 ## 2026-08-26: `core.worktree`汚染が別worktree IDで再発。既存remedyをそのまま適用して復旧
 

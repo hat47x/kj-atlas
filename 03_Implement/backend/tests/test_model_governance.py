@@ -173,18 +173,20 @@ def test_tenant_allowlist_set_get(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers=headers)
         for model_id in ("m1", "m2", "m3"):
-            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers=headers)
 
+        initial = client.get("/admin/provision/models/tenants/tenant-a/allowlist", headers=headers).json()
         resp = client.put(
             "/admin/provision/models/tenants/tenant-a/allowlist",
-            json={"modelIds": ["m1", "m3"]},
-            headers={"X-Admin-Api-Key": _ADMIN_KEY},
+            json={"modelIds": ["m1", "m3"], "expectedRevision": initial["revision"]},
+            headers=headers,
         )
         assert resp.status_code == 200, resp.text
 
-        got = client.get("/admin/provision/models/tenants/tenant-a/allowlist", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
+        got = client.get("/admin/provision/models/tenants/tenant-a/allowlist", headers=headers).json()
         assert got["modelIds"] == ["m1", "m3"]
         assert len(got["revision"]) == 64
 
@@ -276,6 +278,72 @@ def test_tenant_allowlist_rejects_stale_revision_without_lost_update(tmp_path, m
         assert current["modelIds"] == ["m1"]
 
 
+def test_tenant_allowlist_put_without_expected_revision_is_rejected_428(tmp_path, monkeypatch) -> None:
+    """OPS-ADMIN-CONCURRENCY-01 AC-4: the compatibility window for an
+    unconditional PUT is over (Maintainer decision, 2026-08-26). A direct API
+    caller that omits expectedRevision must be rejected with 428 Precondition
+    Required and must NOT mutate the allowlist -- mirroring
+    inquiry_bundles.py's If-Match requirement for its update/delete routes.
+    A PUT with a correct expectedRevision must still succeed (unaffected by
+    this change), and a PUT with a stale expectedRevision must still 409
+    (unchanged conflict behavior, proven separately above)."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+
+    with _client(tmp_path) as (client, _session_local):
+        headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "p", "providerKind": "local", "displayName": "P"},
+            headers=headers,
+        )
+        for model_id in ("m1", "m2"):
+            client.post(
+                "/admin/provision/models",
+                json={"id": model_id, "providerId": "p", "displayName": model_id},
+                headers=headers,
+            )
+
+        # Missing expectedRevision -> 428, and the allowlist is NOT mutated.
+        missing_revision = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1"]},
+            headers=headers,
+        )
+        assert missing_revision.status_code == 428, missing_revision.text
+        assert missing_revision.json()["detail"] == {
+            "code": "model_allowlist_expected_revision_required",
+            "message": "expectedRevision is required to update the tenant model allowlist.",
+        }
+        untouched = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        assert untouched["modelIds"] == []
+
+        # Correct expectedRevision -> still succeeds (428 guard does not
+        # interfere with the already-proven happy path).
+        correct_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1"], "expectedRevision": untouched["revision"]},
+            headers=headers,
+        )
+        assert correct_write.status_code == 200, correct_write.text
+
+        # Stale expectedRevision -> still 409 model_allowlist_conflict, not 428
+        # and not a silent overwrite (unchanged behavior).
+        stale_write = client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m2"], "expectedRevision": untouched["revision"]},
+            headers=headers,
+        )
+        assert stale_write.status_code == 409, stale_write.text
+        assert stale_write.json()["detail"]["code"] == "model_allowlist_conflict"
+
+        final = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()
+        assert final["modelIds"] == ["m1"]
+
+
 def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
 
@@ -306,9 +374,13 @@ def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path
         assert missing_tenant.status_code == 404
         assert missing_tenant.json()["detail"]["code"] == "tenant_not_found"
 
+        expected_revision = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=headers
+        ).json()["revision"]
+
         invalid_models = client.put(
             "/admin/provision/models/tenants/tenant-a/allowlist",
-            json={"modelIds": ["missing-model", "m2"]},
+            json={"modelIds": ["missing-model", "m2"], "expectedRevision": expected_revision},
             headers=headers,
         )
         assert invalid_models.status_code == 422
@@ -321,7 +393,7 @@ def test_tenant_allowlist_rejects_invalid_targets_without_partial_write(tmp_path
 
         duplicate_models = client.put(
             "/admin/provision/models/tenants/tenant-a/allowlist",
-            json={"modelIds": ["m1", "m1"]},
+            json={"modelIds": ["m1", "m1"], "expectedRevision": expected_revision},
             headers=headers,
         )
         assert duplicate_models.status_code == 422
@@ -410,10 +482,18 @@ def test_allowlist_enforced_on_ai_route(tmp_path, monkeypatch) -> None:
     }
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers=admin_headers)
         for model_id in ("m1", "m2"):
-            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
-        client.put("/admin/provision/models/tenants/local-default/allowlist", json={"modelIds": ["m1"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers=admin_headers)
+        initial_revision = client.get(
+            "/admin/provision/models/tenants/local-default/allowlist", headers=admin_headers
+        ).json()["revision"]
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["m1"], "expectedRevision": initial_revision},
+            headers=admin_headers,
+        )
 
         # Disallowed override -> 403 model_not_allowed (fail-closed, no LLM call).
         denied = client.post("/ai/suggest-island-summary", json={"doc": doc, "islandId": "i1", "model": "m2"}, headers={"X-API-Key": _BUSINESS_KEY})
@@ -481,11 +561,19 @@ def test_model_crud_and_allowlist_changes_are_audited(tmp_path, monkeypatch) -> 
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
-        client.post("/admin/provision/models", json={"id": "m1", "providerId": "p", "displayName": "M1"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
-        client.put("/admin/provision/models/tenants/tenant-a/allowlist", json={"modelIds": ["m1"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "external", "displayName": "P"}, headers=admin_headers)
+        client.post("/admin/provision/models", json={"id": "m1", "providerId": "p", "displayName": "M1"}, headers=admin_headers)
+        initial_revision = client.get(
+            "/admin/provision/models/tenants/tenant-a/allowlist", headers=admin_headers
+        ).json()["revision"]
+        client.put(
+            "/admin/provision/models/tenants/tenant-a/allowlist",
+            json={"modelIds": ["m1"], "expectedRevision": initial_revision},
+            headers=admin_headers,
+        )
 
-        audit = client.get("/admin/provision/audit", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
+        audit = client.get("/admin/provision/audit", headers=admin_headers).json()
         routes = {event["route"] for event in audit["events"]}
         assert "/admin/provision/models/providers" in routes
         assert "/admin/provision/models" in routes
@@ -499,17 +587,25 @@ def test_available_models_reflects_tenant_allowlist(tmp_path, monkeypatch) -> No
     monkeypatch.setattr(settings, "llm_provider", "local")
 
     with _client(tmp_path) as (client, _session_local):
-        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post("/admin/provision/models/providers", json={"id": "p", "providerKind": "local", "displayName": "P"}, headers=admin_headers)
         for model_id, state in (("m1", "active"), ("m2", "active"), ("m3", "disabled")):
-            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
-        client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+            client.post("/admin/provision/models", json={"id": model_id, "providerId": "p", "displayName": model_id}, headers=admin_headers)
+        client.patch("/admin/provision/models/m3", json={"lifecycleState": "disabled"}, headers=admin_headers)
 
         # No allowlist -> platform-default: m1 + m2 (m3 disabled excluded).
         default_models = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
         assert {m["id"] for m in default_models} == {"m1", "m2"}
 
         # Allowlist [m2] -> only m2 offered.
-        client.put("/admin/provision/models/tenants/local-default/allowlist", json={"modelIds": ["m2"]}, headers={"X-Admin-Api-Key": _ADMIN_KEY})
+        initial_revision = client.get(
+            "/admin/provision/models/tenants/local-default/allowlist", headers=admin_headers
+        ).json()["revision"]
+        client.put(
+            "/admin/provision/models/tenants/local-default/allowlist",
+            json={"modelIds": ["m2"], "expectedRevision": initial_revision},
+            headers=admin_headers,
+        )
         filtered = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()["models"]
         assert [m["id"] for m in filtered] == ["m2"]
 
@@ -553,9 +649,12 @@ def test_available_models_explains_tenant_policy_and_selectable_capability(tmp_p
                 },
                 headers=admin_headers,
             )
+        first_revision = client.get(
+            "/admin/provision/models/tenants/local-default/allowlist", headers=admin_headers
+        ).json()["revision"]
         client.put(
             "/admin/provision/models/tenants/local-default/allowlist",
-            json={"modelIds": ["allowed-disabled"]},
+            json={"modelIds": ["allowed-disabled"], "expectedRevision": first_revision},
             headers=admin_headers,
         )
         client.patch(
@@ -572,9 +671,12 @@ def test_available_models_explains_tenant_policy_and_selectable_capability(tmp_p
             "unavailableReason": "tenant_policy_excludes_all",
         }
 
+        second_revision = client.get(
+            "/admin/provision/models/tenants/local-default/allowlist", headers=admin_headers
+        ).json()["revision"]
         client.put(
             "/admin/provision/models/tenants/local-default/allowlist",
-            json={"modelIds": ["judgement-only"]},
+            json={"modelIds": ["judgement-only"], "expectedRevision": second_revision},
             headers=admin_headers,
         )
         not_selectable = client.get(
