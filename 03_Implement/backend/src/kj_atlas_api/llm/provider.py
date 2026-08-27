@@ -80,6 +80,15 @@ class LLMRequest:
     max_tokens: int = 2000
     # ADR-0065: optional model override (highest priority).
     model: str | None = None
+    # AI-MODEL-GOVERNANCE-03: the requested model's OWN registered provider
+    # kind (routes/ai.py `_assert_model_allowed` resolves and
+    # readiness-checks this before any LLM call). When set, it wins over
+    # `KJ_ATLAS_LLM_PROVIDER` for transport selection -- per-model dynamic
+    # dispatch. None preserves prior behavior: resolve the process-wide
+    # setting, unaware of which model was requested (used by the tasks that
+    # never carry a model_id: re_layout, suggest_merges, check_narrative,
+    # detect_contradiction).
+    provider_kind: str | None = None
 
 
 # AI-ROUTE-01 MMR-01: tasks that are pure transformation (never a human
@@ -796,6 +805,9 @@ class ProviderRegistry:
             raise ProviderRequestError.unavailable(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {raw_provider_name}", metadata)
         return self._providers[provider_name]()
 
+    def is_registered(self, raw_provider_name: str) -> bool:
+        return raw_provider_name.lower().strip() in self._aliases
+
 
 def _build_default_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
@@ -828,12 +840,32 @@ def build_audit_fields(llm_response: object) -> dict[str, object]:
     }
 
 
-def get_provider() -> LLMProvider:
+def get_provider(provider_kind: str | None = None) -> LLMProvider:
+    """Resolve the transport to use for a generate() call.
+
+    `provider_kind` is AI-MODEL-GOVERNANCE-03's per-model dynamic dispatch:
+    when given (the requested model's OWN registered provider kind, already
+    readiness-checked by the caller -- routes/ai.py `_assert_model_allowed`),
+    it wins over `KJ_ATLAS_LLM_PROVIDER`. Omitted/None preserves prior
+    behavior exactly: resolve the process-wide `settings.llm_provider`,
+    unaware of which model is being requested."""
+    if provider_kind is not None:
+        return _DEFAULT_REGISTRY.resolve(provider_kind)
     return _DEFAULT_REGISTRY.resolve(settings.llm_provider)
 
 
+def is_supported_provider_kind(provider_kind: str) -> bool:
+    """Whether `provider_kind` (raw or alias) has a registered transport
+    factory in the default registry. Used by the per-model dispatch gate
+    (routes/ai.py) to reject an unsupported registered provider kind with the
+    same clean model_provider_unavailable shape as a missing-config one,
+    rather than letting an unrecognized kind fall through to
+    ProviderRegistry.resolve()'s generic provider_unavailable error."""
+    return _DEFAULT_REGISTRY.is_registered(provider_kind)
+
+
 def generate_with_fallback(req: LLMRequest) -> LLMResponse:
-    provider = get_provider()
+    provider = get_provider(req.provider_kind) if req.provider_kind is not None else get_provider()
     # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
     # operator can see external (large-scale) call volume; counting the attempt
     # (before any provider error) is what cost control needs. Token usage is

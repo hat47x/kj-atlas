@@ -7,6 +7,8 @@ surface.
 
 from __future__ import annotations
 
+import io
+import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -767,3 +769,205 @@ def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> N
             "code": "model_provider_unavailable",
             "message": "The model's registered provider is not available in this runtime.",
         }
+
+
+class _StubHTTPResponse:
+    """Minimal urlopen()-shaped stub (matches test_llm_provider.py's helper of
+    the same name) so kj_atlas_api.llm.provider.open_trusted_http can be
+    monkeypatched without a real network call."""
+
+    def __init__(self, body: dict) -> None:
+        self._buffer = io.BytesIO(json.dumps(body).encode("utf-8"))
+
+    def read(self, size: int = -1) -> bytes:
+        return self._buffer.read(size)
+
+    def __enter__(self) -> "_StubHTTPResponse":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+
+def test_dynamic_dispatch_local_and_deepseek_simultaneously(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 remaining AC: register DeepSeek and local
+    providers simultaneously (both configured), register a model under each,
+    and prove per-model dynamic dispatch -- the actual behavior change that
+    replaces the short-term "model's provider kind must equal the
+    process-wide KJ_ATLAS_LLM_PROVIDER" gate covered by
+    test_model_provider_must_match_runtime_transport above.
+
+    The runtime primary is "local". A request naming the DeepSeek-registered
+    model must reach the DeepSeek transport -- NOT local, and NOT rejected
+    just because it differs from KJ_ATLAS_LLM_PROVIDER -- a request naming the
+    local-registered model must reach the local transport, and once DeepSeek's
+    own required setting (its API key) is removed, its model is rejected with
+    the existing model_provider_unavailable shape before any further LLM call
+    is attempted (no unhandled exception, no fallback to the wrong provider)."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "local")
+    monkeypatch.setattr(settings, "local_llm_base_url", "http://local-llm.test")
+    monkeypatch.setattr(settings, "deepseek_api_key", "sk-test-key")
+    monkeypatch.setattr(settings, "deepseek_base_url", "https://api.deepseek.com")
+
+    from kj_atlas_api.llm import provider as llm_provider
+
+    calls: list[str] = []
+
+    def _fake_urlopen(req, timeout_seconds=60):
+        calls.append(req.full_url)
+        if req.full_url == "http://local-llm.test/generate":
+            return _StubHTTPResponse(
+                {"text": json.dumps({"candidates": [{"title": "ローカル応答"}]})}
+            )
+        if req.full_url == "https://api.deepseek.com/v1/chat/completions":
+            content = json.dumps({"candidates": [{"title": "DeepSeek応答"}]})
+            return _StubHTTPResponse(
+                {"choices": [{"message": {"content": content}}]}
+            )
+        raise AssertionError(f"unexpected endpoint reached: {req.full_url}")
+
+    monkeypatch.setattr(llm_provider, "open_trusted_http", _fake_urlopen)
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        business_headers = {"X-API-Key": _BUSINESS_KEY}
+
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "local", "providerKind": "local", "displayName": "Local"},
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models",
+            json={
+                "id": "local-model",
+                "providerId": "local",
+                "displayName": "Local Model",
+                "capabilities": "intermediate,generate",
+            },
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek"},
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models",
+            json={
+                "id": "deepseek-model",
+                "providerId": "deepseek",
+                "displayName": "DeepSeek Model",
+                "capabilities": "intermediate,generate",
+            },
+            headers=admin_headers,
+        )
+
+        # Both models are simultaneously offered -- both are ready even though
+        # only "local" is the process-wide KJ_ATLAS_LLM_PROVIDER.
+        available = client.get("/ai/available-models", headers=business_headers).json()["models"]
+        assert {m["id"] for m in available} == {"local-model", "deepseek-model"}
+
+        # local-model -> the local HTTP transport.
+        local_resp = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": [], "cardTexts": ["alpha"], "model": "local-model", "textReviewed": True},
+            headers=business_headers,
+        )
+        assert local_resp.status_code == 200, local_resp.text
+        assert local_resp.json()["candidates"][0]["title"] == "ローカル応答"
+
+        # deepseek-model -> the DeepSeek transport, even though
+        # KJ_ATLAS_LLM_PROVIDER is "local" -- this is the actual dynamic
+        # dispatch behavior AC-5 asks to prove (not merely gating).
+        deepseek_resp = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": [], "cardTexts": ["alpha"], "model": "deepseek-model", "textReviewed": True},
+            headers=business_headers,
+        )
+        assert deepseek_resp.status_code == 200, deepseek_resp.text
+        assert deepseek_resp.json()["candidates"][0]["title"] == "DeepSeek応答"
+
+        assert calls == [
+            "http://local-llm.test/generate",
+            "https://api.deepseek.com/v1/chat/completions",
+        ]
+
+        # Remove DeepSeek's own required setting (its API key). Its model must
+        # now be rejected with the existing model_provider_unavailable shape
+        # -- fail-closed at the gate, before any further LLM call -- not an
+        # unhandled exception and not a silent fallback to the local
+        # transport.
+        monkeypatch.setattr(settings, "deepseek_api_key", None)
+        calls_before = len(calls)
+        unconfigured_resp = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": [], "cardTexts": ["alpha"], "model": "deepseek-model", "textReviewed": True},
+            headers=business_headers,
+        )
+        assert unconfigured_resp.status_code == 503, unconfigured_resp.text
+        assert unconfigured_resp.json()["detail"] == {
+            "code": "model_provider_unavailable",
+            "message": "The model's registered provider is not available in this runtime.",
+        }
+        assert len(calls) == calls_before  # no LLM call attempted
+
+        # The local model is unaffected by DeepSeek's own config going stale.
+        still_local = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": [], "cardTexts": ["alpha"], "model": "local-model", "textReviewed": True},
+            headers=business_headers,
+        )
+        assert still_local.status_code == 200, still_local.text
+
+
+def test_dynamic_dispatch_disabled_by_none_kill_switch(tmp_path, monkeypatch) -> None:
+    """AI-MODEL-GOVERNANCE-03 design decision: KJ_ATLAS_LLM_PROVIDER=none
+    remains a hard kill switch under dynamic dispatch. Even a fully-configured
+    alternate provider (deepseek, with its API key set) registered in the DB
+    must not become reachable just because a model names it explicitly --
+    "none" means AI is off for this process, full stop (AGENTS.md: "KJ_ATLAS_
+    LLM_PROVIDER=none でも主要価値が成立する")."""
+    monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
+    monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
+    monkeypatch.setattr(settings, "llm_provider", "none")
+    monkeypatch.setattr(settings, "deepseek_api_key", "sk-test-key")
+    monkeypatch.setattr(settings, "deepseek_base_url", "https://api.deepseek.com")
+
+    from kj_atlas_api.llm import provider as llm_provider
+
+    def _fail_if_called(req, timeout_seconds=60):
+        raise AssertionError("no LLM call should be attempted under the none kill switch")
+
+    monkeypatch.setattr(llm_provider, "open_trusted_http", _fail_if_called)
+
+    with _client(tmp_path) as (client, _session_local):
+        admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
+        client.post(
+            "/admin/provision/models/providers",
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek"},
+            headers=admin_headers,
+        )
+        client.post(
+            "/admin/provision/models",
+            json={
+                "id": "deepseek-model",
+                "providerId": "deepseek",
+                "displayName": "DeepSeek Model",
+                "capabilities": "intermediate,generate",
+            },
+            headers=admin_headers,
+        )
+
+        available = client.get("/ai/available-models", headers={"X-API-Key": _BUSINESS_KEY}).json()
+        assert available["models"] == []
+
+        denied = client.post(
+            "/ai/suggest-document-title",
+            json={"islandTitles": [], "cardTexts": ["alpha"], "model": "deepseek-model", "textReviewed": True},
+            headers={"X-API-Key": _BUSINESS_KEY},
+        )
+        assert denied.status_code == 503, denied.text
+        assert denied.json()["detail"]["code"] == "model_provider_unavailable"

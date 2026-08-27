@@ -180,6 +180,59 @@ def _normalize_llm_allowlist(raw_allowlist: str | None) -> str | None:
     return ",".join(normalized_hosts)
 
 
+_PROVIDER_KIND_READINESS_ALIASES = {
+    "local_http": "local",
+    "large_scale": "large-scale",
+    "external": "large-scale",
+}
+
+
+def provider_kind_readiness_errors(kind: str, cfg: "Settings") -> list[str]:
+    """AI-MODEL-GOVERNANCE-03: per-provider-kind config completeness, shared
+    between startup fail-fast (`validate_llm_provider_guards`, checked once
+    for the primary `KJ_ATLAS_LLM_PROVIDER`) and request-time per-model
+    dynamic dispatch (`routes/ai.py` `_assert_model_allowed`, checked for an
+    arbitrary registered model's OWN provider kind). One function means the
+    two call sites cannot drift on what "this provider kind is configured"
+    means.
+
+    Returns the list of missing-setting messages; empty means `kind` has
+    everything it needs to attempt a `generate()` call right now. Mirrors
+    EXACTLY what `validate_llm_provider_guards` already required when `kind`
+    was the primary provider -- notably "local" has no required setting here:
+    a missing `KJ_ATLAS_LOCAL_LLM_BASE_URL` has always been deferred to
+    `LocalProvider.generate()` at request time, not enforced at startup, and
+    per-model dispatch preserves that leniency rather than introducing a new,
+    stricter rule. "none" and unsupported kinds are not decided here --
+    callers special-case "none" (it disables AI unconditionally) and an
+    unsupported kind (rejected by `ProviderRegistry` itself)."""
+    normalized = kind.strip().lower()
+    normalized = _PROVIDER_KIND_READINESS_ALIASES.get(normalized, normalized)
+    errors: list[str] = []
+    if normalized == "deepseek":
+        if not cfg.deepseek_api_key:
+            errors.append("KJ_ATLAS_DEEPSEEK_API_KEY is not set")
+    elif normalized == "large-scale":
+        if not cfg.llm_large_scale_opt_in:
+            errors.append("KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN is not set")
+        if not cfg.llm_escalation_enabled:
+            errors.append("KJ_ATLAS_LLM_ESCALATION_ENABLED is not set")
+        if (
+            cfg.large_scale_llm_base_url is None
+            or cfg.large_scale_llm_model is None
+            or cfg.large_scale_llm_allowlist is None
+        ):
+            errors.append("its base URL, model, and allowlist")
+        elif (
+            urlsplit(cfg.large_scale_llm_base_url).hostname or ""
+        ).lower() not in cfg.large_scale_llm_allowlist.split(","):
+            errors.append(
+                "KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL host must be in "
+                "KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST"
+            )
+    return errors
+
+
 LEGACY_ENV_KEYS = {
     "RUNTIME_PROFILE",
     "DATABASE_URL",
@@ -681,26 +734,6 @@ class Settings(BaseSettings):
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external", "deepseek"}:
             raise ValueError(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {self.llm_provider}")
 
-        if provider == "deepseek":
-            if not self.deepseek_api_key:
-                raise ValueError(
-                    "KJ_ATLAS_LLM_PROVIDER=deepseek requires KJ_ATLAS_DEEPSEEK_API_KEY"
-                )
-            _validate_trusted_http_endpoint(
-                endpoint=self.deepseek_base_url,
-                endpoint_key="KJ_ATLAS_DEEPSEEK_BASE_URL",
-            )
-
-        if provider in {"large-scale", "large_scale", "external"}:
-            if not self.llm_large_scale_opt_in:
-                raise ValueError(
-                    "KJ_ATLAS_LLM_PROVIDER=large-scale requires KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true"
-                )
-            if not self.llm_escalation_enabled:
-                raise ValueError(
-                    "KJ_ATLAS_LLM_PROVIDER=large-scale requires KJ_ATLAS_LLM_ESCALATION_ENABLED=true"
-                )
-
         if self.local_llm_base_url is not None:
             _validate_trusted_http_endpoint(
                 endpoint=self.local_llm_base_url,
@@ -711,6 +744,19 @@ class Settings(BaseSettings):
                 endpoint=self.large_scale_llm_base_url,
                 endpoint_key="KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL",
             )
+        # AI-MODEL-GOVERNANCE-03: validated unconditionally now (like
+        # local/large-scale above), not only `if provider == "deepseek":`.
+        # Per-model dynamic dispatch can reach DeepSeekProvider from a process
+        # whose primary transport is local/large-scale
+        # (llm/provider.py get_provider(provider_kind=...)), so an unsafe or
+        # malformed KJ_ATLAS_DEEPSEEK_BASE_URL must fail closed at startup
+        # regardless of which transport is primary -- this closes the
+        # SSRF-relevant gap that made this the one endpoint validated only
+        # when it happened to be the active provider.
+        _validate_trusted_http_endpoint(
+            endpoint=self.deepseek_base_url,
+            endpoint_key="KJ_ATLAS_DEEPSEEK_BASE_URL",
+        )
         _validate_optional_llm_model_id(
             value=self.local_llm_model,
             value_key="KJ_ATLAS_LOCAL_LLM_MODEL",
@@ -722,22 +768,26 @@ class Settings(BaseSettings):
         self.large_scale_llm_allowlist = _normalize_llm_allowlist(
             self.large_scale_llm_allowlist
         )
-        if provider in {"large-scale", "large_scale", "external"}:
-            if (
-                self.large_scale_llm_base_url is None
-                or self.large_scale_llm_model is None
-                or self.large_scale_llm_allowlist is None
-            ):
+
+        # AI-MODEL-GOVERNANCE-03: the primary provider's own readiness check
+        # now goes through provider_kind_readiness_errors -- the SAME function
+        # request-time per-model dispatch uses for an arbitrary registered
+        # model's provider kind, so the two cannot drift on what "configured"
+        # means for a given kind.
+        if provider == "deepseek":
+            deepseek_errors = provider_kind_readiness_errors("deepseek", self)
+            if deepseek_errors:
                 raise ValueError(
-                    "KJ_ATLAS_LLM_PROVIDER=large-scale requires its base URL, model, and allowlist"
+                    "KJ_ATLAS_LLM_PROVIDER=deepseek requires "
+                    + "; ".join(deepseek_errors)
                 )
-            large_scale_hostname = (
-                urlsplit(self.large_scale_llm_base_url).hostname or ""
-            ).lower()
-            if large_scale_hostname not in self.large_scale_llm_allowlist.split(","):
+
+        if provider in {"large-scale", "large_scale", "external"}:
+            large_scale_errors = provider_kind_readiness_errors("large-scale", self)
+            if large_scale_errors:
                 raise ValueError(
-                    "KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL host must be in "
-                    "KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST"
+                    "KJ_ATLAS_LLM_PROVIDER=large-scale requires "
+                    + "; ".join(large_scale_errors)
                 )
 
         self.llm_provider = provider

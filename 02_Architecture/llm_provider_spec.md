@@ -70,6 +70,18 @@ KJ_ATLAS_DEEPSEEK_MODEL=deepseek-chat
 - `KJ_ATLAS_LLM_PROVIDER=external` は `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
 - `KJ_ATLAS_LLM_PROVIDER=deepseek` は `KJ_ATLAS_DEEPSEEK_API_KEY` を必須とし、未設定時は起動を拒否する。
 
+### 3.1 AI-MODEL-GOVERNANCE-03: per-model動的dispatch（2026-08-27追記）
+
+model registry（`LLMProviderRegistryRow`/`LLMModelRegistryRow`）は `providerId` から `providerKind` を独立に保持しており、`KJ_ATLAS_LLM_PROVIDER` はもはや「実行時に選ばれる唯一のprovider」ではない。
+
+- `KJ_ATLAS_LLM_PROVIDER` の役割は次の2つに整理される。
+  1. **起動時fail-fast対象**: `validate_llm_provider_guards()` はこの値が指す `providerKind` の設定完全性のみを起動時に検査する（本節冒頭の3箇条は不変）。
+  2. **既定/フォールバックtransport**: `model` を指定しないAI呼び出し（suggest-layout / suggest-merges / check-narrative / detect-contradiction）はこの値をそのまま使う。
+- **model単位のdispatch**: `model` を指定するAI呼び出しは、その model の登録先 `providerId` → `providerKind` を解決し、`ProviderRegistry.resolve(providerKind)` で対応するtransport（`local`/`large-scale`/`deepseek`）へ直接dispatchする。判定は `KJ_ATLAS_LLM_PROVIDER` と一致するかではなく、その `providerKind` **自身**の設定完全性（`provider_kind_readiness_errors()`、起動時チェックと同一関数を共用）で行う。したがって `KJ_ATLAS_LLM_PROVIDER=local` のプロセスでも、`KJ_ATLAS_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelへ正しくdispatchできる。
+- **`none` は無条件のkill switch**: `KJ_ATLAS_LLM_PROVIDER=none` のときは、registryに他の `providerKind` が設定済みであっても動的dispatchを一切行わない。model単位の判定より先にこの条件を評価する（AGENTS.md安全不変条件「`KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する」を維持するための設計判断）。
+- **未設定providerの扱い**: 判定に失敗したmodel（`providerKind` 自身の設定不足、`none`、未対応kind）は、LLM呼び出し前に `503 model_provider_unavailable` で拒否する（`ProviderRequestError`由来の生例外を返さない）。
+- **apiKeyRef**: registry行の `apiKeyRef`（AC-4で参照形式のみ受理）は、dispatch先の資格情報として直接使わない。各transportは従来どおり `KJ_ATLAS_*_API_KEY` 環境変数を直接読む。dispatchはどのtransport factoryを呼ぶかだけを決め、資格情報の読み出し経路は変更しない。
+
 ---
 
 ## 4. Interface 契約（`LLMRequest`/`LLMResponse`）

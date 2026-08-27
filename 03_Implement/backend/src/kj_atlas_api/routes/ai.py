@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
-from kj_atlas_api.settings import settings
+from kj_atlas_api.settings import provider_kind_readiness_errors, settings
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.llm.provider import (
     LLMRequest,
@@ -20,6 +20,7 @@ from kj_atlas_api.llm.provider import (
     build_audit_fields,
     generate_with_fallback,
     get_provider,
+    is_supported_provider_kind,
     resolve_model_for_task,
 )
 from kj_atlas_api.models_ai import (
@@ -91,8 +92,34 @@ def _canonical_provider_kind(raw_kind: str) -> str:
     return _PROVIDER_KIND_ALIASES.get(normalized, normalized)
 
 
-def _provider_matches_runtime(provider_kind: str) -> bool:
-    return _canonical_provider_kind(provider_kind) == _canonical_provider_kind(get_provider().provider_kind)
+def _provider_kind_dispatch_errors(provider_kind: str) -> list[str]:
+    """AI-MODEL-GOVERNANCE-03: is `provider_kind` ready to serve a generate()
+    call right now via per-model dynamic dispatch -- independent of whether it
+    equals the process-wide `KJ_ATLAS_LLM_PROVIDER`? Returns missing-config
+    reasons; empty = dispatchable. Used both by the execution gate
+    (`_assert_model_allowed`) and the `/ai/available-models` listing, so a
+    displayed model always matches what the gate will do with it (AC-2).
+
+    `KJ_ATLAS_LLM_PROVIDER=none` remains a hard kill switch: when it is the
+    active setting, AI is off for this process and no per-model dispatch is
+    attempted for ANY registered provider kind, regardless of that kind's own
+    config completeness (AGENTS.md safety invariant: "KJ_ATLAS_LLM_PROVIDER=
+    none でも主要価値が成立する" -- an operator who has explicitly disabled AI
+    at the process level must not have it silently re-enabled by an alternate
+    provider registration in the DB).
+
+    Otherwise, delegates to settings.provider_kind_readiness_errors -- the
+    SAME per-kind config-completeness check validate_llm_provider_guards()
+    already performs for the single primary provider at startup, so dispatch
+    readiness cannot drift from what "configured" means there."""
+    if _canonical_provider_kind(settings.llm_provider) == "none":
+        return ["KJ_ATLAS_LLM_PROVIDER=none disables AI for this process"]
+    canonical = _canonical_provider_kind(provider_kind)
+    if canonical == "none":
+        return ["provider kind 'none' is always unavailable for dispatch"]
+    if not is_supported_provider_kind(canonical):
+        return [f"unsupported provider kind: {provider_kind}"]
+    return provider_kind_readiness_errors(canonical, settings)
 
 
 def _audit_llm_trace(
@@ -161,9 +188,16 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
     )
 
 
-def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
-    """AI-MODEL-GOVERNANCE-01 R3 + AI-MODEL-GOVERNANCE-02: enforce the tenant
-    model allowlist AND that the model is an active registered model.
+def _assert_model_allowed(request: Request, db: Session, model_id: str) -> str:
+    """AI-MODEL-GOVERNANCE-01 R3 + AI-MODEL-GOVERNANCE-02 + AI-MODEL-GOVERNANCE-03:
+    enforce the tenant model allowlist, that the model is an active registered
+    model, AND that its OWN registered provider is ready to serve a
+    generate() call right now. Returns the model's canonical provider_kind on
+    success, for the caller to pass to generate_with_fallback so the request
+    actually dispatches to that model's transport (AI-MODEL-GOVERNANCE-03
+    dynamic dispatch) rather than always the process-wide
+    `KJ_ATLAS_LLM_PROVIDER`. Every failure path here raises before any LLM
+    call is attempted.
 
     - A non-empty allowlist is fail-closed: a requested/resolved model outside
       it is rejected with 403 model_not_allowed before any LLM call.
@@ -171,7 +205,13 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
       AI-MODEL-GOVERNANCE-02 closes the gap where the platform-default was a
       no-op, letting unregistered / disabled model ids reach the LLM provider.
       An id that is not an active registered model (active provider included)
-      is rejected with 403 model_not_registered."""
+      is rejected with 403 model_not_registered.
+    - AI-MODEL-GOVERNANCE-03: a model whose registered provider kind is not
+      itself dispatchable right now (missing required settings, "none", an
+      unsupported kind, or the process-wide KJ_ATLAS_LLM_PROVIDER=none kill
+      switch) is rejected with 503 model_provider_unavailable -- independent
+      of whether that kind equals KJ_ATLAS_LLM_PROVIDER
+      (see _provider_kind_dispatch_errors)."""
     from kj_atlas_api.model_registry_repository import (
         list_models,
         list_providers,
@@ -206,9 +246,10 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
     # is not an active registered model (active provider included) must fail
     # closed before any LLM call. Distinguishes "tenant-restricted" (above)
     # from "does not exist / disabled" (here) for operator triage.
-    active_providers = [row for row in list_providers(db) if row.lifecycle_state == "active"]
-    active_provider_ids = {row.id for row in active_providers}
-    runtime_provider_ids = {row.id for row in active_providers if _provider_matches_runtime(row.provider_kind)}
+    providers_by_id = {row.id: row for row in list_providers(db)}
+    active_provider_ids = {
+        provider_id for provider_id, row in providers_by_id.items() if row.lifecycle_state == "active"
+    }
     models_by_id = {row.id: row for row in list_models(db)}
     active_registered_ids = {
         row.id
@@ -232,14 +273,17 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
         )
 
     model = models_by_id[model_id]
-    if model.provider_id not in runtime_provider_ids:
+    provider_kind = _canonical_provider_kind(providers_by_id[model.provider_id].provider_kind)
+    dispatch_errors = _provider_kind_dispatch_errors(provider_kind)
+    if dispatch_errors:
         logger.warning(
             "model_provider_unavailable",
             extra={
                 "tenantId": tenant.tenant_id,
                 "modelId": model_id,
                 "providerId": model.provider_id,
-                "runtimeProviderKind": get_provider().provider_kind,
+                "providerKind": provider_kind,
+                "reasons": "; ".join(dispatch_errors),
             },
         )
         raise HTTPException(
@@ -249,6 +293,7 @@ def _assert_model_allowed(request: Request, db: Session, model_id: str) -> None:
                 "message": "The model's registered provider is not available in this runtime.",
             },
         )
+    return provider_kind
 
 
 def _reject_unreviewed_text(document, allow_unreviewed_text: bool | None) -> None:
@@ -922,7 +967,7 @@ def get_available_models(request: Request, db: Session = Depends(get_db)) -> Ava
     active_provider_ids = {
         row.id
         for row in list_providers(db)
-        if row.lifecycle_state == "active" and _provider_matches_runtime(row.provider_kind)
+        if row.lifecycle_state == "active" and not _provider_kind_dispatch_errors(row.provider_kind)
     }
     effective = tenant_allowlist_effective_model_ids(db, tenant_id=tenant.tenant_id)
     runtime_models = [row for row in active_models if row.provider_id in active_provider_ids]
@@ -1039,13 +1084,14 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_island_summary"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_island_summary"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
                 prompt=_build_island_summary_prompt(payload),
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
@@ -1185,7 +1231,7 @@ def propose_opposing_viewpoint(
     if next((card for card in payload.doc.cards if card.id == payload.targetCardId), None) is None:
         raise HTTPException(status_code=422, detail="targetCardId does not exist")
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("propose_opposing_viewpoint"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("propose_opposing_viewpoint"))
 
     try:
         llm_response = generate_with_fallback(
@@ -1193,6 +1239,7 @@ def propose_opposing_viewpoint(
                 task="propose_opposing_viewpoint",
                 prompt=_build_opposing_viewpoint_prompt(payload),
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
@@ -1476,13 +1523,14 @@ def get_proposal_status(
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("generate_narrative"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("generate_narrative"))
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
                 prompt=_build_generate_narrative_prompt(payload),
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
@@ -1605,7 +1653,7 @@ def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionRe
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Session = Depends(get_db)) -> RefineCardTextResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("refine_card_text"))
     _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
@@ -1613,6 +1661,7 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
                 task="refine_card_text",
                 prompt=_build_refine_card_text_prompt(payload),
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
@@ -1630,7 +1679,7 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_card_groups"))
     _reject_unreviewed_cards(payload.cards, payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
@@ -1638,6 +1687,7 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
                 task="suggest_card_groups",
                 prompt=_build_suggest_card_groups_prompt(payload),
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
@@ -1678,7 +1728,7 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Request, db: Session = Depends(get_db)) -> SuggestDocumentTitleResponse:
-    _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
+    provider_kind = _assert_model_allowed(request, db, payload.model or resolve_model_for_task("suggest_document_title"))
     _reject_unreviewed_cards([payload], payload.allowUnreviewedText)
     try:
         llm_response = generate_with_fallback(
@@ -1688,6 +1738,7 @@ def suggest_document_title(payload: SuggestDocumentTitleRequest, request: Reques
                 temperature=0.4,
                 max_tokens=300,
                 model=payload.model,
+                provider_kind=provider_kind,
             )
         )
     except ProviderDisabledError as exc:
