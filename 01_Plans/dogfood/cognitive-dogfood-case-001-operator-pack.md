@@ -14,6 +14,7 @@
 3. B/Dでは cultural-substrate-weaving を `3988e12e5f7f316f377d3391e9486c8467a111d5` へ固定する。
 4. PR #2805 の価値仮説、Case 0 audit、framework notes、Round 2 manifestをRound 1モデルへ見せない。
 5. 各arm用に新しい会話/agent/sessionを用意する。
+6. C/Dでは、認知dogfood用の別履歴方式を作らず、KJ Atlasに実装済みのInquiryJourneyを利用できる実行環境を優先する。
 
 ### 実行中
 
@@ -21,13 +22,16 @@
 - arm固有に外部検索させない。資料不足は `Candidate source request` として返させる。
 - modelが資料外の一般知識を使った場合は、その箇所を明示させる。
 - 途中で人間が誘導質問をする場合、質問をrun recordへ残す。
-- C/DでAI提案を採用/修正/棄却した操作はproposal ledgerへ残す。
+- C/Dで正式AI proposal APIを使った場合は既存product auditへ人間判断を記録し、experiment proposal ledgerから参照する。
+- product auditで表現しない `modify`、採否理由、`later_verdict` はexperiment ledgerへだけ残す。
+- C/Dで意味上の節目が来た場合はInquiryJourney snapshot/handoffを使う。実験Roundの切替だけを理由にW型stageを変更しない。
 
 ### 実行後
 
 - raw outputを先に保存し、評価のために書き換えない。
 - required outputを別artifactに整理してよいが、rawへの参照を残す。
 - arm aliasを付け、blind reviewerへはA/B/C/D名を見せない。
+- C/Dでは、InquiryJourneyから再開したときに問い・未解決点・根拠へ戻れたかをrun recordへ記録する。
 
 ## 1. Common product source list — Round 1
 
@@ -44,6 +48,7 @@ ROADMAP.md
 01_Plans/issues/TEMPLATE.md
 01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md
 01_Plans/issues/issue-VR-ROADMAP-01-value-to-social-goal-phase-baseline.md
+01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md
 01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json
 01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json
 01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json
@@ -54,6 +59,8 @@ ROADMAP.md
 01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md
 01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md
 ```
+
+`DOMAIN-W-ITERATION-01` を追加した理由は、ADR本文の `L0: Planned` だけを読んで現在実装を過小評価しないためである。このissueは2026-08-25時点でAC-1〜AC-13が完了し、T9/T10だけが外部トリガー待ちである。
 
 ## 2. Common question
 
@@ -130,19 +137,24 @@ Common question + common required outputを分析AIへ渡す前後で、KJ Atlas
 
 1. 共通資料から生カードを作る。
 2. カードにsourceと事実/推論/不確実性を可能な範囲で保持する。
-3. 初期カテゴリへ入れず、訴えの近さから束ねる。
-4. 表札候補を作り、元カードへ戻して検査する。
-5. 対立・孤立・空白を残す。
-6. 必要ならAIの束ね/表札/反対視点等をproposalとして使う。
-7. 人間がproposalをaccept/modify/reject/deferする。
-8. A型構造からrequired outputを作る。
-9. 最終出力を元カードへ戻して保持監査する。
+3. 既存文書からInquiryJourneyを開始し、作業文書と長期探究状態を分離する。
+4. 初期カテゴリへ入れず、訴えの近さから束ねる。
+5. 表札候補を作り、元カードへ戻して検査する。
+6. 対立・孤立・空白を残す。
+7. 必要ならAIの束ね/表札/反対視点等をproposalとして使う。
+8. 正式proposal APIを使う場合、人間がAdopt/Reject/Holdを既存`/ai/proposals/audit`へ記録する。部分修正はexperiment ledger側で `modify` と元proposalへの参照を残す。
+9. 人が「ここまでの意味状態を残す価値がある」と判断した節目でRoundSnapshot/handoffを作る。experiment Round 1終了を自動的なstage完了にしない。
+10. A型構造からrequired outputを作る。
+11. 最終出力を元カードへ戻して保持監査する。
+12. 一度中断/再開する機会がある場合、InquiryJourneyの再開ブリーフ・比較・lineageが実際に役立つかを観察する。
 
 ### Cで禁止すること
 
 - cultural-substrate-weavingを使用する。
 - 文化体系から探索方向を追加する。
 - KJ Atlasを単なる最終図の清書に使う。
+- experiment metadataをInquiryJourneyのdomain contractへ詰め込む。
+- 実験RoundをW型stageへ機械対応する。
 
 ## 7. Arm D operator procedure — KJ Atlas + cultural-substrate-weaving
 
@@ -165,8 +177,27 @@ BとCの追加項目を両方残す。
 - frameworkがキャンバス構造を先に決めなかったか。
 - framework名を消すと消える所見を成果扱いしていないか。
 - KJ Atlasとskillが同じ原理を二重に強化しただけではないか。
+- framework由来の追加探索がInquiryJourneyのstage/iterationを不必要に増やしていないか。
 
-## 8. Prompt-equivalence audit
+## 8. T9 feedback capture — InquiryJourney AI support
+
+C/Dの実利用中に、`DOMAIN-W-ITERATION-01` T9へ返せる材料を記録する。
+
+AI支援候補を思いついた回数ではなく、**手動中核で実際に発生した反復摩擦**だけを対象にする。
+
+| Observation | Record |
+|---|---|
+| operation | 問い / 引継ぎ / 差分 / 反証 / 再開 / その他 |
+| manual burden | 何を人間が繰り返し行い、何が難しかったか |
+| cognitive risk | omission / anchoring / stale evidence / loss of dissent / other |
+| non-AI workaround | 現行機能でどう処理できたか |
+| proposed AI help | proposal-onlyなら何を候補提示できるか |
+| automation risk | 自動化すると何を先取り/上書きするか |
+| verdict | needed / manual sufficient / conditional / unresolved |
+
+複数ケースで同じ不足が再現するまでは、T9のPhase 3別issue化を急がない。
+
+## 9. Prompt-equivalence audit
 
 実行前に確認する。
 
@@ -177,8 +208,9 @@ BとCの追加項目を両方残す。
 - [ ] A/Cにskill由来の探索規則を漏らしていない。
 - [ ] B/Dのskill versionは一致。
 - [ ] Round 2以前に外部競合/研究情報を混ぜていない。
+- [ ] C/DだけがInquiryJourneyを使うことは「KJ Atlas外部表象というtreatment」の一部として事前登録されている。
 
-## 9. Run artifact naming
+## 10. Run artifact naming
 
 ```text
 01_Plans/dogfood/cognitive-runs/case-001/
@@ -186,7 +218,8 @@ BとCの追加項目を両方残す。
     <alias>-raw.md
     <alias>-result.md
     <alias>-record.md
-    <alias>-canvas.json   # C/D only
+    <alias>-canvas.json   # C/D only; product export/reference
+    <alias>-inquiry-ref.md # C/D only; journey/bundle/snapshot IDsとproduct audit参照
   blind-review/
     package-<alias>.md
     verdict.md
@@ -196,13 +229,13 @@ BとCの追加項目を両方残す。
 
 A/B/C/Dをファイル名へ直接使わず、blind review完了まではランダムaliasを使用する。
 
-## 10. Randomization
+## 11. Randomization
 
 4armの実行順はCase IDから単純に固定せず、実行開始時にランダム化してrun recordへ記録する。
 
 blind aliasも、operatorが評価者へ渡す前にランダム割当する。
 
-## 11. Stop / invalidation
+## 12. Stop / invalidation
 
 次ならrunを無理に採点せずinvalidまたはpartialとして残す。
 
@@ -211,6 +244,8 @@ blind aliasも、operatorが評価者へ渡す前にランダム割当する。
 - Round 1中に一部armだけ外部検索を行った。
 - B/Dで異なるskill versionを使用した。
 - C/Dのcanvasが実際には外部表象として使われず、完成後の清書だけだった。
+- C/DでInquiryJourneyが利用可能だったのに、実験都合だけで別履歴方式を発明した。
+- experiment metadataをproduct schemaへ追加しないと実験できないような手順差が生じた。
 - 大きなcontext lossやtool failureで必要資料を読めなかった。
 
 invalid runも削除しない。失敗理由を残す。
