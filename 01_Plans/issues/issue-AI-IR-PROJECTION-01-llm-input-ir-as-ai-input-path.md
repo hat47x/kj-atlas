@@ -129,7 +129,7 @@ $ grep -rn "ir_version\|graph_summary\|cluster_candidates" --include=*.py --incl
 | ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `detect_contradiction` が IR 経由になり、プロンプトを IR から描画する |
 | リクエスト/レスポンス契約 | `03_Implement/backend/src/kj_atlas_api/models_ai.py` | `DetectContradictionRequest.doc`（任意）、`DetectContradictionResponse.alreadyRecorded` / `.existingContradictionState`（追加） |
 | LLM境界 | `03_Implement/backend/src/kj_atlas_api/llm/provider.py` | `LLMRequest.inputs`（任意）。transport は従来どおり `prompt` のみを送る |
-| 回帰データ | `03_Implement/backend/tests/fixtures/llm_input_ir_document_v1_1.json`, `..._expected_v1_1.json` | 仕様 §6 の `document.json` → `llm_ir.json` ＋ SHA-256 |
+| 回帰データ | `03_Implement/backend/tests/fixtures/llm_input_ir_document.json`, `..._expected.json` | 仕様 §6 の `document.json` → `llm_ir.json` ＋ SHA-256。Stage 1 当時の名は `..._v1_1.json` で、Stage 2 で版数を落として改名した（下の Stage 2 の表と仕様 §6.1 を参照） |
 | 再生成スクリプト | `03_Implement/backend/scripts/generate_llm_input_ir_fixture.py` | `--check` でドリフト検出。LLM も外部 provider も呼ばない |
 | ユニットテスト | `03_Implement/backend/tests/test_llm_input_ir.py` | AC-4 / AC-5 / AC-6 / AC-8 |
 | 統合テスト | `03_Implement/backend/tests/test_ai_detect_contradiction_ir.py` | AC-1、SafeMode 二層の同時成立、後方互換 |
@@ -255,3 +255,15 @@ frontend は**変更していない**（`/ai/suggest-card-groups` の呼び出�
 - `detect-contradiction` / `generate-narrative` / `suggest-layout` ほかのエンドポイントとそのプロンプト構築関数。
 - `models_context.py` の `ContextBundleResponse` / `build_bundle()` / `_STUB_DATASET`（`CE1-CTX-IF`）。
 - `_CardRef`（`detect-contradiction` と共有のリクエスト型）。hold 状態は `doc` 経由でのみ受け取る（上記 設計判断4）。
+
+### 事後検証で見つかった不備と是正（2026-08-30）
+
+Stage 2 の変更に独立レビューを掛け、指摘3件のうち1件を是正した。
+
+| 指摘 | 判定 | 対応 |
+|---|---|---|
+| Stage 1 の「何を作ったか」表（本issue上部）の回帰データ行が、改名前の `llm_input_ir_document_v1_1.json` / `..._expected_v1_1.json` を指したまま残っていた | **是正した。** リポジトリ内で `_v1_1.json` を指す参照はこの1行のみで（他は仕様 §6.1・`generate_llm_input_ir_fixture.py`・`test_llm_input_ir.py` とも改名済み）、`docs_check.py` は markdown 追跡を検査するのでこの種の fixture パス腐りを捕捉しない | 現行名へ更新し、Stage 1 当時の名と改名の経緯を同じ行に注記した |
+| fixture の改名自体（`..._v1_1.json` → `....json` と、それに伴う `generate_llm_input_ir_fixture.py` / 仕様 §6.1 の追随）は AC-2 が要求したものではなく、Stage 1 成果物への便宜的変更である | **差し戻さない。** 版数を落とす根拠は仕様 §6.1・§7.4 と `512cd75d` のコミットメッセージに記録済みで、ドリフト検査も通っている。ここで再改名すると仕様・スクリプト・テストを再び動かすことになり、そちらの方が変更範囲を広げる | 対応なし（記録のみ） |
+| IR 経路化により `SuggestCardGroupsRequest.cards`（上限1000枚、`models_ai.py:388`）に対し IR 側が `MAX_CARDS=200` / `MAX_TEXT_CHARS=12000`（`llm_input_ir.py:35,37`）で切り詰めるため、200枚超ではモデルへ届かないカードが出る | **不備ではない。** 上記 設計判断6 の記載どおりで、黙って落とさず `truncated` で可視化しており、上限値の妥当性は AC-10 の主題として明示的に繰り延べている。数値・契約上限とも再確認して相違なし | 対応なし（AC-10 で扱う） |
+
+是正は本issueの文言1行のみで、`03_Implement/` 配下のコード・テスト・fixture は変更していない。是正後に backend 全体回帰を再実行し **1373 passed, 39 skipped, 8 deselected**（Stage 2 完了時と同一）、`python3 01_Plans/docs_check.py` も passed を確認した。
