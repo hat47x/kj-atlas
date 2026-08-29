@@ -620,15 +620,24 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **POST** `/ai/suggest-card-groups`
 
 - Request: `SuggestCardGroupsRequest`
-  - `cards: CardRef[]` — カードの配列（id + text + textReviewed、最大100件）
+  - `cards: CardRef[]` — グループ化対象カードの配列（id + text + textReviewed、2〜1000件。上限は `DOGFOOD-31` で100件から引き上げ済み）
+  - `doc?: DocumentV1` — **任意**。`AI-IR-PROJECTION-01`（`ADR-0069`）Stage 2 で追加。渡すとサーバが LLM投入IR（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.2）を構築し、**確定済みの `islands`・`parentIslandId` 階層・`edges`（関係5語彙）・各カードの `holdState`** がAI入力へ届く。**省略時は従来どおり `cards` だけで動作する**（後方互換）
   - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
+  - `model?: string` — タスク別モデル override（AI-MODEL-GOVERNANCE-01 R2・allowlist 検査付き）
 - Response: `SuggestCardGroupsResponse`
   - `groups: SuggestedGroup[]` — グループの配列
     - `label: string`
     - `cardIds: string[]`
     - `rationale?: string`
+  - `excludedCardIds: string[]` — 既定 `[]`。`holdState`（`held` / `pending` / `shelved`）が付いているためグループ化候補から外したリクエストカードのID
+  - `truncated: boolean` — 既定 `false`。IR が §5 の上限（`MAX_CARDS=200` / `MAX_TEXT_CHARS=12000`）に達し、リクエストの全カードを投影できなかった場合に `true`。このとき `groups` は投影されたカードのみを対象とする（上限値の妥当性は `AI-IR-PROJECTION-01` AC-10 で別途扱う）
 - カード群のテーマ別グループ化（島候補）を提案する。1段目の束は2〜3枚が原則。
+- **`holdState` が付いたカードを新規グループへ含めない**（`ADR-0069` / `AI-IR-PROJECTION-01` AC-2）。`held`（判断を保留）/ `pending`（未着手）/ `shelved`（Shelfへ退避）の3値はいずれも「人間が意図的に扱いを決めていない」ことの記録であり（`schemas.md` §14.1）、新しい島の構成員として提案することはその判断を上書きする。抑止は**コードで強制**する ── 候補集合から除外してプロンプトに載せず、さらにLLM応答からも当該IDを除去する（プロンプトの遵守は不変条件にならない）。除外後に候補が2枚未満になった場合は**LLMを呼ばず** `groups: []` を返す。既存の島の構成員として `islands[*].cardIds` に現れることは妨げない（既決の構造であり提案ではない）。
+- 応答の `cardIds` は候補集合に限定される。候補外のID（保留カード・未知のID）は除去され、それにより空になったグループは返さない。
 - `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。1件でも未レビューのカードを含むと 422（`unreviewed_text_not_allowed`）。
+- SafeMode は二層で強制される。**(1)** `_reject_unreviewed_cards`（`ADR-0068` / `SEC-AI-SAFEMODE-01`、変更なし）が `cards` を検査する。**(2)** IRビルダーが `llm_input_ir_spec.md` §7.1 に従い、投影対象の全カード（`doc` 側を含む）のレビュー状態を独立に再検査する。`doc` にのみ含まれる未レビューカードは (1) では見えず (2) が 422（`unreviewed_text_not_allowed`）で拒否する。
+- IR生成が失敗した場合の 422 コード: `unreviewed_text_not_allowed`（§7.1）/ `pii_detected`（§7.2。メール・電話・URLトークン。**応答に該当文字列を含めない**）/ `structured_text_only_violation`（§7.3）/ `duplicate_card_id` / `invalid_self_loop` / `empty_card_text`。
+- 座標は渡さない（`ADR-0069` D1=B、`llm_input_ir_spec.md` §2.2.1）。束ねの根拠は訴えの類似性であり布置ではない。
 
 **POST** `/ai/detect-contradiction`
 
