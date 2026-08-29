@@ -18,6 +18,7 @@ from docs_contract_checks import (
     check_adr_traceability_paths,
     check_ci_job_timeouts,
     check_cli_option_commands,
+    check_code_span_citations,
     check_compose_service_commands,
     check_current_history_headings,
     check_document_contract_baseline,
@@ -101,6 +102,10 @@ def run_docs_check(
     # cannot escape validation by being authored as an HTML view (DX-DOC-07).
     link_paths = markdown_paths + contract_tracked_documentation_html_paths(repository_root)
     errors.extend(finding.render() for finding in check_relative_links(repository_root, link_paths))
+    # DX-DOC-09: 01_Plans cites documents as backtick code spans rather than as
+    # Markdown links, so DC-LNK-001 above never covered the planning layer's
+    # main cross-reference shape. DC-LNK-002 checks the same corpus for it.
+    errors.extend(finding.render() for finding in check_code_span_citations(repository_root, link_paths))
     errors.extend(finding.render() for finding in check_adr_id_uniqueness(repository_root, markdown_paths))
     # DOC-NORM-01: the constitution layer's identifiers only mean something if
     # references to them are checked. Without DC-NORM-002 the scheme is decorative.

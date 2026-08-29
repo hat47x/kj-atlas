@@ -20,6 +20,7 @@ SPEC.loader.exec_module(MODULE)
 class MainWiringTest(unittest.TestCase):
     CHECKS_WITH_PATHS = (
         "check_relative_links",
+        "check_code_span_citations",
         "check_adr_id_uniqueness",
         "check_adr_traceability_paths",
         "check_npm_script_commands",
@@ -63,7 +64,7 @@ class MainWiringTest(unittest.TestCase):
         tracked.assert_called_once_with(root.resolve())
         tracked_html.assert_called_once_with(root.resolve())
         for name in self.CHECKS_WITH_PATHS:
-            if name == "check_relative_links":
+            if name in ("check_relative_links", "check_code_span_citations"):
                 # Link checking also covers documentation HTML (DX-DOC-07).
                 mocks[name].assert_called_once_with(root.resolve(), markdown_paths + html_paths)
             else:
@@ -1003,6 +1004,134 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
             findings = MODULE.check_runtime_parameter_key_commands(root, [Path("01_Plans/issues/issue-example.md")])
 
         self.assertEqual(findings, [])
+
+
+class CodeSpanCitationCheckTest(unittest.TestCase):
+    """DC-LNK-002: backtick code-span citations of repository files."""
+
+    def _memo(self, root: Path, body: str, relative="01_Plans/issues/issue-example.md"):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+        return [Path(relative)]
+
+    def test_reports_citation_of_a_file_that_moved_to_done(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            done = root / "01_Plans" / "issues" / "done"
+            done.mkdir(parents=True)
+            (done / "issue-x.md").write_text("", encoding="utf-8")
+            paths = self._memo(root, "- Source Issue: `01_Plans/issues/issue-x.md`\n")
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_id, "DC-LNK-002")
+        self.assertEqual(finding.path, "01_Plans/issues/issue-example.md")
+        self.assertEqual(finding.line, 1)
+        self.assertEqual(finding.target, "01_Plans/issues/issue-x.md")
+        self.assertIn("does not exist", finding.message)
+        self.assertIn("01_Plans/issues/done/", finding.fix_hint)
+
+    def test_accepts_a_citation_that_resolves(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            adr = root / "01_Plans" / "adr"
+            adr.mkdir(parents=True)
+            (adr / "ADR-0043-complexity-budget-for-cognitive-load.md").write_text("", encoding="utf-8")
+            paths = self._memo(
+                root,
+                "- Related ADR: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`\n",
+            )
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(findings, [])
+
+    def test_reports_md_citation_of_a_document_converted_to_html(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            architecture = root / "02_Architecture"
+            architecture.mkdir()
+            (architecture / "architecture.html").write_text("", encoding="utf-8")
+            paths = self._memo(root, "全体構成は `02_Architecture/architecture.md` を参照。\n")
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].target, "02_Architecture/architecture.md")
+
+    def test_ignores_fenced_code_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = self._memo(
+                root,
+                "例:\n\n```\n`01_Plans/issues/issue-missing.md`\n```\n",
+            )
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_tokens_without_a_known_file_suffix(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = self._memo(
+                root,
+                "設定は `KJ_ATLAS_LLM_PROVIDER` と `01_Plans/issues/no-such-directory` を参照。\n",
+            )
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(findings, [])
+
+    def test_ignores_placeholder_tokens(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = self._memo(root, "`01_Plans/issues/issue-<name>.md` の形式で作成する。\n")
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(findings, [])
+
+    def test_accepts_existing_citation_with_a_trailing_line_reference(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            plans = root / "01_Plans"
+            plans.mkdir()
+            (plans / "docs_check.py").write_text("line1\n", encoding="utf-8")
+            paths = self._memo(root, "根拠は `01_Plans/docs_check.py:150` にある。\n")
+
+            findings = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(findings, [])
+
+    def test_retired_targets_are_exempt(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = self._memo(root, "- Replaces: `01_Plans/retired-plan.md`\n")
+
+            with patch.object(MODULE, "RETIRED_CITATION_TARGETS", frozenset({"01_Plans/retired-plan.md"})):
+                exempt = MODULE.check_code_span_citations(root, paths)
+            reported = MODULE.check_code_span_citations(root, paths)
+
+        self.assertEqual(exempt, [])
+        self.assertEqual(len(reported), 1)
+
+    def test_scans_documentation_html_code_elements(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            architecture = root / "02_Architecture"
+            architecture.mkdir()
+            (architecture / "view.html").write_text(
+                "<p>参照: <code>01_Plans/adr/ADR-9999-missing.md</code></p>\n", encoding="utf-8"
+            )
+
+            findings = MODULE.check_code_span_citations(root, [Path("02_Architecture/view.html")])
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].target, "01_Plans/adr/ADR-9999-missing.md")
 
 
 class RepositoryPathCheckTest(unittest.TestCase):

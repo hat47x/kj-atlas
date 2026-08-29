@@ -143,8 +143,17 @@ class DocsCheckEntrypointTest(unittest.TestCase):
 
             result = MODULE.run_docs_check(root, run_tests=False)
 
-        self.assertEqual(len(result.errors), 1)
-        self.assertIn("DC-ADR-002 01_Plans/adr/ADR-0001-source.md:3", result.errors[0])
+        # An ADR traceability field is also a backtick citation, so DC-LNK-002
+        # reports it too. Both are kept: DC-ADR-002 carries the remedy specific
+        # to traceability ("remove the false claim, or point it at the ADR that
+        # records the decision"), which the general citation rule cannot give.
+        self.assertEqual(len(result.errors), 2)
+        self.assertTrue(
+            any("DC-ADR-002 01_Plans/adr/ADR-0001-source.md:3" in error for error in result.errors)
+        )
+        self.assertTrue(
+            any("DC-LNK-002 01_Plans/adr/ADR-0001-source.md:3" in error for error in result.errors)
+        )
 
     def test_run_docs_check_reports_missing_ci_job_timeout(self):
         with tempfile.TemporaryDirectory() as td:

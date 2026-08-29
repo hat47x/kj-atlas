@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 RELATIVE_LINK_RULE_ID = "DC-LNK-001"
+CODE_SPAN_CITATION_RULE_ID = "DC-LNK-002"
 CURRENT_HISTORY_RULE_ID = "DC-CUR-001"
 HISTORY_METADATA_RULE_ID = "DC-HIS-001"
 ARCHITECTURE_BASELINE_RULE_ID = "DC-ARC-001"
@@ -187,6 +188,32 @@ REPOSITORY_PATH_PREFIX_RE = re.compile(r"^(00_Prompt|01_Plans|02_Architecture|03
 REPOSITORY_PATH_FORBIDDEN_CHARS = frozenset(" <>*{|")
 BACKTICK_TOKEN_RE = re.compile(r"`([^`\r\n]+)`")
 TRAILING_LINE_REF_RE = re.compile(r":\d+$")
+# DC-LNK-002. `01_Plans/` Traceability/Scope/Related fields cite other documents
+# as backtick code spans, not as `[text](path)` links, so DC-LNK-001 never saw
+# them. A citation is only recognised as a path (rather than prose in backticks)
+# when it ends in one of these suffixes -- the extension is what separates a file
+# reference from an environment-variable name or a configuration key.
+CITATION_SUFFIXES = frozenset({".md", ".html", ".py", ".ts", ".tsx"})
+# Documents and modules that no longer exist anywhere in the repository and are
+# cited deliberately, as history, by the record that retired them. Verified
+# individually (DX-DOC-09); every entry names why the target is permanently
+# absent, in the same provenance-comment style as
+# LOCALHOST_PROBE_ALLOWLIST_EXACT above.
+#
+# Keyed by target path, not by (source, target) pair: "this document was removed
+# from the repository" is a fact about the repository, so every citation of it is
+# equally historical, and a pair-keyed list would be four times the size for no
+# extra signal. The residual cost is that a *new* document genuinely intended to
+# be created under one of these names would not be flagged as missing.
+#
+# Intent is stated here rather than inferred from the citing text, which is the
+# lesson DX-CANON-INTENT-01 recorded: no wording heuristic separates "this file
+# was deleted on purpose and the record says so" from "this citation rotted".
+#
+# Empty at introduction on purpose: the mechanism lands before any judgement
+# about the existing backlog, so that what the rule catches unaided is visible
+# in one place before entries are argued for. DX-DOC-09 populates it.
+RETIRED_CITATION_TARGETS: frozenset[str] = frozenset()
 # Build-output directory names that legitimately don't exist in a fresh
 # checkout (gitignored, created only by running the build) -- an explicit
 # allowlist rather than parsing .gitignore, since `git check-ignore` only
@@ -478,6 +505,83 @@ def check_relative_links(root: Path, markdown_paths: list[Path]) -> list[DocsChe
                         fix_hint=f"Update the target relative to {source.parent.relative_to(repository_root).as_posix()} or add the referenced file.",
                     )
                 )
+
+    return findings
+
+
+def check_code_span_citations(root: Path, documentation_paths: list[Path]) -> list[DocsCheckFinding]:
+    """Return DC-LNK-002 findings for backtick path citations that resolve to nothing.
+
+    `01_Plans/` cites other documents by convention as a code span --
+    `` `01_Plans/issues/done/issue-X.md` `` -- in Traceability, Scope, Related
+    ADR/Spec and prose, not as a Markdown `[text](path)` link. DC-LNK-001 only
+    scans MARKDOWN_LINK_RE, so it never covered the shape that carries almost
+    every cross-reference in the planning layer: a citation could name a file
+    that had been renamed, moved to `issues/done/`, or converted to HTML
+    (AGENTS.md section 3) and nothing failed.
+
+    Scope is the same corpus DC-LNK-001 checks -- tracked Markdown plus
+    documentation HTML -- rather than DC-CMD-001's current/public subset,
+    because the planning layer is precisely where this citation style is used.
+    The two rules do not overlap: DC-LNK-001 reads Markdown link syntax,
+    DC-CMD-001 reads any repository path in a public document (directories
+    included), and this rule reads code-span citations of files anywhere in the
+    documentation corpus.
+
+    A token is treated as a citation only when it starts at a repository root
+    (REPOSITORY_PATH_PREFIX_RE), ends in a known documentation or source suffix
+    (CITATION_SUFFIXES), and contains no placeholder or glob character
+    (REPOSITORY_PATH_FORBIDDEN_CHARS). The suffix requirement is what keeps
+    environment-variable names, configuration keys and prose out of the rule.
+    A trailing `:N` line reference is stripped before resolution, as in
+    DC-CMD-001.
+
+    Fenced code blocks are excluded -- a fence holds an example, not a citation.
+    Inline spans are deliberately *not* excluded: `_without_fenced_code` is used
+    rather than `_without_code`, since inline code spans are the thing being
+    checked. Documentation HTML reaches the same path because
+    `contract_source_text` renders `<code>` as a backtick span.
+    """
+    repository_root = root.resolve()
+    findings: list[DocsCheckFinding] = []
+
+    for supplied_path in sorted(documentation_paths, key=lambda path: path.as_posix()):
+        relative_path = (
+            supplied_path
+            if not supplied_path.is_absolute()
+            else supplied_path.relative_to(repository_root)
+        )
+        text = _without_fenced_code(contract_source_text(repository_root, relative_path))
+
+        for match in BACKTICK_TOKEN_RE.finditer(text):
+            token = match.group(1)
+            if not REPOSITORY_PATH_PREFIX_RE.match(token):
+                continue
+            if any(character in REPOSITORY_PATH_FORBIDDEN_CHARS for character in token):
+                continue
+            normalized = TRAILING_LINE_REF_RE.sub("", token)
+            if PurePosixPath(normalized).suffix.lower() not in CITATION_SUFFIXES:
+                continue
+            if normalized in RETIRED_CITATION_TARGETS:
+                continue
+            if (repository_root / normalized).is_file():
+                continue
+            findings.append(
+                DocsCheckFinding(
+                    rule_id=CODE_SPAN_CITATION_RULE_ID,
+                    path=relative_path.as_posix(),
+                    line=text.count("\n", 0, match.start()) + 1,
+                    target=token,
+                    message=f"cited path does not exist: {normalized}",
+                    fix_hint=(
+                        "Cite the file's current path -- an issue that closed now lives under "
+                        "01_Plans/issues/done/, an ADR keeps its number but not its slug, and a "
+                        "design document converted per AGENTS.md section 3 is .html. If the target "
+                        "was deliberately removed and this citation records that, add it to "
+                        "RETIRED_CITATION_TARGETS with the reason."
+                    ),
+                )
+            )
 
     return findings
 
@@ -1684,7 +1788,9 @@ def main() -> int:
     args = parser.parse_args()
     root = args.root.resolve()
     markdown_paths = tracked_markdown_paths(root)
-    findings = check_relative_links(root, markdown_paths + tracked_documentation_html_paths(root))
+    link_paths = markdown_paths + tracked_documentation_html_paths(root)
+    findings = check_relative_links(root, link_paths)
+    findings.extend(check_code_span_citations(root, link_paths))
     findings.extend(check_adr_id_uniqueness(root, markdown_paths))
     findings.extend(check_adr_traceability_paths(root, markdown_paths))
     findings.extend(check_ci_job_timeouts(root))
