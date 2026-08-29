@@ -635,12 +635,19 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `DetectContradictionRequest`
   - `cardA: CardRef`（id + text + textReviewed）
   - `cardB: CardRef`
+  - `doc?: DocumentV1` — **任意**。`AI-IR-PROJECTION-01`（`ADR-0069`）で追加。渡すとサーバが LLM投入IR（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.1）を構築し、`edges`（関係5語彙）・確定済みの `islands`・`evidenceLinks` の `contradictionState` がAI入力へ届く。**省略時は従来どおりカード2枚のみで動作する**（後方互換）
   - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `DetectContradictionResponse`
   - `hasContradiction: boolean`
   - `explanation?: string`
+  - `alreadyRecorded: boolean` — 既定 `false`。`doc` に当該2枚の**人間が確定・保留済み**の矛盾（`EvidenceLink.type="contradicts"` かつ `contradictionState` が `confirmed` / `held`）がある場合に `true`
+  - `existingContradictionState?: "unconfirmed" | "confirmed" | "held" | "resolved"` — 上記に該当する既存リンクの状態
 - 2枚のカード間の論理的矛盾を検出する。異なる意見（単なる相違）は矛盾として扱わない。
+- **確定・保留済みの矛盾を再提示しない**（`ADR-0069`）。`alreadyRecorded=true` のとき、応答は `hasContradiction=false` ＋ `alreadyRecorded=true` を返し、**LLMを呼ばない**。人間が既に下した判断を新規の発見として提示し直さないための決定論的な抑止であり、「矛盾が無い」ことの主張ではない。`unconfirmed` / `resolved` は抑止対象外で、通常どおりAIへ問い合わせる。
 - `CardRef.textReviewed` は **既定 false = fail-closed**（`SEC-AI-SAFEMODE-02`）。どちらかが未レビューなら 422。
+- SafeMode は二層で強制される。**(1)** `_reject_unreviewed_cards`（`ADR-0068` / `SEC-AI-SAFEMODE-01`、変更なし）が `cardA` / `cardB` を検査する。**(2)** IRビルダーが `llm_input_ir_spec.md` §7.1 に従い、投影対象の全カード（`doc` 側を含む）のレビュー状態を独立に再検査する。`doc` にのみ含まれる未レビューカードは (1) では見えず (2) が 422（`unreviewed_text_not_allowed`）で拒否する。
+- IR生成が失敗した場合の 422 コード: `unreviewed_text_not_allowed`（§7.1）/ `pii_detected`（§7.2。メール・電話・URLトークン。**応答に該当文字列を含めない**）/ `structured_text_only_violation`（§7.3）/ `duplicate_card_id` / `invalid_self_loop` / `empty_card_text`。
+- 座標は渡さない（`ADR-0069` D1=B、`llm_input_ir_spec.md` §2.2.1）。矛盾の根拠は論理関係であり布置ではない。
 
 #### 廃止済み: カード重要度評価（再実装禁止）
 
