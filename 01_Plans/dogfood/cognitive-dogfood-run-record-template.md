@@ -19,6 +19,7 @@
 - Source manifest ID:
 - Context started fresh: yes / no
 - Known contamination:
+- Operator/setup friction log: <UI locator exploration, environment/file preparation, experiment administration; exclude from M9/T9 unless separately triaged as a product finding>
 
 ## 1. Fixed question
 
@@ -208,6 +209,8 @@
 
 ### M9 認知摩擦
 
+M9は分析方法・外部表象・意味保持のために利用者/分析者が負担した摩擦だけを扱う。UI locator探索、実験用ファイル配置、connector/browser/local環境準備、run record管理などの **operator/setup frictionはM9へ算入しない**。それらが一般利用者にも再現する製品課題だと疑われる場合は、M9へ後付けせずF0〜F2 findingとして別にtriageする。
+
 #### Useful friction
 
 - <pause/check/revisit that changed judgment>
@@ -215,6 +218,10 @@
 #### Waste friction
 
 - <operation burden that produced no observed cognitive value>
+
+#### Excluded operator/setup friction
+
+- <environment/UI-locator/experiment-administration burden excluded from M9>
 
 ## 9. Retention audit (especially C/D)
 
@@ -266,7 +273,7 @@ Detected losses:
 
 ### 10.3 T9 manual-friction observations
 
-AI支援候補を思いついた回数ではなく、**手動中核で現実に繰り返し発生した摩擦**だけを書く。
+AI支援候補を思いついた回数ではなく、**手動中核で現実に繰り返し発生した摩擦**だけを書く。operator/setup frictionはここへ入れない。
 
 | Observation ID | Operation | Manual burden | Cognitive risk | Non-AI workaround | Proposal-only AI help | Automation risk | Run verdict |
 |---|---|---|---|---|---|---|---|
