@@ -1623,6 +1623,17 @@ def _detect_contradiction_ir(payload: DetectContradictionRequest) -> dict:
     allow_unreviewed = bool(
         payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
     )
+    if payload.cardA.id == payload.cardB.id:
+        # A card cannot contradict itself, and the IR forbids a duplicate card
+        # id outright (spec §2.1 rule 5) -- catch it here so the answer is the
+        # same whether or not a document was supplied.
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "duplicate_card_id",
+                "message": "cardA and cardB must reference different cards.",
+            },
+        )
     if payload.doc is not None:
         source = source_from_document(payload.doc)
         # The two focus cards travel outside `doc` in this contract, so make
@@ -1636,14 +1647,6 @@ def _detect_contradiction_ir(payload: DetectContradictionRequest) -> dict:
         if extra:
             source = replace(source, cards=source.cards + extra)
     else:
-        if payload.cardA.id == payload.cardB.id:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "code": "duplicate_card_id",
-                    "message": "cardA and cardB must reference different cards.",
-                },
-            )
         source = IRSource(
             doc_id="",
             doc_version=1,

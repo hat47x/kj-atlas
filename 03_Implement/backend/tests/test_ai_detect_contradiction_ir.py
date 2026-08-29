@@ -321,10 +321,12 @@ def test_ir_layer_rejects_pii_in_document_text() -> None:
     assert _CAPTURED == []
 
 
-def test_same_card_twice_is_rejected() -> None:
-    body = _payload()
+@pytest.mark.parametrize("with_doc", [False, True])
+def test_same_card_twice_is_rejected(with_doc: bool) -> None:
+    body = _payload(_doc() if with_doc else None)
     body["cardB"] = dict(body["cardA"])
     with TestClient(app) as client:
         resp = client.post("/ai/detect-contradiction", json=body)
     assert resp.status_code == 422
     assert resp.json()["detail"]["code"] == "duplicate_card_id"
+    assert _CAPTURED == []
