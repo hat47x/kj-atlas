@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "id": "llm-ir-fixture-doc",
+  "title": "LLM input IR regression fixture",
+  "createdAt": "2026-08-30T00:00:00Z",
+  "updatedAt": "2026-08-30T00:00:00Z",
+  "transform": { "panX": 0, "panY": 0, "zoom": 1 },
+  "cards": [
+    {
+      "id": "c-remote",
+      "text": "チームは在宅勤務でも成果を出せると考えている",
+      "x": -120,
+      "y": -40,
+      "textReviewed": true
+    },
+    {
+      "id": "c-office",
+      "text": "対面でないと設計の議論が浅くなると感じている",
+      "x": 140,
+      "y": -60,
+      "textReviewed": true
+    },
+    {
+      "id": "c-tooling",
+      "text": "共同編集ツールが議論の記録を残している",
+      "x": 20,
+      "y": 90,
+      "textReviewed": true
+    },
+    {
+      "id": "c-onboarding",
+      "text": "新任者は雑談から文脈を得ていた",
+      "x": 180,
+      "y": 120,
+      "textReviewed": true
+    },
+    {
+      "id": "c-commute",
+      "text": "通勤時間が可処分時間を削っていた",
+      "x": -160,
+      "y": 110,
+      "textReviewed": true
+    },
+    {
+      "id": "c-isolated",
+      "text": "評価制度の見直しはまだ着手していない",
+      "x": 0,
+      "y": -180,
+      "textReviewed": true
+    }
+  ],
+  "edges": [
+    { "id": "e1", "fromId": "c-remote", "toId": "c-office", "type": "negate" },
+    { "id": "e2", "fromId": "c-tooling", "toId": "c-remote", "type": "causal" },
+    { "id": "e3", "fromId": "c-office", "toId": "c-onboarding", "type": "related" },
+    { "id": "e4", "fromId": "c-commute", "toId": "c-remote", "type": "causal" },
+    { "id": "e5", "fromId": "c-remote", "toId": "c-office", "type": "negate" },
+    {
+      "id": "e6",
+      "fromId": "isl-work",
+      "toId": "isl-context",
+      "fromKind": "island",
+      "toKind": "island",
+      "type": "related"
+    },
+    { "id": "e7", "fromId": "c-tooling", "toId": "c-onboarding", "type": "unknown" }
+  ],
+  "islands": [
+    {
+      "id": "isl-work",
+      "cardIds": ["c-remote", "c-office", "c-commute"],
+      "title": "働く場所をめぐる見立てが割れている",
+      "titleReviewed": true,
+      "placardCardId": "c-remote"
+    },
+    {
+      "id": "isl-context",
+      "cardIds": ["c-tooling", "c-onboarding", "c-remote"],
+      "title": "文脈の受け渡し経路が変わった",
+      "parentIslandId": "isl-work"
+    }
+  ],
+  "evidenceLinks": [
+    {
+      "id": "ev-confirmed",
+      "type": "contradicts",
+      "fromCardId": "c-remote",
+      "toCardId": "c-office",
+      "note": "本文は IR へ投影しない（PII最小化）",
+      "contradictionState": "confirmed"
+    },
+    {
+      "id": "ev-held",
+      "type": "contradicts",
+      "fromCardId": "c-tooling",
+      "toCardId": "c-onboarding",
+      "contradictionState": "held"
+    },
+    {
+      "id": "ev-unconfirmed",
+      "type": "contradicts",
+      "fromCardId": "c-commute",
+      "toCardId": "c-onboarding",
+      "contradictionState": "unconfirmed"
+    },
+    {
+      "id": "ev-supports",
+      "type": "supports",
+      "fromCardId": "c-tooling",
+      "toCardId": "c-remote"
+    }
+  ]
+}

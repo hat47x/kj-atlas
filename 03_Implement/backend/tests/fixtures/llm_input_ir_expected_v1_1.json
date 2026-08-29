@@ -1,0 +1,242 @@
+{
+  "generatedFrom": "llm_input_ir_document_v1_1.json",
+  "ir": {
+    "cards": [
+      {
+        "char_len": 16,
+        "id": "c-commute",
+        "text": "通勤時間が可処分時間を削っていた",
+        "text_norm": "通勤時間が可処分時間を削っていた"
+      },
+      {
+        "char_len": 18,
+        "id": "c-isolated",
+        "text": "評価制度の見直しはまだ着手していない",
+        "text_norm": "評価制度の見直しはまだ着手していない"
+      },
+      {
+        "char_len": 22,
+        "id": "c-office",
+        "text": "対面でないと設計の議論が浅くなると感じている",
+        "text_norm": "対面でないと設計の議論が浅くなると感じている"
+      },
+      {
+        "char_len": 15,
+        "id": "c-onboarding",
+        "text": "新任者は雑談から文脈を得ていた",
+        "text_norm": "新任者は雑談から文脈を得ていた"
+      },
+      {
+        "char_len": 22,
+        "id": "c-remote",
+        "text": "チームは在宅勤務でも成果を出せると考えている",
+        "text_norm": "チームは在宅勤務でも成果を出せると考えている"
+      },
+      {
+        "char_len": 19,
+        "id": "c-tooling",
+        "text": "共同編集ツールが議論の記録を残している",
+        "text_norm": "共同編集ツールが議論の記録を残している"
+      }
+    ],
+    "cluster_candidates": [
+      {
+        "basis": "relation",
+        "card_ids": [
+          "c-commute",
+          "c-remote",
+          "c-tooling"
+        ],
+        "cluster_id": "cc-0001",
+        "score": 0.5
+      },
+      {
+        "basis": "relation",
+        "card_ids": [
+          "c-office",
+          "c-onboarding"
+        ],
+        "cluster_id": "cc-0002",
+        "score": 0.5
+      }
+    ],
+    "constraints": {
+      "required_sections": [
+        "overall",
+        "clusters",
+        "contradictions"
+      ],
+      "safe_mode": true,
+      "structured_text_only": true
+    },
+    "evidence_links": [
+      {
+        "contradiction_state": "unconfirmed",
+        "from_card_id": "c-commute",
+        "id": "ev-unconfirmed",
+        "to_card_id": "c-onboarding",
+        "type": "contradicts"
+      },
+      {
+        "contradiction_state": "confirmed",
+        "from_card_id": "c-remote",
+        "id": "ev-confirmed",
+        "to_card_id": "c-office",
+        "type": "contradicts"
+      },
+      {
+        "contradiction_state": "held",
+        "from_card_id": "c-tooling",
+        "id": "ev-held",
+        "to_card_id": "c-onboarding",
+        "type": "contradicts"
+      },
+      {
+        "contradiction_state": null,
+        "from_card_id": "c-tooling",
+        "id": "ev-supports",
+        "to_card_id": "c-remote",
+        "type": "supports"
+      }
+    ],
+    "graph_summary": {
+      "centrality": [
+        {
+          "betweenness": 5.0,
+          "card_id": "c-remote",
+          "degree": 3,
+          "rank": 1
+        },
+        {
+          "betweenness": 3.0,
+          "card_id": "c-office",
+          "degree": 2,
+          "rank": 2
+        },
+        {
+          "betweenness": 0.0,
+          "card_id": "c-commute",
+          "degree": 1,
+          "rank": 3
+        },
+        {
+          "betweenness": 0.0,
+          "card_id": "c-onboarding",
+          "degree": 1,
+          "rank": 4
+        },
+        {
+          "betweenness": 0.0,
+          "card_id": "c-tooling",
+          "degree": 1,
+          "rank": 5
+        },
+        {
+          "betweenness": 0.0,
+          "card_id": "c-isolated",
+          "degree": 0,
+          "rank": 6
+        }
+      ],
+      "connected_components": [
+        {
+          "card_ids": [
+            "c-commute",
+            "c-office",
+            "c-onboarding",
+            "c-remote",
+            "c-tooling"
+          ],
+          "component_id": "cmp-001",
+          "edge_count": 4
+        },
+        {
+          "card_ids": [
+            "c-isolated"
+          ],
+          "component_id": "cmp-002",
+          "edge_count": 0
+        }
+      ],
+      "contradiction_subgraphs": [
+        {
+          "card_ids": [
+            "c-office",
+            "c-remote"
+          ],
+          "negation_edges": [
+            "negate:c-remote:c-office"
+          ],
+          "subgraph_id": "neg-001",
+          "summary": "1 negation edges across 2 cards"
+        }
+      ]
+    },
+    "ir_version": "1.1",
+    "islands": [
+      {
+        "card_ids": [
+          "c-onboarding",
+          "c-tooling"
+        ],
+        "id": "isl-context",
+        "parent_island_id": "isl-work",
+        "placard_card_id": null,
+        "review_state": "unreviewed",
+        "title": "文脈の受け渡し経路が変わった"
+      },
+      {
+        "card_ids": [
+          "c-commute",
+          "c-office",
+          "c-remote"
+        ],
+        "id": "isl-work",
+        "parent_island_id": null,
+        "placard_card_id": "c-remote",
+        "review_state": "human_reviewed",
+        "title": "働く場所をめぐる見立てが割れている"
+      }
+    ],
+    "meta": {
+      "created_at": "2026-08-30T00:00:00+00:00",
+      "doc_id": "llm-ir-fixture-doc",
+      "doc_version": 1,
+      "language": "ja",
+      "safe_mode": true,
+      "updated_at": "2026-08-30T00:00:00+00:00"
+    },
+    "relations": [
+      {
+        "from": "c-commute",
+        "id": "causal:c-commute:c-remote",
+        "to": "c-remote",
+        "type": "causal"
+      },
+      {
+        "from": "c-tooling",
+        "id": "causal:c-tooling:c-remote",
+        "to": "c-remote",
+        "type": "causal"
+      },
+      {
+        "from": "c-remote",
+        "id": "negate:c-remote:c-office",
+        "to": "c-office",
+        "type": "negate"
+      },
+      {
+        "from": "c-office",
+        "id": "related:c-office:c-onboarding",
+        "to": "c-onboarding",
+        "type": "related"
+      }
+    ],
+    "truncation": {
+      "reason_codes": [],
+      "truncated": false
+    }
+  },
+  "irVersion": "1.1",
+  "sha256": "84f72382fcad43d6841e953725695916311f34497dc14c8c6d5d33d1224f084f"
+}
