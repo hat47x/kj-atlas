@@ -231,54 +231,61 @@ Detected losses:
 
 - <none or list>
 
-## 10. Candidate source requests
+## 10. InquiryJourney actual-use record (C/D only)
+
+この節は `DOMAIN-W-ITERATION-01` Phase 2手動中核の**実使用証拠**を残し、T9（Phase 3 proposal-only AI支援を別issue化するか）の判断材料へ接続する。
+
+実験用の独自履歴方式は作らず、製品の `InquiryJourneyV1` / `RoundSnapshotV1` / handoff / lineage / compare / resume を使用した範囲だけ記録する。実験Round番号をW型stageへ機械対応させない。
+
+### 10.1 Product journey references
+
+- InquiryJourney ID / bundle reference:
+- Working document ID/file:
+- Snapshot IDs used:
+- W-type stage(s) actually chosen by human:
+- Iteration(s):
+- Parent/branch relation used:
+- Handoff created: yes / no
+- Resume brief used: yes / no
+- Round comparison used: yes / no
+- Card lineage consulted: yes / no
+
+### 10.2 Did the manual core change the work?
+
+- Snapshot/handoff prevented loss of a meaningful state: yes / no / not exercised
+  - evidence:
+- Resume brief reduced reconstruction burden: yes / no / not exercised
+  - evidence:
+- Comparison changed or corrected a judgment: yes / no / not exercised
+  - evidence:
+- Lineage/provenance helped resolve a stale or conflicting claim: yes / no / not exercised
+  - evidence:
+- Branching allowed exploration without overwriting a valuable prior state: yes / no / not exercised
+  - evidence:
+- Product journey mechanics added waste friction without observed cognitive value:
+
+### 10.3 T9 manual-friction observations
+
+AI支援候補を思いついた回数ではなく、**手動中核で現実に繰り返し発生した摩擦**だけを書く。
+
+| Observation ID | Operation | Manual burden | Cognitive risk | Non-AI workaround | Proposal-only AI help | Automation risk | Run verdict |
+|---|---|---|---|---|---|---|---|
+| JF-001 | 問い / 引継ぎ / 差分 / 反証 / 再開 / その他 |  | omission / anchoring / stale evidence / loss of dissent / other |  |  |  | needed / manual sufficient / conditional / unresolved |
+
+### 10.4 T9 run-level verdict
+
+- Repeated friction class(es) observed in this run:
+- Manual core sufficient for this run: yes / no / mixed
+- Candidate Phase 3 support worth cross-case review:
+- Functional/manual-core defect discovered instead of AI need:
+- Notes for cross-case synthesis:
+
+> **単一runではT9を完了させず、Phase 3 issueも原則起票しない。** Case portfolioで事前登録した横断ゲートに従う。操作そのものを完了できない欠陥は、AI支援で迂回せず手動中核のbug/feature gapとして扱う。
+
+## 11. Candidate source requests
 
 run中に不足を発見した資料はここへ置く。このrunだけへ追加して結論を強化しない。
 
 | Candidate source | Why needed | Which claim could change | Next common round? |
 |---|---|---|---|
 |  |  |  | yes / no |
-
-## 11. Blind-review package
-
-評価者へ渡す際にはArm/方法名を除去し、次だけを渡す。
-
-- 固定問い
-- source manifest
-- required output
-- claim/evidence table
-- contradictions/deferred points
-- proposal ledger（method-identifying文言は必要に応じ匿名化）
-- C/Dのカード構造は、方法推定を避けるblind reviewでは文章化した等価表現も併用する
-
-### Reviewer questions
-
-1. 重要な主張は証拠に接地しているか。
-2. 時点の異なる主張を正しく更新しているか。
-3. 反証・不要条件・保留を保持しているか。
-4. 重要で新しい生存所見はあるか。
-5. もっともらしいが対象資料にない一般論を混ぜていないか。
-6. 次の行動は具体的で、その必要性を証拠から説明できるか。
-7. 後から訂正可能な形で理由が残っているか。
-
-## 12. Attribution after comparison
-
-arm単独では帰属しない。比較後に記入する。
-
-- KJ Atlas product:
-- cultural-substrate-weaving:
-- caller/domain context:
-- model behavior:
-- experiment design:
-- unresolved attribution:
-
-## 13. Revisit
-
-- Revisit date:
-- New evidence:
-- Findings retained:
-- Findings modified:
-- Findings rejected:
-- Previously deferred points resolved:
-- Product/skill changes caused by this run:
-- Regression/overfitting check result:
