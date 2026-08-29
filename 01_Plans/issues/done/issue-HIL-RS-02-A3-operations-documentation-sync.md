@@ -2,10 +2,10 @@
 
 - Type: Process
 - Status: Done
-- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20）
+- Source Issue: `01_Plans/issues/done/issue-HIL-RS-02-next-phase-delivery-plan.md`（Done 2026-06-20）
 - Priority: P1
 - Owner: Stream B（HIL-RS-02-A3 運用文書同期準備）
-- Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
+- Scope: `01_Plans/issues/done/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
 - Out of scope: 実装変更、allowlist外Issue/ADR編集、契約再定義、`04_Documentation/**` 本体編集
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `ADR-0039`, `02_Architecture/strict_mode_exception_approval_flow.html`
 - Dependencies: `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）, `ADR-0027`, `ADR-0028`

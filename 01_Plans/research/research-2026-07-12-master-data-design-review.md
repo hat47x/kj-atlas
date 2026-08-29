@@ -63,5 +63,5 @@
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（層1を動かさない根拠）
 - Related: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`（D1 の削除/アーカイブ/移管ゲート）
 - Related: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（D3 の背景）
-- Related: `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（本提言の起票先）
+- Related: `01_Plans/issues/done/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（本提言の起票先）
 - Related: `03_Implement/frontend/src/storage/recent.ts`, `03_Implement/frontend/src/ui/workspace/PatchWorkspacePanel.tsx`（M1/M3 の現状実装）

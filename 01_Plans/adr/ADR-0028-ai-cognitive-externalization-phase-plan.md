@@ -398,7 +398,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 ## Traceability
 
 - Derived-from: `00_Prompt/ai_cognitive_externalization_requirements.md`
-- Related: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Related: `01_Plans/issues/done/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Related: `02_Architecture/llm_input_ir_spec.md`
 - Related: `02_Architecture/llm_quality_strategy.md`
 

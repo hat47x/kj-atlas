@@ -2,11 +2,11 @@
 
 - Type: Feature request / Security
 - Status: Draft
-- Source Issue: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
+- Source Issue: `01_Plans/issues/done/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/`（監査メタデータread API）, `02_Architecture/api.md`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `01_Plans/issues/done/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
 - Expected verification level: `integration`
 
 ## 課題

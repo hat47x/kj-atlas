@@ -7,7 +7,7 @@
 - Owner: Maintainer / Documentation contributor
 - Scope: `README.md`, `04_Documentation/getting_started.md`（新規）, `04_Documentation/public_index.md`, `04_Documentation/installation.md`, `04_Documentation/acceptance_check.md`, `04_Documentation/README.md`
 - Related Backlog: `PRODUCT-VALUE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`, `01_Plans/issues/issue-UX-EMPTY-01-empty-canvas-core-loop-onboarding.md`, `01_Plans/documentation_quality.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/done/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`, `01_Plans/issues/done/issue-UX-EMPTY-01-empty-canvas-core-loop-onboarding.md`, `01_Plans/documentation_quality.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

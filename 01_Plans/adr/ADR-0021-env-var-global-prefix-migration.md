@@ -99,8 +99,8 @@ kj-atlas の公開環境変数は、すべて例外なく `KJ_ATLAS_` で始ま�
 
 実装作業、検証ログ、Done 判定、残タスクは issue memo で管理する。
 
-- Execution tracking: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
-- Runtime contract tracking: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
+- Execution tracking: `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md`
+- Runtime contract tracking: `01_Plans/issues/done/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Policy SSOT: `02_Architecture/runtime_parameter_registry.md`
 
 ## Traceability

@@ -7,7 +7,7 @@
 - Owner: TBD (Productization Program Owner / UX Lead)
 - Scope: `02_Architecture/design/`, `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UI-QUALITY-A11Y-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`, `01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/done/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`, `01_Plans/issues/done/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
 - Expected verification level: `e2e`
 
 ## 要求メタデータ

@@ -7,7 +7,7 @@
 - Owner: Codex (Product Ops evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
 - Related Backlog: `PRODUCT-OPS-01`
-- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/architecture.html`
+- Related ADR/Spec: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/architecture.html`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -141,7 +141,7 @@
 
 ## 13) Follow-up split 2026-05-24: support diagnostics bundle policy
 
-- Follow-up issue: `01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- Follow-up issue: `01_Plans/issues/done/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
 - Reason: the remaining "automated support bundle generation" gap can change product policy around diagnostic package format, automatic collection, support transmission, and retention responsibility. It should not be implemented as a small UI correction under this issue.
 - Boundary:
   - `PRODUCT-OPS-01` continues to own user-facing recovery guidance, manual diagnostic sharing, and current UI/docs consistency.

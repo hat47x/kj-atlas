@@ -5,7 +5,7 @@
 - Deciders: Platform Architecture Owner, Plan Owner, Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
-- Source Issue: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Source Issue: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 
 ## Plan
 
@@ -21,7 +21,7 @@
 ### 合意ログ（本ADRドラフト時点）
 
 - 合意A（取得済み）: ADR-0025 は「変更統治・例外承認の責務境界」のみを定義し、品質ゲート実装境界は扱わない。
-- 合意B（取得済み）: 統合ファイル3点（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）は本ADR作業中に更新しない。
+- 合意B（取得済み）: 統合ファイル3点（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）は本ADR作業中に更新しない。
 - 合意C（取得済み）: 例外承認の恒久運用は Deciders の受理後にのみ有効化する。
 
 ## Context
@@ -136,5 +136,5 @@ DOC-OPS-04 の候補D（Documentation Change Governance）では、Issueごと�
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
-- Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Related: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`

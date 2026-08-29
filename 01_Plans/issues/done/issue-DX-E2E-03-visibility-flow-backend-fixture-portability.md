@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/pub_visibility_i18n_readonly_flow.spec.ts`, `03_Implement/frontend/docs/e2e_testing.md`
 - Related Backlog: `DX-E2E-03`
-- Related ADR/Spec: `01_Plans/issues/issue-UX-SHARE-02-visibility-scope-plain-language.md`, `01_Plans/issues/issue-DX-E2E-02-canvas-legend-heading-drift.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-UX-SHARE-02-visibility-scope-plain-language.md`, `01_Plans/issues/done/issue-DX-E2E-02-canvas-legend-heading-drift.md`
 - Expected verification level: `e2e`
 
 ## Problem

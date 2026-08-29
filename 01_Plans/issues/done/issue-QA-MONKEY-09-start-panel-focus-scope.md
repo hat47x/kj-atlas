@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/ui/StartPanel.tsx`, `03_Implement/frontend/e2e/first_run_document_entry.spec.ts`
 - Related Backlog: `QA-MONKEY-09`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`, `04_Documentation/acceptance_check.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-PRODUCT-UX-01-first-run-document-entry.md`, `04_Documentation/acceptance_check.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

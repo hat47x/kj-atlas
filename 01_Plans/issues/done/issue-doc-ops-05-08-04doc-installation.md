@@ -219,7 +219,7 @@
 
 ### Phase 1: Read（対象再読）
 - 再読対象:
-  - `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `01_Plans/issues/done/issue-doc-ops-05-08-04doc-installation.md`
   - `04_Documentation/installation.md`
 - Status/Scope/RequirementStatement 確認:
   - Status: Ready
@@ -1034,7 +1034,7 @@
 ## 17) DOC-OPS Track 1 serial execution (2026-04-22)
 
 ### Phase 1 Read（同期）
-- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` / `04_Documentation/installation.md` を同時再読。
+- 対象Read同期: `01_Plans/issues/done/issue-doc-ops-05-08-04doc-installation.md` / `04_Documentation/installation.md` を同時再読。
 - `Classification=Improve external` と公開導入手順の責務を確認。
 
 ### Phase 2 ADR/CDC
@@ -1067,7 +1067,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 08）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` と対象Doc `04_Documentation/installation.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-08-04doc-installation.md` と対象Doc `04_Documentation/installation.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan
@@ -1412,7 +1412,7 @@
 
 ### Phase 1 Read（開始時同期）
 - Read同期を再実行し、`AGENTS.md` Read Order と本Issueのメタ項目を再確認。
-- Scopeを `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` のみに固定。
+- Scopeを `01_Plans/issues/done/issue-doc-ops-05-08-04doc-installation.md` のみに固定。
 
 ### Phase 2 ADR/CDC（Draft判定）
 - Context: `04_Documentation/installation.md` は公開導入者向け文書として運用価値が高い。

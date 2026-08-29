@@ -10,7 +10,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/AppErrorBoundary.test.ts`
 - Related Backlog: `DX-TYPECHECK-01`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G7 ビルドと回帰）
+- Related ADR/Spec: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G7 ビルドと回帰）
 - Expected verification level: `unit`
 
 ## 課題

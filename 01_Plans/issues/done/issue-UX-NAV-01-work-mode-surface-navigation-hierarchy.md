@@ -39,7 +39,7 @@
 - 12819a8a: structuralDiff dedup (AC-3)
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/ui/Shell.tsx`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-NAV-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`, `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`, `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`, `01_Plans/issues/done/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/done/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`, `01_Plans/issues/done/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -113,11 +113,11 @@
 - Related: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`（領域4 作業モード面の定義）
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`（Escape/focus 復帰・段階開示）
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（CB-1/CB-3/CB-4）
-- Related: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（本GAPの先送り元）
-- Related: `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`（選択コンテキスト責務）
-- Related: `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`（パネル閉鎖・focus 復帰契約）
-- Related: `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（可視性規律。本Issueは構造実体化の別軸）
-- Derived-from: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（明示的に先送りされたナビゲーション階層 issue）
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`（本GAPの先送り元）
+- Related: `01_Plans/issues/done/issue-UX-OPERABILITY-03-contextual-selection-panel.md`（選択コンテキスト責務）
+- Related: `01_Plans/issues/done/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`（パネル閉鎖・focus 復帰契約）
+- Related: `01_Plans/issues/done/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（可視性規律。本Issueは構造実体化の別軸）
+- Derived-from: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`（明示的に先送りされたナビゲーション階層 issue）
 
 ## 実装設計の到着（2026-07-04）
 

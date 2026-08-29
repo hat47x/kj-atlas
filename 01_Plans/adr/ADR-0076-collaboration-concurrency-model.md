@@ -4,7 +4,7 @@
 - Date: 2026-08-15
 - Deciders: Maintainer（委譲された意思決定権限）
 - Scope: 第3反復（共同編集）の並行性モデル。`03_Implement/backend`（楽観的並行制御・revision）と将来の共同編集実装
-- Related: `02_Architecture/collaboration-concurrency-comparison-2026-08-14.html`（外部比較調査）, `01_Plans/issues/issue-PGM-ITER-03-01-collaboration-concurrency-external-comparison.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
+- Related: `02_Architecture/collaboration-concurrency-comparison-2026-08-14.html`（外部比較調査）, `01_Plans/issues/done/issue-PGM-ITER-03-01-collaboration-concurrency-external-comparison.md`, `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 
 ## Context
 

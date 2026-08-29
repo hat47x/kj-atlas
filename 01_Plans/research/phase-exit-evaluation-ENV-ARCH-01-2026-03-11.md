@@ -12,7 +12,7 @@
 
 ### B. Exit Criteria / Issue / ADR チェック表
 - [x] Exit Criteria: `ENV-ARCH-01` の受入条件5点がすべて満たされている
-  - **根拠**: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md` の受入条件が全件 `[x]`。同ファイル `Verification results` に旧キー拒否の検証結果あり。
+  - **根拠**: `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md` の受入条件が全件 `[x]`。同ファイル `Verification results` に旧キー拒否の検証結果あり。
 - [x] Issue: `ENV-ARCH-01` は Done で、integration レベル検証の証跡がある
   - **根拠**: `Status: Done` / `Expected verification level: integration`。`pytest ...` 実行で 31 passed, 8 skipped を確認。
 - [x] ADR: `ADR-0021` の制約（互換なし一括移行）に違反していない

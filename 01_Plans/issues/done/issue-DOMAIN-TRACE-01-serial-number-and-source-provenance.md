@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-TRACE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
 - Norms: `KJT-SIGN-06`（`Card.meta.source` は「出所が追えなくなっている」失敗の徴候への対処）
 - Expected verification level: `integration`
 
@@ -77,7 +77,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Related: `02_Architecture/schemas.md`（§5 `Card.meta` 予約・`Card.sources` 現行意味）
-- Related: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ/起票者UI境界）
+- Related: `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ/起票者UI境界）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 C）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

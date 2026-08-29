@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `04_Documentation/assets/screenshots/`, `03_Implement/frontend/scripts/`
-- Related ADR/Spec: `04_Documentation/assets/screenshots/README.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related ADR/Spec: `04_Documentation/assets/screenshots/README.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Expected verification level: `docs-check`
 
 ## 課題

@@ -1,6 +1,6 @@
 # MVP-EXIT-01 残る人間確認4項目 — Cowork向けハンドオフ
 
-- 目的: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` の完了条件に残る4件の人間確認を、実機・実際の支援技術・人の目が必要な作業として、Claude Cowork（または担当者）に引き渡す。
+- 目的: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md` の完了条件に残る4件の人間確認を、実機・実際の支援技術・人の目が必要な作業として、Claude Cowork（または担当者）に引き渡す。
 - 前提: 2026-07-15時点で、frontend typecheck、Vitest 1,034件、Playwright 165件、accessibility自動検査、Compose構築、保存往復、backup/restore、代表障害からの復旧はすべて成功済み。**製品機能と自動検証はConditional Go、正式な出荷はNo-Go**。この文書はNo-GoをGoへ動かすための残作業だけを扱う。
 - 非目標: この文書は個別のUI欠陥修正やテストコード追加を扱わない。実施中に見つかった欠陥は、再現条件と受入条件を持つ個別issue（`PRODUCT-UX-*` 等）へ切り出す。本文書やMVP-EXIT-01へ詳細ログを積み上げない。
 
@@ -132,7 +132,7 @@ kj-atlasリポジトリ（C:/GIT/kj-atlas）のMVP-EXIT-01（製品化準備）�
 
 ## Traceability
 
-- Source: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Source: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`
 - Related: `04_Documentation/acceptance_check.md`, `04_Documentation/ui_catalog.md`, `04_Documentation/data_handling.md`
-- Related: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Derived-from: 2026-07-16 チャットでの明示的な移譲依頼

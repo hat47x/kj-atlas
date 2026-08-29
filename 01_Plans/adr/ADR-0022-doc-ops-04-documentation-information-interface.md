@@ -4,7 +4,7 @@
 - Date: 2026-03-08
 - Deciders: Platform Architecture Owner, Plan Owner, Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
-- Derived-from: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Derived-from: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 
 ## Context
 
@@ -43,7 +43,7 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 
 5. **B/C/D拘束条件（逸脱・統合更新の明文化）**
    - 逸脱許可条件: B/C/DでI/F項目を追加・削除・改名する場合は、各ADRの `Decision` と `Consequences` に「逸脱理由」「影響範囲」「復帰方針」を必須記録する。
-   - 統合ファイル更新禁止: B/C/Dの個別ADR起票・審査中は、統合ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）を同時更新しない。
+   - 統合ファイル更新禁止: B/C/Dの個別ADR起票・審査中は、統合ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）を同時更新しない。
    - 例外処理: 統合ファイルの修正が必要になった場合は、B/C/Dを停止し、統合フェーズ専用PRへ切り出す。
 
 6. **DOC-OPS-02 同期観点（固定4点）**
@@ -105,7 +105,7 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 ## Approval request
 
 - Request: ADR-A（本ADR）を `Accepted` に変更する可否を、Deciders（Platform Architecture Owner / Plan Owner / Architecture Owner）へ承認依頼する。
-- Required evidence: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` の `Proceed条件` と `Additional context` が本ADRの拘束条件と整合していること。
+- Required evidence: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` の `Proceed条件` と `Additional context` が本ADRの拘束条件と整合していること。
 - Gate rule: 承認が得られるまで、ADR-B/C/D（ADR-0023〜0025）の実編集を開始しない。
 
 ### Approval input（Deciders向け固定入力）
@@ -132,7 +132,7 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Related: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related: `01_Plans/issues/README.md`
 - Related: `01_Plans/project-progress-dashboard.md`
 - Related: `01_Plans/adr/ADR-0000-adr-governance.md`

@@ -7,7 +7,7 @@
 - Owner: Maintainer / QA contributor
 - Scope: `01_Plans/`, `03_Implement/frontend/`, `03_Implement/backend/`, `04_Documentation/`
 - Related Backlog: `PRODUCT-QA-01`, `MVP-EXIT-01`
-- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
 - Expected verification level: `integration`
 
 ## 目的

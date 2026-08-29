@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/i18n/dynamic_key_coverage.test.ts`
-- Related ADR/Spec: `01_Plans/issues/issue-FB-RM-I18N-02-locale-json-fallback-order.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-FB-RM-I18N-02-locale-json-fallback-order.md`
 - Expected verification level: `unit`
 
 ## 課題

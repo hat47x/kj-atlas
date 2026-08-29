@@ -52,11 +52,11 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0000-adr-governance.md`
-- Related: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
-- Related: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
-- Related: `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
-- Related: `01_Plans/issues/issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`
-- Related: `01_Plans/issues/issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`
+- Related: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related: `01_Plans/issues/done/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
+- Related: `01_Plans/issues/done/issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`
+- Related: `01_Plans/issues/done/issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`
 - Supersedes: N/A
 - Superseded by: N/A
 - Derived-from: 2026-05-21 latest-main intake and triage observation

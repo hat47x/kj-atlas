@@ -164,7 +164,7 @@ R-3 該当の是非は保守者が確認すること。非該当と判断され�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-SEC-ADMIN-PLANE-01-admin-surface-authorization-and-saas-bootstrap.md`
+- Implementation: `01_Plans/issues/done/issue-SEC-ADMIN-PLANE-01-admin-surface-authorization-and-saas-bootstrap.md`
 - Related: `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`（認証の外部委譲）
 - Related: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`（D3=A の先例）
 - Related: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`（本件が露出した経緯）

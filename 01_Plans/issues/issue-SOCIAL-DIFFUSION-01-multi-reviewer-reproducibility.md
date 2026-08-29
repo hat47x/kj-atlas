@@ -7,7 +7,7 @@
 - Owner: TBD（A=Productization Program Owner / R=QA Lead）
 - Scope: `01_Plans/`, `02_Architecture/value_traceability.md`, `03_Implement/frontend/e2e/`, `04_Documentation/narratives.md`
 - Related Backlog: `SOCIAL-DIFFUSION-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0038-social-diffusion-of-explainable-consensus.md`, `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0038-social-diffusion-of-explainable-consensus.md`, `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `01_Plans/issues/done/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend`
 - Related Backlog: `QA-MONKEY-02`
-- Related ADR/Spec: `04_Documentation/e2e_testing.md`, `01_Plans/issues/issue-CE3-patch-workspace-presets.md`, `03_Implement/frontend/src/domain/merge_candidates.ts`
+- Related ADR/Spec: `04_Documentation/e2e_testing.md`, `01_Plans/issues/done/issue-CE3-patch-workspace-presets.md`, `03_Implement/frontend/src/domain/merge_candidates.ts`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

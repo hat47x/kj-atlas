@@ -70,8 +70,8 @@ v1のtop-level keyは `schemaVersion/generatedAt/app/client/incident/runtime/doc
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
-- Related: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`
 - Related: `THREAT_MODEL.md`
 - Related: `04_Documentation/diagnostics.md`
 - Related: `04_Documentation/operations.md`

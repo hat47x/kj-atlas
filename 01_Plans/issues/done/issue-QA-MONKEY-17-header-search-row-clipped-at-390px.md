@@ -7,7 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/App.tsx`（ヘッダーの検索・状態フィルタ行）
 - Related Backlog: `QA-MONKEY-17`
-- Related ADR/Spec: `04_Documentation/acceptance_check.md`（表示幅を変えて確認する / 確認結果の判定）, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G4 画面耐性）
+- Related ADR/Spec: `04_Documentation/acceptance_check.md`（表示幅を変えて確認する / 確認結果の判定）, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G4 画面耐性）
 - Expected verification level: `e2e`
 
 ## 課題

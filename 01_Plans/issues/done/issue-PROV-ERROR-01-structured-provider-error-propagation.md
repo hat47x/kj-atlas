@@ -72,7 +72,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D2）
-- Related: `01_Plans/issues/issue-PROV-VIS-01-llm-provider-visibility-badge.md`
+- Related: `01_Plans/issues/done/issue-PROV-VIS-01-llm-provider-visibility-badge.md`
 - Derived-from: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 
 ## 完了記録 2026-07-06（Claude Code）

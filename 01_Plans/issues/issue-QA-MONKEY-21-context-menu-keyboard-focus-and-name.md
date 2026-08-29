@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/ContextMenu.tsx`, `03_Implement/frontend/scripts/monkey_adversarial_probes.mjs`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `QA-MONKEY-21`
-- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-1）, `01_Plans/issues/issue-QA-MONKEY-14-island-editor-fields-unlabeled-axe-critical.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-1）, `01_Plans/issues/done/issue-QA-MONKEY-14-island-editor-fields-unlabeled-axe-critical.md`
 - Expected verification level: `e2e`
 
 ## 課題

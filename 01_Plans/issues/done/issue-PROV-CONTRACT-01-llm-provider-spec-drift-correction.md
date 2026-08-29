@@ -69,7 +69,7 @@
 
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D3）
 - Related: `02_Architecture/llm_input_ir_spec.md`
-- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B: LLMProvider経路）, `02_Architecture/value_traceability.md` §2.9
+- Related: `01_Plans/issues/done/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B: LLMProvider経路）, `02_Architecture/value_traceability.md` §2.9
 - Derived-from: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 
 ## 完了記録 2026-07-06（Claude Code）

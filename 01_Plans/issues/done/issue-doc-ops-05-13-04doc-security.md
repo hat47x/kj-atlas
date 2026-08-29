@@ -306,7 +306,7 @@
 ## Stream L 実行ログ（2026-04-28 / DOC-OPS-05-13）
 
 ### Phase 1 Read
-- 対象を `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md` のみに固定し、allowlist外編集禁止を再確認。
+- 対象を `01_Plans/issues/done/issue-doc-ops-05-13-04doc-security.md` のみに固定し、allowlist外編集禁止を再確認。
 - 参照整合対象を `04_Documentation/security.md` / `04_Documentation/operations.md` / `04_Documentation/security_operational_guidelines.md` / `THREAT_MODEL.md` に固定。
 - 安全境界（safeMode既定ON・share/export漏えい防止）を後退させない制約を再確認。
 

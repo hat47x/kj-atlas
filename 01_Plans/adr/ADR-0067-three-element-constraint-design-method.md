@@ -105,7 +105,7 @@
 ## Traceability
 
 - `01_Plans/research/direction-review-2026-08-13.md` §2/§4 — 採択の契機と、上記弱点の実査記録
-- `01_Plans/issues/issue-DOGFOOD-METRIC-01-self-measured-gates-need-capability-canaries.md` — 弱点3への対策（能力カナリア）
+- `01_Plans/issues/done/issue-DOGFOOD-METRIC-01-self-measured-gates-need-capability-canaries.md` — 弱点3への対策（能力カナリア）
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md` — データ境界クラス定義
 - `02_Architecture/non-canvas-ui-flow-design.html` — 三者牽制モデルの初出
 - `02_Architecture/design/admin-surface-metadata-display-correction.html` — 三者牽制による補正の実例

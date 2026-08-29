@@ -58,7 +58,7 @@
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/api.md`
 - Related: `02_Architecture/data_model_operations_overview.html`
-- Related: `01_Plans/issues/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`
+- Related: `01_Plans/issues/done/issue-DATA-CONTRACT-RESET-01-document-v1-rebaseline.md`
 - Derived-from: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
 - ADR-0047 R-4（破壊的契約変更）: 旧 `DocumentV1`/`DocumentV1 | DocumentV2` unionとupgrade処理の削除、未知版のfail-closed拒否という、永続契約への破壊的変更である。
 - Related governance: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`

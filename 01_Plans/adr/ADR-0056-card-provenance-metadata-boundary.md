@@ -56,8 +56,8 @@ Maintainerが本ADRを提案通り受理した。`CARD-META-UI-01` の `Decision
 
 ## 追跡関係
 
-- Source: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
-- Related: `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
+- Source: `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
+- Related: `01_Plans/issues/done/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
 - Related: `02_Architecture/schemas.md`
 - Related: `02_Architecture/review_attribution.md`
 - Related: `02_Architecture/data_model_operations_overview.html`

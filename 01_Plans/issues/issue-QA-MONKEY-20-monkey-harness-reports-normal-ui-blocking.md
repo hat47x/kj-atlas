@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/scripts/monkey_adversarial_probes.mjs`, `03_Implement/frontend/scripts/monkey_ui_sweep.mjs`
 - Related Backlog: `QA-MONKEY-20`
-- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `03_Implement/frontend/docs/mvp_exit_monkey_test_log_2026-07-29.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `03_Implement/frontend/docs/mvp_exit_monkey_test_log_2026-07-29.md`
 - Expected verification level: `e2e`
 
 ## 課題

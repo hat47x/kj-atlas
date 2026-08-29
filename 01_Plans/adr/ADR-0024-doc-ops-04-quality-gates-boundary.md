@@ -190,6 +190,6 @@ Self-Correction（最大3回）:
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
-- Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補C節）
+- Related: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補C節）
 - Derived-from: DOC-OPS-04 ADR候補C（Documentation Quality Gates）
 - Amended-by: `DX-DOC-02` T1（2026-07-15 docs-contract適用matrix / rule ID / 段階有効化条件）

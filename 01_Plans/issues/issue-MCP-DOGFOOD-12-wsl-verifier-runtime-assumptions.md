@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py`, `01_Plans/agent_failure_log.md`
 - Related Backlog: `MCP-DOGFOOD-12`
-- Related ADR/Spec: `01_Plans/issues/issue-DOGFOOD-06-verification-paths-abnormal-case-coverage.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOGFOOD-06-verification-paths-abnormal-case-coverage.md`
 - Expected verification level: `e2e`
 
 ## 課題

@@ -515,7 +515,7 @@
 ## DOC-OPS-05-04 Serial execution record（2026-04-19 / Stream doc-ops-05-01..05）
 
 ### Phase 1 Read
-- Read対象: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`, `04_Documentation/diagnostics.md`
+- Read対象: `01_Plans/issues/done/issue-doc-ops-05-04-04doc-diagnostics.md`, `04_Documentation/diagnostics.md`
 - 判定: Requirement meta I/F / Audience / Goal / Public boundary / VerificationLevel=docs-check を再確認。
 
 ### Phase 2 Plan
@@ -535,7 +535,7 @@
 
 ### Phase 3 Execute
 - Phase運用は **Stream H と同一**（Read → ADR CDC → Plan → Execute → Verify → Proceed）で固定。
-- 変更範囲は **専有ファイル: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` のみ** とし、対象外編集は禁止。
+- 変更範囲は **専有ファイル: `01_Plans/issues/done/issue-doc-ops-05-04-04doc-diagnostics.md` のみ** とし、対象外編集は禁止。
 
 ### Phase 3 Execute
 - Classification は **Improve external** を維持（再判定なし）。
@@ -918,7 +918,7 @@
 ### Phase 3 Execute
 - Phase開始時に本Issueファイルを再読。
 - 実施内容: Batch2専任として本5Phase記録を追記し、既存分類（Improve external）を維持。
-- 変更境界: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` のみ。
+- 変更境界: `01_Plans/issues/done/issue-doc-ops-05-04-04doc-diagnostics.md` のみ。
 
 ### Phase 4 Verify
 - Phase開始時に本Issueファイルを再読。
@@ -991,7 +991,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 04）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` と対象Doc `04_Documentation/diagnostics.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-04-04doc-diagnostics.md` と対象Doc `04_Documentation/diagnostics.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan

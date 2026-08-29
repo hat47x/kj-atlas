@@ -7,8 +7,8 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / QA contributor / Developer Experience contributor
-- Scope: `03_Implement/frontend/docs/e2e_testing.md`, `03_Implement/backend/tests/test_qa_e2e_doc_contract.py`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `03_Implement/frontend/docs/e2e_testing.md`
+- Scope: `03_Implement/frontend/docs/e2e_testing.md`, `03_Implement/backend/tests/test_qa_e2e_doc_contract.py`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`, `01_Plans/issues/done/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `01_Plans/issues/done/issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/done/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`, `03_Implement/frontend/docs/e2e_testing.md`
 - Expected verification level: integration
 
 ## Requirement meta I/F（共通キー）
@@ -78,7 +78,7 @@
 - `e2e_testing.md`: 「関連文書」以降に連結されていた `UI Operability（計画）`（Mock-first I/F契約、直列実装順、フェイルセーフ）、`Draft群 Open化向け QA Gate テンプレート（Stream E）`、`Stream E/F/G` の3節すべてを削除した。有効な操作観点5件（開始/選択/表示/閉じる/復帰）は「確認観点」表へ統合し、`Draft QA issue の Open化条件`（旧・重複していた2箇所）は`issues/README.md`/`ADR-0019`への導線1段落に置換した。`fixture-backed visibility suiteの境界`は末尾に孤立していた英語版の詳細（シナリオ表・コマンド）を統合し、`関連文書`の直前へ配置し直した。`関連文書`の後には`Release Gate 連携`のみが続く形にし、以降current見出しに履歴・実行計画混入がないことを確認した。`--files`参照は0件（現行validatorは`--root`のみ受理、`--help`で確認済み）。
 - `test_qa_e2e_doc_contract.py`: `test_e2e_doc_has_plan_execute_verify_proceed_flow_and_self_repair_limit`を`test_e2e_doc_has_current_runbook_invariants`へ置換した。正準npm script（`e2e`/`e2e:mock`/`test:regression-guards`）、Compose優先文言、Risk ID表、SafeMode、失敗時証跡見出し、`ADR-0019`リンクの存在を検査し、`Plan → Execute → Verify → Proceed`/`自己修復は最大3回`/`4回目相当は Stop`/`Stream E/F/G`/`--files`/`直列実装順`/`Draft群 Open化`が再混入しないことを検査する。他の2 test関数（`issue-QA-E2E-USE-01`・`issue-PRODUCT-QA-01`対象）は本issueの対象外であり変更していない。
 - `01_Plans/docs_contract_checks.py`: `CURRENT_ONLY_PATHS`へ`03_Implement/frontend/docs/e2e_testing.md`を追加した。`01_Plans/tests/test_docs_contract_checks.py`に、defaultパスにE2E正本が含まれることの確認1件と、E2E正本へ再混入した`Stream`見出しを`check_current_history_headings`が既定パスだけで検出することを確認する負例1件を追加した。
-- `01_Plans/issues/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`: Follow-upセクションを追記し、2026-07-15の完了記録が対象にしていなかった`e2e_testing.md`本体の残存を本issueへ切り出したことを明記した（DoneのDOC-OPS-06自体は変更していない）。
+- `01_Plans/issues/done/issue-DOC-OPS-06-current-view-history-and-contributor-route.md`: Follow-upセクションを追記し、2026-07-15の完了記録が対象にしていなかった`e2e_testing.md`本体の残存を本issueへ切り出したことを明記した（DoneのDOC-OPS-06自体は変更していない）。
 
 検証結果:
 - `python 01_Plans/tests/test_docs_contract_checks.py`相当（`01_Plans.tests.test_docs_contract_checks`、unittest経由。pytestは本環境で利用不可）: 16/16 pass（新規2件含む）。

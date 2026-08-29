@@ -5,7 +5,7 @@
 - Source Issue: `DX-DOC-08`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/scripts/check_design_consistency.py`, `01_Plans/issues/issue-DX-DOC-08-api-md-endpoint-coverage-gap.md`, `AGENTS.md` §1.3
+- Scope: `03_Implement/backend/scripts/check_design_consistency.py`, `01_Plans/issues/done/issue-DX-DOC-08-api-md-endpoint-coverage-gap.md`, `AGENTS.md` §1.3
 - Related ADR/Spec: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`, `01_Plans/adr/ADR-0075`（L2昇格判定）
 - Expected verification level: `unit`
 

@@ -258,6 +258,6 @@ Gerlich は**相関研究であり因果は確立していない**。自己申�
 - `00_Prompt/domain.md` §2・§7・§8 — 不変条件の正本
 - `00_Prompt/ai_cognitive_externalization_requirements.md` — §2.1/§2.2 が扱う現行の正当化と、その題が指す正しい枠組み
 - `00_Prompt/kj_technique.md` §3・§4・§5 — §3.3 の検査
-- `01_Plans/direction-review-2026-08-13.md` — §2.5 の矛盾、検査の未実装、観測基盤の欠如
+- `01_Plans/research/direction-review-2026-08-13.md` — §2.5 の矛盾、検査の未実装、観測基盤の欠如
 - `01_Plans/dogfood/adopting-org-patterns.md` — §6 の反証可能性の制約
 - `02_Architecture/post-mvp-business-scope-design-program.html` — §4.3 の第3反復

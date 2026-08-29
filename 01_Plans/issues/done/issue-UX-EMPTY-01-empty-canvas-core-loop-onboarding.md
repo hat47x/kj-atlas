@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-EMPTY-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（CB-1 空状態）, `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`（Done・入口のみ）, `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（In Progress・連携）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（CB-1 空状態）, `01_Plans/issues/done/issue-PRODUCT-UX-01-first-run-document-entry.md`（Done・入口のみ）, `01_Plans/issues/done/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（In Progress・連携）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -71,7 +71,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`（スコープ境界）, `issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（連携先）
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-01-first-run-document-entry.md`（スコープ境界）, `issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（連携先）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点1・図C）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

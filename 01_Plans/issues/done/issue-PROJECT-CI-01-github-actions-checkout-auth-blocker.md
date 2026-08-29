@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `.github/workflows/`, GitHub repository/account operations
 - Related Backlog: `PROJECT-CI-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/done/issue-PROJECT-BASELINE-01-latest-mainline-health-baseline.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

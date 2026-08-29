@@ -97,7 +97,7 @@ $ grep -rn "ir_version\|graph_summary\|cluster_candidates" --include=*.py --incl
 ## 依存関係
 
 - `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（採択が前提）
-- `01_Plans/issues/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 の決定で同時に解消される。本issueと同一PRで実施してよい）
+- `01_Plans/issues/done/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 の決定で同時に解消される。本issueと同一PRで実施してよい）
 
 ### 連携（依存ではない）
 

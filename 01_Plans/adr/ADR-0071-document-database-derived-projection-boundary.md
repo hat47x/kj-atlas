@@ -69,7 +69,7 @@ KJキャンバスはJSON documentとして扱いやすく、FirestoreやDynamoDB
 
 ## Traceability
 
-- `01_Plans/issues/issue-DB-DOCUMENT-01-document-database-derived-projection.md`
+- `01_Plans/issues/done/issue-DB-DOCUMENT-01-document-database-derived-projection.md`
 - `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`
 - `01_Plans/adr/ADR-0070-content-addressed-generation-dag-and-git-adapter.md`
 - `02_Architecture/database_portability.md`

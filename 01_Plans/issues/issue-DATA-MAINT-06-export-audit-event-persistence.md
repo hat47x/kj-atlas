@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/value_traceability.md` §2.9（GENAI-GOV-01）, `01_Plans/issues/issue-DX-BACKEND-CE4-01-audit-tracker-unbounded-memory.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/value_traceability.md` §2.9（GENAI-GOV-01）, `01_Plans/issues/done/issue-DX-BACKEND-CE4-01-audit-tracker-unbounded-memory.md`
 - Expected verification level: `integration`
 
 ## 課題

@@ -5,8 +5,8 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
-- Related ADR/Spec: `01_Plans/issues/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`, `AGENTS.md` §4
+- Scope: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`, `AGENTS.md` §4
 - Expected verification level: `docs-check`
 
 ## 課題

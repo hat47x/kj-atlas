@@ -5,10 +5,10 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Stream L (E2E Verification Log Draft)
-- Scope: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（※本Issueメモ整備のみ）
+- Scope: `01_Plans/issues/done/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（※本Issueメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
-- Dependencies: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（完了後に着手）
+- Dependencies: `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md`（完了後に着手）
 - Dependency status: `05-06完了待ち（単方向依存）`
 
 
@@ -393,8 +393,8 @@
 ## Phase-link integrity check（2026-05-10 sync）
 
 ### Cross-issue links
-- Prev phase dependency-1: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A基準語彙）。
-- Prev phase dependency-2: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B完了待ち）。
+- Prev phase dependency-1: `01_Plans/issues/done/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A基準語彙）。
+- Prev phase dependency-2: `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B完了待ち）。
 - Current phase target: `DOC-OPS-05-07`（Gate-C）。
 
 ### Required meta check（must remain synchronized）

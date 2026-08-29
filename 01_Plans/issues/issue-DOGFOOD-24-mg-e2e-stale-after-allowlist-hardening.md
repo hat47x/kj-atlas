@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer（並行編集者＝モデルガバナンス強化の当事者と協調）
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ47・MG）, `03_Implement/backend/src/kj_atlas_api/routes/model_registry.py`
-- Related ADR/Spec: `01_Plans/issues/issue-AI-MODEL-GOVERNANCE-03-registry-provider-dispatch-drift.md`（並行編集者が起票）, `02_Architecture/api.md`（allowlist 契約）, `01_Plans/issues/issue-DOGFOOD-10-concurrent-iteration-edits-race-with-ci-harness.md`（並行レースの記録）
+- Related ADR/Spec: `01_Plans/issues/done/issue-AI-MODEL-GOVERNANCE-03-registry-provider-dispatch-drift.md`（並行編集者が起票）, `02_Architecture/api.md`（allowlist 契約）, `01_Plans/issues/issue-DOGFOOD-10-concurrent-iteration-edits-race-with-ci-harness.md`（並行レースの記録）
 - Expected verification level: `e2e`
 
 > 追記（iteration 188 検証時）: 本コミット `1fc48873` は **backend単体テストの `test_ai_safemode.py` にも10件の失敗**を引き起こしている（`assert 503 == 200`）。`KJ_ATLAS_LLM_PROVIDER=none`（project settings.json 既定）の環境で、AIルートのモデルプロバイダ解決（`ai.py` の `model_provider_unavailable` → 503）が `generate_with_fallback` スタブより先に発火するようになった。同じく並行編集者コミット由来であり、単体テストの追従も並行編集者の責務範囲。

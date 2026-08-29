@@ -8,7 +8,7 @@
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `ADR-0039`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（Done 2026-06-20）
 - Verification: `docs-check`
 
 ## Resolution 2026-06-20
@@ -40,7 +40,7 @@ CE0 fixes the graph responsibility boundary before downstream implementation wor
 - Contract references:
   - `02_Architecture/architecture.html` section `7A. CE-0`
   - `02_Architecture/schemas.md` section `1.1 CE0 Contract Freeze`
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
 - Contract IDs are read-only references:
   - `CE0-CTX-IF`
   - `CE0-SAFEMODE-IF`
@@ -350,7 +350,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 - Scope: 本Issue 1ファイル内での実行記録更新と、既存契約文言との整合確認のみ。
 - Non-Goals: CE0契約ID再定義、実装変更（`03_Implement/**`）、未承認事項の確定化。
 - AC/DoD/Validation/Stop Conditions を既存定義に準拠して再確認し、不足は検出されなかったため追加ドラフト提案は不要と判定。
-- 編集対象が `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみであることを再確認。
+- 編集対象が `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみであることを再確認。
 
 ### Phase 3 ADR/CDC Consensus
 - 方針差分判定: `No ADR delta`（新規の Context/Decision/Consequences 追加承認は不要）。
@@ -579,7 +579,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 - Consequences: 未承認論点は `held/pending` の在庫で保持し、確定化しない。
 
 ### Phase 4 Execute（本Issueのみ更新）
-- 更新対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに限定して実行記録を追記。
+- 更新対象を `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみに限定して実行記録を追記。
 - SafeMode後退、No-Go語彙変更、CE0契約ID再定義、指定外編集は未実施。
 
 ### Verify（docs-check / 自己修復最大3回）
@@ -803,7 +803,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ### Plan
 - Read同期を再実施し、Read結果との差分なしを確認してから計画を固定。
-- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみへ限定し、contract-only（実装変更なし）を維持。
+- Scopeを `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみへ限定し、contract-only（実装変更なし）を維持。
 - `role / transition / no-go` の同義語置換・拡張・再定義は禁止。未承認事項は `held/pending` で保持し、確定しない。
 
 ### ADR/CDC
@@ -855,7 +855,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ### Phase 2 Plan（Read同期）
 - Phase開始時に再Readし、Phase 1との差分がないことを確認してから計画を固定。
-- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` の契約固定記述更新のみに限定（implementation禁止 / single-file）。
+- Scopeを `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` の契約固定記述更新のみに限定（implementation禁止 / single-file）。
 - 差分検知結果: 0 件。差分が発生した場合は即停止し承認待ちへ移行する条件を再確認。
 
 ### Phase 3 ADR/CDC（Read同期）
@@ -925,7 +925,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 - 方針差分が将来発生する場合のみ Context/Decision/Consequences を追記し、承認まで `held` を維持するルールを継続。
 
 ### Phase 4 Execute（contract文言のみ更新）
-- 編集対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに固定して更新。
+- 編集対象を `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみに固定して更新。
 - `role / transition / no-go` 固定語彙を維持し、同義語置換・拡張定義を行わない。
 - SafeMode既定ON境界を後退させる記述を追加しない。
 
@@ -992,7 +992,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ### Phase 4 Execute（契約文面のみ）
 - Phase開始時Read同期を再実施し、差分 0 件を確認してから本Issue本文の実行記録のみ追記した。
-- 編集対象は `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみとし、他ファイル編集は行わない。
+- 編集対象は `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみとし、他ファイル編集は行わない。
 
 ### Verify（安全境界と整合）
 - Phase開始時Read同期を再実施し、語彙・禁止事項・SafeMode境界の差分 0 件を確認した。
@@ -1144,7 +1144,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ### Phase 2 Plan（Read同期）
 - Phase開始時にRead同期を再実施し、Phase 1 からの語彙・禁止事項・SafeMode境界差分が 0 件であることを確認。
-- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみへ固定し、contract-only / docs-only / single-file を維持。
+- Scopeを `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみへ固定し、contract-only / docs-only / single-file を維持。
 - Non-Goals: handler/UI/DB/worker/API/Schema migration を含む実装変更、CE0契約ID再定義、No-Go語彙変更、SafeMode既定緩和。
 - Self-Correction方針: Verify失敗時の自己修復は最大3回、4回目相当は実施せず停止報告。
 
@@ -1248,7 +1248,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 ## Phase Execution Record（2026-04-30 / Stream E / CE0 Core Graph Repositioning 専任）
 ### Phase 1 Read（最新確認）
 - 最新Run（2026-04-28）および本Issue全文を再読し、`role / transition / no-go` 固定語彙と SafeMode 境界に差分がないことを確認。
-- 編集対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに固定し、他ストリーム対象ファイルを編集しない制約を再確認。
+- 編集対象を `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみに固定し、他ストリーム対象ファイルを編集しない制約を再確認。
 - インターフェース依存は実装参照ではなく mock contract で切断して記述する方針を再確認。
 
 ### Phase 2 Context / Decision / Consequences 明文化
@@ -1326,7 +1326,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 ### Phase 1 Read
 - 本Issue最新状態を再読し、Scope/Dependencies/想定I/Fを抽出。
 - Scope抽出: `working` / `context_projection` / `consensus` の責務固定、`working -> consensus` の `patch+approval` 固定、canonical No-Go 5 IDs 固定。
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
 - 想定I/F抽出: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
 - Mock Contract Assumption:
   - `Assumption-CE0-IF-01`: `ContextQueryV1` は query preview 済み入力のみを受理する前提。
@@ -1386,7 +1386,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ## Phase Execution Record（2026-05-03 / Stream C / single-file docs-only contract-only strict run）
 ### Phase 1 Read（Scope/固定語彙/No-Go条件の再確認）
-- Scope を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみと再確認（single-file / docs-only / contract-only）。
+- Scope を `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみと再確認（single-file / docs-only / contract-only）。
 - 固定語彙を再確認：`role`=`working` / `context_projection` / `consensus`、`transition`=`working -> consensus` + `patch+approval`。
 - No-Go canonical 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）の不変を再確認。
 - 致命条件（未定義競合・依存循環・scope逸脱）監視を有効化し、検出なしのため継続。
@@ -1595,7 +1595,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 
 ### Plan
 - 目的を「CE0 core graph repositioning の計画・契約整合」に限定。
-- スコープを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` 単一ファイルに固定。
+- スコープを `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` 単一ファイルに固定。
 - 禁止事項（実装変更、他issue参照更新、語彙再定義、SafeMode後退）を再確認。
 
 ### Execute
@@ -1655,7 +1655,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 ### Verify（自己検証 + 失敗時3回まで修復）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
-- `git diff --name-only` を実行し、`01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみ変更であることを確認。
+- `git diff --name-only` を実行し、`01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみ変更であることを確認。
 - 修復回数: 0/3（失敗なし）。
 
 ### Proceed/Stop
@@ -2055,7 +2055,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 - 致命条件の監視対象（語彙差分、契約ID再定義、SafeMode後退、Verify 4回目相当）を再確認。
 
 ### 2) Plan（AC/DoD不足時は提案）
-- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` の契約固定と実行記録更新のみに限定（single-file / contract-only）。
+- Scopeを `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` の契約固定と実行記録更新のみに限定（single-file / contract-only）。
 - AC/DoD不足判定: 既存AC-1〜AC-9、DoD-1〜DoD-5で実行可能。新規不足は未検出。
 - 不足発生時の運用を再確認: AIドラフトを本Issueへ追記し、明示合意まで `held` を維持。
 
@@ -2095,7 +2095,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 ### Phase 5 Verify
 - 用語統一: `role / transition / no-go`、canonical 5 IDs、`patch+approval` の表記ゆれなし。
 - 依存矛盾: `issue-CE0-contract-freeze.md` 依存前提との矛盾なし。
-- allowlist逸脱: 編集対象は `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみ。
+- allowlist逸脱: 編集対象は `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみ。
 - Self-Correction: 0/3（追加修正不要）。
 
 ### Phase 6 Proceed
@@ -2124,7 +2124,7 @@ CE0 Core Graph repositioning can move toward closeout when these are recorded to
 ### Phase 5 Verify（自己修復は最大3回）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass（self-heal 0/3）。
 - `git diff --check` を実行し、pass。
-- `git status --short` を実行し、編集対象が `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみであることを確認。
+- `git status --short` を実行し、編集対象が `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` のみであることを確認。
 
 ### Phase 6 Proceed
 - 判定: `Ready`（contract-only / single-file / allowlist 準拠 / AC・DoD整合）。

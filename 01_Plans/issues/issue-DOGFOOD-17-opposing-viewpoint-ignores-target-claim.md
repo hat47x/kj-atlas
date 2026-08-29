@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ112）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §M4（反対視点は contradiction/evidence 構造に接地）, `01_Plans/issues/issue-AI-OPPOSE-01-opposing-viewpoint-and-evidence-gap-proposals.md`, `02_Architecture/api.md`（proposals/opposing-viewpoint 契約）
+- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §M4（反対視点は contradiction/evidence 構造に接地）, `01_Plans/issues/done/issue-AI-OPPOSE-01-opposing-viewpoint-and-evidence-gap-proposals.md`, `02_Architecture/api.md`（proposals/opposing-viewpoint 契約）
 - Expected verification level: `e2e`
 
 ## 課題

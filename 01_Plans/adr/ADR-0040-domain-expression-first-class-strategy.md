@@ -69,4 +69,4 @@
 - Related: `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`（P-01/P-04/P-05）, `ADR-0032-product-value-realization-model.md`（V1–V3）, `ADR-0036`（VR2）, `ADR-0039`（段階適正化）
 - Related: `02_Architecture/schemas.md`（DocumentV1 / CritiqueInput / EvidenceLink）, `02_Architecture/value_traceability.md` §2.1.1
-- Derived-from: `01_Plans/issues/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`（Representation boundary table の保留判断を確定）
+- Derived-from: `01_Plans/issues/done/issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`（Representation boundary table の保留判断を確定）

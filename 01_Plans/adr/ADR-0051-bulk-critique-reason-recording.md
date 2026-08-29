@@ -3,7 +3,7 @@
 - Status: Proposed
 - Date: 2026-07-10
 - Deciders: Maintainer and product-design review
-- Scope: `03_Implement/frontend/src/ui/BulkOperationsBar.tsx`, `03_Implement/frontend/src/App.tsx`, `01_Plans/issues/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
+- Scope: `03_Implement/frontend/src/ui/BulkOperationsBar.tsx`, `03_Implement/frontend/src/App.tsx`, `01_Plans/issues/done/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
 - Norms: `DOM-CRIT-06`（違和感の理由をデータとして保存するという前提がなければ、この一括記録機能は成立しない）
 
 ## Context
@@ -60,6 +60,6 @@ Trade-offs:
 
 ## Traceability
 
-- Related issue: `01_Plans/issues/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
+- Related issue: `01_Plans/issues/done/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`
 - Related ADR: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
 - ADR-0047 R-1（実使用の摩擦）: Context に記した「hold -> reason -> review loop」の破綻は、出荷済み一括批評機能の実利用で顕在化した設計トレードオフである。

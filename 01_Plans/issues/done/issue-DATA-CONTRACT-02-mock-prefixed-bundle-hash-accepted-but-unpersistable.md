@@ -8,7 +8,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`（`AIProposalRow` CheckConstraint）, `03_Implement/backend/src/kj_atlas_api/proposal_decision_repository.py`
-- Related ADR/Spec: `02_Architecture/api.md`（proposal・audit 節）, `01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- Related ADR/Spec: `02_Architecture/api.md`（proposal・audit 節）, `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md`
 - Expected verification level: `unit`
 
 ## 三要素整合（ADR-0067）

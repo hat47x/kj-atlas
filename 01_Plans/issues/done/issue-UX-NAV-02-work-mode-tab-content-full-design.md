@@ -2,12 +2,12 @@
 
 - Type: Feature request
 - Status: Done
-- Source Issue: `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（Done。§68で「フルなタブ設計は本Issueの対象外、必要なら別途」と明記済み）
+- Source Issue: `01_Plans/issues/done/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（Done。§68で「フルなタブ設計は本Issueの対象外、必要なら別途」と明記済み）
 - Priority: P2
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/App.tsx`（advancedWorkModeContent）, `03_Implement/frontend/src/ui/WorkModePanel.tsx`, 新規 `03_Implement/frontend/src/ui/WorkModeTabs.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`（機能slotへの縮約）
 - Related Backlog: `UX-NAV-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`（作業モードの受理済み方式）, `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0055-work-mode-navigation-semantics.md`（作業モードの受理済み方式）, `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（Independent。本ADRはCanvas/Menu限定）, `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（role=tablist判断の解消先）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `e2e`
 
 ## Draft→Open 2026-07-13: 着手ゲート代理裁可
@@ -83,10 +83,10 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 
 ## Traceability
 
-- Derived-from: `01_Plans/issues/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（§68でスコープ外と明記済み）
+- Derived-from: `01_Plans/issues/done/issue-UX-NAV-01-work-mode-surface-navigation-hierarchy.md`（§68でスコープ外と明記済み）
 - Related: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（C-5の解消先）
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（作業モードタブ role=tablist 残課題の解消先）
-- Related: `01_Plans/issues/issue-QA-MONKEY-12-work-mode-suggest-layout-button-overlap.md`（タブ化で副次的に解消する可能性がある重なりバグ）
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（作業モードタブ role=tablist 残課題の解消先）
+- Related: `01_Plans/issues/done/issue-QA-MONKEY-12-work-mode-suggest-layout-button-overlap.md`（タブ化で副次的に解消する可能性がある重なりバグ）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html` §P21（完全設計の正本）
 
 ## 完了記録 2026-07-13（Claude Code）

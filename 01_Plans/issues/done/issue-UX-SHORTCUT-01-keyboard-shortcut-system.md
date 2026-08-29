@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-SHORTCUT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 ショートカット原則）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139 の先送り解消）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 ショートカット原則）, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139 の先送り解消）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -75,7 +75,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/issues/issue-UX-CMDK-01-command-palette.md`（表記・バインド共通化）, `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`（L699 棚卸し警告）
+- Related: `01_Plans/issues/done/issue-UX-CMDK-01-command-palette.md`（表記・バインド共通化）, `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`（L699 棚卸し警告）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（P8・図H）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

@@ -57,7 +57,7 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 
 - 判定条件:
   - CLI運用手順の変更が `04_Documentation/operations.md` に同期される。
-  - CE4契約変更時は `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` / `02_Architecture/api.md` / `ADR-0016` / `ADR-0017` の4文書同期を必須とする（契約監査ドリフト防止）。
+  - CE4契約変更時は `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md` / `02_Architecture/api.md` / `ADR-0016` / `ADR-0017` の4文書同期を必須とする（契約監査ドリフト防止）。
 - 検証粒度（Docs運用）:
   - PRチェックリストで「CLI運用変更時の同時更新」を必須項目化。
 
@@ -91,7 +91,7 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 - Parent: `01_Plans/adr/ADR-0008-cli-tooling-plan.md`
 - Related: `01_Plans/adr/ADR-0015-cli-scope-phasing.md`
 - Related: `01_Plans/adr/ADR-0016-cli-command-contract.md`
-- Related: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- Related: `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md`
 - Related: `THREAT_MODEL.md`
 - Related: `04_Documentation/security.md`
 - Related: `04_Documentation/operations.md`

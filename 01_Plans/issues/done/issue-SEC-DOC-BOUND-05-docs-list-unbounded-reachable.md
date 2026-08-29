@@ -8,7 +8,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/database_content_store.py`, `03_Implement/frontend/src/api/client.ts`（`listDocuments`）
-- Related ADR/Spec: `01_Plans/issues/issue-SEC-DOC-BOUND-04-document-access-admin-list-no-pagination.md`（判断支援: cursor方式・limit 100/max 500 を推奨）
+- Related ADR/Spec: `01_Plans/issues/done/issue-SEC-DOC-BOUND-04-document-access-admin-list-no-pagination.md`（判断支援: cursor方式・limit 100/max 500 を推奨）
 - Expected verification level: `integration`
 
 ## 三要素整合（ADR-0067）

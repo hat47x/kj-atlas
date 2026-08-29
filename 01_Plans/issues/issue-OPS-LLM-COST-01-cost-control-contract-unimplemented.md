@@ -65,7 +65,7 @@
 
 ### 連携（依存ではない）
 
-- `01_Plans/issues/issue-SEC-RATE-LIMIT-01-backend-api-has-no-rate-limiting.md`（全API rate limit。費用台帳とは独立に判断する）
+- `01_Plans/issues/done/issue-SEC-RATE-LIMIT-01-backend-api-has-no-rate-limiting.md`（全API rate limit。費用台帳とは独立に判断する）
 
 ## 検証
 

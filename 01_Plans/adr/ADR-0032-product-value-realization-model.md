@@ -96,7 +96,7 @@ KPIは次の3条件を満たすもののみ採用する。
 - Related: `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`
 - Related: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
 - Related: `02_Architecture/value_traceability.md`
-- Derived-from: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Derived-from: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`
 
 ---
 

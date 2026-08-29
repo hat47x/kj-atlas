@@ -66,7 +66,7 @@ VALUE-DOGFOOD-01 の初回ドッグフード走行（2026-07-10、実バック�
 
 ## Traceability
 
-- Derived-from: `01_Plans/issues/issue-VALUE-DOGFOOD-01-first-dogfood-run-and-friction-log.md`
+- Derived-from: `01_Plans/issues/done/issue-VALUE-DOGFOOD-01-first-dogfood-run-and-friction-log.md`
 - Related: `01_Plans/dogfood/dogfood-log-2026-07-10.md`（発見の経緯・全証跡）
 - Related: `03_Implement/frontend/scripts/dogfood_run_20260709.mjs`(再現スクリプト)
 

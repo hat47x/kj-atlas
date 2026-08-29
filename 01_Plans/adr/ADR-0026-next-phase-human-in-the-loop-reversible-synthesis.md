@@ -4,7 +4,7 @@
 - Date: 2026-03-11
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
-- Source Issue: `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- Source Issue: `01_Plans/issues/done/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
 - Related: `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/research/phase-exit-evaluation-ENV-ARCH-01-2026-03-11.md`
 - Norms: `DOM-CORE-03`（可逆統合ループの段階導入そのものが本ADRの決定）
 
@@ -141,7 +141,7 @@
 - Related: `01_Plans/research/phase-exit-evaluation-ENV-ARCH-01-2026-03-11.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `00_Prompt/domain.md`
-- Derived-from: `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- Derived-from: `01_Plans/issues/done/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
 
 
 ## Stream A critical-path checkpoint（2026-04-29）

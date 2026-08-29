@@ -4,7 +4,7 @@
 - Date: 2026-03-14
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
-- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Source Issue: `01_Plans/issues/done/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Related: `ADR-0026`, `00_Prompt/domain.md`, `02_Architecture/architecture.html`, `02_Architecture/schemas.md`
 
 ## Context
@@ -150,10 +150,10 @@
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
-- Related: `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
-- Related: `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`
-- Related: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- Related: `01_Plans/issues/done/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Related: `01_Plans/issues/done/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- Related: `01_Plans/issues/done/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`
+- Related: `01_Plans/issues/done/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - Derived-from: `ADR-0026`
 
 

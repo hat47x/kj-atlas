@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/canvas/`（role=option/listbox構造）, `03_Implement/frontend/src/ui/MenuBar.tsx`（role=menu構造）, `03_Implement/frontend/src/App.tsx`（h1・DomainStateFilterBarの配色）, `03_Implement/frontend/src/ui/ViewControlsPanel.tsx`（表示制御のフォームラベル）
 - Related Backlog: `UI-QUALITY-A11Y-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2）, `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（本Issueの発見元）
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2）, `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（本Issueの発見元）
 - Expected verification level: `e2e`
 
 ## 背景
@@ -46,9 +46,9 @@
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
 - Related: `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`（`DEFERRED_RULE_IDS` 定数）
-- Derived-from: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（axe スモーク導入時の発見）
+- Derived-from: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（axe スモーク導入時の発見）
 
 ## 対応記録（2026-07-10）
 

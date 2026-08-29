@@ -5,9 +5,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
-- Scope: `01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`, `03_Implement/backend/`, `04_Documentation/operations.md`, `04_Documentation/data_handling.md`
+- Scope: `01_Plans/issues/done/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`, `03_Implement/backend/`, `04_Documentation/operations.md`, `04_Documentation/data_handling.md`
 - Related Backlog: `DATA-MAINT-02`
-- Related ADR/Spec: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `02_Architecture/data_model_operations_overview.html`, `04_Documentation/operations.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `02_Architecture/data_model_operations_overview.html`, `04_Documentation/operations.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

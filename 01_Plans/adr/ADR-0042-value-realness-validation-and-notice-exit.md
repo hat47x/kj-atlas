@@ -80,5 +80,5 @@
 - Related: `README.md`（NOTICE）, `00_Prompt/domain.md`
 - Related: `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `ADR-0037-value-measurement-harness-and-scorecard.md`（観測の延期枠組み）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（solo段階・再導入トリガー）
-- Related: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Related: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`
 - Derived-from: 2026-06-10 価値最大化の不足分析（価値実在の検証経路が空白）

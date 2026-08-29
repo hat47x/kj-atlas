@@ -2,7 +2,7 @@
 
 - Type: Feature request / QA
 - Status: Draft
-- Source Issue: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`（残余リスク）
+- Source Issue: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`（残余リスク）
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/`, `04_Documentation/acceptance_check.md`

@@ -191,8 +191,8 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（再起票ゲート R-3 の判定根拠）
 - Related: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`（**境界が重複する。上記「ADR-0068 との関係」を参照**）
 - Related: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`（本ADR採択後の実装課題）
-- Related: `01_Plans/issues/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 で解決される事実の記録）
-- Related: `01_Plans/issues/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`（非目標として分離した課題）
+- Related: `01_Plans/issues/done/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 で解決される事実の記録）
+- Related: `01_Plans/issues/done/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`（非目標として分離した課題）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（F-5 = 実装前提条件）
 - Related: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（F-5前提条件の実装課題、Draft）
 

@@ -7,7 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/canvas/CardView.tsx`
 - Related Backlog: `QA-MONKEY-16`
-- Related ADR/Spec: `04_Documentation/acceptance_check.md`, `01_Plans/issues/issue-QA-MONKEY-14-island-editor-fields-unlabeled-axe-critical.md`
+- Related ADR/Spec: `04_Documentation/acceptance_check.md`, `01_Plans/issues/done/issue-QA-MONKEY-14-island-editor-fields-unlabeled-axe-critical.md`
 - Expected verification level: `e2e`
 
 ## 課題

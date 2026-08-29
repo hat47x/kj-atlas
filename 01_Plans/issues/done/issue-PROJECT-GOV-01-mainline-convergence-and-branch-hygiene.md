@@ -46,7 +46,7 @@
 ### Verified Safety
 
 - SafeMode/share-export/public-exposure branches: All CE/CE0 contract work is now in canonical issues (CE0-contract-freeze Done, CE0-core-graph-repositioning Done). No unique safety-relevant code exists only in stale branches.
-- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/done/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

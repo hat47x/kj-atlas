@@ -128,7 +128,7 @@
 - `01_Plans/adr/ADR-0060-representative-visual-cue-source-boundary.md`
 - `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
-- `01_Plans/issues/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
+- `01_Plans/issues/done/issue-SEC-VISUAL-ASSET-01-legacy-island-image-safe-mode.md`
 - `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-EMOJI-01-p37-pivot-vs-adr0060-emoji-plan-unreconciled.md`（T7の絵文字/プリセット経路を停止。MaintainerがADR-0060を維持または改訂するまで実装判断を行わない）
 
 ## 7) ADR判定

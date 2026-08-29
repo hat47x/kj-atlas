@@ -311,9 +311,9 @@ Prohibited for A2/A3:
 
 ### Immutable Reference Links for Next Lanes（read-only）
 1. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（本SSOT）
-2. `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
-3. `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（A2参照先）
-4. `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（A3参照先）
+2. `01_Plans/issues/done/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
+3. `01_Plans/issues/done/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（A2参照先）
+4. `01_Plans/issues/done/issue-HIL-RS-02-A3-operations-documentation-sync.md`（A3参照先）
 - Verify: 想定差分は 0（契約ID衝突 0 / 語彙衝突 0 / 安全境界後退 0）。
 - Proceed: 差分なしのため Freeze継続。
 
@@ -468,7 +468,7 @@ Prohibited for A2/A3:
 
 ### Phase 1: Read（Plan → Execute → Verify → Proceed）
 - Plan:
-  - 対象: 本書（A1 SSOT）と `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md` の契約値を比較。
+  - 対象: 本書（A1 SSOT）と `01_Plans/issues/done/issue-HIL-RS-02-A1-governance-contract-hardening.md` の契約値を比較。
   - AC（Read）:
     1. 固定キー（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary`）を抽出できる。
     2. Decision Queue遷移制約の差分有無を判定できる。

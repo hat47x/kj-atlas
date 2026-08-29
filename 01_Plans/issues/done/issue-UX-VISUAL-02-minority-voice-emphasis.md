@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-VISUAL-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03・D1 4チャネル規則）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`（凡例への追記先）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03・D1 4チャネル規則）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/done/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`（凡例への追記先）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -71,7 +71,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂・D1）
-- Related: `01_Plans/issues/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`
+- Related: `01_Plans/issues/done/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 B）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

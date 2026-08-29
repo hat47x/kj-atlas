@@ -7,8 +7,8 @@
 - Owner: Codex / Claude Code
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `04_Documentation/`
 - Related Backlog: `DOMAIN-EXPR-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/done/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Dependencies: `01_Plans/issues/done/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
 
 ## Implementation Progress 2026-06-29

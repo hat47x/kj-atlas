@@ -74,7 +74,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/issues/issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`（表記・バインド共通化）
+- Related: `01_Plans/issues/done/issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`（表記・バインド共通化）
 - Related: `02_Architecture/design/kj-atlas UI改善提案.dc.html`（3-3）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

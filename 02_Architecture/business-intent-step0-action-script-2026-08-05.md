@@ -130,8 +130,8 @@ executionPreferences:
 
 ### 対象（3件。それぞれ独立した意図パッケージを作る）
 
-- **C1**: `01_Plans/issues/issue-ENV-ARCH-02-dead-legacy-env-deadline-scaffolding.md`。関連する記録済みの決定は `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md` の「人間判断の確定」節にあります。実装は `03_Implement/backend/src/kj_atlas_api/settings.py`。
-- **C2**: `01_Plans/issues/issue-DX-CLEANUP-06-diffpanel-component-appears-dead.md`。実装は `03_Implement/frontend/src/ui/DiffPanel.tsx` と、置換したと見られる `03_Implement/frontend/src/ui/ReviewDiffPanel.tsx`。
+- **C1**: `01_Plans/issues/done/issue-ENV-ARCH-02-dead-legacy-env-deadline-scaffolding.md`。関連する記録済みの決定は `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md` の「人間判断の確定」節にあります。実装は `03_Implement/backend/src/kj_atlas_api/settings.py`。
+- **C2**: `01_Plans/issues/done/issue-DX-CLEANUP-06-diffpanel-component-appears-dead.md`。実装は `03_Implement/frontend/src/ui/DiffPanel.tsx` と、置換したと見られる `03_Implement/frontend/src/ui/ReviewDiffPanel.tsx`。
 - **C3**: `03_Implement/frontend/src/ui/RepresentativeVisualCuePrototypePanel.tsx`。背景は `02_Architecture/design/design-request-gaps-2026-07-20.md` の N-1 節、および `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`。
 
 ### 手順（各件について）

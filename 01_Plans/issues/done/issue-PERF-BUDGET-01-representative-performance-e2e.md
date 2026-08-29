@@ -4,13 +4,13 @@
 - Status: Done
 - Completion: 2026-07-10; `responsiveness_performance_budget.spec.ts` passed in 10.8s with backend-backed initial document loading.
 - Evidence: document replacement, search/filter, card selection, View panel opening, Share panel opening, and long-task budget all remain within the representative thresholds.
-- Note: the related four-spec regression run initially reached 10/11 because of an independent stale `Critique:` assertion; the test drift is tracked in `01_Plans/issues/issue-DX-E2E-04-critique-label-assertion-drift.md` and is not a performance failure.
+- Note: the related four-spec regression run initially reached 10/11 because of an independent stale `Critique:` assertion; the test drift is tracked in `01_Plans/issues/done/issue-DX-E2E-04-critique-label-assertion-drift.md` and is not a performance failure.
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/responsiveness_performance_budget.spec.ts`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `02_Architecture/value_traceability.md`
 - Related Backlog: `PERF-BUDGET-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/done/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
 - Expected verification level: `e2e`
 
 ## 1) 課題 / Problem statement

@@ -2,7 +2,7 @@
 
 対象読者: maintainer / QA contributor。本文書は開発者向け検証記録であり、公開文書ではない。
 
-`01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` の「現在の判断」に残っていた4件の人間確認について、実施した検証、得られた証跡、機械代替の限界、残る人間判断を記録する。
+`01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md` の「現在の判断」に残っていた4件の人間確認について、実施した検証、得られた証跡、機械代替の限界、残る人間判断を記録する。
 
 ## 候補の固定
 
@@ -116,7 +116,7 @@ provenance記録上の対象revisionは `1367740d...`（2026-07-11撮影）で�
 
 ## 4. 最終出荷判断
 
-`PRODUCT-QA-01` のGate Recordを `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` に記録した。結論は **No-Go**（G5 公開文書が「古いUIを公開する」No-Go条件に該当）。
+`PRODUCT-QA-01` のGate Recordを `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md` に記録した。結論は **No-Go**（G5 公開文書が「古いUIを公開する」No-Go条件に該当）。
 
 製品そのものの主要操作・安全境界・accessibility基盤に、出荷を止める欠陥は見つかっていない。残るのは、修正のcommitと公開画像の再撮影という機械的な工程である。
 

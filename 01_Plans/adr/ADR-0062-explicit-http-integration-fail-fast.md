@@ -73,7 +73,7 @@ kj-atlasは、外部PDPを使わない `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` �
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-SEC-CONFIG-01-http-integration-silent-noop-fallback.md`
+- Implementation: `01_Plans/issues/done/issue-SEC-CONFIG-01-http-integration-silent-noop-fallback.md`
 - Runtime contract: `02_Architecture/runtime_parameter_registry.md`
 - API contract: `02_Architecture/api.md` §8.5
 - Security boundary: `THREAT_MODEL.md`

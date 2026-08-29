@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/complexity_budget_foregrounding.spec.ts`
 - Related Backlog: `DX-E2E-04`
-- Related ADR/Spec: `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-UX-LABEL-01-retention-vocabulary-consistency.md`, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Expected verification level: `e2e`
 
 ## Problem

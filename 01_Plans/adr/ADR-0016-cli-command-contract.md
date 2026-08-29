@@ -113,7 +113,7 @@ CLIコマンド仕様を早期に固定しすぎると、MVP後のAPI確定前�
 - Parent: `01_Plans/adr/ADR-0008-cli-tooling-plan.md`
 - Related: `01_Plans/adr/ADR-0015-cli-scope-phasing.md`
 - Related: `01_Plans/adr/ADR-0017-cli-security-ops-checks.md`
-- Related: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- Related: `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md`
 - Related: `02_Architecture/api.md`
 - Related: `02_Architecture/schemas.md`
 

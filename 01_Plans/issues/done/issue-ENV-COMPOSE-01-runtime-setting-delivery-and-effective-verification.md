@@ -8,7 +8,7 @@
 - Priority: P1
 - Owner: Maintainer / Deployment contributor
 - Scope: `03_Implement/deploy/docker-compose.yml`, `03_Implement/deploy/docker-compose.*.yml`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`, `04_Documentation/configuration.md`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/local_llm_ops_guide.md`, deployment/docs contract tests
-- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`, `01_Plans/issues/issue-ENV-PROFILE-01-runtime-profile-guidance.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `01_Plans/issues/done/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`, `01_Plans/issues/done/issue-ENV-PROFILE-01-runtime-profile-guidance.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`
 - Expected verification level: integration
 
 ## 課題

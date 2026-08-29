@@ -5,10 +5,10 @@
 - Priority: P1
 - Owner: Stream B（CE0 Contract Freeze 専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
-- Editable: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ（Stream B 制約）
+- Editable: `01_Plans/issues/done/issue-CE0-contract-freeze.md` のみ（Stream B 制約）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `ADR-0039`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/done/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
 - Verification: `docs-check`
 
 ## Hold Resolution 2026-06-20
@@ -135,7 +135,7 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 
 - lane: `Stream B`
 - ssot_scope: `CE0 only`（CE1/CE2/CE4は参照専用）
-- edit_allowlist: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ
+- edit_allowlist: `01_Plans/issues/done/issue-CE0-contract-freeze.md` のみ
 - fail_safe:
   - 指定外ファイル編集を検知した場合は即停止して `held`。
   - safeMode既定値後退（`safeMode=true` / `allowUnreviewedText=false` 逸脱）を検知した場合は即停止して `held`。
@@ -563,7 +563,7 @@ This issue is the read-only SSOT for the CE0 contract freeze. Downstream CE0 cor
 - run_id: `stream-b-ce0-2026-04-27-01`
 - input_contract_snapshot: `ce0-contract-freeze-2026-04-27`（fixed）
 - scope_guard:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
   - `02_Architecture/architecture.html（7A CE0節のみ）`
   - `02_Architecture/schemas.md（1.1 CE0契約節のみ）`
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
@@ -1492,7 +1492,7 @@ type PatchProposal = {
 
 ### Phase 1: Read（Read再同期）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
   - read-only参照: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/architecture.html` / `02_Architecture/schemas.md`
 - Decisions:
   - 現行メタデータを確認: Status=`Open` / Priority=`P1` / Scope=`docs-only, contract-only, mock-first` / Dependencies=`CE-0` / Verification=`docs-check`。
@@ -1508,7 +1508,7 @@ type PatchProposal = {
 
 ### Phase 2: CDC（Read再同期済み）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
   - `ADR-0028` CE-0 Contract Matrix、`schemas.md` CE0 Contract Freeze節
 - Context:
   - 未固定リスクは「実装前に I/F・状態遷移・禁止遷移の解釈が下流で分岐すること」。
@@ -1534,7 +1534,7 @@ type PatchProposal = {
 
 ### Phase 3: Plan（Read再同期済み）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
 - Decisions:
   - AC固定:
     1. 契約IDと版（v1）を固定。
@@ -1554,7 +1554,7 @@ type PatchProposal = {
 
 ### Phase 4: Execute（Read再同期済み）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
   - read-only参照: `02_Architecture/schemas.md` CE0節
 - Decisions:
   - Contract Name / Version: `CE0 Contract Freeze v1`（固定）。
@@ -1579,7 +1579,7 @@ type PatchProposal = {
 
 ### Phase 5: Verify（Read再同期済み / self-correction上限3）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
 - Decisions:
   - 検証は docs-check + diff健全性 + allowlist逸脱監査を実施。
 - Diffs:
@@ -1595,7 +1595,7 @@ type PatchProposal = {
 
 ### Phase 6: Proceed（Read再同期済み）
 - Inputs（読んだ対象）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`
 - Decisions:
   - 最終判定: **Ready**
   - 理由: CE0 v1 契約（I/F・状態遷移・禁止遷移・互換方針・mock境界）が issue SSOT で追跡可能になり、後続実装はモックで独立実行可能。
@@ -1637,7 +1637,7 @@ type PatchProposal = {
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
   - result: pass（self-correction 0/3）
-- diff範囲検証: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ変更を確認。
+- diff範囲検証: `01_Plans/issues/done/issue-CE0-contract-freeze.md` のみ変更を確認。
 
 ### Phase 6 Proceed/Stop
 - 判定: **Conditional-Go**（CE0 Contract Freeze継続）。
@@ -1715,7 +1715,7 @@ type PatchProposal = {
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
   - result: pass（self-correction 0/3）
-- diff範囲検証: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ変更を確認。
+- diff範囲検証: `01_Plans/issues/done/issue-CE0-contract-freeze.md` のみ変更を確認。
 
 ### Phase 6 Proceed
 - 判定: **Conditional-Go**
@@ -1845,7 +1845,7 @@ type PatchProposal = {
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
   - result: pass（self-correction 0/3）
-- diff範囲検証: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ変更。
+- diff範囲検証: `01_Plans/issues/done/issue-CE0-contract-freeze.md` のみ変更。
 
 ### Phase 5 Proceed
 - 判定: **Proceed（Conditional-Go）**
@@ -3830,9 +3830,9 @@ export type AuditEventV1 = {
 
 ### Phase 6 Proceed（downstream handoff pointers）
 - 下流参照先（read-only）:
-  - `01_Plans/issues/issue-CE0-contract-freeze.md`（本契約SSOT）
-  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1固定キー）
-  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
+  - `01_Plans/issues/done/issue-CE0-contract-freeze.md`（本契約SSOT）
+  - `01_Plans/issues/done/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1固定キー）
+  - `01_Plans/issues/done/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
 - 判定: **Conditional-Go（Pending/held 残存のため）**。
 
 

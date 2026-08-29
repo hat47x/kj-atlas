@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/backend/`（一覧API・エージェント登録）, `03_Implement/frontend/src/storage/`（recent/プリセットの正本格下げ）, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MODEL-OPS-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/done/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

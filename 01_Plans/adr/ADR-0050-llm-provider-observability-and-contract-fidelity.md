@@ -72,5 +72,5 @@
 - Related: `01_Plans/adr/ADR-0009-local-llm-integration.md`（Provider抽象の親ADR。再決定しない）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-1 実使用の摩擦で起票）
 - Related: `02_Architecture/llm_provider_spec.md`（D3 是正対象）, `02_Architecture/llm_input_ir_spec.md`, `04_Documentation/local_llm_ops_guide.md`（既存の充実した運用文書。変更不要）
-- Related: `01_Plans/issues/issue-PROV-VIS-01-llm-provider-visibility-badge.md`, `issue-PROV-ERROR-01-structured-provider-error-propagation.md`, `issue-PROV-CONTRACT-01-llm-provider-spec-drift-correction.md`
+- Related: `01_Plans/issues/done/issue-PROV-VIS-01-llm-provider-visibility-badge.md`, `issue-PROV-ERROR-01-structured-provider-error-propagation.md`, `issue-PROV-CONTRACT-01-llm-provider-spec-drift-correction.md`
 - Derived-from: 2026-07-06 のコード監査（`provider.py`・`client.ts`・`App.tsx`・`SidePanel.tsx` 実読）

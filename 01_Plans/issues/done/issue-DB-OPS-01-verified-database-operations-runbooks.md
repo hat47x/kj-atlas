@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/README.md`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/tests/test_*_portability.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`, `02_Architecture/database_portability.md`, `01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`, `02_Architecture/database_portability.md`, `01_Plans/issues/done/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`
 - Expected verification level: `integration`
 
 ## 課題

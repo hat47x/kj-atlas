@@ -112,7 +112,7 @@ KJ法キャンバスは長期編集、分岐、統合、人間と生成AIの提�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-DATA-GENERATION-01-content-generation-policy.md`
+- Implementation: `01_Plans/issues/archive/issue-DATA-GENERATION-01-content-generation-policy.md`
 - Related: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`
 - Related: `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`
 - Related: `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`

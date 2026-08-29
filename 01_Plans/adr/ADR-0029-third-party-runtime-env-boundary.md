@@ -93,7 +93,7 @@ Constraints and risks:
 - Related: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`
 - Related: `02_Architecture/runtime_parameter_registry.md`
 - Related: `03_Implement/deploy/docker-compose.yml`
-- Related issue: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
+- Related issue: `01_Plans/issues/done/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 
 

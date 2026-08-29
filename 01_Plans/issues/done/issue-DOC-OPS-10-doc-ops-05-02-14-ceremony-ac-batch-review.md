@@ -2,11 +2,11 @@
 
 - Type: Process
 - Status: Done
-- Source Issue: `01_Plans/issues/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`
+- Source Issue: `01_Plans/issues/done/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`
 - Priority: P3
 - Owner: Maintainer
 - Scope: `01_Plans/issues/issue-doc-ops-05-02..14-*.md`
-- Related ADR/Spec: `01_Plans/lean_operations_inventory.md`（P1）, `AGENTS.md` §4, `01_Plans/issues/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`, `01_Plans/issues/issue-DOC-OPS-09-doc-ops-05-01-done-status-without-evidence.md`
+- Related ADR/Spec: `01_Plans/lean_operations_inventory.md`（P1）, `AGENTS.md` §4, `01_Plans/issues/done/issue-DOC-OPS-08-stale-governance-meta-acs-in-done-issues.md`, `01_Plans/issues/done/issue-DOC-OPS-09-doc-ops-05-01-done-status-without-evidence.md`
 - Expected verification level: `docs-check`
 
 ## 課題

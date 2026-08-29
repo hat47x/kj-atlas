@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/e2e/realistic_user_journey_expansion.spec.ts`, `03_Implement/frontend/e2e/ce3_patch_workspace.spec.ts`
 - Related Backlog: `QA-MONKEY-11`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（推定ドリフト元）
+- Related ADR/Spec: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`（推定ドリフト元）
 - Expected verification level: `e2e`
 
 ## 背景
@@ -52,9 +52,9 @@ QA-MONKEY-10（ラベルカリング）の修正を検証する過程で、**mai
 
 ## Traceability
 
-- Derived-from: `01_Plans/issues/issue-QA-MONKEY-10-cascade-label-culling-hides-fresh-card-text.md`（修正検証中の発見）
+- Derived-from: `01_Plans/issues/done/issue-QA-MONKEY-10-cascade-label-culling-hides-fresh-card-text.md`（修正検証中の発見）
 - Related: `03_Implement/frontend/e2e/helpers/i18n.ts`（`DOCUMENT_REPLACED_STATUS` 追加済み）
-- Related: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`
 
 ## 対応記録（2026-07-10）
 

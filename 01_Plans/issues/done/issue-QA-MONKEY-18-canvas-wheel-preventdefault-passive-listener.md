@@ -10,7 +10,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/canvas/CanvasShell.tsx`
 - Related Backlog: `QA-MONKEY-18`
-- Related ADR/Spec: `04_Documentation/acceptance_check.md`（マウスで確認すること）, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G2 主要操作）
+- Related ADR/Spec: `04_Documentation/acceptance_check.md`（マウスで確認すること）, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G2 主要操作）
 - Expected verification level: `e2e`
 
 ## 課題

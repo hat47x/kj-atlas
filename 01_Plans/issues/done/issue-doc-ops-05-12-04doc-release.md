@@ -156,7 +156,7 @@
 ## 12) DOC-OPS Track 1 serial execution (2026-04-22)
 
 ### Phase 1 Read（同期）
-- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` / `04_Documentation/release.md` を同時再読。
+- 対象Read同期: `01_Plans/issues/done/issue-doc-ops-05-12-04doc-release.md` / `04_Documentation/release.md` を同時再読。
 - `Classification=Improve external` と公開リリース手順の最小責務を再確認。
 
 ### Phase 2 ADR/CDC
@@ -189,7 +189,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 12）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` と対象Doc `04_Documentation/release.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-12-04doc-release.md` と対象Doc `04_Documentation/release.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan
@@ -323,7 +323,7 @@
 ## Stream L serial execution run（2026-04-25 / DOC-OPS-05-12）
 
 ### Phase 1: Read
-- 最新再読対象: `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` と `04_Documentation/release.md`。
+- 最新再読対象: `01_Plans/issues/done/issue-doc-ops-05-12-04doc-release.md` と `04_Documentation/release.md`。
 - 確認結果:
   - Status: Ready（分類判定を保持しつつ実行計画を管理）。
   - Scope: `04_Documentation/release.md`（issue上の対象範囲）。
@@ -573,7 +573,7 @@
 
 ### Phase 1 Read（開始時同期）
 - Read同期を再実行し、`AGENTS.md` Read Order と本Issueの `Requirement meta I/F` を再確認。
-- Scopeを `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` のみに固定。
+- Scopeを `01_Plans/issues/done/issue-doc-ops-05-12-04doc-release.md` のみに固定。
 
 ### Phase 2 ADR/CDC（Draft判定）
 - Context: `04_Documentation/release.md` は公開手順文書として再現性・監査導線の明確化が必要。

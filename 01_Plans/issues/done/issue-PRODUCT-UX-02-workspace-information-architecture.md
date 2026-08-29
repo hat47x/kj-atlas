@@ -7,7 +7,7 @@
 - Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/canvas/`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `PRODUCT-UX-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/done/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

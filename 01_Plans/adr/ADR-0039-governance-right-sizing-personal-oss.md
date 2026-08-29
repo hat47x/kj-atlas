@@ -88,7 +88,7 @@
 ## Traceability
 
 - Related: `README.md`（NOTICE / 開発段階）, `AGENTS.md`, `01_Plans/adr/ADR-0000-adr-governance.md`
-- Execution inventory: `01_Plans/lean_operations_inventory.md`, `01_Plans/issues/issue-OPS-LEAN-01-small-oss-operations-reduction.md`
+- Execution inventory: `01_Plans/lean_operations_inventory.md`, `01_Plans/issues/done/issue-OPS-LEAN-01-small-oss-operations-reduction.md`
 - Related: `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`, `ADR-0037-value-measurement-harness-and-scorecard.md`, `ADR-0038-social-diffusion-of-explainable-consensus.md`
 - Related: `01_Plans/project-progress-dashboard.md`, `02_Architecture/value_traceability.md`, `01_Plans/issues/TEMPLATE.md`
 - Derived-from: 2026-05-31 委譲された意思決定セッションでのガバナンス適正化判断

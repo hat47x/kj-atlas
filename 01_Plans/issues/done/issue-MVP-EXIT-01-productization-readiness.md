@@ -7,7 +7,7 @@
 - Owner: Maintainer / Productization owner
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `MVP-EXIT-01`
-- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-RELEASE-DOC-01-release-artifact-contract-and-runbook.md`, `01_Plans/issues/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `01_Plans/issues/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md`, `02_Architecture/architecture.html`, `04_Documentation/public_index.md`
+- Related ADR/Spec: `README.md`, `ROADMAP.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/done/issue-RELEASE-DOC-01-release-artifact-contract-and-runbook.md`, `01_Plans/issues/done/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `01_Plans/issues/done/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md`, `02_Architecture/architecture.html`, `04_Documentation/public_index.md`
 - Expected verification level: `integration`
 
 ## 目的
@@ -141,7 +141,7 @@ Goへ戻すために必要な残作業:
 
 ## 検証入口
 
-- 品質ゲート: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- 品質ゲート: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - E2E実務手順: `03_Implement/frontend/docs/e2e_testing.md`
 - 一般利用者の受入確認: `04_Documentation/acceptance_check.md`
 - 公開文書入口: `04_Documentation/public_index.md`

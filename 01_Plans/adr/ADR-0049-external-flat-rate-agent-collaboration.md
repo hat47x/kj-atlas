@@ -80,5 +80,5 @@
 - Related: `01_Plans/adr/ADR-0007-future-backlog.md`（FB-RM-MID-07）, `ROADMAP.md`（要件D）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-1: 従量課金困難という記録済みの実利用摩擦への応答）
 - Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/enterprise_architecture.html`（§03 アクセス制御/SafeMode/外部送出）, `02_Architecture/api.md`（context/export 監査）
-- Related: `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`, `issue-CE4-api-cli-audit-integration.md`
+- Related: `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`, `issue-CE3-patch-workspace-presets.md`, `issue-CE4-api-cli-audit-integration.md`
 - Derived-from: `ROADMAP.md` 要件D（2026-06 記録の従量課金摩擦）および 2026-07-05 の企業・自治体向け定額エージェント連携要件

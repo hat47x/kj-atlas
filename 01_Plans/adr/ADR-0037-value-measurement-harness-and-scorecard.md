@@ -66,8 +66,8 @@
 
 - Derived-from: `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`
 - Related: `01_Plans/adr/ADR-0032-product-value-realization-model.md`
-- Related: `01_Plans/issues/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`, `issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`, `issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`
-- Related: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`, `issue-PRODUCT-VALUE-02-ambiguity-evidence-workflow.md`, `issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`
+- Related: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Related issues: `issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md`, `issue-VALUE-MEASURE-02-two-axis-value-governance-scorecard.md`
 
 ---

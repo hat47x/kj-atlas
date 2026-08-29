@@ -2,11 +2,11 @@
 
 - Type: Process
 - Status: Done
-- Source Issue: `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
+- Source Issue: `01_Plans/issues/done/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Priority: P3
 - Owner: Maintainer
 - Scope: `04_Documentation/codex_skill_operations.md`, `04_Documentation/e2e_verification_log_2026-03-03.md`, `04_Documentation/README.md`
-- Related ADR/Spec: `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`
 - Expected verification level: `docs-check`
 
 ## 課題

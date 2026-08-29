@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/mcp/`, `.github/workflows/ci.yml`
-- Related ADR/Spec: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md`
 - Expected verification level: `docs-check`
 
 ## 課題

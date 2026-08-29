@@ -7,7 +7,7 @@
 - Owner: TBD (Productization Program Owner / Security Officer / UX Lead)
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/export/`, `04_Documentation/`
 - Related Backlog: `CARD-META-UI-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0056-card-provenance-metadata-boundary.md`（本Issueの境界提案、Accepted 2026-07-16）, `02_Architecture/schemas.md`（`Card.meta` 将来拡張）, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/review_attribution.md`, `01_Plans/issues/done/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -177,6 +177,6 @@
 - Related: `02_Architecture/schemas.md`（`Card.meta` 将来拡張）
 - Related: `02_Architecture/data_model_operations_overview.html`（CardはL2 embedded-only、個別CRUDなし）
 - Related: `02_Architecture/review_attribution.md`（レビュー帰属と起票者メタの分離）
-- Related: `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（通し番号・原データ出典の具体実装候補）
+- Related: `01_Plans/issues/done/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（通し番号・原データ出典の具体実装候補）
 - Related: `03_Implement/frontend/e2e/card_meta_row.spec.ts`（状態メタ行の既存UI証跡）
 - Derived-from: 2026-07-06 ユーザー指摘「カードの起票者などのメタデータについてのUIが未確定」

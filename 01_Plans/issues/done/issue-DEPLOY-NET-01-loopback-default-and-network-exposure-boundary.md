@@ -8,7 +8,7 @@
 - Priority: P1
 - Owner: Maintainer / Deployment contributor
 - Scope: `03_Implement/deploy/docker-compose.yml`, `02_Architecture/deployment.md`, `02_Architecture/runtime_parameter_registry.md`, `THREAT_MODEL.md`, `README.md`, `04_Documentation/installation.md`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `04_Documentation/release.md`, deployment/docs contract tests
-- Related ADR/Spec: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `02_Architecture/deployment.md`, `THREAT_MODEL.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/issues/done/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md`, `02_Architecture/deployment.md`, `THREAT_MODEL.md`
 - Expected verification level: integration
 
 ## 課題

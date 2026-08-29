@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/first_run_start_panel.spec.ts`, `03_Implement/frontend/e2e/helpers/i18n.ts`
 - Related Backlog: `DX-E2E-05`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Expected verification level: `e2e`
 
 ## Problem

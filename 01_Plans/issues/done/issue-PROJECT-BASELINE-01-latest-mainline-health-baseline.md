@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `PROJECT-BASELINE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `02_Architecture/architecture.html`
+- Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `02_Architecture/architecture.html`
 - Expected verification level: `integration`
 
 ## Baseline Record 2026-06-20

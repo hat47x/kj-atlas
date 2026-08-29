@@ -45,11 +45,11 @@ axeの横断スモークテストで、現在のUIに2つのARIA構造上の課�
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-03-structural-aria-findings.md`
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Related: `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`
-- Independent follow-up: `01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
+- Independent follow-up: `01_Plans/issues/done/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
 
 ## 追記 2026-07-12: 作業モードタブの role=tablist 判断（C-5、2026-07-13分離確定）
 
@@ -58,5 +58,5 @@ Claude Design 実装照合レビュー（拡張提案 P21、2026-07-11）が作�
 完全設計を提示した。作業モードタブは本ADRのキャンバスカード／メニュー内フォームとは別の
 操作面であり、本ADRのAcceptedを形式的な着手条件にしない。`UI-QUALITY-A11Y-02` のC-5残課題は
 実装Issue
-`01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md` を起票した。
+`01_Plans/issues/done/issue-UX-NAV-02-work-mode-tab-content-full-design.md` を起票した。
 `UX-NAV-02` は、タブ固有のキーボード・フォーカス・状態保持条件をIssue側で満たした時点で独立に着手できる。

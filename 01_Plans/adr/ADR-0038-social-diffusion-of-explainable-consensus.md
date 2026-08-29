@@ -75,7 +75,7 @@ V4 の先に、社会的普及を扱う層 VR5 を次の4本柱で定義する�
 - Derived-from: `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`
 - Related: `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`
 - Related: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `ADR-0006-phase3-review-governance.md`
-- Related: `01_Plans/issues/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `issue-CE4-api-cli-audit-integration.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-VALUE-03-reviewable-outcome-package.md`, `issue-CE4-api-cli-audit-integration.md`
 - Related: `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`, `ROADMAP.md`, `THREAT_MODEL.md`
 - Related issues: `issue-SOCIAL-DIFFUSION-01-multi-reviewer-reproducibility.md`, `issue-SOCIAL-DIFFUSION-02-consensus-revisability-over-time.md`, `issue-SOCIAL-DIFFUSION-03-evidence-anchored-safe-diffusion.md`, `issue-SOCIAL-DIFFUSION-04-non-surveillance-adoption-signals.md`
 

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream H Agent（delivery planning only）
-- Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
+- Scope: `01_Plans/issues/done/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
 - Out of scope: 上記以外すべてのファイル編集、`03_Implement/**`、`04_Documentation/**`、実装コード編集
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `ADR-0039`
 - Dependencies (read-only): `issue-HIL-RS-02-A1-governance-contract-hardening.md`（Done 2026-06-20）

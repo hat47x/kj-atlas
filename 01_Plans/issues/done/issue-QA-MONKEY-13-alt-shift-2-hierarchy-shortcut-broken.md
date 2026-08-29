@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/App.tsx`（Alt+Shift+1/2/3 構造レベルショートカットのkeydownハンドラ、`handleHierarchyLevelChange`）
 - Related Backlog: `QA-MONKEY-13`
-- Related ADR/Spec: `01_Plans/issues/issue-DX-E2E-07-current-ui-contract-drift-batch.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DX-E2E-07-current-ui-contract-drift-batch.md`
 - Expected verification level: `e2e`
 
 ## 背景
@@ -66,6 +66,6 @@
 
 ## Traceability
 
-- Derived-from: `01_Plans/issues/issue-DX-E2E-07-current-ui-contract-drift-batch.md`（e2e契約再照合バッチの検証中に発見、T4に基づき分離）
+- Derived-from: `01_Plans/issues/done/issue-DX-E2E-07-current-ui-contract-drift-batch.md`（e2e契約再照合バッチの検証中に発見、T4に基づき分離）
 - Related: `03_Implement/frontend/e2e/header_toolbar_layout.spec.ts`（"modifier shortcuts update visible view and hierarchy state"）
 - Related: `03_Implement/frontend/src/domain/view/hierarchy_level.ts`, `03_Implement/frontend/src/domain/view/hierarchy_level.test.ts`

@@ -7,7 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/e2e/first_meaningful_map_mouse_flow.spec.ts`
 - Related Backlog: `QA-MONKEY-15`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G3 日本語UI / V0-V1 初回価値）, `04_Documentation/acceptance_check.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G3 日本語UI / V0-V1 初回価値）, `04_Documentation/acceptance_check.md`
 - Expected verification level: `e2e`
 
 ## 課題

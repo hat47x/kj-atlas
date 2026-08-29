@@ -9,7 +9,7 @@
 - Related Backlog: `DOMAIN-EXPR-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Norms: `DOM-CRIT-01, DOM-CRIT-02, DOM-CRIT-03, DOM-CRIT-04, DOM-CRIT-05, DOM-AI-01, DOM-AI-02`（5種のCritiqueタグをHIL-RS正本へ統一し、非目標として違和感の無視・正当化と単一正解の提示を明記している）
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
+- Dependencies: `01_Plans/issues/done/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `e2e`
 
 ## Implementation Progress 2026-06-29

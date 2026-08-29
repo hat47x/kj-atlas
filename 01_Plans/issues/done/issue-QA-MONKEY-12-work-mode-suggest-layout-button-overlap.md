@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/ui/SuggestionPanel.tsx`, `03_Implement/frontend/src/ui/NarrativesPanel.tsx`, `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx`, `03_Implement/frontend/src/ui/WorkModePanel.tsx`
 - Related Backlog: `QA-MONKEY-12`
-- Related ADR/Spec: `01_Plans/issues/issue-QA-MONKEY-10-cascade-label-culling-hides-fresh-card-text.md`（類似のポインタ阻害系バグ）
+- Related ADR/Spec: `01_Plans/issues/done/issue-QA-MONKEY-10-cascade-label-culling-hides-fresh-card-text.md`（類似のポインタ阻害系バグ）
 - Expected verification level: `e2e`
 
 ## 背景
@@ -66,4 +66,4 @@ Claude Design 第2回照合（P32）で本Issueの起票と証跡を確認のう
 - Derived-from: Claude Design 実装照合レビュー 2026-07-11（P31、`02_Architecture/design/kj-atlas 拡張提案.dc.html`）
 - Related: `03_Implement/frontend/scripts/verify_qa_monkey11_overlap_20260712.mjs`（再現・証拠取得スクリプト）
 - Related: `03_Implement/frontend/scripts/domain_expr03_provider_local_e2e.mjs`, `03_Implement/frontend/scripts/capture_design_review_20260711.mjs`（同一事象の独立再現）
-- Not related to: `01_Plans/issues/issue-QA-MONKEY-11-e2e-spec-drift-share-panel-ia-and-ce3-entry.md`（誤帰属の訂正: QA-MONKEY-11 は文言/IAドリフトのみで重なりの記載なし）
+- Not related to: `01_Plans/issues/done/issue-QA-MONKEY-11-e2e-spec-drift-share-panel-ia-and-ce3-entry.md`（誤帰属の訂正: QA-MONKEY-11 は文言/IAドリフトのみで重なりの記載なし）

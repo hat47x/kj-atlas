@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `04_Documentation/acceptance_check.md`, `03_Implement/frontend/src/App.tsx`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Expected verification level: `docs-check`
 
 ## 課題

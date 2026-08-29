@@ -9,7 +9,7 @@
 - Owner: Maintainer / Developer Experience contributor
 - Scope: `README.md`, `CONTRIBUTING.md`, `04_Documentation/*.md`, `03_Implement/frontend/docs/e2e_testing.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/deploy/docker-compose.yml`, `03_Implement/deploy/nginx.conf`, `03_Implement/frontend/package.json`, repository-local Python CLI entrypoints, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`, `01_Plans/tests/test_docs_contract_checks.py`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`
 - Related Backlog: `DX-DOC-02`, `DX-DOC-03`, `DX-E2E-08`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/issues/issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md`, `01_Plans/issues/issue-DX-E2E-08-current-runbook-history-and-contract-test-drift.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/issues/done/issue-DX-DOC-02-docs-contract-ci-and-index-completeness.md`, `01_Plans/issues/done/issue-DX-E2E-08-current-runbook-history-and-contract-test-drift.md`
 - Expected verification level: integration
 
 ## Requirement meta I/F（共通キー）

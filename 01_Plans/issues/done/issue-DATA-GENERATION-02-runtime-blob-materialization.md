@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `content_blobs`, generation codec/repository, Document Content Store/API, migration/rollback, retention GC
-- Related ADR/Spec: `ADR-0070`, `ADR-0066`, `02_Architecture/database_portability.md`, `01_Plans/issues/issue-DATA-GENERATION-01-content-generation-policy.md`
+- Related ADR/Spec: `ADR-0070`, `ADR-0066`, `02_Architecture/database_portability.md`, `01_Plans/issues/archive/issue-DATA-GENERATION-01-content-generation-policy.md`
 - Expected verification level: `integration`
 
 ## 三要素整合（ADR-0067）

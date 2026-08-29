@@ -42,9 +42,9 @@
 
 ## 追跡関係
 
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md`
-- Related: `01_Plans/issues/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-04-work-mode-navigation-semantics.md`
+- Related: `01_Plans/issues/done/issue-UX-NAV-02-work-mode-tab-content-full-design.md`
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Related: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
 - Related: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`

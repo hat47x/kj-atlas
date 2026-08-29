@@ -7,7 +7,7 @@
 - Owner: Codex (UX complexity steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `UX-COMPLEXITY-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`, `01_Plans/issues/done/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -77,8 +77,8 @@
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Related: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
-- Related: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`
-- Related: `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`
+- Related: `01_Plans/issues/done/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
 - Related: `ROADMAP.md`
 - Derived-from: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 

@@ -2,7 +2,7 @@
 
 - 区分: Internal / Task Brief（実装契約ではない）
 - 対象: Workspaceの文書入口、文書内プリセット、Admin管理面、将来のエージェント登録
-- 起点: `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`
+- 起点: `01_Plans/issues/done/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`
 - 設計依頼: `02_Architecture/design/design-request-2026-07-round8.md`
 
 ## 1. 結論
@@ -169,7 +169,7 @@ Adminヘッダーには、通常Workspaceと混同しない名称と「この画
 
 ## Traceability
 
-- `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D1〜D4）
+- `01_Plans/issues/done/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D1〜D4）
 - `02_Architecture/data_model_operations_overview.html` §4、§5.2
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
 - `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`

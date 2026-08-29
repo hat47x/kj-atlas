@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/ui/WorkModePanel.tsx`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UI-QUALITY-A11Y-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2 の拡充）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・既存面の拡充。本Issueは新設面への適用で非重複）
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2 の拡充）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/done/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・既存面の拡充。本Issueは新設面への適用で非重複）
 - Expected verification level: `e2e`
 
 ## 判断追跡（2026-07-15）
@@ -81,7 +81,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2）
-- Related: `01_Plans/issues/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・非重複の適用先違い）
+- Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・非重複の適用先違い）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§a11y 画面別仕様・2026-07-04 版）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

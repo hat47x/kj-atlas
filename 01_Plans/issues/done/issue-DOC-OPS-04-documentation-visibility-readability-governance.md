@@ -116,7 +116,7 @@
   - ADR-B: `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`（新規のみ）
   - ADR-C: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`（新規のみ）
   - ADR-D: `01_Plans/adr/ADR-0025-doc-ops-04-change-governance.md`（新規のみ）
-  - 統合フェーズ専用: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+  - 統合フェーズ専用: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - 競合禁止ルール:
   1. B/C/D実行中は `README.md` と dashboard を更新しない（統合フェーズ1本化）。
   2. B/C/Dは相互ADR本文を直接編集しない（参照はTraceabilityリンクのみ）。

@@ -156,7 +156,7 @@ R-2 該当の是非は保守者が確認すること。非該当と判断され�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-DATA-DOC-LIFECYCLE-01-documents-lack-owner-and-lifecycle.md`
+- Implementation: `01_Plans/issues/done/issue-DATA-DOC-LIFECYCLE-01-documents-lack-owner-and-lifecycle.md`
 - Derived-from: `02_Architecture/post-mvp-business-scope-design-program.html` §6（欠落の検出）
 - Method: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（D2の制約元）

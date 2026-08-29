@@ -10,7 +10,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/e2e/document-title-editor.spec.ts`
 - Related Backlog: `QA-MONKEY-19`
-- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G3 日本語UI / G7 ビルドと回帰）
+- Related ADR/Spec: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`（G3 日本語UI / G7 ビルドと回帰）
 - Expected verification level: `e2e`
 
 ## 課題

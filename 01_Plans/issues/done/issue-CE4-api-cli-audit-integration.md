@@ -9,7 +9,7 @@
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0016`, `ADR-0017`, `ADR-0039`, `02_Architecture/api.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
 - Verification: `docs-check`
 - Expected verification level: `docs-check`
 
@@ -46,7 +46,7 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ## Operating Mode（Stream C / serial phases）
 - Execution mode: proposal-only（実装コード変更禁止 / 他Issue編集禁止）
-- Editable scope: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ
+- Editable scope: `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md` のみ
 - Dependency policy: CE0 / CE1 は read-only 参照（未承認事項の確定禁止）
 - Serial phases: **Plan+Read → ADR (Context/Decision/Consequences) → API/CLI監査チェックリスト定義 → Mock接続で依存切断 → Verify（自己修復は最大3回）→ Proceed**
 - Stop conditions:
@@ -624,7 +624,7 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 - `ADR-0028`（認知外在化フェーズ接続）
 - `ADR-0016` / `ADR-0017`（契約境界・品質ゲート語彙）
 - `02_Architecture/api.md`（API境界の単一正本）
-- `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）
+- `01_Plans/issues/done/issue-CE0-contract-freeze.md`（契約依存）
 
 ### Open化条件（Draft gate解除の必要十分条件）
 - [x] O1: 本Issueの契約本文のみで、`proposal-only` / `fail-closed` / 監査4イベント順序が再読できる。 → 契約は `02_Architecture/architecture.html` に固定（CE4 Done 2026-06-20）。
@@ -1081,7 +1081,7 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 ## Stream H execution log（2026-05-09 / CE4 Draft Ready化, docs-only, contract-only）
 
 ### Task Brief（Scope固定）
-- Scope: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` の契約整理のみ。
+- Scope: `01_Plans/issues/done/issue-CE4-api-cli-audit-integration.md` の契約整理のみ。
 - Non-Goals: backend/frontend/CLI実装、ADR更新、他Issue編集。
 - Acceptance Criteria:
   - [x] API契約・CLI契約・Audit契約を分離して検証可能な粒度で記載する。
@@ -1509,4 +1509,4 @@ CE4 Open化。CE0/CE1 Doneにより依存充足。SafeMode不変条件維持（p
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9
+- Related: `01_Plans/issues/done/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9

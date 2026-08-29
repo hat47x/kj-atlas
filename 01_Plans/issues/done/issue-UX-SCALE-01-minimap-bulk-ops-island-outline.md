@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-SCALE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1/D3）, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`（PB-1..5）, `01_Plans/issues/issue-PERF-BUDGET-01-large-document-performance-assertions.md`（In Progress・性能検証の正本）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1/D3）, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`（PB-1..5）, `01_Plans/issues/done/issue-PERF-BUDGET-01-large-document-performance-assertions.md`（In Progress・性能検証の正本）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -74,7 +74,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/issues/issue-PERF-BUDGET-01-large-document-performance-assertions.md`
+- Related: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/issues/done/issue-PERF-BUDGET-01-large-document-performance-assertions.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点2・図R/S/T）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

@@ -48,7 +48,7 @@ kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-DB-PORTABILITY-01-database-capability-registry.md`
+- Implementation: `01_Plans/issues/done/issue-DB-PORTABILITY-01-database-capability-registry.md`
 - Canonical matrix: `02_Architecture/database_portability.md`
 - Related: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`
 - Related: `02_Architecture/runtime_parameter_registry.md`

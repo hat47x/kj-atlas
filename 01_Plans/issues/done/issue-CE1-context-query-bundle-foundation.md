@@ -211,7 +211,7 @@ CE1 can move from `Open` toward closeout when the following are recorded togethe
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; ContextBundle payloadはmockで先行可能）
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（契約依存; ContextBundle payloadはmockで先行可能）
 - Verification: `docs-check`
 - Dependency meta: `blockers=none; depends_on=CE0-contract-freeze,FB-P2C-01-a1-interface-contract; unlocks=CE2-low-risk-ai-assist,CE4-api-cli-audit-integration`
 
@@ -247,7 +247,7 @@ CE1 can move from `Open` toward closeout when the following are recorded togethe
 ## Stream C execution update（2026-05-09 / CE1 ContextQuery/ContextBundle Foundation）
 
 ### Phase 1: Read（対象ファイル再読）
-- 本issueを再読し、編集範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- 本issueを再読し、編集範囲が `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
 - `ContextQueryV1` / `ContextBundleV1` を **closed-world 契約** として扱う前提を再確認。
 - fixed error semantics（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）を再確認。
 
@@ -339,7 +339,7 @@ CE1 can move from `Open` toward closeout when the following are recorded togethe
 
 ### Phase 1 Read（latest / docs-only scope確認）
 - Read Orderの上位文書を再確認し、CE1の責務を `contract-only / mock-first` に限定することを再確認。
-- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみへ固定（docs-only scope）。
+- 編集範囲を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみへ固定（docs-only scope）。
 - CE0 read-only境界、CE1 Contract IDs、固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に差分なしを確認。
 
 ### Phase 2 ADR-style（Context / Decision / Consequences）
@@ -411,7 +411,7 @@ export type ContextBundleV1 = {
 ## Stream D update（2026-05-08 / CE1 ContextQuery/ContextBundle Foundation contract-first）
 
 ### Phase 1 Read（scope固定 + 前提再確認）
-- 編集対象を本ファイルのみに固定（`01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`）。
+- 編集対象を本ファイルのみに固定（`01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`）。
 - 依存切断方針を「実装接続なし / I/F + mock契約先行」に固定。
 - CE1 v1 凍結対象（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
 
@@ -759,7 +759,7 @@ export type ContextBundleV1 = {
 
 - lane: `Stream H`
 - mode: `contract-first / mock-driven / non-interference`
-- editable_scope: `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（allowlist準拠）
+- editable_scope: `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`（allowlist準拠）
 - dependency_policy: CE0/CE4 は read-only 参照、I/F依存はすべてモック境界で固定
 - self-repair budget: `0/3`（超過時停止ルールを維持）
 
@@ -1118,7 +1118,7 @@ export type ContextBundleV1 = {
 ## Stream E update（2026-05-03 / CE1 contract hard-freeze refresh）
 
 ### Phase 1 Read
-- Scope を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` の docs-only に固定。
+- Scope を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` の docs-only に固定。
 - CE1 v1 契約ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）を再確認。
 - 固定語彙 `preview_required` / `nondeterministic_bundle` / `unknown_contract_key` を再確認。
 
@@ -1159,7 +1159,7 @@ export type ContextBundleV1 = {
 ## Stream E execution update（2026-05-03 / Phase 1〜6 strict）
 
 ### Phase 1 Read（scope lock / upstream reconfirm）
-- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
+- 編集範囲を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
 - `ADR-0028` と `02_Architecture/schemas.md` に対するCE1責務を **contract-only / mock-first** として再確認。
 - CE0 read-only境界、CE1 Contract IDs、固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の変更なしを確認。
 
@@ -1473,7 +1473,7 @@ handoffKeys:
 ## Stream E update（2026-05-04 / CE1 contract freeze mock-first, implementation-decoupled）
 
 ### Phase 1 Read
-- Scopeを `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
+- Scopeを `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
 - CE1の責務を **ContextQueryV1/ContextBundleV1 のI/F先行固定** に限定し、実装手順（handler/UI/DB/worker）は別タスク扱いで本Issueから分離。
 - CE0 read-only境界と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の継続を確認。
 
@@ -1857,7 +1857,7 @@ handoffKeys:
 
 ### Phase 1 Read（CE0固定契約の再読）
 - `issue-CE0-contract-freeze.md` を read-only で再読し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` と No-Go canonical IDs の固定を再確認。
-- 本Stream Cの編集許可が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- 本Stream Cの編集許可が `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
 
 ### Phase 2 ADR明文化（Context / Decision / Consequences）
 - **Context**: CE2/CE4 が実装待ちで停止しないためには、CE1で ContextQuery/ContextBundle/Preview gate を実装非依存の契約として先行固定する必要がある。
@@ -2094,7 +2094,7 @@ handoffKeys:
 
 ### Phase 1 Read同期
 - 本issueを再読し、CE1の編集対象が `ContextQueryV1` / `ContextBundleV1` の契約固定に限定されることを再確認。
-- 作業境界を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` 単体に固定し、他ファイル編集禁止を確認。
+- 作業境界を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` 単体に固定し、他ファイル編集禁止を確認。
 - 既存凍結項目（Contract IDs、固定エラー語彙、preview gate、hash決定論）に衝突差分がないことを確認。
 
 ### Phase 2 ADR様式の契約整理（Context / Decision / Consequences）
@@ -2558,7 +2558,7 @@ handoffKeys:
 ## Stream D execution update（2026-05-09 / contract-only handoff freeze）
 
 ### Phase 1 Read（latest state sync）
-- 編集対象を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定。
+- 編集対象を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` のみに再固定。
 - CE1の責務を `ContextQueryV1` / `ContextBundleV1` の **契約先行固定のみ** に限定し、実装要素（handler/UI/DB/worker）を除外することを再確認。
 - 固定エラー語彙を `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` に統一済みであることを確認。
 
@@ -2698,7 +2698,7 @@ handoffKeys:
 ## Stream CE1 execution update（2026-05-10 / ContextQuery/Bundle foundation planning hardening, docs-only）
 
 ### Phase 1: Read
-- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（主）と `01_Plans/issues/issue-CE2-low-risk-ai-assist.md`（参照のみ）に固定し、コード変更を禁止。
+- 編集範囲を `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`（主）と `01_Plans/issues/done/issue-CE2-low-risk-ai-assist.md`（参照のみ）に固定し、コード変更を禁止。
 - 既存契約の固定値を再確認：`ContextQueryV1` / `ContextBundleV1`（closed-world）、`previewConfirmed=false -> 422 preview_required`、`400 unknown_contract_key`、`409 nondeterministic_bundle`。
 - 停止条件を事前宣言：SafeMode既定ON後退案が必要になった場合、契約ID未定義のまま実装提案が必要になった場合、self-repair 3回超過で即Stop（`held`）。
 

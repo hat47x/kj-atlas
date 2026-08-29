@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/tests/test_document_access_rls_postgres.py`, `.github/workflows/ci.yml`
-- Related ADR/Spec: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `02_Architecture/contract-seam-integrity-2026-08-05.html`, `01_Plans/issues/issue-DATA-GENERATION-01-content-generation-policy.md`
+- Related ADR/Spec: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `02_Architecture/contract-seam-integrity-2026-08-05.html`, `01_Plans/issues/archive/issue-DATA-GENERATION-01-content-generation-policy.md`
 - Expected verification level: `integration`
 
 ## 課題

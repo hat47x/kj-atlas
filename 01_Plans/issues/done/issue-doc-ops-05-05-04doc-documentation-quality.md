@@ -353,7 +353,7 @@
 ## Stream K integration pass（2026-05-09 / Gate-A: DOC-OPS-05-05）
 
 ### Scope lock（proposal-only）
-- Edit scope: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md` のみ。
+- Edit scope: `01_Plans/issues/done/issue-doc-ops-05-05-04doc-documentation-quality.md` のみ。
 - Out of scope: 他Issue本文編集、`01_Plans/documentation_quality.md` 本文改稿、`03_Implement/**` 変更、`04_Documentation/**` 更新。
 - Dependency rule: Gate-B（05-06）/Gate-C（05-07）を逆依存させない（informational link のみ）。
 
@@ -473,8 +473,8 @@
 
 ### Cross-issue links
 - Prev phase dependency: `DOC-OPS-05-05` は Gate-A のため前段依存なし（基準化フェーズ）。
-- Next phase handoff: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B）。
-- Final phase reference: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
+- Next phase handoff: `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B）。
+- Final phase reference: `01_Plans/issues/done/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
 
 ### Required meta check（must remain synchronized）
 - RequirementID: `DOC-OPS-05-05`

@@ -91,6 +91,6 @@
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（契約・安全境界の正本。本ADRはその自動輸送版）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（再起票基準 R-2）
 - Related: `THREAT_MODEL.md`, `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`（非監視制約）
-- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`（Accepted に伴い Open）, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（段階ゲートにより Draft 維持）
+- Related: `01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md`（Accepted に伴い Open）, `issue-EXT-CONN-02-webhook-proposal-ingest.md`, `issue-EXT-CONN-03-critique-constraint-export.md`, `issue-EXT-CONN-04-evidence-trail-landing-view.md`（段階ゲートにより Draft 維持）
 
 ---

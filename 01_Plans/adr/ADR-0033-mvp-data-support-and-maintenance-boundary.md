@@ -99,8 +99,8 @@ MVPでは、データサポート境界を次の4区分で管理する。
 - Related: `02_Architecture/api.md`
 - Related: `02_Architecture/enterprise_architecture.html`
 - Related: `01_Plans/adr/ADR-0032-product-value-realization-model.md`
-- Related: `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
-- Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
-- Related: `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
+- Related: `01_Plans/issues/done/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`
+- Related: `01_Plans/issues/done/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- Related: `01_Plans/issues/done/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
 
 ---

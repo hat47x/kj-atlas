@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
-- Scope: `04_Documentation/public_index.md`, Gist公開候補の `04_Documentation/*.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
+- Scope: `04_Documentation/public_index.md`, Gist公開候補の `04_Documentation/*.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/done/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Related Backlog: `DOC-PUBLIC-BOUNDARY-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`, `04_Documentation/README.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: `docs-check`

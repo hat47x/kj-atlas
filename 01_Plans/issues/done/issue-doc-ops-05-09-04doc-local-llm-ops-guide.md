@@ -960,7 +960,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 09）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md` と対象Doc `04_Documentation/local_llm_ops_guide.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md` と対象Doc `04_Documentation/local_llm_ops_guide.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan

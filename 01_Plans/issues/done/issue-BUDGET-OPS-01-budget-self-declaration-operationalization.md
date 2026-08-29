@@ -7,7 +7,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: TBD
-- Scope: `01_Plans/issues/TEMPLATE.md`, `.github/pull_request_template.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Scope: `01_Plans/issues/TEMPLATE.md`, `.github/pull_request_template.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Related Backlog: `BUDGET-OPS-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `docs-check`

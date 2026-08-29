@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/i18n/locales/`
-- Related ADR/Spec: `04_Documentation/acceptance_check.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Related ADR/Spec: `04_Documentation/acceptance_check.md`, `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`
 - Expected verification level: `integration`
 
 ## 課題

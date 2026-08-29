@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/ui/Shell.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-MENU-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 収納5層・第3層=メニューバー）, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`（Done・トリガ/フォーカス契約）, `01_Plans/issues/issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md`（Done・レスポンシブ回帰の先行）, `01_Plans/issues/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（初期表示アンカー上限）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2 収納5層・第3層=メニューバー）, `01_Plans/issues/done/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`（Done・トリガ/フォーカス契約）, `01_Plans/issues/done/issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md`（Done・レスポンシブ回帰の先行）, `01_Plans/issues/done/issue-UX-COMPLEXITY-01-core-value-foregrounding.md`（初期表示アンカー上限）, `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ表示・共有境界）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -92,7 +92,7 @@ Claude Design Round 6 回答で命名矛盾が解消され、確定版6分類は
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2）
-- Related: `01_Plans/issues/issue-UX-CMDK-01-command-palette.md`, `issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`, `issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
+- Related: `01_Plans/issues/done/issue-UX-CMDK-01-command-palette.md`, `issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`, `issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
 - Related: `02_Architecture/design/kj-atlas UI改善提案.dc.html`（3-1）, `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§依頼1・確定版6分類＝図GG、2026-07-04 Round 6）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

@@ -7,7 +7,7 @@
 - Owner: Maintainer / Documentation contributor
 - Scope: `01_Plans/project-progress-dashboard.md`, `01_Plans/issues/README.md`, `01_Plans/documentation_quality.md`, `CONTRIBUTING.md`, `04_Documentation/e2e_testing.md`, `03_Implement/frontend/docs/e2e_testing.md`, `README.md`, `AGENTS.md`（導線のみ）
 - Related Backlog: `DOC-OPS-04`, `DOC-PUBLIC-BOUNDARY-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/issues/README.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0045-agent-division-of-labor-cowork-code-codex.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `01_Plans/issues/done/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/issues/README.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

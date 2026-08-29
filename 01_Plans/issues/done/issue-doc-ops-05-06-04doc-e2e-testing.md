@@ -8,7 +8,7 @@
 - Scope: `04_Documentation/e2e_testing.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`, `01_Plans/documentation_quality.md`
-- Dependencies: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`（完了後に着手）
+- Dependencies: `01_Plans/issues/done/issue-doc-ops-05-05-04doc-documentation-quality.md`（完了後に着手）
 - Dependency status: `05-05完了待ち（単方向依存）`
 
 
@@ -157,7 +157,7 @@
   - DoD-3: docs-check計画（validator / rg / diff-check）が記載され、検証可能性が担保される。
 
 ### Phase 4: Execute（本Draft本文のみ更新）
-- 実施範囲を `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみに限定。
+- 実施範囲を `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md` のみに限定。
 - 05-05/05-07本文、および `04_Documentation/e2e_testing.md`・実装コードは非編集を維持。
 
 ### Phase 5: Verify（依存整合・判定軸検証・用語一貫）
@@ -387,7 +387,7 @@
   - DoD-K3: allowlist外編集を行わず、本Issueのみ更新する。
 
 ### Phase 4: Execute（本Issueのみ更新）
-- 実施: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ追記。
+- 実施: `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ追記。
 - 非実施: `04_Documentation/e2e_testing.md` 本文、他Issue本文、実装コードの編集。
 
 ### Phase 5: Verify（依存未確定時Hold維持・語彙競合なし）
@@ -409,7 +409,7 @@
 ### Phase 1: Read同期（05-05基準語彙の継承確認）
 - 継承語彙を固定: `Go/NoGo`、`Proceed/Hold/Stop`、`pass/fail/blocked`、`self-correction <=3`。
 - Dependency status を再確認: `05-05完了待ち（単方向依存）` を維持し、依存証跡未確定時は Open 判定を実施しない。
-- Scope再確認: 本対応は `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ編集。
+- Scope再確認: 本対応は `01_Plans/issues/done/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ編集。
 
 ### Phase 2: ADR（Context / Decision / Consequences）
 - Context: E2E公開導線の Open 化は、語彙揺れや判定条件の欠落があると監査再現性を損なう。
@@ -505,9 +505,9 @@
 ## Phase-link integrity check（2026-05-10 sync）
 
 ### Cross-issue links
-- Prev phase dependency: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A完了待ち）。
+- Prev phase dependency: `01_Plans/issues/done/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A完了待ち）。
 - Current phase target: `DOC-OPS-05-06`（Gate-B）。
-- Next phase handoff: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
+- Next phase handoff: `01_Plans/issues/done/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
 
 ### Required meta check（must remain synchronized）
 - RequirementID: `DOC-OPS-05-06`

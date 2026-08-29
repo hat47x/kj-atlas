@@ -7,7 +7,7 @@
 - Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `04_Documentation/public_index.md`
 - Related Backlog: `PRODUCT-UX-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `ROADMAP.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `ROADMAP.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

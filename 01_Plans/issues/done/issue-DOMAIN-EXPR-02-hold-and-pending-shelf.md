@@ -9,7 +9,7 @@
 - Related Backlog: `DOMAIN-EXPR-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Norms: `DOM-CORE-01`（`held`/`pending`/`shelved` の第一級化そのものが本issueの主題）
-- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
+- Dependencies: `01_Plans/issues/done/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done 2026-06-20）
 - Expected verification level: `integration`
 
 ## Draft→In Progress 2026-06-21

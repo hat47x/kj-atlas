@@ -85,6 +85,6 @@ Claude Design 壁打ち成果のうち、以下の3系統を採択する（一�
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`、`ADR-0031-productization-screen-information-architecture.md`、`ADR-0043-complexity-budget-for-cognitive-load.md`、`ADR-0044-ui-ux-quality-baseline-and-verification.md`、`ADR-0046-responsiveness-performance-budget.md`
 - Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`（追加的・後方互換の拡張系譜）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（本 ADR は R-1: dogfood/MVP 検証で観測された実利用摩擦を根拠とし、D3 関係記号は R-3/R-4 判定に接続する）
-- Related: `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139: ショートカット体系の ADR 化要求）
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-02-workspace-information-architecture.md`（L139: ショートカット体系の ADR 化要求）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（軽量運用）
 - Derived-from: `02_Architecture/design/` の壁打ち成果物3点（2026-07-02 受領）および `01_Plans/dogfood/dogfood-log-2026-06-26.md`

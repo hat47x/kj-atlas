@@ -7,7 +7,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/canvas/CardView.accessibility.test.ts`, `03_Implement/frontend/e2e/a11y_axe_smoke.spec.ts`
 - Related Backlog: `QA-MONKEY-14`
-- Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/issue-UI-QUALITY-A11Y-07-card-inline-editor-missing-accessible-name.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/done/issue-UI-QUALITY-A11Y-07-card-inline-editor-missing-accessible-name.md`
 - Expected verification level: `e2e`
 
 ## 課題

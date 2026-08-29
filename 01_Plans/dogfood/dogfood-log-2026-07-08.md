@@ -34,12 +34,12 @@
 1. Selection state becomes ambiguous after creating an island from a multi-card selection.
    - User risk: the next operation target is unclear.
    - Product value impact: weakens trust in the core thinking loop of grouping, holding, and reviewing.
-   - Tracking: `01_Plans/issues/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`.
+   - Tracking: `01_Plans/issues/done/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`.
 
 2. Hold and critique are split across different action surfaces for the same selected cards.
    - User risk: users can preserve a card but may miss the action that records why it remains unresolved.
    - Product value impact: weakens the domain concept that ambiguity should remain visible and explainable.
-   - Tracking: `01_Plans/issues/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`.
+   - Tracking: `01_Plans/issues/done/issue-UX-WORKFLOW-01-hold-critique-action-continuity.md`.
 
 ### Lower Priority / Usability
 
@@ -48,7 +48,7 @@
 
 2. Share preflight visibility terms need plainer guidance.
    - The current terms are precise, but users need a short explanation of why the view and pack can have different visibility.
-   - Tracking: `01_Plans/issues/issue-UX-SHARE-02-visibility-scope-plain-language.md`.
+   - Tracking: `01_Plans/issues/done/issue-UX-SHARE-02-visibility-scope-plain-language.md`.
 
 ## SafeMode And Share Preflight
 

@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/backend/`（受信エンドポイント）, `03_Implement/frontend/src/import/agent_response_import.ts`（サニタイズの共有）, `THREAT_MODEL.md`
 - Related Backlog: `EXT-CONN-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-EXT-AGENT-02-agent-response-import.md`（サニタイズ・提案着地の正本）, `01_Plans/issues/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D3登録・認可境界）
+- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/done/issue-EXT-AGENT-02-agent-response-import.md`（サニタイズ・提案着地の正本）, `01_Plans/issues/done/issue-DATA-MODEL-OPS-02-management-plane-data-boundary.md`（D3登録・認可境界）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -47,5 +47,5 @@
 ## Traceability
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
-- Related: `01_Plans/issues/issue-EXT-AGENT-02-agent-response-import.md`
+- Related: `01_Plans/issues/done/issue-EXT-AGENT-02-agent-response-import.md`
 - Related: `03_Implement/frontend/src/import/agent_response_import.ts`

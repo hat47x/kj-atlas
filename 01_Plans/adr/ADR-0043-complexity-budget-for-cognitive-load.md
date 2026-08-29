@@ -69,5 +69,5 @@ UI/操作を増やす issue では、本文に1行で次を自己申告する（
 - Related: `00_Prompt/domain.md`（思考を雑にしない）, `00_Prompt/ai_cognitive_externalization_requirements.md`（判断基準）
 - Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `ADR-0031-productization-screen-information-architecture.md`
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（軽量運用）, `ADR-0040-domain-expression-first-class-strategy.md`
-- Related: `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Derived-from: 2026-06-10 価値最大化の不足分析（機能増加に対する認知負荷の歯止めが未定義）

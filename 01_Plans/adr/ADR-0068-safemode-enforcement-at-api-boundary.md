@@ -134,12 +134,12 @@ R-3 該当の是非は保守者が確認すること。
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`
+- Implementation: `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`
 - Related: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（**境界が重複する。上記追記を参照**）
 - Related: `02_Architecture/llm_input_ir_spec.md` §7.1（SafeMode を凍結仕様として既に規定）
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Related: `02_Architecture/architecture.html` §05（CE-0 禁止事項の出典）
 - Related: `02_Architecture/llm_escalation_policy.html` §04（CE2-C2 停止条件の出典）
 - Related: `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`
-- Related: `01_Plans/issues/issue-SEC-LLM-AUDIT-01-llm-calls-bypass-audit-dispatcher.md`
+- Related: `01_Plans/issues/done/issue-SEC-LLM-AUDIT-01-llm-calls-bypass-audit-dispatcher.md`
 - Related: `THREAT_MODEL.md`

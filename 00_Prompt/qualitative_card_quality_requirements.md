@@ -3,7 +3,7 @@
 - Status: Normative
 - Updated: 2026-07-15
 - Scope: KJ法のカード作成、編集、品質確認、AI支援
-- Implementation tracking: `01_Plans/issues/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md`
+- Implementation tracking: `01_Plans/issues/done/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md`
 
 ## 1. 目的
 

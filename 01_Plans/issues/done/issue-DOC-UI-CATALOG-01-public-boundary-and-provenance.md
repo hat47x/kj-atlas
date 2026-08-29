@@ -7,7 +7,7 @@
 - Owner: Maintainer / Documentation contributor
 - Scope: `04_Documentation/ui_catalog.md`, `04_Documentation/assets/screenshots/README.md`, `04_Documentation/README.md`, `04_Documentation/public_index.md`, `02_Architecture/design/`, `03_Implement/frontend/scripts/capture_*screenshots.mjs`（撮影再現性のみ）
 - Related Backlog: `DOC-PUBLIC-BOUNDARY-01`
-- Related ADR/Spec: `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`, `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

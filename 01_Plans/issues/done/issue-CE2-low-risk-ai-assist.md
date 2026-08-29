@@ -13,10 +13,10 @@ CE2 low-risk AI assist decision gate satisfied. All Go conditions met:
 - CE0 Done + CE1 Done = dependency chain complete
 - SafeMode invariants preserved (proposal-only, no auto-apply, CE0-SAFEMODE-IF)
 - Implementation: Separate implementation issues for island title candidates, B-type drafts, counter-perspective proposals (per ADR-0028 Phase B)
-- Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
+- Scope: `01_Plans/issues/done/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `ADR-0039`, `02_Architecture/schemas.md`
-- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
+- Dependencies: `01_Plans/issues/done/issue-CE0-contract-freeze.md`（Done 2026-06-20）, `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md`（Done 2026-06-20）
 - Dependency status: `確定（CE0 Done + CE1 Done = CE2 Open化条件充足）`
 - CE1 contract status: `read-only handoff ready（CE1 Done, mock contract参照可能）`
 - Expected verification level: `docs-check`
@@ -102,7 +102,7 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 - self-correction が3回を超過。
 
 ### Phase 4: Execute（本Issueのみ更新）
-- 本更新は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ変更。
+- 本更新は `01_Plans/issues/done/issue-CE2-low-risk-ai-assist.md` のみ変更。
 - 実装・他Issue編集・依存値の推測補完は実施しない。
 
 ### Phase 5: Verify（依存矛盾なし / 推測実装なし / docs-check）
@@ -501,4 +501,4 @@ CE2 remains proposal-only / human-final / no-auto / fail-closed. SafeMode invari
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9
+- Related: `01_Plans/issues/done/issue-GENAI-GOV-01-generative-ai-lane-boundary-and-readiness.md`（Lane B/C: proposal-onlyレビュー面）, `02_Architecture/value_traceability.md` §2.9

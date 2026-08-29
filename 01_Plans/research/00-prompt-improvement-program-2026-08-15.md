@@ -2,7 +2,7 @@
 
 - 区分: 施策整理 / 版: 第1版 / 作成: 2026-08-15
 - 対象: `00_Prompt/` 全13文書
-- 関係: `01_Plans/product-trajectory-research-2026-08-15.md`（本施策の契機）、`AGENTS.md`（読み順の正本）
+- 関係: `01_Plans/research/product-trajectory-research-2026-08-15.md`（本施策の契機）、`AGENTS.md`（読み順の正本）
 
 本書は個別の設計判断を行わない。**何が問題で、どの順に手を入れるか**を定める。
 

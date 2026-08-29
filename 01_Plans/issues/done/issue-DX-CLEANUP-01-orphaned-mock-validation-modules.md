@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/merge/p2b_decision_log_mock.ts`, `03_Implement/frontend/src/domain/p2a_stream_d/mock_validation_stream_d.ts`
-- Related ADR/Spec: `01_Plans/issues/issue-FB-P2A-02-a2-mock-validation.md`, `01_Plans/issues/issue-FB-P2B-02-a2-mock-validation.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-FB-P2A-02-a2-mock-validation.md`, `01_Plans/issues/done/issue-FB-P2B-02-a2-mock-validation.md`
 - Expected verification level: `unit`
 
 ## 課題

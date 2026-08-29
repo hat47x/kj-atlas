@@ -46,7 +46,7 @@ KJ Atlas should help users keep uncertainty visible without losing the reason fo
 
 - 2026-07-10: added an `Add reason` action to the bulk operation bar. The reason editor explains that the note is saved to every selected card and does not require AI. Existing card notes are preserved and the new reason is appended.
 - `e2e/bulk_hold_reason_flow.spec.ts` covers selecting cards, applying hold, saving a shared reason with `Ctrl+Enter`, and verifying the saved hold state and note.
-- Remaining label consistency work is tracked in `01_Plans/issues/issue-UX-LABEL-01-retention-vocabulary-consistency.md`.
+- Remaining label consistency work is tracked in `01_Plans/issues/done/issue-UX-LABEL-01-retention-vocabulary-consistency.md`.
 
 ## Dogfood Evidence
 

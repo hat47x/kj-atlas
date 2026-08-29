@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`（`_assert_model_allowed`）, `03_Implement/backend/tests/test_model_governance.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（scenario 47）
-- Related ADR/Spec: `01_Plans/issues/issue-AI-MODEL-GOVERNANCE-01-per-operation-model-selection-and-tenant-restriction.md`（R3）, `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-AI-MODEL-GOVERNANCE-01-per-operation-model-selection-and-tenant-restriction.md`（R3）, `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`
 - Expected verification level: `integration` + 業務フローE2E
 
 ## 課題

@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/test_ce2_proposal_api.py`, `03_Implement/frontend/src/api/client.ts`
-- Related ADR/Spec: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md`, `01_Plans/issues/issue-SEC-AUDIT-LOG-01-proposal-decision-reason-unmasked-in-server-log.md`, `02_Architecture/llm_quality_strategy.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-CE2-low-risk-ai-assist.md`, `01_Plans/issues/done/issue-SEC-AUDIT-LOG-01-proposal-decision-reason-unmasked-in-server-log.md`, `02_Architecture/llm_quality_strategy.md`
 - Expected verification level: `integration`
 
 ## 三要素整合（ADR-0067）

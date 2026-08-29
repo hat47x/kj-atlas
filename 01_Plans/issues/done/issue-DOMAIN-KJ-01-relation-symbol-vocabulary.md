@@ -79,7 +79,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`（contradictionState との整合）
+- Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/issues/done/issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`（contradictionState との整合）
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（図V-2・リサーチ反映）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

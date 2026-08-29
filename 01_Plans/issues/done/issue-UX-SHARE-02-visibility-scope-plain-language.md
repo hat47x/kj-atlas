@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/`, `04_Documentation/`
 - Related Backlog: `UX-SHARE-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/done/issue-PRODUCT-UX-03-safe-share-export-flow.md`
 - Expected verification level: `unit + e2e`
 
 ## Problem

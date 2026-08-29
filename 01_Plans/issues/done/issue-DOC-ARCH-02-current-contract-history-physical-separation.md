@@ -7,7 +7,7 @@
 - Owner: Maintainer / Architecture contributor
 - Scope: `02_Architecture/architecture.html`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `02_Architecture/schemas_review_attribution.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/contract_reading_guide.md`, `02_Architecture/history/`（新規）, `AGENTS.md`（導線のみ）
 - Related Backlog: `DOC-ARCH-01`, `DATA-CONTRACT-01`
-- Related ADR/Spec: `01_Plans/issues/issue-DOC-ARCH-01-architecture-source-log-separation.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/contract_reading_guide.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOC-ARCH-01-architecture-source-log-separation.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/contract_reading_guide.md`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

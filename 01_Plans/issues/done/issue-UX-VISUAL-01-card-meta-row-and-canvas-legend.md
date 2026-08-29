@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/canvas/CardView.tsx`, `03_Implement/frontend/src/canvas/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `UX-VISUAL-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done・バッジ過多リスクの引き継ぎ）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D1）, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/issues/done/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（Done・バッジ過多リスクの引き継ぎ）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -74,7 +74,7 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`, `issue-DOMAIN-EXPR-02-hold-and-pending-shelf.md`
+- Related: `01_Plans/issues/done/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`, `issue-DOMAIN-EXPR-02-hold-and-pending-shelf.md`
 - Related: `04_Documentation/ui_catalog.md`（§4 現行バッジ）, `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点3・図B）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 

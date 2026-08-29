@@ -518,7 +518,7 @@
 ## DOC-OPS-05-03 Serial execution record（2026-04-19 / Stream doc-ops-05-01..05）
 
 ### Phase 1 Read
-- Read対象: `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`, `04_Documentation/configuration.md`
+- Read対象: `01_Plans/issues/done/issue-doc-ops-05-03-04doc-configuration.md`, `04_Documentation/configuration.md`
 - 判定: Requirement meta I/F / Audience / Goal / Public boundary / VerificationLevel=docs-check を再確認。
 
 ### Phase 2 Plan
@@ -829,7 +829,7 @@
 ## Stream H serial execution record（2026-04-21, strict 5Phase / dedicated file only）
 
 ### Phase 1 Read
-- 専有対象を `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` のみに固定し、対象外編集禁止を再確認。
+- 専有対象を `01_Plans/issues/done/issue-doc-ops-05-03-04doc-configuration.md` のみに固定し、対象外編集禁止を再確認。
 - `Requirement meta I/F` と `DecisionStatus=Fixed`、`VerificationLevel=docs-check` を再確認。
 - Classification は既定どおり **Improve external** を維持。
 
@@ -972,7 +972,7 @@
 ## 17) DOC-OPS Track 1 serial execution (2026-04-22)
 
 ### Phase 1 Read（同期）
-- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` / `04_Documentation/configuration.md` を同時再読。
+- 対象Read同期: `01_Plans/issues/done/issue-doc-ops-05-03-04doc-configuration.md` / `04_Documentation/configuration.md` を同時再読。
 - `Classification=Improve external` / `VerificationLevel=docs-check` / docs-only 制約を再確認。
 
 ### Phase 2 Plan
@@ -1005,7 +1005,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 03）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` と対象Doc `04_Documentation/configuration.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-03-04doc-configuration.md` と対象Doc `04_Documentation/configuration.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan
@@ -1329,7 +1329,7 @@
 
 ### Phase 1 Read（開始時同期）
 - Read同期を再実行し、`AGENTS.md` Read Order と本Issueの `Requirement meta I/F` を再確認。
-- Scopeを `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` のみに固定。
+- Scopeを `01_Plans/issues/done/issue-doc-ops-05-03-04doc-configuration.md` のみに固定。
 
 ### Phase 2 ADR/CDC（Draft判定）
 - Context: `04_Documentation/configuration.md` は公開価値が高く、公開品質メタの整合が必要。

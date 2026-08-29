@@ -7,7 +7,7 @@
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/`（読み取り専用ビュー）, `03_Implement/backend/`（トレイル解決。EXT-CONN-01 投影の一部として）
 - Related Backlog: `EXT-CONN-04`
-- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/issue-UX-SHARE-01-pre-share-summary-gate.md`（露出規則の正本）
+- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/issues/done/issue-UX-SHARE-01-pre-share-summary-gate.md`（露出規則の正本）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -46,5 +46,5 @@
 ## Traceability
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`（追記 2026-07-12 B-2）
-- Related: `01_Plans/issues/issue-EXT-CONN-01-readonly-mcp-server.md`（トレイル解決の投影基盤）
+- Related: `01_Plans/issues/done/issue-EXT-CONN-01-readonly-mcp-server.md`（トレイル解決の投影基盤）
 - Related: `01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`（役割B）

@@ -5,7 +5,7 @@
 - Deciders: Plan Owner, Documentation Owner, Architecture Owner
 - Scope: `01_Plans/` / `02_Architecture/` / `04_Documentation/`（文書可読性の最小基線のみ）
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
-- Derived-from: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補B）
+- Derived-from: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補B）
 
 ## Context
 
@@ -110,6 +110,6 @@ issue-DOC-OPS-04（ADR候補B）で確認された主要課題は以下。
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
-- Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Related: `01_Plans/issues/done/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`

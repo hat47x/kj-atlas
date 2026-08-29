@@ -317,6 +317,6 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 - Related: `03_Implement/frontend/docs/e2e_testing.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
-- Follow-up: `01_Plans/issues/issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`
-- Follow-up: `01_Plans/issues/issue-AUTH-SCHEMA-01-identity-schema-planning.md`
+- Follow-up: `01_Plans/issues/done/issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`
+- Follow-up: `01_Plans/issues/done/issue-AUTH-SCHEMA-01-identity-schema-planning.md`
 - Replaces: `04_Documentation/auth_oidc_saml_mock_idp.md`

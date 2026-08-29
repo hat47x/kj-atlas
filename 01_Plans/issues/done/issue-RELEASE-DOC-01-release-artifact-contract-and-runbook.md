@@ -7,9 +7,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer / Release contributor
-- Scope: `04_Documentation/release.md`, `.github/workflows/release.yml`, `CHANGELOG.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`
+- Scope: `04_Documentation/release.md`, `.github/workflows/release.yml`, `CHANGELOG.md`, `01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/tests/test_docs_contract_checks.py`
 - Related Backlog: `MVP-EXIT-01`, `PRODUCT-QA-01`, `DOC-OPS-05-12`, `DX-DOC-04`
-- Related ADR/Spec: `.github/workflows/release.yml`, `04_Documentation/release.md`, `CHANGELOG.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
+- Related ADR/Spec: `.github/workflows/release.yml`, `04_Documentation/release.md`, `CHANGELOG.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Expected verification level: integration
 
 ## Requirement meta I/F（共通キー）

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1 (Stream D second)
 - Owner: Codex
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/done/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/done/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related Backlog: `DATA-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Expected verification level: `integration`

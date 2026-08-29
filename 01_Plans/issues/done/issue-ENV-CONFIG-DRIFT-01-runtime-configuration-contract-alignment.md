@@ -111,7 +111,7 @@ Non-goals:
 
 ## 10) Additional context
 
-- Related issue: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
+- Related issue: `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md`
 - ADR化が必要になる条件:
   - changing the accepted `ADR-0029` adapter boundary into a stricter no-vendor-env deployment redesign.
   - changing `external_http` missing-endpoint behavior from current `noop` fallback to fail-fast.

@@ -71,8 +71,8 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 
 ## 依存関係
 
-- `01_Plans/issues/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`（SafeMode 緩和の記録項目が関係する）
-- `01_Plans/issues/issue-SEC-AUTH-REPLAY-01-jwt-replay-defence-effectiveness.md`（AC-5 は同issueのAC-5と重複。一方で対応すればよい）
+- `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`（SafeMode 緩和の記録項目が関係する）
+- `01_Plans/issues/done/issue-SEC-AUTH-REPLAY-01-jwt-replay-defence-effectiveness.md`（AC-5 は同issueのAC-5と重複。一方で対応すればよい）
 
 ## 検証
 

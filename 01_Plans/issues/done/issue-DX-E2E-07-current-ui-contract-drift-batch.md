@@ -7,7 +7,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/`, `03_Implement/frontend/e2e/helpers/`
 - Related Backlog: `DX-E2E-07`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`, `01_Plans/issues/done/issue-UX-STATE-01-selection-target-consistency-after-bulk-island.md`, `01_Plans/issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F

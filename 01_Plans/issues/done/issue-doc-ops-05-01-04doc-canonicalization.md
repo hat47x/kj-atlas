@@ -462,7 +462,7 @@
 
 ## 17) 2026-04-17 Focused cycle（Target限定: issue + canonicalization）
 
-- Target files: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
+- Target files: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
 - Prohibition: **他4xドキュメント編集禁止**
 
 ### Read
@@ -626,7 +626,7 @@
 ## DOC-OPS-05-01 Serial execution record（2026-04-19 / Stream doc-ops-05-01..05）
 
 ### Phase 1 Read
-- Read対象: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
+- Read対象: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
 - 判定: Requirement meta I/F / Audience / Goal / Public boundary / VerificationLevel=docs-check を再確認。
 
 ### Phase 2 Plan
@@ -1080,7 +1080,7 @@
 ## 17) DOC-OPS Track 1 serial execution (2026-04-22)
 
 ### Phase 1 Read（同期）
-- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md` を同時再読。
+- 対象Read同期: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md` を同時再読。
 - `Classification=Move internal` と stub公開方針を確認。
 
 ### Phase 2 Plan
@@ -1113,7 +1113,7 @@
 ## Stream G serial lane run（2026-04-22, Phase 01）
 
 ### Phase 1: Read
-- 対象再読: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` と対象Doc `04_Documentation/canonicalization.md` を最新状態で再読。
+- 対象再読: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md` と対象Doc `04_Documentation/canonicalization.md` を最新状態で再読。
 - メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
 
 ### Phase 2: Plan
@@ -1259,7 +1259,7 @@
 ## 19) Stream G execution (DOC-OPS-05-01 / 2026-04-25)
 
 ### Phase 1: Read（開始時再読）
-- 再読対象: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
+- 再読対象: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
 - 抽出結果（固定）:
   - Status: `Draft`
   - Priority: `P2`
@@ -1345,7 +1345,7 @@
 ## 17) Stream G final execution（2026-04-26 / DOC-OPS-05-01 単独完遂）
 
 ### Phase 1 Read（状態同期）
-- 再読対象: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
+- 再読対象: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
 - 確認結果: `Status=Ready`, `Priority=P2`, `Scope=04_Documentation/canonicalization.md`, `Expected verification level=docs-check`, Requirement meta I/F（RequirementID / GoNoGoGate / SecurityGateImpact / VerificationLevel）は整合。
 - 事前想定との差分: なし（`DecisionStatus=Fixed` のため追加判断待ちは不要）。
 
@@ -1433,7 +1433,7 @@
 - 既存記録の重複は維持しつつ、今回サイクルでは **AC/DoD不足の補強ドラフト提示** と **検証ログ追加** のみ実施する。
 
 ### Plan
-- スコープ: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` のみ。
+- スコープ: `01_Plans/issues/done/issue-doc-ops-05-01-04doc-canonicalization.md` のみ。
 - 非目標: `04_Documentation/canonicalization.md` を含む他ファイル変更、実装コード変更、ADR新設。
 - AC/DoD不足ドラフト（今回提示）:
   - AC-K1: `Expected verification level` と `VerificationLevel` の一致を Verify で都度記録する。

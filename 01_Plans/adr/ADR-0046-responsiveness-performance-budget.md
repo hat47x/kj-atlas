@@ -78,6 +78,6 @@
 - Related: `02_Architecture/architecture.html`（規模前提）, `02_Architecture/runtime_parameter_registry.md`（timeout/Failure budget）
 - Related: `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`（認知負荷予算と対をなす計算負荷予算）
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-4 レイアウト堅牢性・UQ-5 状態可視性）
-- Related: `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（軽量運用）
 - Derived-from: 2026-06-10 性能記述の分布調査（規模前提のみで予算・劣化検知の基準なし）

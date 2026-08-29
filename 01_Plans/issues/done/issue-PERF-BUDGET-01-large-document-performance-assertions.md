@@ -20,7 +20,7 @@ Completed: CI/local Playwright verification of layout and export budget
 - Owner: Codex
 - Scope: `03_Implement/frontend/e2e/`, `03_Implement/frontend/src/`
 - Related Backlog: `PERF-BUDGET-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `02_Architecture/value_traceability.md`（§2.8 PB）, `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `02_Architecture/value_traceability.md`（§2.8 PB）, `01_Plans/issues/done/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
 - Expected verification level: `e2e`
 
 ## 1) 課題 / Problem statement

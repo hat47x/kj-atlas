@@ -3,7 +3,7 @@
 - Status: Accepted（2026-07-13、maintainer 代理裁可。高権限操作の包括解禁は不採用）
 - Date: 2026-06-01
 - Deciders: Maintainer
-- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
+- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/done/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/done/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
 
 ## Context
 
@@ -153,9 +153,9 @@ Productization Program Owner / QA Lead が次に確認する事項:
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
-- Related: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
-- Related: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
-- Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- Related: `01_Plans/issues/done/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Related: `01_Plans/issues/done/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
+- Related: `01_Plans/issues/done/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related: `02_Architecture/data_model_operations_overview.html`
 - Related: `02_Architecture/api.md`
 - Related: `04_Documentation/security.md`

@@ -8,7 +8,7 @@
 - Scope: `02_Architecture/`, `04_Documentation/`
 - Related Backlog: `ENV-CONFIG-DRIFT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`, `02_Architecture/enterprise_architecture.html`
-- Dependencies: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
+- Dependencies: `01_Plans/issues/done/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

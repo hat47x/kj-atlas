@@ -7,7 +7,7 @@
 - Owner: Claude Code
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `UX-SHARE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章・反スコアリング）, `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`（Done・目的起点フローの強化であり再決定ではない）, `01_Plans/issues/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（出典トグルの所有元）, `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（起票者などの主体メタ境界）
+- Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 憲章・反スコアリング）, `01_Plans/issues/done/issue-PRODUCT-UX-03-safe-share-export-flow.md`（Done・目的起点フローの強化であり再決定ではない）, `01_Plans/issues/done/issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`（出典トグルの所有元）, `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（起票者などの主体メタ境界）
 - Norms: `DOM-SHARE-03`（矛盾k件の明示）, `DOM-SHARE-02`（価値記述の「保留」も対象だが、サマリの3件数自体は保留を直接数えていない）
 - Expected verification level: `e2e`
 
@@ -74,8 +74,8 @@
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Related: `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`, `issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`, `issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
-- Related: `01_Plans/issues/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
+- Related: `01_Plans/issues/done/issue-PRODUCT-UX-03-safe-share-export-flow.md`, `issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`, `issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
+- Related: `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
 - Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§領域5・2026-07-04 版）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
