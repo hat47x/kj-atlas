@@ -9,7 +9,7 @@ import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import urlparse
-from typing import Callable, Literal, Protocol
+from typing import Any, Callable, Literal, Protocol
 from urllib import error, request
 from uuid import uuid4
 
@@ -96,6 +96,13 @@ class LLMRequest:
     # AI-MODEL-GOVERNANCE-03: server-resolved registry dispatch target. This is
     # internal-only and contains a credential reference, never the secret.
     registered_provider: RegisteredProviderConfig | None = None
+    # AI-IR-PROJECTION-01 (ADR-0069 D4=A): the LLM input IR this prompt was
+    # rendered from (`llm_input_ir_spec.md` §4, `ir_version` 1.1). Providers do
+    # not read it -- transports still send `prompt` -- but carrying it on the
+    # request keeps the IR the auditable input of record, and lets a test assert
+    # what actually reached the boundary. Only routes migrated to the IR path
+    # populate it; it stays None for the rest.
+    inputs: dict[str, Any] | None = None
 
 
 # AI-ROUTE-01 MMR-01: tasks that are pure transformation (never a human

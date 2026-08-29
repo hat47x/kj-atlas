@@ -425,6 +425,12 @@ class DetectContradictionRequest(BaseModel):
 
     cardA: _CardRef
     cardB: _CardRef
+    # AI-IR-PROJECTION-01 (ADR-0069): optional canvas context. When supplied the
+    # route builds the LLM input IR (`llm_input_ir_spec.md`) from it, so the
+    # model finally sees `edges`, `islands`, `evidenceLinks` and
+    # `contradictionState` instead of two bare texts. Optional on purpose: the
+    # two-card request shape that shipped before stays valid (AC-11).
+    doc: DocumentV1 | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
 
@@ -434,6 +440,15 @@ class DetectContradictionResponse(BaseModel):
 
     hasContradiction: bool
     explanation: str | None = None
+    # AI-IR-PROJECTION-01 AC-1: true when `doc` already carries a human-decided
+    # (`confirmed` / `held`) contradiction between the pair. The endpoint then
+    # reports no NEW contradiction -- re-proposing a decision the human already
+    # made is exactly what ADR-0069 set out to stop -- and says so here so a
+    # caller can tell "nothing found" apart from "already handled".
+    alreadyRecorded: bool = False
+    existingContradictionState: (
+        Literal["unconfirmed", "confirmed", "held", "resolved"] | None
+    ) = None
 
 
 class SuggestDocumentTitleRequest(BaseModel):

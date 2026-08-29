@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+from dataclasses import replace
 from typing import Literal
 from uuid import uuid4
 
@@ -11,6 +12,14 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
+from kj_atlas_api.llm_input_ir import (
+    IRGenerationError,
+    IRSource,
+    SourceCard,
+    adjudicated_contradiction,
+    build_llm_input_ir,
+    source_from_document,
+)
 from kj_atlas_api.settings import settings
 from kj_atlas_api.tenant_context import TenantContext
 from kj_atlas_api.llm.provider import (
@@ -1598,13 +1607,141 @@ def _parse_suggest_card_groups_response(raw_text: str) -> SuggestCardGroupsRespo
     )
 
 
-def _build_detect_contradiction_prompt(payload: DetectContradictionRequest) -> str:
-    return (
-        f"Determine if these two KJ-method cards contradict each other. "
-        f'Return JSON: {{"hasContradiction": true|false, "explanation": "..."}}\n'
-        f"Card A (id={payload.cardA.id}): {payload.cardA.text}\n"
-        f"Card B (id={payload.cardB.id}): {payload.cardB.text}"
+def _detect_contradiction_ir(payload: DetectContradictionRequest) -> dict:
+    """Build the LLM input IR for `/ai/detect-contradiction` (ADR-0069 D4=A).
+
+    `payload.doc`, when present, is the projection source: the IR then carries
+    the relation graph, the confirmed island hierarchy and the recorded
+    evidence links. Without it the IR degrades to the two cards alone, which is
+    the pre-IR request shape and stays supported (AC-11).
+
+    SafeMode: the caller has ALREADY run `_reject_unreviewed_cards`. The
+    `allow_unreviewed_text` argument reproduces that helper's own predicate so
+    the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
+    rather than contradicting it. Both layers run; neither replaces the other.
+    """
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
     )
+    if payload.doc is not None:
+        source = source_from_document(payload.doc)
+        # The two focus cards travel outside `doc` in this contract, so make
+        # sure they are projected even when the document does not list them.
+        known = {card.id for card in source.cards}
+        extra = tuple(
+            SourceCard(id=card.id, text=card.text, text_reviewed=card.textReviewed)
+            for card in (payload.cardA, payload.cardB)
+            if card.id not in known
+        )
+        if extra:
+            source = replace(source, cards=source.cards + extra)
+    else:
+        if payload.cardA.id == payload.cardB.id:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "duplicate_card_id",
+                    "message": "cardA and cardB must reference different cards.",
+                },
+            )
+        source = IRSource(
+            doc_id="",
+            doc_version=1,
+            cards=tuple(
+                SourceCard(id=card.id, text=card.text, text_reviewed=card.textReviewed)
+                for card in (payload.cardA, payload.cardB)
+            ),
+        )
+
+    try:
+        # spec §2.2.1: detect-contradiction does not request coordinates
+        # (ADR-0069 D1=B) -- placement is not evidence of a contradiction.
+        return build_llm_input_ir(
+            source,
+            include_coordinates=False,
+            safe_mode=True,
+            allow_unreviewed_text=allow_unreviewed,
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+
+
+def _build_detect_contradiction_prompt(
+    payload: DetectContradictionRequest, ir: dict | None = None
+) -> str:
+    """Render the prompt from the IR (ADR-0069: the IR is the input of record).
+
+    `ir=None` keeps the function callable on its own; the route always passes
+    the IR it built.
+    """
+    header = (
+        "Determine if these two KJ-method cards contradict each other. "
+        'Return JSON: {"hasContradiction": true|false, "explanation": "..."}\n'
+        "A mere difference of opinion is not a contradiction.\n"
+    )
+    lines = [
+        header,
+        f"Card A (id={payload.cardA.id}): {payload.cardA.text}",
+        f"Card B (id={payload.cardB.id}): {payload.cardB.text}",
+    ]
+    if ir is None:
+        return "\n".join(lines)
+
+    pair = {payload.cardA.id, payload.cardB.id}
+    context: list[str] = []
+
+    recorded = [
+        link
+        for link in ir.get("evidence_links", [])
+        if {link["from_card_id"], link["to_card_id"]} & pair
+    ]
+    if recorded:
+        context.append(
+            "Evidence links the human has already recorded (do NOT re-propose a "
+            "contradiction whose state is confirmed or held):"
+        )
+        for link in recorded:
+            state = link["contradiction_state"] or "n/a"
+            context.append(
+                f'- {link["type"]} {link["from_card_id"]} -> {link["to_card_id"]}'
+                f" (contradictionState={state})"
+            )
+
+    relations = [
+        relation
+        for relation in ir.get("relations", [])
+        if {relation["from"], relation["to"]} & pair
+    ]
+    if relations:
+        context.append("Relations recorded on the canvas (ADR-0048 vocabulary):")
+        for relation in relations:
+            context.append(
+                f'- {relation["type"]}: {relation["from"]} -> {relation["to"]}'
+            )
+
+    islands = [
+        island for island in ir.get("islands", []) if set(island["card_ids"]) & pair
+    ]
+    if islands:
+        context.append("Islands the human has confirmed for these cards:")
+        for island in islands:
+            title = island["title"] or "(untitled)"
+            context.append(
+                f'- {island["id"]} "{title}" (reviewState={island["review_state"]}, '
+                f'members={",".join(island["card_ids"])})'
+            )
+
+    subgraphs = ir.get("graph_summary", {}).get("contradiction_subgraphs", [])
+    touching = [item for item in subgraphs if set(item["card_ids"]) & pair]
+    if touching:
+        context.append("Structural observation (no ranking, no scoring):")
+        for item in touching:
+            context.append(f'- {item["subgraph_id"]}: {item["summary"]}')
+
+    if context:
+        lines.append("")
+        lines.extend(context)
+    return "\n".join(lines)
 
 
 def _parse_detect_contradiction_response(raw_text: str) -> DetectContradictionResponse:
@@ -1680,20 +1817,52 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def detect_contradiction(payload: DetectContradictionRequest, request: Request, db: Session = Depends(get_db)) -> DetectContradictionResponse:
+    # SEC-AI-SAFEMODE-01/02 (ADR-0068, Done). Layer 1 -- DO NOT REMOVE. The IR
+    # builder below runs its own review-state check as an ADDITIONAL layer
+    # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_cards([payload.cardA, payload.cardB], payload.allowUnreviewedText)
+
+    # AI-IR-PROJECTION-01 (stage 1 of the ADR-0069 rollout): this route now goes
+    # through the LLM input IR instead of stringifying two card texts.
+    ir = _detect_contradiction_ir(payload)
+
+    # AC-1: a contradiction the human already confirmed or held is a decision,
+    # not a finding. Answer from the IR and never ask the model again.
+    adjudicated = adjudicated_contradiction(ir, payload.cardA.id, payload.cardB.id)
+    if adjudicated is not None:
+        state = adjudicated["contradiction_state"]
+        return DetectContradictionResponse(
+            hasContradiction=False,
+            explanation=(
+                "A contradiction between these cards is already recorded and "
+                f"adjudicated by a human (contradictionState={state}); "
+                "it is not re-proposed."
+            ),
+            alreadyRecorded=True,
+            existingContradictionState=state,
+        )
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="detect_contradiction",
-                prompt=_build_detect_contradiction_prompt(payload),
+                prompt=_build_detect_contradiction_prompt(payload, ir),
+                inputs=ir,
             )
         )
     except ProviderDisabledError as exc:
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    # DetectContradictionRequest has no document context; audit with empty doc_id.
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "detect_contradiction", llm_response)
+    # Unchanged for the two-card request shape ("(no-doc)"); a supplied document
+    # is now attributable in the audit trail.
+    _audit_llm_trace(
+        request,
+        _resolve_audit_tenant(request, db),
+        payload.doc.id if payload.doc is not None else "(no-doc)",
+        "detect_contradiction",
+        llm_response,
+    )
     return _parse_detect_contradiction_response(llm_response.raw_text)
 
 
