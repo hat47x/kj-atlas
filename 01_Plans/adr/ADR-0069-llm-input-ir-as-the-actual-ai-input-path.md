@@ -160,12 +160,14 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 
 ### ADR-0068 との関係（重要）
 
-`ADR-0068`（SafeMode enforcement at API boundary、Proposed）と本ADRは**同じ境界を対象としており、独立に実装すると衝突する**。
+**更新（2026-08-29）**: 本節起票時点では `ADR-0068` は Proposed だったが、その後 Accepted となり、実装issue `issue-SEC-AI-SAFEMODE-01`（Done）が `_reject_unreviewed_cards`/`_reject_unreviewed_text` を `detect-contradiction` を含む対象ルートへ既に配線済みである（コードで確認済み）。同issue自身が当時「短期の SafeMode 強制は ADR-0068 を採択して `/ai/*` に適用し、ADR-0069/IR は別途進める併用が現実的」と記録しており、**吸収ではなく併用（defense-in-depth）が既定路線として先に実現している**。
 
-- `ADR-0068` は `/ai/*` の各リクエストモデルへ `safeMode` を追加する方向。
-- 本ADR D4=A は、IR 構築をサーバ側へ置き、IR §7.1 が `safe_mode` を強制する方向。
+`ADR-0068`（SafeMode enforcement at API boundary、Accepted・実装済み）と本ADRは同じ境界を対象とするが、**既存の `_reject_unreviewed_cards`/`_reject_unreviewed_text` を本ADRの実装が除去・弱化してはならない**。本ADR D4=A（IR §7.1 による `safe_mode` 強制）は、既存の境界保護に**追加**する第二層として実装すること（唯一の防御手段として置き換えない）。
 
-本ADRが採択される場合、`ADR-0068` の D1（safeMode の伝達方法）は本ADRに吸収されうる。**両者を別々のAIエージェントが並行して実装しないこと。** 採択順序を決め、後続側はその決定を前提に再検討すること。
+- `ADR-0068` は `/ai/*` の各リクエストモデルへ `safeMode` を追加する方向（実装済み）。
+- 本ADR D4=A は、IR 構築をサーバ側へ置き、IR §7.1 が `safe_mode` を強制する方向（追加の防御層）。
+
+将来的に IR 経路が全 `/ai/*` を覆った段階で、`ADR-0068` 由来の実装を退役させるかどうかは別途判断する（本ADRの実装時点では判断しない）。
 
 ### 移行時に必要な対応
 
