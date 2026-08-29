@@ -210,10 +210,64 @@ CITATION_SUFFIXES = frozenset({".md", ".html", ".py", ".ts", ".tsx"})
 # lesson DX-CANON-INTENT-01 recorded: no wording heuristic separates "this file
 # was deleted on purpose and the record says so" from "this citation rotted".
 #
-# Empty at introduction on purpose: the mechanism lands before any judgement
-# about the existing backlog, so that what the rule catches unaided is visible
-# in one place before entries are argued for. DX-DOC-09 populates it.
-RETIRED_CITATION_TARGETS: frozenset[str] = frozenset()
+# Every entry below is a target that survived DX-DOC-09's mechanical passes:
+# 446 of the 508 citations the rule first reported were repointed at files that
+# had merely moved or been renamed. What remains is the residue that cannot be
+# repointed, because there is nothing to point at.
+RETIRED_CITATION_TARGETS: frozenset[str] = frozenset(
+    {
+        # Pre-ADR planning documents, all deleted in 906e8bbf ("docs: make
+        # 01_Plans README a navigable ADR index") when the phase-plan format was
+        # replaced by ADRs. Cited only from the `Replaces:` / `Source:` /
+        # `Supersedes:` / `Migrated-from:` traceability fields of ADR-0000
+        # through ADR-0009 -- the ADRs that retired them. Naming the retired
+        # document is the entire purpose of those fields, so these are
+        # historical citations, not rot.
+        "01_Plans/roadmap.md",
+        "01_Plans/value_to_requirements.md",
+        "01_Plans/phase0_bootstrap.md",
+        "01_Plans/phase1_canvas_mvp.md",
+        "01_Plans/phase2_qualitative_integration.md",
+        "01_Plans/phase3_review_governance.md",
+        "01_Plans/phaseX_future_backlog.md",
+        "01_Plans/phaseX_cli_tool.md",
+        "01_Plans/phaseX_local_llm_integration.md",
+        # Renamed away in 29fcffcc; cited by a done issue's audit record.
+        "01_Plans/future_backlog.md",
+        # ADR-0020 `Replaces:` -- a pre-ADR draft never tracked in git.
+        "04_Documentation/auth_oidc_saml_mock_idp.md",
+        # Modules deleted by the very issue that cites them. The citation names
+        # what was removed; repointing it would falsify the record.
+        "03_Implement/frontend/src/domain/merge/p2b_decision_log_mock.ts",  # DX-CLEANUP-01
+        "03_Implement/frontend/src/domain/p2a_stream_d/mock_validation_stream_d.ts",  # DX-CLEANUP-01
+        "03_Implement/frontend/src/domain/policy/access_control_metadata.ts",  # DX-CLEANUP-02
+        "03_Implement/frontend/src/ui/DiffPanel.tsx",  # DX-CLEANUP-06 (8ab456f8)
+        "03_Implement/frontend/src/ui/DiffPanel.test.ts",  # DX-CLEANUP-06 (8ab456f8)
+        "03_Implement/backend/tests/test_settings_env_migration.py",  # ENV-ARCH-02
+        # Replaced by the tabized work-mode surface in fbd1ff46 (UX-NAV-02).
+        "03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx",
+        # Proposed in a done issue's "next action" list and never adopted; the
+        # content landed in the existing 04_Documentation/canonicalization.md.
+        "02_Architecture/canonicalization_workflow.md",
+        # Planned module for EXT-CONN-03, not yet built. schemas.md and the
+        # issue describe the contract it will implement.
+        "03_Implement/frontend/src/export/agent_constraints_export.ts",
+        # Illustrative paths, not references: an example filename inside an
+        # acceptance criterion, a probe path in a check's own test description,
+        # and a dated-filename template placeholder.
+        "01_Plans/xxx/result-analysis.md",
+        "02_Architecture/_probe.md",
+        "01_Plans/dogfood-log-2026-08-XX.md",
+        # The filename DOGFOOD-07 reports as unstageable. The file exists under
+        # the corrected name (dogfood-analysis-synthesis-2026-08-12.md); the old
+        # name is the defect being recorded.
+        "01_Plans/dogfood/result-analysis-synthesis-2026-08-12.md",
+        # Static publish artifact, produced by `npm run publish:static -- --out
+        # ../deploy/public` (03_Implement/README.md). Absent until a build runs,
+        # like the REPOSITORY_PATH_BUILD_OUTPUT_LEAF_NAMES cases below.
+        "03_Implement/deploy/public/index.html",
+    }
+)
 # Build-output directory names that legitimately don't exist in a fresh
 # checkout (gitignored, created only by running the build) -- an explicit
 # allowlist rather than parsing .gitignore, since `git check-ignore` only

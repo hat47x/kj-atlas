@@ -1119,6 +1119,26 @@ class CodeSpanCitationCheckTest(unittest.TestCase):
         self.assertEqual(exempt, [])
         self.assertEqual(len(reported), 1)
 
+    def test_every_retired_target_is_actually_absent_from_the_repository(self):
+        """An exemption for a file that exists again is a silent blind spot.
+
+        RETIRED_CITATION_TARGETS says "this path names something deliberately
+        removed". If one is ever recreated, the entry stops being a historical
+        note and starts suppressing a real check, so it has to be removed.
+        """
+        repository_root = Path(__file__).resolve().parents[2]
+        resurrected = sorted(
+            target
+            for target in MODULE.RETIRED_CITATION_TARGETS
+            if (repository_root / target).exists()
+        )
+        self.assertEqual(
+            resurrected,
+            [],
+            "these paths exist again and must be dropped from RETIRED_CITATION_TARGETS "
+            f"so DC-LNK-002 checks them once more: {resurrected}",
+        )
+
     def test_scans_documentation_html_code_elements(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
