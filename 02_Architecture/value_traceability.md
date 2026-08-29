@@ -250,6 +250,26 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 
 この節は新しいAI経路を許可するものではない。生成AI関連の新規issueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言できるようにするための索引である。Lane D、外部共有条件、provider fallback、SafeMode、`human_reviewed`、自動適用に触れる変更は、実装PRではなくADRまたは内部issueで先に扱う。
 
+## 2.10 整合性予算（IC）正本対応表（`ADR-0078`）
+
+CVI/CB/UQ/PBが「何を守るか」を定義するのに対し、IC（Integrity/Consistency）は「守るべきものが実際に両面（または全面）で守られているか」を横断的に索引化する。構造的整合性（IC-1〜7、フィールド名・型の一致）は自動検査で充足しているが、意味的整合性（IC-8〜10、同一不変条件が全実装面に反映されているか）は自動検査が原理的に困難であり、定期的な手動監査で埋める（`ADR-0078` D2）。IC-11（ADR/issue間の相互参照）は構造的だが自動検査が無く、機械検査可能な既知のギャップとして扱う。
+
+| IC ID | 整合性境界 | 種別 | 主な担保（既存） | 充足度 |
+|---|---|---|---|---|
+| IC-1 | TS↔Python 型のフィールド集合一致（`DocumentV1`関連12型） | 構造 | `test_ts_python_contract_drift.py`（`KNOWN_TS_ONLY_GAPS`許可リスト方式） | 充足（自動） |
+| IC-2 | API実装↔`api.md`のエンドポイント一致 | 構造 | `check_contract_drift.py` チェック1 | 充足（自動） |
+| IC-3 | Pydanticフィールド↔`schemas.md`の一致 | 構造 | `check_contract_drift.py` チェック2 | 充足（自動） |
+| IC-4 | frontend APIクライアント↔backend routeシグネチャ一致 | 構造 | `check_contract_drift.py` チェック3 | 充足（自動） |
+| IC-5 | 環境変数↔`runtime_parameter_registry.md`の一致 | 構造 | `check_contract_drift.py` チェック4 | 充足（自動） |
+| IC-6 | 文書間の相互参照リンク切れ（`02_Architecture`等の追跡HTML） | 構造 | `DX-DOC-07`（docs_check） | 充足（自動） |
+| IC-7 | historyディレクトリのbacklinkメタデータ整合 | 構造 | `check_history_metadata`（`docs_contract_checks.py`） | 充足（自動） |
+| IC-8 | 凍結仕様間の語彙一致（例: LLM投入IR↔キャンバス関係語彙） | **意味** | なし（`AI-REL-VOCAB-DRIFT-01`で個別修正のみ） | **未**（自動検査なし。2026-08-29の追加監査でDocumentV1関連4enum・外部連携仕様を横断確認したが追加のドリフトは未検出） |
+| IC-9 | 同一不変条件の全実装面カバレッジ（例: 反スコアリングがbackend/frontend両方に効くか） | **意味** | 一部（`test_ai_anti_scoring_contract.py`はbackendのみ。`DOMAIN-SCORING-SURFACE-01`で発覚） | **薄い**（片面のみ自動検査） |
+| IC-10 | `DocumentV1`内の関数従属性（例: カード→島の所属一意性） | **意味** | 一部（drag&drop経路は`moveCardToIsland()`で解決済み。統合経路は`DOMAIN-ISLAND-MEMBERSHIP-01`で対応中） | **薄い**（書込み経路の一部は解決済みだが検知機構が無い） |
+| IC-11 | ADR/issue間のバッククォート引用パスの正確性 | 構造 | なし（`DC-LNK-001`はMarkdownリンク構文のみが対象） | **未（機械検査可能）**。初回監査で244件の不整合を実測、`DX-DOC-09`で対応中 |
+
+**運用**: 薄い／未の次元のみを改善issue化する（`ADR-0039`、物量網羅はしない）。IC-1〜7に対する追加検査は新設しない（既に自動化されており対象外）。意味的整合性の監査パスは、リリース候補または大きな機能追加のまとまりごとに1回実行し、`PRODUCT-QA-01` G7の一部として記録する。詳細・非目標は `ADR-0078` を参照。
+
 ## 3. 設計判断の扱い
 
 設計文書は、価値判断を再定義する場所ではありません。新しい要件や価値判断が必要になった場合は、先に `00_Prompt` または ADR で扱います。

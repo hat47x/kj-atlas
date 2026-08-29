@@ -1,6 +1,6 @@
 # ADR-0069: LLM投入IRをAI入力の実経路とする（座標・関係語彙・島階層の決着を含む）
 
-- Status: Proposed
+- Status: Accepted（2026-08-29、D1=B・D3=A・D4=A 仮承認。利用者からの委譲に基づく暫定決定であり、特別に重大な安全境界変更を伴わないため実行フェーズへ移行。D2は2026-08-13に別途採択済み）
 - Date: 2026-08-09
 - Deciders: Project Maintainers
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/frontend/src/domain/island_edge_aggregate.ts`, `03_Implement/frontend/src/export/abstract_map_export.ts`, `02_Architecture/llm_input_ir_spec.md`
@@ -84,6 +84,8 @@ IR は本問題提起に既に答えを出しているが、その答えは提�
 
 **推奨は B。** 問題提起が拒否しているのは「AIに配置を解釈させること」であり、IR は `cluster_candidates.basis="spatial"` によって空間由来を明示ラベル付けすることで、その暗黙化を既に防いでいる。B なら「相対布置を渡すか否か」をエンドポイント単位で明示的に選べる。
 
+**決定（2026-08-29・仮承認）**: **D1=B を採択**。`coordinates` を任意フィールドへ緩和し、`suggest-layout` は要求、他エンドポイント（`detect-contradiction`/`suggest-card-groups`/`generate-narrative`）は非要求とする。実装時にエンドポイントごとの要否表を `llm_input_ir_spec.md` へ明記する。
+
 ### D2: 関係語彙の写像
 
 | 案 | 内容 | 評価 |
@@ -106,6 +108,8 @@ IR は本問題提起に既に答えを出しているが、その答えは提�
 
 **推奨は A。** 追加する `islands` には最低限 `id` / `card_ids` / `title` / `placard_card_id` / `parent_island_id` / レビュー状態を含めること。
 
+**決定（2026-08-29・仮承認）**: **D3=A を採択**。ただし実装は下記「前提条件」節の解消（`DOMAIN-ISLAND-MEMBERSHIP-01`）を先行させること。
+
 ### D4: 投影の実装場所
 
 | 案 | 内容 | 評価 |
@@ -115,6 +119,8 @@ IR は本問題提起に既に答えを出しているが、その答えは提�
 | C | 投影ロジックを Python へ一本化し TS 側を削除する | 描画・export がサーバ往復を要することになり、ローカルファースト（`architecture.html`）に反する |
 
 **推奨は A。**
+
+**決定（2026-08-29・仮承認）**: **D4=A を採択**。サーバ側（Python）にIRビルダーを実装し、`test_ts_python_contract_drift.py` の対象へ投影ロジックを追加する。
 
 ### 仕様バージョンについて
 
@@ -173,6 +179,8 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 
 `02_Architecture/functional-dependency-integrity-2026-08-06.html` の **F-5「島所属の関数従属性が強制されていない」が未解消**である。カード→島の所属が一意に定まらない状態では、`islands` を含む IR の構築結果が一意にならない。本ADRの実装前に F-5 を解消するか、投影側で一意化規則（先勝ち・後勝ち・全列挙のいずれか）を明示すること。
 
+**決定（2026-08-29）**: 書込み側のドラッグ&ドロップ経路は既に単一所属を強制済み（`island_edge_aggregate.ts` `moveCardToIsland()`）と確認したが、統合（canonicalization）経路（`canonical_ops.ts` `updateIslands()`）は跨島マージ時に重複所属を生成しうることを新たに確認した（`issue-DOMAIN-ISLAND-MEMBERSHIP-01`）。同issueが追加する助言的診断が実運用データでの発生頻度を計測するまでの**暫定の一意化規則として「先勝ち」（`getIslandsForCard()`/`islands.find()` が既に実装している、配列先頭から見て最初に一致した島を採用する）を採用する**。IRビルダー（D4=A）は、複数島に同時出現するカードについてこの規則で単一の `island_id` を選ぶこと。`issue-DOMAIN-ISLAND-MEMBERSHIP-01` のAC-1〜2が完了するまで、本ADRの `islands` 実装（D3）には着手しない。
+
 ## Traceability
 
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（本ADRの根拠となる実測と分析）
@@ -186,5 +194,6 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - Related: `01_Plans/issues/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 で解決される事実の記録）
 - Related: `01_Plans/issues/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`（非目標として分離した課題）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（F-5 = 実装前提条件）
+- Related: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（F-5前提条件の実装課題、Draft）
 
 ---
