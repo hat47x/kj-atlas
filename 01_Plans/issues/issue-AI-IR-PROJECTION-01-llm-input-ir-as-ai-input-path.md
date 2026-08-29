@@ -9,7 +9,7 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Expected verification level: `integration`
 
-> **進捗（2026-08-30）: 段階適用の Stage 1 / 5 のみ完了（`detect-contradiction`）。** 残り4段階（`suggest-card-groups` → `generate-narrative` → `suggest-layout` → その他）は未着手。AC-2 / AC-3 / AC-10 は未着手、AC-7 は範囲を分離。詳細は末尾の「結果（Stage 1）」節を参照。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
+> **進捗（2026-08-30）: 段階適用の Stage 1〜2 / 5 完了（`detect-contradiction`・`suggest-card-groups`）。** 残り3段階（`generate-narrative` → `suggest-layout` → その他）は未着手。AC-3 / AC-10 は未着手、AC-7 は範囲を分離。詳細は末尾の「結果（Stage 1）」「結果（Stage 2）」節を参照。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
 
 > **本issueは `ADR-0069` の採択を前提とする。** ADR が Proposed の間は着手しないこと。D1〜D4 が未決のまま実装すると、凍結仕様（`llm_input_ir_spec.md`）への非互換な改変が入る。**（2026-08-29 に Accepted・仮承認となり、この前提は解消済み。）**
 
@@ -89,16 +89,16 @@ $ grep -rn "ir_version\|graph_summary\|cluster_candidates" --include=*.py --incl
 ## 受入条件
 
 - [x] AC-1（detect-contradiction のみ）: `detect-contradiction` が `evidenceLinks` と `contradictionState` を受け取り、`confirmed` / `held` の矛盾を再提示しないことを integration テストで固定する。— `tests/test_ai_detect_contradiction_ir.py`。抑止は決定論（LLMを呼ばない）。
-- [ ] AC-2: `suggest-card-groups` が既存の島・`parentIslandId`・`holdState` を受け取り、`holdState` が保留中のカードを新規グループへ含めないことをテストで固定する。— **Stage 2、未着手**。
+- [x] AC-2（suggest-card-groups only）: `suggest-card-groups` が既存の島・`parentIslandId`・`holdState` を受け取り、`holdState` が保留中のカードを新規グループへ含めないことをテストで固定する。— `tests/test_ai_suggest_card_groups_ir.py`。抑止は決定論（候補集合から除外＋応答からも除去。プロンプト依存にしない）。`held` / `pending` / `shelved` の3値すべてを対象とした。
 - [ ] AC-3: `generate-narrative` が `edges` を受け取り、`causal` / `negate` が入力に含まれることをテストで固定する。— **Stage 3、未着手**。
-- [x] AC-4（detect-contradiction のみ）: 全対象エンドポイントで、IR が `constraints.safe_mode == true` を満たさない場合に IR 生成が失敗すること（仕様 §7.1）をテストで固定する。— `build_llm_input_ir(safe_mode=False)` が `safe_mode_required` を送出。あわせて既存の `_reject_unreviewed_cards` 422 が**無変更**であることの回帰テストを追加（第二層であって置換でないことの証明）。Stage 2 以降の対象エンドポイントでは未実施。
+- [x] AC-4（detect-contradiction / suggest-card-groups）: 全対象エンドポイントで、IR が `constraints.safe_mode == true` を満たさない場合に IR 生成が失敗すること（仕様 §7.1）をテストで固定する。— `build_llm_input_ir(safe_mode=False)` が `safe_mode_required` を送出。あわせて既存の `_reject_unreviewed_cards` 422 が**無変更**であることの回帰テストを、移行済みの両エンドポイントで追加（第二層であって置換でないことの証明）。Stage 3 以降の対象エンドポイントでは未実施。
 - [x] AC-5（detect-contradiction のみ）: PII最小化チェック（§7.2）と構造化テキスト限定チェック（§7.3）が入力側で機能することをテストで固定する。— メール／電話／URLトークンの3パターンと、base64疑似バイナリ・禁止キー名を `tests/test_llm_input_ir.py` で固定。拒否応答が該当文字列を反射しないことも固定。
 - [x] AC-6: 上限超過時の切り詰めが決定論的であること（同一入力→同一出力、§5）をテストで固定する。— 同一入力2回で `llm_ir.json` のSHA-256一致、入力配列順を反転しても一致、参照整合が保たれることを固定。IRビルダー全体の性質のため段階に依存しない。
 - [ ] AC-7: `test_ts_python_contract_drift.py` を投影ロジックへ拡張し、TS 実装（`buildAbstractMapExport` / `getDerivedIslandEdges`）と Python 実装の同値性を検査する。— **未着手**。狭いスポットチェックも実施していない。現行の `test_ts_python_contract_drift.py` は TS ソースからフィールド集合を抽出して突き合わせる**静的な**ドリフト検出であり、挙動同値性の検査基盤ではない。TS を実行して結果を突き合わせる仕組みは新規構築が必要で、本Stageの範囲を超える。また今回のIRビルダーは `getDerivedIslandEdges()`（島間派生辺）も `buildAbstractMapExport()` も再実装しておらず（`islands` は確定済み島をそのまま投影する）、対応する関数対が現時点で存在しない。**Stage 4（`suggest-layout`）で派生辺・座標投影を扱う段階で再評価すること。**
-- [x] AC-8（D1/D3のスキーマ変更範囲のみ）: `ir_version` が繰り上がり、`llm_input_ir_spec.md` が採択された D1〜D3 と一致している。— `1.0` → `1.1`。版数判断の根拠は仕様 §7.4。§6 の FixtureProvider 生成手順は `scripts/generate_llm_input_ir_fixture.py` で end-to-end に再現でき、`--check` によるドリフト検出をテストに含めた。「全エンドポイントが IR 経由」の確認は Stage 5 まで持ち越し。
-- [x] AC-9（detect-contradiction のみ）: `02_Architecture/api.md` のリクエスト契約が実装と同期している。— `/ai/detect-contradiction` の項のみ更新。他エンドポイントは未変更（未変更であることが正しい）。
+- [x] AC-8（D1/D3のスキーマ変更範囲のみ）: `ir_version` が繰り上がり、`llm_input_ir_spec.md` が採択された D1〜D3 と一致している。— `1.0` → `1.1`（Stage 1）→ `1.2`（Stage 2 で `cards[*].hold_state` を加算）。版数判断の根拠は仕様 §7.4。§6 の FixtureProvider 生成手順は `scripts/generate_llm_input_ir_fixture.py` で end-to-end に再現でき、`--check` によるドリフト検出をテストに含めた。「全エンドポイントが IR 経由」の確認は Stage 5 まで持ち越し。
+- [x] AC-9（detect-contradiction / suggest-card-groups）: `02_Architecture/api.md` のリクエスト契約が実装と同期している。— Stage 1 で `/ai/detect-contradiction`、Stage 2 で `/ai/suggest-card-groups` の項を更新。他エンドポイントは未変更（未変更であることが正しい）。
 - [ ] AC-10: 代表規模（カード300・島30程度）で入力トークン量を計測し、変化を記録する。上限値（`MAX_CARDS=200` 等、§5.1）が現行規模に合わない場合は別issueへ切り出す。— **意図的に延期**。1エンドポイントだけの計測は代表性を持たない（IRの `graph_summary` / `islands` は文書単位のコストであり、複数エンドポイントで償却される前提で設計されている）。移行エンドポイントが増えた段階でまとめて計測する。
-- [x] AC-11（detect-contradiction のみ）: 既存フロントエンドが動作する（後方互換）。または必要な改修を同一 PR に含める。`03_Implement/deploy/tools/kj_canvas_demo.py` も追随させる。— **改修不要を確認**。`/ai/detect-contradiction` を呼ぶフロントエンドコードは存在しない（`grep -rn "detect-contradiction\|detectContradiction" 03_Implement/frontend/src` は0件）。`kj_canvas_demo.py` はAPIではなくモックLLMアダプタ（`http://localhost:8001/generate`）を直接叩いており、本エンドポイントの契約に依存しない。追加した `doc` はリクエストの任意フィールド、`alreadyRecorded` / `existingContradictionState` はレスポンスの追加フィールドであり、いずれも破壊的ではない。`verify_business_flow_e2e.sh` の2箇所の呼び出しも従来形のまま通る。
+- [x] AC-11（detect-contradiction / suggest-card-groups）: 既存フロントエンドが動作する（後方互換）。または必要な改修を同一 PR に含める。`03_Implement/deploy/tools/kj_canvas_demo.py` も追随させる。— **改修不要を確認**。`/ai/detect-contradiction` を呼ぶフロントエンドコードは存在しない（`grep -rn "detect-contradiction\|detectContradiction" 03_Implement/frontend/src` は0件）。`kj_canvas_demo.py` はAPIではなくモックLLMアダプタ（`http://localhost:8001/generate`）を直接叩いており、本エンドポイントの契約に依存しない。追加した `doc` はリクエストの任意フィールド、`alreadyRecorded` / `existingContradictionState` はレスポンスの追加フィールドであり、いずれも破壊的ではない。`verify_business_flow_e2e.sh` の2箇所の呼び出しも従来形のまま通る。**Stage 2 追記**: `/ai/suggest-card-groups` にもフロントエンドの呼び出し元は存在しない（`grep -rn "suggest-card-groups\|suggestCardGroups" 03_Implement/frontend` は0件。`03_Implement/deploy/tools/` の2件はいずれもモックLLMアダプタ側で、APIの契約に依存しない）。追加した `doc` はリクエストの任意フィールド、`excludedCardIds` / `truncated` はレスポンスの追加フィールドである。`verify_business_flow_e2e.sh` の呼び出し（27箇所）は `doc` を渡さない従来形であり、候補カード行の書式 `  - id="...", text="..."` を IR 経路でも維持したため `mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）もそのまま一致する。
 
 ## 依存関係
 
@@ -190,3 +190,68 @@ frontend は**変更していない**（`/ai/detect-contradiction` の呼び出�
 - `models_context.py` の `ContextBundleResponse` / `build_bundle()` / `_STUB_DATASET`（`CE1-CTX-IF`）。Scope に挙がっているが、IRビルダーとは別の投影層であり、本Stageでは接続しない。
 - `_reject_unreviewed_cards` / `_reject_unreviewed_text` の呼び出し箇所（12箇所すべて）。1行も変更していない（`git diff` で確認済み）。
 - 他8つのプロンプト構築関数。`ADR-0069` の段階適用順に従い、Stage 2 以降で扱う。
+
+## 結果（Stage 2: suggest-card-groups）
+
+AC-2 を `suggest-card-groups` に限定して実装した。Stage 1 の配線パターン（IRビルダーを消費し、プロンプトをIRから描画し、人間の既決は決定論で守る）をそのまま踏襲している。
+
+### 何を作ったか
+
+| 成果物 | パス | 変更内容 |
+|---|---|---|
+| IRビルダー（加算） | `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py` | `HOLD_STATES` 定数、`SourceCard.hold_state`、`_card_to_ir()`、消費側ヘルパ `held_card_ids()`、`validate_llm_input_ir()` の hold_state 検査。`IR_VERSION` 1.1 → 1.2 |
+| 仕様改訂 | `02_Architecture/llm_input_ir_spec.md` | §2.1 規則8（`hold_state`）、§4.1 / §4.2 スキーマ、§6.1 の fixture 名、§7.4 に 1.2 の行と版数根拠 |
+| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `_suggest_card_groups_ir()`（新規）、`_card_group_candidates()`（新規）、`_build_suggest_card_groups_prompt()` をIR描画へ、`_parse_suggest_card_groups_response()` に候補集合フィルタ、`suggest_card_groups()` 本体 |
+| リクエスト/レスポンス契約 | `03_Implement/backend/src/kj_atlas_api/models_ai.py` | `SuggestCardGroupsRequest.doc`（任意）、`SuggestCardGroupsResponse.excludedCardIds` / `.truncated`（追加） |
+| API契約 | `02_Architecture/api.md` | `/ai/suggest-card-groups` の項のみ。あわせて `cards` の上限記述の陳腐化（「最大100件」→ 実装は 2〜1000件、`DOGFOOD-31` で引き上げ済み）を是正 |
+| 回帰データ | `tests/fixtures/llm_input_ir_document.json`, `..._expected.json` | 版数入りの旧名から改名（§6.1 に理由を明記）。`c-isolated` に `holdState: "held"` を追加して新フィールドを回帰データで覆う |
+| ユニットテスト | `tests/test_llm_input_ir.py` | `hold_state` の投影・省略・未知値・派生構造への非影響を追加（37 → 46件） |
+| 統合テスト | `tests/test_ai_suggest_card_groups_ir.py`（新規） | AC-2、SafeMode 二層の同時成立、後方互換、切り詰めの可視化（18件） |
+
+### 仕様改訂は必要だったか — 必要だった（`ir_version` 1.2）
+
+**必要だった。** 1.1 の IR にはカードの hold 状態を置く場所が無く、既存フィールドで代替できない（`islands` は確定した所属、`evidence_links` は根拠・矛盾、`relations` はカード間の論理関係を表し、いずれも「このカードの扱いを人間が保留している」という単項の状態を表現できない）。IR を迂回して `DocumentV1.cards[*].holdState` を直接読めば実装自体は可能だが、それは `ADR-0069` の主張（IR がAI入力の実経路である）を崩す。
+
+**島・`parentIslandId` は 1.1 で足りていた。** `islands[*].parent_island_id`（§2.2A）をそのまま使っており、この部分の仕様改訂は不要だった。改訂は `cards[*].hold_state` の1フィールドのみ、加算的（`required` 不変・値を持たないカードではキーごと省略）で、hold 状態を使っていない文書の IR は 1.1 とバイト単位で同一である。根拠は仕様 §7.4。
+
+### 設計上の判断（実装時に決めたこと）
+
+1. **3値すべてを除外対象にした。** `held`（判断を保留）/ `pending`（未着手）/ `shelved`（Shelfへ退避）はいずれも `schemas.md` §14.1 で「人間が意図的に扱いを決めていない」状態であり、新しい島の構成員として提案することはその判断の上書きになる。AC-2 の「保留中」を「`holdState` が付いている＝非 active」と読んだ。3値のいずれかだけを対象にする読み方を採らなかった理由は、`pending` を候補に残すと「未着手だから束ねてよい」という解釈をコードが採ることになり、その判断は人間の側にあるためである。狭める必要が生じた場合は `held_card_ids()` の1箇所で変えられる。
+2. **抑止は二重にコードで行う。** (a) 候補集合から除外してプロンプトに載せない、(b) LLM応答の `cardIds` を候補集合へフィルタする。(b) が必要なのは、プロンプトの遵守が不変条件にならないため（Stage 1 の「再提示しない」を決定論で実現したのと同じ理由）。(b) は同時にID捏造の防御にもなる。フィルタで空になったグループは返さない。
+3. **候補が2枚未満なら LLM を呼ばない。** 1枚だけの「束」は KJ の束ではない（`ai_kj_execution_procedures.md` §2）。`groups: []` と `excludedCardIds` を決定論で返す。
+4. **`doc` は任意フィールドにした。** フラットなカード配列だけの既存契約を壊さないため（AC-11）。`doc` 無しでも IR 経路を通る。ただし `doc` が無ければ hold 状態は入力に存在しないため、AC-2 の抑止が働くのは `doc` を渡した場合のみである（カード配列側に `holdState` を追加する案は採らなかった。`_CardRef` は `detect-contradiction` と共有しており、そちらの契約まで動かすことになるため）。
+5. **候補カード行の書式を維持した。** `  - id="...", text="..."` は `03_Implement/deploy/tools/mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）との事実上の契約であり、business-flow E2E の27箇所がこれに依存する。IR から描画する形に変えても書式は同一に保ち、テストで固定した。並び順のみ IR の `id` 昇順になる（決定論のため）。
+6. **切り詰めを可視化した（`truncated`）。** リクエストは最大1000枚を受け付ける（`DOGFOOD-31`）のに対し、IR は `MAX_CARDS=200` / `MAX_TEXT_CHARS=12000`（仕様 §5.1）で切り詰める。IR 経路化により、**200枚超の束ね依頼では一部のカードがモデルへ届かなくなる**。上限値の妥当性は AC-10（延期中）の主題だが、黙って落とすことは避け、レスポンスに `truncated` を追加した。切り詰めで落ちたカードは `excludedCardIds`（人間が保留したもの）とは区別している。
+
+### テスト結果
+
+| 対象 | 結果 |
+|---|---|
+| `pytest tests/test_ai_suggest_card_groups_ir.py -q` | 18 passed |
+| `pytest tests/test_llm_input_ir.py -q` | 46 passed（Stage 1 の 37 + 本Stageの9） |
+| `pytest tests/ -k "card_groups or ir or safe_mode" -q` | 189 passed, 2 skipped, 1229 deselected |
+| `pytest tests/ -q`（backend 全体回帰） | **1373 passed, 39 skipped, 8 deselected**（Stage 1 のベースライン: 1346 passed, 39 skipped, 8 deselected。差分 +27 は本Stageの新規テストのみで、既存テストの failed / skipped / deselected は1件も増減していない） |
+| `pytest tests/test_ai_safemode.py -q` | 20 passed（**無変更で全通過** = 第一層を弱化していないことの直接証拠） |
+| `ruff check`（変更した src / tests / scripts） | All checks passed |
+| `scripts/check_design_consistency.py` | PASSED（0 errors, 0 warnings） |
+| `scripts/check_contract_drift.py` | OK（0 errors, 2 warnings。いずれも本変更以前から存在する Pydantic↔TS の既知差分） |
+| `python3 01_Plans/docs_check.py` | passed（active_memos=45, tracked_markdown=683） |
+
+frontend は**変更していない**（`/ai/suggest-card-groups` の呼び出し元が存在しないため。AC-11 参照）。したがって `npm run typecheck` / `vitest` は本変更の検証対象外。
+
+### Stage 3〜5 に残っていること（Stage 1 の表の更新）
+
+| Stage | 対象 | 主な作業 |
+|---|---|---|
+| 3 | `generate-narrative` | AC-3。`edges`（`causal` / `negate`）を渡す。`readingOrder` と IR の関係を決める必要がある |
+| 4 | `suggest-layout` | 座標を渡す唯一のエンドポイント（`include_coordinates=True`）。`getDerivedIslandEdges()` 相当が必要になる見込みで、**AC-7 の再評価点** |
+| 5 | 残りのエンドポイント | `refine-card-text` / `suggest-document-title` / `check-narrative` / `suggest-island-summary` / `summarize-island-relation` ほか |
+| 全Stage完了後 | AC-10 | 代表規模（カード300・島30）でのトークン量計測。**本Stageで `MAX_CARDS=200` が実運用規模（`DOGFOOD-31` の200〜300枚）と衝突することが具体化した**（上記 設計判断6）。AC-10 では計測に加えて上限値の見直し要否を判断すること |
+| 全Stage完了後 | `ADR-0068` の退役判断 | IR 経路が全 `/ai/*` を覆った時点で判断する（**本Stageでも判断していない**） |
+
+### 本Stageで意図的に触れなかったもの
+
+- `_reject_unreviewed_cards` / `_reject_unreviewed_text` の呼び出し箇所（12箇所すべて）。1行も変更していない（`git diff` で確認済み。`suggest_card_groups` の呼び出しはコメントを添えたのみで、引数も位置も同一）。
+- `detect-contradiction` / `generate-narrative` / `suggest-layout` ほかのエンドポイントとそのプロンプト構築関数。
+- `models_context.py` の `ContextBundleResponse` / `build_bundle()` / `_STUB_DATASET`（`CE1-CTX-IF`）。
+- `_CardRef`（`detect-contradiction` と共有のリクエスト型）。hold 状態は `doc` 経由でのみ受け取る（上記 設計判断4）。
