@@ -8,6 +8,8 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 本仕様は `ADR-0009` の Phase B（データ/IR整備）を完了させるための正本である。
 対象は「LLMへ渡す前段データ」のみであり、モデル実装や推論品質評価ルーブリック自体は対象外とする。
 
+> **現行 `ir_version`: `1.1`**（2026-08-30、`ADR-0069` D1=B / D2=A / D3=A / D4=A を反映）。版数判断の根拠と 1.0 からの差分は §7.4 を参照。
+
 > CE1 Context foundation integration note: `ContextQuery` / `ContextBundle` の契約固定（`previewConfirmed` 必須、canonical hash）は `02_Architecture/api.md` と `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` を正本とし、本書では IR 接続時の整合条件のみを規定する。
 
 ---
@@ -152,8 +154,10 @@ A2 contract test では次を機械判定する。
    - 前後空白を除去
 4. `char_len` は `text_norm` の文字数。
 5. 同一 `id` が複数ある場合は入力不正として reject する。
+6. **正規化後の並び順は `id` 昇順**（ir_version 1.1 で明文化）。入力配列の順序に依存しないため、カードの並び替えだけを行った文書から同一の `llm_ir.json` が得られる（§6 の検証成功条件「同一 `document.json` から常に同一 `llm_ir.json`」を、入力の些末な差分に対しても成立させる）。
+7. 正規化後に `text` または `text_norm` が空文字になるカードは reject する（§4.2 が `minLength: 1` を課しているため、空のまま IR へ入れられない）。
 
-### 2.2 coordinates
+### 2.2 coordinates（ir_version 1.1 で任意フィールド化・ADR-0069 D1=B）
 
 入力座標は以下へ正規化する。
 
@@ -176,6 +180,71 @@ A2 contract test では次を機械判定する。
 3. `radius = round(sqrt(x^2 + y^2), 3)`。
 4. `angle_deg = round(atan2(y, x) * 180 / pi, 3)`（範囲 -180.000..180.000）。
 5. `card_id` は `cards.id` に存在しなければ reject。
+6. **座標を渡す場合は必ず本節の正規化を経る。** 生の絶対座標を IR へ入れてはならない。
+
+#### 2.2.1 エンドポイント別 座標要否（ADR-0069 D1=B）
+
+`coordinates` は `ir_version` 1.1 で**任意フィールド**である。IRビルダーの呼び出し側は、エンドポイントごとに要否を宣言する。
+
+| エンドポイント | `coordinates` | 理由 |
+|---|---|---|
+| `POST /ai/suggest-layout` | **要求** | 出力そのものが配置であり、相対布置が入力として意味を持つ |
+| `POST /ai/detect-contradiction` | 非要求 | 判断材料は論理関係（`relations` / `evidence_links`）であり、布置は根拠にならない |
+| `POST /ai/suggest-card-groups` | 非要求 | 既存の島・階層・関係で足りる。空間由来のまとまりが要る場合は `cluster_candidates.basis="spatial"` で明示的に渡す |
+| `POST /ai/generate-narrative` | 非要求 | 叙述の骨格は `causal` / `negate` であり座標ではない |
+
+`coordinates` を省略した IR では、`cluster_candidates` の spatial 候補（§3.1 規則2）は生成されない（relation 由来のみ）。
+
+### 2.2A islands（ir_version 1.1 で追加・ADR-0069 D3=A）
+
+人間が確定させた島階層を IR へ渡す。**`cluster_candidates`（機械が出した候補、§3.1）とは型として別**であり、混同してはならない。前者は既決（CVI-3 の人手レビュー昇格を経た構造）、後者は提案である。
+
+```json
+{
+  "id": "string",
+  "card_ids": ["c1", "c2"],
+  "title": "string|null",
+  "placard_card_id": "string|null",
+  "parent_island_id": "string|null",
+  "review_state": "unreviewed|human_reviewed"
+}
+```
+
+規則:
+
+1. `id` は空文字禁止。重複 `id` は reject。
+2. `card_ids` は `cards.id` に存在するものだけを残し、昇順ソートする。存在しない ID は黙って除外する（切り詰め §5 で除外されたカードを島が参照しうるため）。
+3. **カード→島の一意化規則は「先勝ち」**（`issue-DOMAIN-ISLAND-MEMBERSHIP-01` の暫定規則）。複数の島の `cardIds` に同時出現するカードは、**入力配列の先頭から見て最初に一致した島にのみ**帰属させ、後続の島の `card_ids` からは除外する。これは読み取り側の投影規則であり、書込み側の重複所属を禁止するものではない。
+4. `parent_island_id` は他の島の `id` に存在しなければ `null` にする（孤立参照を IR へ持ち込まない）。
+5. `placard_card_id` は当該島の `card_ids` に含まれない場合 `null` にする。
+6. `review_state` は `CE0-REVIEW-IF` の2値のみ。`Island.titleReviewed === true` を `human_reviewed`、それ以外（`false` / 未設定）を `unreviewed` へ写像する。AI がこの値を昇格させてはならない。
+7. `card_ids` が空になった島も保持する（島の存在自体が構造情報であるため）。
+8. 並び順は `id` 昇順。
+
+`title` / `placard_card_id` / `parent_island_id` は値が無い場合 `null` を明示する（キーの欠落ではない）。
+
+### 2.2B evidence_links（ir_version 1.1 で追加）
+
+人間が記録済みの根拠・矛盾リンクを IR へ渡す。`ADR-0069` が挙げた「矛盾検出が既存の `evidenceLinks` / `contradictionState` を見ていない」（`AI-IR-PROJECTION-01` AC-1）を、IR経路で解消するためのフィールドである。
+
+```json
+{
+  "id": "string",
+  "type": "supports|contradicts",
+  "from_card_id": "string",
+  "to_card_id": "string",
+  "contradiction_state": "unconfirmed|confirmed|held|resolved|null"
+}
+```
+
+規則:
+
+1. `from_card_id` / `to_card_id` が `cards.id` に存在しないものは除外する。
+2. 重複判定キー `(type, from_card_id, to_card_id)` が重複した場合は入力順で先頭の1件へ重複排除する。
+3. **`EvidenceLink.note`（自由記述）は IR へ投影しない。** §7.2 の PII 最小化と、根拠リンクが構造情報として扱われるべきである（本文の再投入ではない）ことの双方による。
+4. `contradiction_state` は `type="contradicts"` のときのみ意味を持つ。`type="supports"` では常に `null`。
+5. 並び順は `(type, from_card_id, to_card_id)` 昇順。
+6. **`confirmed` / `held` は人間が既に判断を下した状態である。** IR の消費側（プロンプト構築・提案生成）は、この状態のリンクを新規の発見として再提示してはならない。
 
 ### 2.3 relations
 
@@ -197,6 +266,12 @@ A2 contract test では次を機械判定する。
 3. 重複判定キー `(from, to, type)` が重複した場合は1件へ重複排除する。
 4. 自己ループ（`from == to`）は `negate` 以外は reject。
 5. 正規化後の並び順は `(type, from, to)` 昇順。
+6. **`DocumentV1.edges` からの投影規則（ir_version 1.1 で明文化）**: 次のいずれかに該当する辺は、reject ではなく**除外**する（IR は「カード間の論理関係」の IR であり、それ以外の辺は表現対象外であるため）。
+   - `fromKind` または `toKind` が `"island"` の辺（島間の派生辺は `islands` の階層で表現する）。
+   - `type` が5値語彙のいずれでもない辺（backend のみの `unknown` を含む。D2=A の決定により IR に含めない）。
+   - `from` / `to` が `cards` に存在しない辺。
+   
+   上記に該当しない辺のうち規則1〜5に違反するもの（`negate` 以外の自己ループなど）は規則どおり reject する。
 
 ### 2.4 meta
 
@@ -219,6 +294,12 @@ A2 contract test では次を機械判定する。
 2. `doc_version` は正整数。
 3. `language` 判定不能時は `unknown` を使用する。
 4. `meta` に個人識別子（メール、電話、住所、外部ID）を含めない。
+5. **`created_at` / `updated_at` は ir_version 1.1 で任意フィールドとする。** 文書を伴わない入力（`POST /ai/detect-contradiction` にカード2枚だけを渡す既存契約など）では発生時刻が入力に存在せず、生成時刻で埋めると同一入力から同一 IR が得られなくなる（AC-3 / §5 の決定論に反する）。この場合は**キーごと省略する**。現在時刻で代替してはならない。
+6. **`language` の判定規則（ir_version 1.1 で明文化）**: 全カードの `text_norm` を連結した文字列に対し、
+   - CJK 統合漢字・ひらがな・カタカナ（`U+3040..U+30FF`, `U+3400..U+4DBF`, `U+4E00..U+9FFF`, `U+F900..U+FAFF`）のいずれかを含むなら `ja` 成分あり。
+   - ASCII のラテン文字（`A-Za-z`）を含むなら `en` 成分あり。
+   - 両方あれば `mixed`、片方だけならその値、どちらも無ければ `unknown`。
+7. **`meta` は `LLMRequest.inputs` のトップレベルに含める**（§4.1 参照）。§7.1 が `meta.safe_mode` を必須としている以上、`meta` が IR の外にあると仕様が自己矛盾する。ir_version 1.0 の §4 スキーマは `meta` を列挙しないまま `additionalProperties: false` としており、実装不能であった。1.1 でこれを是正する。
 
 ---
 
@@ -238,9 +319,18 @@ A2 contract test では次を機械判定する。
 計算規則:
 
 1. relation-based 候補: `related|causal` 辺で連結な部分集合を列挙。
-2. spatial-based 候補: 座標距離の近傍グラフ（k=3）で連結な集合を列挙。
+2. spatial-based 候補: 座標距離の近傍グラフ（k=3）で連結な集合を列挙。`coordinates` が無い IR（§2.2.1 で非要求のエンドポイント）では spatial 候補を生成しない。
 3. 同一 `card_ids` は `basis` を統合し1件にする（`relation` 優先）。
 4. `score` は `round(min(1.0, density + cohesion) / 2, 4)`。
+
+**ir_version 1.1 での明文化**（AC-2「曖昧語なし」を満たすため。1.0 は `density` / `cohesion` / `cluster_id` の採番順・候補の粒度を定義しておらず、決定論的に再現できなかった）:
+
+5. 候補の粒度は**連結成分**とする（極大な連結部分集合。部分集合の総当たり列挙ではない）。カード1枚だけの成分は候補にしない（`card_ids` の `minItems` は2）。
+6. spatial 近傍グラフ: 各カードについて、正規化座標のユークリッド距離が近い順に上位3件（`k=3`）へ無向辺を張る。距離が同値の場合は `card_id` 昇順で先に来るものを採る。
+7. `density = round(m / (n * (n - 1) / 2), 6)`。`n` は候補内カード数、`m` は候補内の**内部辺数**（当該 basis のグラフにおける、両端が候補内にある辺の数。重複排除後）。
+8. `cohesion = round(m / (m + b), 6)`。`b` は候補内カードに接続する辺のうち、片端が候補外にある辺の数。`m + b == 0` のときは `0.0`。
+   - 候補が連結成分である以上 `b` は常に 0 であり `cohesion` は `m > 0` なら 1.0 になる。それでも式を残すのは、将来 basis の定義を成分より細かい粒度へ変えたときに `score` の意味が変わらないようにするためである。
+9. `cluster_id` は、`card_ids` を昇順ソートした配列同士を辞書順比較して並べ、その順に `cc-0001` から連番を振る。`basis` は採番順序に影響しない（規則3の統合後に採番する）。
 
 ### 3.2 中心性（centrality）
 
@@ -260,6 +350,13 @@ A2 contract test では次を機械判定する。
 3. 並び順は `betweenness desc`, 同値時 `degree desc`, 同値時 `card_id asc`。
 4. `rank` は上記順序の1始まり連番。
 
+**ir_version 1.1 での明文化**:
+
+5. 対象グラフは §2.3 正規化後の全 relation を無向辺とみなしたもの（型で絞らない）。多重辺は `(from, to)` の非順序対で1本に畳む（`degree` の二重計上を避ける）。自己ループは `degree` に数えない。
+6. `degree` は当該カードに接続する（畳み込み後の）辺の本数。
+7. betweenness は**非正規化**の標準定義 `bc(v) = Σ_{s<t, s≠v≠t} σ_st(v) / σ_st` を用いる（無向グラフなので各ペアを1回だけ数える）。Brandes のアルゴリズムで計算し、最後に `round(x, 4)`。
+8. 関係を1本も持たないカードも `degree=0` / `betweenness=0.0` の項目として必ず列挙する。`centrality` は `cards` と1対1であり、§5.2 の切り詰めがこの `rank` を唯一の順序根拠として使う。
+
 ### 3.3 連結成分（connected_components）
 
 ```json
@@ -276,6 +373,11 @@ A2 contract test では次を機械判定する。
 2. `component_id` は card_ids の最小ID順に `cmp-001` から連番。
 3. `card_ids` は昇順ソート。
 4. `edge_count` は当該成分内の正規化 relation 数。
+
+**ir_version 1.1 での明文化**:
+
+5. 孤立カード（辺を持たないカード）も、カード1枚・`edge_count=0` の成分として列挙する。全カードがいずれか1つの成分にちょうど1回現れる（`connected_components` の `card_ids` の総和 = `cards`）。
+6. `edge_count` は畳み込み前の正規化 relation 件数（`(from, to, type)` 単位）。したがって同じカード対に `related` と `negate` があれば2と数える。
 
 ### 3.4 矛盾サブグラフ（contradiction_subgraphs）
 
@@ -295,21 +397,31 @@ A2 contract test では次を機械判定する。
    - 形式: `"<n> negation edges across <m> cards"`
 3. LLM要約は禁止（前処理は純決定論）。
 
+**ir_version 1.1 での明文化**:
+
+4. `card_ids` は当該成分の全カードではなく、**その成分内の `negate` 辺に接続するカードだけ**を昇順で並べたもの（1.0 の §3.4 例が `card_ids: ["c3","c7"]` / `negation_edges: ["negate:c3:c7"]` と対応させていることに合わせる）。
+5. `negation_edges` は当該成分内の `negate` relation の `id` を `(from, to)` 昇順で並べたもの。
+6. `subgraph_id` は §3.3 の `component_id` の順序に従い、`negate` を含む成分だけを対象に `neg-001` から連番。
+7. `summary` の `<n>` は `len(negation_edges)`、`<m>` は `len(card_ids)`。自己ループ `negate:cX:cX` は `card_ids` に `cX` を1回だけ寄与させる。
+
 ---
 
 ## 4. LLM投入IR JSON Schema（LLMRequest.inputs）
 
-### 4.1 必須/任意
+### 4.1 必須/任意（ir_version 1.1）
 
 必須:
 - `ir_version`
 - `cards`
-- `coordinates`
 - `relations`
 - `graph_summary`
 - `constraints`
+- `meta`（1.1 で追加。§2.4 規則7を参照。§7.1 が `meta.safe_mode` を必須としているため 1.0 の欠落は仕様の欠陥であった）
 
 任意:
+- `coordinates`（1.1 で必須→任意。ADR-0069 D1=B。§2.2.1 の要否表を参照）
+- `islands`（1.1 で追加。ADR-0069 D3=A。§2.2A）
+- `evidence_links`（1.1 で追加。§2.2B）
 - `cluster_candidates`
 - `truncation`
 
@@ -323,13 +435,13 @@ A2 contract test では次を機械判定する。
   "required": [
     "ir_version",
     "cards",
-    "coordinates",
     "relations",
     "graph_summary",
-    "constraints"
+    "constraints",
+    "meta"
   ],
   "properties": {
-    "ir_version": { "type": "string", "const": "1.0" },
+    "ir_version": { "type": "string", "const": "1.1" },
     "cards": {
       "type": "array",
       "minItems": 1,
@@ -374,6 +486,47 @@ A2 contract test では次を機械判定する。
         }
       }
     },
+    "islands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "card_ids",
+          "title",
+          "placard_card_id",
+          "parent_island_id",
+          "review_state"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "card_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "title": { "type": ["string", "null"] },
+          "placard_card_id": { "type": ["string", "null"] },
+          "parent_island_id": { "type": ["string", "null"] },
+          "review_state": { "type": "string", "enum": ["unreviewed", "human_reviewed"] }
+        }
+      }
+    },
+    "evidence_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "from_card_id", "to_card_id", "contradiction_state"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "enum": ["supports", "contradicts"] },
+          "from_card_id": { "type": "string", "minLength": 1 },
+          "to_card_id": { "type": "string", "minLength": 1 },
+          "contradiction_state": {
+            "type": ["string", "null"],
+            "enum": ["unconfirmed", "confirmed", "held", "resolved", null]
+          }
+        }
+      }
+    },
     "cluster_candidates": {
       "type": "array",
       "items": {
@@ -393,9 +546,72 @@ A2 contract test では次を機械判定する。
       "additionalProperties": false,
       "required": ["centrality", "connected_components", "contradiction_subgraphs"],
       "properties": {
-        "centrality": { "type": "array" },
-        "connected_components": { "type": "array" },
-        "contradiction_subgraphs": { "type": "array" }
+        "centrality": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["card_id", "degree", "betweenness", "rank"],
+            "properties": {
+              "card_id": { "type": "string", "minLength": 1 },
+              "degree": { "type": "integer", "minimum": 0 },
+              "betweenness": { "type": "number", "minimum": 0 },
+              "rank": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "connected_components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["component_id", "card_ids", "edge_count"],
+            "properties": {
+              "component_id": { "type": "string", "minLength": 1 },
+              "card_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "edge_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "contradiction_subgraphs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subgraph_id", "card_ids", "negation_edges", "summary"],
+            "properties": {
+              "subgraph_id": { "type": "string", "minLength": 1 },
+              "card_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "negation_edges": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "summary": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["doc_id", "doc_version", "safe_mode", "language"],
+      "properties": {
+        "doc_id": { "type": "string", "minLength": 1 },
+        "doc_version": { "type": "integer", "minimum": 1 },
+        "safe_mode": { "type": "boolean", "const": true },
+        "language": { "type": "string", "enum": ["ja", "en", "mixed", "unknown"] },
+        "created_at": { "type": "string", "minLength": 1 },
+        "updated_at": { "type": "string", "minLength": 1 }
       }
     },
     "constraints": {
@@ -449,16 +665,28 @@ A2 contract test では次を機械判定する。
 3. 除外カードに接続する relation を除外。
 4. なお超過する場合は `text` を `text_norm` 先頭 240 文字へ固定切り詰め。
 
+**ir_version 1.1 での明文化**（AC-3「同一入力から同一切り詰め結果」を機械的に満たすため。1.0 は各段階の対象・順序・参照整合の扱いが未定義であった）:
+
+5. 判定は切り詰め前の値で1度だけ行う。`over_cards = len(cards) > MAX_CARDS`、`over_relations = len(relations) > MAX_RELATIONS`、`over_text = sum(char_len) > MAX_TEXT_CHARS`。いずれかが真なら段階1を実施する。
+6. 段階2の「低位」は §3.2 の `rank` が**大きい**方（中心性が低い方）である。除外の順序を決める `rank` は**切り詰め前の全カード集合に対して1度だけ**算出し、以後の全段階でその値を使う（段階ごとに再計算すると除外順が入力規模に依存して揺れる）。`rank <= MAX_CARDS` のカードだけを残す。理由コード `MAX_CARDS`。
+   - IR へ出力する `graph_summary` と `cluster_candidates` は、**全段階の除外を終えた後の集合に対して算出する**。除外順の根拠に使う `rank`（切り詰め前）と、出力する `centrality`（切り詰め後）は別物である。こうしないと `graph_summary` が IR に存在しないカードを参照し、IR が参照的に閉じなくなる。
+7. 段階3では、除外カードを参照する `coordinates` / `islands[*].card_ids` / `evidence_links` も同時に除外する（参照整合を IR 内で保つ）。島は `card_ids` が空になっても保持する（§2.2A 規則7）。
+8. 段階3の後もなお `len(relations) > MAX_RELATIONS` の場合、`(type, from, to)` 昇順で先頭 `MAX_RELATIONS` 件だけを残す。理由コード `MAX_RELATIONS`。
+9. 段階4は `text` だけでなく `text_norm` も `text_norm[:240]` へ揃え、`char_len = len(text_norm)` を再計算する。`char_len` を据え置くと `sum(char_len)` が減らず上限判定が永久に成立しない。理由コード `MAX_TEXT_CHARS`。
+10. 段階4の後もなお `sum(char_len) > MAX_TEXT_CHARS` の場合、`rank` の大きいカードから1枚ずつ除外し（そのたびに段階3と同じ参照整合の除外を行う）、上限内へ収める。カードは最低1枚残す（§4.2 `cards.minItems = 1`）。理由コードは `MAX_TEXT_CHARS` のまま（新しいコードは増やさない）。
+
 ### 5.3 記録
 
 - 切り詰めを1回でも実施した場合、`truncation.truncated=true`。
 - 該当した上限の理由コードを重複なしで `reason_codes` へ記録。
+- `reason_codes` は `MAX_CARDS` / `MAX_RELATIONS` / `MAX_TEXT_CHARS` の順で並べる（集合の並びが入力順に依存しないようにするため）。
+- 切り詰めが一度も発生しなかった場合、`truncation` は `{"truncated": false, "reason_codes": []}` を出力する（キーごと省略しない。「切り詰めていない」ことを消費側が確認できるようにするため）。
 
 ---
 
 ## 6. FixtureProvider回帰データ生成手順（IR仕様のみで再現）
 
-1. 入力 `document.json` から `cards / coordinates / relations / meta` を抽出する。
+1. 入力 `document.json` から `cards / coordinates / relations / islands / evidence_links / meta` を抽出する。
 2. 本仕様 2章の正規化規則を適用して `normalized_input.json` を生成する。
 3. 本仕様 3章の前処理規則を適用して `graph_features.json` を生成する。
 4. 本仕様 4章の schema に従って `llm_ir.json`（= `LLMRequest.inputs`）を生成する。
@@ -471,6 +699,17 @@ A2 contract test では次を機械判定する。
 - 同一 `document.json` から常に同一 `llm_ir.json` が生成される。
 - provider未起動（`KJ_ATLAS_LLM_PROVIDER=none`）でも回帰が成立する。
 
+### 6.1 回帰データの所在と再生成（ir_version 1.1）
+
+| 役割 | パス |
+|---|---|
+| 入力 `document.json` | `03_Implement/backend/tests/fixtures/llm_input_ir_document_v1_1.json` |
+| 期待 `llm_ir.json` ＋ SHA-256 | `03_Implement/backend/tests/fixtures/llm_input_ir_expected_v1_1.json` |
+| 再生成コマンド | `python3 scripts/generate_llm_input_ir_fixture.py`（`03_Implement/backend` 直下で実行） |
+| 回帰テスト | `03_Implement/backend/tests/test_llm_input_ir.py` |
+
+`llm_ir.json` のハッシュは canonical JSON（キー辞書順・UTF-8・空白なし・`ensure_ascii=false`）の SHA-256 16進小文字とする（§9.2 の `bundleHash` 算出規則と同じ正規化を IR へ適用したもの）。再生成コマンドはこの仕様の実装を通すだけであり、LLM も外部 provider も呼ばない。
+
 ---
 
 ## 7. safeMode・PII最小化・構造化テキスト限定 整合チェック
@@ -481,6 +720,13 @@ A2 contract test では次を機械判定する。
 - `constraints.safe_mode == true` を必須化。
 - どちらかが欠ける、または `false` の場合は IR 生成を失敗させる。
 
+**ir_version 1.1 での明文化**:
+
+- 本節のチェックは**既存の API 境界の SafeMode 強制（`ADR-0068` / `SEC-AI-SAFEMODE-01` が配線した `_reject_unreviewed_cards` / `_reject_unreviewed_text`）を置き換えるものではなく、それに追加する第二層である**（`ADR-0069`「ADR-0068 との関係」）。IR 経路を導入する変更が、既存の呼び出しを除去・弱化することを禁じる。
+- IR ビルダーは、投影対象のカードが人間レビュー済みであること（`textReviewed === true`）を**ビルダー自身で**再検査する。ルート側のガードが将来失われても IR が未レビュー本文を組み立てないようにするためであり、二重に検査されること自体が目的である。
+- 緩和（`allowUnreviewedText` ＋ profile 許可）が成立している場合に限り、この再検査は通過してよい。ただし `safe_mode` フラグそのものの緩和は許可しない（`constraints.safe_mode` は `const true`）。
+- 失敗は fail-closed とし、API 境界では 422 とする。**失敗応答に違反した入力値（カード本文・検出したPII断片）を反射してはならない**（`SEC-VALIDATION-LEAK-01` の作法）。
+
 ### 7.2 PII最小化チェック
 
 以下パターンに一致する文字列を `text` / `text_norm` / `meta` で検出した場合、IR生成を失敗させる。
@@ -489,13 +735,44 @@ A2 contract test では次を機械判定する。
 - 電話: `/\+?[0-9][0-9\- ]{8,}[0-9]/`
 - URLクエリ中トークン: `/[?&](token|key|secret|password)=/i`
 
+**ir_version 1.1 での明文化**:
+
+- 検査対象は**自由記述テキスト**（`cards[*].text` / `cards[*].text_norm`）と `meta` の文字列値に限る。ID 系フィールド（`cards[*].id` / `islands[*].id` / `relations[*].id` / `evidence_links[*].*_card_id` など）は検査対象に**含めない** — UUID やハイフン区切りIDが電話パターンへ偽陽性で一致し、正常な文書の IR 生成が不能になるため。
+- `meta` に適用するのは**メール・URLトークンの2パターンのみ**とし、電話パターンは適用しない。電話パターンは実質「長い数字列」の検出器であり、ISO-8601 のタイムスタンプ（`2026-01-01T00:00:00Z`）が必ず一致する。`meta.created_at` / `meta.updated_at` は自由記述ではなく、ここで弾く価値もない。
+- **既知の偽陽性**: 電話パターンは自由記述テキスト中の日付・連番・型番にも一致しうる（`2026-01-01` など）。本節は fail-closed 側に倒す設計であり、この偽陽性は意図的に受け入れる。パターン自体の精緻化が必要になった場合は本仕様の改訂として別途扱い、実装側で黙って緩めない。
+- 失敗時のエラーは、どのパターン種別（`email` / `phone` / `url_token`）に当たったかまでを報告し、**一致した文字列そのものは報告しない**。
+- 本節は「検出したら失敗」であって「マスクして続行」ではない。IR は入力の正本であり、黙って書き換えると `document.json → llm_ir.json` の対応が追跡できなくなる。
+
 ### 7.3 構造化テキスト限定チェック
 
 - JSON型は `string|number|boolean|array|object|null` のみ。
 - Base64疑似バイナリ（長さ1024超かつ `[A-Za-z0-9+/=]` のみ）を禁止。
 - `attachments` / `binary` / `image` というキー名の出現を禁止。
 
+**ir_version 1.1 での明文化**:
+
+- 禁止キー名の判定は**完全一致**とし、大文字小文字を区別しない（`attachments` / `binary` / `image`）。`imageUrl` / `image_url` のような別語は該当しない（部分一致で弾くと `Island.imageUrl` を持つ正常文書が通らなくなるため）。IR が `Island.imageUrl` を投影しないこと自体は §2.2A のフィールド一覧が保証する。
+- Base64 判定は、長さ 1024 を**超え**、かつ空白を含まず `[A-Za-z0-9+/=]` のみで構成される文字列を対象とする。
+- 検査は IR 全体を再帰的に走査して行う。`constraints.structured_text_only == true` はこの検査を通過した事実の宣言である。
+
 ---
+
+## 7.4 ir_version の履歴と版数判断
+
+| `ir_version` | 日付 | 変更 | 出典 |
+|---|---|---|---|
+| `1.0` | 2026-04 | 初版（凍結） | `ADR-0009` Phase B |
+| `1.1` | 2026-08-30 | D1（`coordinates` 任意化）、D3（`islands` 追加）、`evidence_links` 追加、`meta` をIRトップレベルへ明記、§3/§5 の計算規則の明文化 | `ADR-0069`, `issue-AI-IR-PROJECTION-01` |
+
+**なぜ 2.0 ではなく 1.1 か。** 1.1 の変更は**加算的**である。
+
+- 必須フィールドを増やしていない。`meta` は §2.4 と §7.1 が既に必須と定めていたものを §4 のスキーマ本文へ書き足しただけであり、新しい要求ではなく 1.0 の内部矛盾の是正である。
+- `coordinates` は必須から任意へ**緩和**した。1.0 の妥当な IR は 1.1 でも妥当である（`ir_version` の値を除く）。
+- `islands` / `evidence_links` は任意フィールドの追加である。
+- 既存フィールドの意味・列挙値・計算規則を**変更していない**。§3 / §5 への追記は、1.0 が定義していなかった箇所（`density` / `cohesion` の定義、採番順序、切り詰めの参照整合）を決定論的に埋めたものである。1.0 の下で同じ入力から複数の出力があり得た箇所を1つに絞っており、1.0 で一意に定まっていた結果を別の値へ変えてはいない。
+- 関係型語彙の5値化（D2=A）は 2026-08-13 に本書へ適用済みであり、1.1 で新たに変わるものではない。
+
+したがって破壊的変更を示す 2.0 ではなく、加算的なマイナー繰り上げ 1.1 とする。`additionalProperties: false` は維持しているため、1.0 の消費側が 1.1 の IR を読む場合は `islands` / `evidence_links` / `meta` を未知キーとして扱う点に注意する。消費側は `ir_version` を見て分岐すること。
 
 ## 8. トレーサビリティ
 
@@ -504,6 +781,11 @@ A2 contract test では次を機械判定する。
 - 実行制約: `02_Architecture/llm_runtime_constraints.md`。
 - 品質ゲート: `02_Architecture/llm_quality_strategy.md`。
 - エスカレーション運用: `02_Architecture/llm_escalation_policy.html`。
+- 版数 1.1 の決定根拠: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（D1=B / D2=A / D3=A / D4=A）。
+- 実装課題: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`。
+- SafeMode の第一層（本仕様 §7.1 が置き換えてはならない既存実装）: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`。
+- カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。
+- Python 実装（D4=A）: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`。
 
 
 ## 9. CE-1 ContextQuery/ContextBundle 最小I/F（Contract Freeze）
