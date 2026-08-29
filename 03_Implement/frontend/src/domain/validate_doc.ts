@@ -1466,3 +1466,80 @@ export function validateDocumentV1Strict(value: unknown): ValidateDocumentV1Stri
 
   return { ok: true, document: value as DocumentV1 };
 }
+
+// ---------------------------------------------------------------------------
+// Advisory-only diagnostics (NOT part of the fail-closed validation gate)
+// ---------------------------------------------------------------------------
+
+/**
+ * DOMAIN-ISLAND-MEMBERSHIP-01 / F-5 / R2(a)-検証
+ * (`02_Architecture/functional-dependency-integrity-2026-08-06.html` §8.1)
+ *
+ * Reports cards that appear in more than one island's `cardIds`. The norm
+ * "a card belongs to at most one island" is stated by `getIslandsForCard()`
+ * in `island_edge_aggregate.ts`, and the drag&drop write path already enforces
+ * it via `moveCardToIsland()`. The canonicalization write path
+ * (`canonical_ops.ts` `updateIslands()`) does not: a cross-island merge adds
+ * the canonical card to EVERY island that held a source card.
+ *
+ * This is deliberately **advisory only** and is NOT called from
+ * `validateDocumentV1Strict()`. §8.1 (R2(a)-検証) concluded that fail-closed
+ * rejection of this condition is the wrong trade-off for a local-first app
+ * with no document-recovery UI — the risk of a document that can no longer be
+ * opened outweighs the harm. The violation rate is to be measured first; any
+ * later promotion to a hard error requires a fresh ADR-0047 applicability
+ * check. Callers must therefore keep this off blocking paths (save, share,
+ * import, export, CI): dev-time console warnings, a non-blocking diagnostic
+ * script, or unit tests only.
+ *
+ * @returns one human-readable advisory per offending card; empty when the
+ *          card→island functional dependency holds.
+ */
+export function checkIslandMembershipIntegrity(document: DocumentV1): string[] {
+  const islands = document?.islands;
+  if (!Array.isArray(islands)) {
+    return [];
+  }
+
+  // Insertion-ordered so the output is deterministic: cards in order of first
+  // appearance, islands in document order.
+  const islandIdsByCardId = new Map<string, string[]>();
+
+  islands.forEach((island, index) => {
+    const cardIds = island?.cardIds;
+    if (!Array.isArray(cardIds)) {
+      return;
+    }
+
+    const islandId = typeof island.id === "string" && island.id.length > 0 ? island.id : `islands[${index}]`;
+    // Repeats inside one island are a different (intra-island) condition and
+    // must not be mistaken for cross-island membership.
+    const seenInThisIsland = new Set<string>();
+
+    for (const cardId of cardIds) {
+      if (typeof cardId !== "string" || seenInThisIsland.has(cardId)) {
+        continue;
+      }
+      seenInThisIsland.add(cardId);
+
+      const existing = islandIdsByCardId.get(cardId);
+      if (existing) {
+        existing.push(islandId);
+      } else {
+        islandIdsByCardId.set(cardId, [islandId]);
+      }
+    }
+  });
+
+  const advisories: string[] = [];
+  for (const [cardId, islandIds] of islandIdsByCardId) {
+    if (islandIds.length < 2) {
+      continue;
+    }
+    advisories.push(
+      `islands: card '${cardId}' belongs to ${islandIds.length} islands (${islandIds.join(", ")}): a card should belong to at most one island`
+    );
+  }
+
+  return advisories;
+}

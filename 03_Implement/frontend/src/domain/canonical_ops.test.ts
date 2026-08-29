@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyCanonicalization } from "./canonical_ops";
+import { checkIslandMembershipIntegrity } from "./validate_doc";
 import type { DocumentV1 } from "./types";
 
 const baseDoc: DocumentV1 = {
@@ -80,6 +81,49 @@ describe("applyCanonicalization", () => {
     expect(result.document.cards.find((card) => card.id === "canon-1")?.sources).toEqual(["a", "b"]);
     expect(result.document.islands[0].cardIds).toEqual(["a", "canon-1"]);
     expect(result.document.readingOrder).toEqual(["canon-1", "c"]);
+  });
+
+  // DOMAIN-ISLAND-MEMBERSHIP-01 AC-2 (F-5 / R2(a), canonicalization write path).
+  // This pins CURRENT behavior; it is not an endorsement of it. updateIslands()
+  // decides each island against the ORIGINAL cardIds in a single map() pass and
+  // has no "remove from the other islands" step (unlike moveCardToIsland() in
+  // island_edge_aggregate.ts), so a merge whose sources span two islands puts
+  // the canonical card in BOTH. Which island such a merge result should belong
+  // to is an open product question the issue explicitly defers, so the behavior
+  // is left unchanged here and only made visible.
+  it("adds the canonical card to both islands when source cards span two islands", () => {
+    const doc: DocumentV1 = {
+      ...baseDoc,
+      islands: [
+        { id: "island-a", cardIds: ["a", "x"] },
+        { id: "island-b", cardIds: ["b", "y"] },
+      ],
+    };
+
+    const result = applyCanonicalization(doc, {
+      sourceCardIds: ["a", "b"],
+      mergedText: "Merged",
+      canonicalId: "canon-1",
+    });
+
+    // Current behavior: added to both, and neither source card is removed.
+    expect(result.document.islands.find((island) => island.id === "island-a")?.cardIds).toEqual([
+      "a",
+      "x",
+      "canon-1",
+    ]);
+    expect(result.document.islands.find((island) => island.id === "island-b")?.cardIds).toEqual([
+      "b",
+      "y",
+      "canon-1",
+    ]);
+
+    // ...which is exactly the cross-island duplicate membership that the
+    // advisory diagnostic added by AC-1 exists to surface (advisory only —
+    // the document stays valid and saveable).
+    expect(checkIslandMembershipIntegrity(result.document)).toEqual([
+      "islands: card 'canon-1' belongs to 2 islands (island-a, island-b): a card should belong to at most one island",
+    ]);
   });
 
   it("throws when fewer than two source ids are provided", () => {

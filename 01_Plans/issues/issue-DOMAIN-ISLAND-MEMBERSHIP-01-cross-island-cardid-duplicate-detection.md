@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned
@@ -40,15 +40,24 @@
 
 ## 受入条件
 
-- [ ] AC-1: `validate_doc.ts` に跨島カード重複所属を検出する助言的診断関数が追加され、既存の `validateDocument()` の合否判定・戻り値シグネチャを一切変更しないことがテストで示される（回帰テスト: 跨島重複を含む文書が引き続き `valid: true` を返す）。
-- [ ] AC-2: `canonical_ops.test.ts` に、統合元カードが異なる2つの島に分散しているケースのテストが追加され、現状の挙動（両島へ統合先カードが追加される）が明示的に記録される。
-- [ ] AC-3: `ADR-0069` の「前提条件」節が本issueを参照し、暫定の一意化規則（先勝ち、読み取り専用の規範であり書込み側の強制ではない）を明記する形へ更新される。
-- [ ] AC-4: `ADR-0078` の IC-10 行が本issueを参照する形へ更新される。
+- [x] AC-1: `validate_doc.ts` に跨島カード重複所属を検出する助言的診断関数が追加され、既存の `validateDocument()` の合否判定・戻り値シグネチャを一切変更しないことがテストで示される（回帰テスト: 跨島重複を含む文書が引き続き `valid: true` を返す）。
+- [x] AC-2: `canonical_ops.test.ts` に、統合元カードが異なる2つの島に分散しているケースのテストが追加され、現状の挙動（両島へ統合先カードが追加される）が明示的に記録される。
+- [x] AC-3: `ADR-0069` の「前提条件」節が本issueを参照し、暫定の一意化規則（先勝ち、読み取り専用の規範であり書込み側の強制ではない）を明記する形へ更新される。
+- [x] AC-4: `ADR-0078` の IC-10 行が本issueを参照する形へ更新される。
 
 ## 検証計画
 
 - 実行する確認: `npm test`（`canonical_ops.test.ts`, `validate_doc`関連テスト）を対象範囲で実行。
 - 期待結果: 新規テストがグリーン、既存テスト（特に `validateDocument` の他の合否判定）に regression が無いこと。
+
+## 結果
+
+- AC-1: `03_Implement/frontend/src/domain/validate_doc.ts` に `checkIslandMembershipIntegrity(document: DocumentV1): string[]` を追加。`validateDocumentV1Strict()`（本validatorの実名。issue本文の `validateDocument()` は通称）からは呼ばない独立関数とし、戻り値・`ok` 判定・`errors` の内容を一切変更していない。回帰テストは `validate_doc.test.ts` に追加（跨島重複を含む文書が `ok: true` のままであることと、同じ文書で診断が1件返ることの双方を固定）。
+- AC-2: `canonical_ops.test.ts` に跨島マージのテストを追加。`sourceCardIds: ["a", "b"]` が島A・島Bに分散している場合、`canon-1` が両島の `cardIds` へ追加され統合元カードも除去されないという**現状の挙動**を固定した（`canonical_ops.ts` は変更していない）。同テストで AC-1 の診断が当該重複を検出することも確認している。
+- AC-3 / AC-4: 本issue起票時のコミット `00c69131` で反映済みであることを確認（ADR-0069「前提条件」節が暫定規則「先勝ち」を読み取り側の規範として明記、ADR-0078 IC-10 行が本issueを参照）。今回の変更では両ADRを再編集していない。
+- 検証結果: `npm run typecheck` 成功。`npx vitest run src/domain src/import src/export src/diff` → 149 files / 919 tests すべて green（新規7件を含む）。`python3 01_Plans/docs_check.py` 成功。
+- 残課題（本issueの範囲外、別issue化の判断は診断による発生頻度の計測後）: (1) 跨島マージ結果がどの島に属すべきかの業務設計判断、(2) reject化（fail-closed）の要否＝`ADR-0047` 該当確認、(3) 診断のアプリ内呼び出し箇所（現状は単体テストのみ。`functional-dependency-integrity-2026-08-06.html` §8.1 が許す非ブロッキング経路に限る）。
+- ADR-0069 が置いていた着手ゲート（「AC-1〜2が完了するまで `islands` 実装（D3）に着手しない」）は本issueの完了により解除される。
 
 ## 補足
 

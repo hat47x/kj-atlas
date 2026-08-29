@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { validateDocumentV1Strict } from "./validate_doc";
+import { checkIslandMembershipIntegrity, validateDocumentV1Strict } from "./validate_doc";
+import type { DocumentV1 } from "./types";
 
 describe("validateDocumentV1Strict", () => {
   const now = new Date().toISOString();
@@ -434,4 +435,103 @@ describe("validateDocumentV1Strict", () => {
     expect(result.errors).toContain("deterministicTieBreak.order[0]: must be 'padding_compliance'");
   });
 
+  // DOMAIN-ISLAND-MEMBERSHIP-01 AC-1: the advisory diagnostic must not leak
+  // into the fail-closed gate. A document whose card sits in two islands stays
+  // valid — §8.1 (R2(a)-検証) rejected fail-closed handling of this condition.
+  it("keeps a document with cross-island duplicate membership valid", () => {
+    const result = validateDocumentV1Strict({
+      ...validDocument,
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0 },
+        { id: "c2", text: "B", x: 1, y: 1 },
+      ],
+      islands: [
+        { id: "island-a", cardIds: ["c1", "c2"] },
+        { id: "island-b", cardIds: ["c2"] },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.islands).toHaveLength(2);
+  });
+
+});
+
+// DOMAIN-ISLAND-MEMBERSHIP-01 AC-1 (F-5 / R2(a)-検証).
+describe("checkIslandMembershipIntegrity", () => {
+  const now = new Date().toISOString();
+
+  function docWithIslands(islands: DocumentV1["islands"]): DocumentV1 {
+    return {
+      version: 1,
+      id: "doc_membership",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0 },
+        { id: "c2", text: "B", x: 1, y: 1 },
+      ],
+      edges: [],
+      islands,
+    };
+  }
+
+  it("reports nothing when every card belongs to at most one island", () => {
+    const advisories = checkIslandMembershipIntegrity(
+      docWithIslands([
+        { id: "island-a", cardIds: ["c1"] },
+        { id: "island-b", cardIds: ["c2"] },
+      ])
+    );
+
+    expect(advisories).toEqual([]);
+  });
+
+  it("reports a card that belongs to two islands", () => {
+    const advisories = checkIslandMembershipIntegrity(
+      docWithIslands([
+        { id: "island-a", cardIds: ["c1", "c2"] },
+        { id: "island-b", cardIds: ["c2"] },
+      ])
+    );
+
+    expect(advisories).toEqual([
+      "islands: card 'c2' belongs to 2 islands (island-a, island-b): a card should belong to at most one island",
+    ]);
+  });
+
+  it("reports every offending card and lists all islands it belongs to", () => {
+    const advisories = checkIslandMembershipIntegrity(
+      docWithIslands([
+        { id: "island-a", cardIds: ["c1", "c2"] },
+        { id: "island-b", cardIds: ["c1", "c2"] },
+        { id: "island-c", cardIds: ["c1"] },
+      ])
+    );
+
+    expect(advisories).toEqual([
+      "islands: card 'c1' belongs to 3 islands (island-a, island-b, island-c): a card should belong to at most one island",
+      "islands: card 'c2' belongs to 2 islands (island-a, island-b): a card should belong to at most one island",
+    ]);
+  });
+
+  it("does not treat a repeat inside a single island as cross-island membership", () => {
+    const advisories = checkIslandMembershipIntegrity(
+      docWithIslands([{ id: "island-a", cardIds: ["c1", "c1"] }])
+    );
+
+    expect(advisories).toEqual([]);
+  });
+
+  it("stays advisory: it never changes validateDocumentV1Strict's verdict", () => {
+    const document = docWithIslands([
+      { id: "island-a", cardIds: ["c1", "c2"] },
+      { id: "island-b", cardIds: ["c2"] },
+    ]);
+
+    expect(checkIslandMembershipIntegrity(document)).toHaveLength(1);
+    expect(validateDocumentV1Strict(document).ok).toBe(true);
+  });
 });
