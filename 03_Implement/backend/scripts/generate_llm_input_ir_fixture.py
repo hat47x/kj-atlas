@@ -30,8 +30,8 @@ from kj_atlas_api.llm_input_ir import (  # noqa: E402
 from kj_atlas_api.models import DocumentV1  # noqa: E402
 
 FIXTURE_DIR = _BACKEND_ROOT / "tests" / "fixtures"
-DOCUMENT_PATH = FIXTURE_DIR / "llm_input_ir_document_v1_1.json"
-EXPECTED_PATH = FIXTURE_DIR / "llm_input_ir_expected_v1_1.json"
+DOCUMENT_PATH = FIXTURE_DIR / "llm_input_ir_document.json"
+EXPECTED_PATH = FIXTURE_DIR / "llm_input_ir_expected.json"
 
 
 def build_expected() -> dict[str, object]:

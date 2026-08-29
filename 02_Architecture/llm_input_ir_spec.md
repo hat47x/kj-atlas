@@ -8,7 +8,7 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 本仕様は `ADR-0009` の Phase B（データ/IR整備）を完了させるための正本である。
 対象は「LLMへ渡す前段データ」のみであり、モデル実装や推論品質評価ルーブリック自体は対象外とする。
 
-> **現行 `ir_version`: `1.1`**（2026-08-30、`ADR-0069` D1=B / D2=A / D3=A / D4=A を反映）。版数判断の根拠と 1.0 からの差分は §7.4 を参照。
+> **現行 `ir_version`: `1.2`**（2026-08-30、`cards[*].hold_state` を加算）。1.1 は同日の `ADR-0069` D1=B / D2=A / D3=A / D4=A 反映版。版数判断の根拠と各版の差分は §7.4 を参照。
 
 > CE1 Context foundation integration note: `ContextQuery` / `ContextBundle` の契約固定（`previewConfirmed` 必須、canonical hash）は `02_Architecture/api.md` と `01_Plans/issues/done/issue-CE1-context-query-bundle-foundation.md` を正本とし、本書では IR 接続時の整合条件のみを規定する。
 
@@ -140,7 +140,8 @@ A2 contract test では次を機械判定する。
   "id": "string",
   "text": "string",
   "text_norm": "string",
-  "char_len": 0
+  "char_len": 0,
+  "hold_state": "held|pending|shelved"
 }
 ```
 
@@ -156,6 +157,11 @@ A2 contract test では次を機械判定する。
 5. 同一 `id` が複数ある場合は入力不正として reject する。
 6. **正規化後の並び順は `id` 昇順**（ir_version 1.1 で明文化）。入力配列の順序に依存しないため、カードの並び替えだけを行った文書から同一の `llm_ir.json` が得られる（§6 の検証成功条件「同一 `document.json` から常に同一 `llm_ir.json`」を、入力の些末な差分に対しても成立させる）。
 7. 正規化後に `text` または `text_norm` が空文字になるカードは reject する（§4.2 が `minLength: 1` を課しているため、空のまま IR へ入れられない）。
+8. **`hold_state`（ir_version 1.2 で追加）**: `DocumentV1.cards[*].holdState`（`schemas.md` §14.1）を投影する。値は `held` / `pending` / `shelved` の3値のみ。
+   - **値を持たないカードではキーごと省略する**（`null` を書かない）。省略が「保留していない通常カード」の符号化であり、`schemas.md` §14.1 の「欠落時＝従来挙動」と一致する。`islands`（§2.2A）が `null` を明示するのとは扱いが異なる — 島では「タイトル未設定」と「タイトル欠落」を区別する必要があるが、カードの hold 状態には区別すべき第2の欠落状態が無く、全カードへ `"hold_state": null` を書くのは毎リクエストのトークン費用に見合わない。
+   - 3値以外の値は reject せず**除外**する（キー省略として扱う）。§2.3 規則6 が未知の関係型を除外するのと同じ理由 — 未知の hold 状態は IR が使える構造を持たないが、それによって正常な文書を投影不能にしてはならない。
+   - **意味**: 3値はいずれも「人間が意図的に判断を保留・退避させた」ことの記録である。IR の消費側は、この状態のカードを**新規のグループ・島の構成員として提案してはならない**（`AI-IR-PROJECTION-01` AC-2）。既存の島の構成員として `islands[*].card_ids` に現れることは妨げない（既決の構造であり提案ではない）。
+   - AI がこの値を書き換え・昇格させてはならない（§2.2A 規則6 の `review_state` と同じ扱い）。
 
 ### 2.2 coordinates（ir_version 1.1 で任意フィールド化・ADR-0069 D1=B）
 
@@ -190,7 +196,7 @@ A2 contract test では次を機械判定する。
 |---|---|---|
 | `POST /ai/suggest-layout` | **要求** | 出力そのものが配置であり、相対布置が入力として意味を持つ |
 | `POST /ai/detect-contradiction` | 非要求 | 判断材料は論理関係（`relations` / `evidence_links`）であり、布置は根拠にならない |
-| `POST /ai/suggest-card-groups` | 非要求 | 既存の島・階層・関係で足りる。空間由来のまとまりが要る場合は `cluster_candidates.basis="spatial"` で明示的に渡す |
+| `POST /ai/suggest-card-groups` | 非要求 | 既存の島・階層・関係・`hold_state` で足りる。空間由来のまとまりが要る場合は `cluster_candidates.basis="spatial"` で明示的に渡す |
 | `POST /ai/generate-narrative` | 非要求 | 叙述の骨格は `causal` / `negate` であり座標ではない |
 
 `coordinates` を省略した IR では、`cluster_candidates` の spatial 候補（§3.1 規則2）は生成されない（relation 由来のみ）。
@@ -408,7 +414,7 @@ A2 contract test では次を機械判定する。
 
 ## 4. LLM投入IR JSON Schema（LLMRequest.inputs）
 
-### 4.1 必須/任意（ir_version 1.1）
+### 4.1 必須/任意（ir_version 1.2）
 
 必須:
 - `ir_version`
@@ -424,6 +430,9 @@ A2 contract test では次を機械判定する。
 - `evidence_links`（1.1 で追加。§2.2B）
 - `cluster_candidates`
 - `truncation`
+
+カード単位の任意フィールド:
+- `cards[*].hold_state`（1.2 で追加。§2.1 規則8。値を持つカードにのみ現れる）
 
 ### 4.2 JSON Schema（Draft 2020-12相当）
 
@@ -441,7 +450,7 @@ A2 contract test では次を機械判定する。
     "meta"
   ],
   "properties": {
-    "ir_version": { "type": "string", "const": "1.1" },
+    "ir_version": { "type": "string", "const": "1.2" },
     "cards": {
       "type": "array",
       "minItems": 1,
@@ -453,7 +462,8 @@ A2 contract test では次を機械判定する。
           "id": { "type": "string", "minLength": 1 },
           "text": { "type": "string", "minLength": 1 },
           "text_norm": { "type": "string", "minLength": 1 },
-          "char_len": { "type": "integer", "minimum": 1 }
+          "char_len": { "type": "integer", "minimum": 1 },
+          "hold_state": { "type": "string", "enum": ["held", "pending", "shelved"] }
         }
       }
     },
@@ -699,14 +709,16 @@ A2 contract test では次を機械判定する。
 - 同一 `document.json` から常に同一 `llm_ir.json` が生成される。
 - provider未起動（`KJ_ATLAS_LLM_PROVIDER=none`）でも回帰が成立する。
 
-### 6.1 回帰データの所在と再生成（ir_version 1.1）
+### 6.1 回帰データの所在と再生成
 
 | 役割 | パス |
 |---|---|
-| 入力 `document.json` | `03_Implement/backend/tests/fixtures/llm_input_ir_document_v1_1.json` |
-| 期待 `llm_ir.json` ＋ SHA-256 | `03_Implement/backend/tests/fixtures/llm_input_ir_expected_v1_1.json` |
+| 入力 `document.json` | `03_Implement/backend/tests/fixtures/llm_input_ir_document.json` |
+| 期待 `llm_ir.json` ＋ SHA-256 | `03_Implement/backend/tests/fixtures/llm_input_ir_expected.json` |
 | 再生成コマンド | `python3 scripts/generate_llm_input_ir_fixture.py`（`03_Implement/backend` 直下で実行） |
 | 回帰テスト | `03_Implement/backend/tests/test_llm_input_ir.py` |
+
+ファイル名に版数を含めない（1.1→1.2 の繰り上げのたびに改名すると参照元が増える一方であるため。版数は期待ファイル内の `irVersion` フィールドが持つ）。
 
 `llm_ir.json` のハッシュは canonical JSON（キー辞書順・UTF-8・空白なし・`ensure_ascii=false`）の SHA-256 16進小文字とする（§9.2 の `bundleHash` 算出規則と同じ正規化を IR へ適用したもの）。再生成コマンドはこの仕様の実装を通すだけであり、LLM も外部 provider も呼ばない。
 
@@ -763,6 +775,17 @@ A2 contract test では次を機械判定する。
 |---|---|---|---|
 | `1.0` | 2026-04 | 初版（凍結） | `ADR-0009` Phase B |
 | `1.1` | 2026-08-30 | D1（`coordinates` 任意化）、D3（`islands` 追加）、`evidence_links` 追加、`meta` をIRトップレベルへ明記、§3/§5 の計算規則の明文化 | `ADR-0069`, `issue-AI-IR-PROJECTION-01` |
+| `1.2` | 2026-08-30 | `cards[*].hold_state` 追加（§2.1 規則8） | `issue-AI-IR-PROJECTION-01` AC-2（Stage 2: `suggest-card-groups`） |
+
+**なぜ 1.2 か（`hold_state` の追加）。** `AI-IR-PROJECTION-01` AC-2 は「`suggest-card-groups` が `holdState` を受け取り、保留中のカードを新規グループへ含めない」ことを要求する。1.1 の IR にはカードの hold 状態を表す場所が無く、**既存フィールドで代替できない** — `islands`（§2.2A）は確定した所属を、`evidence_links`（§2.2B）は根拠・矛盾を、`relations`（§2.3）はカード間の論理関係を表すが、いずれも「このカードの扱いを人間が保留している」という単項の状態を表現できない。IR を迂回して `DocumentV1` を直接読めば実装はできるが、それは `ADR-0069`（IR がAI入力の実経路である）の主張そのものを崩す。
+
+1.1→1.2 も**加算的**であり、2.0 に当たらない:
+
+- 任意フィールドの追加のみ。`required` は `["id", "text", "text_norm", "char_len"]` のまま増やしていない。
+- hold 状態を持たないカードではキーが現れないため、hold 状態を使っていない文書の IR は 1.1 と**バイト単位で同一**である（`ir_version` の値を除く）。
+- 既存フィールドの意味・列挙値・計算規則を変更していない。`hold_state` は §3 の前処理（中心性・連結成分・クラスタ候補）にも §5 の切り詰め順序にも**影響しない** — 保留は人間の見立てであって構造ではないため（`AGENTS.md` §5 の R5 判定: `holdState` は「利用者の現在の見立て」側であり、正規化・不変条件の対象にしない）。
+
+`additionalProperties: false` は維持しているため、1.1 想定の消費側は `hold_state` を未知キーとして扱う。消費側は `ir_version` を見て分岐すること。
 
 **なぜ 2.0 ではなく 1.1 か。** 1.1 の変更は**加算的**である。
 
@@ -782,6 +805,7 @@ A2 contract test では次を機械判定する。
 - 品質ゲート: `02_Architecture/llm_quality_strategy.md`。
 - エスカレーション運用: `02_Architecture/llm_escalation_policy.html`。
 - 版数 1.1 の決定根拠: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（D1=B / D2=A / D3=A / D4=A）。
+- 版数 1.2（`cards[*].hold_state`）の決定根拠: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md` AC-2 と「結果（Stage 2）」節。`holdState` の意味の正本は `02_Architecture/schemas.md` §14.1。
 - 実装課題: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`。
 - SafeMode の第一層（本仕様 §7.1 が置き換えてはならない既存実装）: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`。
 - カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。

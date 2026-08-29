@@ -1,4 +1,4 @@
-"""Unit tests for the LLM input IR builder (`llm_input_ir_spec.md` 1.1).
+"""Unit tests for the LLM input IR builder (`llm_input_ir_spec.md` 1.2).
 
 Covers the narrowed AC-4 / AC-5 / AC-6 / AC-8 of `AI-IR-PROJECTION-01`:
 SafeMode refusal, PII + structured-text refusal, deterministic truncation, and
@@ -25,6 +25,7 @@ from kj_atlas_api.llm_input_ir import (
     adjudicated_contradiction,
     build_llm_input_ir,
     canonical_ir_json,
+    held_card_ids,
     ir_sha256,
     source_from_document,
     validate_llm_input_ir,
@@ -32,12 +33,22 @@ from kj_atlas_api.llm_input_ir import (
 from kj_atlas_api.models import DocumentV1
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
-DOCUMENT_FIXTURE = FIXTURE_DIR / "llm_input_ir_document_v1_1.json"
-EXPECTED_FIXTURE = FIXTURE_DIR / "llm_input_ir_expected_v1_1.json"
+DOCUMENT_FIXTURE = FIXTURE_DIR / "llm_input_ir_document.json"
+EXPECTED_FIXTURE = FIXTURE_DIR / "llm_input_ir_expected.json"
 
 
-def _card(card_id: str, text: str = "alpha", *, reviewed: bool | None = True, x=None, y=None):
-    return SourceCard(id=card_id, text=text, text_reviewed=reviewed, x=x, y=y)
+def _card(
+    card_id: str,
+    text: str = "alpha",
+    *,
+    reviewed: bool | None = True,
+    x=None,
+    y=None,
+    hold_state: str | None = None,
+):
+    return SourceCard(
+        id=card_id, text=text, text_reviewed=reviewed, x=x, y=y, hold_state=hold_state
+    )
 
 
 def _source(cards, **kwargs) -> IRSource:
@@ -49,10 +60,10 @@ def _source(cards, **kwargs) -> IRSource:
 # ---------------------------------------------------------------------------
 
 
-def test_ir_version_is_1_1() -> None:
+def test_ir_version_is_1_2() -> None:
     ir = build_llm_input_ir(_source([_card("c1"), _card("c2", "beta")]))
-    assert IR_VERSION == "1.1"
-    assert ir["ir_version"] == "1.1"
+    assert IR_VERSION == "1.2"
+    assert ir["ir_version"] == "1.2"
     validate_llm_input_ir(ir)
 
 
@@ -126,6 +137,94 @@ def test_island_review_state_is_never_promoted_by_the_projection() -> None:
         )
     )
     assert ir["islands"][0]["review_state"] == "unreviewed"
+
+
+# ---------------------------------------------------------------------------
+# AC-2 (builder half): `cards[*].hold_state` -- spec §2.1 rule 8, ir_version 1.2
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("state", ["held", "pending", "shelved"])
+def test_hold_state_is_projected_for_every_documented_value(state: str) -> None:
+    ir = build_llm_input_ir(_source([_card("c1", hold_state=state), _card("c2", "beta")]))
+    by_id = {card["id"]: card for card in ir["cards"]}
+    assert by_id["c1"]["hold_state"] == state
+    validate_llm_input_ir(ir)
+
+
+def test_hold_state_key_is_omitted_for_an_active_card() -> None:
+    """spec §2.1 rule 8: absence encodes "not held"; no `null` is written."""
+    ir = build_llm_input_ir(_source([_card("c1"), _card("c2", "beta")]))
+    assert all("hold_state" not in card for card in ir["cards"])
+
+
+def test_unknown_hold_state_is_dropped_not_rejected() -> None:
+    """Same treatment as an unknown relation type (§2.3 rule 6): a foreign value
+    must not make an otherwise valid document un-projectable."""
+    ir = build_llm_input_ir(
+        _source([_card("c1", hold_state="frozen"), _card("c2", "beta")])
+    )
+    assert all("hold_state" not in card for card in ir["cards"])
+
+
+def test_hold_state_is_read_from_the_document_adapter() -> None:
+    document = DocumentV1.model_validate(
+        {
+            "version": 1,
+            "id": "doc-hold",
+            "createdAt": "2026-08-30T00:00:00Z",
+            "updatedAt": "2026-08-30T00:00:00Z",
+            "transform": {"panX": 0, "panY": 0, "zoom": 1},
+            "cards": [
+                {"id": "c1", "text": "alpha", "x": 0, "y": 0, "textReviewed": True,
+                 "holdState": "shelved"},
+                {"id": "c2", "text": "beta", "x": 1, "y": 1, "textReviewed": True},
+            ],
+            "edges": [],
+            "islands": [],
+        }
+    )
+    ir = build_llm_input_ir(source_from_document(document))
+    assert held_card_ids(ir) == ["c1"]
+
+
+def test_held_card_ids_covers_all_three_values_and_sorts() -> None:
+    ir = build_llm_input_ir(
+        _source(
+            [
+                _card("c3", hold_state="shelved"),
+                _card("c1", "beta", hold_state="held"),
+                _card("c2", "gamma", hold_state="pending"),
+                _card("c4", "delta"),
+            ]
+        )
+    )
+    assert held_card_ids(ir) == ["c1", "c2", "c3"]
+
+
+def test_hold_state_does_not_affect_the_derived_structure() -> None:
+    """§7.4 (1.2): a hold state is a human's current reading, not structure, so
+    it must not move centrality, components, clusters or the truncation order."""
+    cards = [_card("c1", x=0, y=0), _card("c2", "beta", x=10, y=0)]
+    relations = (SourceRelation(from_id="c1", to_id="c2", type="related"),)
+    plain = build_llm_input_ir(_source(cards, relations=relations))
+    held = build_llm_input_ir(
+        _source(
+            [_card("c1", x=0, y=0, hold_state="held"), _card("c2", "beta", x=10, y=0)],
+            relations=relations,
+        )
+    )
+    assert plain["graph_summary"] == held["graph_summary"]
+    assert plain.get("cluster_candidates") == held.get("cluster_candidates")
+    assert plain["relations"] == held["relations"]
+
+
+def test_validate_rejects_a_hand_built_ir_with_an_unknown_hold_state() -> None:
+    ir = build_llm_input_ir(_source([_card("c1"), _card("c2", "beta")]))
+    ir["cards"][0]["hold_state"] = "archived"
+    with pytest.raises(IRGenerationError) as exc:
+        validate_llm_input_ir(ir)
+    assert exc.value.code == "ir_schema_violation"
 
 
 def test_relation_vocabulary_is_the_canvas_five(monkeypatch: pytest.MonkeyPatch) -> None:

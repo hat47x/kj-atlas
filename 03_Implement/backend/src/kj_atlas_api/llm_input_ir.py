@@ -1,6 +1,6 @@
 """LLM input IR builder (`LLMRequest.inputs`).
 
-Normative source: `02_Architecture/llm_input_ir_spec.md` (`ir_version` 1.1).
+Normative source: `02_Architecture/llm_input_ir_spec.md` (`ir_version` 1.2).
 Decision record: `ADR-0069` (D1=B coordinates optional, D2=A five-value relation
 vocabulary, D3=A `islands` distinct from `cluster_candidates`, D4=A the
 projection lives on the server so SafeMode can be enforced here).
@@ -30,7 +30,7 @@ from typing import Any, Iterable, Sequence
 # Constants (spec §4.2, §5.1)
 # ---------------------------------------------------------------------------
 
-IR_VERSION = "1.1"
+IR_VERSION = "1.2"
 
 MAX_CARDS = 200
 MAX_RELATIONS = 400
@@ -47,6 +47,12 @@ REQUIRED_SECTIONS: tuple[str, ...] = ("overall", "clusters", "contradictions")
 
 EVIDENCE_TYPES: tuple[str, ...] = ("supports", "contradicts")
 CONTRADICTION_STATES: tuple[str, ...] = ("unconfirmed", "confirmed", "held", "resolved")
+
+#: spec §2.1 rule 8 (ir_version 1.2) / `schemas.md` §14.1 `Card.holdState`.
+#: An absent value is the ordinary, active card; every listed value records that
+#: a human has deliberately set the card aside (`held` = judgement withheld,
+#: `pending` = not yet worked, `shelved` = moved to the shelf).
+HOLD_STATES: tuple[str, ...] = ("held", "pending", "shelved")
 
 #: spec §2.2B rule 6 / issue AI-IR-PROJECTION-01 AC-1: states a human has
 #: already adjudicated. A consumer must not re-surface these as new findings.
@@ -115,6 +121,8 @@ class SourceCard:
     text_reviewed: bool | None = None
     x: float | None = None
     y: float | None = None
+    #: `DocumentV1.cards[*].holdState` (spec §2.1 rule 8, ir_version 1.2).
+    hold_state: str | None = None
 
 
 @dataclass(frozen=True)
@@ -168,6 +176,7 @@ class _NormalizedCard:
     text_reviewed: bool | None
     x: float | None
     y: float | None
+    hold_state: str | None = None
 
 
 @dataclass
@@ -202,6 +211,7 @@ def source_from_document(document: Any) -> IRSource:
             text_reviewed=getattr(card, "textReviewed", None),
             x=getattr(card, "x", None),
             y=getattr(card, "y", None),
+            hold_state=getattr(card, "holdState", None),
         )
         for card in getattr(document, "cards", []) or []
     )
@@ -306,15 +316,7 @@ def build_llm_input_ir(
     )
 
     ir: dict[str, Any] = {"ir_version": IR_VERSION}
-    ir["cards"] = [
-        {
-            "id": card.id,
-            "text": card.text,
-            "text_norm": card.text_norm,
-            "char_len": card.char_len,
-        }
-        for card in cards
-    ]
+    ir["cards"] = [_card_to_ir(card) for card in cards]
     if include_coordinates:
         coordinates = _normalize_coordinates(cards)
         if coordinates:
@@ -387,10 +389,35 @@ def _normalize_cards(source_cards: Sequence[SourceCard]) -> list[_NormalizedCard
                 text_reviewed=card.text_reviewed,
                 x=card.x,
                 y=card.y,
+                # spec §2.1 rule 8: an unknown value is dropped rather than
+                # rejected, the same way an unknown relation type is (§2.3
+                # rule 6) -- a foreign hold state carries no structure the IR
+                # can use, but it must not make the document un-projectable.
+                hold_state=card.hold_state if card.hold_state in HOLD_STATES else None,
             )
         )
     normalized.sort(key=lambda card: card.id)
     return normalized
+
+
+def _card_to_ir(card: _NormalizedCard) -> dict[str, Any]:
+    """spec §2.1. `hold_state` is emitted only when the card carries one.
+
+    Absent means the ordinary active card, which is the overwhelming majority;
+    writing `"hold_state": null` on every card would cost tokens on every
+    request to say nothing, and §2.1 rule 8 fixes the omission as the encoding
+    of "active" (unlike `islands`, where §2.2A requires explicit nulls because
+    an absent title and an untitled island are different states).
+    """
+    ir_card: dict[str, Any] = {
+        "id": card.id,
+        "text": card.text,
+        "text_norm": card.text_norm,
+        "char_len": card.char_len,
+    }
+    if card.hold_state is not None:
+        ir_card["hold_state"] = card.hold_state
+    return ir_card
 
 
 def _normalize_coordinates(cards: Sequence[_NormalizedCard]) -> list[dict[str, Any]]:
@@ -1066,6 +1093,19 @@ def adjudicated_contradiction(
     return None
 
 
+def held_card_ids(ir: dict[str, Any]) -> list[str]:
+    """Card ids the human has set aside (spec §2.1 rule 8), ascending.
+
+    `AI-IR-PROJECTION-01` AC-2: a card carrying ANY `hold_state` is one whose
+    disposition the human has deliberately not settled. Proposing it as a member
+    of a NEW group overrides that decision, which is precisely the behaviour
+    `ADR-0069` set out to remove. All three values count -- `held` (judgement
+    withheld), `pending` (not yet worked) and `shelved` (moved off the canvas)
+    each say "not now", and none of them says "bundle me".
+    """
+    return sorted(card["id"] for card in ir.get("cards", []) if card.get("hold_state"))
+
+
 def validate_llm_input_ir(ir: dict[str, Any]) -> None:
     """Structural assertions the spec §4.2 schema makes machine-checkable.
 
@@ -1110,6 +1150,11 @@ def validate_llm_input_ir(ir: dict[str, Any]) -> None:
     if ir["meta"].get("safe_mode") is not True:
         raise IRGenerationError("safe_mode_required", "meta.safe_mode must be true.")
     card_ids = {card["id"] for card in ir["cards"]}
+    for card in ir["cards"]:
+        if "hold_state" in card and card["hold_state"] not in HOLD_STATES:
+            raise IRGenerationError(
+                "ir_schema_violation", "Unknown hold_state value in the IR."
+            )
     for relation in ir["relations"]:
         if relation["type"] not in RELATION_TYPES:
             raise IRGenerationError("ir_schema_violation", "Unknown relation type in the IR.")

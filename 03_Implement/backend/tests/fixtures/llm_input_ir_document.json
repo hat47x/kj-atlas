@@ -46,7 +46,8 @@
       "text": "評価制度の見直しはまだ着手していない",
       "x": 0,
       "y": -180,
-      "textReviewed": true
+      "textReviewed": true,
+      "holdState": "held"
     }
   ],
   "edges": [

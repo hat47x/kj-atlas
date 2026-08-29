@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "llm_input_ir_document_v1_1.json",
+  "generatedFrom": "llm_input_ir_document.json",
   "ir": {
     "cards": [
       {
@@ -10,6 +10,7 @@
       },
       {
         "char_len": 18,
+        "hold_state": "held",
         "id": "c-isolated",
         "text": "評価制度の見直しはまだ着手していない",
         "text_norm": "評価制度の見直しはまだ着手していない"
@@ -172,7 +173,7 @@
         }
       ]
     },
-    "ir_version": "1.1",
+    "ir_version": "1.2",
     "islands": [
       {
         "card_ids": [
@@ -237,6 +238,6 @@
       "truncated": false
     }
   },
-  "irVersion": "1.1",
-  "sha256": "84f72382fcad43d6841e953725695916311f34497dc14c8c6d5d33d1224f084f"
+  "irVersion": "1.2",
+  "sha256": "f605eb24229a857df6921a5b3e42df94322a889a8d174820a6617906bf318ab6"
 }
