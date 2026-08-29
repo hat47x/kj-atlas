@@ -18,6 +18,7 @@ from kj_atlas_api.llm_input_ir import (
     SourceCard,
     adjudicated_contradiction,
     build_llm_input_ir,
+    held_card_ids,
     source_from_document,
 )
 from kj_atlas_api.settings import settings
@@ -1577,33 +1578,201 @@ def _parse_refine_card_text_response(raw_text: str) -> RefineCardTextResponse:
     )
 
 
-def _build_suggest_card_groups_prompt(payload: SuggestCardGroupsRequest) -> str:
-    cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
-    return (
+def _suggest_card_groups_ir(payload: SuggestCardGroupsRequest) -> dict:
+    """Build the LLM input IR for `/ai/suggest-card-groups` (ADR-0069 D4=A).
+
+    Stage 2 of the `AI-IR-PROJECTION-01` rollout. `payload.doc`, when present,
+    is the projection source: the IR then carries the islands the human already
+    confirmed (with their `parent_island_id` hierarchy), the relation graph and
+    every card's `hold_state`. Without it the IR degrades to the flat card list,
+    which is the pre-IR request shape and stays supported (AC-11).
+
+    SafeMode: the caller has ALREADY run `_reject_unreviewed_cards`. The
+    `allow_unreviewed_text` argument reproduces that helper's own predicate so
+    the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
+    rather than contradicting it. Both layers run; neither replaces the other.
+    """
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    requested = tuple(
+        SourceCard(id=card.id, text=card.text, text_reviewed=card.textReviewed)
+        for card in payload.cards
+    )
+    if payload.doc is not None:
+        source = source_from_document(payload.doc)
+        # The cards to group travel outside `doc` in this contract, so make sure
+        # they are projected even when the document does not list them. A card
+        # the document DOES list keeps the document's richer entry (that is the
+        # one carrying `holdState`).
+        known = {card.id for card in source.cards}
+        extra = tuple(card for card in requested if card.id not in known)
+        if extra:
+            source = replace(source, cards=source.cards + extra)
+    else:
+        source = IRSource(doc_id="", doc_version=1, cards=requested)
+
+    try:
+        # spec §2.2.1: suggest-card-groups does not request coordinates
+        # (ADR-0069 D1=B). Bundling follows the similarity of what cards appeal
+        # for, not where they happen to sit on the canvas.
+        return build_llm_input_ir(
+            source,
+            include_coordinates=False,
+            safe_mode=True,
+            allow_unreviewed_text=allow_unreviewed,
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+
+
+def _card_group_candidates(
+    payload: SuggestCardGroupsRequest, ir: dict
+) -> tuple[list[str], list[str]]:
+    """Split the requested cards into (groupable, withheld-because-held).
+
+    AC-2, enforced in code rather than by prompt wording: a card the human has
+    set aside (`hold_state`, spec §2.1 rule 8) is not a grouping candidate, and
+    an LLM instruction to that effect is a request, not an invariant.
+
+    A card the IR could not carry at all (spec §5 truncation) is not a candidate
+    either, and is reported as neither -- it was never offered, so the held set
+    stays exactly "withheld by the human's decision".
+    """
+    projected = {card["id"] for card in ir["cards"]}
+    held = set(held_card_ids(ir))
+    candidates = [
+        card.id for card in payload.cards if card.id in projected and card.id not in held
+    ]
+    withheld = [card.id for card in payload.cards if card.id in held]
+    return candidates, withheld
+
+
+def _build_suggest_card_groups_prompt(
+    payload: SuggestCardGroupsRequest,
+    ir: dict | None = None,
+    candidate_ids: list[str] | None = None,
+) -> str:
+    """Render the prompt from the IR (ADR-0069: the IR is the input of record).
+
+    `ir=None` keeps the function callable on its own; the route always passes
+    the IR it built.
+    """
+    header = (
         # ai_kj_execution_procedures.md §2: bundle by the similarity of what the
         # cards are APPEALING for (訴えの類似性), not by classification; first
         # level bundles are 2-3 cards (rarely 4); never force a lone card in.
-        f"Group these KJ-method cards into islands. "
-        f"Bundle cards by the similarity of what they are appealing for, not by classification labels. "
-        f"Each first-level bundle is 2-3 cards (rarely 4). Do not force a card into a bundle it does not belong to. "
-        f'Return JSON: {{"groups": [{{"label": "...", "cardIds": ["..."], '
-        f'"rationale": "..."}}]}}\nCards:\n{cards}'
+        "Group these KJ-method cards into islands. "
+        "Bundle cards by the similarity of what they are appealing for, not by classification labels. "
+        "Each first-level bundle is 2-3 cards (rarely 4). Do not force a card into a bundle it does not belong to. "
+        'Return JSON: {"groups": [{"label": "...", "cardIds": ["..."], '
+        '"rationale": "..."}]}'
     )
+    if ir is None:
+        cards = "\n".join(f'  - id="{c.id}", text="{c.text}"' for c in payload.cards)
+        return f"{header}\nCards:\n{cards}"
+
+    allowed = set(candidate_ids) if candidate_ids is not None else None
+    by_id = {card["id"]: card for card in ir["cards"]}
+    listed = [
+        card_id
+        for card_id in (candidate_ids if candidate_ids is not None else by_id)
+        if card_id in by_id
+    ]
+    # The line format is a contract with the mock adapter's prompt parser
+    # (`03_Implement/deploy/tools/mock_local_llm.py`); keep it byte-compatible.
+    cards = "\n".join(f'  - id="{cid}", text="{by_id[cid]["text"]}"' for cid in listed)
+    lines = [header, f"Cards:\n{cards}"]
+
+    context: list[str] = []
+
+    withheld = [card_id for card_id in held_card_ids(ir) if allowed is None or card_id not in allowed]
+    if withheld:
+        context.append(
+            "Cards the human has set aside (holdState). They are NOT listed above "
+            "and must not appear in any group:"
+        )
+        for card_id in withheld:
+            context.append(f'- {card_id} (holdState={by_id[card_id]["hold_state"]})')
+
+    islands = ir.get("islands", [])
+    if islands:
+        context.append(
+            "Islands the human has already confirmed. Do not re-propose an "
+            "existing island, and do not move its members without reason:"
+        )
+        for island in islands:
+            title = island["title"] or "(untitled)"
+            parent = island["parent_island_id"]
+            parent_note = f", parentIslandId={parent}" if parent else ""
+            context.append(
+                f'- {island["id"]} "{title}" (reviewState={island["review_state"]}'
+                f'{parent_note}, members={",".join(island["card_ids"]) or "none"})'
+            )
+
+    relations = ir.get("relations", [])
+    if relations:
+        context.append("Relations recorded on the canvas (ADR-0048 vocabulary):")
+        for relation in relations:
+            context.append(
+                f'- {relation["type"]}: {relation["from"]} -> {relation["to"]}'
+            )
+
+    clusters = [
+        cluster
+        for cluster in ir.get("cluster_candidates", [])
+        if allowed is None or set(cluster["card_ids"]) <= allowed
+    ]
+    if clusters:
+        context.append(
+            "Structural observation, not a decision (no ranking of card content):"
+        )
+        for cluster in clusters:
+            context.append(
+                f'- {cluster["cluster_id"]}: {",".join(cluster["card_ids"])} '
+                f'(basis={cluster["basis"]})'
+            )
+
+    if context:
+        lines.append("")
+        lines.extend(context)
+    return "\n".join(lines)
 
 
-def _parse_suggest_card_groups_response(raw_text: str) -> SuggestCardGroupsResponse:
+def _parse_suggest_card_groups_response(
+    raw_text: str,
+    *,
+    candidate_ids: list[str] | None = None,
+    excluded_card_ids: list[str] | None = None,
+    truncated: bool = False,
+) -> SuggestCardGroupsResponse:
     data = json.loads(raw_text)
     from kj_atlas_api.models_ai import _SuggestedGroup
 
-    return SuggestCardGroupsResponse(
-        groups=[
+    allowed = set(candidate_ids) if candidate_ids is not None else None
+    groups: list[_SuggestedGroup] = []
+    for g in data.get("groups", []):
+        card_ids = [str(c) for c in g.get("cardIds", g.get("card_ids", []))]
+        if allowed is not None:
+            # AC-2, second half of the in-code enforcement: whatever the model
+            # answered, a card that was not a candidate does not enter a group.
+            # Prompt compliance is not an invariant, and a held card slipping
+            # back in here would be the human's decision overridden.
+            card_ids = [card_id for card_id in card_ids if card_id in allowed]
+            if not card_ids:
+                continue
+        groups.append(
             _SuggestedGroup(
                 label=str(g.get("label", "")),
-                cardIds=[str(c) for c in g.get("cardIds", g.get("card_ids", []))],
+                cardIds=card_ids,
                 rationale=g.get("rationale"),
             )
-            for g in data.get("groups", [])
-        ]
+        )
+
+    return SuggestCardGroupsResponse(
+        groups=groups,
+        excludedCardIds=list(excluded_card_ids or []),
+        truncated=truncated,
     )
 
 
@@ -1793,14 +1962,36 @@ def refine_card_text(payload: RefineCardTextRequest, request: Request, db: Sessi
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db: Session = Depends(get_db)) -> SuggestCardGroupsResponse:
+    # SEC-AI-SAFEMODE-01/02 (ADR-0068, Done). Layer 1 -- DO NOT REMOVE. The IR
+    # builder below runs its own review-state check as an ADDITIONAL layer
+    # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_cards(payload.cards, payload.allowUnreviewedText)
+
+    # AI-IR-PROJECTION-01 (stage 2 of the ADR-0069 rollout): this route now goes
+    # through the LLM input IR instead of stringifying a flat id/text list, so
+    # the existing islands, their hierarchy and each card's hold state reach the
+    # model -- and the hold state is enforced here, in code.
+    ir = _suggest_card_groups_ir(payload)
+    candidate_ids, excluded_card_ids = _card_group_candidates(payload, ir)
+    truncated = bool(ir.get("truncation", {}).get("truncated"))
+
     model_id = payload.model or resolve_model_for_task("suggest_card_groups")
     provider_config = _assert_model_allowed(request, db, model_id)
+
+    if len(candidate_ids) < 2:
+        # AC-2: nothing left to bundle once the human's held cards are withheld.
+        # Answer from the IR; a one-card "group" is not a KJ bundle
+        # (ai_kj_execution_procedures.md §2) and the model is not asked.
+        return SuggestCardGroupsResponse(
+            groups=[], excludedCardIds=excluded_card_ids, truncated=truncated
+        )
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_card_groups",
-                prompt=_build_suggest_card_groups_prompt(payload),
+                prompt=_build_suggest_card_groups_prompt(payload, ir, candidate_ids),
+                inputs=ir,
                 model=model_id,
                 registered_provider=provider_config,
             )
@@ -1809,9 +2000,21 @@ def suggest_card_groups(payload: SuggestCardGroupsRequest, request: Request, db:
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
         _raise_llm_http_error(exc)
-    # SuggestCardGroupsRequest has no document context; audit with empty doc_id.
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), "(no-doc)", "suggest_card_groups", llm_response)
-    return _parse_suggest_card_groups_response(llm_response.raw_text)
+    # Unchanged for the flat card-list request shape ("(no-doc)"); a supplied
+    # document is now attributable in the audit trail.
+    _audit_llm_trace(
+        request,
+        _resolve_audit_tenant(request, db),
+        payload.doc.id if payload.doc is not None else "(no-doc)",
+        "suggest_card_groups",
+        llm_response,
+    )
+    return _parse_suggest_card_groups_response(
+        llm_response.raw_text,
+        candidate_ids=candidate_ids,
+        excluded_card_ids=excluded_card_ids,
+        truncated=truncated,
+    )
 
 
 @router.post(

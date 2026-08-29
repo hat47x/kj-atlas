@@ -389,6 +389,13 @@ class SuggestCardGroupsRequest(BaseModel):
     # DOGFOOD-31: real KJ round-1 can produce hundreds of cards (kj_technique.md
     # §1「数百枚は正常」). The previous 100-card cap blocked the first-pass
     # grouping of a 200-card round; align with max_document_cards (10,000).
+    # AI-IR-PROJECTION-01 stage 2 (ADR-0069): optional canvas context. When
+    # supplied the route builds the LLM input IR (`llm_input_ir_spec.md`) from
+    # it, so grouping finally sees the islands the human already confirmed,
+    # their `parentIslandId` hierarchy, the relation graph, and each card's
+    # `holdState`. Optional on purpose: the flat card-list request shape that
+    # shipped before stays valid (AC-11).
+    doc: DocumentV1 | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
     # AI-MODEL-GOVERNANCE-01 (R2): per-operation model override (allowlist-checked).
@@ -409,6 +416,17 @@ class SuggestCardGroupsResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     groups: list[_SuggestedGroup]
+    # AI-IR-PROJECTION-01 AC-2: request cards withheld from grouping because the
+    # human has set them aside (`Card.holdState` in `held` / `pending` /
+    # `shelved`, schemas.md §14.1). They are never offered to the model and are
+    # stripped from its answer, so a caller would otherwise see them silently
+    # vanish -- this field says which ones and why they are missing.
+    excludedCardIds: list[str] = []
+    # True when the IR hit a §5 limit (`MAX_CARDS` / `MAX_TEXT_CHARS`) and could
+    # not carry every requested card. The reported groups then cover only the
+    # cards that were projected. Sizing of those limits is AI-IR-PROJECTION-01
+    # AC-10, deliberately deferred; surfacing the fact is not.
+    truncated: bool = False
 
 
 class _SuggestedGroup(BaseModel):
