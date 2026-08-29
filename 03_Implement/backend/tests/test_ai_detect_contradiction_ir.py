@@ -213,6 +213,24 @@ def test_two_card_request_without_doc_still_works() -> None:
     assert "created_at" not in ir["meta"]  # never invented (spec §2.4 rule 5)
 
 
+def test_focus_cards_are_projected_even_when_absent_from_the_document() -> None:
+    """cardA/cardB travel outside `doc` in this contract, so the IR must carry
+    them regardless of whether the supplied document happens to list them."""
+    doc = _doc()
+    doc["cards"] = [
+        {"id": "c-other", "text": "別の観察", "x": 0, "y": 0, "textReviewed": True}
+    ]
+    doc["islands"] = []
+    with TestClient(app) as client:
+        resp = client.post("/ai/detect-contradiction", json=_payload(doc))
+    assert resp.status_code == 200, resp.text
+    assert [card["id"] for card in _CAPTURED[0].inputs["cards"]] == [
+        "c-office",
+        "c-other",
+        "c-remote",
+    ]
+
+
 def test_response_shape_is_backward_compatible() -> None:
     with TestClient(app) as client:
         resp = client.post("/ai/detect-contradiction", json=_payload())
