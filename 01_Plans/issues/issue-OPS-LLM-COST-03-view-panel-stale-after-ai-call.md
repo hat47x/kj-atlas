@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `OPS-LLM-COST-03`
-- Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-and-user-freedom-boundary.md`
+- Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `e2e`
 
 ## 課題

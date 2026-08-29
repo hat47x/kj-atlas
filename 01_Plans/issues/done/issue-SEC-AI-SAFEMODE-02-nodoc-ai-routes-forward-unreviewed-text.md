@@ -8,7 +8,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `02_Architecture/api.md`, `03_Implement/backend/tests/test_ai_safemode.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0068-ai-safemode-d2-b-422-reject.md`, `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`（AC-4 が将来のIR層で同一境界を塞ぐ・ADR-0069 採択待ち）
+- Related ADR/Spec: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`（AC-4 が将来のIR層で同一境界を塞ぐ・ADR-0069 採択待ち）
 - Expected verification level: `integration`
 
 ## 三要素整合（ADR-0067）

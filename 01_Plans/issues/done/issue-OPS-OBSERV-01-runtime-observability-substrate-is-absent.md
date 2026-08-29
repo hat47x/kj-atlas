@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/observability.py`（新規）, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/README.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0053-support-diagnostics-bundle.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `04_Documentation/security.md`（ログのPII方針）
+- Related ADR/Spec: `01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `04_Documentation/security.md`（ログのPII方針）
 - Expected verification level: `integration`
 
 ## 課題

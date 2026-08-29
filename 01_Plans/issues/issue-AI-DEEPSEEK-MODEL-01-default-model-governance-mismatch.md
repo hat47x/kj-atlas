@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/tests/test_ai_eval_pipeline.py`
 - Related Backlog: `AI-DEEPSEEK-MODEL-01`
-- Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-and-user-freedom-boundary.md`
+- Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `e2e`
 
 ## 課題

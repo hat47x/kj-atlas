@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/Minimap.tsx`, `03_Implement/frontend/scripts/monkey_adversarial_probes.mjs`
 - Related Backlog: `QA-MONKEY-31`
-- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-1）, `01_Plans/adr/ADR-0048-ui-visual-language-and-canvas-navigation.md`（D2）
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-1）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2）
 - Expected verification level: `e2e`
 
 ## 課題

@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/backend/tests/test_ai_provider_status_route.py`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/export/diagnostics_bundle.ts`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/ai_provider_status.spec.ts`, `01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md`, `02_Architecture/llm_provider_spec.md`, `03_Implement/backend/README.md`
 - Related Backlog: `AI-DEEPSEEK-STATUS-01`
-- Related ADR/Spec: `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-and-user-freedom-boundary.md`
+- Related ADR/Spec: `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `e2e`
 
 ## 課題

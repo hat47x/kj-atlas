@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/mcp/scripts/verify_mcp.ts`, `README.md`, `03_Implement/frontend/src/export/context_bundle_projection.ts`
-- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-service-scope.md`, `01_Plans/dogfood/README.md`（DOGFOOD-03/06/08）
+- Related ADR/Spec: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`, `01_Plans/dogfood/README.md`（DOGFOOD-03/06/08）
 - Expected verification level: `docs-check`
 
 ## 課題

@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/tests/database_portability_contracts.py`, `03_Implement/backend/tests/test_*_portability.py`, `03_Implement/backend/tests/test_document_access_rls_postgres.py`
-- Related ADR/Spec: `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`, `01_Plans/adr/ADR-0070-content-addressed-revision-dag.md`, `02_Architecture/database_portability.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0066-database-portability-capability-registry.md`, `01_Plans/adr/ADR-0070-content-addressed-generation-dag-and-git-adapter.md`, `02_Architecture/database_portability.md`
 - Expected verification level: `integration`
 
 ## 課題

@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/vite.config.ts`, frontend performance E2E
-- Related ADR/Spec: `01_Plans/adr/ADR-0046-performance-budget-and-responsive-interaction.md`, `01_Plans/adr/ADR-0043-ui-complexity-budget.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`
 - Expected verification level: `e2e`
 
 ## 課題

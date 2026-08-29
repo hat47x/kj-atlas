@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/ui/DocumentTitleEditor.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/document-title-editor.spec.ts`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `QA-MONKEY-32`
-- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0050-llm-provider-and-user-freedom-boundary.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `e2e`
 
 ## 課題

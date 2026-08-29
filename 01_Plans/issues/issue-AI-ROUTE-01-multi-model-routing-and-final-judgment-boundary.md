@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/kj_atlas_api/`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `02_Architecture/value_traceability.md` §2.1（V3）, `01_Plans/adr/ADR-0050-llm-provider-configuration-contract.md`
+- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `02_Architecture/value_traceability.md` §2.1（V3）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `integration`
 
 ## 課題

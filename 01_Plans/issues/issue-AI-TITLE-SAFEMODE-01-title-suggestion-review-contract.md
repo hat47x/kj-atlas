@@ -8,7 +8,7 @@
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/api/client.test.ts`, `03_Implement/frontend/src/ui/ux_operability_regression.test.ts`
 - Related Backlog: `AI-TITLE-SAFEMODE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0068-ai-safe-mode-input-boundary.md`, `THREAT_MODEL.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `THREAT_MODEL.md`
 - Expected verification level: `e2e`
 
 ## 課題
