@@ -62,7 +62,7 @@ CVI/CB/UQ/PB と同じ形式で、**IC（Integrity/Consistency）次元**を定�
 | IC-8 | 凍結仕様間の語彙一致（例: LLM投入IR↔キャンバス関係語彙） | **意味** | なし（`AI-REL-VOCAB-DRIFT-01`で個別修正のみ） | **未**（自動検査なし） |
 | IC-9 | 同一不変条件の全実装面カバレッジ（例: 反スコアリングがbackend/frontend両方に効くか） | **意味** | 一部（`test_ai_anti_scoring_contract.py`はbackendのみ。`DOMAIN-SCORING-SURFACE-01`で発覚） | **薄い**（片面のみ自動検査） |
 | IC-10 | `DocumentV1`内の関数従属性（例: カード→島の所属一意性） | **意味** | 一部（drag&drop経路は`moveCardToIsland()`で解決済み。統合経路は`issue-DOMAIN-ISLAND-MEMBERSHIP-01`で対応中） | **薄い**（書込み経路の一部は解決済みだが、検知機構が無く統合経路に別のギャップを2026-08-29の監査で新規発見） |
-| IC-11 | ADR/issue間のバッククォート引用パスの正確性 | 構造 | なし（`DC-LNK-001`はMarkdownリンク構文のみが対象で、`01_Plans`の実際の引用慣習＝コードスパンを検査していない） | **未（自動検査なし・機械検査は可能）**。初回監査で244件の不整合を実測し、`DX-DOC-09`を起票した（2026-08-21） |
+| IC-11 | ADR/issue間のバッククォート引用パスの正確性 | 構造 | `DC-LNK-002`（`docs_contract_checks.py` `check_code_span_citations`。`RETIRED_CITATION_TARGETS`許可リスト方式） | 充足（自動）。初回監査で244件の不整合を実測して`DX-DOC-09`を起票（2026-08-21）、同issueで検査を新設し446件を修正・退役文書への歴史的引用62件を許可リスト化した（2026-08-29） |
 
 **「充足」列が構造系（IC-1〜7）に集中し、意味系（IC-8〜10）が薄い／未であるという非対称が、この索引の主要な発見である。** これはCVI/UQ/PBの索引化パターン（`ADR-0044`）をそのまま踏襲しており、「薄い／未の次元のみを改善issue化する」（`ADR-0039`）という既存運用にそのまま乗る。
 
@@ -126,7 +126,7 @@ UQ（`ADR-0044`）とPB（`ADR-0046`）は既にUI操作性・応答性を包括
 - Related: `01_Plans/issues/done/issue-DOMAIN-SCORING-SURFACE-01-health-percentage-and-lone-card-defect-contradict-invariants.md`（IC-9の実例、Done）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（IC-10 = F-5の出典）
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（IC-8の実例の発見経路）
-- Related: `01_Plans/issues/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと実装課題、Draft）
+- Related: `01_Plans/issues/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと`DC-LNK-002`の実装）
 - Related: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（IC-10の追加監査で新規発見した実装課題、Draft）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（物量抑制方針。新規自動検査を作らない根拠）
 - Related: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`

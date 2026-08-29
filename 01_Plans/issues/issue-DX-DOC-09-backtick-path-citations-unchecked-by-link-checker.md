@@ -1,7 +1,7 @@
 # Issue: DX-DOC-09 バッククォート表記のパス引用がリンク切れ検査の対象外で、244件の不整合が蓄積している
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned
@@ -96,13 +96,39 @@ ADR番号は正しいが、スラグ（タイトル部分）が引用時点の�
 
 ## 受入条件
 
-- [ ] AC-1: バッククォート引用のパス整合性を検査する仕組みが `docs_check.py` パイプラインに追加され、`docs-check passed`の判定に含まれる。
-- [ ] AC-2: パターン(a)〜(c)（機械的に解決可能な164件超）が修正され、修正後は当該パターンの再発をCIが検知する。
-- [ ] AC-3: パターン(d)の`.ts`/`.tsx`引用が修正される。
-- [ ] AC-4: `phase*.md`系の引用について、意図的な歴史的引用か単純な失効かを判定した記録が残る（削除は伴わなくてよい）。
-- [ ] AC-5: `issue-DX-DOC-08`のScope欄が現行の`.html`パスへ更新される。
-- [ ] AC-6: 新検査導入後、`docs_check.py`がバッククォート引用のリンク切れをゼロ件で通過する。
-- [ ] AC-7: `ADR-0078`のIC-11行の記述を「薄い」から「未（機械検査可能・本issueで対応）」へ整合させる。
+- [x] AC-1: バッククォート引用のパス整合性を検査する仕組みが `docs_check.py` パイプラインに追加され、`docs-check passed`の判定に含まれる。→ `DC-LNK-002`（`check_code_span_citations`）を新設。
+- [x] AC-2: パターン(a)〜(c)が修正され、修正後は当該パターンの再発をCIが検知する。→ 446件を修正（内訳は下記「実施結果」）。
+- [x] AC-3: パターン(d)の`.ts`/`.tsx`引用が修正される。→ 本着手時点で残存ゼロ。`.ts`引用のうち同名`.tsx`が実在するものは1件も検出されず、issue記載の`App.ts`・`SidePanel.ts`は既に修正済みだった（再走査で確認）。
+- [x] AC-4: `phase*.md`系の引用について、意図的な歴史的引用か単純な失効かを判定した記録が残る（削除は伴わなくてよい）。→ **歴史的引用と判定**。下記「`phase*.md`系の判定」を参照。削除していない。
+- [x] AC-5: `issue-DX-DOC-08`のScope欄が現行の`.html`パスへ更新される。→ 本着手時点で既に更新済み（Scope欄は `02_Architecture/api.md` と `03_Implement/backend/src/kj_atlas_api/routes/` のみを引用し、`.md`のまま残った4文書は含まれていなかった）。再確認のみで変更なし。
+- [x] AC-6: 新検査導入後、`docs_check.py`がバッククォート引用のリンク切れをゼロ件で通過する。→ `docs-check passed`（`RETIRED_CITATION_TARGETS`の25件を除く）。
+- [x] AC-7: `ADR-0078`のIC-11行の記述を実態へ整合させる。→ 「未（自動検査なし）」は本issueの完了により事実に反するため、`DC-LNK-002`で充足（自動）へ更新した。
+
+## 実施結果（2026-08-29）
+
+新検査`DC-LNK-002`の初回検出は**508件**（issue起票時の実測244件から増加。監査後も引用が追加され続けたため）。うち446件を機械的に修正し、62件を歴史的引用と判定して許可リスト化した。
+
+| パターン | 修正件数 | 解決方法 |
+|---|---|---|
+| (a) issueの`done/`移動等への追随漏れ | 431 | basenameで一意解決。うち`archive/`移動1件、`research/`移動2件は個別確認 |
+| (b) ADR番号は正・スラグが失効 | 14 | ADR番号→現行ファイル名を引当（`DC-ADR-001`が番号の一意性を保証済み） |
+| (c) `.md`→`.html`変換への追随漏れ | 1 | issue記載の4文書のうち3件は着手時点で修正済み。残る`external_agent_collaboration_spec.md`を修正 |
+| (d) `.ts`→`.tsx` | 0 | 残存なし（AC-3） |
+| 歴史的引用（許可リスト） | 62 | `RETIRED_CITATION_TARGETS`（25パス） |
+
+**実装上の注意（再発防止）**: 修正はフェンスコードブロックの外だけに適用した。本issue自身のフェンス内には不整合パスが実例として引用されており、一括置換で書き換えるとissueの記述が壊れる。またHTML文書では引用が`<code>`要素でありバッククォートではないため、Markdown向けの一括置換とは別経路が必要だった（`02_Architecture/`のHTML 6件）。
+
+### `phase*.md`系の判定（AC-4）
+
+**歴史的引用と判定した。失効ではない。**
+
+`01_Plans/phase0_bootstrap.md`・`phase1_canvas_mvp.md`・`phase2_qualitative_integration.md`・`phase3_review_governance.md`・`phaseX_*.md`・`roadmap.md`・`value_to_requirements.md` の9文書は、コミット`906e8bbf`（"docs: make 01_Plans README a navigable ADR index"）でフェーズ計画形式をADR形式へ移行した際に削除されている。
+
+これらを引用しているのは`ADR-0000`〜`ADR-0009`の **`Replaces:` / `Supersedes:` / `Source:` / `Migrated-from:` 欄のみ**であり、いずれも「このADRが何を置き換えたか」を記録する欄である。**退役した文書の名前を書くことがその欄の目的**であるから、引用先が存在しないことは不整合ではなく正しい状態である。現行文書へ付け替えると、ADRが何を置き換えたのかという記録そのものが失われる。
+
+同型の判定を、退役モジュールを引用する完了issue群（`DX-CLEANUP-01`/`-02`/`-06`、`ENV-ARCH-02`、`UX-NAV-02`）にも適用した。これらは「そのissue自身が削除したファイル」を引用しており、付け替えは記録の改竄にあたる。
+
+判定の記録先は`docs_contract_checks.py`の`RETIRED_CITATION_TARGETS`とし、各エントリに退役理由（コミットまたは退役させたissue）をコメントで併記した。引用箇所ごとのインラインマーカーではなくパス単位の許可リストにしたのは、「その文書はリポジトリから削除された」がリポジトリ側の事実であって引用箇所ごとの事実ではないためである。副作用として、同名の文書を新規作成する意図の引用は検知されない。
 
 ## 依存関係
 
@@ -110,5 +136,6 @@ ADR番号は正しいが、スラグ（タイトル部分）が引用時点の�
 
 ## 検証
 
-- `python 01_Plans/docs_check.py`
-- 手動: 修正前後で本issueに記載した実測件数（159/85）が新検査でどう減少したかを記録する。
+- `python 01_Plans/docs_check.py` → `docs-check passed: active_memos=46, tracked_markdown=683`（2026-08-29）
+- `python -m unittest discover -s 01_Plans/tests -p "test_*.py"` → 117 tests, OK
+- 件数の推移（`DC-LNK-002`の検出件数）: 508 → 81（パターンa）→ 68（パターンb）→ 62（パターンc）→ 0（歴史的引用62件を`RETIRED_CITATION_TARGETS`へ記録）
