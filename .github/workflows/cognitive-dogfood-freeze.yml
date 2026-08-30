@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "01_Plans/dogfood/cognitive-dogfood-case-*-launch-*.md"
+      - "01_Plans/dogfood/cognitive-dogfood-case-*-round1-source-manifest.json"
       - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
+      - "01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py"
       - ".github/workflows/cognitive-dogfood-freeze.yml"
   workflow_dispatch:
 
@@ -12,15 +14,27 @@ permissions:
   contents: read
 
 jobs:
-  launch-treatment-equivalence:
-    name: Launch treatment equivalence
+  frozen-input-preflight:
+    name: Frozen input preflight
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Validate frozen launch packets
         run: python 01_Plans/dogfood/validate_cognitive_launch_packets.py
+      - name: Reproduce frozen product evidence bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          for case_number in 001 002 003; do
+            python 01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py \
+              --repo-root . \
+              --manifest "01_Plans/dogfood/cognitive-dogfood-case-${case_number}-round1-source-manifest.json" \
+              --output "/tmp/cognitive-dogfood-case-${case_number}-bundle"
+          done
