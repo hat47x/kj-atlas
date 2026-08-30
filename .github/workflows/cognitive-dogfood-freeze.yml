@@ -1,0 +1,26 @@
+name: Cognitive dogfood freeze
+
+on:
+  pull_request:
+    paths:
+      - "01_Plans/dogfood/cognitive-dogfood-case-*-launch-*.md"
+      - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
+      - ".github/workflows/cognitive-dogfood-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  launch-treatment-equivalence:
+    name: Launch treatment equivalence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Validate frozen launch packets
+        run: python 01_Plans/dogfood/validate_cognitive_launch_packets.py
