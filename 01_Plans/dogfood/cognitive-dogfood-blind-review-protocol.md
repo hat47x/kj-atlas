@@ -1,9 +1,9 @@
 # Cognitive Dogfood Blind Review Protocol
 
-- Status: Prepared before first Case 001 raw run
+- Status: Prepared before first valid Case 001 raw run
 - Scope: `COGNITIVE-EVAL-01` P2 blind review
 - Applies to: Case 001〜003 unless a case preregistration explicitly narrows it
-- Related: `cognitive-dogfood-execution-plan.md`, `cognitive-dogfood-run-record-template.md`, `cognitive-dogfood-case-001-operator-pack.md`
+- Related: `cognitive-dogfood-execution-plan.md`, `cognitive-dogfood-run-record-template.md`, `cognitive-dogfood-case-portfolio-preregistration.md`, `cognitive-dogfood-case-portfolio-freeze.md`
 
 ## 1. 目的
 
@@ -15,7 +15,7 @@ blind reviewは完全な臨床試験型blindを意味しない。成果物の文
 
 KJ Atlas repoは公開されているため、A/B/C/Dを明記したraw record、canvas、InquiryJourney参照、skill execution recordをblind verdict前に同じ公開branchへcommitすると、reviewerがrepoを探索するだけでunblindできる。
 
-したがってCase 001 Round 1では次を守る。
+したがってCases 001〜003 Round 1では次を守る。
 
 1. raw/result/record/canvas/inquiry-refとarm↔alias mappingは、blind verdict凍結まではreviewerへ見えないoperator workspaceに保持する。
 2. GitHubへ先に保存する必要がある場合は、blind reviewerをrepo閲覧不可のfresh contextに限定し、blind package以外のrepository browsing/tool利用を禁止する。ただし原則は1を優先する。
@@ -28,7 +28,7 @@ KJ Atlas repoは公開されているため、A/B/C/Dを明記したraw record�
 
 aliasはA/B/C/Dと意味的に無関係な中立文字列を使う。
 
-- arm execution orderはCase 001 preflightの **C → D → B → A** を変更しない。
+- arm execution orderはportfolioで固定した **C → D → B → A** を変更しない。
 - alias mappingは最初のblind package生成前にoperator workspaceで作る。
 - mappingはblind reviewerへ渡さない。
 - mappingはblind verdict凍結後に公開する。
@@ -38,7 +38,7 @@ aliasはA/B/C/Dと意味的に無関係な中立文字列を使う。
 
 ## 4. Blind packageに含めるもの
 
-packageはcommon required outputの比較に必要なものへ限定する。
+packageはcase固有のcommon required outputを比較するために必要なものへ限定する。
 
 含める:
 
@@ -48,7 +48,7 @@ packageはcommon required outputの比較に必要なものへ限定する。
 - 主要主張のsource path / stable identifier / evidence time。
 - counterevidence / uncertainty / deferred points。
 - Candidate source requests。
-- T1〜T3についてrunが提示したtemporal interpretation。`T1`等のテスト名は必要ならneutralizedしてよい。
+- caseごとに事前登録されたconflict/correction checkについてrunが提示したinterpretation。`T1` / `C2-T1` / `C3-T1`等のexperimenter test IDはpackage生成時に `source-check-N` へ中立化する。
 - raw artifactへ戻すためのoperator-only reference ID。ただしreviewerから直接開けない形式にする。
 
 原則として含めない:
@@ -61,6 +61,7 @@ packageはcommon required outputの比較に必要なものへ限定する。
 - M1〜M9のrun自己評価。
 - T9 / InquiryJourney method-friction記録。
 - operatorの感想や「このrunは良かった」等の評価語。
+- preregistered test IDやexperimenter-onlyの「何を見つけるべきか」という説明。
 
 method固有の自己言及がrequired output本文へ混ざっている場合は、意味を変えずに削除できる範囲だけpackage化時に除く。削除で主張の意味が変わる場合は改変せず、`method identity may be inferable` とだけ記録する。
 
@@ -77,7 +78,7 @@ operatorはpackageごとに次を記録する。
 - その他の編集: `none` が原則。
 - package digest（SHA-256推奨）。
 
-主張、根拠、反証、confidence、deferを言い換えてはいけない。format整形とmethod metadata除去だけを許容する。
+主張、根拠、反証、confidence、deferを言い換えてはいけない。format整形とmethod metadata / preregistered test IDの除去だけを許容する。
 
 ## 6. Review stage BR1 — independent package review
 
@@ -94,11 +95,11 @@ BR1では相対順位を付けない。
 見るのは主に次である。
 
 - 主要主張がsourceへ戻れるか。
-- 古い状態を現在状態として誤採用していないか。
+- 古い状態・訂正済み状態・条件付き設計・未実装契約を誤って現在の確定状態として採用していないか。
 - 反証が形だけでなく結論を本当に変え得るか。
 - 不確実性と保留が適切か。
 - unsupported leap / important omissionがないか。
-- 次の検証が実証不足と対応しているか。
+- fixed questionに対する境界案と次の検証が、実証不足に対応しているか。
 
 ## 7. Review stage BR2 — cross-package synthesis
 
@@ -118,9 +119,10 @@ BR2では初めて差分を見る。
 1. 全packageに共通して生存した所見。
 2. 一部packageだけにあり、sourceへ戻って生存した所見。
 3. 一部packageだけにあるunsupported/overclaim。
-4. temporal correction / dissent / uncertainty保持の差。
-5. primary jobやcounter-hypothesisが実質同じで表現だけ違うケース。
+4. temporal/contract correction、dissent、uncertainty保持の差。
+5. fixed questionへの中核回答・境界が実質同じで表現だけ違うケース。
 6. 結論は同じでも、decision/revisit可能性に差があるケース。
+7. 方法上の追加工程があっても、成果物上の増分が見えないケース。
 
 BR2でもまだA/B/C/Dへunblindしない。
 
@@ -147,6 +149,7 @@ unblind後にBR1/BR2の元verdictを書き換えない。追加解釈は`post-un
 - packageごとに異なるsource集合を与えた。
 - BR1 reviewerが他packageを知っていた。
 - BR2前にarm mappingを開示した。
+- reviewerへpreregistered conflict/correction testの説明を先に見せ、特定findingを探すよう誘導した。
 
 この場合もreviewを削除しない。`partial blind` / `unblinded` として残し、証拠強度を下げる。
 
