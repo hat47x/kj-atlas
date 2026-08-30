@@ -568,7 +568,143 @@ def _parse_island_summary_response(
     return response
 
 
-def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
+def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
+    """Build the LLM input IR for `/ai/generate-narrative` (ADR-0069 D4=A).
+
+    Stage 3 of the `AI-IR-PROJECTION-01` rollout (AC-3). `doc` is required by
+    this contract, so the IR is always projected from the whole document. What
+    it adds is the part the narrative was missing: the typed CARD-TO-CARD
+    relations. Before this change the prompt carried the reading order, the
+    island-to-island edges and the evidence links -- but never a `causal` or
+    `negate` edge between two cards, which is the skeleton a B型 narrative is
+    supposed to follow.
+
+    SafeMode: the caller has ALREADY run `_reject_unreviewed_text`. The
+    `allow_unreviewed_text` argument reproduces that helper's own predicate so
+    the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
+    rather than contradicting it. Both layers run; neither replaces the other.
+    """
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    try:
+        # spec §2.2.1: generate-narrative does not request coordinates
+        # (ADR-0069 D1=B) -- the narrative's spine is causal/negate, not layout.
+        return build_llm_input_ir(
+            source_from_document(payload.doc),
+            include_coordinates=False,
+            safe_mode=True,
+            allow_unreviewed_text=allow_unreviewed,
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+
+
+def _reading_order_slots(payload: GenerateNarrativeRequest) -> dict[str, int]:
+    """Map every card onto its 1-based position in the reading order.
+
+    An island entry lends its position to each of its member cards, so a
+    relation between two cards can be placed on the narrative's spine even when
+    the reading order names islands rather than cards. First match wins, which
+    matches the card->island uniqueness rule the IR itself uses (spec §2.2A).
+    """
+    islands_by_id = {island.id: island for island in payload.doc.islands}
+    slots: dict[str, int] = {}
+    for index, entry_id in enumerate(payload.doc.readingOrder or [], start=1):
+        island = islands_by_id.get(entry_id)
+        member_ids = list(island.cardIds) if island is not None else [entry_id]
+        for card_id in member_ids:
+            slots.setdefault(card_id, index)
+    return slots
+
+
+def _narrative_relation_lines(
+    payload: GenerateNarrativeRequest, ir: dict | None
+) -> list[str]:
+    """The typed logical structure the narrative must follow.
+
+    Card-to-card relations and evidence links are read from the IR (ADR-0069:
+    the IR is the input of record). Island-to-island edges are NOT in the IR --
+    spec §2.3 rule 6 excludes them on purpose, because a derived island edge is
+    Stage 4's `getDerivedIslandEdges()` subject -- so they keep being read off
+    the document exactly as they were before this change.
+    """
+    lines: list[str] = []
+    for edge in payload.doc.edges:
+        if edge.fromKind == "island" and edge.toKind == "island":
+            lines.append(
+                f'island "{edge.fromId}" --{edge.type}--> island "{edge.toId}"'
+            )
+
+    if ir is None:
+        for link in payload.doc.evidenceLinks or []:
+            lines.append(
+                f'card "{link.fromCardId}" --evidence:{link.type}--> card "{link.toCardId}"'
+            )
+        return lines
+
+    # AC-3: the five-value relation vocabulary (ADR-0048 D3 / ADR-0069 D2=A)
+    # reaches the model as itself. `causal` and `negate` are NOT folded into a
+    # generic "related" bucket -- they are the two the narrative reasons with.
+    for relation in ir.get("relations", []):
+        lines.append(
+            f'card "{relation["from"]}" --{relation["type"]}--> card "{relation["to"]}"'
+        )
+    for link in ir.get("evidence_links", []):
+        state = link.get("contradiction_state")
+        suffix = f" (contradictionState={state})" if state else ""
+        lines.append(
+            f'card "{link["from_card_id"]}" --evidence:{link["type"]}--> '
+            f'card "{link["to_card_id"]}"{suffix}'
+        )
+    return lines
+
+
+def _narrative_spine_lines(
+    payload: GenerateNarrativeRequest, ir: dict
+) -> list[str]:
+    """Place each causal / negation edge on the reading order (AC-3).
+
+    The reading order is the narrative's spine; these are its joints. Saying
+    only "c1 --causal--> c2" leaves the model to rediscover where in the
+    sequence that pull happens, which is the work the projection exists to do.
+    """
+    slots = _reading_order_slots(payload)
+    lines: list[str] = []
+    for relation in ir.get("relations", []):
+        if relation["type"] not in ("causal", "negate"):
+            continue
+        from_slot = slots.get(relation["from"])
+        to_slot = slots.get(relation["to"])
+        if from_slot is not None and to_slot is not None:
+            where = (
+                f"within reading-order {from_slot}"
+                if from_slot == to_slot
+                else f"reading-order {from_slot} -> reading-order {to_slot}"
+            )
+        elif from_slot is None and to_slot is None:
+            where = "outside the reading order"
+        else:
+            known = from_slot if from_slot is not None else to_slot
+            where = f"reading-order {known} <-> outside the reading order"
+        lines.append(
+            f'- {where}: card "{relation["from"]}" --{relation["type"]}--> '
+            f'card "{relation["to"]}"'
+        )
+    return lines
+
+
+def _build_generate_narrative_prompt(
+    payload: GenerateNarrativeRequest, ir: dict | None = None
+) -> str:
+    """Render the prompt from the IR (ADR-0069: the IR is the input of record).
+
+    `ir=None` keeps the function callable on its own; the route always passes
+    the IR it built. The reading-order lines stay document-derived in both
+    cases: the reading order is not a field of the IR (spec §4 is a closed
+    schema and defines no `reading_order`), and its line format is a de-facto
+    contract with `deploy/tools/mock_local_llm.py`'s prompt parser.
+    """
     cards_by_id = {card.id: card for card in payload.doc.cards}
     islands_by_id = {island.id: island for island in payload.doc.islands}
     reading_order = payload.doc.readingOrder or []
@@ -598,15 +734,22 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
     # ADR-0069 (D2=A): the narrative's spine is the logical structure — pass the
     # typed relations (edges + evidenceLinks) so the draft uses the causal /
     # contradiction vocabulary instead of inventing it.
-    relation_lines: list[str] = []
-    for edge in payload.doc.edges:
-        if edge.fromKind == "island" and edge.toKind == "island":
-            relation_lines.append(
-                f'island "{edge.fromId}" --{edge.type}--> island "{edge.toId}"'
-            )
-    for link in payload.doc.evidenceLinks or []:
-        relation_lines.append(
-            f'card "{link.fromCardId}" --evidence:{link.type}--> card "{link.toCardId}"'
+    relation_lines = _narrative_relation_lines(payload, ir)
+    spine_lines = _narrative_spine_lines(payload, ir) if ir is not None else []
+
+    context_lines: list[str] = []
+    if spine_lines:
+        context_lines.append(
+            "Causal and oppositional structure placed on the reading order "
+            "(use these as the narrative's joints; do not invent relations that "
+            "are not listed):"
+        )
+        context_lines.extend(spine_lines)
+    if ir is not None and ir.get("truncation", {}).get("truncated"):
+        reasons = ",".join(ir["truncation"].get("reason_codes", [])) or "unspecified"
+        context_lines.append(
+            f"Note: the projection hit its size limit ({reasons}); some cards and "
+            "relations of the document are not listed above."
         )
 
     return "\n".join(
@@ -620,6 +763,7 @@ def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
             "Use the typed relations below as the logical skeleton (causal, negation, evidence).",
             "Logical relations:",
             *(relation_lines or ["- (none)"]),
+            *context_lines,
             # ai_kj_execution_procedures.md §7: self-perform the A/B照合 and report
             # the mismatches as warnings so the 3+ threshold can be evaluated.
             "Self-perform the A/B cross-check (kj_technique.md §5) and report each mismatch as a warning:",
@@ -1504,14 +1648,24 @@ def get_proposal_status(
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> GenerateNarrativeResponse:
+    # SEC-AI-SAFEMODE-01 (ADR-0068, Done). Layer 1 -- DO NOT REMOVE. The IR
+    # builder below runs its own review-state check as an ADDITIONAL layer
+    # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+
+    # AI-IR-PROJECTION-01 (stage 3 of the ADR-0069 rollout): this route now goes
+    # through the LLM input IR, so the typed card-to-card relations -- causal and
+    # negate above all -- reach the model instead of only the reading order.
+    ir = _generate_narrative_ir(payload)
+
     model_id = payload.model or resolve_model_for_task("generate_narrative")
     provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
-                prompt=_build_generate_narrative_prompt(payload),
+                prompt=_build_generate_narrative_prompt(payload, ir),
+                inputs=ir,
                 model=model_id,
                 registered_provider=provider_config,
             )
