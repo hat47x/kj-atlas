@@ -8,6 +8,8 @@ on:
       - "01_Plans/dogfood/cognitive-dogfood-case-001-skill-manifest.json"
       - "01_Plans/dogfood/doc_cognitive_case_*_starter.json"
       - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
+      - "01_Plans/dogfood/validate_cognitive_run_records.py"
+      - "01_Plans/dogfood/test_validate_cognitive_run_records.py"
       - "01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py"
       - "01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py"
       - ".github/workflows/cognitive-dogfood-freeze.yml"
@@ -38,6 +40,9 @@ jobs:
           python-version: "3.11"
       - name: Validate frozen launch packets
         run: python 01_Plans/dogfood/validate_cognitive_launch_packets.py
+      - name: Test run intake contract
+        working-directory: 01_Plans/dogfood
+        run: python test_validate_cognitive_run_records.py
       - name: Reproduce frozen product evidence bundles
         shell: bash
         run: |
