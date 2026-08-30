@@ -7,9 +7,12 @@
 
 - Case ID:
 - Round: 1 / 2 / revisit
-- Arm: A / B / C / D / blinded alias
+- Arm: A / B / C / D
+- Blind alias: pending / <alias>
 - Run ID:
+- Run validity: valid / partial / invalid / pending
 - Date:
+- Execution order position:
 - Operator:
 - Model/provider:
 - Model/version if known:
@@ -17,8 +20,9 @@
 - KJ Atlas version/commit:
 - cultural-substrate-weaving version/commit: N/A or SHA
 - Source manifest ID:
+- Operator pack/version:
 - Context started fresh: yes / no
-- Known contamination:
+- Known contamination: none / <description>
 - Operator/setup friction log: <UI locator exploration, environment/file preparation, experiment administration; exclude from M9/T9 unless separately triaged as a product finding>
 
 ## 1. Fixed question
@@ -41,6 +45,8 @@
 - [ ] B/D: 指定commitのcultural-substrate-weavingだけを方法として使用した。
 - [ ] C/D: KJ Atlas外部表象を使用した。
 - [ ] A/B: KJ Atlasキャンバスを使用していない。
+
+該当しないチェックは `N/A` と注記してよい。該当する条件が満たされない場合はrunを `valid` にしない。
 
 ### Deviations
 
@@ -65,6 +71,7 @@
 ### C/D
 
 - KJ Atlas document ID/file:
+- InquiryJourney/bundle reference:
 - Raw card count:
 - Islands/groups:
 - Isolated cards:
@@ -81,6 +88,8 @@
 | Proposal ID | Proposal | Evidence cited | Human action | Reason | Later verdict |
 |---|---|---|---|---|---|
 | P-001 |  |  | accept / modify / reject / defer |  | pending |
+
+AI proposalを一件も利用しなかった場合は `none used` と明記する。空欄のままにしない。
 
 ### Calibration notes
 
@@ -244,6 +253,8 @@ Detected losses:
 
 実験用の独自履歴方式は作らず、製品の `InquiryJourneyV1` / `RoundSnapshotV1` / handoff / lineage / compare / resume を使用した範囲だけ記録する。実験Round番号をW型stageへ機械対応させない。
 
+A/Bではこの節を削除するか `N/A` とする。
+
 ### 10.1 Product journey references
 
 - InquiryJourney ID / bundle reference:
@@ -296,3 +307,33 @@ run中に不足を発見した資料はここへ置く。このrunだけへ追�
 | Candidate source | Why needed | Which claim could change | Next common round? |
 |---|---|---|---|
 |  |  |  | yes / no |
+
+## 12. cultural-substrate-weaving execution record (B/D only)
+
+B/Dでは必須。A/Cではこの節を削除するか `N/A` とする。
+
+- Activation verdict: activate / limited / no increment / stop
+- Activation reason:
+- Framework candidates considered:
+- Selected framework(s) and reason:
+- Rejected framework(s) and reason:
+- New semantic units/relations/questions attributed to framework exploration:
+- Target-side evidence used to validate them:
+- Removal test — framework terminology removed:
+- Substitution test — alternative framework/baseline could produce same finding:
+- Skill-specific surviving findings after removal/substitution:
+- Framework-capture or duplication signs:
+- Stop condition reached:
+
+「体系を使った」こと自体を増分と数えない。対象へ戻って生存し、体系語を除いても成立する差だけを記録する。
+
+## 13. Static intake validation
+
+raw artifact保存後、blind package作成前にrun-record validatorを実行し、その結果を保存する。
+
+- Validator command:
+- Validator result: pass / fail / warnings
+- Validation output artifact/log:
+- Remaining manual checks:
+
+validatorは方法の優劣を採点しない。比較条件・記録完全性・明らかなcontamination/placeholderだけを検査する。
