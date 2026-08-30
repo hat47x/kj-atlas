@@ -1,6 +1,6 @@
 # Cognitive Dogfood Run Record Template
 
-> `COGNITIVE-EVAL-01` の4arm比較を、別セッション・別モデルでも同じ粒度で記録するためのテンプレート。
+> `COGNITIVE-EVAL-01` の4arm比較を、別セッション・別モデル・Case 001〜003でも同じ粒度で記録するためのテンプレート。
 > この文書は評価方法であり、各ケースの答えを含めない。
 
 ## 0. Run metadata
@@ -27,7 +27,7 @@
 
 ## 1. Fixed question
 
-ケース文書からそのまま転記する。armごとに言い換えない。
+対象ケースのlaunch packetからそのまま転記する。armごとに言い換えない。
 
 > <question>
 
@@ -35,16 +35,16 @@
 
 ### Common domain sources
 
-- [ ] 全arm共通のrepository snapshotだけを使用した。
-- [ ] 今回の問いへの既存回答・仮説を入力へ混ぜていない。
-- [ ] source path / snapshot SHAを保存した。
+- [ ] 全arm共通のfrozen repository snapshotから作成したsanitized evidence bundleだけを使用した。
+- [ ] 今回の問いへの既存回答・仮説・experimenter-only評価情報を入力へ混ぜていない。
+- [ ] source path / snapshot SHA / bundle IDを保存した。
 
 ### Arm-specific method
 
 - [ ] A/C: cultural-substrate-weavingを使用していない。
-- [ ] B/D: 指定commitのcultural-substrate-weavingだけを方法として使用した。
-- [ ] C/D: KJ Atlas外部表象を使用した。
-- [ ] A/B: KJ Atlasキャンバスを使用していない。
+- [ ] B/D: 指定commitのcanonical cultural-substrate-weaving bundleだけを方法として使用した。
+- [ ] C/D: KJ Atlas外部表象を分析中に使用した。
+- [ ] A/B: KJ Atlasキャンバスを分析用の外部表象として使用していない。
 
 該当しないチェックは `N/A` と注記してよい。該当する条件が満たされない場合はrunを `valid` にしない。
 
@@ -100,66 +100,36 @@ AI proposalを一件も利用しなかった場合は `none used` と明記す�
 
 ## 6. Required output
 
-### 6.1 利用者の仕事
+実行前に、そのcase/armのlaunch packetにある `Required output` の各項目を**順序・意味を変えず** `### 6.1` 以降の見出しへ転記する。Case 001の製品価値項目をCase 002/003へ流用したり、逆にCase 002/003の問いをCase 001へ混ぜない。
 
-- Primary job candidate:
-- Adjacent jobs:
+例ではなく、実runでは次のplaceholderをcase固有項目へ置換する。
+
+### 6.1 <required output item 1>
+
+- Result:
 - Evidence:
+- Counterevidence:
 - Uncertainty:
 
-### 6.2 既存手段との境界
+### 6.2 <required output item 2>
 
-- Existing approaches sufficient when:
-- Existing approaches become insufficient when:
+- Result:
 - Evidence:
+- Counterevidence:
+- Uncertainty:
 
-### 6.3 現在実現している価値
+### 6.n <continue until every preregistered required output item is represented>
 
-| Claim | Evidence | Evidence time | Confidence | Counterevidence |
-|---|---|---|---|---|
-|  |  |  |  |  |
-
-### 6.4 未実証の価値仮説
-
-| Hypothesis | Why plausible | What is still missing | Falsification route |
-|---|---|---|---|
-|  |  |  |  |
-
-### 6.5 KJ Atlasが不要かもしれない条件
-
-- <counter-hypothesis>
-
-### 6.6 次の検証/issue
-
-- Action:
-- Why now:
-- Expected evidence:
-- ADR trigger involved: yes / no
-
-### 6.7 訂正・矛盾・旧情報
-
-| Source | Earlier/visible claim | Later/current evidence | Run judgment |
-|---|---|---|---|
-|  |  |  |  |
-
-### 6.8 保留
-
-| Deferred point | Missing evidence | Why not infer now |
-|---|---|---|
-|  |  |  |
+必要に応じて表・文章を使ってよい。重要なのはlaunch packetの全要求を落とさず、主要主張からsourceへ戻れることである。
 
 ## 7. Conflict-bearing source check
 
-ケースで事前登録された項目だけを判定する。arm実行中には「正解」を教えない。
+対象ケース文書で事前登録されたtest IDだけを判定する。arm実行中には「正解」やtestの説明を教えない。
 
-- T1 detected: yes / no / partial
-  - temporal interpretation:
-- T2 detected: yes / no / partial
-  - temporal interpretation:
-- T3 detected: yes / no / partial
-  - temporal interpretation:
+- <case test ID> detected: yes / no / partial
+  - temporal/contract interpretation:
 
-評価者は、単にキーワードへ言及したかではなく、**古い状態を現在の状態として誤採用しなかったか**を見る。
+Case 001は `T1`〜`T3`、Case 002は `C2-T1`〜`C2-T4`、Case 003は `C3-T1`〜`C3-T5` を使用する。評価者は、単にキーワードへ言及したかではなく、**古い状態・訂正済み状態・条件付き設計・未実装契約を現在状態へ誤採用しなかったか**を見る。
 
 ## 8. M1–M9 evidence
 
