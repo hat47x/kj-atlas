@@ -6,7 +6,7 @@ on:
       - "01_Plans/dogfood/cognitive-dogfood-case-*-launch-*.md"
       - "01_Plans/dogfood/cognitive-dogfood-case-*-round1-source-manifest.json"
       - "01_Plans/dogfood/cognitive-dogfood-case-001-skill-manifest.json"
-      - "01_Plans/dogfood/doc_cognitive_case_001_starter.json"
+      - "01_Plans/dogfood/doc_cognitive_case_*_starter.json"
       - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
       - "01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py"
       - "01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py"
@@ -53,28 +53,31 @@ jobs:
           python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
             --skill-repo-root _skill_repo \
             --manifest 01_Plans/dogfood/cognitive-dogfood-case-001-skill-manifest.json \
-            --output /tmp/cognitive-dogfood-case-001-skill-bundle
-      - name: Assemble Case 001 arm packages
+            --output /tmp/cognitive-dogfood-skill-bundle
+      - name: Assemble all case arm packages
         shell: bash
         run: |
           set -euo pipefail
-          root=/tmp/cognitive-dogfood-case-001-arms
-          for arm in A B C D; do
-            mkdir -p "$root/$arm/product"
-            cp -a /tmp/cognitive-dogfood-case-001-bundle/. "$root/$arm/product/"
+          for case_number in 001 002 003; do
+            root="/tmp/cognitive-dogfood-case-${case_number}-arms"
+            for arm in A B C D; do
+              mkdir -p "$root/$arm/product"
+              cp -a "/tmp/cognitive-dogfood-case-${case_number}-bundle/." "$root/$arm/product/"
+            done
+
+            cp "01_Plans/dogfood/cognitive-dogfood-case-${case_number}-launch-ordinary.md" "$root/A/launch.md"
+            cp "01_Plans/dogfood/cognitive-dogfood-case-${case_number}-launch-skill.md" "$root/B/launch.md"
+            cp "01_Plans/dogfood/cognitive-dogfood-case-${case_number}-launch-atlas.md" "$root/C/launch.md"
+            cp "01_Plans/dogfood/cognitive-dogfood-case-${case_number}-launch-atlas-skill.md" "$root/D/launch.md"
+
+            mkdir -p "$root/B/skill" "$root/D/skill"
+            cp -a /tmp/cognitive-dogfood-skill-bundle/. "$root/B/skill/"
+            cp -a /tmp/cognitive-dogfood-skill-bundle/. "$root/D/skill/"
+
+            cp "01_Plans/dogfood/doc_cognitive_case_${case_number}_starter.json" "$root/C/starter.json"
+            cp "01_Plans/dogfood/doc_cognitive_case_${case_number}_starter.json" "$root/D/starter.json"
           done
 
-          cp 01_Plans/dogfood/cognitive-dogfood-case-001-launch-ordinary.md "$root/A/launch.md"
-          cp 01_Plans/dogfood/cognitive-dogfood-case-001-launch-skill.md "$root/B/launch.md"
-          cp 01_Plans/dogfood/cognitive-dogfood-case-001-launch-atlas.md "$root/C/launch.md"
-          cp 01_Plans/dogfood/cognitive-dogfood-case-001-launch-atlas-skill.md "$root/D/launch.md"
-
-          mkdir -p "$root/B/skill" "$root/D/skill"
-          cp -a /tmp/cognitive-dogfood-case-001-skill-bundle/. "$root/B/skill/"
-          cp -a /tmp/cognitive-dogfood-case-001-skill-bundle/. "$root/D/skill/"
-
-          cp 01_Plans/dogfood/doc_cognitive_case_001_starter.json "$root/C/starter.json"
-          cp 01_Plans/dogfood/doc_cognitive_case_001_starter.json "$root/D/starter.json"
       - name: Upload Case 001 Arm A package
         uses: actions/upload-artifact@v4
         with:
@@ -101,5 +104,63 @@ jobs:
         with:
           name: cognitive-dogfood-case-001-arm-d
           path: /tmp/cognitive-dogfood-case-001-arms/D
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Case 002 Arm A package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-002-arm-a
+          path: /tmp/cognitive-dogfood-case-002-arms/A
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 002 Arm B package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-002-arm-b
+          path: /tmp/cognitive-dogfood-case-002-arms/B
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 002 Arm C package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-002-arm-c
+          path: /tmp/cognitive-dogfood-case-002-arms/C
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 002 Arm D package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-002-arm-d
+          path: /tmp/cognitive-dogfood-case-002-arms/D
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Case 003 Arm A package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-003-arm-a
+          path: /tmp/cognitive-dogfood-case-003-arms/A
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 003 Arm B package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-003-arm-b
+          path: /tmp/cognitive-dogfood-case-003-arms/B
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 003 Arm C package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-003-arm-c
+          path: /tmp/cognitive-dogfood-case-003-arms/C
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Case 003 Arm D package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-dogfood-case-003-arm-d
+          path: /tmp/cognitive-dogfood-case-003-arms/D
           if-no-files-found: error
           retention-days: 14
