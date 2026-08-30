@@ -51,11 +51,11 @@ class CognitiveArmPackageValidationTests(unittest.TestCase):
     def write_skill(self, package: Path, *, operator_manifest_copied: bool = False) -> None:
         skill = package / "skill"
         source = skill / "src" / "ja-JP" / "ROUTER.md"
-        source.parent.mkdir(parents=True)
+        source.parent.mkdir(parents=True, exist_ok=True)
         payload = b"canonical skill source\n"
         source.write_bytes(payload)
         experiment = skill / "_experiment"
-        experiment.mkdir(parents=True)
+        experiment.mkdir(parents=True, exist_ok=True)
         manifest = {
             "schemaVersion": 1,
             "canonicalRoot": "src/ja-JP",
