@@ -71,6 +71,9 @@ REQUIRED_META = [
     "KJ Atlas version/commit",
     "cultural-substrate-weaving version/commit",
     "Source manifest ID",
+    "Execution artifact name",
+    "Execution artifact workflow head",
+    "Execution artifact digest",
     "Operator pack/version",
     "Context started fresh",
     "Known contamination",
@@ -210,6 +213,27 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
             errors.append(
                 f"Source manifest ID does not match frozen {case_id} Round 1 manifest"
             )
+
+        if arm in {"A", "B", "C", "D"}:
+            expected_artifact = f"cognitive-dogfood-{case_id}-arm-{arm.lower()}"
+            actual_artifact = fields.get("Execution artifact name", "").strip()
+            if actual_artifact != expected_artifact:
+                errors.append(
+                    "Execution artifact name does not match the frozen case/arm package: "
+                    f"expected {expected_artifact!r}, got {actual_artifact!r}"
+                )
+
+    artifact_head = fields.get("Execution artifact workflow head", "").strip()
+    if artifact_head and not re.fullmatch(r"[0-9a-f]{40}", artifact_head):
+        errors.append(
+            "Execution artifact workflow head must be a 40-character lowercase Git SHA"
+        )
+
+    artifact_digest = fields.get("Execution artifact digest", "").strip()
+    if artifact_digest and not re.fullmatch(r"sha256:[0-9a-f]{64}", artifact_digest):
+        errors.append(
+            "Execution artifact digest must use the GitHub Actions sha256:<64 hex> form"
+        )
 
     normalized_text = re.sub(r"\s+", " ", text)
     if contract is not None and contract["question"] not in normalized_text:
