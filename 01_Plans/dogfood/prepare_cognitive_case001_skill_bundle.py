@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Prepare the frozen Case 001 Japanese canonical skill bundle.
+"""Prepare the frozen shared Japanese canonical skill bundle.
 
-This is experiment tooling. It extracts only the preregistered canonical
-`src/ja-JP` files from the frozen cultural-substrate-weaving commit and verifies
-each Git blob SHA. Repository docs, evals, generated plugin copies, adapters,
-PR material, and coevolution notes are not copied.
+This is experiment tooling. The operator-only source manifest remains anchored to
+Case 001 because it was preregistered before the first valid run, but that case
+identity must never be copied into an arm-visible bundle. The generated bundle
+extracts only the preregistered canonical `src/ja-JP` files from the frozen
+cultural-substrate-weaving commit and emits case-neutral metadata suitable for
+B/D in Cases 001–003.
+
+Repository docs, evals, generated plugin copies, adapters, PR material, and
+coevolution notes are not copied.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ DOGFOOD_DIR = Path(__file__).resolve().parent
 DEFAULT_MANIFEST = DOGFOOD_DIR / "cognitive-dogfood-case-001-skill-manifest.json"
 BUNDLE_METADATA_DIR = "_experiment"
 BUNDLE_METADATA_FILE = "skill-bundle-manifest.json"
+VISIBLE_MANIFEST_PREFIX = "cognitive-dogfood-skill-ja"
 
 
 class BundleError(RuntimeError):
@@ -60,7 +66,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
     if data.get("schemaVersion") != 1:
         raise BundleError("unsupported skill manifest schemaVersion")
     if data.get("caseId") != "case-001":
-        raise BundleError("manifest is not for Case 001")
+        raise BundleError("operator skill manifest must remain anchored to preregistered Case 001")
     if data.get("locale") != "ja-JP" or data.get("canonicalRoot") != "src/ja-JP":
         raise BundleError("skill manifest must identify canonical ja-JP source")
     commit = data.get("skillCommit")
@@ -173,9 +179,10 @@ def prepare_bundle(
 
         metadata_dir = output_dir / BUNDLE_METADATA_DIR
         metadata_dir.mkdir(parents=True, exist_ok=True)
+        visible_manifest_id = f"{VISIBLE_MANIFEST_PREFIX}@{skill_commit}"
         bundle_metadata = {
             "schemaVersion": 1,
-            "manifestId": manifest["manifestId"],
+            "manifestId": visible_manifest_id,
             "skillRepository": manifest["skillRepository"],
             "skillCommit": skill_commit,
             "locale": manifest["locale"],
@@ -183,16 +190,19 @@ def prepare_bundle(
             "sourceCount": len(bundle_sources),
             "sources": bundle_sources,
             "operatorManifestCopied": False,
+            "caseScopedMetadataIncluded": False,
             "repositoryDocsCopied": False,
             "evaluationArtifactsCopied": False,
             "notes": [
-                "This bundle contains only the frozen canonical ja-JP skill source preregistered for B/D.",
+                "This bundle contains only the frozen canonical ja-JP skill source preregistered for the skill-enabled treatment.",
                 "ROUTER.md decides relevance; bundle presence does not force every canonical file to be activated.",
             ],
         }
         metadata_text = json.dumps(
             bundle_metadata, ensure_ascii=False, indent=2, sort_keys=True
         ) + "\n"
+        if "case-001" in metadata_text.lower() or "case 001" in metadata_text.lower():
+            raise BundleError("arm-visible skill metadata leaked Case 001 identity")
         (metadata_dir / BUNDLE_METADATA_FILE).write_text(metadata_text, encoding="utf-8")
     except Exception:
         shutil.rmtree(output_dir, ignore_errors=True)
@@ -203,7 +213,7 @@ def prepare_bundle(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare and verify the frozen Case 001 ja-JP skill bundle."
+        description="Prepare and verify the frozen shared ja-JP skill bundle."
     )
     parser.add_argument(
         "--skill-repo-root",
