@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "AI-IR-PROJECTION-01 AC-7. The single expected output shared by the TS and the Python",
+    "derived-island-edge implementations, computed from derived_island_edges_document.json.",
+    "Readers: backend tests/test_derived_island_relations_ts_equivalence.py (Python side, via",
+    "llm_input_ir.derived_island_relations) and frontend",
+    "src/domain/island_edge_aggregate.python_equivalence.test.ts (TS side, via",
+    "getDerivedIslandEdges). Field names follow the TS DerivedIslandEdge type; the Python",
+    "test maps its snake_case keys onto these explicitly so the correspondence is visible.",
+    "Expected content, by construction of the fixture: related:c1:c2 is internal to isl-a and",
+    "is dropped; related:c8:c9 joins two lone wolves and is dropped; the two causal edges",
+    "aggregate into ONE isl-a -> isl-b relation with aggregateCount 2."
+  ],
+  "derivedIslandEdges": [
+    {
+      "id": "derived-card:isl-c|c9|related",
+      "fromId": "isl-c",
+      "toId": "c9",
+      "fromKind": "island",
+      "toKind": "card",
+      "type": "related",
+      "isDerived": true,
+      "aggregateCount": 1,
+      "contributingEdgeIds": ["related:c5:c9"],
+      "contributingCardIds": ["c5", "c9"]
+    },
+    {
+      "id": "derived-island:isl-a|isl-b|causal",
+      "fromId": "isl-a",
+      "toId": "isl-b",
+      "fromKind": "island",
+      "toKind": "island",
+      "type": "causal",
+      "isDerived": true,
+      "aggregateCount": 2,
+      "contributingEdgeIds": ["causal:c1:c3", "causal:c2:c4"],
+      "contributingCardIds": ["c1", "c3", "c2", "c4"]
+    },
+    {
+      "id": "derived-island:isl-b|isl-c|negate",
+      "fromId": "isl-b",
+      "toId": "isl-c",
+      "fromKind": "island",
+      "toKind": "island",
+      "type": "negate",
+      "isDerived": true,
+      "aggregateCount": 1,
+      "contributingEdgeIds": ["negate:c3:c5"],
+      "contributingCardIds": ["c3", "c5"]
+    }
+  ]
+}

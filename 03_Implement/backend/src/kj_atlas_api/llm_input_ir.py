@@ -1106,6 +1106,104 @@ def held_card_ids(ir: dict[str, Any]) -> list[str]:
     return sorted(card["id"] for card in ir.get("cards", []) if card.get("hold_state"))
 
 
+def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
+    """Aggregate the IR's card-level `relations` up to island level.
+
+    The Python counterpart of `frontend/src/domain/island_edge_aggregate.ts`
+    `getDerivedIslandEdges()`. `AI-IR-PROJECTION-01` AC-7 asked for a TS<->Python
+    equivalence check on the projection layer; this is the function pair it now
+    has (`tests/test_derived_island_relations_ts_equivalence.py` and
+    `frontend/src/domain/island_edge_aggregate.python_equivalence.test.ts` share
+    one fixture and one expected output).
+
+    Why it lives here and not in the IR itself: spec §2.3 rule 6 keeps island
+    endpoints OUT of `relations` on purpose, so an island-level relation is a
+    CONSUMER's view of `relations` x `islands`, not a stored field. Deriving it
+    here changes no schema and needs no `ir_version` bump.
+
+    Equivalence with the TS function holds on documents where:
+
+    - every edge is card-to-card (an edge with an island endpoint never reaches
+      the IR at all, so the "persisted island edge" branch of the TS function
+      has no input here -- the TS function skips island->island edges too, but
+      it does promote a persisted island->card edge, which this one cannot see);
+    - every edge type is one of the five canvas values (`unknown` is dropped by
+      §2.3 rule 6, where TS would aggregate it);
+    - no `(from, to, type)` triple is duplicated (§2.3 rule 3 de-duplicates
+      before this function runs, where TS counts both occurrences);
+    - a card belongs to at most one island (§2.2A applies FIRST-MATCH-WINS,
+      where TS's `getIslandsForCard()` returns every match).
+
+    Those are exactly the projection differences the IR introduces by design;
+    they are boundary conditions of the comparison, not drift.
+    """
+    island_by_card: dict[str, str] = {}
+    for island in ir.get("islands", []):
+        for card_id in island["card_ids"]:
+            island_by_card.setdefault(card_id, island["id"])
+
+    card_ids = {card["id"] for card in ir.get("cards", [])}
+    aggregate: dict[str, dict[str, Any]] = {}
+
+    def _contribute(
+        key: str, from_id: str, to_id: str, to_kind: str, relation: dict[str, str]
+    ) -> None:
+        entry = aggregate.get(key)
+        if entry is None:
+            entry = {
+                "id": key,
+                "from_id": from_id,
+                "to_id": to_id,
+                "from_kind": "island",
+                "to_kind": to_kind,
+                "type": relation["type"],
+                "contributing_relation_ids": [],
+                "contributing_card_ids": [],
+            }
+            aggregate[key] = entry
+        entry["contributing_relation_ids"].append(relation["id"])
+        # Both endpoints are cards: §2.3 rule 6 already removed every relation
+        # with an island endpoint before this point.
+        for endpoint in (relation["from"], relation["to"]):
+            if endpoint not in entry["contributing_card_ids"]:
+                entry["contributing_card_ids"].append(endpoint)
+
+    for relation in ir.get("relations", []):
+        from_island = island_by_card.get(relation["from"])
+        to_island = island_by_card.get(relation["to"])
+
+        if from_island is None and to_island is None:
+            # Lone wolf <-> lone wolf: no island relation to escalate to.
+            continue
+
+        if from_island is not None and to_island is not None:
+            if from_island == to_island:
+                # Internal to one island; it says nothing about island layout.
+                continue
+            a, b = (from_island, to_island) if from_island <= to_island else (to_island, from_island)
+            _contribute(f"derived-island:{a}|{b}|{relation['type']}", a, b, "island", relation)
+            continue
+
+        # Exactly one side sits in an island; the other is a lone-wolf card.
+        # ADR-0048 D2 round 5: that relation is promoted to the island's placard.
+        island_id = from_island if from_island is not None else to_island
+        lone_card_id = relation["to"] if from_island is not None else relation["from"]
+        if lone_card_id not in card_ids:
+            continue
+        _contribute(
+            f"derived-card:{island_id}|{lone_card_id}|{relation['type']}",
+            str(island_id),
+            lone_card_id,
+            "card",
+            relation,
+        )
+
+    rows = sorted(aggregate.values(), key=lambda row: row["id"])
+    for row in rows:
+        row["aggregate_count"] = len(row["contributing_relation_ids"])
+    return rows
+
+
 def validate_llm_input_ir(ir: dict[str, Any]) -> None:
     """Structural assertions the spec §4.2 schema makes machine-checkable.
 
