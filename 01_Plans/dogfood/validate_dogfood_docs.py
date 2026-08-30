@@ -34,7 +34,6 @@ GLOB = "doc_kj_atlas_dogfood_r*.json"
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
     "build_cognitive_blind_package.py",
-    "prepare_cognitive_case001_source_bundle.py",
     "prepare_cognitive_case001_skill_bundle.py",
     "prepare_cognitive_frozen_source_bundle.py",
 )
@@ -361,9 +360,9 @@ def main() -> int:
             print(f"  - {issue}")
         return 1
 
-    print("\nALL DOGFOOD DOCUMENTS/TOOLS/COGNITIVE CASE INPUTS STRUCTURALLY VALID ✅")
+    print("\nAll dogfood documents and cognitive experiment helpers look structurally valid.")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
