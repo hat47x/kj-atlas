@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Build a reviewer-facing blind package from a cognitive dogfood run record.
+"""Build a reviewer-facing blind package from a valid cognitive dogfood run record.
 
 The builder copies only the common result-bearing sections. It intentionally
 omits arm/method metadata, M1-M9 self-evaluation, InquiryJourney/T9 records, and
 skill execution records. It does not paraphrase the run's claims.
+
+A package is never produced from a record that fails the shared static-intake
+gate. This keeps P2 blind review fail-closed even if an operator invokes this
+builder directly instead of running the validator as a separate command first.
 """
 
 from __future__ import annotations
@@ -12,6 +16,8 @@ import argparse
 import hashlib
 import re
 from pathlib import Path
+
+from validate_cognitive_run_records import validate_record
 
 FORBIDDEN_DIRECT_MARKERS = (
     "cultural-substrate-weaving",
@@ -59,6 +65,15 @@ def extract_until_any(text: str, start: str, next_headings: tuple[str, ...]) -> 
             f"missing next section after {start}: one of {next_headings!r}"
         )
     return text[start_index:min(candidates)].strip()
+
+
+def require_static_intake(record_path: Path) -> list[str]:
+    """Fail before blind packaging unless the shared P2 intake contract passes."""
+    errors, warnings = validate_record(record_path)
+    if errors:
+        rendered = " | ".join(errors)
+        raise ValueError(f"static intake failed: {rendered}")
+    return warnings
 
 
 def neutralize_conflict_section(section: str) -> str:
@@ -150,7 +165,7 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build a blind review package from a cognitive dogfood run record."
+        description="Build a blind review package from a valid cognitive dogfood run record."
     )
     parser.add_argument("record", type=Path)
     parser.add_argument("output", type=Path)
@@ -160,9 +175,15 @@ def main() -> int:
         print(f"FAIL: record not found: {args.record}")
         return 1
 
+    try:
+        intake_warnings = require_static_intake(args.record)
+    except ValueError as exc:
+        print(f"FAIL: {exc}")
+        return 1
+
     record_text = args.record.read_text(encoding="utf-8")
     try:
-        package, warnings = build_package(record_text)
+        package, package_warnings = build_package(record_text)
     except ValueError as exc:
         print(f"FAIL: {exc}")
         return 1
@@ -171,6 +192,7 @@ def main() -> int:
     args.output.write_text(package, encoding="utf-8")
     package_digest = hashlib.sha256(package.encode("utf-8")).hexdigest()
 
+    warnings = intake_warnings + package_warnings
     for warning in warnings:
         print(f"WARN: {warning}")
     print(f"WROTE: {args.output}")
