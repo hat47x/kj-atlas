@@ -36,7 +36,7 @@ run開始前にActions artifact metadataから次をoperator側で保存し、`c
 
 artifactの14日retention後に同じfrozen inputから再生成した場合も、古いrun recordを新しいartifact identityへ書き換えない。各runが実際に使ったpackage identityを残す。
 
-以下1.1/1.2の手動bundle生成は、Actions artifactを再現するための検証・復旧経路である。通常runでActions artifactを使えない場合はdeviationとして理由を記録し、同等性を別途確認する。
+以下1.1/1.2の手動bundle生成は、Actions artifactを再現するための**診断・復旧・同等性確認専用**である。Round 1のvalid比較runにはActions artifactを使用する。Actions artifactを利用できない状態で手動bundleだけを使ったrunは、artifact name / workflow head / digestを持たないためstatic intakeをPASSさせず、`partial` または `invalid` として理由を残す。比較条件自体を改訂して手動packageをvalid化する必要が生じた場合は、既存条件を上書きせず別revision/deviationとして事前に記録する。
 
 ### 1.1 Product evidence bundle
 
@@ -135,7 +135,7 @@ python 01_Plans/dogfood/validate_cognitive_run_records.py \
 
 `PASS`しないrunをBR1へ送らない。failの原因がexperiment record deficiencyか、実際のproduct/manual-core defectかを分ける。
 
-validatorは、case/armから期待されるartifact名と、workflow head/digestの書式も検査する。artifact内容そのものの認知品質は採点しない。
+validatorは、case/armから期待されるartifact名と、workflow head/digestの書式も検査する。さらにCase 001は`6.1`〜`6.9`、Case 002/003は`6.1`〜`6.10`のrequired outputが連続・重複なし・過不足なしで存在することを確認する。artifact内容そのものの認知品質は採点しない。
 
 ## 6. Blind package
 
