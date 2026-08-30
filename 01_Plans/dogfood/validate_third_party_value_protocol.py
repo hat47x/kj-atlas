@@ -3,8 +3,8 @@
 
 This validator does not score product value or participant outcomes. It only
 protects protocol invariants that must remain true before third-party sessions:
-neutral baseline capture, stopping/no-use as valid outcomes, and the public-Git
-publication boundary.
+neutral baseline capture, stopping/no-use as valid outcomes, runtime data-path
+disclosure, and the public-Git publication boundary.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 
 FILES = {
     "execution": ROOT / "third-party-value-validation-execution-plan.md",
+    "launch": ROOT / "third-party-value-session-launch-checklist.md",
     "session": ROOT / "third-party-value-session-record-template.md",
     "publication": ROOT / "third-party-value-publication-boundary.md",
     "participant": ROOT / "third-party-value-participant-brief.md",
@@ -30,8 +31,20 @@ REQUIRED_SNIPPETS = {
         "Privacy / data handling",
         "support / modify / narrow / reject / unresolved",
     ],
+    "launch": [
+        "最初の実資料をKJ Atlasへ入力する前に",
+        "AI provider / endpoint actually used",
+        "Material sent outside the KJ Atlas process/device",
+        "GO-WITH-REDUCTION",
+        "STOP-DATA-BOUNDARY",
+        "検証を完遂するためにdata-control条件を緩めない",
+        "Launch verdictが空欄",
+    ],
     "session": [
         "Public / private record boundary",
+        "Session launch checklist reference",
+        "Runtime data path actually used",
+        "Runtime data path disclosed before first material entry",
         "Existing-workflow sufficiency hypothesis",
         "Stop / withdrawal",
         "No-use reason",
@@ -47,6 +60,9 @@ REQUIRED_SNIPPETS = {
         "良い評価をもらうこと",
         "既存の方法で十分",
         "途中で止められます",
+        "AI・ネットワーク・保存経路について",
+        "検証を続けるために、資料の安全条件を緩める必要はありません",
+        "セッションへの参加とpublic Gitへの公開は別の判断です",
         "元資料や識別可能な記録をそのままpublic Gitへ掲載することは既定では行いません",
     ],
     "analysis": [
