@@ -25,11 +25,14 @@ def build_case001_arm_c_record(
     contamination: str = "none",
     required_numbers: list[int] | None = None,
     empty_required_numbers: set[int] | None = None,
+    empty_conflict_interpretations: set[str] | None = None,
 ) -> str:
     if required_numbers is None:
         required_numbers = list(range(1, 10))
     if empty_required_numbers is None:
         empty_required_numbers = set()
+    if empty_conflict_interpretations is None:
+        empty_conflict_interpretations = set()
 
     required_output = "\n\n".join(
         (
@@ -39,6 +42,18 @@ def build_case001_arm_c_record(
         )
         for number in required_numbers
     )
+
+    conflict_lines: list[str] = []
+    for test_id, verdict in (("T1", "yes"), ("T2", "partial"), ("T3", "no")):
+        interpretation = (
+            "" if test_id in empty_conflict_interpretations
+            else f"current-state relationship interpreted for {test_id}"
+        )
+        conflict_lines.append(
+            f"- {test_id} detected: {verdict}\n"
+            f"  - temporal/contract interpretation: {interpretation}"
+        )
+    conflict_section = "\n".join(conflict_lines)
 
     question = validator.CASE_CONTRACTS["case-001"]["question"]
     product_sha = validator.PRODUCT_SHA
@@ -96,9 +111,7 @@ none used
 
 ## 7. Conflict-bearing source check
 
-- T1 detected: yes
-- T2 detected: partial
-- T3 detected: no
+{conflict_section}
 
 ## 8. M1–M9 evidence
 
@@ -227,6 +240,41 @@ class RequiredOutputTests(unittest.TestCase):
         self.assertEqual(errors, ["Required output 6.4 must contain substantive body text"])
 
 
+class ConflictInterpretationTests(unittest.TestCase):
+    def test_interpretations_pass(self) -> None:
+        section = """- T1 detected: yes
+  - temporal/contract interpretation: later source supersedes the earlier state
+- T2 detected: partial
+  - temporal/contract interpretation: implementation and report timing differ
+- T3 detected: no
+  - temporal/contract interpretation: no supported correction relationship was found
+"""
+        self.assertEqual(
+            validator.validate_conflict_interpretations(section, ("T1", "T2", "T3")),
+            [],
+        )
+
+    def test_empty_interpretation_fails(self) -> None:
+        section = """- T1 detected: yes
+  - temporal/contract interpretation:
+- T2 detected: partial
+  - temporal/contract interpretation: present
+"""
+        errors = validator.validate_conflict_interpretations(section, ("T1", "T2"))
+        self.assertEqual(
+            errors,
+            ["T1 temporal/contract interpretation must contain substantive text"],
+        )
+
+    def test_missing_interpretation_label_fails(self) -> None:
+        section = """- T1 detected: yes
+- T2 detected: partial
+  - temporal/contract interpretation: present
+"""
+        errors = validator.validate_conflict_interpretations(section, ("T1", "T2"))
+        self.assertEqual(errors, ["T1 requires temporal/contract interpretation"])
+
+
 class FullRecordTests(unittest.TestCase):
     def validate_text(self, text: str) -> tuple[list[str], list[str]]:
         with tempfile.TemporaryDirectory() as directory:
@@ -251,6 +299,15 @@ class FullRecordTests(unittest.TestCase):
         )
         self.assertTrue(
             any("Required output 6.5 must contain substantive body text" in error for error in errors),
+            errors,
+        )
+
+    def test_empty_conflict_interpretation_fails(self) -> None:
+        errors, _ = self.validate_text(
+            build_case001_arm_c_record(empty_conflict_interpretations={"T2"})
+        )
+        self.assertTrue(
+            any("T2 temporal/contract interpretation must contain substantive text" in error for error in errors),
             errors,
         )
 
