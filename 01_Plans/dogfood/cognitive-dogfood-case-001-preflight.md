@@ -10,7 +10,7 @@
 
 Case 001の最初のraw runを保存する前に、比較条件が実際に再現可能かを確認した記録である。
 
-この文書はCase 001の問いへの回答を含めず、A〜Dの成果比較にも使用しない。preflightで確認するのは、sourceの存在、固定snapshot、実行順、自然発生conflict testの成立、既知contaminationだけである。
+この文書はCase 001の問いへの回答を含めず、A〜Dの成果比較にも使用しない。preflightで確認するのは、sourceの存在、固定snapshot、実行順、自然発生conflict testの成立、既知contamination、記録契約の整合だけである。
 
 ## 2. Frozen source manifest verification
 
@@ -28,18 +28,22 @@ operator packで指定したRound 1共通入力20件を、すべてproduct snaps
 | 8 | `01_Plans/issues/TEMPLATE.md` | `186902acb4ae2bffb61761b5c71474566e1c8ce5` | present |
 | 9 | `01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md` | `948561157ea716ccbf6f3dba789dbde929d45035` | present |
 | 10 | `01_Plans/issues/issue-VR-ROADMAP-01-value-to-social-goal-phase-baseline.md` | `245b62c3479ea5810fb841dca9de499ce6d6b217` | present |
-| 11 | `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | verified at frozen snapshot | present |
+| 11 | `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | `4597c11804960dd8e6b16c176b8e78fc82013c62` | present |
 | 12 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json` | `c6ae2f6635a30d94a5d7bd671785e6fa5e6f1acc` | present |
 | 13 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json` | `27a00fddcf6717a0af1ba2bf67ef8faebc7f6985` | present |
 | 14 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json` | `edb83ab819984f20052b644898613e1457a8a1f1` | present |
 | 15 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r4.json` | `8241de96cb8c7a6267fbdcba840a23d9be6b0950` | present |
 | 16 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json` | `9aa694d334409ce3bf3c29fc8a84f61c9b64cf17` | present |
-| 17 | `01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md` | verified at frozen snapshot | present |
-| 18 | `01_Plans/issues/issue-DOGFOOD-20-card-groups-not-theme-based.md` | verified at frozen snapshot | present |
-| 19 | `01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md` | verified at frozen snapshot | present |
-| 20 | `01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md` | verified at frozen snapshot | present |
+| 17 | `01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md` | `ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1` | present |
+| 18 | `01_Plans/issues/issue-DOGFOOD-20-card-groups-not-theme-based.md` | `50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829` | present |
+| 19 | `01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md` | `455185f1e12490c6a1d97c45a221491b5c2131cc` | present |
+| 20 | `01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md` | `49cb747ab1cbb7cf4756eb505c965ee532f8b3fe` | present |
 
-`verified at frozen snapshot` はpreflightで直接同commitを指定して内容取得まで確認したもの。次にsource bundleを機械生成する場合は、その時点でblob SHAもmanifestへ補完できるが、Case 001開始条件としてはcommit SHA + pathで一意に再取得できる。
+Round 1 common source manifest IDは次で固定する。
+
+```text
+case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649
+```
 
 ## 3. Current-state / temporal conflict preflight
 
@@ -93,7 +97,7 @@ SHA-256:
 ['C', 'D', 'B', 'A']
 ```
 
-となる。よってCase 001 Round 1の実行順は **C → D → B → A** で固定する。
+となる。よってCase 001 Round 1の実行順は **C → D → B → A** で固定する。operator packの旧§11に残っていた「実行開始時にrandomizeする」という記述は、最初のraw run保存前に修正した。結果依存の変更ではない。
 
 ## 6. Contamination declaration
 
@@ -114,14 +118,33 @@ SHA-256:
 
 | Finding | Triage | Reason |
 |---|---|---|
-| Round 1共通入力20件は固定commitで再取得可能 | evidence / no issue | 実験開始条件を満たす |
+| Round 1共通入力20件は固定commit/blobで再取得可能 | evidence / no issue | 実験開始条件を満たす |
 | T1〜T3は自然発生の時間差テストとして成立 | evidence / no issue | 新機能要求ではない |
 | InquiryJourney Phase 2実使用をC/Dへ接続可能 | F1 existing issue | `DOMAIN-W-ITERATION-01` T9が既に実使用証拠を待っている |
 | 現在の実験者contextはarmとして汚染済み | experiment constraint | KJ Atlas製品欠陥ではない |
+| operator packのarm順記述がpreflightと競合していた | experiment protocol defect / corrected before first run | C→D→B→Aへ一本化した |
+| B/D必須skill記録に共通template上の専用欄がなかった | experiment record defect / corrected before first run | run record §12を追加した |
+| static intakeが人手だけだった | experiment record risk / corrected before first run | `validate_cognitive_run_records.py` を追加した |
 | new ADR trigger | none | `ADR-0047` R-1〜R-4をまだ実測していない |
-| new issue trigger | none | preflightだけではF2条件を満たす実利用課題がない |
+| new product issue trigger | none | いずれも製品実利用前の実験管理上の修正 |
 
-## 8. Exit verdict
+## 8. Protocol amendment boundary
+
+ここまでの修正は、**最初のarm raw outputが保存される前**に行った。
+
+修正したのは次だけである。
+
+- 事前登録済み実行順との文書不整合。
+- B/D method executionの記録漏れ。
+- source manifestのblob SHA補完。
+- static intake validationの追加。
+- blind review時の情報漏洩を防ぐ運用契約の追加。
+
+固定問い、A〜D treatment、product snapshot、skill snapshot、T1〜T3、M1〜M9、F0〜F3ゲートは変更していない。
+
+最初のraw run保存後は、これら比較条件を結果に応じて変更しない。
+
+## 9. Exit verdict
 
 **P0 passed. Case 001はisolated-arm executionへ進める。**
 
