@@ -3,7 +3,9 @@
 - Status: Prepared
 - Case: `cognitive-dogfood-case-001-product-purpose.md`
 - Record template: `cognitive-dogfood-run-record-template.md`
+- Preflight: `cognitive-dogfood-case-001-preflight.md`
 - Rule: Arm A〜Dは**別コンテキスト**で実行する。同一会話の中でroleだけ切り替えない。
+- Pre-registered Round 1 execution order: **C → D → B → A**
 
 ## 0. Operator rules
 
@@ -12,9 +14,10 @@
 1. `cognitive-dogfood-case-001-product-purpose.md` のうち、armへ渡してよい範囲だけを確認する。
 2. KJ Atlas product snapshotを `2232b3bb26647e5c4a083f55bdbf83c161698649` へ固定する。
 3. B/Dでは cultural-substrate-weaving を `3988e12e5f7f316f377d3391e9486c8467a111d5` へ固定する。
-4. PR #2805 の価値仮説、Case 0 audit、framework notes、Round 2 manifestをRound 1モデルへ見せない。
+4. PR #2805 の価値仮説、Case 0 audit/outcome trace、framework notes、Round 2 manifestをRound 1モデルへ見せない。
 5. 各arm用に新しい会話/agent/sessionを用意する。
 6. C/Dでは、認知dogfood用の別履歴方式を作らず、KJ Atlasに実装済みのInquiryJourneyを利用できる実行環境を優先する。
+7. 実行順はpreflightで事前登録した **C → D → B → A** を使う。実行開始時に再randomizeしない。
 
 ### 実行中
 
@@ -32,6 +35,8 @@
 - required outputを別artifactに整理してよいが、rawへの参照を残す。
 - arm aliasを付け、blind reviewerへはA/B/C/D名を見せない。
 - C/Dでは、InquiryJourneyから再開したときに問い・未解決点・根拠へ戻れたかをrun recordへ記録する。
+- B/Dではrun record §12のskill-specific execution recordを埋める。
+- blind package作成前にrun-record validatorを実行する。
 
 ## 1. Common product source list — Round 1
 
@@ -61,6 +66,12 @@ ROADMAP.md
 ```
 
 `DOMAIN-W-ITERATION-01` を追加した理由は、ADR本文の `L0: Planned` だけを読んで現在実装を過小評価しないためである。このissueは2026-08-25時点でAC-1〜AC-13が完了し、T9/T10だけが外部トリガー待ちである。
+
+Round 1 common source manifest ID:
+
+```text
+case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649
+```
 
 ## 2. Common question
 
@@ -123,6 +134,8 @@ KJ Atlasキャンバスは使いません。
 
 ### Bの記録追加
 
+run record §12へ次を記録する。
+
 - activation判定
 - framework candidates
 - selected/rejected framework and reason
@@ -170,7 +183,7 @@ KJ統合では体系から得た材料も他の生材料と同様に扱い、体
 
 ### Dの記録追加
 
-BとCの追加項目を両方残す。
+BとCの追加項目を両方残す。skill側はrun record §12へ記録する。
 
 特に次を監査する。
 
@@ -218,7 +231,7 @@ AI支援候補を思いついた回数ではなく、**手動中核で実際に�
     <alias>-raw.md
     <alias>-result.md
     <alias>-record.md
-    <alias>-canvas.json   # C/D only; product export/reference
+    <alias>-canvas.json     # C/D only; product export/reference
     <alias>-inquiry-ref.md # C/D only; journey/bundle/snapshot IDsとproduct audit参照
   blind-review/
     package-<alias>.md
@@ -229,11 +242,19 @@ AI支援候補を思いついた回数ではなく、**手動中核で実際に�
 
 A/B/C/Dをファイル名へ直接使わず、blind review完了まではランダムaliasを使用する。
 
-## 11. Randomization
+## 11. Randomization and aliasing
 
-4armの実行順はCase IDから単純に固定せず、実行開始時にランダム化してrun recordへ記録する。
+### Arm execution order
 
-blind aliasも、operatorが評価者へ渡す前にランダム割当する。
+Round 1のarm順はpreflightでsnapshot文字列から再現可能に導出済みであり、**C → D → B → A** に固定されている。ここでは再randomizeしない。
+
+この固定は最初のraw output保存前に行われたため、結果依存ではない。
+
+### Blind alias
+
+blind aliasは、blind package作成時にA/B/C/Dと意味的に無関係な中立aliasを割り当てる。mappingはblind reviewerへ渡さず、verdict凍結後にのみ照合する。
+
+alias選択は成果物の採否や順序を変えないため、arm execution orderとは別のadministrative randomizationとして扱う。
 
 ## 12. Stop / invalidation
 
@@ -249,3 +270,26 @@ blind aliasも、operatorが評価者へ渡す前にランダム割当する。
 - 大きなcontext lossやtool failureで必要資料を読めなかった。
 
 invalid runも削除しない。失敗理由を残す。
+
+## 13. Static intake validation
+
+raw/result/record保存後、blind package作成前に次を実行する。
+
+```bash
+python 01_Plans/dogfood/validate_cognitive_run_records.py \
+  01_Plans/dogfood/cognitive-runs/case-001/round-1/<alias>-record.md
+```
+
+validatorは次だけを静的に確認する。
+
+- Case/Round/arm、fresh-context、run validity等の必須metadata。
+- Case 001 Round 1のproduct/skill snapshot一致。
+- fixed questionの完全一致。
+- required output / M1〜M9 / T1〜T3 / retention auditの存在。
+- C/DのKJ Atlas・InquiryJourney記録。
+- B/Dのskill execution record。
+- 明白なplaceholderや未記入欄。
+
+validatorは成果の質や「どのarmが優れているか」を判定しない。failは自動的に製品欠陥を意味せず、まずexperiment record deficiencyとして直す。
+
+4armすべてのstatic intakeがpassし、手動のinvalid条件確認も終わってからP2 blind reviewへ進む。
