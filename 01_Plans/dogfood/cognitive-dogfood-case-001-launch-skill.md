@@ -3,6 +3,7 @@
 - Status: Frozen before first raw run
 - Evidence bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - Product snapshot: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
+- Skill bundle ID: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
 - Skill snapshot: `hat47x/cultural-substrate-weaving@3988e12e5f7f316f377d3391e9486c8467a111d5`
 
 ## Context boundary
@@ -11,7 +12,7 @@
 
 製品についての証拠として使用してよいのは、evidence bundle内の20件の製品資料だけである。`_experiment/bundle-manifest.json` はファイル同一性確認のために参照してよいが、bundle外のKJ Atlas repository、近隣plan、PR discussion、Case 0監査、外部競合/研究資料を探索しない。operator用のsource manifestを探したり開いたりしない。
 
-方法としては、operatorから別途与えられた上記commitの `cultural-substrate-weaving` canonical sourceだけを使用する。skill repositoryを追加探索せず、PR #5 discussionやCase 001向け共進化protocolを読まない。
+方法としては、operatorから別途与えられたsanitized skill bundle内の `src/ja-JP` 正本だけを使用する。`_experiment/skill-bundle-manifest.json` は同一性確認のために参照してよい。skill repositoryを追加探索せず、docs/evals/plugins/adapters/AGENTS.md/README/PR discussionやCase 001向け共進化protocolを読まない。
 
 外部Web検索を行わない。資料外の一般知識を使う場合は、frozen source由来の主張と明確に分ける。追加資料が必要なら、そのrunだけへ追加せず `Candidate source request` として挙げる。
 
