@@ -26,6 +26,7 @@ def build_case001_arm_c_record(
     required_numbers: list[int] | None = None,
     empty_required_numbers: set[int] | None = None,
     empty_conflict_interpretations: set[str] | None = None,
+    empty_measure_numbers: set[int] | None = None,
 ) -> str:
     if required_numbers is None:
         required_numbers = list(range(1, 10))
@@ -33,10 +34,12 @@ def build_case001_arm_c_record(
         empty_required_numbers = set()
     if empty_conflict_interpretations is None:
         empty_conflict_interpretations = set()
+    if empty_measure_numbers is None:
+        empty_measure_numbers = set()
 
     required_output = "\n\n".join(
         (
-            f"### 6.{number} Required item {number}"
+            f"### 6.{number} Required item {number}\n\n- Result:\n- Evidence:\n- Counterevidence:\n- Uncertainty:"
             if number in empty_required_numbers
             else f"### 6.{number} Required item {number}\n\nResult: substantive result {number}."
         )
@@ -54,6 +57,26 @@ def build_case001_arm_c_record(
             f"  - temporal/contract interpretation: {interpretation}"
         )
     conflict_section = "\n".join(conflict_lines)
+
+    measure_names = {
+        1: "生存所見",
+        2: "根拠接地",
+        3: "異論・残差保持",
+        4: "早期収束耐性",
+        5: "AI依存校正",
+        6: "再訪・訂正可能性",
+        7: "注意・探索制御",
+        8: "決定への変換品質",
+        9: "認知摩擦",
+    }
+    measure_section = "\n\n".join(
+        (
+            f"### M{number} {measure_names[number]}\n\n- Observation:"
+            if number in empty_measure_numbers
+            else f"### M{number} {measure_names[number]}\n\nrecorded evidence {number}"
+        )
+        for number in range(1, 10)
+    )
 
     question = validator.CASE_CONTRACTS["case-001"]["question"]
     product_sha = validator.PRODUCT_SHA
@@ -115,41 +138,7 @@ none used
 
 ## 8. M1–M9 evidence
 
-### M1 生存所見
-
-recorded
-
-### M2 根拠接地
-
-recorded
-
-### M3 異論・残差保持
-
-recorded
-
-### M4 早期収束耐性
-
-recorded
-
-### M5 AI依存校正
-
-recorded
-
-### M6 再訪・訂正可能性
-
-recorded
-
-### M7 注意・探索制御
-
-recorded
-
-### M8 決定への変換品質
-
-recorded
-
-### M9 認知摩擦
-
-recorded
+{measure_section}
 
 ## 9. Retention audit
 
@@ -215,17 +204,17 @@ class RequiredOutputTests(unittest.TestCase):
         errors = validator.validate_required_output_numbering(text, 9)
         self.assertTrue(any("duplicates=[3]" in error for error in errors), errors)
 
-    def test_empty_body_fails(self) -> None:
+    def test_empty_template_fields_fail(self) -> None:
         text = "\n".join(
             (
-                f"### 6.{number} Item {number}"
+                f"### 6.{number} Item {number}\n- Result:\n- Evidence:\n- Counterevidence:\n- Uncertainty:"
                 if number == 4
                 else f"### 6.{number} Item {number}\nbody {number}"
             )
             for number in range(1, 10)
         )
         errors = validator.validate_required_output_bodies(text, 9)
-        self.assertEqual(errors, ["Required output 6.4 must contain substantive body text"])
+        self.assertEqual(errors, ["Required output 6.4 must contain a recorded value"])
 
     def test_comment_only_body_fails(self) -> None:
         text = "\n".join(
@@ -237,7 +226,7 @@ class RequiredOutputTests(unittest.TestCase):
             for number in range(1, 10)
         )
         errors = validator.validate_required_output_bodies(text, 9)
-        self.assertEqual(errors, ["Required output 6.4 must contain substantive body text"])
+        self.assertEqual(errors, ["Required output 6.4 must contain a recorded value"])
 
 
 class ConflictInterpretationTests(unittest.TestCase):
@@ -275,6 +264,35 @@ class ConflictInterpretationTests(unittest.TestCase):
         self.assertEqual(errors, ["T1 requires temporal/contract interpretation"])
 
 
+class MeasureBodyTests(unittest.TestCase):
+    def test_empty_measure_template_field_fails(self) -> None:
+        text = """## 8. M1–M9 evidence
+### M1 生存所見
+- Observation:
+### M2 根拠接地
+recorded
+### M3 異論・残差保持
+recorded
+### M4 早期収束耐性
+recorded
+### M5 AI依存校正
+recorded
+### M6 再訪・訂正可能性
+recorded
+### M7 注意・探索制御
+recorded
+### M8 決定への変換品質
+recorded
+### M9 認知摩擦
+recorded
+## 9. Retention audit
+"""
+        self.assertEqual(
+            validator.validate_measure_bodies(text),
+            ["M1 evidence must contain a recorded value or a reason it is not measurable"],
+        )
+
+
 class FullRecordTests(unittest.TestCase):
     def validate_text(self, text: str) -> tuple[list[str], list[str]]:
         with tempfile.TemporaryDirectory() as directory:
@@ -298,7 +316,7 @@ class FullRecordTests(unittest.TestCase):
             build_case001_arm_c_record(empty_required_numbers={5})
         )
         self.assertTrue(
-            any("Required output 6.5 must contain substantive body text" in error for error in errors),
+            any("Required output 6.5 must contain a recorded value" in error for error in errors),
             errors,
         )
 
@@ -308,6 +326,15 @@ class FullRecordTests(unittest.TestCase):
         )
         self.assertTrue(
             any("T2 temporal/contract interpretation must contain substantive text" in error for error in errors),
+            errors,
+        )
+
+    def test_empty_measure_fails(self) -> None:
+        errors, _ = self.validate_text(
+            build_case001_arm_c_record(empty_measure_numbers={7})
+        )
+        self.assertTrue(
+            any("M7 evidence must contain a recorded value" in error for error in errors),
             errors,
         )
 
