@@ -9,7 +9,7 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Expected verification level: `integration`
 
-> **進捗（2026-08-30）: 段階適用の Stage 1〜2 / 5 完了（`detect-contradiction`・`suggest-card-groups`）。** 残り3段階（`generate-narrative` → `suggest-layout` → その他）は未着手。AC-3 / AC-10 は未着手、AC-7 は範囲を分離。詳細は末尾の「結果（Stage 1）」「結果（Stage 2）」節を参照。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
+> **進捗（2026-08-30）: 段階適用の Stage 1〜3 / 5 完了（`detect-contradiction`・`suggest-card-groups`・`generate-narrative`）。** 残り2段階（`suggest-layout` → その他）は未着手。AC-10 は未着手、AC-7 は範囲を分離。詳細は末尾の「結果（Stage 1）」「結果（Stage 2）」「結果（Stage 3）」節を参照。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
 
 > **本issueは `ADR-0069` の採択を前提とする。** ADR が Proposed の間は着手しないこと。D1〜D4 が未決のまま実装すると、凍結仕様（`llm_input_ir_spec.md`）への非互換な改変が入る。**（2026-08-29 に Accepted・仮承認となり、この前提は解消済み。）**
 
@@ -90,15 +90,15 @@ $ grep -rn "ir_version\|graph_summary\|cluster_candidates" --include=*.py --incl
 
 - [x] AC-1（detect-contradiction のみ）: `detect-contradiction` が `evidenceLinks` と `contradictionState` を受け取り、`confirmed` / `held` の矛盾を再提示しないことを integration テストで固定する。— `tests/test_ai_detect_contradiction_ir.py`。抑止は決定論（LLMを呼ばない）。
 - [x] AC-2（suggest-card-groups only）: `suggest-card-groups` が既存の島・`parentIslandId`・`holdState` を受け取り、`holdState` が保留中のカードを新規グループへ含めないことをテストで固定する。— `tests/test_ai_suggest_card_groups_ir.py`。抑止は決定論（候補集合から除外＋応答からも除去。プロンプト依存にしない）。`held` / `pending` / `shelved` の3値すべてを対象とした。
-- [ ] AC-3: `generate-narrative` が `edges` を受け取り、`causal` / `negate` が入力に含まれることをテストで固定する。— **Stage 3、未着手**。
-- [x] AC-4（detect-contradiction / suggest-card-groups）: 全対象エンドポイントで、IR が `constraints.safe_mode == true` を満たさない場合に IR 生成が失敗すること（仕様 §7.1）をテストで固定する。— `build_llm_input_ir(safe_mode=False)` が `safe_mode_required` を送出。あわせて既存の `_reject_unreviewed_cards` 422 が**無変更**であることの回帰テストを、移行済みの両エンドポイントで追加（第二層であって置換でないことの証明）。Stage 3 以降の対象エンドポイントでは未実施。
+- [x] AC-3（generate-narrative only）: `generate-narrative` が `edges` を受け取り、`causal` / `negate` が入力に含まれることをテストで固定する。— `tests/test_ai_generate_narrative_ir.py`。IR（`LLMRequest.inputs`）側とプロンプト側の両方で固定し、あわせて読み順上のどこで効くかの写像も固定した。
+- [x] AC-4（detect-contradiction / suggest-card-groups / generate-narrative）: 全対象エンドポイントで、IR が `constraints.safe_mode == true` を満たさない場合に IR 生成が失敗すること（仕様 §7.1）をテストで固定する。— `build_llm_input_ir(safe_mode=False)` が `safe_mode_required` を送出。あわせて既存の `_reject_unreviewed_cards` 422 が**無変更**であることの回帰テストを、移行済みの各エンドポイントで追加（第二層であって置換でないことの証明）。Stage 3 では `_reject_unreviewed_text`（文書経路）について同じ回帰を追加した。Stage 4 以降の対象エンドポイントでは未実施。
 - [x] AC-5（detect-contradiction のみ）: PII最小化チェック（§7.2）と構造化テキスト限定チェック（§7.3）が入力側で機能することをテストで固定する。— メール／電話／URLトークンの3パターンと、base64疑似バイナリ・禁止キー名を `tests/test_llm_input_ir.py` で固定。拒否応答が該当文字列を反射しないことも固定。
 - [x] AC-6: 上限超過時の切り詰めが決定論的であること（同一入力→同一出力、§5）をテストで固定する。— 同一入力2回で `llm_ir.json` のSHA-256一致、入力配列順を反転しても一致、参照整合が保たれることを固定。IRビルダー全体の性質のため段階に依存しない。
 - [ ] AC-7: `test_ts_python_contract_drift.py` を投影ロジックへ拡張し、TS 実装（`buildAbstractMapExport` / `getDerivedIslandEdges`）と Python 実装の同値性を検査する。— **未着手**。狭いスポットチェックも実施していない。現行の `test_ts_python_contract_drift.py` は TS ソースからフィールド集合を抽出して突き合わせる**静的な**ドリフト検出であり、挙動同値性の検査基盤ではない。TS を実行して結果を突き合わせる仕組みは新規構築が必要で、本Stageの範囲を超える。また今回のIRビルダーは `getDerivedIslandEdges()`（島間派生辺）も `buildAbstractMapExport()` も再実装しておらず（`islands` は確定済み島をそのまま投影する）、対応する関数対が現時点で存在しない。**Stage 4（`suggest-layout`）で派生辺・座標投影を扱う段階で再評価すること。**
 - [x] AC-8（D1/D3のスキーマ変更範囲のみ）: `ir_version` が繰り上がり、`llm_input_ir_spec.md` が採択された D1〜D3 と一致している。— `1.0` → `1.1`（Stage 1）→ `1.2`（Stage 2 で `cards[*].hold_state` を加算）。版数判断の根拠は仕様 §7.4。§6 の FixtureProvider 生成手順は `scripts/generate_llm_input_ir_fixture.py` で end-to-end に再現でき、`--check` によるドリフト検出をテストに含めた。「全エンドポイントが IR 経由」の確認は Stage 5 まで持ち越し。
-- [x] AC-9（detect-contradiction / suggest-card-groups）: `02_Architecture/api.md` のリクエスト契約が実装と同期している。— Stage 1 で `/ai/detect-contradiction`、Stage 2 で `/ai/suggest-card-groups` の項を更新。他エンドポイントは未変更（未変更であることが正しい）。
+- [x] AC-9（detect-contradiction / suggest-card-groups / generate-narrative）: `02_Architecture/api.md` のリクエスト契約が実装と同期している。— Stage 1 で `/ai/detect-contradiction`、Stage 2 で `/ai/suggest-card-groups`、Stage 3 で `/ai/generate-narrative` の項を更新。Stage 3 はリクエスト／レスポンスの**形が変わっていない**ため、追記したのは IR 経由化・二層 SafeMode・IR 由来の 422 コード（`empty_cards` の挙動変更を含む）である。他エンドポイントは未変更（未変更であることが正しい）。
 - [ ] AC-10: 代表規模（カード300・島30程度）で入力トークン量を計測し、変化を記録する。上限値（`MAX_CARDS=200` 等、§5.1）が現行規模に合わない場合は別issueへ切り出す。— **意図的に延期**。1エンドポイントだけの計測は代表性を持たない（IRの `graph_summary` / `islands` は文書単位のコストであり、複数エンドポイントで償却される前提で設計されている）。移行エンドポイントが増えた段階でまとめて計測する。
-- [x] AC-11（detect-contradiction / suggest-card-groups）: 既存フロントエンドが動作する（後方互換）。または必要な改修を同一 PR に含める。`03_Implement/deploy/tools/kj_canvas_demo.py` も追随させる。— **改修不要を確認**。`/ai/detect-contradiction` を呼ぶフロントエンドコードは存在しない（`grep -rn "detect-contradiction\|detectContradiction" 03_Implement/frontend/src` は0件）。`kj_canvas_demo.py` はAPIではなくモックLLMアダプタ（`http://localhost:8001/generate`）を直接叩いており、本エンドポイントの契約に依存しない。追加した `doc` はリクエストの任意フィールド、`alreadyRecorded` / `existingContradictionState` はレスポンスの追加フィールドであり、いずれも破壊的ではない。`verify_business_flow_e2e.sh` の2箇所の呼び出しも従来形のまま通る。**Stage 2 追記**: `/ai/suggest-card-groups` にもフロントエンドの呼び出し元は存在しない（`grep -rn "suggest-card-groups\|suggestCardGroups" 03_Implement/frontend` は0件。`03_Implement/deploy/tools/` の2件はいずれもモックLLMアダプタ側で、APIの契約に依存しない）。追加した `doc` はリクエストの任意フィールド、`excludedCardIds` / `truncated` はレスポンスの追加フィールドである。`verify_business_flow_e2e.sh` の呼び出し（27箇所）は `doc` を渡さない従来形であり、候補カード行の書式 `  - id="...", text="..."` を IR 経路でも維持したため `mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）もそのまま一致する。
+- [x] AC-11（detect-contradiction / suggest-card-groups）: 既存フロントエンドが動作する（後方互換）。または必要な改修を同一 PR に含める。`03_Implement/deploy/tools/kj_canvas_demo.py` も追随させる。— **改修不要を確認**。`/ai/detect-contradiction` を呼ぶフロントエンドコードは存在しない（`grep -rn "detect-contradiction\|detectContradiction" 03_Implement/frontend/src` は0件）。`kj_canvas_demo.py` はAPIではなくモックLLMアダプタ（`http://localhost:8001/generate`）を直接叩いており、本エンドポイントの契約に依存しない。追加した `doc` はリクエストの任意フィールド、`alreadyRecorded` / `existingContradictionState` はレスポンスの追加フィールドであり、いずれも破壊的ではない。`verify_business_flow_e2e.sh` の2箇所の呼び出しも従来形のまま通る。**Stage 2 追記**: `/ai/suggest-card-groups` にもフロントエンドの呼び出し元は存在しない（`grep -rn "suggest-card-groups\|suggestCardGroups" 03_Implement/frontend` は0件。`03_Implement/deploy/tools/` の2件はいずれもモックLLMアダプタ側で、APIの契約に依存しない）。追加した `doc` はリクエストの任意フィールド、`excludedCardIds` / `truncated` はレスポンスの追加フィールドである。`verify_business_flow_e2e.sh` の呼び出し（27箇所）は `doc` を渡さない従来形であり、候補カード行の書式 `  - id="...", text="..."` を IR 経路でも維持したため `mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）もそのまま一致する。**Stage 3 追記**: `/ai/generate-narrative` は**移行済みエンドポイントで初めて実フロントエンド呼出元を持つ**（`frontend/src/api/client.ts` の `generateNarrative`、`App.tsx` から使用）。このためリクエスト／レスポンスの形を一切変えない方針を採り、フロントエンドは無改修（`03_Implement/frontend` の変更ゼロ）。読み順行の書式 `- <n>. island id="..."` / `- <n>. card id="..."` も維持したため `mock_local_llm.py` の `_READING_ORDER_LINE`（`^- \d+\. \w+ id="([^"]+)"`）はそのまま一致する。新たに加えた行（`- reading-order 1 -> reading-order 2: ...` 等の背骨行、切り詰め注記）はいずれもこの正規表現に一致しない（`- ` の直後が数字＋`.` ではない）ことをテストで固定した。`verify_business_flow_e2e.sh` からの呼び出しは**144箇所**あり（当初「2箇所」と記載していたのは誤り。`grep -c 'X POST "$BASE_URL/ai/generate-narrative"'` で確認）、IR経路化で新設された 422（`pii_detected` §7.2 / `structured_text_only_violation` §7.3）に触れる fixture が無いことを静的に確認した（同スクリプト中の `text` / `title` / `summary` / `note` 値 1463件に対し §7.2 の3パターンと §7.3 の禁止キーを走査、ヒット0件）。
 
 ## 依存関係
 
@@ -267,3 +267,63 @@ Stage 2 の変更に独立レビューを掛け、指摘3件のうち1件を是�
 | IR 経路化により `SuggestCardGroupsRequest.cards`（上限1000枚、`models_ai.py:388`）に対し IR 側が `MAX_CARDS=200` / `MAX_TEXT_CHARS=12000`（`llm_input_ir.py:35,37`）で切り詰めるため、200枚超ではモデルへ届かないカードが出る | **不備ではない。** 上記 設計判断6 の記載どおりで、黙って落とさず `truncated` で可視化しており、上限値の妥当性は AC-10 の主題として明示的に繰り延べている。数値・契約上限とも再確認して相違なし | 対応なし（AC-10 で扱う） |
 
 是正は本issueの文言1行のみで、`03_Implement/` 配下のコード・テスト・fixture は変更していない。是正後に backend 全体回帰を再実行し **1373 passed, 39 skipped, 8 deselected**（Stage 2 完了時と同一）、`python3 01_Plans/docs_check.py` も passed を確認した。
+
+## 結果（Stage 3: generate-narrative）
+
+AC-3 を `generate-narrative` に限定して実装した。Stage 1〜2 の配線パターン（IRビルダーを消費し、プロンプトをIRから描画する）を踏襲しているが、**移行済みエンドポイントで初めて実フロントエンド呼出元を持つ**点が前2段階と異なる（`frontend/src/api/client.ts` の `generateNarrative`、`App.tsx` から使用）。このためリクエスト／レスポンスの形を一切変えない方針を採った。
+
+### 何を作ったか
+
+| 成果物 | パス | 変更内容 |
+|---|---|---|
+| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `_generate_narrative_ir()` / `_reading_order_slots()` / `_narrative_relation_lines()` / `_narrative_spine_lines()`（いずれも新規）、`_build_generate_narrative_prompt()` に `ir` 引数を追加してIR描画へ、`generate_narrative()` 本体で `LLMRequest.inputs` にIRを載せる |
+| API契約 | `02_Architecture/api.md` | `/ai/generate-narrative` の項のみ。形は不変のため、追記したのは IR経由化・二層SafeMode・IR由来の422コード（`empty_cards` の挙動変更を含む）・座標非投影・切り詰めの扱い |
+| 統合テスト | `03_Implement/backend/tests/test_ai_generate_narrative_ir.py`（新規） | AC-3、読み順への写像、SafeMode二層の同時成立、後方互換、切り詰めの可視化（17件） |
+
+**IRビルダー（`llm_input_ir.py`）と仕様（`llm_input_ir_spec.md`）は変更していない。** 本Stageが消費する `relations`（5語彙）と `evidence_links` は Stage 1（`ir_version` 1.1）までに揃っており、`ir_version` は 1.2 のまま据え置きである。**仕様改訂を必要としなかった最初の段階**であり、これは投影層が段階を跨いで償却され始めた最初の証拠でもある（ADR-0069 が想定した「文書単位のコストを複数エンドポイントで償却する」構造）。
+
+### 設計上の判断（実装時に決めたこと）
+
+1. **リクエスト／レスポンスの形を一切変えなかった。** Stage 1・2 は `doc` を任意フィールドとして加え、レスポンスにも観測用フィールド（`alreadyRecorded` / `excludedCardIds` / `truncated`）を足したが、本エンドポイントは `doc` が既に必須であり、かつ実フロントエンド呼出元がある。`truncated` 相当を足せばフロントエンドの型（`GenerateNarrativeResult`）へ波及する。IR経由化はAI入力の質の問題であって契約の問題ではないため、**frontend の変更ゼロ**（`git status --short -- 03_Implement/frontend` が空）で完了させた。
+2. **読み順はIRから描かない。** `llm_input_ir_spec.md` §4 は `additionalProperties: false` の閉じたスキーマであり `reading_order` を定義しない。読み順をIRへ入れるには仕様改訂が要るが、読み順は「この文書のこの瞬間の叙述の並び」であって投影すべき構造ではない（Stage 4 の座標と同じく、必要なエンドポイントだけが受け取ればよい）。したがって**IRは骨格（関係）を供給し、背骨（読み順）は従来どおり `doc.readingOrder` から描く**という分担にした。副次的に `mock_local_llm.py` の `_READING_ORDER_LINE` との事実上の契約も自動的に維持される。
+3. **関係を読み順の上に写像した（`_narrative_spine_lines`）。** 「`c1 --causal--> c2`」とだけ渡すと、その因果が叙述のどこで効くのかをモデルが再発見する必要がある。それは投影層が肩代わりすべき作業である。島の読み順項目は構成カードへ位置を配り（`_reading_order_slots`）、`causal` / `negate` の2種別に限って `reading-order 1 -> reading-order 2` / `within reading-order 2` / `reading-order 1 <-> outside the reading order` / `outside the reading order` の4形で位置を明示する。`related` 等は文脈として一覧には出すが背骨には載せない。
+4. **島間の辺はIRを通さない。** 仕様 §2.3 規則6 が島間辺をIRの対象外としており（派生辺は Stage 4 の `getDerivedIslandEdges()` の主題）、従来どおり `doc.edges` から描く。IR経由化で**従来届いていた文脈を失わない**ことを回帰テストで固定した。
+5. **SafeMode の第一層はコメント追加のみ。** `_reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)` の行は1文字も変えず、上に由来コメント（DO NOT REMOVE）を添えただけである。`_reject_unreviewed_*` の呼び出しは変更前後とも12箇所で同一。IR層の `allow_unreviewed_text` は第一層と同じ述語（`allowUnreviewedText is True and settings.allow_unreviewed_ai_text`）を再現しており、緩和プロファイル下で両層が食い違わない（片開きにならない）ことをテストで固定した。
+6. **`empty_cards` の挙動変更は受け入れた。** カード0枚の文書は 200（空のプロンプトから叙述を書かせる）ではなく 422 になる。叙述の対象が存在しない以上、草稿を返すことに価値がない。api.md に挙動変更として明記した。フロントエンドは `parseErrorDetail` が `{code, message}` 形の detail を解釈するため `ApiError` としてメッセージが表示され、クラッシュしない（`client.ts` で確認）。
+7. **切り詰めはプロンプトに明記した。** レスポンスへ `truncated` を足さない方針（上記1）の代わりに、`MAX_CARDS=200` 超で投影が切り詰められた場合はプロンプト本文へ注記を出す。Stage 2 で立てた「黙って落とさない」原則を、契約を変えずに満たせる範囲で維持したもの。API利用者から観測できない点は api.md に限界として明記した。
+
+### テスト結果
+
+| 対象 | 結果 |
+|---|---|
+| `pytest tests/test_ai_generate_narrative_ir.py -v` | 17 passed |
+| `pytest tests/ -k "narrative or ir or safe_mode" -q` | 228 passed, 2 skipped, 1207 deselected |
+| `pytest tests/ -q`（backend 全体回帰） | **1390 passed, 39 skipped, 8 deselected**（Stage 2 のベースライン: 1373 passed, 39 skipped, 8 deselected。差分 +17 は本Stageの新規テストのみで、既存テストの failed / skipped / deselected は1件も増減していない） |
+| `pytest tests/test_ai_safemode.py -q` | 20 passed（**無変更で全通過** = 第一層を弱化していないことの直接証拠） |
+| `pytest tests/test_ai_prompt.py -q` | 30 passed（`_build_generate_narrative_prompt()` を `ir` 無しで直接呼ぶ既存テストを含む。既定引数 `ir=None` で従来描画に落ちることを担保している） |
+| `ruff check`（変更した src / tests） | All checks passed |
+| `scripts/check_design_consistency.py` | PASSED（0 errors, 0 warnings） |
+| `scripts/check_contract_drift.py` | OK（0 errors, 2 warnings。いずれも本変更以前から存在する Pydantic↔TS の既知差分） |
+| `scripts/generate_llm_input_ir_fixture.py --check` | up to date（IRビルダー無変更であることの確認として実行） |
+| `python3 01_Plans/docs_check.py` | passed（active_memos=45, tracked_markdown=683） |
+
+frontend は**変更していない**（`git status --short -- 03_Implement/frontend` が空）。リクエスト／レスポンスの形が不変であるため `npm run typecheck` / `vitest` は本変更の検証対象外。
+
+`verify_business_flow_e2e.sh`（実サーバ＋モックLLMを要するため本セッションでは未実行）については、静的確認のみ行った: 呼び出し144箇所、IR経由化で新設された 422（§7.2 `pii_detected` / §7.3 `structured_text_only_violation`）に触れる fixture は無し（`text` / `title` / `summary` / `note` 値1463件を走査、ヒット0件）。**実行は未実施であり、残作業として明記する。**
+
+### Stage 4〜5 に残っていること（Stage 2 の表の更新）
+
+| Stage | 対象 | 主な作業 |
+|---|---|---|
+| 4 | `suggest-layout` | 座標を渡す唯一のエンドポイント（`include_coordinates=True`）。`getDerivedIslandEdges()` 相当（島間派生辺）が必要になる見込みで、**AC-7 の再評価点**。本Stageで島間辺をIR外に留め置いたため、その判断は Stage 4 へそのまま持ち越されている |
+| 5 | 残りのエンドポイント | `refine-card-text` / `suggest-document-title` / `check-narrative` / `suggest-island-summary` / `summarize-island-relation` ほか |
+| 全Stage完了後 | AC-10 | 代表規模でのトークン量計測。`MAX_CARDS=200` の影響が本Stageで2エンドポイント目に及んだ（200枚超では叙述の骨格から関係が落ちる）。AC-10 では上限値の見直し要否を判断すること |
+| 全Stage完了後 | `ADR-0068` の退役判断 | IR経路が全 `/ai/*` を覆った時点で判断する（**本Stageでも判断していない**） |
+
+### 本Stageで意図的に触れなかったもの
+
+- `llm_input_ir.py` と `llm_input_ir_spec.md`。本Stageは既存の `relations` / `evidence_links` を消費するだけで、仕様改訂を要さない。
+- `_reject_unreviewed_cards` / `_reject_unreviewed_text` の呼び出し箇所（12箇所すべて）。1行も変更していない。
+- `detect-contradiction` / `suggest-card-groups` / `suggest-layout` ほかのエンドポイントとそのプロンプト構築関数。
+- `03_Implement/frontend` 全体（上記 設計判断1）。
+- AC-7（TS同値性の検査基盤）と AC-10（トークン量計測）。いずれも Stage 4 以降の主題として据え置き。
