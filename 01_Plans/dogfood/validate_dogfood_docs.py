@@ -8,7 +8,10 @@ Checks each doc_kj_atlas_dogfood_r*.json:
 - readingOrder items resolve to cards or islands
 - at least one narrative is present
 
-Exit 0 = all documents valid. Exit 1 = any issue found.
+Also syntax-checks the lightweight cognitive-dogfood experiment helper scripts.
+It does not score or validate any future arm result.
+
+Exit 0 = all documents/tools structurally valid. Exit 1 = any issue found.
 """
 
 from __future__ import annotations
@@ -19,6 +22,10 @@ from pathlib import Path
 
 DOGFOOD_DIR = Path(__file__).parent
 GLOB = "doc_kj_atlas_dogfood_r*.json"
+COGNITIVE_TOOL_FILES = (
+    "validate_cognitive_run_records.py",
+    "build_cognitive_blind_package.py",
+)
 
 
 def validate_one(path: Path) -> list[str]:
@@ -50,6 +57,22 @@ def validate_one(path: Path) -> list[str]:
     return issues
 
 
+def validate_cognitive_tools() -> list[str]:
+    issues: list[str] = []
+    for filename in COGNITIVE_TOOL_FILES:
+        path = DOGFOOD_DIR / filename
+        if not path.is_file():
+            issues.append(f"{filename}: missing cognitive dogfood helper")
+            continue
+        try:
+            compile(path.read_text(encoding="utf-8"), str(path), "exec")
+        except SyntaxError as exc:
+            issues.append(
+                f"{filename}: syntax error at line {exc.lineno}: {exc.msg}"
+            )
+    return issues
+
+
 def main() -> int:
     files = sorted(DOGFOOD_DIR.glob(GLOB))
     if not files:
@@ -63,6 +86,8 @@ def main() -> int:
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             all_issues.append(f"{path.name}: invalid document ({exc})")
 
+    all_issues.extend(validate_cognitive_tools())
+
     for path in files:
         d = json.loads(path.read_text(encoding="utf-8"))
         print(
@@ -70,13 +95,17 @@ def main() -> int:
             f"{len(d['islands'])}I/{len(d['narratives'])}N"
         )
 
+    for filename in COGNITIVE_TOOL_FILES:
+        status = "present" if (DOGFOOD_DIR / filename).is_file() else "missing"
+        print(f"  {filename}: {status} / syntax-check")
+
     if all_issues:
         print(f"\nISSUES FOUND ({len(all_issues)}):")
-        for i in all_issues:
-            print(f"  - {i}")
+        for issue in all_issues:
+            print(f"  - {issue}")
         return 1
 
-    print("\nALL DOGFOOD DOCUMENTS STRUCTURALLY VALID ✅")
+    print("\nALL DOGFOOD DOCUMENTS/TOOLS STRUCTURALLY VALID ✅")
     return 0
 
 
