@@ -24,12 +24,19 @@ def build_case001_arm_c_record(
     artifact_digest: str = "sha256:" + "b" * 64,
     contamination: str = "none",
     required_numbers: list[int] | None = None,
+    empty_required_numbers: set[int] | None = None,
 ) -> str:
     if required_numbers is None:
         required_numbers = list(range(1, 10))
+    if empty_required_numbers is None:
+        empty_required_numbers = set()
 
     required_output = "\n\n".join(
-        f"### 6.{number} Required item {number}\n\nResult: substantive result {number}."
+        (
+            f"### 6.{number} Required item {number}"
+            if number in empty_required_numbers
+            else f"### 6.{number} Required item {number}\n\nResult: substantive result {number}."
+        )
         for number in required_numbers
     )
 
@@ -164,19 +171,20 @@ def frozen_launch_required_numbers(case_id: str) -> list[int]:
     ]
 
 
-class RequiredOutputNumberingTests(unittest.TestCase):
+class RequiredOutputTests(unittest.TestCase):
     def test_contract_counts_match_frozen_launch_packets(self) -> None:
         for case_id, contract in validator.CASE_CONTRACTS.items():
             with self.subTest(case_id=case_id):
                 expected = list(range(1, int(contract["required_output_count"]) + 1))
                 self.assertEqual(frozen_launch_required_numbers(case_id), expected)
 
-    def test_complete_sequence_passes(self) -> None:
+    def test_complete_sequence_and_bodies_pass(self) -> None:
         text = "\n".join(
-            f"### 6.{number} Item {number}\nbody"
+            f"### 6.{number} Item {number}\nbody {number}"
             for number in range(1, 10)
         )
         self.assertEqual(validator.validate_required_output_numbering(text, 9), [])
+        self.assertEqual(validator.validate_required_output_bodies(text, 9), [])
 
     def test_missing_item_fails(self) -> None:
         text = "\n".join(
@@ -193,6 +201,30 @@ class RequiredOutputNumberingTests(unittest.TestCase):
         )
         errors = validator.validate_required_output_numbering(text, 9)
         self.assertTrue(any("duplicates=[3]" in error for error in errors), errors)
+
+    def test_empty_body_fails(self) -> None:
+        text = "\n".join(
+            (
+                f"### 6.{number} Item {number}"
+                if number == 4
+                else f"### 6.{number} Item {number}\nbody {number}"
+            )
+            for number in range(1, 10)
+        )
+        errors = validator.validate_required_output_bodies(text, 9)
+        self.assertEqual(errors, ["Required output 6.4 must contain substantive body text"])
+
+    def test_comment_only_body_fails(self) -> None:
+        text = "\n".join(
+            (
+                f"### 6.{number} Item {number}\n<!-- pending -->"
+                if number == 4
+                else f"### 6.{number} Item {number}\nbody {number}"
+            )
+            for number in range(1, 10)
+        )
+        errors = validator.validate_required_output_bodies(text, 9)
+        self.assertEqual(errors, ["Required output 6.4 must contain substantive body text"])
 
 
 class FullRecordTests(unittest.TestCase):
@@ -212,6 +244,15 @@ class FullRecordTests(unittest.TestCase):
             build_case001_arm_c_record(required_numbers=[1, 2, 3])
         )
         self.assertTrue(any("6.1..6.9" in error for error in errors), errors)
+
+    def test_empty_required_output_body_fails(self) -> None:
+        errors, _ = self.validate_text(
+            build_case001_arm_c_record(empty_required_numbers={5})
+        )
+        self.assertTrue(
+            any("Required output 6.5 must contain substantive body text" in error for error in errors),
+            errors,
+        )
 
     def test_artifact_identity_and_contamination_fail(self) -> None:
         errors, _ = self.validate_text(
