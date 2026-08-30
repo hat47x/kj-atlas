@@ -1,9 +1,9 @@
 # Third-Party Value Validation — Participant Brief
 
 - Status: Prepared before first third-party session
-- Date: 2026-08-30
+- Date: 2026-08-31
 - Audience: third-party participant / collaborator
-- Operator reference: `third-party-value-validation-execution-plan.md`
+- Operator reference: `third-party-value-validation-execution-plan.md`, `third-party-value-session-launch-checklist.md`
 
 ## このセッションについて
 
@@ -29,6 +29,24 @@ KJ法の経験やKJ Atlasへの事前知識は必要ありません。使い方�
 
 「安全に持ち込める資料がない」という事情自体も、このツールが仕事に合うかを考える上で有効な結果です。
 
+## AI・ネットワーク・保存経路について
+
+実際の資料を入力する前に、そのセッションで使うKJ Atlasの実行方法を確認します。
+
+特に、次を分かる範囲で説明します。
+
+- AI機能を使うかどうか。
+- AIを使う場合、資料やカード等が端末・KJ Atlasのprocess外へ送られるか。
+- 外部providerやnetwork経路を使う場合、どこへ何が送られるかについて確認できている範囲。
+- session後に元資料、KJ Atlasのdocument/export、operatorメモ等を保存するか。
+- audio/video/screenshot等を記録するか。
+
+不明点が残り、その状態では資料を扱いたくない場合は、AIを使わない、匿名化を強める、保存しない、別資料に変える、またはセッションを止めることができます。
+
+**検証を続けるために、資料の安全条件を緩める必要はありません。**
+
+AI/provider/network経路や保存条件が仕事上受け入れられないこと自体も、「この条件では使わない」という有効な結果として扱います。
+
 ## セッション中にお願いすること
 
 最初に、現在その仕事をどのような道具・手順で行っているかを伺います。
@@ -52,6 +70,8 @@ KJ法の経験やKJ Atlasへの事前知識は必要ありません。使い方�
 このプロジェクトのrepositoryはpublicですが、**あなたの元資料や識別可能な記録をそのままpublic Gitへ掲載することは既定では行いません。**
 
 公開する場合でも、必要最小限の匿名化・要約済みの検証記録だけを対象とします。氏名や所属の公開は検証参加の条件ではありません。
+
+セッションへの参加とpublic Gitへの公開は別の判断です。セッションに参加したことだけで、資料や観察記録の公開に同意したものとは扱いません。
 
 public Gitへ一度公開された情報は、後からrepositoryから削除してもclone・fork・cache等から完全には回収できない可能性があります。そのため、公開範囲はcommit前に確認します。
 
@@ -78,3 +98,5 @@ public Gitへ一度公開された情報は、後からrepositoryから削除し
 ## 補足
 
 このセッションは製品開発上の価値検証です。医療・心理診断、能力測定、人事評価等を目的としません。
+
+`third-party-value-session-launch-checklist.md` はoperatorが実資料投入前にdata pathを確認するための実務checklistであり、法的同意書や所属組織の情報セキュリティ承認の代替ではありません。
