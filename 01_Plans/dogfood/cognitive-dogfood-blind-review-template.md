@@ -2,6 +2,7 @@
 
 > arm/method identityを見ず、成果物そのものをsourceへ戻して評価する。
 > 単一総合点や「好み」で順位付けしない。
+> Case 001〜003で共通使用し、fixed questionに応じた境界回答を評価する。
 
 ## 0. Review metadata
 
@@ -36,30 +37,39 @@
 
 主要主張をsourceへ戻して確認する。
 
-| Claim / finding | Source used | Source supports it? | Temporal state handled? | Counterevidence handled? | Review |
+| Claim / finding | Source used | Source supports it? | Temporal/contract state handled? | Counterevidence handled? | Review |
 |---|---|---|---|---|---|
 |  |  | yes / partial / no | yes / partial / no | yes / partial / no |  |
 
 - Unsupported leap(s):
 - Source misread(s):
-- Stale-state adoption(s):
+- Stale/conditional/unimplemented state adoption(s):
 - Important evidence used correctly:
 
-## 3. Primary job / product boundary
+## 3. Core answer / case boundary
 
-- Primary job candidate as understood from package:
-- Is it stated as a user job rather than a feature list?:
+fixed questionに対する中核回答を、feature listではなく条件付きの境界として読めているかを見る。
+
+- Core answer/boundary as understood from package:
+- Does it directly answer the fixed question?:
 - Evidence that supports it:
 - Evidence that weakens it:
-- Existing approaches that package correctly says are sufficient:
-- Existing approaches that package may have unfairly understated:
-- Product boundary still unclear:
+- Conditions where the proposed boundary should not apply:
+- Alternatives or existing approaches the package correctly treats as sufficient:
+- Alternatives or existing approaches the package may have unfairly understated:
+- Boundary still unclear:
+
+Case別の着眼点は次の範囲に留め、特定の結論を正解として与えない。
+
+- Case 001: 利用者の一次仕事 / KJ Atlasが必要・不要になる製品境界。
+- Case 002: AIの自律実行 / proposal / human confirmation / useful frictionの境界。
+- Case 003: local/offline/self-host/data-control / server/collaborationの境界。
 
 ## 4. Falsification quality
 
 - Strongest counter-hypothesis in package:
-- Could this evidence actually overturn/revise the conclusion?:
-- Conditions under which KJ Atlas would be unnecessary:
+- Could this evidence actually overturn/revise the core answer?:
+- Conditions under which the proposed boundary would be unnecessary or should reverse:
 - Counterargument that is only ceremonial/weak:
 - Missing disconfirming evidence:
 
@@ -70,17 +80,19 @@
 - Dissent/counterevidence preserved:
 - Low-salience or isolated material that remained visible:
 - Material flattened into a generic compromise:
-- Material promoted from uncertain/inference to fact:
+- Material promoted from uncertain/inference/conditional to fact:
 
-## 6. Temporal correction check
+## 6. Source correction / transition check
 
-事前登録された自然発生の時間差を、packageがどの程度扱えているかを見る。テストの「正解語」を探すのではなく、古い記述と現在状態の関係を評価する。
+package内で中立化された `source-check-N` をすべて扱う。事前登録された「正解語」を探すのではなく、古い記述・訂正・条件付き設計・未実装契約と現在状態の関係を評価する。
 
-| Check | Detected relationship | Earlier state misused as current? | Review |
+| Check | Detected relationship | Earlier/conditional state misused as current? | Review |
 |---|---|---|---|
-| temporal case 1 |  | yes / no / unclear |  |
-| temporal case 2 |  | yes / no / unclear |  |
-| temporal case 3 |  | yes / no / unclear |  |
+| source-check-1 |  | yes / no / unclear |  |
+| source-check-2 |  | yes / no / unclear |  |
+| source-check-3 |  | yes / no / unclear |  |
+| source-check-4 | N/A if absent | yes / no / unclear / N/A |  |
+| source-check-5 | N/A if absent | yes / no / unclear / N/A |  |
 
 ## 7. Decision usefulness
 
@@ -96,15 +108,15 @@
 この節は成果物だけを見る。どのmethodを使ったかは推測しない。
 
 - Can major claims be reconstructed from cited evidence?:
-- Can a later reviewer identify what was uncertain?:
+- Can a later reviewer identify what was uncertain/conditional/unimplemented?:
 - Can a later reviewer see why a counter-hypothesis was rejected/deferred?:
 - What would be difficult to revisit?:
 
 ## 9. Important omissions
 
 - High-impact evidence omitted:
-- Important contradiction omitted:
-- Important existing-tool sufficiency omitted:
+- Important contradiction/transition omitted:
+- Important alternative or sufficiency condition omitted:
 - Important unproven assumption omitted:
 - Candidate finding absent from package but supported by source:
 
@@ -152,7 +164,7 @@ BR2でのみ記入する。arm mappingを見ないまま行う。
 - Findings common to all packages:
 - Findings present in only some packages and source-grounded:
 - Unsupported/overclaimed findings present in only some packages:
-- Best temporal correction behavior and why:
+- Best source-state/correction behavior and why:
 - Best dissent/uncertainty preservation and why:
 - Best falsification behavior and why:
 - Best decision/revisit support and why:
@@ -185,4 +197,4 @@ blind verdict凍結後にのみ記入する。
 - F0/F1/F2/F3 triage candidates:
 - Cross-case evidence still required:
 
-単一Case 001だけでproduct/skillの恒久判断を確定しない。
+単一ケースだけでproduct/skillの恒久判断を確定しない。
