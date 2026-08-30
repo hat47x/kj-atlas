@@ -2,7 +2,9 @@
 """Static intake validation for cognitive dogfood run records.
 
 This validates experiment comparability/record completeness only. It does not
-score cognitive quality or choose a winning arm.
+score cognitive quality or choose a winning arm. Case-specific fixed questions,
+source manifest IDs, and preregistered conflict-check IDs are frozen here for
+Cases 001–003.
 """
 
 from __future__ import annotations
@@ -13,13 +15,47 @@ from pathlib import Path
 
 PRODUCT_SHA = "2232b3bb26647e5c4a083f55bdbf83c161698649"
 SKILL_SHA = "3988e12e5f7f316f377d3391e9486c8467a111d5"
-SOURCE_MANIFEST_ID = f"case-001-r1-product@{PRODUCT_SHA}"
 EXPECTED_ORDER = {"C": 1, "D": 2, "B": 3, "A": 4}
-FIXED_QUESTION = (
-    "KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、"
-    "どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、"
-    "何をまだ実証できていないか。"
-)
+
+CASE_CONTRACTS = {
+    "case-001": {
+        "question": (
+            "KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、"
+            "どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、"
+            "何をまだ実証できていないか。"
+        ),
+        "tests": ("T1", "T2", "T3"),
+    },
+    "case-002": {
+        "question": (
+            "KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、"
+            "どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。"
+            "現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、"
+            "または十分に一般的な安全境界か。"
+        ),
+        "tests": ("C2-T1", "C2-T2", "C2-T3", "C2-T4"),
+    },
+    "case-003": {
+        "question": (
+            "KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な"
+            "同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、"
+            "安全境界、または特定利用ケース向け要件のどれとして扱うべきか。"
+        ),
+        "tests": ("C3-T1", "C3-T2", "C3-T3", "C3-T4", "C3-T5"),
+    },
+}
+
+CASE_ALIASES = {
+    "001": "case-001",
+    "case 001": "case-001",
+    "case-001": "case-001",
+    "002": "case-002",
+    "case 002": "case-002",
+    "case-002": "case-002",
+    "003": "case-003",
+    "case 003": "case-003",
+    "case-003": "case-003",
+}
 
 REQUIRED_META = [
     "Case ID",
@@ -47,14 +83,6 @@ COMMON_HEADINGS = [
     "## 4. Raw analysis artifacts",
     "## 5. AI proposal ledger",
     "## 6. Required output",
-    "### 6.1 利用者の仕事",
-    "### 6.2 既存手段との境界",
-    "### 6.3 現在実現している価値",
-    "### 6.4 未実証の価値仮説",
-    "### 6.5 KJ Atlasが不要かもしれない条件",
-    "### 6.6 次の検証/issue",
-    "### 6.7 訂正・矛盾・旧情報",
-    "### 6.8 保留",
     "## 7. Conflict-bearing source check",
     "## 8. M1–M9 evidence",
     "### M1 生存所見",
@@ -87,6 +115,20 @@ def blank_or_placeholder(value: str) -> bool:
     return not value or (value.startswith("<") and value.endswith(">"))
 
 
+def normalize_case_id(raw: str) -> str | None:
+    return CASE_ALIASES.get(raw.strip().lower())
+
+
+def section_text(text: str, start: str, end: str) -> str:
+    start_index = text.find(start)
+    if start_index < 0:
+        return ""
+    end_index = text.find(end, start_index + len(start))
+    if end_index < 0:
+        return ""
+    return text[start_index + len(start):end_index].strip()
+
+
 def validate_record(path: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -101,9 +143,15 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
     if arm not in {"A", "B", "C", "D"}:
         errors.append(f"Arm must be A/B/C/D, got {arm!r}")
 
-    case_id = fields.get("Case ID", "").strip().lower()
-    if case_id not in {"case-001", "001", "case 001"}:
-        errors.append(f"Case ID must identify case-001, got {case_id!r}")
+    raw_case_id = fields.get("Case ID", "")
+    case_id = normalize_case_id(raw_case_id)
+    if case_id is None:
+        errors.append(
+            f"Case ID must identify one of {tuple(CASE_CONTRACTS)}, got {raw_case_id!r}"
+        )
+        contract = None
+    else:
+        contract = CASE_CONTRACTS[case_id]
 
     round_id = fields.get("Round", "").strip().lower()
     if round_id not in {"1", "round 1"}:
@@ -141,7 +189,7 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
 
     if PRODUCT_SHA not in fields.get("KJ Atlas version/commit", ""):
         errors.append(
-            "KJ Atlas snapshot does not match the frozen Case 001 Round 1 SHA"
+            "KJ Atlas snapshot does not match the frozen cognitive-dogfood product SHA"
         )
 
     skill_version = fields.get(
@@ -156,23 +204,50 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
                 "A/C must record cultural-substrate-weaving version as N/A"
             )
 
-    if fields.get("Source manifest ID", "").strip() != SOURCE_MANIFEST_ID:
-        errors.append(
-            "Source manifest ID does not match the frozen Case 001 Round 1 manifest"
-        )
+    if case_id is not None:
+        expected_manifest = f"{case_id}-r1-product@{PRODUCT_SHA}"
+        if fields.get("Source manifest ID", "").strip() != expected_manifest:
+            errors.append(
+                f"Source manifest ID does not match frozen {case_id} Round 1 manifest"
+            )
 
     normalized_text = re.sub(r"\s+", " ", text)
-    if FIXED_QUESTION not in normalized_text:
-        errors.append("Fixed question is missing or changed")
+    if contract is not None and contract["question"] not in normalized_text:
+        errors.append(f"Fixed question is missing or changed for {case_id}")
 
     for heading in COMMON_HEADINGS:
         if heading not in text:
             errors.append(f"required heading missing: {heading}")
 
-    for test_id in ("T1", "T2", "T3"):
-        pattern = rf"^- {test_id} detected:\s*(yes|no|partial)\s*$"
-        if not re.search(pattern, text, re.MULTILINE | re.IGNORECASE):
-            errors.append(f"{test_id} detected must be yes/no/partial")
+    required_output = section_text(
+        text, "## 6. Required output", "## 7. Conflict-bearing source check"
+    )
+    if not required_output:
+        errors.append("Required output section is empty or malformed")
+    else:
+        result_headings = re.findall(r"^### 6\.\d+\s+\S.*$", required_output, re.MULTILINE)
+        if not result_headings:
+            errors.append(
+                "Required output must contain at least one populated '### 6.<n>' heading"
+            )
+
+    if contract is not None:
+        expected_tests = tuple(contract["tests"])
+        for test_id in expected_tests:
+            pattern = rf"^- {re.escape(test_id)} detected:\s*(yes|no|partial)\s*$"
+            if not re.search(pattern, text, re.MULTILINE | re.IGNORECASE):
+                errors.append(f"{test_id} detected must be yes/no/partial")
+
+        detected_test_lines = re.findall(
+            r"^- ([A-Za-z0-9-]+) detected:\s*(?:yes|no|partial)\s*$",
+            text,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        unexpected = [test for test in detected_test_lines if test not in expected_tests]
+        if unexpected:
+            errors.append(
+                f"unexpected conflict-check IDs for {case_id}: {', '.join(unexpected)}"
+            )
 
     if arm in {"C", "D"}:
         if "## 10. InquiryJourney actual-use record (C/D only)" not in text:
@@ -223,7 +298,7 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate Case 001 Round 1 cognitive dogfood run records."
+        description="Validate Case 001–003 Round 1 cognitive dogfood run records."
     )
     parser.add_argument("records", nargs="+", type=Path)
     args = parser.parse_args()
