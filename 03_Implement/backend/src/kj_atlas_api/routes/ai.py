@@ -18,6 +18,7 @@ from kj_atlas_api.llm_input_ir import (
     SourceCard,
     adjudicated_contradiction,
     build_llm_input_ir,
+    derived_island_relations,
     held_card_ids,
     source_from_document,
 )
@@ -817,7 +818,105 @@ def _parse_generate_narrative_response(
     return response
 
 
-def _build_prompt(payload: SuggestLayoutRequest) -> str:
+def _suggest_layout_ir(payload: SuggestLayoutRequest) -> dict:
+    """Build the LLM input IR for `/ai/suggest-layout` (ADR-0069 D4=A).
+
+    Stage 4 of the `AI-IR-PROJECTION-01` rollout, and the ONLY endpoint that
+    asks for coordinates: spec §2.2.1 lists `POST /ai/suggest-layout` as the one
+    "要求" row of the D1=B table, because here the output IS placement, so the
+    relative arrangement is genuine input. They arrive normalized per §2.2
+    (centroid translated to the origin, plus `radius` / `angle_deg`) -- the raw
+    absolute coordinates never enter the IR.
+
+    SafeMode: the caller has ALREADY run `_reject_unreviewed_text`. The
+    `allow_unreviewed_text` argument reproduces that helper's own predicate so
+    the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
+    rather than contradicting it. Both layers run; neither replaces the other.
+    """
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    try:
+        return build_llm_input_ir(
+            source_from_document(payload.doc),
+            include_coordinates=True,
+            safe_mode=True,
+            allow_unreviewed_text=allow_unreviewed,
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+
+
+def _layout_placement_lines(ir: dict) -> list[str]:
+    """The IR's normalized coordinates (spec §2.2), rendered for the prompt.
+
+    These are structure, not output: the endpoint's response is in the
+    document's own absolute space, which is why the `Cards:` section keeps
+    carrying raw `x`/`y` unchanged. What the normalization adds is the part the
+    absolute values do not state -- which cards sit near each other, and in what
+    direction, independent of where the canvas happens to be panned.
+    """
+    return [
+        f'- card "{item["card_id"]}" at (x={item["x"]}, y={item["y"]}), '
+        f'radius={item["radius"]}, angle_deg={item["angle_deg"]}'
+        for item in ir.get("coordinates", [])
+    ]
+
+
+def _layout_relation_lines(payload: SuggestLayoutRequest, ir: dict) -> list[str]:
+    """The typed relations (ADR-0069: "あわせて edges を渡す").
+
+    Card-to-card relations come from the IR, which is the input of record.
+    Persisted island-to-island edges are NOT in the IR (spec §2.3 rule 6) and
+    are read off the document, exactly as `getDerivedIslandEdges()` leaves them
+    alone for being already explicit.
+    """
+    lines = [
+        f'- card "{relation["from"]}" --{relation["type"]}--> card "{relation["to"]}"'
+        for relation in ir.get("relations", [])
+    ]
+    lines.extend(
+        f'- island "{edge.fromId}" --{edge.type}--> island "{edge.toId}" (stated)'
+        for edge in payload.doc.edges
+        if edge.fromKind == "island" and edge.toKind == "island"
+    )
+    return lines
+
+
+def _layout_island_relation_lines(ir: dict) -> list[str]:
+    """Islands as relation sets rather than only as rectangles.
+
+    `derived_island_relations()` is the Python counterpart of the frontend's
+    `getDerivedIslandEdges()`. Without it the prompt described each island by
+    its current bounding box alone, so the only thing the model could reason
+    about was where the island already is -- never which islands pull on each
+    other, which is the thing a layout is supposed to express.
+    """
+    lines: list[str] = []
+    for row in derived_island_relations(ir):
+        target = (
+            f'island "{row["to_id"]}"'
+            if row["to_kind"] == "island"
+            else f'lone card "{row["to_id"]}"'
+        )
+        lines.append(
+            f'- island "{row["from_id"]}" --{row["type"]}--> {target} '
+            f'(aggregated from {row["aggregate_count"]} card relation(s): '
+            f'{", ".join(row["contributing_card_ids"])})'
+        )
+    return lines
+
+
+def _build_prompt(payload: SuggestLayoutRequest, ir: dict | None = None) -> str:
+    """Render the layout prompt, enriched from the IR when one is supplied.
+
+    `ir=None` keeps the function callable on its own; the route always passes
+    the IR it built. The `Cards:` and `Islands:` line formats are unchanged
+    byte-for-byte -- they are a de-facto contract with
+    `deploy/tools/mock_local_llm.py`'s `_CARD_LINE` parser, and the `Cards:`
+    section must keep listing EVERY document card because `_parse_suggestion()`
+    requires the response to cover all of them (the IR may truncate, §5).
+    """
     cards_by_id = {card.id: card for card in payload.doc.cards}
     card_lines = []
     for card in payload.doc.cards:
@@ -826,6 +925,7 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
             f'- id="{card.id}", text={json.dumps(card.text)}, x={card.x}, y={card.y}{critique_text}'
         )
 
+    islands_by_id = {island["id"]: island for island in (ir or {}).get("islands", [])}
     island_lines = []
     for island in payload.doc.islands:
         island_cards = [
@@ -843,12 +943,46 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
 
         title_text = json.dumps(island.title) if island.title else '""'
         critique_text = f", critique={json.dumps(island.critique)}" if island.critique else ""
+        # ADR-0069 D3=A: the confirmed hierarchy (parent island, placard, review
+        # state) is what makes an island a decided structure rather than a box.
+        ir_island = islands_by_id.get(island.id)
+        structure_text = ""
+        if ir_island is not None:
+            structure_text = (
+                f', parentIslandId={json.dumps(ir_island["parent_island_id"])}'
+                f', placardCardId={json.dumps(ir_island["placard_card_id"])}'
+                f', reviewState="{ir_island["review_state"]}"'
+            )
         island_lines.append(
             f'- id="{island.id}", title={title_text}, cardIds={json.dumps(island.cardIds)}, '
-            f"{bounds_text}{critique_text}"
+            f"{bounds_text}{structure_text}{critique_text}"
         )
 
     instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
+
+    context_lines: list[str] = []
+    if ir is not None:
+        placement_lines = _layout_placement_lines(ir)
+        relation_lines = _layout_relation_lines(payload, ir)
+        island_relation_lines = _layout_island_relation_lines(ir)
+        if placement_lines:
+            context_lines.append(
+                "Relative placement (centroid moved to the origin; structure only, "
+                "do NOT return these values -- return coordinates in the same "
+                "absolute space as the Cards section above):"
+            )
+            context_lines.extend(placement_lines)
+        context_lines.append("Logical relations (these, not the current positions, say what belongs near what):")
+        context_lines.extend(relation_lines or ["- (none)"])
+        context_lines.append("Island relations (aggregated from the card relations above):")
+        context_lines.extend(island_relation_lines or ["- (none)"])
+        if ir.get("truncation", {}).get("truncated"):
+            reasons = ",".join(ir["truncation"].get("reason_codes", [])) or "unspecified"
+            context_lines.append(
+                f"Note: the projection hit its size limit ({reasons}); the relation "
+                "and placement sections above do not cover every card listed under "
+                "Cards. Still return a position for every card."
+            )
 
     return "\n".join(
         [
@@ -857,6 +991,8 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
             "Do not force a single correct answer. Suggest one plausible alternative layout.",
             "If a critique says 'too close', increase distance.",
             "If a critique says 'belongs together', place nearer.",
+            "Place cards and islands that stand in a logical relation nearer, and keep "
+            "the two sides of a 'negate' relation visibly apart.",
             "Preserve all ids and texts. Only propose positions and transform.",
             "Use this exact schema:",
             '{"transform":{"panX":number,"panY":number,"zoom":number},"cards":[{"id":string,"x":number,"y":number}],"notes":string?}',
@@ -869,6 +1005,7 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
             *card_lines,
             "Islands:",
             *island_lines,
+            *context_lines,
         ]
     )
 
@@ -1145,12 +1282,23 @@ def get_provider_status() -> ProviderStatusResponse:
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_layout(payload: SuggestLayoutRequest, request: Request, db: Session = Depends(get_db)) -> SuggestLayoutResponse:
+    # SEC-AI-SAFEMODE-01 (ADR-0068, Done). Layer 1 -- DO NOT REMOVE. The IR
+    # builder below runs its own review-state check as an ADDITIONAL layer
+    # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+
+    # AI-IR-PROJECTION-01 (stage 4 of the ADR-0069 rollout). The one endpoint
+    # that declares `coordinates` required (spec §2.2.1 / D1=B) -- and the first
+    # to receive the relations and the confirmed island hierarchy, so an island
+    # reaches the model as a set of relations and not only as a rectangle.
+    ir = _suggest_layout_ir(payload)
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="re_layout",
-                prompt=_build_prompt(payload),
+                prompt=_build_prompt(payload, ir),
+                inputs=ir,
             )
         )
     except ProviderDisabledError as exc:
