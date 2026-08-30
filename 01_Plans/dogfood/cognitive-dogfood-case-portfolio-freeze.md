@@ -10,7 +10,7 @@
 
 Case 001の結果を見てからCase 002/003の問い、資料、方法条件を有利な方向へ調整しないため、実行入力の固定状態だけを記録する。
 
-このregisterは事前登録の問いを変更しない。各ケースの答え、評価、T1等のexperimenter-only test、Arm間比較結果は含めない。
+このregisterは事前登録の問いを変更しない。各ケースの答え、評価、experimenter-only conflict/correction test、Arm間比較結果は含めない。
 
 ## Shared invariants
 
@@ -23,6 +23,24 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
 - raw resultを評価前に固定する。
 - blind reviewをunblindより前に完了する。
 - invalid / negative / no-increment resultを削除しない。
+- arm execution orderはC → D → B → Aを維持する。
+
+## Shared execution / review infrastructure
+
+- Common run record: `cognitive-dogfood-run-record-template.md`
+  - case固有required outputとconflict/correction IDだけをlaunch/contractから差し込む。
+  - M1〜M9、proposal ledger、retention、T9、skill execution recordは3ケース共通。
+- Run validator: `validate_cognitive_run_records.py`
+  - Case 001〜003のfixed question / source manifest ID / conflict-check IDを選び分ける。
+  - 方法の優劣は採点しない。
+- Shared C/D UI runbook: `cognitive-dogfood-cd-ui-runbook.md`
+  - InquiryJourney / snapshot / handoff / resume / lineage / compareのoperator手順を共通化する。
+- Blind package builder: `build_cognitive_blind_package.py`
+  - arm/method metadataとexperimenter test IDを除き、test IDは`source-check-N`へ中立化する。
+- Blind review protocol/template:
+  - `cognitive-dogfood-blind-review-protocol.md`
+  - `cognitive-dogfood-blind-review-template.md`
+  - fixed questionに応じたcase境界を評価し、Case 001のprimary-job問題へCase 002/003を引き戻さない。
 
 ## Case 001
 
@@ -36,7 +54,8 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - `cognitive-dogfood-case-001-launch-atlas.md`
   - `cognitive-dogfood-case-001-launch-atlas-skill.md`
 - Operator pack: `cognitive-dogfood-case-001-operator-pack.md`
-- C/D UI runbook: `cognitive-dogfood-case-001-cd-ui-runbook.md`
+- Original Case 001 C/D preflight runbook: `cognitive-dogfood-case-001-cd-ui-runbook.md`
+  - 以後の共通操作正本は`cognitive-dogfood-cd-ui-runbook.md`とし、この文書はCase 001準備時の実装照合記録として保持する。
 
 ## Case 002
 
