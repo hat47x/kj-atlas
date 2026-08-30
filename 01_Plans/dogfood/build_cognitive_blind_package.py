@@ -61,14 +61,25 @@ def extract_until_any(text: str, start: str, next_headings: tuple[str, ...]) -> 
     return text[start_index:min(candidates)].strip()
 
 
-def neutralize_temporal_section(section: str) -> str:
+def neutralize_conflict_section(section: str) -> str:
+    """Hide preregistered test IDs without paraphrasing the run observation."""
     section = section.replace(
-        "## 7. Conflict-bearing source check", "## Temporal correction observations"
+        "## 7. Conflict-bearing source check", "## Source correction observations"
     )
-    section = re.sub(r"\bT1\b", "temporal-case-1", section)
-    section = re.sub(r"\bT2\b", "temporal-case-2", section)
-    section = re.sub(r"\bT3\b", "temporal-case-3", section)
-    return section
+    counter = 0
+
+    def replace_detected(match: re.Match[str]) -> str:
+        nonlocal counter
+        counter += 1
+        verdict = match.group(2)
+        return f"- source-check-{counter} detected: {verdict}"
+
+    return re.sub(
+        r"^- ([A-Za-z0-9-]+) detected:\s*(yes|no|partial)\s*$",
+        replace_detected,
+        section,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
 
 
 def build_package(record_text: str) -> tuple[str, list[str]]:
@@ -88,7 +99,7 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
     required_output = extract_section(
         record_text, "## 6. Required output", "## 7. Conflict-bearing source check"
     )
-    temporal = extract_section(
+    conflict_observations = extract_section(
         record_text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence"
     )
     candidate_sources = extract_until_any(
@@ -100,7 +111,7 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
         ),
     )
 
-    temporal = neutralize_temporal_section(temporal)
+    conflict_observations = neutralize_conflict_section(conflict_observations)
     source_digest = hashlib.sha256(record_text.encode("utf-8")).hexdigest()
 
     package = "\n\n".join(
@@ -115,14 +126,14 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
             ),
             fixed_question,
             required_output,
-            temporal,
+            conflict_observations,
             candidate_sources,
             (
                 "## Reviewer boundary\n\n"
                 "This package intentionally omits arm identity, method metadata, "
-                "run self-scoring, InquiryJourney/T9 records, and skill execution "
-                "records. Review claims against the common frozen source bundle "
-                "before any unblinding."
+                "run self-scoring, InquiryJourney/T9 records, skill execution "
+                "records, and preregistered experimenter test identifiers. Review "
+                "claims against the common frozen source bundle before any unblinding."
             ),
         ]
     ) + "\n"
