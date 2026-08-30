@@ -45,6 +45,22 @@ def extract_section(text: str, start: str, next_heading: str | None) -> str:
     return text[start_index:end_index].strip()
 
 
+def extract_until_any(text: str, start: str, next_headings: tuple[str, ...]) -> str:
+    start_index = text.find(start)
+    if start_index < 0:
+        raise ValueError(f"missing section: {start}")
+    candidates = [
+        index
+        for heading in next_headings
+        if (index := text.find(heading, start_index + len(start))) >= 0
+    ]
+    if not candidates:
+        raise ValueError(
+            f"missing next section after {start}: one of {next_headings!r}"
+        )
+    return text[start_index:min(candidates)].strip()
+
+
 def neutralize_temporal_section(section: str) -> str:
     section = section.replace(
         "## 7. Conflict-bearing source check", "## Temporal correction observations"
@@ -66,10 +82,23 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
     if not case_id or not round_id:
         raise ValueError("Case ID and Round are required")
 
-    fixed_question = extract_section(record_text, "## 1. Fixed question", "## 2. Input verification")
-    required_output = extract_section(record_text, "## 6. Required output", "## 7. Conflict-bearing source check")
-    temporal = extract_section(record_text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence")
-    candidate_sources = extract_section(record_text, "## 11. Candidate source requests", "## 12. cultural-substrate-weaving execution record")
+    fixed_question = extract_section(
+        record_text, "## 1. Fixed question", "## 2. Input verification"
+    )
+    required_output = extract_section(
+        record_text, "## 6. Required output", "## 7. Conflict-bearing source check"
+    )
+    temporal = extract_section(
+        record_text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence"
+    )
+    candidate_sources = extract_until_any(
+        record_text,
+        "## 11. Candidate source requests",
+        (
+            "## 12. cultural-substrate-weaving execution record",
+            "## 13. Static intake validation",
+        ),
+    )
 
     temporal = neutralize_temporal_section(temporal)
     source_digest = hashlib.sha256(record_text.encode("utf-8")).hexdigest()
@@ -77,12 +106,24 @@ def build_package(record_text: str) -> tuple[str, list[str]]:
     package = "\n\n".join(
         [
             "# Cognitive Dogfood Blind Package",
-            f"- Case ID: {case_id}\n- Round: {round_id}\n- Blind alias: {alias}\n- Source record SHA-256: `{source_digest}`\n- Package scope: common result-bearing sections only",
+            (
+                f"- Case ID: {case_id}\n"
+                f"- Round: {round_id}\n"
+                f"- Blind alias: {alias}\n"
+                f"- Source record SHA-256: `{source_digest}`\n"
+                "- Package scope: common result-bearing sections only"
+            ),
             fixed_question,
             required_output,
             temporal,
             candidate_sources,
-            "## Reviewer boundary\n\nThis package intentionally omits arm identity, method metadata, run self-scoring, InquiryJourney/T9 records, and skill execution records. Review claims against the common frozen source bundle before any unblinding.",
+            (
+                "## Reviewer boundary\n\n"
+                "This package intentionally omits arm identity, method metadata, "
+                "run self-scoring, InquiryJourney/T9 records, and skill execution "
+                "records. Review claims against the common frozen source bundle "
+                "before any unblinding."
+            ),
         ]
     ) + "\n"
 
