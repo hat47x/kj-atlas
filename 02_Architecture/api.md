@@ -592,6 +592,12 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `basedOnReadingOrder: string[]` — 参照した読取順
   - `warnings?: string[]`
 - A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（kj_technique.md §5）を人間が実施する必要がある。
+- **`AI-IR-PROJECTION-01`（`ADR-0069`）Stage 3 で LLM投入IR 経由になった**（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.2）。`doc.edges` の**カード間**関係（5語彙。特に `causal` / `negate`）と `evidenceLinks` の `contradictionState` が、読み順上のどの位置で効くかとあわせてAI入力へ届く。**リクエスト／レスポンスの形は変わらない**（後方互換。フロントエンドの `generateNarrative` は無改修）。
+- 読み順は IR のフィールドではない（`llm_input_ir_spec.md` §4 は閉じたスキーマであり `reading_order` を定義しない）。叙述の背骨は従来どおり `doc.readingOrder` から描画し、IR は骨格（関係）を供給する。島間の辺（`fromKind` / `toKind` = `island`）も IR の対象外であり（§2.3 規則6）、従来どおり `doc.edges` から描画する。
+- SafeMode は二層で強制される。**(1)** `_reject_unreviewed_text`（`ADR-0068` / `SEC-AI-SAFEMODE-01`、変更なし）。**(2)** IRビルダーが §7.1 に従い投影対象カードのレビュー状態を独立に再検査する。本エンドポイントは (1) と (2) の検査対象がいずれも同一の `doc` であるため (1) が必ず先に発火する。(2) は多層防御であり、(1) の置き換えではない。
+- IR生成が失敗した場合の 422 コード: `unreviewed_text_not_allowed`（§7.1）/ `pii_detected`（§7.2。メール・電話・URLトークン。**応答に該当文字列を含めない**）/ `structured_text_only_violation`（§7.3）/ `empty_cards` / `empty_card_text` / `duplicate_card_id` / `invalid_card_id` / `invalid_self_loop` / `duplicate_island_id` / `invalid_island_id`。**`empty_cards` は挙動変更**であり、カードが1枚も無い文書は 200 ではなく 422 を返す（叙述の対象が存在しないため）。
+- 座標は渡さない（`ADR-0069` D1=B、`llm_input_ir_spec.md` §2.2.1）。叙述の骨格は `causal` / `negate` であり布置ではない。
+- カード200枚超（`MAX_CARDS`、§5.1）の文書では IR が切り詰められ、**打ち切られたカードに繋がる関係はAI入力に含まれない**。読み順そのものは従来どおり `doc.readingOrder` 全体から描画するため欠落しない。レスポンスの形は変えない方針（後方互換）のため `suggest-card-groups` の `truncated` に相当するフィールドは追加しておらず、切り詰めはプロンプト本文に明記して黙って落とさないことのみ担保する。上限値の妥当性は `AI-IR-PROJECTION-01` AC-10 で扱う。
 
 **POST** `/ai/check-narrative`
 
