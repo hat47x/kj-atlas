@@ -121,6 +121,12 @@ def blank_or_placeholder(value: str) -> bool:
     return not value or (value.startswith("<") and value.endswith(">"))
 
 
+def has_substantive_text(text: str) -> bool:
+    """Return true when text contains more than Markdown/comment scaffolding."""
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL).strip()
+    return bool(re.search(r"[A-Za-z0-9\u3040-\u30ff\u3400-\u9fff]", text))
+
+
 def normalize_case_id(raw: str) -> str | None:
     return CASE_ALIASES.get(raw.strip().lower())
 
@@ -191,9 +197,63 @@ def validate_required_output_bodies(
         following = [candidate.start() for candidate in matches if candidate.start() > match.start()]
         end = min(following) if following else len(required_output)
         body = required_output[match.end():end].strip()
-        body_without_comments = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL).strip()
-        if not re.search(r"[A-Za-z0-9\u3040-\u30ff\u3400-\u9fff]", body_without_comments):
+        if not has_substantive_text(body):
             errors.append(f"Required output 6.{number} must contain substantive body text")
+
+    return errors
+
+
+def validate_conflict_interpretations(
+    conflict_section: str, expected_tests: tuple[str, ...]
+) -> list[str]:
+    """Require a substantive temporal/contract interpretation for each test verdict."""
+    errors: list[str] = []
+    detected_pattern = re.compile(
+        r"^- ([A-Za-z0-9-]+) detected:\s*(yes|no|partial)\s*$",
+        re.MULTILINE | re.IGNORECASE,
+    )
+    detected_matches = list(detected_pattern.finditer(conflict_section))
+
+    for test_id in expected_tests:
+        match = next(
+            (candidate for candidate in detected_matches if candidate.group(1) == test_id),
+            None,
+        )
+        if match is None:
+            continue
+        later_starts = [
+            candidate.start()
+            for candidate in detected_matches
+            if candidate.start() > match.start()
+        ]
+        end = min(later_starts) if later_starts else len(conflict_section)
+        block = conflict_section[match.end():end]
+        interpretation_match = re.search(
+            r"^\s+- temporal/contract interpretation:\s*(.*)$",
+            block,
+            re.MULTILINE,
+        )
+        if interpretation_match is None:
+            errors.append(f"{test_id} requires temporal/contract interpretation")
+            continue
+
+        interpretation = interpretation_match.group(1).strip()
+        if not has_substantive_text(interpretation):
+            # Permit a multiline continuation directly beneath the interpretation
+            # label, but stop before another peer bullet or heading.
+            continuation: list[str] = []
+            remainder = block[interpretation_match.end():]
+            for line in remainder.splitlines():
+                if re.match(r"^\s{0,2}-\s", line) or re.match(r"^#{1,6}\s", line):
+                    break
+                if line.strip():
+                    continuation.append(line.strip())
+            interpretation = "\n".join(continuation)
+
+        if not has_substantive_text(interpretation):
+            errors.append(
+                f"{test_id} temporal/contract interpretation must contain substantive text"
+            )
 
     return errors
 
@@ -336,6 +396,11 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
             errors.append(
                 f"unexpected conflict-check IDs for {case_id}: {', '.join(unexpected)}"
             )
+
+        conflict_section = section_text(
+            text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence"
+        )
+        errors.extend(validate_conflict_interpretations(conflict_section, expected_tests))
 
     if arm in {"C", "D"}:
         if "## 10. InquiryJourney actual-use record (C/D only)" not in text:
