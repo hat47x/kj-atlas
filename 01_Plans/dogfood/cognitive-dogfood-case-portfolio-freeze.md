@@ -45,7 +45,8 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - Cases 001〜003の4armでfixed question / required output / product snapshot / evidence bundleを一致させる。
   - cultural-substrate-weaving treatmentはB/Dだけ、KJ Atlas starterはC/Dだけに存在することを検査する。
 - Dedicated workflow: `.github/workflows/cognitive-dogfood-freeze.yml`
-  - launch packetまたはfreeze validator変更時にfail-closedでtreatment equivalenceを検査する。
+  - launch packet / product source manifest / bundle builder / freeze validator変更時にfail-closedでpreflightする。
+  - treatment equivalenceだけでなく、Cases 001〜003のfrozen product evidence bundleを固定commitから実際に再生成する。
 
 ## Case 001
 
@@ -125,6 +126,18 @@ B/Dへ渡すskill sourceもrepository全体ではなく、shared skill manifest�
 - skill treatmentがB/Dだけに入り、A/Cへ混入しないこと。
 - KJ Atlas starterがC/Dだけに入り、A/Bへ混入しないこと。
 - 全armが追加資料を一方的に取り込まずCandidate source requestへ送る経路を持つこと。
+- Cases 001〜003のproduct bundleがfrozen commitから再生成可能であること。
+
+## P0 verification evidence
+
+P0終了前に次を確認した。
+
+1. Cases 001〜003のproduct manifestは、通常CIでfrozen product commit上のpath / Git blob SHAまで実照合済み。
+2. `Cognitive dogfood freeze` workflowの`Frozen input preflight`で、12 launch packetのtreatment equivalenceが成功した。
+3. 同preflightで、Cases 001〜003のfrozen product evidence bundleを20 / 18 / 18 sourceから実際に再生成できた。
+4. B/D用skill manifestの12 sourceは、`cultural-substrate-weaving@3988e12e5f7f316f377d3391e9486c8467a111d5` のcanonical `src/ja-JP`現物とpath / Git blob SHAを照合し、全件一致した。
+
+ここまででP0を閉じる。以後、最初のvalid raw runに必要な欠陥が見つからない限り、preflight機能を追加し続けない。次の正規工程はP1 Case 001 Arm Cである。
 
 ## Pre-run correction log
 
@@ -137,6 +150,6 @@ B/Dへ渡すskill sourceもrepository全体ではなく、shared skill manifest�
 
 ## Change boundary after first valid raw run
 
-最初の有効なCase 001 raw result保存後は、Cases 001–003のfixed question、Round 1 source manifest、product/skill snapshot、arm treatment、required outputを結果に合わせて変更しない。
+最初の有効なCase 001 raw result保存後は、Cases 001〜003のfixed question、Round 1 source manifest、product/skill snapshot、arm treatment、required outputを結果に合わせて変更しない。
 
 実行不能になる実装変更、資料破損、重大な安全/権限上の理由がある場合は、既存入力を上書きせずdeviation/revisionとして別記録し、旧条件と理由を残す。
