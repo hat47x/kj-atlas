@@ -32,11 +32,13 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - M1〜M9、proposal ledger、retention、T9、skill execution recordは3ケース共通。
 - Run validator: `validate_cognitive_run_records.py`
   - Case 001〜003のfixed question / source manifest ID / conflict-check IDを選び分ける。
+  - Required outputの全項目、各項目の実質記録、conflict/correctionの時点・契約解釈、M1〜M9の実質記録をP2前にfail-closedで確認する。
   - 方法の優劣は採点しない。
 - Shared C/D UI runbook: `cognitive-dogfood-cd-ui-runbook.md`
   - InquiryJourney / snapshot / handoff / resume / lineage / compareのoperator手順を共通化する。
 - Blind package builder: `build_cognitive_blind_package.py`
   - arm/method metadataとexperimenter test IDを除き、test IDは`source-check-N`へ中立化する。
+  - builder自身がrun validatorを通し、static intake不合格recordからP2 packageを生成しない。
 - Blind review protocol/template:
   - `cognitive-dogfood-blind-review-protocol.md`
   - `cognitive-dogfood-blind-review-template.md`
@@ -46,6 +48,7 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - cultural-substrate-weaving treatmentはB/Dだけ、KJ Atlas starterはC/Dだけに存在することを検査する。
 - Dedicated workflow: `.github/workflows/cognitive-dogfood-freeze.yml`
   - launch packet / product source manifest / skill manifest / starter / bundle builder / freeze validator変更時にfail-closedでpreflightする。
+  - run intake / blind-package contract testsも実行し、記録契約の緩みを検出する。
   - treatment equivalenceだけでなく、Cases 001〜003のfrozen product evidence bundleと共通frozen skill bundleを固定commitから実際に再生成する。
   - Cases 001〜003のA〜Dを個別artifactへ組み立て、fresh sessionへ他arm/他treatmentを混入させずに渡せるようにする。
 
@@ -158,6 +161,8 @@ B/Dへ渡すskill sourceもrepository全体ではなく、shared operator-only s
 - shared skill bundleがfrozen cultural-substrate-weaving commitから再生成可能であること。
 - arm-visible skill metadataへCase 001 identityをコピーしないこと。
 - Cases 001〜003のA〜D package uploadが全件成功すること。
+- run intake contract testでRequired output / conflict interpretation / M1〜M9の空記録がrejectされること。
+- blind-package contract testでstatic intake不合格recordがP2 package化されないこと。
 
 ## P0 verification evidence
 
@@ -170,16 +175,18 @@ P0終了前後の実行可能性確認として次を確認した。
 5. Cases 001〜003のA〜D packageをActions artifactとして実際に生成・uploadし、12件すべて成功した。初回portfolio artifact化はworkflow run #23 / head `7737f2e488c43a1fb70a2e9e65358b3dbcfe39d5`。
 6. package境界の代表実検査として、Case 002 Arm Aはskill/starterなし、Case 003 Arm Cはstarterありskillなし、Case 002 Arm Dはstarterとcanonical skill 12件ありであることをZIP展開で確認した。
 7. case-neutral skill metadata補正後のworkflow run #29 / head `2548b7ba09568c8a4f39a55ff6b96b13cbaeeec9` で12 packageを再生成し全件成功した。Case 002 Arm Bの実ZIPを展開し、skill subtreeに `case-001` / `Case 001` がなく、arm-visible `manifestId` が `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5` であることを確認した。
+8. first raw run前にrun-intake / blind-package contract testsを追加し、Required outputの連続全項目・実質記録、各conflict/correction testの時点/契約解釈、M1〜M9の実質記録、artifact identity / contamination、およびP2 builderのstatic-intake強制をsynthetic fixtureで検証した。workflow run #47 / head `fdf1bb68af1bbccdd4a97197aa557a1dcc2a02d8` でcontract testと12 package再生成が全件成功した。
 
 ここまででP0を閉じたまま維持する。以後、最初のvalid raw runに必要な欠陥が見つからない限り、preflight機能を追加し続けない。次の正規工程はP1 Case 001 Arm Cである。
 
 ## Pre-run correction log
 
-最初のvalid raw runより前のfreeze検証で、次の入力不一致を検出・補正した。これは実験結果を見てからの変更ではない。
+最初のvalid raw runより前のfreeze検証で、次の入力不一致・比較完全性上の欠陥を検出・補正した。これは実験結果を見てからの変更ではない。
 
 1. Case 003 source manifestのADR 7件で、意味上の資料選択は正しかったがファイル名転記が実blobと一致していなかった。`validate_dogfood_docs.py` の実commit照合で検出し、同じADR番号の固定commit上の正しいpathへ補正した。source件数・問い・snapshotは変更していない。
 2. Case 002のRequired output直後の反証許容文がOrdinaryだけ詳細で、B/C/Dでは短縮されていた。launch treatment validatorで検出し、4armすべて「現状維持・特定操作だけ自律化・AI支援削減のいずれも許容」に統一した。fixed question、10項目のrequired output、product/skill snapshot、treatmentは変更していない。
 3. 3ケース共通B/D skill bundleのoperator-only manifestがCase 001由来であるため、builderがその `manifestId=case-001-skill-ja@...` をarm-visible metadataへコピーするとCase 002/003へ別Caseの存在が漏れることを、12 artifact化後のpackage監査で発見した。canonical skill 12件、skill commit、B/D treatmentは変更せず、arm-visible metadataだけを `cognitive-dogfood-skill-ja@<skill SHA>` へcase-neutral化し、`caseScopedMetadataIncluded=false` とした。Case 002 Arm Bの実ZIPでcase identity非混入を確認した。
+4. run intakeは当初、Required outputの見出しが一部だけでも通る、見出しだけ/空template値でも通る、conflict testの`detected`フラグだけで解釈がなくても通る、M1〜M9が空でも通る余地があった。またblind package builderは手順上static intake必須でもコード上は直接呼べた。first raw run前に、Case 001=9項目・Case 002/003=10項目の連続全項目、各項目の実質記録、各test IDの`temporal/contract interpretation`、M1〜M9の実質記録、artifact identity / contaminationをfail-closed化し、builder自身にもstatic intakeを強制した。評価内容の良否やarm treatmentは変更していない。
 
 補正後もfixed question、Round 1 evidence、product/skill snapshot、4arm treatment、required outputは変更していない。
 
