@@ -20,10 +20,15 @@
 - KJ Atlas version/commit:
 - cultural-substrate-weaving version/commit: N/A or SHA
 - Source manifest ID:
+- Execution artifact name:
+- Execution artifact workflow head:
+- Execution artifact digest: sha256:<64 hex>
 - Operator pack/version:
 - Context started fresh: yes / no
 - Known contamination: none / <description>
 - Operator/setup friction log: <UI locator exploration, environment/file preparation, experiment administration; exclude from M9/T9 unless separately triaged as a product finding>
+
+`Execution artifact ...` は、fresh contextへ実際に渡したActions artifactを記録する。artifactがretention期限後に消えても、name / workflow head / digestをrun recordへ残し、同じfrozen inputから再生成したpackageと区別できるようにする。
 
 ## 1. Fixed question
 
@@ -38,6 +43,7 @@
 - [ ] 全arm共通のfrozen repository snapshotから作成したsanitized evidence bundleだけを使用した。
 - [ ] 今回の問いへの既存回答・仮説・experimenter-only評価情報を入力へ混ぜていない。
 - [ ] source path / snapshot SHA / bundle IDを保存した。
+- [ ] 実際に使用したarm packageのartifact name / workflow head / digestを保存した。
 
 ### Arm-specific method
 
