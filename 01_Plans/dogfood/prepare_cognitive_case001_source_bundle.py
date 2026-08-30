@@ -2,12 +2,14 @@
 """Prepare the frozen Case 001 Round 1 product-source bundle.
 
 This is experiment tooling, not a KJ Atlas product feature. It reads the
-machine-readable source manifest, extracts every common source from the frozen
+operator-only source manifest, extracts every common source from the frozen
 product commit with git, verifies the Git blob SHA, and writes a self-contained
-read-only input directory for an isolated arm context.
+input directory for an isolated arm context.
 
-The tool deliberately does not copy launch packets, Case 0 audits, PR notes,
-Round 2 material, or other excluded inputs into the product evidence bundle.
+Fresh arms receive only the common product evidence and sanitized product-only
+bundle metadata. The operator manifest itself is deliberately not copied,
+because it also contains exclusion/treatment information that would leak
+experiment design across arms.
 """
 
 from __future__ import annotations
@@ -25,7 +27,6 @@ DOGFOOD_DIR = Path(__file__).resolve().parent
 DEFAULT_MANIFEST = DOGFOOD_DIR / "cognitive-dogfood-case-001-round1-source-manifest.json"
 BUNDLE_METADATA_DIR = "_experiment"
 BUNDLE_METADATA_FILE = "bundle-manifest.json"
-FROZEN_SOURCE_MANIFEST_FILE = "source-manifest.json"
 
 
 class BundleError(RuntimeError):
@@ -177,9 +178,9 @@ def prepare_bundle(
         metadata_dir = output_dir / BUNDLE_METADATA_DIR
         metadata_dir.mkdir(parents=True, exist_ok=True)
 
-        frozen_manifest_bytes = manifest_path.read_bytes()
-        (metadata_dir / FROZEN_SOURCE_MANIFEST_FILE).write_bytes(frozen_manifest_bytes)
-
+        # IMPORTANT: do not copy the operator-only manifest. It contains the
+        # skill treatment and excluded-input names, which would leak experiment
+        # design into A/C and can anchor any arm to withheld hypotheses.
         bundle_metadata = {
             "schemaVersion": 1,
             "manifestId": manifest["manifestId"],
@@ -189,11 +190,12 @@ def prepare_bundle(
             "productCommit": product_commit,
             "sourceCount": len(bundle_sources),
             "sources": bundle_sources,
-            "sourceManifestSha256": sha256_bytes(frozen_manifest_bytes),
+            "operatorManifestCopied": False,
             "excludedInputsCopied": False,
+            "treatmentMetadataIncluded": False,
             "notes": [
-                "This directory contains only the common frozen product evidence sources plus experiment metadata.",
-                "Launch/method packets are intentionally supplied separately so the evidence bundle is identical across arms.",
+                "This directory contains only common frozen product evidence plus product-only integrity metadata.",
+                "Arm-specific launch/method instructions are supplied separately by the operator.",
             ],
         }
         metadata_text = json.dumps(
@@ -209,7 +211,7 @@ def prepare_bundle(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare and verify the frozen Case 001 Round 1 source bundle."
+        description="Prepare and verify the frozen Case 001 Round 1 product-source bundle."
     )
     parser.add_argument(
         "--repo-root",
@@ -221,13 +223,13 @@ def main() -> int:
         "--manifest",
         type=Path,
         default=DEFAULT_MANIFEST,
-        help="machine-readable frozen source manifest",
+        help="operator-only machine-readable frozen source manifest",
     )
     parser.add_argument(
         "--output",
         type=Path,
         required=True,
-        help="new bundle directory to create",
+        help="new sanitized bundle directory to create",
     )
     parser.add_argument(
         "--force",
@@ -246,7 +248,7 @@ def main() -> int:
 
     print(
         "PASS: prepared "
-        f"{metadata['sourceCount']} frozen sources for {metadata['manifestId']}"
+        f"{metadata['sourceCount']} frozen product sources for {metadata['manifestId']}"
     )
     print(f"PRODUCT_COMMIT: {metadata['productCommit']}")
     print(f"OUTPUT: {args.output.resolve()}")
