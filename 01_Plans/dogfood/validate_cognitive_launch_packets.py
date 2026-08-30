@@ -17,6 +17,8 @@ PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
 SKILL_COMMIT = "3988e12e5f7f316f377d3391e9486c8467a111d5"
 PRODUCT_SNAPSHOT = f"hat47x/kj-atlas@{PRODUCT_COMMIT}"
 SKILL_SNAPSHOT = f"hat47x/cultural-substrate-weaving@{SKILL_COMMIT}"
+VISIBLE_SKILL_BUNDLE_ID = f"cognitive-dogfood-skill-ja@{SKILL_COMMIT}"
+OPERATOR_SKILL_MANIFEST_ID = f"case-001-skill-ja@{SKILL_COMMIT}"
 
 MODES = {
     "ordinary": {"skill": False, "atlas": False},
@@ -87,6 +89,22 @@ def validate_case(case_number: str) -> list[str]:
         if has_starter != treatment["atlas"]:
             expectation = "must include" if treatment["atlas"] else "must not include"
             issues.append(f"{label} {mode}: {expectation} KJ Atlas starter document")
+
+        # The preregistered source manifest remains Case-001-scoped for operator use,
+        # but arm-visible skill bundles are intentionally case-neutral. A stale
+        # operator manifest ID in launch.md makes the packet disagree with the
+        # generated skill-bundle-manifest and can reveal irrelevant provenance.
+        if OPERATOR_SKILL_MANIFEST_ID in text:
+            issues.append(
+                f"{label} {mode}: operator-only skill manifest ID leaked into launch packet"
+            )
+        if "Skill bundle ID:" in text:
+            if not treatment["skill"]:
+                issues.append(f"{label} {mode}: non-skill arm names a skill bundle ID")
+            elif VISIBLE_SKILL_BUNDLE_ID not in text:
+                issues.append(
+                    f"{label} {mode}: Skill bundle ID does not match arm-visible manifest ID"
+                )
 
         if "Candidate source request" not in text:
             issues.append(f"{label} {mode}: missing common candidate-source escape hatch")
