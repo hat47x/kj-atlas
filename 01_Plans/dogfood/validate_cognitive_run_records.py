@@ -127,6 +127,29 @@ def has_substantive_text(text: str) -> bool:
     return bool(re.search(r"[A-Za-z0-9\u3040-\u30ff\u3400-\u9fff]", text))
 
 
+def has_recorded_value(text: str) -> bool:
+    """Reject empty template labels while allowing prose, lists, and continuations."""
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        list_match = re.match(r"^[-*+]\s+(.*)$", line)
+        if list_match:
+            item = list_match.group(1).strip()
+            if ":" in item:
+                _, value = item.split(":", 1)
+                if has_substantive_text(value):
+                    return True
+                continue
+            if has_substantive_text(item):
+                return True
+            continue
+        if has_substantive_text(line):
+            return True
+    return False
+
+
 def normalize_case_id(raw: str) -> str | None:
     return CASE_ALIASES.get(raw.strip().lower())
 
@@ -178,13 +201,10 @@ def validate_required_output_numbering(
 def validate_required_output_bodies(
     required_output: str, expected_count: int
 ) -> list[str]:
-    """Require non-empty substantive body text under each frozen 6.x heading."""
+    """Require a recorded value under each frozen 6.x heading."""
     errors: list[str] = []
     heading_pattern = re.compile(r"^### 6\.(\d+)\s+\S.*$", re.MULTILINE)
     matches = list(heading_pattern.finditer(required_output))
-
-    # Numbering validation reports missing/duplicate/out-of-order headings. Here we
-    # only validate bodies for uniquely present expected headings.
     by_number: dict[int, list[re.Match[str]]] = {}
     for match in matches:
         by_number.setdefault(int(match.group(1)), []).append(match)
@@ -197,8 +217,8 @@ def validate_required_output_bodies(
         following = [candidate.start() for candidate in matches if candidate.start() > match.start()]
         end = min(following) if following else len(required_output)
         body = required_output[match.end():end].strip()
-        if not has_substantive_text(body):
-            errors.append(f"Required output 6.{number} must contain substantive body text")
+        if not has_recorded_value(body):
+            errors.append(f"Required output 6.{number} must contain a recorded value")
 
     return errors
 
@@ -239,8 +259,6 @@ def validate_conflict_interpretations(
 
         interpretation = interpretation_match.group(1).strip()
         if not has_substantive_text(interpretation):
-            # Permit a multiline continuation directly beneath the interpretation
-            # label, but stop before another peer bullet or heading.
             continuation: list[str] = []
             remainder = block[interpretation_match.end():]
             for line in remainder.splitlines():
@@ -253,6 +271,29 @@ def validate_conflict_interpretations(
         if not has_substantive_text(interpretation):
             errors.append(
                 f"{test_id} temporal/contract interpretation must contain substantive text"
+            )
+
+    return errors
+
+
+def validate_measure_bodies(text: str) -> list[str]:
+    """Require a recorded value in every M1–M9 evidence section."""
+    errors: list[str] = []
+    measure_section = section_text(text, "## 8. M1–M9 evidence", "## 9. Retention audit")
+    pattern = re.compile(r"^### M([1-9])\s+.*$", re.MULTILINE)
+    matches = list(pattern.finditer(measure_section))
+
+    for number in range(1, 10):
+        number_matches = [match for match in matches if int(match.group(1)) == number]
+        if len(number_matches) != 1:
+            continue
+        match = number_matches[0]
+        following = [candidate.start() for candidate in matches if candidate.start() > match.start()]
+        end = min(following) if following else len(measure_section)
+        body = measure_section[match.end():end].strip()
+        if not has_recorded_value(body):
+            errors.append(
+                f"M{number} evidence must contain a recorded value or a reason it is not measurable"
             )
 
     return errors
@@ -401,6 +442,8 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
             text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence"
         )
         errors.extend(validate_conflict_interpretations(conflict_section, expected_tests))
+
+    errors.extend(validate_measure_bodies(text))
 
     if arm in {"C", "D"}:
         if "## 10. InquiryJourney actual-use record (C/D only)" not in text:
