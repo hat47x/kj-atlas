@@ -96,25 +96,29 @@ def prepare_bundle(
     common_sources = manifest["commonSources"]
 
     repo_root = repo_root.resolve()
-    if not (repo_root / ".git").exists():
-        # A worktree can use a .git file, so accept either file or directory.
-        if not (repo_root / ".git").is_file():
-            raise BundleError(f"not a git checkout/worktree: {repo_root}")
+    git_marker = repo_root / ".git"
+    if not git_marker.exists():
+        raise BundleError(f"not a git checkout/worktree: {repo_root}")
 
-    resolved_commit = run_git(repo_root, "rev-parse", f"{product_commit}^{{commit}}", text=True)
+    resolved_commit = run_git(
+        repo_root, "rev-parse", f"{product_commit}^{{commit}}", text=True
+    )
     if resolved_commit != product_commit:
         raise BundleError(
             f"frozen product commit resolved to {resolved_commit}, expected {product_commit}"
         )
 
     output_dir = output_dir.resolve()
+    if output_dir == repo_root or output_dir in repo_root.parents:
+        raise BundleError(
+            "refusing to use the repository root or one of its ancestors as output"
+        )
+
     if output_dir.exists():
         if not force:
             raise BundleError(
                 f"output already exists: {output_dir}; use --force to replace it"
             )
-        if output_dir == repo_root or repo_root in output_dir.parents and output_dir == repo_root:
-            raise BundleError("refusing to remove repository root")
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
 
