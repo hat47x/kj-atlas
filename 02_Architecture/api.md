@@ -459,6 +459,13 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `suggestedDoc: DocumentV1` — 再配置後の文書
   - `notes?: string` — AIからの補足
 - キャンバス全体の空間配置（島・カードの位置）を提案する。指示文があればそれに沿った配置を試みる。
+- **`AI-IR-PROJECTION-01`（`ADR-0069`）Stage 4 で LLM投入IR 経由になった**（`02_Architecture/llm_input_ir_spec.md`。版数の正本は `llm_input_ir.IR_VERSION` で、Stage 4 では繰り上げていない）。**リクエスト／レスポンスの形は変わらない**（後方互換。フロントエンドの `suggestLayout` は無改修）。
+- **座標を渡す唯一のエンドポイントである**（`ADR-0069` D1=B、`llm_input_ir_spec.md` §2.2.1 の要否表で本エンドポイントだけが「要求」）。出力そのものが配置であるため相対布置が入力として意味を持つ。IR が運ぶのは §2.2 の**正規化座標**（重心を原点へ平行移動した `x` / `y` と `radius` / `angle_deg`）のみで、**生の絶対座標は IR に入らない**（§2.2 規則6）。プロンプトには従来どおり文書の絶対座標も併記する ── レスポンスは文書と同じ絶対座標系で返る契約であり、`suggestedDoc` は全カードの位置を含む必要があるため。
+- `doc.edges` の**カード間**関係（5語彙。特に `causal` / `negate`）がAI入力へ届く（`ADR-0069` 実装順序4「あわせて `edges` を渡す」）。島間の辺（`fromKind` / `toKind` = `island`）は IR の対象外であり（§2.3 規則6）、従来どおり `doc.edges` から描画する。
+- **島は矩形だけでなく関係の集合としても渡る。** 従来は `cardIds` から算出した `bounds` / `anchor` のみだった。IR経由化により (a) 確定済みの島階層（`parentIslandId` / `placardCardId` / レビュー状態、`ADR-0069` D3=A）と、(b) カード間関係を島単位へ集約した**島間の派生関係**が加わる。(b) はフロントエンドの `getDerivedIslandEdges()`（`island_edge_aggregate.ts`）に対応するサーバ側実装（`llm_input_ir.derived_island_relations()`）が算出する。`bounds` / `anchor` は**削っていない** ── 新しい配置を提案するエンドポイントは現在の幾何を必要とするため、変更は加算的である。
+- SafeMode は二層で強制される。**(1)** `_reject_unreviewed_text`（`ADR-0068` / `SEC-AI-SAFEMODE-01`、変更なし）が `doc.cards` を検査する。**(2)** IRビルダーが `llm_input_ir_spec.md` §7.1 に従いレビュー状態を独立に再検査する。両層は同じ述語（`allowUnreviewedText=true` かつ profile 許可）で緩和され、片開きにならない。
+- IR経由化で次の 422 が新設された（いずれも `{code, message}` 形の detail）。`pii_detected`（§7.2 のメール／電話／URLトークンのパターンに一致する本文）、`structured_text_only_violation`（§7.3）、`empty_cards`。**`empty_cards` は挙動変更である** ── カード0枚の文書は従来 200 で空の配置提案を返していたが、配置する対象が無い以上 422 とする。
+- カード200枚超（`MAX_CARDS`、§5.1）の文書では IR が切り詰められ、**打ち切られたカードの座標・関係はAI入力の該当セクションに含まれない**。`Cards:` セクションは文書側から描画するため全カードが残り、`suggestedDoc` が全カードの位置を返す契約は維持される。レスポンスの形を変えない方針（後方互換）のため `suggest-card-groups` の `truncated` に相当するフィールドは追加しておらず、切り詰めはプロンプト本文に明記して黙って落とさないことのみ担保する。上限値の妥当性は `AI-IR-PROJECTION-01` AC-10 で扱う。
 
 **POST** `/ai/suggest-merges`
 
