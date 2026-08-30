@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate structural integrity of kj-atlas dogfood documents (R1-R6).
+"""Validate structural integrity of kj-atlas dogfood documents and helpers.
 
 Checks each doc_kj_atlas_dogfood_r*.json:
 - parses as JSON with the expected top-level keys
@@ -8,7 +8,10 @@ Checks each doc_kj_atlas_dogfood_r*.json:
 - readingOrder items resolve to cards or islands
 - at least one narrative is present
 
-Also syntax-checks the lightweight cognitive-dogfood experiment helper scripts.
+Also:
+- syntax-checks the lightweight cognitive-dogfood experiment helper scripts
+- validates the Case 001 Round 1 frozen source manifest shape
+
 It does not score or validate any future arm result.
 
 Exit 0 = all documents/tools structurally valid. Exit 1 = any issue found.
@@ -17,6 +20,7 @@ Exit 0 = all documents/tools structurally valid. Exit 1 = any issue found.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -25,7 +29,15 @@ GLOB = "doc_kj_atlas_dogfood_r*.json"
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
     "build_cognitive_blind_package.py",
+    "prepare_cognitive_case001_source_bundle.py",
 )
+CASE001_SOURCE_MANIFEST = (
+    DOGFOOD_DIR / "cognitive-dogfood-case-001-round1-source-manifest.json"
+)
+CASE001_PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
+CASE001_SKILL_COMMIT = "3988e12e5f7f316f377d3391e9486c8467a111d5"
+CASE001_SOURCE_COUNT = 20
+HEX40 = re.compile(r"^[0-9a-f]{40}$")
 
 
 def validate_one(path: Path) -> list[str]:
@@ -73,6 +85,61 @@ def validate_cognitive_tools() -> list[str]:
     return issues
 
 
+def validate_case001_source_manifest() -> list[str]:
+    issues: list[str] = []
+    if not CASE001_SOURCE_MANIFEST.is_file():
+        return [f"{CASE001_SOURCE_MANIFEST.name}: missing frozen source manifest"]
+
+    try:
+        manifest = json.loads(CASE001_SOURCE_MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"{CASE001_SOURCE_MANIFEST.name}: invalid JSON ({exc})"]
+
+    if manifest.get("schemaVersion") != 1:
+        issues.append("Case 001 source manifest schemaVersion must be 1")
+    if manifest.get("caseId") != "case-001" or manifest.get("round") != 1:
+        issues.append("Case 001 source manifest must identify case-001 round 1")
+    if manifest.get("productCommit") != CASE001_PRODUCT_COMMIT:
+        issues.append("Case 001 product commit changed from the preregistered SHA")
+    if manifest.get("skillCommitForArmsBD") != CASE001_SKILL_COMMIT:
+        issues.append("Case 001 skill commit changed from the preregistered SHA")
+
+    expected_manifest_id = f"case-001-r1-product@{CASE001_PRODUCT_COMMIT}"
+    if manifest.get("manifestId") != expected_manifest_id:
+        issues.append("Case 001 source manifestId does not match product commit")
+
+    sources = manifest.get("commonSources")
+    if not isinstance(sources, list):
+        issues.append("Case 001 commonSources must be a list")
+        return issues
+    if len(sources) != CASE001_SOURCE_COUNT:
+        issues.append(
+            f"Case 001 commonSources count is {len(sources)}, expected {CASE001_SOURCE_COUNT}"
+        )
+
+    seen_paths: set[str] = set()
+    for index, source in enumerate(sources, 1):
+        if not isinstance(source, dict):
+            issues.append(f"Case 001 source #{index} is not an object")
+            continue
+        path = source.get("path")
+        blob_sha = source.get("blobSha")
+        if not isinstance(path, str) or not path or path.startswith("/") or ".." in Path(path).parts:
+            issues.append(f"Case 001 source #{index} has unsafe/missing path")
+        elif path in seen_paths:
+            issues.append(f"Case 001 source path duplicated: {path}")
+        else:
+            seen_paths.add(path)
+        if not isinstance(blob_sha, str) or not HEX40.fullmatch(blob_sha):
+            issues.append(f"Case 001 source #{index} has invalid blobSha")
+
+    excluded = manifest.get("round1ExcludedInputs")
+    if not isinstance(excluded, list) or not excluded:
+        issues.append("Case 001 round1ExcludedInputs must be a non-empty list")
+
+    return issues
+
+
 def main() -> int:
     files = sorted(DOGFOOD_DIR.glob(GLOB))
     if not files:
@@ -87,6 +154,7 @@ def main() -> int:
             all_issues.append(f"{path.name}: invalid document ({exc})")
 
     all_issues.extend(validate_cognitive_tools())
+    all_issues.extend(validate_case001_source_manifest())
 
     for path in files:
         d = json.loads(path.read_text(encoding="utf-8"))
@@ -98,6 +166,12 @@ def main() -> int:
     for filename in COGNITIVE_TOOL_FILES:
         status = "present" if (DOGFOOD_DIR / filename).is_file() else "missing"
         print(f"  {filename}: {status} / syntax-check")
+
+    source_status = "present" if CASE001_SOURCE_MANIFEST.is_file() else "missing"
+    print(
+        f"  {CASE001_SOURCE_MANIFEST.name}: {source_status} / "
+        f"expected {CASE001_SOURCE_COUNT} frozen sources"
+    )
 
     if all_issues:
         print(f"\nISSUES FOUND ({len(all_issues)}):")
