@@ -1,6 +1,6 @@
 # Cognitive Dogfood Case Portfolio — Execution Freeze Register
 
-- Status: P0 frozen and CI-verified before first valid Case 001 arm run
+- Status: P0 frozen and CI-verified / P1 Case 001 arm packages ready
 - Date: 2026-08-30
 - Pre-registration: `cognitive-dogfood-case-portfolio-preregistration.md`
 - Product snapshot for Cases 001–003: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
@@ -45,8 +45,9 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - Cases 001〜003の4armでfixed question / required output / product snapshot / evidence bundleを一致させる。
   - cultural-substrate-weaving treatmentはB/Dだけ、KJ Atlas starterはC/Dだけに存在することを検査する。
 - Dedicated workflow: `.github/workflows/cognitive-dogfood-freeze.yml`
-  - launch packet / product source manifest / bundle builder / freeze validator変更時にfail-closedでpreflightする。
-  - treatment equivalenceだけでなく、Cases 001〜003のfrozen product evidence bundleを固定commitから実際に再生成する。
+  - launch packet / product source manifest / skill manifest / starter / bundle builder / freeze validator変更時にfail-closedでpreflightする。
+  - treatment equivalenceだけでなく、Cases 001〜003のfrozen product evidence bundleとCase 001のfrozen skill bundleを固定commitから実際に再生成する。
+  - Case 001はA〜Dを個別artifactへ組み立て、fresh sessionへ他arm/他treatmentを混入させずに渡せるようにする。
 
 ## Case 001
 
@@ -62,6 +63,16 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
 - Operator pack: `cognitive-dogfood-case-001-operator-pack.md`
 - Original Case 001 C/D preflight runbook: `cognitive-dogfood-case-001-cd-ui-runbook.md`
   - 以後の共通操作正本は`cognitive-dogfood-cd-ui-runbook.md`とし、この文書はCase 001準備時の実装照合記録として保持する。
+- CI artifact names:
+  - `cognitive-dogfood-case-001-arm-a`
+  - `cognitive-dogfood-case-001-arm-b`
+  - `cognitive-dogfood-case-001-arm-c`
+  - `cognitive-dogfood-case-001-arm-d`
+- package boundary:
+  - 全armに同じsanitized product evidenceを含める。
+  - B/Dだけにfrozen canonical skill bundleを含める。
+  - C/Dだけにempty starter documentを含める。
+  - 各artifactにはそのarm専用の`launch.md`だけを含め、他armのlaunch packetを含めない。
 
 ## Case 002
 
@@ -127,6 +138,8 @@ B/Dへ渡すskill sourceもrepository全体ではなく、shared skill manifest�
 - KJ Atlas starterがC/Dだけに入り、A/Bへ混入しないこと。
 - 全armが追加資料を一方的に取り込まずCandidate source requestへ送る経路を持つこと。
 - Cases 001〜003のproduct bundleがfrozen commitから再生成可能であること。
+- Case 001のskill bundleがfrozen cultural-substrate-weaving commitから再生成可能であること。
+- Case 001のA〜D package uploadが全件成功すること。
 
 ## P0 verification evidence
 
@@ -136,6 +149,7 @@ P0終了前に次を確認した。
 2. `Cognitive dogfood freeze` workflowの`Frozen input preflight`で、12 launch packetのtreatment equivalenceが成功した。
 3. 同preflightで、Cases 001〜003のfrozen product evidence bundleを20 / 18 / 18 sourceから実際に再生成できた。
 4. B/D用skill manifestの12 sourceは、`cultural-substrate-weaving@3988e12e5f7f316f377d3391e9486c8467a111d5` のcanonical `src/ja-JP`現物とpath / Git blob SHAを照合し、全件一致した。
+5. Case 001のA〜D packageをActions artifactとして実際に生成・uploadし、4件すべて成功した。
 
 ここまででP0を閉じる。以後、最初のvalid raw runに必要な欠陥が見つからない限り、preflight機能を追加し続けない。次の正規工程はP1 Case 001 Arm Cである。
 
