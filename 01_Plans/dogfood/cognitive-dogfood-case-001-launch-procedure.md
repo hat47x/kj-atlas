@@ -40,11 +40,12 @@ artifactの14日retention後に同じfrozen inputから再生成した場合も�
 
 ### 1.1 Product evidence bundle
 
-完全な `kj-atlas` git checkout/worktreeから、全arm共通bundleを一度生成する。
+完全な `kj-atlas` git checkout/worktreeから、全arm共通bundleを一度生成する。Case固有の旧builderではなく、全cognitive-dogfood caseで共通のsanitized frozen-source builderを使用する。
 
 ```bash
-python 01_Plans/dogfood/prepare_cognitive_case001_source_bundle.py \
+python 01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py \
   --repo-root /path/to/kj-atlas \
+  --manifest 01_Plans/dogfood/cognitive-dogfood-case-001-round1-source-manifest.json \
   --output /path/to/operator-workspace/case001-product
 ```
 
@@ -53,7 +54,8 @@ python 01_Plans/dogfood/prepare_cognitive_case001_source_bundle.py \
 - 20件すべてが固定commitから抽出される。
 - 各Git blob SHAがoperator manifestと一致する。
 - bundleの `_experiment/bundle-manifest.json` に `sourceCount: 20` がある。
-- `operatorManifestCopied=false`、`excludedInputsCopied=false`、`treatmentMetadataIncluded=false` である。
+- `bundleId` が `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649` と一致する。
+- `operatorOnlyMetadataCopied=false` であり、excluded input、skill treatment、cross-arm情報などoperator-only metadataがarm-visible bundleへコピーされていない。
 - bundle外のplan/PR/Case 0資料をarmへ追加しない。
 
 この同一product bundleをA/B/C/Dすべてへ渡す。armごとに作り直す必要はない。
