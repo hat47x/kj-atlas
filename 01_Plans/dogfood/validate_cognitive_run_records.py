@@ -3,8 +3,8 @@
 
 This validates experiment comparability/record completeness only. It does not
 score cognitive quality or choose a winning arm. Case-specific fixed questions,
-source manifest IDs, and preregistered conflict-check IDs are frozen here for
-Cases 001–003.
+required-output counts, source manifest IDs, and preregistered conflict-check IDs
+are frozen here for Cases 001–003.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ CASE_CONTRACTS = {
             "どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、"
             "何をまだ実証できていないか。"
         ),
+        "required_output_count": 9,
         "tests": ("T1", "T2", "T3"),
     },
     "case-002": {
@@ -33,6 +34,7 @@ CASE_CONTRACTS = {
             "現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、"
             "または十分に一般的な安全境界か。"
         ),
+        "required_output_count": 10,
         "tests": ("C2-T1", "C2-T2", "C2-T3", "C2-T4"),
     },
     "case-003": {
@@ -41,6 +43,7 @@ CASE_CONTRACTS = {
             "同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、"
             "安全境界、または特定利用ケース向け要件のどれとして扱うべきか。"
         ),
+        "required_output_count": 10,
         "tests": ("C3-T1", "C3-T2", "C3-T3", "C3-T4", "C3-T5"),
     },
 }
@@ -130,6 +133,40 @@ def section_text(text: str, start: str, end: str) -> str:
     if end_index < 0:
         return ""
     return text[start_index + len(start):end_index].strip()
+
+
+def validate_required_output_numbering(
+    required_output: str, expected_count: int
+) -> list[str]:
+    """Require exactly one contiguous 6.1..6.N heading sequence."""
+    errors: list[str] = []
+    numbers = [
+        int(number)
+        for number in re.findall(
+            r"^### 6\.(\d+)\s+\S.*$", required_output, re.MULTILINE
+        )
+    ]
+    expected = list(range(1, expected_count + 1))
+
+    if numbers != expected:
+        missing = [number for number in expected if number not in numbers]
+        duplicates = sorted({number for number in numbers if numbers.count(number) > 1})
+        extras = [number for number in numbers if number not in expected]
+        details: list[str] = []
+        if missing:
+            details.append(f"missing={missing}")
+        if duplicates:
+            details.append(f"duplicates={duplicates}")
+        if extras:
+            details.append(f"extra={extras}")
+        if not details:
+            details.append(f"order={numbers}")
+        errors.append(
+            f"Required output must contain exactly contiguous headings 6.1..6.{expected_count} "
+            f"({'; '.join(details)})"
+        )
+
+    return errors
 
 
 def validate_record(path: Path) -> tuple[list[str], list[str]]:
@@ -248,12 +285,12 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
     )
     if not required_output:
         errors.append("Required output section is empty or malformed")
-    else:
-        result_headings = re.findall(r"^### 6\.\d+\s+\S.*$", required_output, re.MULTILINE)
-        if not result_headings:
-            errors.append(
-                "Required output must contain at least one populated '### 6.<n>' heading"
+    elif contract is not None:
+        errors.extend(
+            validate_required_output_numbering(
+                required_output, int(contract["required_output_count"])
             )
+        )
 
     if contract is not None:
         expected_tests = tuple(contract["tests"])
