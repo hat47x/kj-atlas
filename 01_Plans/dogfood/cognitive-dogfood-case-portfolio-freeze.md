@@ -1,6 +1,6 @@
 # Cognitive Dogfood Case Portfolio — Execution Freeze Register
 
-- Status: Frozen before first valid Case 001 arm run
+- Status: P0 frozen and CI-verified before first valid Case 001 arm run
 - Date: 2026-08-30
 - Pre-registration: `cognitive-dogfood-case-portfolio-preregistration.md`
 - Product snapshot for Cases 001–003: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
@@ -41,6 +41,11 @@ Case 001の結果を見てからCase 002/003の問い、資料、方法条件を
   - `cognitive-dogfood-blind-review-protocol.md`
   - `cognitive-dogfood-blind-review-template.md`
   - fixed questionに応じたcase境界を評価し、Case 001のprimary-job問題へCase 002/003を引き戻さない。
+- Launch treatment validator: `validate_cognitive_launch_packets.py`
+  - Cases 001〜003の4armでfixed question / required output / product snapshot / evidence bundleを一致させる。
+  - cultural-substrate-weaving treatmentはB/Dだけ、KJ Atlas starterはC/Dだけに存在することを検査する。
+- Dedicated workflow: `.github/workflows/cognitive-dogfood-freeze.yml`
+  - launch packetまたはfreeze validator変更時にfail-closedでtreatment equivalenceを検査する。
 
 ## Case 001
 
@@ -111,6 +116,24 @@ B/Dへ渡すskill sourceもrepository全体ではなく、shared skill manifest�
 - shared skill manifestが12 canonical ja-JP sourceに固定されていること。
 - Cases 001–003 starterのcards / islands / evidenceLinks / readingOrder / narrativesが空であること。
 - cognitive experiment helperのPython構文。
+
+`validate_cognitive_launch_packets.py` / `Cognitive dogfood freeze` workflowは、12個のlaunch packetについて次をfail-closedで検査する。
+
+- 同一caseの4armでfixed questionが完全一致すること。
+- 同一caseの4armでrequired outputが完全一致すること。
+- product snapshot / evidence bundleが4armで一致すること。
+- skill treatmentがB/Dだけに入り、A/Cへ混入しないこと。
+- KJ Atlas starterがC/Dだけに入り、A/Bへ混入しないこと。
+- 全armが追加資料を一方的に取り込まずCandidate source requestへ送る経路を持つこと。
+
+## Pre-run correction log
+
+最初のvalid raw runより前のfreeze検証で、次の入力不一致を検出・補正した。これは実験結果を見てからの変更ではない。
+
+1. Case 003 source manifestのADR 7件で、意味上の資料選択は正しかったがファイル名転記が実blobと一致していなかった。`validate_dogfood_docs.py` の実commit照合で検出し、同じADR番号の固定commit上の正しいpathへ補正した。source件数・問い・snapshotは変更していない。
+2. Case 002のRequired output直後の反証許容文がOrdinaryだけ詳細で、B/C/Dでは短縮されていた。launch treatment validatorで検出し、4armすべて「現状維持・特定操作だけ自律化・AI支援削減のいずれも許容」に統一した。fixed question、10項目のrequired output、product/skill snapshot、treatmentは変更していない。
+
+補正後、通常CIのdogfood/docs contractと`Cognitive dogfood freeze`のlaunch treatment equivalenceはともに成功した。
 
 ## Change boundary after first valid raw run
 
