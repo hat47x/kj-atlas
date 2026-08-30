@@ -97,11 +97,12 @@ class LLMRequest:
     # internal-only and contains a credential reference, never the secret.
     registered_provider: RegisteredProviderConfig | None = None
     # AI-IR-PROJECTION-01 (ADR-0069 D4=A): the LLM input IR this prompt was
-    # rendered from (`llm_input_ir_spec.md` §4, `ir_version` 1.1). Providers do
-    # not read it -- transports still send `prompt` -- but carrying it on the
-    # request keeps the IR the auditable input of record, and lets a test assert
-    # what actually reached the boundary. Only routes migrated to the IR path
-    # populate it; it stays None for the rest.
+    # rendered from (`llm_input_ir_spec.md` §4). The schema version it carries is
+    # `llm_input_ir.IR_VERSION` -- do not restate the number here, it drifts.
+    # Providers do not read it -- transports still send `prompt` -- but carrying
+    # it on the request keeps the IR the auditable input of record, and lets a
+    # test assert what actually reached the boundary. Only routes migrated to
+    # the IR path populate it; it stays None for the rest.
     inputs: dict[str, Any] | None = None
 
 

@@ -650,7 +650,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `DetectContradictionRequest`
   - `cardA: CardRef`（id + text + textReviewed）
   - `cardB: CardRef`
-  - `doc?: DocumentV1` — **任意**。`AI-IR-PROJECTION-01`（`ADR-0069`）で追加。渡すとサーバが LLM投入IR（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.1）を構築し、`edges`（関係5語彙）・確定済みの `islands`・`evidenceLinks` の `contradictionState` がAI入力へ届く。**省略時は従来どおりカード2枚のみで動作する**（後方互換）
+  - `doc?: DocumentV1` — **任意**。`AI-IR-PROJECTION-01`（`ADR-0069`）で追加。渡すとサーバが LLM投入IR（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.2）を構築し、`edges`（関係5語彙）・確定済みの `islands`・`evidenceLinks` の `contradictionState` がAI入力へ届く。**省略時は従来どおりカード2枚のみで動作する**（後方互換）
   - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`）
 - Response: `DetectContradictionResponse`
   - `hasContradiction: boolean`
