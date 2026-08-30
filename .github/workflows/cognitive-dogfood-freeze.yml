@@ -46,7 +46,7 @@ jobs:
         run: python 01_Plans/dogfood/validate_cognitive_launch_packets.py
       - name: Test run intake and blind-package contracts
         working-directory: 01_Plans/dogfood
-        run: python -m unittest test_validate_cognitive_run_records.py test_build_cognitive_blind_package.py
+        run: python -m unittest test_validate_cognitive_arm_packages.py test_validate_cognitive_run_records.py test_build_cognitive_blind_package.py
       - name: Reproduce frozen product evidence bundles
         shell: bash
         run: |
