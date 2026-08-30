@@ -69,6 +69,10 @@ method固有の自己言及がrequired output本文へ混ざっている場合�
 
 blind packageはraw resultの内容を都合よく改善してはならない。
 
+**P2への入口はfail-closedとする。** `build_cognitive_blind_package.py` はpackage生成前に `validate_cognitive_run_records.py` と同じstatic intakeを内部で実行し、run validity、fresh-context/contamination、固定artifact identity、case固有Required outputの完全性、conflict-check記録等にerrorがあるrecordからはpackageを生成しない。operatorがvalidatorの単独実行を飛ばしてbuilderを直接呼んでも、このgateを迂回できない。static intakeのwarningはpackage生成を妨げないが、builder自身のmethod-identity warningと合わせて人手確認へ送る。
+
+Case 001ではRequired output `6.1`〜`6.9`、Case 002/003では`6.1`〜`6.10`が連続・重複なし・過不足なしであることをstatic intakeで確認する。これらの件数は凍結launch packetとcontract testで同期させる。
+
 operatorはpackageごとに次を記録する。
 
 - source result artifact ID。
