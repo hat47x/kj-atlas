@@ -1,15 +1,15 @@
 # Case 001 Launch Packet — KJ Atlas external representation
 
 - Status: Frozen before first raw run
-- Product source manifest: `cognitive-dogfood-case-001-round1-source-manifest.json`
+- Evidence bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - Product snapshot: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - Starter document: `doc_cognitive_case_001_starter.json`
 
 ## Context boundary
 
-このtaskは、与えられたfrozen sourceからKJ Atlasの存在目的と現在の実証状態を分析する。
+このtaskは、operatorから与えられたsanitized evidence bundleのfrozen sourceから、KJ Atlasの存在目的と現在の実証状態を分析する。
 
-製品についての証拠として使用してよいのは、source manifestの `commonSources` 20件だけである。manifestの `round1ExcludedInputs`、同branchの近隣plan/PR discussion、Case 0監査、外部競合/研究資料は読まない。
+製品についての証拠として使用してよいのは、evidence bundle内の20件の製品資料だけである。`_experiment/bundle-manifest.json` はファイル同一性確認のために参照してよいが、bundle外のrepository、近隣plan、PR discussion、Case 0監査、外部競合/研究資料を探索しない。operator用のsource manifestを探したり開いたりしない。
 
 外部Web検索を行わない。資料外の一般知識を使う場合は、frozen source由来の主張と明確に分ける。追加資料が必要なら、そのrunだけへ追加せず `Candidate source request` として挙げる。
 
