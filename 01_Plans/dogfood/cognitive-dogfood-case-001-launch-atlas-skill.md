@@ -3,7 +3,7 @@
 - Status: Frozen before first raw run
 - Evidence bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - Product snapshot: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
-- Skill bundle ID: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
+- Skill bundle ID: `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
 - Skill snapshot: `hat47x/cultural-substrate-weaving@3988e12e5f7f316f377d3391e9486c8467a111d5`
 - Starter document: `doc_cognitive_case_001_starter.json`
 
