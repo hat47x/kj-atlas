@@ -10,8 +10,10 @@ Checks each doc_kj_atlas_dogfood_r*.json:
 
 Also:
 - syntax-checks the lightweight cognitive-dogfood experiment helper scripts
-- validates the Case 001 Round 1 frozen product-source manifest shape
-- validates the Case 001 frozen canonical skill manifest shape
+- validates Case 001–003 Round 1 frozen product-source manifests
+- verifies every frozen source path/blob against the preregistered product commit
+- validates the shared frozen canonical cultural-substrate-weaving skill manifest
+- validates Case 001–003 starter documents remain semantically empty
 
 It does not score or validate any future arm result.
 
@@ -22,28 +24,39 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
 DOGFOOD_DIR = Path(__file__).parent
+ROOT = DOGFOOD_DIR.parent.parent
 GLOB = "doc_kj_atlas_dogfood_r*.json"
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
     "build_cognitive_blind_package.py",
     "prepare_cognitive_case001_source_bundle.py",
     "prepare_cognitive_case001_skill_bundle.py",
+    "prepare_cognitive_frozen_source_bundle.py",
 )
-CASE001_SOURCE_MANIFEST = (
-    DOGFOOD_DIR / "cognitive-dogfood-case-001-round1-source-manifest.json"
-)
-CASE001_SKILL_MANIFEST = (
+PRODUCT_REPOSITORY = "hat47x/kj-atlas"
+SKILL_REPOSITORY = "hat47x/cultural-substrate-weaving"
+PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
+SKILL_COMMIT = "3988e12e5f7f316f377d3391e9486c8467a111d5"
+PRODUCT_MANIFEST_SPECS = {
+    "case-001": 20,
+    "case-002": 18,
+    "case-003": 18,
+}
+SHARED_SKILL_MANIFEST = (
     DOGFOOD_DIR / "cognitive-dogfood-case-001-skill-manifest.json"
 )
-CASE001_PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
-CASE001_SKILL_COMMIT = "3988e12e5f7f316f377d3391e9486c8467a111d5"
-CASE001_SOURCE_COUNT = 20
-CASE001_SKILL_SOURCE_COUNT = 12
-CASE001_SKILL_ROOT = PurePosixPath("src/ja-JP")
+SHARED_SKILL_SOURCE_COUNT = 12
+SHARED_SKILL_ROOT = PurePosixPath("src/ja-JP")
+STARTER_SPECS = {
+    "case-001": "doc_cognitive_case_001_starter",
+    "case-002": "doc_cognitive_case_002_starter",
+    "case-003": "doc_cognitive_case_003_starter",
+}
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -99,123 +112,195 @@ def safe_manifest_path(raw: object) -> bool:
     return not path.is_absolute() and ".." not in path.parts
 
 
-def validate_case001_source_manifest() -> list[str]:
+def git_blob_at(commit: str, path: str) -> tuple[str | None, str | None]:
+    command = ["git", "-C", str(ROOT), "rev-parse", f"{commit}:{path}"]
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except FileNotFoundError:
+        return None, "git executable was not found"
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip()
+        return None, stderr or f"git exited with {exc.returncode}"
+    return completed.stdout.strip(), None
+
+
+def validate_product_source_manifest(case_id: str, expected_count: int) -> list[str]:
     issues: list[str] = []
-    if not CASE001_SOURCE_MANIFEST.is_file():
-        return [f"{CASE001_SOURCE_MANIFEST.name}: missing frozen source manifest"]
+    path = DOGFOOD_DIR / f"cognitive-dogfood-{case_id}-round1-source-manifest.json"
+    label = case_id.replace("case-", "Case ")
+    if not path.is_file():
+        return [f"{path.name}: missing frozen source manifest"]
 
     try:
-        manifest = json.loads(CASE001_SOURCE_MANIFEST.read_text(encoding="utf-8"))
+        manifest = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        return [f"{CASE001_SOURCE_MANIFEST.name}: invalid JSON ({exc})"]
+        return [f"{path.name}: invalid JSON ({exc})"]
 
     if manifest.get("schemaVersion") != 1:
-        issues.append("Case 001 source manifest schemaVersion must be 1")
-    if manifest.get("caseId") != "case-001" or manifest.get("round") != 1:
-        issues.append("Case 001 source manifest must identify case-001 round 1")
-    if manifest.get("productCommit") != CASE001_PRODUCT_COMMIT:
-        issues.append("Case 001 product commit changed from the preregistered SHA")
-    if manifest.get("skillCommitForArmsBD") != CASE001_SKILL_COMMIT:
-        issues.append("Case 001 skill commit changed from the preregistered SHA")
+        issues.append(f"{label} source manifest schemaVersion must be 1")
+    if manifest.get("caseId") != case_id or manifest.get("round") != 1:
+        issues.append(f"{label} source manifest must identify {case_id} round 1")
+    if manifest.get("productRepository") != PRODUCT_REPOSITORY:
+        issues.append(f"{label} product repository changed from the preregistration")
+    if manifest.get("productCommit") != PRODUCT_COMMIT:
+        issues.append(f"{label} product commit changed from the preregistered SHA")
+    if manifest.get("skillRepository") != SKILL_REPOSITORY:
+        issues.append(f"{label} skill repository changed from the preregistration")
+    if manifest.get("skillCommitForArmsBD") != SKILL_COMMIT:
+        issues.append(f"{label} skill commit changed from the preregistered SHA")
 
-    expected_manifest_id = f"case-001-r1-product@{CASE001_PRODUCT_COMMIT}"
+    expected_manifest_id = f"{case_id}-r1-product@{PRODUCT_COMMIT}"
     if manifest.get("manifestId") != expected_manifest_id:
-        issues.append("Case 001 source manifestId does not match product commit")
+        issues.append(f"{label} source manifestId does not match product commit")
 
     sources = manifest.get("commonSources")
     if not isinstance(sources, list):
-        issues.append("Case 001 commonSources must be a list")
+        issues.append(f"{label} commonSources must be a list")
         return issues
-    if len(sources) != CASE001_SOURCE_COUNT:
+    if len(sources) != expected_count:
         issues.append(
-            f"Case 001 commonSources count is {len(sources)}, expected {CASE001_SOURCE_COUNT}"
+            f"{label} commonSources count is {len(sources)}, expected {expected_count}"
         )
 
     seen_paths: set[str] = set()
     for index, source in enumerate(sources, 1):
         if not isinstance(source, dict):
-            issues.append(f"Case 001 source #{index} is not an object")
+            issues.append(f"{label} source #{index} is not an object")
             continue
-        path = source.get("path")
+        raw_path = source.get("path")
         blob_sha = source.get("blobSha")
-        if not safe_manifest_path(path):
-            issues.append(f"Case 001 source #{index} has unsafe/missing path")
-        elif path in seen_paths:
-            issues.append(f"Case 001 source path duplicated: {path}")
+        path_valid = safe_manifest_path(raw_path)
+        blob_valid = isinstance(blob_sha, str) and HEX40.fullmatch(blob_sha)
+        if not path_valid:
+            issues.append(f"{label} source #{index} has unsafe/missing path")
+        elif raw_path in seen_paths:
+            issues.append(f"{label} source path duplicated: {raw_path}")
         else:
-            seen_paths.add(path)
-        if not isinstance(blob_sha, str) or not HEX40.fullmatch(blob_sha):
-            issues.append(f"Case 001 source #{index} has invalid blobSha")
+            seen_paths.add(raw_path)
+        if not blob_valid:
+            issues.append(f"{label} source #{index} has invalid blobSha")
+
+        if path_valid and blob_valid:
+            actual_blob, error = git_blob_at(PRODUCT_COMMIT, raw_path)
+            if error:
+                issues.append(
+                    f"{label} source cannot resolve at frozen commit: {raw_path} ({error})"
+                )
+            elif actual_blob != blob_sha:
+                issues.append(
+                    f"{label} source blob mismatch: {raw_path} got {actual_blob}, expected {blob_sha}"
+                )
 
     excluded = manifest.get("round1ExcludedInputs")
     if not isinstance(excluded, list) or not excluded:
-        issues.append("Case 001 round1ExcludedInputs must be a non-empty list")
+        issues.append(f"{label} round1ExcludedInputs must be a non-empty list")
 
     return issues
 
 
-def validate_case001_skill_manifest() -> list[str]:
+def validate_shared_skill_manifest() -> list[str]:
     issues: list[str] = []
-    if not CASE001_SKILL_MANIFEST.is_file():
-        return [f"{CASE001_SKILL_MANIFEST.name}: missing frozen skill manifest"]
+    if not SHARED_SKILL_MANIFEST.is_file():
+        return [f"{SHARED_SKILL_MANIFEST.name}: missing frozen skill manifest"]
 
     try:
-        manifest = json.loads(CASE001_SKILL_MANIFEST.read_text(encoding="utf-8"))
+        manifest = json.loads(SHARED_SKILL_MANIFEST.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        return [f"{CASE001_SKILL_MANIFEST.name}: invalid JSON ({exc})"]
+        return [f"{SHARED_SKILL_MANIFEST.name}: invalid JSON ({exc})"]
 
     if manifest.get("schemaVersion") != 1:
-        issues.append("Case 001 skill manifest schemaVersion must be 1")
+        issues.append("Shared skill manifest schemaVersion must be 1")
     if manifest.get("caseId") != "case-001":
-        issues.append("Case 001 skill manifest must identify case-001")
-    if manifest.get("skillCommit") != CASE001_SKILL_COMMIT:
-        issues.append("Case 001 skill commit changed from the preregistered SHA")
+        issues.append("Shared skill manifest remains anchored to case-001")
+    if manifest.get("skillCommit") != SKILL_COMMIT:
+        issues.append("Shared skill commit changed from the preregistered SHA")
     if manifest.get("locale") != "ja-JP":
-        issues.append("Case 001 skill locale must be ja-JP")
-    if manifest.get("canonicalRoot") != CASE001_SKILL_ROOT.as_posix():
-        issues.append("Case 001 skill canonicalRoot must be src/ja-JP")
+        issues.append("Shared skill locale must be ja-JP")
+    if manifest.get("canonicalRoot") != SHARED_SKILL_ROOT.as_posix():
+        issues.append("Shared skill canonicalRoot must be src/ja-JP")
     if manifest.get("appliesToArms") != ["B", "D"]:
-        issues.append("Case 001 skill manifest must apply to B and D only")
+        issues.append("Shared skill manifest must apply to B and D only")
 
-    expected_manifest_id = f"case-001-skill-ja@{CASE001_SKILL_COMMIT}"
+    expected_manifest_id = f"case-001-skill-ja@{SKILL_COMMIT}"
     if manifest.get("manifestId") != expected_manifest_id:
-        issues.append("Case 001 skill manifestId does not match skill commit")
+        issues.append("Shared skill manifestId does not match skill commit")
 
     sources = manifest.get("canonicalSources")
     if not isinstance(sources, list):
-        issues.append("Case 001 canonicalSources must be a list")
+        issues.append("Shared canonicalSources must be a list")
         return issues
-    if len(sources) != CASE001_SKILL_SOURCE_COUNT:
+    if len(sources) != SHARED_SKILL_SOURCE_COUNT:
         issues.append(
-            f"Case 001 canonicalSources count is {len(sources)}, expected {CASE001_SKILL_SOURCE_COUNT}"
+            f"Shared canonicalSources count is {len(sources)}, expected {SHARED_SKILL_SOURCE_COUNT}"
         )
 
     seen_paths: set[str] = set()
     for index, source in enumerate(sources, 1):
         if not isinstance(source, dict):
-            issues.append(f"Case 001 skill source #{index} is not an object")
+            issues.append(f"Shared skill source #{index} is not an object")
             continue
         raw_path = source.get("path")
         blob_sha = source.get("blobSha")
         if not safe_manifest_path(raw_path):
-            issues.append(f"Case 001 skill source #{index} has unsafe/missing path")
+            issues.append(f"Shared skill source #{index} has unsafe/missing path")
         else:
-            path = PurePosixPath(raw_path)
-            if path != CASE001_SKILL_ROOT and CASE001_SKILL_ROOT not in path.parents:
-                issues.append(f"Case 001 skill source escapes canonical root: {raw_path}")
+            source_path = PurePosixPath(raw_path)
+            if source_path != SHARED_SKILL_ROOT and SHARED_SKILL_ROOT not in source_path.parents:
+                issues.append(f"Shared skill source escapes canonical root: {raw_path}")
             if raw_path in seen_paths:
-                issues.append(f"Case 001 skill source path duplicated: {raw_path}")
+                issues.append(f"Shared skill source path duplicated: {raw_path}")
             else:
                 seen_paths.add(raw_path)
         if not isinstance(blob_sha, str) or not HEX40.fullmatch(blob_sha):
-            issues.append(f"Case 001 skill source #{index} has invalid blobSha")
+            issues.append(f"Shared skill source #{index} has invalid blobSha")
 
     if "src/ja-JP/ROUTER.md" not in seen_paths:
-        issues.append("Case 001 skill bundle must include src/ja-JP/ROUTER.md")
+        issues.append("Shared skill bundle must include src/ja-JP/ROUTER.md")
 
     excluded = manifest.get("excludedFromSkillBundle")
     if not isinstance(excluded, list) or not excluded:
-        issues.append("Case 001 excludedFromSkillBundle must be a non-empty list")
+        issues.append("Shared excludedFromSkillBundle must be a non-empty list")
+
+    return issues
+
+
+def validate_starter(case_id: str, expected_id: str) -> list[str]:
+    issues: list[str] = []
+    number = case_id.removeprefix("case-")
+    path = DOGFOOD_DIR / f"doc_cognitive_case_{number}_starter.json"
+    label = case_id.replace("case-", "Case ")
+    if not path.is_file():
+        return [f"{path.name}: missing empty starter document"]
+
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"{path.name}: invalid JSON ({exc})"]
+
+    if document.get("version") != 1:
+        issues.append(f"{label} starter version must be 1")
+    if document.get("id") != expected_id:
+        issues.append(f"{label} starter id must be {expected_id}")
+
+    for field in ("cards", "islands", "evidenceLinks", "readingOrder", "narratives"):
+        if document.get(field) != []:
+            issues.append(f"{label} starter {field} must remain an empty list")
+
+    transform = document.get("transform")
+    if not isinstance(transform, dict):
+        issues.append(f"{label} starter transform must be an object")
+    else:
+        expected_transform = {"panX": 0, "panY": 0, "zoom": 1}
+        if transform != expected_transform:
+            issues.append(
+                f"{label} starter transform changed from neutral {expected_transform}"
+            )
 
     return issues
 
@@ -234,8 +319,11 @@ def main() -> int:
             all_issues.append(f"{path.name}: invalid document ({exc})")
 
     all_issues.extend(validate_cognitive_tools())
-    all_issues.extend(validate_case001_source_manifest())
-    all_issues.extend(validate_case001_skill_manifest())
+    for case_id, expected_count in PRODUCT_MANIFEST_SPECS.items():
+        all_issues.extend(validate_product_source_manifest(case_id, expected_count))
+    all_issues.extend(validate_shared_skill_manifest())
+    for case_id, expected_id in STARTER_SPECS.items():
+        all_issues.extend(validate_starter(case_id, expected_id))
 
     for path in files:
         d = json.loads(path.read_text(encoding="utf-8"))
@@ -248,16 +336,24 @@ def main() -> int:
         status = "present" if (DOGFOOD_DIR / filename).is_file() else "missing"
         print(f"  {filename}: {status} / syntax-check")
 
-    source_status = "present" if CASE001_SOURCE_MANIFEST.is_file() else "missing"
+    for case_id, expected_count in PRODUCT_MANIFEST_SPECS.items():
+        manifest = DOGFOOD_DIR / f"cognitive-dogfood-{case_id}-round1-source-manifest.json"
+        status = "present" if manifest.is_file() else "missing"
+        print(
+            f"  {manifest.name}: {status} / expected {expected_count} frozen product sources"
+        )
+
+    skill_status = "present" if SHARED_SKILL_MANIFEST.is_file() else "missing"
     print(
-        f"  {CASE001_SOURCE_MANIFEST.name}: {source_status} / "
-        f"expected {CASE001_SOURCE_COUNT} frozen product sources"
+        f"  {SHARED_SKILL_MANIFEST.name}: {skill_status} / "
+        f"expected {SHARED_SKILL_SOURCE_COUNT} canonical ja-JP sources"
     )
-    skill_status = "present" if CASE001_SKILL_MANIFEST.is_file() else "missing"
-    print(
-        f"  {CASE001_SKILL_MANIFEST.name}: {skill_status} / "
-        f"expected {CASE001_SKILL_SOURCE_COUNT} canonical ja-JP sources"
-    )
+
+    for case_id, expected_id in STARTER_SPECS.items():
+        number = case_id.removeprefix("case-")
+        starter = DOGFOOD_DIR / f"doc_cognitive_case_{number}_starter.json"
+        status = "present" if starter.is_file() else "missing"
+        print(f"  {starter.name}: {status} / expected empty id={expected_id}")
 
     if all_issues:
         print(f"\nISSUES FOUND ({len(all_issues)}):")
@@ -265,7 +361,7 @@ def main() -> int:
             print(f"  - {issue}")
         return 1
 
-    print("\nALL DOGFOOD DOCUMENTS/TOOLS STRUCTURALLY VALID ✅")
+    print("\nALL DOGFOOD DOCUMENTS/TOOLS/COGNITIVE CASE INPUTS STRUCTURALLY VALID ✅")
     return 0
 
 
