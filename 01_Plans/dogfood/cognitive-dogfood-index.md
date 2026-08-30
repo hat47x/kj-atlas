@@ -22,7 +22,8 @@
 - P0: **完了**。
   - Cases 001〜003の問い、product snapshot、skill snapshot、4arm treatment、required outputを凍結済み。
   - launch treatment equivalence、product manifest/blob、product bundle再生成、skill canonical sourceのblob一致を検証済み。
-  - Case 001 A〜Dのfresh-session用Actions artifactを生成できる状態。
+  - Cases 001〜003のA〜Dを、各arm単独のfresh-session用Actions artifactとして12件すべて生成できる状態。
+  - artifact境界は、全arm=同一case product evidence、B/Dのみ=skill、C/Dのみ=empty starter、各artifact=自armのlaunch.mdのみ。
 - P1: **Case 001 Arm C ready / raw run未取得**。
   - 実行順は C → D → B → A。
   - 現在の設計者チャットは既知仮説を含むためarmとして使わない。
@@ -101,6 +102,7 @@ Case 000から認知的優位性の因果主張をしない。比較対照、AI 
 - `cognitive-dogfood-case-002-round1-source-manifest.json`
 - `doc_cognitive_case_002_starter.json`
 - `cognitive-dogfood-case-002-launch-*.md`
+- Actions artifact: `cognitive-dogfood-case-002-arm-a` 〜 `arm-d`
 
 ### Case 003: local/offline/self-hostとcollaborationの境界
 
@@ -108,6 +110,9 @@ Case 000から認知的優位性の因果主張をしない。比較対照、AI 
 - `cognitive-dogfood-case-003-round1-source-manifest.json`
 - `doc_cognitive_case_003_starter.json`
 - `cognitive-dogfood-case-003-launch-*.md`
+- Actions artifact: `cognitive-dogfood-case-003-arm-a` 〜 `arm-d`
+
+Case 002/003のartifactを先に生成していても、実行順はCase 001→002→003を維持する。artifact準備済みであることは前倒し実行を意味しない。
 
 ## 7. Experiment tooling
 
@@ -118,13 +123,13 @@ Case 000から認知的優位性の因果主張をしない。比較対照、AI 
 - `prepare_cognitive_frozen_source_bundle.py`
   - product snapshotからarm-visible product evidenceだけを抽出。
 - `prepare_cognitive_case001_skill_bundle.py`
-  - B/D用canonical `src/ja-JP`だけを抽出。
+  - B/D用canonical `src/ja-JP`だけを抽出。skill snapshotは3ケース共通。
 - `validate_cognitive_run_records.py`
   - raw runの必須記録を検査。
 - `build_cognitive_blind_package.py`
   - arm/method情報を外したblind packageを生成。
 - `.github/workflows/cognitive-dogfood-freeze.yml`
-  - frozen input preflightとCase 001 A〜D artifact生成。
+  - frozen input preflightとCases 001〜003のA〜D、計12個のfresh-session artifact生成。
 
 experiment toolingの不足を、直ちにKJ Atlas製品の機能不足へ読み替えない。
 
@@ -146,6 +151,10 @@ internal cognitive dogfoodは第三者価値の証明ではない。
 - `../issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md`
 - `../issues/issue-PRODUCT-POSITION-01-primary-job-and-switch-reason.md`
 - `../issues/issue-PRACTICE-CULTURE-01-cultural-fit-and-product-invariants.md`
+- `third-party-value-validation-execution-plan.md`
+- `third-party-value-session-record-template.md`
+- `third-party-value-publication-boundary.md`
+- `third-party-value-analysis-plan.md`
 
 Case 001〜003で得た価値・switch reason・認知増分は、第三者が自分の実資料を持ち込んだときに支持/修正/縮小/棄却される**仮説**として渡す。
 
