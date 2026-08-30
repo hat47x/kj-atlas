@@ -6,6 +6,7 @@ on:
       - "01_Plans/dogfood/cognitive-dogfood-case-*-launch-*.md"
       - "01_Plans/dogfood/cognitive-dogfood-case-*-round1-source-manifest.json"
       - "01_Plans/dogfood/cognitive-dogfood-case-001-skill-manifest.json"
+      - "01_Plans/dogfood/cognitive-dogfood-run-record-template.md"
       - "01_Plans/dogfood/doc_cognitive_case_*_starter.json"
       - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
       - "01_Plans/dogfood/validate_cognitive_run_records.py"
