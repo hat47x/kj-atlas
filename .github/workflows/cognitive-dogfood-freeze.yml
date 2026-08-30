@@ -11,6 +11,8 @@ on:
       - "01_Plans/dogfood/validate_cognitive_launch_packets.py"
       - "01_Plans/dogfood/validate_cognitive_run_records.py"
       - "01_Plans/dogfood/test_validate_cognitive_run_records.py"
+      - "01_Plans/dogfood/build_cognitive_blind_package.py"
+      - "01_Plans/dogfood/test_build_cognitive_blind_package.py"
       - "01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py"
       - "01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py"
       - ".github/workflows/cognitive-dogfood-freeze.yml"
@@ -41,9 +43,9 @@ jobs:
           python-version: "3.11"
       - name: Validate frozen launch packets
         run: python 01_Plans/dogfood/validate_cognitive_launch_packets.py
-      - name: Test run intake contract
+      - name: Test run intake and blind-package contracts
         working-directory: 01_Plans/dogfood
-        run: python test_validate_cognitive_run_records.py
+        run: python -m unittest test_validate_cognitive_run_records.py test_build_cognitive_blind_package.py
       - name: Reproduce frozen product evidence bundles
         shell: bash
         run: |
