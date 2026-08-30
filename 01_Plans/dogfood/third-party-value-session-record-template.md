@@ -12,9 +12,28 @@
 - Participation basis: volunteer / collaborator / other
 - Practice context summary:
 - KJ Atlas version/commit:
+- Session launch checklist reference:
+- Launch verdict: GO / GO-WITH-REDUCTION / STOP-DATA-BOUNDARY / STOP-PARTICIPANT / STOP-OTHER
 - Data handling agreement:
 - Public / private record boundary:
 - Withdrawal / deletion agreement:
+
+### 0.1 Runtime data path actually used
+
+- Execution mode: local / self-hosted / hosted / other / unknown
+- AI enabled: yes / no
+- AI provider / endpoint actually used: N/A / <record>
+- Material sent outside KJ Atlas process/device: yes / no / partial / unknown
+- What was sent externally: none / raw material / selected cards / derived text / metadata / other / unknown
+- Provider-side retention/logging known: yes / no / N/A
+- Operator-side request/response logging: yes / no / unknown / N/A
+- Raw material retained after session: yes / no / partial
+- KJ Atlas document/export retained: yes / no / partial
+- Audio/video/screen capture used: yes / no / partial
+- Storage location class: participant-controlled / operator-private / organization-controlled / other / none
+- Planned retention/deletion point:
+
+Record actual runtime behavior, not the product's general capability. If a field remained `unknown`, explain why it was acceptable for this material or why the session stopped.
 
 ## 1. Eligibility / safety check
 
@@ -23,6 +42,9 @@
 - [ ] Participant can stop at any time.
 - [ ] Material can be handled under agreed permissions.
 - [ ] No unapproved personal/confidential/third-party material is being introduced.
+- [ ] Runtime AI/network/storage path was explained before first material entry.
+- [ ] Any unresolved data-path uncertainty is compatible with the material conditions, or the session stopped before material entry.
+- [ ] Session participation and public-Git publication were treated as separate decisions.
 
 Deviation / limitation:
 
@@ -98,6 +120,7 @@ Fill after or near the end of the session, referring back to raw Obs IDs.
 - What was difficult to bring into KJ Atlas?
 - What should remain outside the product?
 - Did data-control constraints change the session?
+- Did AI/provider/network/storage constraints require a reduced workflow?:
 
 ### S2 — Externalization
 
@@ -145,9 +168,12 @@ Record participant wording as closely as practical.
 - Stop point:
 - Stop reason:
 - Was stopping a product failure, a fit judgment, a data-control constraint, an accessibility barrier, or something else?:
+- Did runtime data-path uncertainty or external processing contribute?:
 - What should **not** be inferred from the stop?:
 
 Stopping is a valid outcome. Do not convert it automatically into a feature request.
+
+If the session stopped before material entry because the runtime data path was unacceptable or insufficiently known, preserve that as `no-use / governance evidence`; do not mark it invalid merely because no KJ artifact was produced.
 
 ## 9. Artifact references
 
@@ -156,6 +182,7 @@ Stopping is a valid outcome. Do not convert it automatically into a feature requ
 - Anonymized evidence:
 - Existing-workflow comparison artifact:
 - Material intentionally not retained:
+- Private runtime/data-path evidence reference, if any:
 
 ## 10. Participant-level interpretation
 
@@ -175,6 +202,7 @@ Do this only after raw observations are recorded.
 
 - Strongest reason not to use KJ Atlas:
 - Is it rational under the participant's context?:
+- Is it primarily workflow/value, runtime data boundary, practice fit, accessibility, or another condition?:
 
 ### 10.4 Primary-job relationship
 
@@ -205,6 +233,8 @@ Rules:
 - V-F2: new issue only when reproducible, uncovered, actionable, and testable.
 - V-F3: ADR only when `ADR-0047` real-use trigger is present.
 
+A single session's provider/storage condition is not automatically a product requirement. Preserve the raw no-use reason first.
+
 ## 13. Candidate follow-up sources / sessions
 
 - Missing evidence:
@@ -215,14 +245,16 @@ Do not add follow-up participants merely to confirm a preferred conclusion.
 
 ## 14. Session validity
 
-- Independent baseline captured before value vocabulary: yes / no
+- Independent baseline captured before value vocabulary: yes / no / N/A if stopped before baseline
 - Raw observations preserved: yes / no
 - Counterevidence / no-use was allowed: yes / no
 - Participant could stop: yes / no
+- Runtime data path disclosed before first material entry: yes / no / N/A because no material entered
 - Data handling followed agreement: yes / no
+- Public-Git publication treated separately from session participation: yes / no
 - Operator inference separated from observation: yes / no
 - Known contamination / leading:
 
 Session validity verdict: valid / partial / invalid
 
-Invalid/partial sessions remain in the record with the reason; do not silently delete them.
+A `STOP-DATA-BOUNDARY` or other pre-material stop can still be valid evidence if the stopping condition and participant decision were captured without leading. Invalid/partial sessions remain in the record with the reason; do not silently delete them.
