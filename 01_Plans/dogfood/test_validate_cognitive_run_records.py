@@ -7,11 +7,14 @@ accepts structurally complete records and rejects comparison-breaking omissions.
 
 from __future__ import annotations
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 import validate_cognitive_run_records as validator
+
+DOGFOOD_DIR = Path(__file__).resolve().parent
 
 
 def build_case001_arm_c_record(
@@ -147,7 +150,27 @@ pending synthetic validation
 """
 
 
+def frozen_launch_required_numbers(case_id: str) -> list[int]:
+    number = case_id.removeprefix("case-")
+    path = DOGFOOD_DIR / f"cognitive-dogfood-case-{number}-launch-ordinary.md"
+    text = path.read_text(encoding="utf-8")
+    try:
+        section = text.split("## Required output", 1)[1].split("\n## ", 1)[0]
+    except IndexError as exc:
+        raise AssertionError(f"Required output section missing in {path.name}") from exc
+    return [
+        int(value)
+        for value in re.findall(r"^(\d+)\.\s+\S", section, flags=re.MULTILINE)
+    ]
+
+
 class RequiredOutputNumberingTests(unittest.TestCase):
+    def test_contract_counts_match_frozen_launch_packets(self) -> None:
+        for case_id, contract in validator.CASE_CONTRACTS.items():
+            with self.subTest(case_id=case_id):
+                expected = list(range(1, int(contract["required_output_count"]) + 1))
+                self.assertEqual(frozen_launch_required_numbers(case_id), expected)
+
     def test_complete_sequence_passes(self) -> None:
         text = "\n".join(
             f"### 6.{number} Item {number}\nbody"
