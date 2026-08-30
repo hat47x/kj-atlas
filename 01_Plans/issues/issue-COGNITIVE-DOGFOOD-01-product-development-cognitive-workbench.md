@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Process
-- Status: Draft
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
