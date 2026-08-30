@@ -169,6 +169,35 @@ def validate_required_output_numbering(
     return errors
 
 
+def validate_required_output_bodies(
+    required_output: str, expected_count: int
+) -> list[str]:
+    """Require non-empty substantive body text under each frozen 6.x heading."""
+    errors: list[str] = []
+    heading_pattern = re.compile(r"^### 6\.(\d+)\s+\S.*$", re.MULTILINE)
+    matches = list(heading_pattern.finditer(required_output))
+
+    # Numbering validation reports missing/duplicate/out-of-order headings. Here we
+    # only validate bodies for uniquely present expected headings.
+    by_number: dict[int, list[re.Match[str]]] = {}
+    for match in matches:
+        by_number.setdefault(int(match.group(1)), []).append(match)
+
+    for number in range(1, expected_count + 1):
+        number_matches = by_number.get(number, [])
+        if len(number_matches) != 1:
+            continue
+        match = number_matches[0]
+        following = [candidate.start() for candidate in matches if candidate.start() > match.start()]
+        end = min(following) if following else len(required_output)
+        body = required_output[match.end():end].strip()
+        body_without_comments = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL).strip()
+        if not re.search(r"[A-Za-z0-9\u3040-\u30ff\u3400-\u9fff]", body_without_comments):
+            errors.append(f"Required output 6.{number} must contain substantive body text")
+
+    return errors
+
+
 def validate_record(path: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -286,11 +315,9 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
     if not required_output:
         errors.append("Required output section is empty or malformed")
     elif contract is not None:
-        errors.extend(
-            validate_required_output_numbering(
-                required_output, int(contract["required_output_count"])
-            )
-        )
+        expected_count = int(contract["required_output_count"])
+        errors.extend(validate_required_output_numbering(required_output, expected_count))
+        errors.extend(validate_required_output_bodies(required_output, expected_count))
 
     if contract is not None:
         expected_tests = tuple(contract["tests"])
