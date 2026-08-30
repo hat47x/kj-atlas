@@ -4,7 +4,8 @@
 - Scope: Case 001 Round 1 P1 execution
 - Preregistered order: **C → D → B → A**
 - Product bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
-- Skill bundle ID for B/D: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
+- Operator-only skill manifest ID: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
+- Arm-visible skill bundle ID for B/D: `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
 
 ## 1. Operator-only preparation
 
@@ -72,9 +73,11 @@ python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
 - `src/ja-JP` 正本12件だけが固定commitから抽出される。
 - 各Git blob SHAがoperator manifestと一致する。
 - `_experiment/skill-bundle-manifest.json` に `sourceCount: 12` がある。
+- arm-visible `manifestId` は `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5` である。
+- `caseScopedMetadataIncluded=false` であり、arm-visible skill subtreeに `case-001` / `Case 001` を含めない。
 - docs/evals/plugins/adapters/AGENTS/README/PR discussionは入っていない。
 
-A/Cへskill bundleまたはskill manifestを渡さない。
+operator-only skill manifestがCase 001に由来することは、Case 001結果を見る前に固定した履歴として保持する。ただし、そのcase identityはB/Dのarm-visible bundleへコピーしない。A/Cへskill bundleまたはskill manifestを渡さない。
 
 ## 2. Arm launch matrix
 
