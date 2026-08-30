@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Build a reviewer-facing blind package from a cognitive dogfood run record.
+
+The builder copies only the common result-bearing sections. It intentionally
+omits arm/method metadata, M1-M9 self-evaluation, InquiryJourney/T9 records, and
+skill execution records. It does not paraphrase the run's claims.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import re
+from pathlib import Path
+
+FORBIDDEN_DIRECT_MARKERS = (
+    "cultural-substrate-weaving",
+    "Arm A",
+    "Arm B",
+    "Arm C",
+    "Arm D",
+    "Activation verdict",
+    "Framework candidates considered",
+)
+
+
+def parse_fields(text: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for line in text.splitlines():
+        match = re.match(r"^- ([^:]+):\s*(.*)$", line)
+        if match and match.group(1) not in result:
+            result[match.group(1)] = match.group(2).strip()
+    return result
+
+
+def extract_section(text: str, start: str, next_heading: str | None) -> str:
+    start_index = text.find(start)
+    if start_index < 0:
+        raise ValueError(f"missing section: {start}")
+    if next_heading is None:
+        return text[start_index:].strip()
+    end_index = text.find(next_heading, start_index + len(start))
+    if end_index < 0:
+        raise ValueError(f"missing next section after {start}: {next_heading}")
+    return text[start_index:end_index].strip()
+
+
+def neutralize_temporal_section(section: str) -> str:
+    section = section.replace(
+        "## 7. Conflict-bearing source check", "## Temporal correction observations"
+    )
+    section = re.sub(r"\bT1\b", "temporal-case-1", section)
+    section = re.sub(r"\bT2\b", "temporal-case-2", section)
+    section = re.sub(r"\bT3\b", "temporal-case-3", section)
+    return section
+
+
+def build_package(record_text: str) -> tuple[str, list[str]]:
+    fields = parse_fields(record_text)
+    alias = fields.get("Blind alias", "").strip()
+    case_id = fields.get("Case ID", "").strip()
+    round_id = fields.get("Round", "").strip()
+
+    if not alias or alias.lower() in {"pending", "a", "b", "c", "d"}:
+        raise ValueError("Blind alias must be assigned and neutral")
+    if not case_id or not round_id:
+        raise ValueError("Case ID and Round are required")
+
+    fixed_question = extract_section(record_text, "## 1. Fixed question", "## 2. Input verification")
+    required_output = extract_section(record_text, "## 6. Required output", "## 7. Conflict-bearing source check")
+    temporal = extract_section(record_text, "## 7. Conflict-bearing source check", "## 8. M1–M9 evidence")
+    candidate_sources = extract_section(record_text, "## 11. Candidate source requests", "## 12. cultural-substrate-weaving execution record")
+
+    temporal = neutralize_temporal_section(temporal)
+    source_digest = hashlib.sha256(record_text.encode("utf-8")).hexdigest()
+
+    package = "\n\n".join(
+        [
+            "# Cognitive Dogfood Blind Package",
+            f"- Case ID: {case_id}\n- Round: {round_id}\n- Blind alias: {alias}\n- Source record SHA-256: `{source_digest}`\n- Package scope: common result-bearing sections only",
+            fixed_question,
+            required_output,
+            temporal,
+            candidate_sources,
+            "## Reviewer boundary\n\nThis package intentionally omits arm identity, method metadata, run self-scoring, InquiryJourney/T9 records, and skill execution records. Review claims against the common frozen source bundle before any unblinding.",
+        ]
+    ) + "\n"
+
+    warnings: list[str] = []
+    for marker in FORBIDDEN_DIRECT_MARKERS:
+        if marker.lower() in package.lower():
+            warnings.append(
+                f"method identity may be inferable: direct marker {marker!r} remains"
+            )
+
+    return package, warnings
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Build a blind review package from a cognitive dogfood run record."
+    )
+    parser.add_argument("record", type=Path)
+    parser.add_argument("output", type=Path)
+    args = parser.parse_args()
+
+    if not args.record.is_file():
+        print(f"FAIL: record not found: {args.record}")
+        return 1
+
+    record_text = args.record.read_text(encoding="utf-8")
+    try:
+        package, warnings = build_package(record_text)
+    except ValueError as exc:
+        print(f"FAIL: {exc}")
+        return 1
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(package, encoding="utf-8")
+    package_digest = hashlib.sha256(package.encode("utf-8")).hexdigest()
+
+    for warning in warnings:
+        print(f"WARN: {warning}")
+    print(f"WROTE: {args.output}")
+    print(f"PACKAGE_SHA256: {package_digest}")
+    print("NOTE: warnings require manual redaction review; do not paraphrase claims.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
