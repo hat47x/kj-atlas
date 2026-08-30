@@ -14,6 +14,7 @@ from pathlib import Path
 PRODUCT_SHA = "2232b3bb26647e5c4a083f55bdbf83c161698649"
 SKILL_SHA = "3988e12e5f7f316f377d3391e9486c8467a111d5"
 SOURCE_MANIFEST_ID = f"case-001-r1-product@{PRODUCT_SHA}"
+EXPECTED_ORDER = {"C": 1, "D": 2, "B": 3, "A": 4}
 FIXED_QUESTION = (
     "KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、"
     "どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、"
@@ -120,6 +121,23 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
             "Known contamination must be none for a valid run, "
             f"got {contamination!r}"
         )
+
+    blind_alias = fields.get("Blind alias", "").strip()
+    if blind_alias.lower() in {"pending", "a", "b", "c", "d"}:
+        errors.append("Blind alias must be a neutral assigned alias before P2")
+
+    order_text = fields.get("Execution order position", "").strip()
+    order_match = re.match(r"^(\d+)(?:\s*/\s*4)?$", order_text)
+    if arm in EXPECTED_ORDER:
+        if not order_match:
+            errors.append(
+                "Execution order position must be an integer 1..4 or '<n>/4'"
+            )
+        elif int(order_match.group(1)) != EXPECTED_ORDER[arm]:
+            errors.append(
+                f"Arm {arm} must be execution position {EXPECTED_ORDER[arm]} "
+                "under the preregistered C→D→B→A order"
+            )
 
     if PRODUCT_SHA not in fields.get("KJ Atlas version/commit", ""):
         errors.append(
