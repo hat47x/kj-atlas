@@ -112,9 +112,13 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
 - `doc_kj_atlas_dogfood_r14.json`
   - R14のKJキャンバス。
 - `cognitive-dogfood-continuous-2026-09-03-r9.md`
-  - R15。route別の最終prompt計測から、規模上限による欠落とは別に、IRへ残ったevidenceがrendererで失われる経路欠落を分離した記録。
+  - R15。route別の最終prompt計測からevidenceの `20→0` をrenderer欠落と判定した記録。この判定はR16で仕様へ戻って補正したが、測定値と判断経路を追跡するため記録自体は残す。
 - `doc_kj_atlas_dogfood_r15.json`
-  - R15のKJキャンバス。
+  - R15のKJキャンバス。R16で反証された推論を含む履歴資料として残す。
+- `cognitive-dogfood-continuous-2026-09-03-r10.md`
+  - R16。R15の測定値は保持したまま、「IRにある全情報を全routeへ描画する」という暗黙前提を撤回し、coverageをrouteごとの必要意味集合で判定するよう補正した記録。
+- `doc_kj_atlas_dogfood_r16.json`
+  - R16のKJキャンバス。
 
 継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
