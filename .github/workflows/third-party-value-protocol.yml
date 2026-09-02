@@ -3,6 +3,7 @@ name: Third-party value protocol
 on:
   pull_request:
     paths:
+      - "01_Plans/issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md"
       - "01_Plans/dogfood/third-party-value-*.md"
       - "01_Plans/dogfood/validate_third_party_value_protocol.py"
       - ".github/workflows/third-party-value-protocol.yml"
