@@ -22,7 +22,7 @@ membership structure is not.
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from typing import Any
 
 from kj_atlas_api.models import SuggestLayoutRequest
 from kj_atlas_api.models_ai import GenerateNarrativeRequest, SuggestCardGroupsRequest
