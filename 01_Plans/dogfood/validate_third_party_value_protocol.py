@@ -4,7 +4,8 @@
 This validator does not score product value or participant outcomes. It only
 protects protocol invariants that must remain true before third-party sessions:
 neutral baseline capture, stopping/no-use as valid outcomes, runtime data-path
-disclosure, and the public-Git publication boundary.
+disclosure, the public-Git publication boundary, and discoverability from the
+canonical VALUE-REALNESS-01 issue.
 """
 
 from __future__ import annotations
@@ -13,8 +14,10 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent
+PLANS_ROOT = ROOT.parent
 
 FILES = {
+    "issue": PLANS_ROOT / "issues" / "issue-VALUE-REALNESS-01-third-party-beachhead-validation.md",
     "execution": ROOT / "third-party-value-validation-execution-plan.md",
     "launch": ROOT / "third-party-value-session-launch-checklist.md",
     "session": ROOT / "third-party-value-session-record-template.md",
@@ -24,6 +27,18 @@ FILES = {
 }
 
 REQUIRED_SNIPPETS = {
+    "issue": [
+        "現在の実行準備状態",
+        "現在残っている外部入力",
+        "session開始時の入口",
+        "third-party-value-validation-execution-plan.md",
+        "third-party-value-participant-brief.md",
+        "third-party-value-session-launch-checklist.md",
+        "third-party-value-session-record-template.md",
+        "third-party-value-publication-boundary.md",
+        "third-party-value-analysis-plan.md",
+        "validate_third_party_value_protocol.py",
+    ],
     "execution": [
         "Baseline before product-value vocabulary",
         "No-use reason",
@@ -91,7 +106,7 @@ def main() -> int:
 
     for key, path in FILES.items():
         if not path.is_file():
-            errors.append(f"missing protocol file: {path.relative_to(ROOT)}")
+            errors.append(f"missing protocol file: {path.relative_to(PLANS_ROOT)}")
             continue
 
         text = path.read_text(encoding="utf-8")
