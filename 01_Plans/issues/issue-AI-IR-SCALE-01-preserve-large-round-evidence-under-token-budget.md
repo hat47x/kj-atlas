@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-PROJECTION-01` AC-10
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/`, `02_Architecture/llm_input_ir_spec.md`
+- Scope: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/scripts/`, `03_Implement/backend/tests/`, `02_Architecture/llm_input_ir_spec.md`
 - Related ADR/Spec: `ADR-0069`, `ADR-0047`, `02_Architecture/llm_input_ir_spec.md` §5, `issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md`
 - Expected verification level: backend unit + representative-scale measurement + named-provider token observation
 
@@ -40,6 +40,30 @@ IRから100カードが外れたことを、すべてのrouteで「provider prom
 
 このため、scale remediationはIR単体の件数だけでなく、**routeごとの最終promptで何が残り、何が欠けるか**を測って判断する。
 
+### 2026-09-03 route別の最終prompt計測
+
+PR #2820で、300カード・30島の同じ代表入力を、移行済み3 routeの実際のprompt builderへ通した。外部LLMは呼ばず、providerへ送られる描画済みpromptを決定論的に比較した。
+
+| route | card text | 完全な島membership | typed relation | 相対座標 |
+| --- | ---: | ---: | ---: | ---: |
+| `suggest-card-groups` | 200/300 | 20/30 | 199/300 | 対象外 |
+| `suggest-layout` | 300/300 | 30/30 | 199/300 | 200/300 |
+| `generate-narrative` | 300/300 | 30/30 | 199/300 | 対象外 |
+
+この結果から、全カード本文が最終promptに残るrouteでも、relationや相対配置などの構造文脈は共有IRの上限を受けることが確認できた。単一の「カードが何枚見えるか」だけでは、AIへ届く意味のcoverageを評価できない。
+
+さらに、各島に1件ずつ計30件のheld contradiction evidence linkを加えた副シナリオでは、共有IRに20件が残った。その20件について最終promptを測ると次の差があった。
+
+| route | source evidence | IRに残る | 最終promptで見える |
+| --- | ---: | ---: | ---: |
+| `suggest-card-groups` | 30 | 20 | **0** |
+| `suggest-layout` | 30 | 20 | **0** |
+| `generate-narrative` | 30 | 20 | **20** |
+
+ここでは `30 -> 20` が規模上限によるcoverage lossであり、`suggest-card-groups` / `suggest-layout` の `20 -> 0` はprompt rendererによる追加欠落である。後者は規模・token判断から分離し、`AI-IR-PROMPT-EVIDENCE-01` としてP1で修正する。
+
+renderer欠落を直しても、`MAX_CARDS` による20/30のcoverage lossは残る。本Issueは引き続きOpenとし、named providerのtoken観測と意味保存型投影戦略の判断を継続する。
+
 ### なぜ問題か
 
 KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
@@ -62,7 +86,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 ### 先に測ること
 
-1. 300カード・30島の代表入力について、移行済みrouteの最終prompt coverageを比較する。
+1. 300カード・30島の代表入力について、移行済みrouteの最終prompt coverageを比較する。**完了。PR #2820で決定論的な測定を追加した。**
    - `suggest-card-groups`: IR truncationが候補集合へどう反映されるか。
    - `suggest-layout`: 全カード節を残したまま、IR由来のrelation/island/relative-placement coverageがどこまで失われるか。
    - `generate-narrative`: reading orderとIR由来の論理構造のcoverage差。
@@ -90,21 +114,22 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 - [ ] 300カード・30島の代表規模について、少なくとも1つのnamed model/providerでprovider-reported input token数を記録できる。
 - [ ] `suggest-layout` 相当の最重量promptと、座標を使わない代表routeのtoken/coverage差を記録できる。
-- [ ] `suggest-card-groups` / `suggest-layout` / `generate-narrative` について、IR切り詰めが最終promptのどの情報を失わせるかを区別して記録できる。
+- [x] `suggest-card-groups` / `suggest-layout` / `generate-narrative` について、IR切り詰めが最終promptのどの情報を失わせるかを区別して記録できる。
 - [ ] 300枚規模で、非空だった島がglobal selectionだけを理由にIR上で黙って空島へ変わらない。空になる場合は、消費側がcoverage lossを明示的に判断できる契約を持つ。
 - [ ] 保留・根拠・矛盾・少数/反対所見など、人間が意味を与えた情報を中心性順位だけで無差別に落とさない規則、またはそれらを確実に処理するbatch規則を仕様化する。
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくともcoverageの欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [ ] 300カード規模の回帰テストをCIで固定する。
+- [x] 300カード規模の回帰テストをCIで固定する。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
 
 - 自動確認:
   - `scripts/measure_llm_input_ir_scale.py`
+  - `scripts/measure_ai_route_prompt_coverage.py`
   - `tests/test_llm_input_ir_scale.py`
-  - route別prompt rendering test。
+  - `tests/test_ai_route_prompt_coverage.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
   - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
@@ -114,9 +139,10 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 本Issueの最低限の安全な投影戦略とtoken予算判断が得られるまで、`AI-IR-PROJECTION-01` Stage 5を7経路へ一括展開しない。
 
-ただし、Stage 5の各route調査や、IRを使わない現行経路のbug修正を止めるものではない。
+ただし、Stage 5の各route調査や、IRを使わない現行経路のbug修正を止めるものではない。`AI-IR-PROMPT-EVIDENCE-01` のように、IRへ残った意味がrendererでさらに失われる不具合は、この規模判断を待たずに修正する。
 
 ## 補足
 
 - 本Issueは `AI-IR-PROJECTION-01` AC-10が明示していた「上限値が現行規模に合わない場合は別issueへ切り出す」を実行したもの。
+- route別最終prompt計測はPR #2820で追加し、R15継続dogfoodで `AI-IR-PROMPT-EVIDENCE-01` への分離まで行った。
 - 現時点では長期アーキテクチャ判断を確定しないため、新ADRは起票しない。task別投影やbatchingが複数境界を横断する長期契約へ発展した場合にのみ `ADR-0047` のトリガーを評価する。
