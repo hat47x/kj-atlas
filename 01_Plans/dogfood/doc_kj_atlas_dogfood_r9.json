@@ -3,7 +3,7 @@
   "id": "doc_kj_atlas_dogfood_r9",
   "title": "kj-atlas 継続dogfood — 第三者価値実証は何を待っているのか",
   "createdAt": "2026-09-02T13:00:00.000Z",
-  "updatedAt": "2026-09-02T13:05:00.000Z",
+  "updatedAt": "2026-09-02T13:10:00.000Z",
   "transform": {
     "panX": 0,
     "panY": 0,
@@ -23,7 +23,7 @@
       "id": "c02",
       "x": 360,
       "y": 80,
-      "text": "第三者実証には、実行計画、参加者向け説明、開始前チェック、session記録、公開境界、事前分析計画がすでに用意されている。",
+      "text": "第三者実証には、実行計画、参加者向け説明、開始前チェック、セッション記録、公開境界、事前分析計画がすでに用意されている。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "01_Plans/dogfood/third-party-value-*.md"}
@@ -32,7 +32,7 @@
       "id": "c03",
       "x": 660,
       "y": 80,
-      "text": "validate_third_party_value_protocol.pyは、中立なbaseline、停止やno-useの保持、runtime data pathの開示、public Gitへの公開境界をfail-closedで検査する。",
+      "text": "validate_third_party_value_protocol.pyは、中立なbaseline、停止やno-useの保持、実行時のデータ経路の開示、public Gitへの公開境界を、不備があれば失敗させる方式で検査する。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "01_Plans/dogfood/validate_third_party_value_protocol.py"}
@@ -41,7 +41,7 @@
       "id": "c04",
       "x": 60,
       "y": 310,
-      "text": "third-party-value-protocol.ymlにより、第三者実証protocolの変更は専用GitHub Actionsで検査できる。",
+      "text": "third-party-value-protocol.ymlにより、第三者実証の検証手順を変更したときは専用GitHub Actionsで検査できる。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": ".github/workflows/third-party-value-protocol.yml"}
@@ -50,7 +50,7 @@
       "id": "c05",
       "x": 360,
       "y": 310,
-      "text": "cognitive-dogfood-index.mdの『外部現実への接続』には第三者実証の主要文書が並んでおり、実行資産自体はnavigation上も存在している。",
+      "text": "cognitive-dogfood-index.mdの『外部現実への接続』には第三者実証の主要文書が並んでおり、実行資産自体は索引から辿れる。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "01_Plans/dogfood/cognitive-dogfood-index.md"}
@@ -59,7 +59,7 @@
       "id": "c06",
       "x": 660,
       "y": 310,
-      "text": "R9着手時のVALUE-REALNESS-01にはthird-party-value-*一式への直接参照がなく、Issue単体ではprotocol未整備なのか外部入力待ちなのかを判別しにくかった。",
+      "text": "R9着手時のVALUE-REALNESS-01にはthird-party-value-*一式への直接参照がなく、Issue単体では検証手順が未整備なのか、外部入力を待っているのかを判別しにくかった。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "VALUE-REALNESS-01 before R9"}
@@ -68,7 +68,7 @@
       "id": "c07",
       "x": 60,
       "y": 540,
-      "text": "第三者sessionで残る主要な外部入力は、協力者または同等の外部評価機会と、その人が扱える実資料・匿名化資料・現実的な代替資料である。",
+      "text": "第三者セッションで残る主要な外部入力は、協力者または同等の外部評価機会と、その人が扱える実資料・匿名化資料・現実的な代替資料である。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "VALUE-REALNESS-01 + third-party-value-validation-execution-plan.md"}
@@ -77,7 +77,7 @@
       "id": "c08",
       "x": 360,
       "y": 540,
-      "text": "AI/provider/network/storageのruntime data pathは実行環境と資料条件に依存するため、一般論で先に確定せず、各sessionの実資料投入前に確認する設計になっている。",
+      "text": "AIプロバイダー、ネットワーク、保存先などを含む実行時のデータ経路は、実行環境と資料条件に依存するため、一般論で先に固定せず、各セッションで最初の実資料を投入する前に確認する設計になっている。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "third-party-value-session-launch-checklist.md"}
@@ -86,7 +86,7 @@
       "id": "c09",
       "x": 660,
       "y": 540,
-      "text": "VALUE-MEASURE-01はreal-user/cooperator milestone前に重い観測基盤やtelemetryを前倒ししない方針であり、第三者session前の追加計測は既存計画とも整合しない。",
+      "text": "VALUE-MEASURE-01はreal-user/cooperator milestone前に重い観測基盤やテレメトリを前倒ししない方針であり、第三者セッション前の追加計測は既存計画とも整合しない。",
       "claimType": "fact",
       "textReviewed": false,
       "meta": {"source": "01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md"}
@@ -95,7 +95,7 @@
       "id": "c10",
       "x": 60,
       "y": 770,
-      "text": "protocolが揃っている状態で新しいKPI、telemetry、product schema、重複文書を増やしても、第三者価値が実在するかという主要な不確実性は減らない。",
+      "text": "検証手順が揃っている状態で新しいKPI、テレメトリ、製品側の新しいスキーマ、重複文書を増やしても、第三者にとって価値が実在するかという主要な不確実性は減らない。",
       "claimType": "claim",
       "textReviewed": false,
       "meta": {"source": "c02-c09 synthesis"}
@@ -104,7 +104,7 @@
       "id": "c11",
       "x": 360,
       "y": 770,
-      "text": "現在必要なのはprotocolの再設計ではなく、正本Issueから準備済み資産とsession開始手順へ辿れるようにし、外部入力待ちであることを明示することである。",
+      "text": "現在必要なのは検証手順の再設計ではなく、正本Issueから準備済み資産とセッション開始手順へ辿れるようにし、外部入力待ちであることを明示することである。",
       "claimType": "claim",
       "textReviewed": false,
       "meta": {"source": "c05-c10 synthesis"}
@@ -113,7 +113,7 @@
       "id": "c12",
       "x": 660,
       "y": 770,
-      "text": "正本Issueと実行資産の接続をvalidatorとworkflowで検査すれば、将来文書整理で入口だけが失われる退行をCIで検出できる。",
+      "text": "正本Issueと実行資産の接続をvalidatorとworkflowで検査すれば、将来の文書整理で入口だけが失われる退行をCIで検出できる。",
       "claimType": "claim",
       "textReviewed": false,
       "meta": {"source": "R9 implementation decision"}
@@ -122,7 +122,7 @@
       "id": "c13",
       "x": 60,
       "y": 1000,
-      "text": "protocol準備済みであることはVALUE-REALNESS-01の受入条件を満たしたことを意味しない。価値証拠は実際の第三者sessionから得る必要がある。",
+      "text": "検証手順が準備済みであることはVALUE-REALNESS-01の受入条件を満たしたことを意味しない。価値の証拠は実際の第三者セッションから得る必要がある。",
       "claimType": "claim",
       "textReviewed": false,
       "meta": {"source": "VALUE-REALNESS-01 acceptance boundary"}
@@ -140,7 +140,7 @@
       "id": "c15",
       "x": 660,
       "y": 1000,
-      "text": "内部dogfoodを追加しても第三者の独立した反証可能性は代替できないため、R9の次の前進条件は内部分析量ではなく外部sessionの発生である。",
+      "text": "内部dogfoodを追加しても第三者の独立した反証可能性は代替できないため、R9の次の前進条件は内部分析を増やすことではなく、外部セッションが実際に行われることである。",
       "claimType": "claim",
       "textReviewed": false,
       "meta": {"source": "c01-c14 synthesis"}
@@ -172,7 +172,7 @@
     {
       "id": "i2",
       "cardIds": ["c07", "c08", "c09", "c10"],
-      "title": "現在の律速は追加計測ではなく、実際の第三者sessionという外部入力にある",
+      "title": "現在の律速は追加計測ではなく、実際の第三者セッションという外部入力にある",
       "shape": "rect",
       "geometry": {"x": 30, "y": 495, "width": 980, "height": 245}
     },
@@ -207,7 +207,7 @@
     {
       "id": "n1",
       "title": "第三者価値実証の準備と未実証を分ける",
-      "body": "VALUE-REALNESS-01はP0かつOpenであり、第三者が自分の資料を使った価値実証はまだ完了していない。しかし、実行計画、参加者向け説明、開始前チェック、session記録、公開境界、事前分析計画、validator、専用workflowはすでに用意されている。R9着手時の問題は、これらの実行資産が存在しないことではなく、正本Issueから準備状態と開始手順へ辿りにくいことだった。現在残る主要な不確実性は、第三者協力者または同等の外部評価機会と、その文脈で安全に扱える資料を用いた実sessionがまだ発生していないことである。runtime data pathも実行環境と資料条件に依存するため、一般論で先に固定せず各sessionの実資料投入前に確認する。したがって、協力者がいない段階で新しいKPI、telemetry、product schema、重複protocolを増やしても、第三者価値が実在するかという問いには答えられない。今回の改善ではVALUE-REALNESS-01に準備状態とsession開始時の入口を戻し、その導線自体をvalidatorとworkflowで守るようにした。ただしprotocol準備済みであることは価値実証完了ではない。STOP-DATA-BOUNDARY、STOP-PARTICIPANT、既存手段で十分という判断も有効な外部結果として受け取り、内部dogfoodで第三者の独立した反証可能性を代替しない。"
+      "body": "VALUE-REALNESS-01はP0かつOpenであり、第三者が自分の資料を使った価値実証はまだ完了していない。しかし、実行計画、参加者向け説明、開始前チェック、セッション記録、公開境界、事前分析計画、validator、専用workflowはすでに用意されている。R9着手時の問題は、これらの実行資産が存在しないことではなく、正本Issueから準備状態と開始手順へ辿りにくいことだった。現在残る主要な不確実性は、第三者協力者または同等の外部評価機会と、その文脈で安全に扱える資料を用いた実際のセッションがまだ行われていないことである。実行時のデータ経路も環境と資料条件に依存するため、一般論で先に固定せず、各セッションで最初の実資料を投入する前に確認する。したがって、協力者がいない段階で新しいKPI、テレメトリ、製品側のスキーマ、重複する検証文書を増やしても、第三者にとって価値が実在するかという問いには答えられない。今回の改善ではVALUE-REALNESS-01に準備状態とセッション開始時の入口を戻し、その導線自体をvalidatorとworkflowで守るようにした。ただし検証手順が準備済みであることは価値実証完了ではない。STOP-DATA-BOUNDARY、STOP-PARTICIPANT、既存手段で十分という判断も有効な外部結果として受け取り、内部dogfoodで第三者の独立した反証可能性を代替しない。"
     }
   ]
 }
