@@ -9,6 +9,7 @@
 - Owner: Maintainer
 - Scope: `01_Plans/issues/`, `01_Plans/dogfood/`, `04_Documentation/`
 - Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/kj_technique.md`, `COGNITIVE-DOGFOOD-01`
+- Execution protocol: `third-party-value-validation-execution-plan.md`, `third-party-value-participant-brief.md`, `third-party-value-session-launch-checklist.md`, `third-party-value-session-record-template.md`, `third-party-value-publication-boundary.md`, `third-party-value-analysis-plan.md`
 - Expected verification level: docs-check
 
 ## 課題
@@ -36,6 +37,58 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 2. **External-reality grounding**: 内部dogfood/設計文書/AIが作る自己参照的な認識循環へ、製品外から反証・違和感・不要判断を入れる。
 
 後者は「第三者の意見が正しい」という意味ではない。内部で立てた価値仮説が、外から来た材料によって実際に変更・縮小・棄却可能な状態を保つための入力である。
+
+## 現在の実行準備状態
+
+このissueの検証手順は、第三者の反応を見る前にリポジトリ上で準備済みである。したがって、現時点の未完了を「検証protocolがまだない」ことと混同しない。
+
+準備済みの正本・補助資産は次のとおり。
+
+- `01_Plans/dogfood/third-party-value-validation-execution-plan.md`
+  - V0〜V4の実行順、参加条件、観察単位、停止条件、finding triageを定める。
+- `01_Plans/dogfood/third-party-value-participant-brief.md`
+  - 参加者へ目的、資料条件、AI・network・保存経路、公開境界、中止可能性を平易に説明する。
+- `01_Plans/dogfood/third-party-value-session-launch-checklist.md`
+  - 最初の実資料を投入する前にruntime data pathを確認し、`GO / GO-WITH-REDUCTION / STOP-*` を記録する。
+- `01_Plans/dogfood/third-party-value-session-record-template.md`
+  - baseline、raw observation、artifact evidence、friction、no-use、counterevidence、停止理由、事後説明を同じsession記録に残す。
+- `01_Plans/dogfood/third-party-value-publication-boundary.md`
+  - raw material、識別可能なartifact、public Gitへ残せるsanitized evidenceを分離する。
+- `01_Plans/dogfood/third-party-value-analysis-plan.md`
+  - 結果を見る前に分析順序を固定し、内部仮説へ `support / modify / narrow / reject / unresolved` で戻す。
+- `01_Plans/dogfood/validate_third_party_value_protocol.py`
+  - 中立なbaseline、停止/no-useの保持、runtime data pathの開示、public Git境界などのprotocol不変条件をfail-closedで検査する。
+- `.github/workflows/third-party-value-protocol.yml`
+  - 上記validatorをGitHub Actionsで実行する。
+
+### 現在残っている外部入力
+
+リポジトリ側のprotocol整備と、実際の価値実証を分ける。
+
+現時点で本issueを完了できない主な理由は、**第三者協力者またはそれに準ずる外部評価機会で、本人の実資料・本人が妥当と認める匿名化資料・現実的な代替資料のいずれかを使ったsessionを、まだ実行していないこと**である。
+
+また、AI/provider/network/storage等のruntime data pathは、実際に使う環境と資料条件に依存するため、リポジトリ上の一般論だけで事前確定しない。各sessionの実資料投入前に `third-party-value-session-launch-checklist.md` で確認する。
+
+このため、協力者がいない間に次を追加しても、本issueの主要な不確実性は減らない。
+
+- 新しい価値KPI。
+- 個人追跡テレメトリ。
+- 第三者実証専用の新しいproduct schema/API。
+- 既存protocolと重複する同意・観察・分析文書。
+- 内部dogfoodだけを用いた第三者価値の代替判定。
+
+### session開始時の入口
+
+第三者協力者または外部評価機会が得られたら、次の順で開始する。
+
+1. operatorは `third-party-value-validation-execution-plan.md` を正本として確認する。
+2. 参加者には `third-party-value-participant-brief.md` の範囲を説明し、KJ Atlasの価値仮説を先に教えてbaselineを誘導しない。
+3. 最初の実資料投入前に `third-party-value-session-launch-checklist.md` を埋め、runtime data pathと保存範囲が不明なまま進めない。
+4. `GO` または妥当な `GO-WITH-REDUCTION` の場合だけsessionを進め、`third-party-value-session-record-template.md` に生の観察を記録する。
+5. session後の公開可否は参加同意と分け、`third-party-value-publication-boundary.md` に従う。
+6. V1/V2の材料が得られた後、`third-party-value-analysis-plan.md` の順序でKJ統合し、結果を本issue、`PRODUCT-POSITION-01`、必要に応じて `PRACTICE-CULTURE-01` へ戻す。
+
+`STOP-DATA-BOUNDARY`、`STOP-PARTICIPANT`、既存手段で十分という判断も有効な結果である。完遂を目的化しない。
 
 ## 対応方針
 
@@ -71,6 +124,7 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 ## 検証計画
 
 - 実行する確認:
+  - `python 01_Plans/dogfood/validate_third_party_value_protocol.py` でprotocol不変条件を確認する。
   - 実利用セッションごとに `Context / Existing workflow / Raw observations / Artifact evidence / Friction / Value moment / Reuse intent / Counterevidence / No-use reason` を記録する。
   - 観察カードはあらかじめ用意した分類へ押し込まず、`00_Prompt/kj_technique.md` に従って訴えの類似性から束ねる。
   - 文化的体系はカード分類器ではなく、調べ落とし（権威、合意、匿名性、根拠、再現性、時間軸、アクセシビリティ等）を補う探索レンズとして使う。
@@ -83,6 +137,7 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 ## 補足
 
 - 依存: 第三者協力者またはそれに準ずる外部評価機会。
+- リポジトリ側の準備: 第三者sessionの実行・記録・公開境界・分析protocolとvalidatorは準備済み。これらの存在だけでは受入条件を満たさない。
 - 停止基準: 協力者がいない段階でKPIを固定しない。実利用証拠なしにVR4/VR5を前倒ししない。
 - 認識上の停止基準: 第三者観察が既存仮説の言い換えだけになり、独立した反証可能性を失った場合は検証設計を見直す。
 - ADR候補化条件: 実使用で、データ契約・権限・安全境界・共有意味論・不可逆なワークフロー契約を横断的に変更する必要が生じた場合だけ `ADR-0047` に従って起票する。
