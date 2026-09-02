@@ -30,7 +30,7 @@ REQUIRED_SNIPPETS = {
     "issue": [
         "現在の実行準備状態",
         "現在残っている外部入力",
-        "session開始時の入口",
+        "セッション開始時の入口",
         "third-party-value-validation-execution-plan.md",
         "third-party-value-participant-brief.md",
         "third-party-value-session-launch-checklist.md",
