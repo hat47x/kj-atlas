@@ -152,6 +152,21 @@ experiment ledgerの存在だけを理由に新しいproduct API/schemaを起票
 - instrumentation leakage: 実験のための記録要求が製品設計へ不必要に混入する。
 - endless exploration: 新しい対象側増分がないのに探索を続ける。
 
+## 現在の実行準備状態
+
+R10継続dogfoodで、比較実験の準備状態と未実行部分を再点検した。
+
+- Case 001〜003の問い、product snapshot、skill snapshot、A〜Dのtreatment、required outputは凍結済みである。
+- frozen source bundle、skill bundle、arm package、run record、blind packageには既存のvalidatorとcontract testがある。
+- `cognitive-dogfood-index.md` の現在地は `P1: Case 001 Arm C ready / raw run未取得` であり、比較証拠そのものはまだ得られていない。
+- valid armは、比較設計の既知情報から隔離されたfresh contextで開始する。この設計者側の継続dogfoodコンテキストをA〜Dへ再利用しない。
+- C/DではKJ AtlasキャンバスとInquiryJourneyを実際の外部表象として操作する。チャット内の代理JSON編集をC/D実走へ読み替えない。
+- product snapshotの固定はarm間比較の内的妥当性を守るためのものであり、その後の改善を含むcurrent mainの絶対評価とは区別して解釈する。
+
+現在の次の実行入口は、`cognitive-dogfood-index.md`、`cognitive-dogfood-execution-plan.md`、Case 001のlaunch packet、`cognitive-dogfood-cd-ui-runbook.md` である。
+
+raw run取得前に、新しいKPI、別schema、追加preflightを増やして実走の代替にしない。現在の主要な未投入条件は、隔離された実行コンテキストとC/Dの実UI操作である。
+
 ## cultural-substrate-weavingとの責任分界
 
 実験で見つかった問題は、直ちにスキル修正へ入れず次に帰属させる。
