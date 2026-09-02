@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "id": "doc_kj_atlas_dogfood_r9",
+  "title": "kj-atlas 継続dogfood — 第三者価値実証は何を待っているのか",
+  "createdAt": "2026-09-02T13:00:00.000Z",
+  "updatedAt": "2026-09-02T13:00:00.000Z",
+  "transform": {
+    "panX": 0,
+    "panY": 0,
+    "zoom": 0.72
+  },
+  "cards": [
+    {
+      "id": "c01",
+      "x": 60,
+      "y": 80,
+      "text": "VALUE-REALNESS-01はP0かつOpenで、第三者が自分の実資料または妥当な代替資料を使った価値実証はまだ完了していない。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "01_Plans/issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md"}
+    },
+    {
+      "id": "c02",
+      "x": 360,
+      "y": 80,
+      "text": "第三者実証には、実行計画、参加者向け説明、開始前チェック、session記録、公開境界、事前分析計画がすでに用意されている。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "01_Plans/dogfood/third-party-value-*.md"}
+    },
+    {
+      "id": "c03",
+      "x": 660,
+      "y": 80,
+      "text": "validate_third_party_value_protocol.pyは、中立なbaseline、停止やno-useの保持、runtime data pathの開示、public Gitへの公開境界をfail-closedで検査する。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "01_Plans/dogfood/validate_third_party_value_protocol.py"}
+    },
+    {
+      "id": "c04",
+      "x": 60,
+      "y": 310,
+      "text": "third-party-value-protocol.ymlにより、第三者実証protocolの変更は専用GitHub Actionsで検査できる。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": ".github/workflows/third-party-value-protocol.yml"}
+    },
+    {
+      "id": "c05",
+      "x": 360,
+      "y": 310,
+      "text": "cognitive-dogfood-index.mdの『外部現実への接続』には第三者実証の主要文書が並んでおり、実行資産自体はnavigation上も存在している。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "01_Plans/dogfood/cognitive-dogfood-index.md"}
+    },
+    {
+      "id": "c06",
+      "x": 660,
+      "y": 310,
+      "text": "R9着手時のVALUE-REALNESS-01にはthird-party-value-*一式への直接参照がなく、Issue単体ではprotocol未整備なのか外部入力待ちなのかを判別しにくかった。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "VALUE-REALNESS-01 before R9"}
+    },
+    {
+      "id": "c07",
+      "x": 60,
+      "y": 540,
+      "text": "第三者sessionで残る主要な外部入力は、協力者または同等の外部評価機会と、その人が扱える実資料・匿名化資料・現実的な代替資料である。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "VALUE-REALNESS-01 + third-party-value-validation-execution-plan.md"}
+    },
+    {
+      "id": "c08",
+      "x": 360,
+      "y": 540,
+      "text": "AI/provider/network/storageのruntime data pathは実行環境と資料条件に依存するため、一般論で先に確定せず、各sessionの実資料投入前に確認する設計になっている。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "third-party-value-session-launch-checklist.md"}
+    },
+    {
+      "id": "c09",
+      "x": 660,
+      "y": 540,
+      "text": "VALUE-MEASURE-01はreal-user/cooperator milestone前に重い観測基盤やtelemetryを前倒ししない方針であり、第三者session前の追加計測は既存計画とも整合しない。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md"}
+    },
+    {
+      "id": "c10",
+      "x": 60,
+      "y": 770,
+      "text": "protocolが揃っている状態で新しいKPI、telemetry、product schema、重複文書を増やしても、第三者価値が実在するかという主要な不確実性は減らない。",
+      "claimType": "claim",
+      "textReviewed": false,
+      "meta": {"source": "c02-c09 synthesis"}
+    },
+    {
+      "id": "c11",
+      "x": 360,
+      "y": 770,
+      "text": "現在必要なのはprotocolの再設計ではなく、正本Issueから準備済み資産とsession開始手順へ辿れるようにし、外部入力待ちであることを明示することである。",
+      "claimType": "claim",
+      "textReviewed": false,
+      "meta": {"source": "c05-c10 synthesis"}
+    },
+    {
+      "id": "c12",
+      "x": 660,
+      "y": 770,
+      "text": "正本Issueと実行資産の接続をvalidatorとworkflowで検査すれば、将来文書整理で入口だけが失われる退行をCIで検出できる。",
+      "claimType": "claim",
+      "textReviewed": false,
+      "meta": {"source": "R9 implementation decision"}
+    },
+    {
+      "id": "c13",
+      "x": 60,
+      "y": 1000,
+      "text": "protocol準備済みであることはVALUE-REALNESS-01の受入条件を満たしたことを意味しない。価値証拠は実際の第三者sessionから得る必要がある。",
+      "claimType": "claim",
+      "textReviewed": false,
+      "meta": {"source": "VALUE-REALNESS-01 acceptance boundary"}
+    },
+    {
+      "id": "c14",
+      "x": 360,
+      "y": 1000,
+      "text": "STOP-DATA-BOUNDARY、STOP-PARTICIPANT、既存手段で十分という判断も第三者価値実証の有効な結果であり、完遂や肯定評価を目的化しない。",
+      "claimType": "fact",
+      "textReviewed": false,
+      "meta": {"source": "third-party-value-session-launch-checklist.md + analysis plan"}
+    },
+    {
+      "id": "c15",
+      "x": 660,
+      "y": 1000,
+      "text": "内部dogfoodを追加しても第三者の独立した反証可能性は代替できないため、R9の次の前進条件は内部分析量ではなく外部sessionの発生である。",
+      "claimType": "claim",
+      "textReviewed": false,
+      "meta": {"source": "c01-c14 synthesis"}
+    }
+  ],
+  "edges": [
+    {"id": "e01", "fromId": "c02", "toId": "c10", "type": "causal"},
+    {"id": "e02", "fromId": "c03", "toId": "c10", "type": "related"},
+    {"id": "e03", "fromId": "c04", "toId": "c10", "type": "related"},
+    {"id": "e04", "fromId": "c05", "toId": "c06", "type": "contrast"},
+    {"id": "e05", "fromId": "c06", "toId": "c11", "type": "causal"},
+    {"id": "e06", "fromId": "c07", "toId": "c15", "type": "causal"},
+    {"id": "e07", "fromId": "c08", "toId": "c10", "type": "related"},
+    {"id": "e08", "fromId": "c09", "toId": "c10", "type": "supports"},
+    {"id": "e09", "fromId": "c10", "toId": "c11", "type": "causal"},
+    {"id": "e10", "fromId": "c11", "toId": "c12", "type": "causal"},
+    {"id": "e11", "fromId": "c01", "toId": "c13", "type": "related"},
+    {"id": "e12", "fromId": "c13", "toId": "c15", "type": "causal"},
+    {"id": "e13", "fromId": "c14", "toId": "c15", "type": "related"}
+  ],
+  "islands": [
+    {
+      "id": "i1",
+      "cardIds": ["c01", "c02", "c03", "c04", "c05", "c06"],
+      "title": "実行資産は揃っているが、正本Issueからその準備状態が見えにくかった",
+      "shape": "rect",
+      "geometry": {"x": 30, "y": 35, "width": 980, "height": 385}
+    },
+    {
+      "id": "i2",
+      "cardIds": ["c07", "c08", "c09", "c10"],
+      "title": "現在の律速は追加計測ではなく、実際の第三者sessionという外部入力にある",
+      "shape": "rect",
+      "geometry": {"x": 30, "y": 495, "width": 980, "height": 245}
+    },
+    {
+      "id": "i3",
+      "cardIds": ["c11", "c12"],
+      "title": "正本と実行資産をつなぎ、その導線自体をCIで守る",
+      "shape": "rect",
+      "geometry": {"x": 30, "y": 725, "width": 980, "height": 185}
+    },
+    {
+      "id": "i4",
+      "cardIds": ["c13", "c14", "c15"],
+      "title": "準備完了と価値実証完了を混同せず、否定的な外部結果もそのまま受け取る",
+      "shape": "rect",
+      "geometry": {"x": 30, "y": 955, "width": 980, "height": 245}
+    }
+  ],
+  "evidenceLinks": [
+    {"id": "ev01", "cardId": "c01", "type": "supports", "url": "01_Plans/issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md"},
+    {"id": "ev02", "cardId": "c02", "type": "supports", "url": "01_Plans/dogfood/third-party-value-validation-execution-plan.md"},
+    {"id": "ev03", "cardId": "c03", "type": "supports", "url": "01_Plans/dogfood/validate_third_party_value_protocol.py"},
+    {"id": "ev04", "cardId": "c04", "type": "supports", "url": ".github/workflows/third-party-value-protocol.yml"},
+    {"id": "ev05", "cardId": "c05", "type": "supports", "url": "01_Plans/dogfood/cognitive-dogfood-index.md"},
+    {"id": "ev06", "cardId": "c07", "type": "supports", "url": "01_Plans/dogfood/third-party-value-validation-execution-plan.md"},
+    {"id": "ev07", "cardId": "c08", "type": "supports", "url": "01_Plans/dogfood/third-party-value-session-launch-checklist.md"},
+    {"id": "ev08", "cardId": "c09", "type": "supports", "url": "01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md"},
+    {"id": "ev09", "cardId": "c14", "type": "supports", "url": "01_Plans/dogfood/third-party-value-analysis-plan.md"}
+  ]
+}
