@@ -35,7 +35,9 @@ GLOB = "doc_kj_atlas_dogfood_r*.json"
 CONTINUOUS_GLOB = "cognitive-dogfood-continuous-*.md"
 CONTINUOUS_INDEX = DOGFOOD_DIR / "cognitive-dogfood-index.md"
 CONTINUOUS_ROUND_HEADING = re.compile(r"^# 継続dogfood R(\d+)\b", re.MULTILINE)
-CONTINUOUS_CANVAS_REF = re.compile(r"`(doc_kj_atlas_dogfood_r\d+\.json)`")
+CONTINUOUS_CANVAS_REF = re.compile(
+    r"`(?:[^`\n]*/)?(doc_kj_atlas_dogfood_r\d+\.json)`"
+)
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
     "build_cognitive_blind_package.py",
@@ -117,11 +119,11 @@ def validate_continuous_index() -> list[str]:
                 f"{CONTINUOUS_INDEX.name}"
             )
 
+        refs = sorted(set(CONTINUOUS_CANVAS_REF.findall(report_text)))
         heading = CONTINUOUS_ROUND_HEADING.search(report_text)
         if heading:
             expected_canvas = f"doc_kj_atlas_dogfood_r{heading.group(1)}.json"
         else:
-            refs = sorted(set(CONTINUOUS_CANVAS_REF.findall(report_text)))
             if len(refs) != 1:
                 issues.append(
                     f"{report.name}: cannot determine one matching dogfood canvas "
@@ -130,7 +132,7 @@ def validate_continuous_index() -> list[str]:
                 continue
             expected_canvas = refs[0]
 
-        if f"`{expected_canvas}`" not in report_text:
+        if expected_canvas not in refs:
             issues.append(
                 f"{report.name}: does not reference its matching canvas {expected_canvas}"
             )
