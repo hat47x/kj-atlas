@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "id": "doc-first-run-value",
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "updatedAt": "2026-09-02T12:00:00.000Z",
+  "transform": {
+    "panX": 0,
+    "panY": 0,
+    "zoom": 1
+  },
+  "cards": [
+    {
+      "id": "first-run-observation-1",
+      "text": "インタビュー後、メモがチャットの奥に流れて、見つけ直すのに時間がかかった。",
+      "x": 80,
+      "y": 60
+    },
+    {
+      "id": "first-run-observation-2",
+      "text": "結論は残っているのに、どの発言を根拠にしたのか後から分からなくなった。",
+      "x": 380,
+      "y": 180
+    },
+    {
+      "id": "first-run-observation-3",
+      "text": "一人だけ違う意見だったので、そのまま議事録から落ちた。",
+      "x": 220,
+      "y": 360
+    }
+  ],
+  "islands": [],
+  "edges": []
+}
