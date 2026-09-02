@@ -41,14 +41,18 @@ ISLAND_COUNT = 30
 CARDS_PER_ISLAND = 10
 
 
+def _card_text(index: int) -> str:
+    return (
+        f"観察{index:03d}: 根拠・異論・保留を失わず、"
+        "後から判断の経路へ戻れるように残した代表規模カード。"
+    )
+
+
 def representative_document(*, include_evidence: bool = False) -> dict[str, Any]:
     cards = [
         {
             "id": f"c{i:03d}",
-            "text": (
-                f"観察{i:03d}: 根拠・異論・保留を失わず、"
-                "後から判断の経路へ戻れるように残した代表規模カード。"
-            ),
+            "text": _card_text(i),
             "x": float(i % 30),
             "y": float(i // 30),
             "textReviewed": True,
@@ -107,12 +111,35 @@ def _count(prompt: str, needles: list[str]) -> int:
     return sum(needle in prompt for needle in needles)
 
 
-def _card_text_needles() -> list[str]:
-    return [f"観察{i:03d}:" for i in range(CARD_COUNT)]
+def _count_variants(prompt: str, variants: list[tuple[str, ...]]) -> int:
+    """Count semantic items regardless of raw-vs-JSON prompt serialization.
+
+    Some route builders interpolate reviewed Japanese text directly, while
+    others use ``json.dumps`` and therefore escape non-ASCII characters.  The
+    measurement is about whether the semantic item reaches the provider prompt,
+    not which equivalent string serialization the route happens to use.
+    """
+    return sum(any(needle in prompt for needle in item_variants) for item_variants in variants)
 
 
-def _island_title_needles() -> list[str]:
-    return [f"島{i:02d}" for i in range(ISLAND_COUNT)]
+def _card_text_variants() -> list[tuple[str, ...]]:
+    return [
+        (
+            f"観察{i:03d}:",
+            json.dumps(_card_text(i)),
+        )
+        for i in range(CARD_COUNT)
+    ]
+
+
+def _island_title_variants() -> list[tuple[str, ...]]:
+    return [
+        (
+            f"島{i:02d}",
+            json.dumps(f"島{i:02d}"),
+        )
+        for i in range(ISLAND_COUNT)
+    ]
 
 
 def _relation_needles(route: str) -> list[str]:
@@ -168,8 +195,8 @@ def _coverage(prompt: str, route: str, *, include_evidence: bool) -> dict[str, A
         "relative_coordinates": CARD_COUNT if route == "suggest-layout" else 0,
     }
     visible = {
-        "card_texts": _count(prompt, _card_text_needles()),
-        "island_titles": _count(prompt, _island_title_needles()),
+        "card_texts": _count_variants(prompt, _card_text_variants()),
+        "island_titles": _count_variants(prompt, _island_title_variants()),
         "complete_island_memberships": _count(prompt, _membership_needles(route)),
         "typed_relations": _count(prompt, _relation_needles(route)),
         "evidence_links": _count(prompt, _evidence_needles()) if include_evidence else 0,
