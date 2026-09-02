@@ -1,0 +1,12 @@
+{
+  "defaultPackId": "first-run-value",
+  "packs": [
+    {
+      "id": "first-run-value",
+      "title": "最初の意味ある配置",
+      "documentPath": "first-run-value.document.json",
+      "enforceSafeMode": true,
+      "visibility": "Public"
+    }
+  ]
+}
