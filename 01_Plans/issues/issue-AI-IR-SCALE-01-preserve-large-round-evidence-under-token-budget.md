@@ -23,18 +23,30 @@ KJ Atlasは、数百枚のカードを扱うKJ実践を正常な利用規模と�
 
 Stage 5へIR経由を広げる前のAC-10計測として、300カード・30島・300 relation の決定論的な代表入力を作り、現行投影を実行した。その結果、`MAX_CARDS` により次が再現した。
 
-- 300カードのうち200カードだけがIRへ残り、100カードが投影から外れる。
-- 30島そのものは保持されるが、後半10島は全メンバーを失って空島になる。
-- ring状の300 relationは199 relationへ減る。
+- 300カードのうち200カードだけがIRへ残り、100カードがIRの構造文脈から外れる。
+- 30島そのものは保持されるが、後半10島はIR上で全メンバーを失って空島になる。
+- ring状の300 relationはIR上で199 relationへ減る。
 - `truncation.reason_codes` には `MAX_CARDS` が残るため、切り詰めが発生した事実は分かる。しかし、どの意味領域・島・異論・保留・根拠が失われたかまでは消費側から判断できない。
 
-これは `DOGFOOD-31` の再発ではない。リクエスト自体は200枚超を受けられるようになっているが、その後のIR投影層がモデルへ届く前に資料を落とす、別の境界である。
+これは `DOGFOOD-31` の再発ではない。リクエスト自体は200枚超を受けられるようになっているが、その後のIR投影層に別のcoverage境界がある。
+
+### IR coverage と実prompt coverageを分ける
+
+IRから100カードが外れたことを、すべてのrouteで「provider promptから100カードが完全に消えた」と読み替えてはいけない。現在の移行済みrouteには、互換性や出力契約のためDocument由来情報を別経路でも描画しているものがある。
+
+- `suggest-card-groups` は、IR内のカードから実際の候補カード列を描画するため、IRのcard coverageが候補集合へ直接影響する。
+- `suggest-layout` は、全カードのid/text/現在座標を従来の `Cards:` 節へ残しつつ、IRから相対配置・relation・島構造を追加している。ここでのIR切り詰めは、カードの存在そのものより**構造文脈のcoverage**を失わせる。
+- `generate-narrative` もreading order自体はDocument由来で保持する一方、card-to-cardの論理構造をIRから受ける。したがって失われる情報の種類は `suggest-card-groups` と同じではない。
+
+このため、scale remediationはIR単体の件数だけでなく、**routeごとの最終promptで何が残り、何が欠けるか**を測って判断する。
 
 ### なぜ問題か
 
 KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
 
-現在の切り詰めは中心性順位を使うため決定論的ではあるが、300枚規模で「全体の3分の1を落とし、島を空にする」ことを許す。中心性が低いカードが、少数意見、未決事項、反証、周辺観察である可能性はあるため、単に順序が決定論的であるだけでは意味保存を保証できない。
+現在のIR切り詰めは中心性順位を使うため決定論的ではあるが、300枚規模で「IRの3分の1を外し、島を空にする」ことを許す。中心性が低いカードが、少数意見、未決事項、反証、周辺観察である可能性はあるため、単に順序が決定論的であるだけでは意味保存を保証できない。
+
+さらに、routeによってはカード本文を別経路で残していても、relation、evidence、hold、島membershipなどIRが担う構造が欠ければ、AIは「カードを知っているが、人間が与えた意味のつながりを知らない」状態になり得る。
 
 また、上限を300や1000へ機械的に引き上げればよいとも限らない。provider transportが実際に送るのは描画済みpromptであり、正確なinput token数はmodel/provider固有である。IRのJSON bytesだけから共通の安全なtoken上限を決めることはできない。
 
@@ -42,19 +54,23 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 | 次元 | 分析 | 他次元への制約 |
 | --- | --- | --- |
-| 業務設計 | 数百枚の生カードから少数意見・保留・残差を含む構造を育てる。大規模だから周辺カードを黙って捨てる運用は一次価値と衝突する | 速度や一回のprompt完結を、意味保存より上位に置かない |
-| データ設計 | IRは全Documentの複製ではなくLLMへ渡す投影だが、切り詰め後も「何を代表し、何を落としたか」が追える必要がある | island/evidence/hold等の人間確定情報を、中心性だけで無差別に消さない |
-| 機能設計 | global cap引上げ、task別投影、島ごとの代表抽出、batch/hierarchical処理など複数方式がある | provider/modelのtoken予算とSafeMode、決定性、proposal-only境界を維持する |
+| 業務設計 | 数百枚の生カードから少数意見・保留・残差を含む構造を育てる。大規模だから周辺の意味文脈を黙って捨てる運用は一次価値と衝突する | 速度や一回のprompt完結を、意味保存より上位に置かない |
+| データ設計 | IRは全Documentの複製ではなくLLMへ渡す構造投影である。切り詰め後も「何を代表し、何を落としたか」が追える必要がある | island/evidence/hold等の人間確定情報を、中心性だけで無差別に消さない |
+| 機能設計 | routeごとに従来promptとIRの役割分担が異なる。global cap引上げ、task別投影、島ごとの代表抽出、batch/hierarchical処理など複数方式がある | provider/modelのtoken予算とSafeMode、決定性、proposal-only境界を維持する |
 
 ## 対応方針
 
 ### 先に測ること
 
-1. 300カード・30島の代表入力について、移行済みrouteのうち少なくとも次をnamed model/providerで実測する。
-   - `suggest-layout` 相当: 座標・島・関係を含む最重量投影。
+1. 300カード・30島の代表入力について、移行済みrouteの最終prompt coverageを比較する。
+   - `suggest-card-groups`: IR truncationが候補集合へどう反映されるか。
+   - `suggest-layout`: 全カード節を残したまま、IR由来のrelation/island/relative-placement coverageがどこまで失われるか。
+   - `generate-narrative`: reading orderとIR由来の論理構造のcoverage差。
+2. 少なくとも次をnamed model/providerで実測する。
+   - `suggest-layout` 相当: 座標・島・関係を含む最重量prompt。
    - 座標を使わない代表route。
-2. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。
-3. model/providerがusageを返さない場合は、その事実を記録し、別tokenizer導入を自動的な前提にしない。
+3. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。
+4. model/providerがusageを返さない場合は、その事実を記録し、別tokenizer導入を自動的な前提にしない。
 
 ### 検討する方式
 
@@ -64,7 +80,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - 実測token予算に余裕があり、主要modelで安全に扱える場合。
 - **B: task別・意味保存型の投影へする**
   - 各非空島から少なくとも代表カードを残す。
-  - `hold_state`、根拠/矛盾リンク、少数・反対所見など保護すべき情報を明示規則で残す。
+  - `hold_state`、根拠/矛盾リンク、少数・反対所見など保護すべき情報を、各taskの意味に応じた明示規則で残す。
 - **C: batch / hierarchical projection**
   - 全量を一度にpromptへ入れず、島/ラウンド単位で分割し、最終提案へ統合する。
 
@@ -73,8 +89,9 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 ## 受入条件
 
 - [ ] 300カード・30島の代表規模について、少なくとも1つのnamed model/providerでprovider-reported input token数を記録できる。
-- [ ] `suggest-layout` 相当の最重量投影と、座標を使わない代表routeの差を記録できる。
-- [ ] 300枚規模で、非空だった島がglobal selectionだけを理由に黙って空島へ変わらない。空になる場合は、消費側がcoverage lossを明示的に判断できる契約を持つ。
+- [ ] `suggest-layout` 相当の最重量promptと、座標を使わない代表routeのtoken/coverage差を記録できる。
+- [ ] `suggest-card-groups` / `suggest-layout` / `generate-narrative` について、IR切り詰めが最終promptのどの情報を失わせるかを区別して記録できる。
+- [ ] 300枚規模で、非空だった島がglobal selectionだけを理由にIR上で黙って空島へ変わらない。空になる場合は、消費側がcoverage lossを明示的に判断できる契約を持つ。
 - [ ] 保留・根拠・矛盾・少数/反対所見など、人間が意味を与えた情報を中心性順位だけで無差別に落とさない規則、またはそれらを確実に処理するbatch規則を仕様化する。
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくともcoverageの欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
@@ -87,10 +104,11 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - 自動確認:
   - `scripts/measure_llm_input_ir_scale.py`
   - `tests/test_llm_input_ir_scale.py`
+  - route別prompt rendering test。
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
   - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
-  - 外部LLMを呼ばない通常CIでは、exact token countを捏造せず構造損失だけを決定論的に検査する。
+  - 外部LLMを呼ばない通常CIでは、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
 
 ## 完了境界
 
