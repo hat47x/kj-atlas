@@ -26,6 +26,7 @@ def test_base_route_prompt_coverage_is_deterministic_and_multidimensional() -> N
             "truncated": True,
             "reason_codes": ["MAX_CARDS"],
         }
+        assert result["coverage"]["visible_in_final_prompt"]["island_titles"] == 30
         assert result["prompt"]["utf8_bytes"] >= result["prompt"]["unicode_chars"]
         assert result["token_measurement"]["exact_input_tokens"] is None
 
@@ -61,18 +62,18 @@ def test_evidence_scenario_distinguishes_inputs_from_rendered_prompt() -> None:
     assert layout["coverage"]["source"]["evidence_links"] == 30
     assert narrative["coverage"]["source"]["evidence_links"] == 30
 
+    # MAX_CARDS retains the first 20 complete ten-card islands in this
+    # deterministic fixture, so 20 of the 30 island-local evidence links survive
+    # the shared IR selection.
+    assert groups["ir"]["evidence_links"] == 20
+    assert layout["ir"]["evidence_links"] == 20
+    assert narrative["ir"]["evidence_links"] == 20
+
     # These two routes carry evidence_links on LLMRequest.inputs but their final
     # prompt builders do not render an evidence section.  The provider transport
     # sends the prompt, so that distinction must stay observable.
-    assert groups["ir"]["evidence_links"] > 0
-    assert layout["ir"]["evidence_links"] > 0
     assert groups["coverage"]["visible_in_final_prompt"]["evidence_links"] == 0
     assert layout["coverage"]["visible_in_final_prompt"]["evidence_links"] == 0
 
-    # Narrative explicitly renders IR evidence links as evidence:<type>.  The
-    # exact retained count is selection-policy dependent and is intentionally
-    # measured rather than hard-coded here, but it must be non-zero and cannot
-    # exceed what survived in the IR.
-    visible = narrative["coverage"]["visible_in_final_prompt"]["evidence_links"]
-    assert visible > 0
-    assert visible <= narrative["ir"]["evidence_links"] <= 30
+    # Narrative explicitly renders every evidence link that survived in the IR.
+    assert narrative["coverage"]["visible_in_final_prompt"]["evidence_links"] == 20
