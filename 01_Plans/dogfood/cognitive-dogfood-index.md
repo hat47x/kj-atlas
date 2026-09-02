@@ -111,6 +111,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R14。継続dogfoodの記録と索引に時間差が生じていたことを分析し、存在する記録へ戻る導線をdocs contractで守るようにした記録。
 - `doc_kj_atlas_dogfood_r14.json`
   - R14のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r9.md`
+  - R15。route別の最終prompt計測から、規模上限による欠落とは別に、IRへ残ったevidenceがrendererで失われる経路欠落を分離した記録。
+- `doc_kj_atlas_dogfood_r15.json`
+  - R15のKJキャンバス。
 
 継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
