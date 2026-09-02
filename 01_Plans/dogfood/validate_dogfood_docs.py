@@ -14,6 +14,7 @@ Also:
 - verifies every frozen source path/blob against the preregistered product commit
 - validates the shared frozen canonical cultural-substrate-weaving skill manifest
 - validates Case 001–003 starter documents remain semantically empty
+- validates every continuous-dogfood record is indexed with its matching canvas
 
 It does not score or validate any future arm result.
 
@@ -31,6 +32,12 @@ from pathlib import Path, PurePosixPath
 DOGFOOD_DIR = Path(__file__).parent
 ROOT = DOGFOOD_DIR.parent.parent
 GLOB = "doc_kj_atlas_dogfood_r*.json"
+CONTINUOUS_GLOB = "cognitive-dogfood-continuous-*.md"
+CONTINUOUS_INDEX = DOGFOOD_DIR / "cognitive-dogfood-index.md"
+CONTINUOUS_ROUND_HEADING = re.compile(r"^# 継続dogfood R(\d+)\b", re.MULTILINE)
+CONTINUOUS_CANVAS_REF = re.compile(
+    r"`(?:[^`\n]*/)?(doc_kj_atlas_dogfood_r\d+\.json)`"
+)
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
     "build_cognitive_blind_package.py",
@@ -84,6 +91,60 @@ def validate_one(path: Path) -> list[str]:
 
     if not d.get("narratives"):
         issues.append(f"{doc_id}: no narratives")
+
+    return issues
+
+
+def validate_continuous_index() -> list[str]:
+    """Keep continuous dogfood records reachable from the navigation index.
+
+    The index is not an authority over the contents of a dogfood round. This
+    check only prevents an existing round and its DocumentV1 canvas from
+    becoming invisible to the normal navigation path.
+    """
+
+    issues: list[str] = []
+    reports = sorted(DOGFOOD_DIR.glob(CONTINUOUS_GLOB))
+    if not reports:
+        return [f"no continuous dogfood records matched {CONTINUOUS_GLOB}"]
+    if not CONTINUOUS_INDEX.is_file():
+        return [f"{CONTINUOUS_INDEX.name}: missing cognitive dogfood navigation index"]
+
+    index_text = CONTINUOUS_INDEX.read_text(encoding="utf-8")
+    for report in reports:
+        report_text = report.read_text(encoding="utf-8")
+        if f"`{report.name}`" not in index_text:
+            issues.append(
+                f"{report.name}: continuous dogfood record is missing from "
+                f"{CONTINUOUS_INDEX.name}"
+            )
+
+        refs = sorted(set(CONTINUOUS_CANVAS_REF.findall(report_text)))
+        heading = CONTINUOUS_ROUND_HEADING.search(report_text)
+        if heading:
+            expected_canvas = f"doc_kj_atlas_dogfood_r{heading.group(1)}.json"
+        else:
+            if len(refs) != 1:
+                issues.append(
+                    f"{report.name}: cannot determine one matching dogfood canvas "
+                    f"from heading/reference (found {refs})"
+                )
+                continue
+            expected_canvas = refs[0]
+
+        if expected_canvas not in refs:
+            issues.append(
+                f"{report.name}: does not reference its matching canvas {expected_canvas}"
+            )
+        if not (DOGFOOD_DIR / expected_canvas).is_file():
+            issues.append(
+                f"{report.name}: matching canvas does not exist: {expected_canvas}"
+            )
+        if f"`{expected_canvas}`" not in index_text:
+            issues.append(
+                f"{report.name}: matching canvas {expected_canvas} is missing from "
+                f"{CONTINUOUS_INDEX.name}"
+            )
 
     return issues
 
@@ -317,6 +378,7 @@ def main() -> int:
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             all_issues.append(f"{path.name}: invalid document ({exc})")
 
+    all_issues.extend(validate_continuous_index())
     all_issues.extend(validate_cognitive_tools())
     for case_id, expected_count in PRODUCT_MANIFEST_SPECS.items():
         all_issues.extend(validate_product_source_manifest(case_id, expected_count))
@@ -330,6 +392,12 @@ def main() -> int:
             f"  {path.name}: {len(d['cards'])}C/{len(d['edges'])}E/"
             f"{len(d['islands'])}I/{len(d['narratives'])}N"
         )
+
+    continuous_reports = sorted(DOGFOOD_DIR.glob(CONTINUOUS_GLOB))
+    print(
+        f"  {CONTINUOUS_INDEX.name}: continuous-index coverage for "
+        f"{len(continuous_reports)} records"
+    )
 
     for filename in COGNITIVE_TOOL_FILES:
         status = "present" if (DOGFOOD_DIR / filename).is_file() else "missing"

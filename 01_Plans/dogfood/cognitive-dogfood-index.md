@@ -1,7 +1,7 @@
 # 認知dogfood ナビゲーション索引
 
 - Status: Maintainer/operator navigation only
-- Date: 2026-09-02
+- Date: 2026-09-03
 - Scope: cognitive dogfood / product-value validation workstream
 - Arm input: **No** — この文書をCase 001〜003のA/B/C/Dへ渡さない。
 
@@ -79,6 +79,10 @@ Case 000から認知的優位性の因果関係を主張しない。比較対照
 
 Case 001〜003の統制比較とは別に、既知の設計判断を含む日常開発の自己分析を継続dogfoodとして扱う。これらも比較条件への入力にはしない。
 
+- `cognitive-dogfood-continuous-2026-09-02.md`
+  - R7。外部AIが長期的な共同思考へ参加するときの接続・受け渡し上の摩擦を分析した、最初の継続dogfood記録。
+- `doc_kj_atlas_dogfood_r7.json`
+  - R7のKJキャンバス。
 - `cognitive-dogfood-continuous-2026-09-02-r2.md`
   - R8。最初の10分と一次利用仕事のずれを分析し、公開用パック、導入手順、同期テストへ戻した記録。
 - `doc_kj_atlas_dogfood_r8.json`
@@ -91,6 +95,22 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R10。認知比較実験が何を待っているのかを分析し、実験準備済みと有効な生の実行記録が未取得であることを分離した記録。
 - `doc_kj_atlas_dogfood_r10.json`
   - R10のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r5.md`
+  - R11。公開ROADMAPと実装・価値検証の正本を照合し、完了済み機能を実装済み基盤へ戻して、現在の焦点を認知比較評価と第三者価値実証へ合わせた記録。
+- `doc_kj_atlas_dogfood_r11.json`
+  - R11のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r6.md`
+  - R12。一次利用仕事から未完課題を見直し、人間が残した意味をAI入力で落とさない `AI-IR-PROJECTION-01` をP1で継続する優先順位判断へ戻した記録。
+- `doc_kj_atlas_dogfood_r12.json`
+  - R12のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r7.md`
+  - R13。LLM入力IRの経路棚卸しが手作業へ戻っていたことを分析し、IR移行済み経路とStage 5残債をCI上の明示的な被覆契約へ変えた記録。
+- `doc_kj_atlas_dogfood_r13.json`
+  - R13のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r8.md`
+  - R14。継続dogfoodの記録と索引に時間差が生じていたことを分析し、存在する記録へ戻る導線をdocs contractで守るようにした記録。
+- `doc_kj_atlas_dogfood_r14.json`
+  - R14のKJキャンバス。
 
 継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
