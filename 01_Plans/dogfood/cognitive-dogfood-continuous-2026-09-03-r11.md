@@ -82,7 +82,7 @@ PR #2820の300枚測定では、`suggest-card-groups` について次を確認�
 
 この測定がない状態で、narrative向けのscale戦略を決めたことにはしない。
 
-## 6. 島3 — suggest-layoutは必要意味の欠落がすでに成立している
+## 6. 島4 — suggest-layoutは必要意味の欠落がすでに成立している
 
 `suggest-layout` は、IR仕様でcoordinatesを唯一「要求」するrouteである。出力が配置そのものなので、現在位置から独立した相対布置が入力として意味を持つ。
 
