@@ -1,177 +1,159 @@
 # ROADMAP
 
 **English summary**  
-kj-atlas aims to become a safe, human-in-the-loop diagramming environment for structured qualitative synthesis.  
-This roadmap prioritizes UX refinement, structural analysis tools, localization readiness, and community-driven evolution, while maintaining privacy-by-default and offline-first principles.
+kj-atlas is a safe, human-in-the-loop environment for structured qualitative synthesis. The core product foundation is already implemented; the current priority is to validate, with controlled comparison and third-party use, where that foundation creates a real cognitive and practical advantage. Future capabilities remain candidates until actual-use evidence justifies promoting them.
 
-この文書は、**開発コミュニティ向けの公開コミュニケーション文書**です。  
-詳細な実装順序・個別タスクは `01_Plans/` を参照してください。
-特に、ロードマップ項目を実装アクションへ分解した管理は `01_Plans/adr/ADR-0007-future-backlog.md` の「Roadmap統合バックログ」を正とします。
+この文書は、**開発コミュニティ向けの公開コミュニケーション文書**です。
+
+詳細な実装状態・個別タスクは `01_Plans/` を参照してください。特に、従来の公開ロードマップ項目を実装アクションへ分解した状態管理は `01_Plans/adr/ADR-0007-future-backlog.md` の「Roadmap統合バックログ」を正とします。認知dogfoodの実行状態は `01_Plans/dogfood/cognitive-dogfood-index.md`、一次利用仕事と切替理由は `01_Plans/issues/issue-PRODUCT-POSITION-01-primary-job-and-switch-reason.md` を正本とします。
 
 ## 基本方針
 
-kj-atlas は以下を中核とする：
+kj-atlas は、まとまりきらない定性資料や観察を、早すぎる分類・要約・合意で潰さず、出典・異論・保留・人間の判断権を残したまま構造化し、後から根拠へ戻れる共有可能な理解へ育てることを、現在の中心的な利用仕事として検証しています。
 
-- 🧠 意味の保留（Ambiguity Preservation）
-- 🔁 Human-in-the-loop 構造思考支援
-- 🔒 SafeMode デフォルトの安全設計
-- 🌐 オフライン / 自前ホスト前提
+そのため、次を中核原則として維持します。
+
+- 🧠 意味を急いで閉じない（Ambiguity Preservation）
+- 🔁 人間が判断を引き受ける Human-in-the-loop の構造思考支援
+- 🔒 SafeMode を既定とする安全設計
+- 🌐 オフライン / 自前ホストを選べる構成
 - 📦 OSSとして持続可能な規模感
+- 🔎 出典・異論・保留・判断履歴へ戻れる追跡可能性
 
-## 近接フェーズ（Next 1–2 Releases）
+## 現在地
 
-### 1. UX深化
+### 実装済みの基盤
 
-- 視座プリセット（Explore / Review / Summary）
-- 島の折りたたみ（階層可視性制御）
-- 多角形島（Polygon islands）
-- SafeMode のUI明示性強化
+従来のROADMAPで「近接フェーズ」として掲げていた次の項目は、すでに実装済みです。詳細な完了状態と受入条件は `ADR-0007-future-backlog.md` を参照してください。
 
-### 2. 研究用途強化
+- Explore / Review / Summary の視座プリセット
+- 島の折りたたみと階層可視性制御
+- 多角形島と互換読み込み
+- SafeMode 状態のUI明示
+- Trace Analytics
+- 構造メトリクス
+- Diagnostics 出力の安定化
+- ZIP import の hardening
+- Worker ベース処理の安定化
+- CIによる import / serialization / shape 回帰防止
 
-- Trace Analytics（根拠構造の統計）
-- 構造メトリクス（健全性指標）
-- Diagnostics出力の安定化
+これらは「次に作る機能」ではなく、現在の価値検証を支える実装基盤として扱います。
 
-### 3. セキュリティ維持
+### 現在の焦点 — 機能追加より、価値と認知増分を確かめる
 
-- ZIP import の継続的ハードニング
-- Workerベース処理の安定化
-- CIによる回帰防止
+現在の主要な未確定事項は、機能をさらに増やせるかではありません。実装済みの基盤が、既存のAIチャット、ホワイトボード、文書、定性分析ツールなどでは保ちにくい思考過程を、本当に支えられるかを確かめることです。
 
-## 中期フェーズ（Mid-term Vision）
+#### 1. 一次利用仕事と切替理由
 
-### A. 類似カード統合（Card Consolidation）
+`PRODUCT-POSITION-01` で、一次利用仕事と自然な競合、切替理由を暫定的に具体化しています。ただし、これは内部検討だけで最終確定しません。実際の利用観察から反証可能な形で更新します。
 
-#### 背景
-- 大規模運用ではカード数が増えすぎる
-- 類似カードは代表1枚へ統合する必要がある
+#### 2. 認知比較評価
 
-#### 想定機能
-- 類似度検出（非AI deterministic heuristic）
-- 統合候補提示
-- 統合ログ保持（監査対象）
-- 代表カード下に「統合済みカード一覧」を保持（折りたたみ対応）
+`COGNITIVE-EVAL-01` では、Case 001〜003について、通常のAIチャット、KJ支援skill、KJ Atlas、KJ Atlas + skill を比較する条件を準備しています。
 
-### B. 質的統合法対応（Hierarchical Qualitative Synthesis）
+比較設計、凍結入力、起動用成果物、実行記録、blind review の手順は準備済みです。一方で、**有効な生の実行記録はまだ取得していません**。準備済みであることを、認知上の優位性が実証済みであることとはみなしません。
 
-#### 背景
-- 質的統合法（KJ法）の本来のプロセスにおいて、階層的統合は核心となる
-- デジタル環境でも、ボトムアップな統合過程を可逆的に再現できることが重要
+#### 3. 第三者による価値実証
 
-#### 想定拡張
-- 島の中にサブ島（階層ネスト）を持つ入れ子構造の可視化
-- 「表札（見出し）カード」による下位カード群の代表・要約
-- 鳥観⇄枝葉切替UI（レベルスライダー）による全体像と詳細のシームレスな移行
-- 構造レベル別エクスポート（抽出レベルに応じたアウトライン出力を含む）
+`VALUE-REALNESS-01` では、参加者向け説明、実行計画、開始前チェック、記録、公開境界、分析計画まで準備しています。
 
-### C. LLMアダプタ基盤（Local / Large-scale 共通）
+一方で、**第三者による実セッションはまだ実施していません**。内部dogfoodで見つかった価値を、そのまま第三者価値の証拠へ読み替えないことを原則とします。
 
-- 標準的な運用では大規模LLMの利用を想定する
-- 同一の抽象インタフェースで、ローカルLLM（例：Ollama等）と大規模LLMの双方を扱う
-- LLMは「補助提案」専用（決定は常に人間）
-- SafeModeポリシー適用対象（利用形態に依存せず統一適用）
-- 外部接続の可否はデプロイポリシーで切り替え可能にする
+### 現在の優先順位
 
-> 可視性・エラー忠実性の是正（2026-07-06）: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（`PROV-VIS-01`/`PROV-ERROR-01`/`PROV-CONTRACT-01`）。
->
-> **Pending（未決事項として明示・2026-07-06）**: 現行のローカルLLM `/generate` 契約は kj-atlas 独自形状（意図的決定・`04_Documentation/local_llm_ops_guide.md` に明記）で、OpenAI/Ollama 互換 API とは非互換。real-use での接続失敗が実際に顕在化した場合、OpenAI互換（`/v1/chat/completions`）ワイヤ形式の追加/代替を別ADRとして起票する（ADR-0047 R-1 ゲート待ち。現時点では予測ベースのため決定しない）。
+当面は次の順で前進します。
 
-### D. API課金回避のための定額/オフライン AI 補完経路
+1. Case 001から、隔離された新規コンテキストと実際のKJ Atlas操作による比較記録を得る。
+2. Case 002、003へ同じ比較条件を広げ、特定ケースだけの偶然かを確認する。
+3. 第三者の実仕事に近い材料で、一次利用仕事と切替理由を検証する。
+4. dogfoodや第三者利用で再現した摩擦を既存Issueへ戻し、必要な場合だけ新しいIssueを起票する。
+5. 複数ケースで再現した問題や、利用価値に直結する証拠が得られたものから、将来候補を実装優先へ昇格する。
 
-#### 背景
-- 生成AIのAPI利用は従量課金がかさみ、MVP段階では API 利用が困難な場合がある。
-- 定額のチャットやAIエージェントで高度な思考を補完するワークロードが現実解になりうる。
+比較実験や第三者利用より先に、新しい機能一覧を埋めること自体を進捗とはみなしません。
 
-#### 想定機能
-- キャンバスの文脈（カード/島/関係など）と生成AI向けプロンプトを一体で書き出す。
-- 外部の定額AI/エージェントによる思考結果を、次のいずれかでキャンバスへ反映する：
-  - 低額なローカルLLMを用いて反映する経路、または
-  - 構造化された変更指示（スキーマ化したパッチ/操作列）を出力させ、専用の適用ロジックで反映する経路（要・適用ロジック）。
-- SafeMode と人間による承認（HIL）を維持し、自動確定はしない。
+## 証拠によって昇格する将来候補
 
-> MVP において API 利用が困難であることへの回答。LLMアダプタ基盤（C）と整合させる。
->
-> 仕様化（2026-07-05）: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（決定）＋ `02_Architecture/external_agent_collaboration_spec.html`（契約正本）。(b) 構造化変更指示ルートを AgentTaskPackage/AgentResponse v1 として具体化（Copilot / Copilot Studio プロファイル同梱・Tier 0 手動授受を MVP とする）。実装は `EXT-AGENT-01/02/03`。
+以下は設計上の可能性として保持しますが、ここに並んでいる順序を実装約束とはしません。実使用の摩擦、比較評価、第三者価値実証、保守負担、安全性を見て、昇格・延期・縮小・棄却します。
 
-## ローカライゼーション（Localization Strategy）
+### A. 大規模な質的統合
 
-### 基本方針
+- 類似カード統合を、人間の判断と由来追跡を保ったまま支援する。
+- 島の階層化、表札、鳥観と詳細の往復を、大規模キャンバスでも扱いやすくする。
+- カードを減らすこと自体を目的にせず、統合前の意味・文脈・由来へ戻れるようにする。
 
-- 日本語を一次言語とする
-- UI文字列は内部的に英語キー管理
-- 翻訳可能構造にするが、初期段階で多言語化は強制しない
-- Packデータ（`document.json`）は言語非依存
+一部の基盤機能は既に実装済みです。今後の拡張は、実際の大規模利用で同じ摩擦が再現した場合に進めます。
 
-### 段階的対応
+### B. AIによる補助提案
 
-#### Phase 1: 内部i18n準備
-- UI文言をハードコードから分離
-- JSON翻訳ファイル構造を用意
-- 英語UIの最低限サポート
+- ローカルLLMと大規模LLMを同じ抽象境界から扱える構成。
+- LLMは結論を自動確定せず、提案・反証・探索を補助する。
+- SafeMode と人間の承認境界を利用形態にかかわらず維持する。
+- Providerやモデルを変えても、失敗や根拠の見え方が失われないようにする。
 
-#### Phase 2: 多言語対応拡張
-- 英語完全対応
-- コミュニティ翻訳導入可能構造
-- 言語選択設定（view単位）
+現行のローカルLLM `/generate` 契約は kj-atlas 独自形状です。OpenAI/Ollama互換ワイヤ形式は、実使用で接続失敗が顕在化した場合に改めて判断します。
 
-#### Phase 3: Packの多言語安全設計
-- `document.json` は言語非依存
-- 表示言語はview依存
-- SafeMode下で言語変換による情報漏洩が起きない設計
+### C. 定額 / オフラインAIとの協働
 
-## 長期ビジョン（Long-term）
+生成AI APIの従量課金を前提にせず、定額チャットや外部AIエージェントと安全に往復できる経路を維持・発展させます。
 
-### 1. 島形状の高度化
-- 自由曲線（Spline）
-- 不定形包囲
-- 密度ヒートマップ重畳
+- キャンバス文脈と依頼内容を、外部AIへ渡せる形で書き出す。
+- 外部AIの結果は、構造化変更提案として受け取り、人間の承認後に反映する。
+- AI側がキャンバスの意味を自動確定しない。
 
-### 2. 多人数利用（慎重に検討）
-- 同時編集はスコープ外
-- 将来的に「差分レビュー共有」型で対応可能性
+この方向の契約は `ADR-0049-external-flat-rate-agent-collaboration.md` と関連仕様で管理しています。
 
-### 3. 監査強化（Optional）
-- 署名付きレビュー記録
-- 監査ログハッシュ
-- 研究用途向けエビデンス保存
+### D. ローカライゼーション
 
-## 展開・公開運用（Publishing & Access Control）
+- 日本語を一次言語とする。
+- UI文字列は翻訳可能なキーとして管理する。
+- `document.json` の意味を表示言語から独立させる。
+- 多言語化によってSafeModeや公開境界が弱くならないようにする。
 
-企業・行政などの運用では、公開範囲や認可要件が大きく異なるため、以下を並行検討する。
+翻訳範囲の拡大は、実際の利用者・協力者の需要に合わせて段階的に進めます。
 
-### 方式A：静的配信（広域公開向け）
-- Export（Bundle/Review Pack）を定期連携し、S3 + CDN 等の静的配信へ展開
-- SafeMode 強制（既定ON、解除不可の公開モードを用意）
-- 公開に必要な最小ファイル（index + assets + packs）を生成する「Static Publish」モード
+### E. 展開・公開運用
 
-### 方式B：認証付き配信（限定公開向け）
-- 統合認証（OIDC/SAML）でユーザ識別
-- API層で認可（RBAC/ABAC）を実施し、文書単位の公開範囲を制御
-- 監査ログと連動（閲覧/エクスポートのイベント記録は外部ログ基盤に送信可能）
+企業・行政・研究などでは公開範囲が異なるため、次の選択肢を設計候補として保持します。
 
-### 方式C：ハイブリッド（現実解）
-- 内部は方式Bで厳格管理
-- 市民向けは方式Aで低コスト公開
-- 「公開版生成」をエクスポートパイプラインで担保（匿名化・伏字・SafeMode強制）
+- 静的配信: Review Pack等を静的Webとして安全に公開する。
+- 認証付き配信: OIDC/SAML等の外部認証と認可境界を組み合わせる。
+- ハイブリッド: 内部は制限付き、外部向けは匿名化・SafeModeを強制した公開版とする。
 
-### Mid-term 実装候補
-- visibility（Public / Unlisted / Org / Restricted）を pack/view メタに導入
-- `isReadOnly` を受け取ってUIを制御（アプリ内RBACは持たない）
-- Static Publish 出力（S3/静的Web向け）を公式サポート
-- DocumentACL 抽象I/F（roles/groups/policyRef）を定義し、実装は外部に委譲
+visibility、read-only表示、Static Publish、DocumentACLなどは、実利用上の必要性と既存アーキテクチャへの影響を確認して昇格します。
+
+## 長期的に保持する探索余地
+
+- 自由曲線や不定形包囲など、島表現の高度化
+- 差分レビューを中心とした慎重な複数人協働
+- 署名付きレビュー記録や監査ログハッシュなど、研究・組織利用向け監査強化
+
+これらも固定した到達義務ではありません。kj-atlasの中心的な利用仕事を強める場合に限って取り込みます。
 
 ## 非目標（Out of Scope）
 
 - SNS型公開プラットフォーム化
-- AIによる自動結論生成
-- SaaS依存設計
-- 大規模リアルタイム共同編集
+- AIによる自動結論生成、自動合意、自動意思決定
+- SaaSに依存しなければ成立しない設計
+- 大規模リアルタイム共同編集を主目的にすること
+- 汎用ホワイトボードの機能数を競うこと
+- 人間のレビューをなくすことをAI活用の目標にすること
 
 ## 設計原則（常に維持する）
 
-- `document.json` は純粋構造データ
-- `view.json` は視座とメタ情報
-- safeMode は既定ON
-- 個人情報は保存しない
-- Workerによる非ブロッキング処理
+- `document.json` は純粋な構造データとして扱う。
+- `view.json` は視座と表示上のメタ情報を扱う。
+- SafeMode は既定ONとする。
+- 個人情報を安易に保存しない。
+- 重い処理はWorker等へ逃がし、UI応答性を守る。
+- 出典・異論・保留・人間の判断履歴へ戻れることを、便利な自動化より優先する。
+- dogfoodや実利用で見つかった摩擦は、手順で隠すのではなく、再現できるものを製品へ戻す。
+
+## このROADMAPの更新ルール
+
+公開ROADMAPは、内部の実装状態より先に未来を約束するための文書ではありません。
+
+- 実装済み項目を未来形のまま残さない。
+- 準備済みと実証済みを分ける。
+- 将来候補をP0へ昇格するときは、実使用の証拠または明確な安全・保守上の理由を示す。
+- 実装状態の詳細は `ADR-0007`、認知dogfoodの状態は `cognitive-dogfood-index.md`、価値仮説は各Issue/ADRへ戻って確認できるようにする。
+- 公開文書として読みやすい自然な日本語に整えるが、凍結済み実験入力を文体だけの理由で書き換えない。
