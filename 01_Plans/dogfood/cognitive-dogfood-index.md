@@ -119,6 +119,12 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R16。R15の測定値は保持したまま、「IRにある全情報を全routeへ描画する」という暗黙前提を撤回し、coverageをrouteごとの必要意味集合で判定するよう補正した記録。
 - `doc_kj_atlas_dogfood_r16.json`
   - R16のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-03-r11.md`
+  - R17。route固有の必要意味を正本から対応づけ、`detect-contradiction` のfocus pairに対するhuman adjudicationが300枚切り詰めで消え得ること、narrative/groups/layoutに未測定の必要意味軸が残ることを分離した記録。
+- `doc_kj_atlas_dogfood_r17.json`
+  - R17のKJキャンバス。
+- `ai-ir-required-semantic-coverage-map-2026-09-03.md`
+  - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
 継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
