@@ -27,6 +27,8 @@
 - P1: **Case 001 Arm C ready / raw run未取得**。
   - 実行順は C → D → B → A。
   - 現在の設計者チャットは既知仮説を含むためarmとして使わない。
+  - R10で、比較設計・ハーネス・製品schemaの不足ではなく、隔離されたfresh contextとC/Dの実UI操作が現在の主な未投入条件だと再確認した。
+  - raw run取得前に新しいpreflight、KPI、実験schemaを増やして実行の代替にしない。
 - P2以降: 未開始。
 - 第三者価値実証: **protocol準備済み / 実session未実施**。
   - `VALUE-REALNESS-01` はP0かつOpenのまま。
@@ -85,6 +87,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R9。第三者価値実証が何を待っているのかを分析し、protocol準備済みと外部session未実施を分離した記録。
 - `doc_kj_atlas_dogfood_r9.json`
   - R9のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-02-r4.md`
+  - R10。認知比較実験が何を待っているのかを分析し、実験準備済みとvalid raw run未取得を分離した記録。
+- `doc_kj_atlas_dogfood_r10.json`
+  - R10のKJキャンバス。
 
 継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
@@ -144,6 +150,8 @@ Case 002/003のartifactを先に生成していても、実行順はCase 001→0
   - product snapshotからarm-visible product evidenceだけを抽出。
 - `prepare_cognitive_case001_skill_bundle.py`
   - B/D用canonical `src/ja-JP`だけを抽出。skill snapshotは3ケース共通。
+- `validate_cognitive_arm_packages.py`
+  - A〜Dへproduct/skill/starter/launchが意図した境界で入ったかを検査。
 - `validate_cognitive_run_records.py`
   - raw runの必須記録を検査。
 - `build_cognitive_blind_package.py`
