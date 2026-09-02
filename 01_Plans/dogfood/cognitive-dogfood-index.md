@@ -1,8 +1,8 @@
 # Cognitive Dogfood Navigation Index
 
 - Status: Maintainer/operator navigation only
-- Date: 2026-08-30
-- Scope: cognitive dogfood / product-value validation workstream in PR #2805
+- Date: 2026-09-02
+- Scope: cognitive dogfood / product-value validation workstream
 - Arm input: **No** — この文書をCase 001〜003のA/B/C/Dへ渡さない。
 
 ## 1. この索引の役割
@@ -28,6 +28,11 @@
   - 実行順は C → D → B → A。
   - 現在の設計者チャットは既知仮説を含むためarmとして使わない。
 - P2以降: 未開始。
+- 第三者価値実証: **protocol準備済み / 実session未実施**。
+  - `VALUE-REALNESS-01` はP0かつOpenのまま。
+  - 実行計画、参加者向け説明、開始前checklist、session記録、公開境界、事前分析計画、validator、専用workflowは準備済み。
+  - 現在残る主要な外部入力は、第三者協力者または同等の外部評価機会と、その文脈で扱える資料である。
+  - protocol準備済みであることを、価値実証完了とみなさない。
 
 ## 3. 最初に読む文書
 
@@ -67,6 +72,21 @@
   - 元資料。Case 001 armの答えとしては使わない。
 
 Case 000から認知的優位性の因果主張をしない。比較対照、AI proposal ledger、fresh-context条件を持たないためである。
+
+### 継続dogfood — 日常開発の自己分析
+
+Case 001〜003の統制比較とは別に、既知の設計判断を含む日常開発の自己分析を継続dogfoodとして扱う。これらもarm inputにはしない。
+
+- `cognitive-dogfood-continuous-2026-09-02-r2.md`
+  - R8。最初の10分と一次利用仕事のずれを分析し、public pack、getting started、同期テストへ戻した記録。
+- `doc_kj_atlas_dogfood_r8.json`
+  - R8のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-02-r3.md`
+  - R9。第三者価値実証が何を待っているのかを分析し、protocol準備済みと外部session未実施を分離した記録。
+- `doc_kj_atlas_dogfood_r9.json`
+  - R9のKJキャンバス。
+
+継続dogfoodで得た内部所見を、Case 001〜003の比較結果や第三者価値実証の代替証拠として扱わない。
 
 ## 5. Case 001 — 存在目的と一次利用仕事
 
@@ -148,15 +168,26 @@ experiment toolingの不足を、直ちにKJ Atlas製品の機能不足へ読み
 
 internal cognitive dogfoodは第三者価値の証明ではない。
 
+正本は次である。
+
 - `../issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md`
 - `../issues/issue-PRODUCT-POSITION-01-primary-job-and-switch-reason.md`
 - `../issues/issue-PRACTICE-CULTURE-01-cultural-fit-and-product-invariants.md`
+
+第三者sessionを開始するときは、`VALUE-REALNESS-01` の「現在の実行準備状態」「現在残っている外部入力」「session開始時の入口」から次へ進む。
+
 - `third-party-value-validation-execution-plan.md`
+- `third-party-value-participant-brief.md`
+- `third-party-value-session-launch-checklist.md`
 - `third-party-value-session-record-template.md`
 - `third-party-value-publication-boundary.md`
 - `third-party-value-analysis-plan.md`
+- `validate_third_party_value_protocol.py`
+- `.github/workflows/third-party-value-protocol.yml`
 
 Case 001〜003で得た価値・switch reason・認知増分は、第三者が自分の実資料を持ち込んだときに支持/修正/縮小/棄却される**仮説**として渡す。
+
+protocol一式が準備済みでも、第三者sessionが未実施なら `VALUE-REALNESS-01` は完了しない。協力者がいない段階で新しいKPI、telemetry、重複protocolを増やして実証の代わりにしない。
 
 ## 10. 変更境界
 
