@@ -440,7 +440,7 @@ def _parse_narrative_check_response(
     return response
 
 
-def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
+def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest, ir_context=None) -> str:
     cards_by_id = {card.id: card for card in payload.doc.cards}
     island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
     if island is None:
@@ -450,7 +450,27 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
     if len(member_cards) == 0:
         raise HTTPException(status_code=422, detail="island has no member cards")
 
-    card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in member_cards]
+    if ir_context is None:
+        card_texts_by_id = {card.id: card.text for card in member_cards}
+    else:
+        member_ids = {card.id for card in member_cards}
+        card_texts_by_id = {
+            item["id"]: item["text"]
+            for item in ir_context.ir.get("cards", [])
+            if item["id"] in member_ids
+        }
+        if set(card_texts_by_id) != member_ids:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "required_card_context_mismatch",
+                    "message": "Task-required card context did not fit in the IR projection",
+                },
+            )
+    card_lines = [
+        f'- id="{card.id}", text={json.dumps(card_texts_by_id[card.id])}'
+        for card in member_cards
+    ]
 
     # 戻し検査 (kj_technique.md §3, 優先3-3): cards that OBJECTED to the previous
     # placard carry critiqueTags not_the_same / feels_off (recorded via the UI's
@@ -1373,6 +1393,9 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Reques
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+    # provider transportはpromptだけを送るため、直接メンバー本文もIRから再描画する。
+    # 最初のbuilder呼び出しは従来の島不存在・空島エラー境界を保つvalidation-onlyである。
+    base_prompt = _build_island_summary_prompt(payload, ir_context=ir_context)
     prompt = "\n".join(
         [base_prompt, "", *island_summary_ir_prompt_lines(ir_context)]
     )
