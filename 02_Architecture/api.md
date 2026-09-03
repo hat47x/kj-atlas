@@ -1390,3 +1390,21 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 | endpoint | 廃止日 | 根拠 | 再実装 |
 |---|---|---|---|
 | POST /ai/assess-card-importance | 2026-08-11 | `AI-IMPORTANCE-SCORING-01`（D-a）。カード本文の序列化が `domain.md` の無条件の不変条件に抵触 | **禁止**。`test_ai_anti_scoring_contract.py` が固定。代替は順位・等級を含まない構造的観測（`llm_input_ir_spec.md` §4 `graph_summary`）に限り、`ADR-0069` の後 |
+
+### 2.10 AIカード統合提案（`POST /ai/suggest-merges`）
+
+`POST /ai/suggest-merges` は、複数カードを一枚へ統合できる可能性を**提案するだけ**のAI APIである。AIはカードを削除・上書き・自動統合しない。04ステップ型の近接カード整理と、複数カードの意味核を保つ核融合法型の統合を候補として扱うが、単なる語彙類似や同一テーマだけでは統合理由にしない。
+
+入力境界は次のとおり。
+
+- SafeModeを既定で維持し、未レビュー本文やPIIをproviderへ送らない。
+- `holdState` が付いたカードと `mergedIntoCardId` 済みカードは統合候補から除外する。候補が2枚未満ならproviderを呼ばず空の提案を返す。
+- 候補本文、候補間のcard relation、`evidenceLinks` は共有LLM入力IRを正本とする。
+- `claimType`、全島所属、`canonicalId` / `repOf`、出典の同一性は `suggest-merges` 専用の構造化文脈として重ねる。
+- `sources` の生値はproviderへ送らず、同じ出典を共有しているかを判別できる文書内の不透明参照へ変換する。
+- 全候補カードをroute-requiredとして扱う。IR上限により候補本文、候補間relation、候補間evidenceが欠ける場合は、不完全な入力で統合を提案せず422でfail-closedにする。
+- provider promptは `LLMRequest.inputs` と同じ構造化入力から描画し、Document側の生本文を同じ意味の迂回入力として使わない。
+
+LLM応答は信頼境界の外側として扱う。未知ID・重複ID・2件未満・件数上限に加え、hold、既merge、明示的な `negate`、`type=contradicts` のevidence、異なる既知 `claimType`、同じカードを複数候補へ含める競合提案を決定論的に拒否する。
+
+Responseの外形は従来どおり `SuggestMergesResponse` / `MergeSuggestion` を維持する。現時点では `groupId`、`cardIds`、`mergedTextDraft`、任意の `rationale` であり、統合方法や残差を表す追加フィールドは、実merge適用時の来歴・残差保持を監査した後に判断する。

@@ -13,7 +13,7 @@
 
 ## 課題
 
-`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残した。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件だった。2026-09-03に `suggest-island-summary` をStage 5の第1経路、`propose-opposing-viewpoint` を第2経路として移行し、現在は**6経路がIR経由、未移行は5経路**である。
+`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残した。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件だった。2026-09-03に `suggest-island-summary`、`propose-opposing-viewpoint`、`suggest-merges` を順に移行し、現在は**7経路が構造化入力経由、未移行は4経路**である。`suggest-merges` は共有Document IRだけでは判断に必要な意味が足りないため、共有IRにroute固有の意味文脈を重ねる方式を採った。
 
 ただし、この7件を「同じ方法でIRへ移せばよい7件」と扱うのは適切ではない。実装を再確認すると、次の3種類が混在している。
 
@@ -32,7 +32,7 @@
 | `check-narrative` | `DocumentV1`、narrative本文、reading order | narrativeとA型図解の往復照合、カード・島、reading order、叙述の根拠となる論理関係 | **IR移行候補**。ただし文書全体を扱うため `AI-IR-SCALE-01` と強く結合 |
 | `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03、merge後監査完了）**。対象島に必要な意味をroute固有投影で保護し、直接メンバー本文もIRからprovider promptへ描画する。必要意味の欠落時はfail-closed |
 | `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行済み（2026-09-03）**。対象カードと直接接続するrelation/evidenceを必須意味として保護し、人間の `contradictionState` を新規AI発見と区別する。対象カード本文もIRから最終promptへ描画する |
-| `suggest-merges` | `DocumentV1`、全カード | 類似カード候補。既存の島・hold・対立関係を「mergeを避ける制約」として扱うべきかは未決 | **受入条件を先に定める**。IRに情報があるという理由だけでmerge判断へ使わない |
+| `suggest-merges` | `DocumentV1`、全カード | 04ステップ型の近接整理または核融合法型の意味核統合。hold、claimType、島文脈、relation/evidence、既存系譜、出典同一性を意味保存に使う | **route固有structured inputへ移行済み（2026-09-03）**。共有IRを正規化・SafeMode・上限管理の基底にし、merge固有文脈を外側へ重ねる。必要意味が欠ける場合はfail-closed |
 | `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **別契約またはhybrid候補**。現在の限定済みgrounding集合をgeneric IRで広げない |
 | `refine-card-text` | 単一カード本文、任意context。Documentなし | 元の意味を保った言い換え、レビュー状態 | **IR例外候補**。現行IRへ入れるには存在しないカードIDや疑似Documentを作る必要がある |
 | `suggest-document-title` | 島タイトル列、カード本文サンプル、現在タイトル。Documentなし | 人間側で選ばれた概要情報から複数の同格タイトル候補を作る | **IR例外候補**。現在のtask-localな要約入力をDocument IRへ偽装しない |
@@ -111,6 +111,19 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 - 同じ島・異なる島という所属をmerge判断へ使うのか。
 
 受入条件が定まるまでIR移行を実装しない。
+
+#### 実装結果（2026-09-03）
+
+受入条件を `AI-MERGE-SEMANTICS-01` で先に固定したうえで、Stage 5の第3経路として `suggest-merges` をroute固有structured inputへ移行した。
+
+- hold中または既merge済みのカードを候補集合から除外し、候補2枚未満ではproviderを呼ばない。
+- 候補本文・card relation・evidenceは共有IRを正本とし、`claimType`、全島所属、`canonicalId` / `repOf`、出典同一性だけをmerge固有文脈として重ねる。
+- raw `sources` はproviderへ送らず、不透明な文書内参照へ変換する。
+- 全候補を `required_card_ids` として保護し、本文・relation・evidenceの必要意味が上限で欠ければfail-closedにする。
+- provider promptも `LLMRequest.inputs` と同じ投影から描画し、Document生本文の迂回入力を回帰で禁止する。
+- 応答後のhold・既merge・`negate`・contradiction evidence・claimType差・候補競合の決定論的guardは維持する。
+
+これにより `suggest-merges` のAI入力移行は完了した。ただし、人間が提案を採用した後のmerge適用でsource・残差・系譜が保持されるかは別の完了条件として `AI-MERGE-SEMANTICS-01` に残す。
 
 ### 5. `summarize-island-relation`
 

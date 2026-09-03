@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Architecture / AI Integration
-- Status: Open
+- Status: In Progress
 - Source Issue: `AI-IR-STAGE5-SCOPE-01` Stage 5
 - Priority: P1
 - Owner: Maintainer
@@ -182,6 +182,20 @@ LLM応答は信用せず、後段で決定論的に検査する。
 8. API文書と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
 9. 内容・構造を確定した後、意味を変えず自然な日本語として全文を読み直す。
 
+## 実装結果（2026-09-03）
+
+AIへの入力と応答検査について、意味境界を実装へ反映した。
+
+- `holdState` が付いたカードと `mergedIntoCardId` 済みカードは候補集合から除外し、候補が2枚未満ならproviderを呼ばず空提案を返す。
+- 候補カードの本文は共有LLM入力IRで正規化し、`claimType`、全島所属、`canonicalId` / `repOf`、出典の同一性をroute固有の構造化入力として重ねる。
+- `sources` の生値はproviderへ送らず、文書内で同じ出典を共有しているかだけを比較できる不透明なローカル参照へ変換する。
+- 候補カード本文、候補間relation、候補間evidenceがIR上限によって欠ける場合は、不完全な入力で統合を提案せずfail-closedにする。
+- SafeModeはroute側検査を一次防御、IR生成時の検査を第二層として維持し、PIIを含む候補本文もprovider呼出前に拒否する。
+- provider promptは `LLMRequest.inputs` と同じroute固有入力から候補本文・relation・evidence・補助文脈を描画し、Document側の生本文を同じ意味の迂回入力として使わない。
+- 応答後は既存の決定論的guardにより、hold、既merge、`negate`、`contradicts` evidence、異なる既知 `claimType`、同一カードを複数候補へ含める競合提案を拒否する。
+
+一方、**提案を人間が採用した後の実merge適用経路**について、元カード・`sources`・残差・canonical/representation系譜が十分に保持されることは、この変更ではまだ完了根拠を得ていない。`mergeMethod` / `residuals` をresponse契約へ追加するかどうかも、適用経路の監査後に判断する。
+
 ## 受入条件
 
 - [x] `suggest-merges` とKJ法のグループ編成・表札生成の違いを定義する。
@@ -190,14 +204,14 @@ LLM応答は信用せず、後段で決定論的に検査する。
 - [x] hold、明示的対立・矛盾、異なる既知claimType、既存merge系譜、同一応答内の候補競合を保護対象として定義する。
 - [x] 島所属・equivalence・出典差は単純なhard veto/許可ではなく、意味文脈として扱うと定義する。
 - [x] ADR-0069 D5=Aに基づき、本経路をDocument-backed structured taskとして分類する。
-- [ ] 上記のroute-required meaningをintegration regressionとして固定する。
-- [ ] `suggest-merges` のprovider実入力をgeneric Document IRまたはroute固有投影へ移す。
-- [ ] promptを意味保存型の統合契約へ更新する。
-- [ ] LLM応答後の決定論的merge guardを実装する。
-- [ ] 同一カードが複数候補へ出た場合のfail-closedをテストで固定する。
+- [x] 上記のroute-required meaningをintegration regressionとして固定する。
+- [x] `suggest-merges` のprovider実入力をgeneric Document IRまたはroute固有投影へ移す。
+- [x] promptを意味保存型の統合契約へ更新する。
+- [x] LLM応答後の決定論的merge guardを実装する。
+- [x] 同一カードが複数候補へ出た場合のfail-closedをテストで固定する。
 - [ ] 元カード・sources・残差・merge/canonical系譜が採用後も追跡可能であることを既存適用経路と統合テストで確認する。
-- [ ] SafeMode二層、PII最小化、structured-text-only、IR上限のfail-closedを確認する。
-- [ ] `02_Architecture/api.md` と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
+- [x] SafeMode二層、PII最小化、structured-text-only、IR上限のfail-closedを確認する。
+- [x] `02_Architecture/api.md` と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
 - [ ] 最終成果物を自然な日本語として全文ドラフトし直す。
 
 ## 完了境界
