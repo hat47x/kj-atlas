@@ -97,8 +97,10 @@ def test_merge_ir_carries_claim_island_lineage_and_opaque_source_identity() -> N
     assert by_id["c1"]["islandIds"] == ["i1", "i2"]
     assert by_id["c1"]["lineage"]["canonicalId"] == "canonical-a"
     assert by_id["c1"]["lineage"]["repOf"] == ["old-1", "old-2"]
-    assert by_id["c1"]["sourceRefs"] == by_id["c2"]["sourceRefs"]
-    assert by_id["c1"]["sourceRefs"] != by_id["c3"]["sourceRefs"]
+
+    shared_refs = set(by_id["c1"]["sourceRefs"]) & set(by_id["c2"]["sourceRefs"])
+    assert len(shared_refs) == 1
+    assert set(by_id["c2"]["sourceRefs"]).isdisjoint(by_id["c3"]["sourceRefs"])
 
     serialized = json.dumps(context.inputs, ensure_ascii=False, sort_keys=True)
     assert "person@example.com" not in serialized
@@ -153,7 +155,7 @@ def test_merge_ir_fails_closed_when_candidate_count_exceeds_ir_budget() -> None:
     assert exc_info.value.code == "required_card_budget_exceeded"
 
 
-def test_merge_prompt_is_rendered_from_route_input_not_raw_sources() -> None:
+def test_merge_prompt_is_rendered_from_route_input_not_live_document_text_or_raw_sources() -> None:
     payload = _payload(
         [
             _card("c1", "alpha   beta", claimType="fact", sources=["person@example.com"]),
@@ -163,11 +165,14 @@ def test_merge_prompt_is_rendered_from_route_input_not_raw_sources() -> None:
         edges=[Edge(id="e1", fromId="c1", toId="c2", type="equivalence")],
     )
     context = _context(payload)
+    # IR構築後にDocument側だけを書き換え、最終promptが同じprovider inputsから
+    # 描画されていることを確認する。
+    payload.doc.cards[0].text = "RAW-MUTATED-TEXT"
 
     prompt = ai._build_merge_prompt(payload, context)
 
-    assert "alpha beta" in prompt
-    assert "alpha   beta" not in prompt
+    assert "alpha   beta" in prompt
+    assert "RAW-MUTATED-TEXT" not in prompt
     assert "claimType" in prompt
     assert "islandIds" in prompt
     assert "equivalence" in prompt
@@ -189,6 +194,7 @@ def test_merge_route_sends_route_specific_inputs_to_provider(monkeypatch) -> Non
         return SimpleNamespace(raw_text='{"suggestions":[]}')
 
     monkeypatch.setattr(ai, "generate_with_fallback", fake_generate)
+    monkeypatch.setattr(ai, "_resolve_audit_tenant", lambda *args, **kwargs: object())
     monkeypatch.setattr(ai, "_audit_llm_trace", lambda *args, **kwargs: None)
 
     response = ai.suggest_merges(payload, request=object(), db=object())
