@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Architecture / Feature / Verification
-- Status: Open
+- Status: In Progress
 - Source Issue: `AI-IR-PROJECTION-01` AC-10
 - Priority: P1
 - Owner: Maintainer
@@ -58,7 +58,7 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 | `suggest-layout` | 300/300 | 30/30 | 199/300 | 200/300 |
 | `generate-narrative` | 300/300 | 30/30 | 199/300 | 対象外 |
 
-この結果から、全カード本文が最終promptに残るrouteでも、relationや相対配置などの構造文脈は共有IRの上限を受けることが確認できた。単一の「カードが何枚見えるか」だけでは、AIへ届く意味のcoverageを評価できない。
+この表はPR #2820時点の**広いcoverage基準によるベースライン**として残す。その後のroute固有remediationによって「どの200枚が残るか」は変わり得るため、個別ACの現在値は後述の「routeごとの必要意味集合」と `measure_ai_route_required_meaning.py` を正本とする。
 
 さらに、各島に1件ずつ計30件のheld contradiction evidence linkを加えた副シナリオでは、共有IRに20件が残った。その20件について最終promptを測ると次の差があった。
 
@@ -70,9 +70,39 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 
 この表はrouteごとのprompt投影差を示す観測として残す。ただし、`suggest-card-groups` と `suggest-layout` にevidence描画を要求する現行ACはないため、`20 -> 0` だけでは不具合と判定しない。IRに存在する全フィールドを全routeへ描画することも要求しない。
 
-一方、`30 -> 20` は共有IRの切り詰めによって参照可能な構造自体が減った結果である。そこで失われた情報が当該routeの必要意味に含まれる場合は、scale remediationの対象になる。本Issueは引き続きOpenとし、named providerのtoken観測と、route別の必要意味を保つ投影戦略の判断を継続する。
+一方、`30 -> 20` は共有IRの切り詰めによって参照可能な構造自体が減った結果である。そこで失われた情報が当該routeの必要意味に含まれる場合は、scale remediationの対象になる。
 
-### なぜ問題か
+## R19: routeごとの必要意味集合
+
+`AI-IR-PROJECTION-01` のAC、`llm_input_ir_spec.md`、各routeのintegration test、実際のprompt builderを突き合わせ、移行済み4 routeについて「欠落するとそのrouteの仕事または人間判断保護を壊す意味」と「IRに存在するだけでは必須としない情報」を分ける。
+
+| route | 契約上必要な意味 | source → provider手前の経路 | 300カード規模の現在地 |
+| --- | --- | --- | --- |
+| `detect-contradiction` | 明示対象の `cardA` / `cardB`、およびその2枚について人間が `confirmed` / `held` とした contradiction state。既決判断は再提案しない | `payload.cardA/cardB` → `required_card_ids` → IR。pairの `evidence_links` → IR → `adjudicated_contradiction()`。未確定時はpair関連のrelation/evidenceをprompt文脈に使う | **AC-1に必要な意味は解消済み。** #2827で末尾pairを切り詰めから保護し、`confirmed` / `held` はLLMを呼ばず `alreadyRecorded=true`。座標は非要求 |
+| `suggest-card-groups` | `payload.cards` で指定された候補集合、候補に対する人間の `holdState`、既に確定した島と `parentIslandId`。少なくともhold中の候補は新規グループへ入れず、既存島を無視して再分類しない | 候補本文・hold・島階層 → IR → candidate filter / prompt。`holdState` はprompt遵守ではなくコードで候補から除外する | **hold判断は解消済み、全coverageは未解消。** #2830で要求対象のheld cardだけをrequiredとして保護。末尾10枚島の例ではheld 1枚は残るが他9枚は残らず、島全体・候補集合全体を保持したとは扱わない |
+| `generate-narrative` | `readingOrder` の完全な順序、および叙述の論理骨格となるcard-to-cardの `causal` / `negate`。明示されたisland-to-island edgeも従来文脈として維持する | `readingOrder` とisland edgeはDocumentからpromptへ。card relationはIRからpromptへ入り、`causal` / `negate` はreading-order上の位置へ写像する | **未解消。** 末尾島はreading orderに残る一方、そのカード間の `causal` / `negate` がIRで落ち、provider手前でも骨格が消える |
+| `suggest-layout` | 全カードの出力対象としてのid/text/生の絶対座標、配置判断用の正規化相対座標、typed card relation、確定島階層とcard relationから派生するisland relation | 全カードと生座標は互換 `Cards:` 節でDocumentからpromptへ。相対座標・card relation・島階層はIR、島関係は `derived_island_relations()` からpromptへ | **未解消。** 末尾カード本文・生座標は見えるが、相対座標と末尾 `causal` / `negate` がIRで落ち、構造入力が欠ける。全カードを `required_card_ids` にするだけでは `MAX_CARDS=200` と衝突するため、focus保護の単純横展開はしない |
+
+### 必須としないものの扱い
+
+- `coordinates` は `suggest-layout` だけが要求する。`detect-contradiction` / `suggest-card-groups` / `generate-narrative` で「IRに座標がない」ことをcoverage欠落と数えない。
+- `evidence_links` は `detect-contradiction` の既決判断保護には必須だが、現行ACでは `suggest-card-groups` / `suggest-layout` に全evidenceを描画することを要求していない。将来その仕事上の必要性が示された場合にACを先に追加する。
+- `generate-narrative` ではevidenceを補助文脈として描画しているが、現行AC-3の最低限の骨格は `causal` / `negate` である。evidence全件coverageを理由にglobal capを変更しない。
+- `suggest-card-groups` のrelationは補助文脈として有用だが、AC-2の人間判断保護の核心は候補・hold・既存島/階層である。relation全件一致をremediation完了条件にはしない。
+- 「必須ではない」は「捨ててよい」という意味ではない。DocumentV1には保持し、当該routeのprovider入力の欠陥判定に自動的には使わないという区別である。
+
+### route-required probeとの対応
+
+`scripts/measure_ai_route_required_meaning.py` は、上表の意味を300カード・30島の末尾へ置き、source / IR / final prompt（またはLLM呼出前の決定論ガード）を分けて観測する。`tests/test_ai_route_required_meaning_scale.py` は現在次を固定している。
+
+- `detect-target-tail`: focus pairとheld contradictionが残り、人間の既決判断を検出できる。
+- `groups-late-islands-and-holds`: 要求対象のheld cardは残ってwithheldになるが、末尾島の全10枚を保持したとは扱わない。
+- `narrative-late-causal-negate`: reading orderは残るが末尾の `causal` / `negate` は失われる。
+- `layout-late-structure`: 全カードのlegacy表示は残るが、末尾相対座標と `causal` / `negate` は失われる。
+
+このprobeを「全IRフィールドの一致率」ではなく、route契約に対するscale regressionのtripwireとして扱う。detect/groupsのように局所的なrequired意味を安全に保護できたrouteは成功条件へ昇格し、narrative/layoutのように未解決なものはcharacterizationとして残す。
+
+## なぜ問題か
 
 KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
 
@@ -98,7 +128,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
    - `suggest-card-groups`: IR truncationが候補集合と、契約上必要な島・relation・holdへどう反映されるか。
    - `suggest-layout`: 全カード節を残したまま、契約上必要なrelation/island/relative-placement coverageがどこまで失われるか。
    - `generate-narrative`: reading orderと、叙述に必要なIR由来の論理構造のcoverage差。
-2. routeごとの「必要意味集合」を既存ADR・仕様・ACから明示し、測定項目をその集合へ対応づける。IRに存在するという理由だけで測定項目を必須化しない。
+2. routeごとの「必要意味集合」を既存ADR・仕様・ACから明示し、測定項目をその集合へ対応づける。**完了。R19の表と `measure_ai_route_required_meaning.py` / `test_ai_route_required_meaning_scale.py` を対応づけた。** IRに存在するという理由だけで測定項目を必須化しない。
 3. 少なくとも次をnamed model/providerで実測する。
    - `suggest-layout` 相当: 座標・島・関係を含む最重量prompt。
    - 座標を使わない代表route。
@@ -125,13 +155,13 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] 300カード・30島の代表規模について、少なくとも1つのnamed model/providerでprovider-reported input token数を記録できる。
 - [ ] `suggest-layout` 相当の最重量promptと、座標を使わない代表routeのtoken/coverage差を記録できる。
 - [x] `suggest-card-groups` / `suggest-layout` / `generate-narrative` について、IR切り詰めが最終promptのどの情報を失わせるかを区別して記録できる。
-- [ ] 移行済みrouteごとに、既存ADR・仕様・ACから「必要意味集合」を明示し、その集合に対する source → IR → final prompt のcoverageを評価できる。
+- [x] 移行済みrouteごとに、既存ADR・仕様・ACから「必要意味集合」を明示し、その集合に対する source → IR → final prompt のcoverageを評価できる。
 - [ ] 300枚規模で、当該routeが必要とする非空島の意味構造がglobal selectionだけを理由に黙って失われない。失われる場合は、消費側がcoverage lossを明示的に判断できる契約を持つ。
 - [ ] 保留・根拠・矛盾・少数/反対所見などのうち、routeの必要意味に含まれる人間確定情報を中心性順位だけで無差別に落とさない規則、またはそれらを確実に処理するbatch規則を仕様化する。
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [x] 300カード規模の回帰テストをCIで固定する。
+- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。GitHub Actionsは現在無効のため、CIで実行成功済みとは扱わない。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
@@ -139,12 +169,21 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - 自動確認:
   - `scripts/measure_llm_input_ir_scale.py`
   - `scripts/measure_ai_route_prompt_coverage.py`
+  - `scripts/measure_ai_route_required_meaning.py`
   - `tests/test_llm_input_ir_scale.py`
   - `tests/test_ai_route_prompt_coverage.py`
+  - `tests/test_ai_route_required_meaning_scale.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
   - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
-  - 外部LLMを呼ばない通常CIでは、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
+  - 外部LLMを呼ばない通常の回帰では、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
+
+## 次の判断順序
+
+1. **named provider/modelの実入力tokenを測る。** `suggest-layout` 相当の最重量promptと、座標を使わない代表routeを同じmodel/providerで比較する。
+2. `generate-narrative` は、tailの `causal` / `negate` を守るために単純にrelation端点をrequired化してよいかを検討する。readingOrder上の全島・全relationへ広げるとrequired集合自体が大きくなるため、先にtoken予算とbatch候補を比較する。
+3. `suggest-layout` は全カードに相対座標が必要な仕事であり、300枚を全て `required_card_ids` にすると `MAX_CARDS=200` を超えてfail-closedする。focus preservationの単純横展開は採らず、global cap・task別投影・batch/hierarchical projectionをtoken実測とともに比較する。
+4. coverage-loss metadataは、narrative/layoutの投影方式が決まった後に、その方式で本当に後から検証すべき欠落単位を定めて追加する。先に汎用メタデータだけを増やさない。
 
 ## 完了境界
 
@@ -158,4 +197,6 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 - 本Issueは `AI-IR-PROJECTION-01` AC-10が明示していた「上限値が現行規模に合わない場合は別issueへ切り出す」を実行したもの。
 - route別最終prompt計測はPR #2820で追加した。R15ではevidenceのroute差を不具合と解釈したが、R16で仕様へ戻ってその判定を撤回した。測定値自体は変更していない。
+- `detect-contradiction` のfocus pair / 人間の既決矛盾は #2827 でscale保護した。
+- `suggest-card-groups` の要求対象に含まれるhold判断は #2830 でscale保護した。ただし候補集合全体や島全体のcoverageを解消したものではない。
 - 現時点では長期アーキテクチャ判断を確定しないため、新ADRは起票しない。task別投影やbatchingが複数境界を横断する長期契約へ発展した場合にのみ `ADR-0047` のトリガーを評価する。
