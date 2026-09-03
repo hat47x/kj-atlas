@@ -1,0 +1,62 @@
+name: Temporary merge-apply persistence E2E
+
+on:
+  push:
+    branches:
+      - test/ai-merge-apply-save-reload-e2e-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: test/ai-merge-apply-save-reload-e2e-20260903
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run merge domain regressions
+        working-directory: 03_Implement/frontend
+        run: >-
+          npx vitest run
+          src/domain/merge_suggestion_apply.test.ts
+          src/domain/representative_merge.test.ts
+          src/ui/MergeSuggestionsPanel.test.ts
+
+      - name: Typecheck frontend
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: Run merge save-reload E2E
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_suggestion_apply_save_reload.spec.ts --reporter=line
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Remove one-shot workflow
+        run: |
+          rm .github/workflows/merge-apply-e2e-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/merge-apply-e2e-once.yml
+          git commit -m "chore: remove one-shot merge apply e2e workflow"
+          git push origin HEAD:test/ai-merge-apply-save-reload-e2e-20260903
