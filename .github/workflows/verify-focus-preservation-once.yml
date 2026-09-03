@@ -29,6 +29,39 @@ jobs:
         working-directory: 03_Implement/backend
         run: python -m pip install -e '.[test]'
 
+      - name: Repair JSON-escaped layout visibility probe
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("03_Implement/backend/scripts/measure_ai_route_required_meaning.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''            "tail_card_a_visible_in_legacy_cards": payload.doc.cards[298].text in prompt,
+              "tail_card_b_visible_in_legacy_cards": payload.doc.cards[299].text in prompt,
+          '''
+          # Keep indentation-independent matching explicit because the source is
+          # Python, not a data file; this fails rather than silently rewriting a
+          # different probe if the lines move underneath this one-shot repair.
+          old = old.replace("              ", "            ")
+          new = '''            # The layout prompt JSON-serializes reviewed text. With the default
+              # ensure_ascii=True, Japanese appears as \\u escapes, so semantic
+              # visibility must accept either equivalent representation.
+              "tail_card_a_visible_in_legacy_cards": (
+                  payload.doc.cards[298].text in prompt
+                  or __import__("json").dumps(payload.doc.cards[298].text) in prompt
+              ),
+              "tail_card_b_visible_in_legacy_cards": (
+                  payload.doc.cards[299].text in prompt
+                  or __import__("json").dumps(payload.doc.cards[299].text) in prompt
+              ),
+          '''
+          new = new.replace("              ", "            ")
+          if old not in text:
+              raise SystemExit("layout visibility probe anchor not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
       - name: Run focus-preservation regressions
         working-directory: 03_Implement/backend
         run: >-
@@ -37,6 +70,10 @@ jobs:
           tests/test_ai_detect_contradiction_ir_scale.py
           tests/test_ai_route_required_meaning_scale.py
           -q
+
+      - name: Lint repaired scale probe
+        working-directory: 03_Implement/backend
+        run: ruff check scripts/measure_ai_route_required_meaning.py
 
       - name: Close verified focus-preservation memo
         run: python .github/scripts/verify_focus_preservation_once.py
