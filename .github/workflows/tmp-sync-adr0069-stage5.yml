@@ -1,0 +1,46 @@
+name: ADR-0069 Stage 5適用範囲の一回限り同期
+
+on:
+  push:
+    branches:
+      - docs/adr0069-stage5-applicability-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: docs/adr0069-stage5-applicability-20260903
+          fetch-depth: 0
+
+      - name: ADRとStage 5正本を同期する
+        run: python scripts/_tmp_sync_adr0069_stage5_scope.py
+
+      - name: 文書契約を検査する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-adr0069-stage5.txt
+          test -s /tmp/triage-adr0069-stage5.txt
+          python 01_Plans/docs_check.py
+          git diff --check
+          grep -F 'Stage 5での適用範囲（2026-09-03追補）' 01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md
+          grep -F '限定grounding契約を維持するhybrid境界' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'Document IR適用外（2026-09-03確定）' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'IR化件数を完了指標にしない' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+
+      - name: 一時ファイルを除去して確定する
+        run: |
+          rm .github/workflows/tmp-sync-adr0069-stage5.yml
+          rm scripts/_tmp_sync_adr0069_stage5_scope.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: ADR-0069のStage 5適用範囲を確定する'
+          git fetch origin docs/adr0069-stage5-applicability-20260903
+          git rebase origin/docs/adr0069-stage5-applicability-20260903
+          git push origin HEAD:docs/adr0069-stage5-applicability-20260903
