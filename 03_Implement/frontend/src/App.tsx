@@ -2542,6 +2542,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       nextStatusMessage?: string,
       options?: {
         preserveSuggestionPreview?: boolean;
+        preserveMergeSuggestions?: boolean;
       }
     ): boolean => {
       if (isReadOnly) {
@@ -2566,7 +2567,9 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         setSuggestionError(null);
         setIsAnnotateOverlayEnabled(false);
       }
-      setMergeSuggestions([]);
+      if (!options?.preserveMergeSuggestions) {
+        setMergeSuggestions([]);
+      }
       setMergeSuggestionError(null);
       setHasSaveConflict(false);
       if (nextStatusMessage) {
@@ -3601,7 +3604,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       }[decision]);
       applyDocumentChange(
         nextDocument,
-        t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel })
+        t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel }),
+        { preserveMergeSuggestions: true },
       );
 
       const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
@@ -3661,7 +3665,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       const changed = applyDocumentChange(
         result.document,
         t("app.history.merge_suggestion_applied"),
-        { preserveSuggestionPreview: true },
+        { preserveSuggestionPreview: true, preserveMergeSuggestions: true },
       );
       if (!changed) {
         return;
