@@ -1,0 +1,46 @@
+name: 反対視点IRブランチのmain追随（一回限り）
+
+on:
+  push:
+    branches:
+      - feat/opposing-viewpoint-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  merge-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: feat/opposing-viewpoint-ir-context-20260903
+          fetch-depth: 0
+
+      - name: 最新mainを取り込む
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-edit origin/main
+
+      - name: Pythonテスト環境を準備する
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: 反対視点と表札IRの局所回帰を確認する
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_opposing_viewpoint_ir.py -q
+          pytest tests/test_ai_oppose.py -q
+          pytest tests/test_ai_island_summary_ir.py -q
+          pytest tests/test_ai_llm_input_ir_coverage.py -q
+          ruff check src tests/test_ai_opposing_viewpoint_ir.py tests/test_ai_oppose.py
+
+      - name: 一回限りworkflowを除去してpushする
+        run: |
+          rm .github/workflows/merge-main-into-opposing-once.yml
+          git add -A
+          git commit -m 'chore: 最新main上で反対視点IR差分を再構成する'
+          git push origin HEAD:feat/opposing-viewpoint-ir-context-20260903
