@@ -7,8 +7,6 @@ new again merely because the pair sits outside the ordinary centrality cut.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -126,17 +124,16 @@ def test_unadjudicated_tail_pair_reaches_llm_with_focus_context(state: str) -> N
     assert f"contradictionState={state}" in _CAPTURED[0].prompt
 
 
-def test_scale_failure_does_not_echo_focus_text_or_ids() -> None:
+def test_focus_card_missing_from_doc_is_added_before_truncation() -> None:
     body = _payload("held")
     body["doc"]["cards"] = body["doc"]["cards"][:-1]
 
     with TestClient(app) as client:
         response = client.post("/ai/detect-contradiction", json=body)
 
-    # cardB travels outside doc and is deliberately added to the projection
-    # source by the route, so a missing document member remains supported.
+    # cardB travels outside doc in this request contract. The route adds it to
+    # the IR source before truncation, so the human-held pair remains visible.
     assert response.status_code == 200, response.text
-    assert response.json()["alreadyRecorded"] is False
-    assert len(_CAPTURED) == 1
-    detail = json.dumps(response.json(), ensure_ascii=False)
-    assert "required_card_missing" not in detail
+    assert response.json()["alreadyRecorded"] is True
+    assert response.json()["existingContradictionState"] == "held"
+    assert _CAPTURED == []
