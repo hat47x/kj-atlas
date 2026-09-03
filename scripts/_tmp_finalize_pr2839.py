@@ -29,18 +29,28 @@ replace_once(
 issue = Path("01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md")
 replace_once(
     issue,
+    "| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03）**。対象島に必要な意味をroute固有投影で保護し、欠落時はfail-closedにした |",
+    "| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR構造文脈の配線済み／実入力経路は未完了**。対象島に必要な構造意味はroute固有投影で保護したが、直接メンバー本文は `AI-IR-STAGE5-SUMMARY-PROMPT-01` でIR描画へ移す |",
+)
+replace_once(
+    issue,
+    "### IR移行済み",
+    "### IR構造文脈の配線済み（実入力経路は未完了）",
+)
+replace_once(
+    issue,
     "1. `suggest-island-summary` — 2026-09-03に配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。実行回帰の確認を別ゲートとして残す。",
-    "1. `suggest-island-summary` — 2026-09-03に配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。後続のmerge後監査で、mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認した。",
+    "1. `suggest-island-summary` — 2026-09-03に構造文脈を配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。merge後監査で、mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認した。一方、providerが実際に受け取るpromptの直接メンバー本文はまだDocument由来であり、`AI-IR-STAGE5-SUMMARY-PROMPT-01` がOpenのため実入力経路の移行は未完了とする。",
 )
 replace_once(
     issue,
     "1. **`suggest-island-summary` の必要意味をintegration regressionでコードへ固定し、IRへ配線した。** 実行回帰の確認を残す。",
-    "1. **完了: `suggest-island-summary` の必要意味をintegration regressionでコードへ固定し、IRへ配線した。** merge後監査で専用回帰と関連回帰を実行し、二層SafeModeを含めて確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。",
+    "1. **回帰確認済み・実入力経路は未完了: `suggest-island-summary` の構造意味をintegration regressionで固定し、IRへ配線した。** merge後監査で専用回帰と関連回帰を実行し、二層SafeModeを含めて確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。ただし直接メンバー本文のIR描画は `AI-IR-STAGE5-SUMMARY-PROMPT-01` に残る。",
 )
 replace_once(
     issue,
     "- [ ] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。",
-    "- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。",
+    "- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。なおAI実入力経路の完了条件は `AI-IR-STAGE5-SUMMARY-PROMPT-01` に残る。",
 )
 
 # Final assertions: keep these intentionally literal so drift fails closed.
@@ -54,7 +64,17 @@ for needle in (
         raise SystemExit(f"api.md synchronization failed: {needle}")
 
 issue_text = issue.read_text(encoding="utf-8")
-if "backend全体はmainでも再現する既知4件を基準差分として切り分け" not in issue_text:
-    raise SystemExit("Stage 5 issue synchronization failed")
+for needle in (
+    "backend全体はmainでも再現する既知4件を基準差分として切り分け",
+    "IR構造文脈の配線済み／実入力経路は未完了",
+    "AI-IR-STAGE5-SUMMARY-PROMPT-01",
+):
+    if needle not in issue_text:
+        raise SystemExit(f"Stage 5 issue synchronization failed: {needle}")
 
-print("PR #2839 documentation synchronized after baseline-aware regression.")
+prompt_issue = Path("01_Plans/issues/issue-AI-IR-STAGE5-SUMMARY-PROMPT-01-render-direct-members-from-ir.md")
+prompt_issue_text = prompt_issue.read_text(encoding="utf-8")
+if "- Status: Open" not in prompt_issue_text:
+    raise SystemExit("summary prompt input-path issue must remain Open")
+
+print("PR #2839 documentation synchronized after baseline-aware regression; summary prompt input-path defect remains Open.")
