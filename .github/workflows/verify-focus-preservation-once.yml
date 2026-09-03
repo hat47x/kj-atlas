@@ -37,29 +37,25 @@ jobs:
 
           path = Path("03_Implement/backend/scripts/measure_ai_route_required_meaning.py")
           text = path.read_text(encoding="utf-8")
-          old = '''            "tail_card_a_visible_in_legacy_cards": payload.doc.cards[298].text in prompt,
-              "tail_card_b_visible_in_legacy_cards": payload.doc.cards[299].text in prompt,
-          '''
-          # Keep indentation-independent matching explicit because the source is
-          # Python, not a data file; this fails rather than silently rewriting a
-          # different probe if the lines move underneath this one-shot repair.
-          old = old.replace("              ", "            ")
-          new = '''            # The layout prompt JSON-serializes reviewed text. With the default
+          old_a = '            "tail_card_a_visible_in_legacy_cards": payload.doc.cards[298].text in prompt,\n'
+          old_b = '            "tail_card_b_visible_in_legacy_cards": payload.doc.cards[299].text in prompt,\n'
+          new_a = '''            # The layout prompt JSON-serializes reviewed text. With the default
               # ensure_ascii=True, Japanese appears as \\u escapes, so semantic
               # visibility must accept either equivalent representation.
               "tail_card_a_visible_in_legacy_cards": (
                   payload.doc.cards[298].text in prompt
-                  or __import__("json").dumps(payload.doc.cards[298].text) in prompt
+                  or json.dumps(payload.doc.cards[298].text) in prompt
               ),
-              "tail_card_b_visible_in_legacy_cards": (
+          '''.replace("              ", "            ")
+          new_b = '''            "tail_card_b_visible_in_legacy_cards": (
                   payload.doc.cards[299].text in prompt
-                  or __import__("json").dumps(payload.doc.cards[299].text) in prompt
+                  or json.dumps(payload.doc.cards[299].text) in prompt
               ),
-          '''
-          new = new.replace("              ", "            ")
-          if old not in text:
-              raise SystemExit("layout visibility probe anchor not found")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          '''.replace("              ", "            ")
+          if text.count(old_a) != 1 or text.count(old_b) != 1:
+              raise SystemExit("layout visibility probe line anchor not found exactly once")
+          text = text.replace(old_a, new_a, 1).replace(old_b, new_b, 1)
+          path.write_text(text, encoding="utf-8")
           PY
 
       - name: Run focus-preservation regressions
