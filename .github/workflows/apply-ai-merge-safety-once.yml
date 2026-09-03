@@ -17,6 +17,10 @@ jobs:
           ref: feat/ai-merge-safety-20260903
           fetch-depth: 0
 
+      - name: Fix one-shot patch replacement escaping
+        run: |
+          python -c 'from pathlib import Path; p=Path(".github/scripts/apply_ai_merge_safety_once.py"); s=p.read_text(encoding="utf-8"); old="text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)"; new="text, count = re.subn(pattern, lambda _: replacement, text, count=1, flags=re.S)"; assert s.count(old)==1; p.write_text(s.replace(old,new,1), encoding="utf-8")'
+
       - name: Apply merge safety patch
         run: python .github/scripts/apply_ai_merge_safety_once.py
 
