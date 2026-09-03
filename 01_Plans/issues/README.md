@@ -19,7 +19,7 @@
 2. `Status` は `Draft -> Open -> In Progress -> Done` の順で更新する。
 3. `Expected verification level` は変更リスクに応じて `docs-check / unit / integration / e2e` から選ぶ。
 4. ADRは長期的、横断的、破壊的、または安全境界を変える判断に限る。
-5. 完了時は検証結果と `Status: Done` をmemoへ一度記録し、同じ変更でmemo本体を `01_Plans/issues/done/` へ移す。索引の手動更新は不要。2026-09-04以前からactive直下に残るlegacy Doneは、参照影響を確認できたものから段階的に移す。
+5. 完了時は検証結果と `Status: Done` をmemoへ一度記録し、同じ変更でmemo本体を `01_Plans/issues/done/` へ移す。索引の手動更新は不要。2026-09-04以前からactive直下に残るlegacy Doneは、参照影響を確認できたものから段階的に移す。legacy Doneを移す場合は参照先も同じ変更で更新し、`python 01_Plans/docs_check.py` と関連dogfood検査を通す。
 
 ## 必須メタデータ
 
