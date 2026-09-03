@@ -525,6 +525,9 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `type: "opposing_viewpoint"`, `status: "proposed"`, `reviewState: "unreviewed"`
   - `targetCardId: string`, `opposingText: string`, `evidenceGap: boolean`, `rationale: string`, `warnings: string[]`
 - contradiction / evidence 構造をもとに、対象カードの**反対視点・根拠不足**を提案する（value_traceability V1/V3）。**proposal-only（自動適用なし・人間の判断を先取りしない）**。対象カードが存在しない場合は 422、対象Documentが永続化されていない場合は 404。判定（Adopt/Reject/Hold）は `/ai/proposals/audit` と同経路。
+- AI入力はLLM投入IRを経由する。対象カードと、そこへ直接接続するcard relation / evidenceの両端を必須文脈として保護し、`confirmed` / `held` を含む `contradictionState` を人間の既決判断としてprovider手前へ渡す。直接接続していないカードはIRに残った範囲だけを補助探索へ用いる。
+- `Target card:` の本文もIR正規化後の対象カード本文から描画し、Document側の生本文を中心入力へ迂回させない。promptと `LLMRequest.inputs` の対象本文は同じIR値を使う。
+- 必須意味が共有IRの上限で欠ける場合は422でfail-closedにする。主なコードは `required_card_budget_exceeded` / `required_text_truncated` / `required_card_context_mismatch` / `required_relation_missing` / `required_evidence_missing`。SafeModeはroute側とIR側の二層を維持し、座標は送らない。
 
 **POST** `/ai/proposals/audit`
 
