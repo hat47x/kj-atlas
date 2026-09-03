@@ -1,0 +1,79 @@
+name: suggest-merges safety guard validation (one-shot)
+
+on:
+  push:
+    branches:
+      - feat/ai-merge-safety-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ai-merge-safety-20260903
+          fetch-depth: 0
+
+      - name: Apply merge safety patch
+        run: python .github/scripts/apply_ai_merge_safety_once.py
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Run merge semantics regression
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_merge_semantics.py -q
+          pytest tests/test_ai_prompt.py -q
+          pytest tests/ -k 'merge or safe_mode' -q
+
+      - name: Confirm known main baseline failures
+        run: |
+          git worktree add /tmp/kj-atlas-main origin/main
+          python -m venv /tmp/kj-main-venv
+          /tmp/kj-main-venv/bin/python -m pip install -q -e '/tmp/kj-atlas-main/03_Implement/backend[test]'
+          cd /tmp/kj-atlas-main/03_Implement/backend
+          set +e
+          /tmp/kj-main-venv/bin/pytest \
+            tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys \
+            -q | tee /tmp/main-known-failures.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          test "$code" -ne 0
+          grep -F '4 failed' /tmp/main-known-failures.txt
+
+      - name: Run backend regression excluding known main failures
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/ -q \
+            --deselect=tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            --deselect=tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            --deselect=tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            --deselect=tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys
+
+      - name: Run static and plan checks
+        run: |
+          cd 03_Implement/backend
+          ruff check src tests/test_ai_merge_semantics.py tests/test_ai_prompt.py
+          cd ../..
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
+          git diff --check
+
+      - name: Remove one-shot files and push validated changes
+        run: |
+          rm .github/workflows/apply-ai-merge-safety-once.yml
+          rm .github/scripts/apply_ai_merge_safety_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: suggest-mergesの意味保存guardを追加する'
+          git push origin HEAD:feat/ai-merge-safety-20260903
