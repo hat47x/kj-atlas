@@ -54,7 +54,7 @@ def _payload() -> SuggestIslandSummaryRequest:
     return SuggestIslandSummaryRequest(doc=doc, islandId="i1")
 
 
-def test_context_preserves_members_and_directly_adjacent_meaning_only() -> None:
+def test_context_preserves_only_members_and_directly_adjacent_meaning() -> None:
     context = build_island_summary_ir_context(_payload(), allow_unreviewed_text=False)
 
     assert context.direct_member_ids == frozenset({"c1", "c2"})
@@ -62,17 +62,23 @@ def test_context_preserves_members_and_directly_adjacent_meaning_only() -> None:
     assert "coordinates" not in context.ir
 
     projected_ids = {item["id"] for item in context.ir["cards"]}
-    assert {"c1", "c2", "c3"}.issubset(projected_ids)
+    assert projected_ids == {"c1", "c2", "c3"}
 
     relation_keys = {
         (item["from"], item["to"], item["type"])
         for item in context.ir.get("relations", [])
     }
-    assert ("c1", "c2", "causal") in relation_keys
-    assert ("c2", "c3", "negate") in relation_keys
+    assert relation_keys == {
+        ("c1", "c2", "causal"),
+        ("c2", "c3", "negate"),
+    }
 
     evidence_ids = {item["id"] for item in context.ir.get("evidence_links", [])}
-    assert "ev1" in evidence_ids
+    assert evidence_ids == {"ev1"}
+
+    projected_islands = {item["id"]: item for item in context.ir.get("islands", [])}
+    assert set(projected_islands) == {"i1", "i-parent"}
+    assert projected_islands["i-parent"]["card_ids"] == []
 
 
 def test_prompt_context_marks_external_card_as_context_only_and_keeps_human_state() -> None:
