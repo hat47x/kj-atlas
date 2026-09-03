@@ -89,6 +89,11 @@ from kj_atlas_api.island_summary_ir import (
     build_island_summary_ir_context,
     island_summary_ir_prompt_lines,
 )
+from kj_atlas_api.opposing_viewpoint_ir import (
+    OpposingViewpointIRContext,
+    build_opposing_viewpoint_ir_context,
+    opposing_viewpoint_ir_prompt_lines,
+)
 from kj_atlas_api.routes.docs import _authorize_request, get_document_row
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -1472,33 +1477,44 @@ def propose_island_summary(
     return proposal
 
 
-def _build_opposing_viewpoint_prompt(payload: ProposeOpposingViewpointRequest) -> str:
-    """AI-OPPOSE-01 (M4): prompt the model to propose an opposing viewpoint or
-    evidence gap for a target card, using the doc's contradiction / evidence
-    structure. proposal-only -- the model never decides; the human does."""
+def _build_opposing_viewpoint_prompt(
+    payload: ProposeOpposingViewpointRequest,
+    ir_context: OpposingViewpointIRContext | None = None,
+) -> str:
+    """対象カードに接地したproposal-onlyの反対視点promptを組み立てる。
+
+    ``ir_context=None`` は既存の単体テスト・補助呼出しとの互換経路であり、
+    production routeは常にroute固有IRを渡す。``Target card:`` の行形式は
+    DOGFOOD-17のmock/E2E接地契約なので変更しない。
+    """
     target = next((card for card in payload.doc.cards if card.id == payload.targetCardId), None)
     if target is None:
         raise HTTPException(status_code=422, detail="targetCardId does not exist")
-    card_lines = "\n".join(f'  - id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards)
+
+    lines = [
+        "You propose an OPPOSING viewpoint or an evidence-gap note for the target card.",
+        "Use only the provided cards, relations, and evidence. Do not add outside facts.",
+        "The proposal is a candidate for human review -- it is never applied automatically.",
+        "Ground every claim in the target and the recorded context. Distinguish an existing human judgement from a new AI proposal.",
+        "If the target's evidence is missing or weak, set evidenceGap=true; recorded contradictory evidence does not by itself decide the target's truth.",
+        'Return strict JSON only: {"opposingText": string, "evidenceGap": boolean, "rationale": string, "warnings": [string,...]}',
+        f"Target card: {json.dumps({'id': target.id, 'text': target.text})}",
+    ]
+    if ir_context is not None:
+        lines.extend(opposing_viewpoint_ir_prompt_lines(ir_context))
+        return "\n".join(lines)
+
+    # 互換経路: IR文脈を明示しない補助呼出しでは従来の全文書入力を維持する。
+    card_lines = "\n".join(
+        f'  - id="{card.id}", text={json.dumps(card.text)}'
+        for card in payload.doc.cards
+    )
     evidence_lines = "\n".join(
         f'  - source "{link.fromCardId}" --{link.type}--> target "{link.toCardId}"'
         for link in payload.doc.evidenceLinks or []
     ) or "- (none)"
-    return "\n".join(
-        [
-            "You propose an OPPOSING viewpoint or an evidence-gap note for the target card.",
-            "Use only the provided cards and evidence links. Do not add outside facts.",
-            "The proposal is a candidate for human review -- it is never applied automatically.",
-            "Ground every claim in the card text. If the target's evidence is missing or weak, set evidenceGap=true.",
-            'Return strict JSON only: {"opposingText": string, "evidenceGap": boolean, "rationale": string, "warnings": [string,...]}',
-            f"Target card: {json.dumps({'id': target.id, 'text': target.text})}",
-            "Cards:",
-            card_lines,
-            "Evidence links:",
-            evidence_lines,
-        ]
-    )
-
+    lines.extend(["Cards:", card_lines, "Evidence links:", evidence_lines])
+    return "\n".join(lines)
 
 @router.post(
     "/proposals/opposing-viewpoint",
@@ -1525,7 +1541,18 @@ def propose_opposing_viewpoint(
         raise HTTPException(status_code=404, detail="Document not found")
     if next((card for card in payload.doc.cards if card.id == payload.targetCardId), None) is None:
         raise HTTPException(status_code=422, detail="targetCardId does not exist")
+    # SEC-AI-SAFEMODE-01/02: 既存route guardを一次防御として維持する。
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    try:
+        ir_context = build_opposing_viewpoint_ir_context(
+            payload, allow_unreviewed_text=allow_unreviewed
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+    prompt = _build_opposing_viewpoint_prompt(payload, ir_context)
     model_id = payload.model or resolve_model_for_task("propose_opposing_viewpoint")
     provider_config = _assert_model_allowed(request, db, model_id)
 
@@ -1533,7 +1560,8 @@ def propose_opposing_viewpoint(
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="propose_opposing_viewpoint",
-                prompt=_build_opposing_viewpoint_prompt(payload),
+                prompt=prompt,
+                inputs=ir_context.ir,
                 model=model_id,
                 registered_provider=provider_config,
             )

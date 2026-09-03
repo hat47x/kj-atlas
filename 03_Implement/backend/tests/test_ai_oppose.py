@@ -125,6 +125,45 @@ def test_propose_opposing_viewpoint_returns_proposal_only(tmp_path, monkeypatch)
     assert body["opposingText"]
 
 
+
+
+def test_route_sends_target_ir_and_human_contradiction_state(tmp_path, monkeypatch) -> None:
+    """production routeが対象周辺IRをpromptとLLMRequest.inputsの両方へ渡す。"""
+    monkeypatch.setattr(settings, "api_key", None)
+    doc = _doc()
+    doc["evidenceLinks"][0]["contradictionState"] = "held"
+    captured = {}
+
+    from kj_atlas_api.llm.provider import _new_metadata
+
+    def _fake_generate(req):
+        captured["request"] = req
+        return LLMResponse(
+            raw_text='{"opposingText":"対象主張への別視点です。","evidenceGap":false,"rationale":"記録済み構造を参照。","warnings":[]}',
+            metadata=_new_metadata(
+                provider_kind="local",
+                provider_name="local",
+                model_id="default",
+                transport="none",
+            ),
+        )
+
+    monkeypatch.setattr(ai, "generate_with_fallback", _fake_generate)
+    with _client(tmp_path) as client:
+        _put_doc(client, doc)
+        resp = client.post(
+            "/ai/proposals/opposing-viewpoint",
+            json={"doc": doc, "targetCardId": "c-claim"},
+        )
+
+    assert resp.status_code == 200, resp.text
+    request = captured["request"]
+    assert request.inputs is not None
+    assert {card["id"] for card in request.inputs["cards"]} >= {"c-claim", "c-counter"}
+    assert "contradictionState=held" in request.prompt
+    assert "existing HUMAN judgement" in request.prompt
+    assert 'Target card: {"id": "c-claim"' in request.prompt
+
 def test_propose_opposing_viewpoint_rejects_unreviewed(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "api_key", None)
     _stub_response(monkeypatch, '{"opposingText":"x","evidenceGap":false,"rationale":"r","warnings":[]}')
