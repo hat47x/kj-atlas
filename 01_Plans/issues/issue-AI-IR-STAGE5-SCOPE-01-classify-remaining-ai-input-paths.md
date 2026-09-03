@@ -78,7 +78,7 @@ Stage 5の第1経路として `suggest-island-summary` をIRへ配線した。re
 
 ### 3. `propose-opposing-viewpoint`
 
-この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。現在も全カード本文と `evidenceLinks` は渡しているが、evidence linkの `contradictionState` はpromptに含めず、card relationも使っていない。
+この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。移行前のpromptには全カード本文と `evidenceLinks` を渡していたが、evidence linkの `contradictionState` は含まれず、card relationも使われていなかった。
 
 人間が既に `confirmed` / `held` とした矛盾を、新しい発見のように扱うことは避ける必要がある。ただし `detect-contradiction` と違い、この経路では既存の矛盾自体が「反対視点の根拠」として意味を持つ場合がある。したがって、既決矛盾を完全に除外するのではなく、**人間が判断済みであることを状態付きで渡し、新規発見と区別する**のが自然である。
 
