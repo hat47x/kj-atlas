@@ -1849,5 +1849,9 @@
   "recent_documents_dialog.my_documents": "My documents only",
   "recent_documents_dialog.archive": "Archive",
   "recent_documents_dialog.unarchive": "Unarchive",
-  "app.status.lifecycle_transition_failed": "Failed to change the archive state"
+  "app.status.lifecycle_transition_failed": "Failed to change the archive state",
+  "merge_suggestions.action.apply": "Apply accepted merge",
+  "merge_suggestions.action.applied": "Merge applied",
+  "app.status.merge_suggestion.apply_failed": "The merge could not be applied ({code}). Check the current card state.",
+  "app.history.merge_suggestion_applied": "Applied the accepted merge suggestion to the document"
 }

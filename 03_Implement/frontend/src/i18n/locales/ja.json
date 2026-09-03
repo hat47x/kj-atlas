@@ -1849,5 +1849,9 @@
   "recent_documents_dialog.my_documents": "自分の文書のみ",
   "recent_documents_dialog.archive": "アーカイブ",
   "recent_documents_dialog.unarchive": "アーカイブ解除",
-  "app.status.lifecycle_transition_failed": "アーカイブ状態の変更に失敗しました"
+  "app.status.lifecycle_transition_failed": "アーカイブ状態の変更に失敗しました",
+  "merge_suggestions.action.apply": "採用した統合を適用",
+  "merge_suggestions.action.applied": "統合を適用済み",
+  "app.status.merge_suggestion.apply_failed": "統合を適用できませんでした（{code}）。現在のカード状態を確認してください。",
+  "app.history.merge_suggestion_applied": "採用済みの統合候補をDocumentへ適用しました"
 }

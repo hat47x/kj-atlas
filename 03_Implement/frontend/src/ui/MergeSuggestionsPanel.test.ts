@@ -37,6 +37,7 @@ function buildProps() {
     ]),
     onMergedTextChange: vi.fn(),
     onDecide: vi.fn(),
+    onApplyAccepted: vi.fn(),
     latestAuditEventByGroup: new Map([[
       "heuristic-risk-a-b",
       {
@@ -108,6 +109,38 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain(t("merge_suggestions.action.reject"));
     expect(html).toContain(t("merge_suggestions.action.defer"));
     expect(html).toContain(t("merge_suggestions.human_in_loop_hint"));
+  });
+
+  it("shows the explicit apply action only for an accepted suggestion", () => {
+    const base = buildProps();
+    const pendingHtml = renderToStaticMarkup(
+      React.createElement(MergeSuggestionsPanel, {
+        ...base,
+        suggestions: [
+          {
+            ...base.suggestions[0],
+            latestDecision: "accept" as const,
+            representativeResolvedBy: "fallback" as const,
+          },
+        ],
+      }),
+    );
+    expect(pendingHtml).toContain(t("merge_suggestions.action.apply"));
+    expect(pendingHtml).not.toContain(t("merge_suggestions.action.applied"));
+
+    const appliedHtml = renderToStaticMarkup(
+      React.createElement(MergeSuggestionsPanel, {
+        ...base,
+        suggestions: [
+          {
+            ...base.suggestions[0],
+            latestDecision: "accept" as const,
+            representativeResolvedBy: "repOf" as const,
+          },
+        ],
+      }),
+    );
+    expect(appliedHtml).toContain(t("merge_suggestions.action.applied"));
   });
 
   it("disables merge-decision editing controls in read-only mode", () => {
