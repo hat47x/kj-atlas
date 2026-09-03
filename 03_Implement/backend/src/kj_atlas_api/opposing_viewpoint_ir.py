@@ -95,6 +95,23 @@ def build_opposing_viewpoint_ir_context(
         required_card_ids=tuple(sorted(required_ids)),
     )
 
+    # 共有IRはMAX_TEXT_CHARS超過時に保持カードすべての本文を240文字へ短縮する。
+    # 対象カードまたは直接文脈の意味を欠いた状態で反対視点を生成してはならないため、
+    # required集合を含む投影で本文短縮が起きた場合はprovider前にfail-closedにする。
+    truncation_reasons = set(ir.get("truncation", {}).get("reason_codes", []))
+    if "MAX_TEXT_CHARS" in truncation_reasons:
+        raise IRGenerationError(
+            "required_text_truncated",
+            "Task-required card text exceeded the lossless IR text budget.",
+        )
+
+    projected_card_ids = {item["id"] for item in ir.get("cards", [])}
+    if not required_ids.issubset(projected_card_ids):
+        raise IRGenerationError(
+            "required_card_context_mismatch",
+            "Task-required card context did not fit in the IR projection.",
+        )
+
     projected_relation_keys = {
         (item["from"], item["to"], item["type"])
         for item in ir.get("relations", [])

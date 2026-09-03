@@ -124,6 +124,39 @@ def test_tail_target_and_direct_context_are_reserved_before_card_truncation() ->
     assert 'card "c299" --negate--> card "c298"' in prompt
 
 
+
+def test_required_target_text_truncation_fails_closed() -> None:
+    cards = [
+        Card(id="target", text="中" * 2000, x=0, y=0, textReviewed=True),
+        *[
+            Card(
+                id=f"u{i}",
+                text="周" * 2000,
+                x=float(i + 1),
+                y=0,
+                textReviewed=True,
+            )
+            for i in range(6)
+        ],
+    ]
+    doc = DocumentV1(
+        version=1,
+        id="opposing-required-text-overflow",
+        createdAt=_NOW,
+        updatedAt=_NOW,
+        transform=Transform(panX=0, panY=0, zoom=1),
+        cards=cards,
+        edges=[],
+        islands=[],
+        evidenceLinks=[],
+    )
+    payload = ProposeOpposingViewpointRequest(doc=doc, targetCardId="target")
+
+    with pytest.raises(IRGenerationError) as captured:
+        build_opposing_viewpoint_ir_context(payload, allow_unreviewed_text=False)
+
+    assert captured.value.code == "required_text_truncated"
+
 def test_target_required_relation_overflow_fails_closed() -> None:
     relation_types = sorted(RELATION_TYPES)
     cards = [Card(id="target", text="中心の主張", x=0, y=0, textReviewed=True)]

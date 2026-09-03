@@ -1514,6 +1514,22 @@ def _build_opposing_viewpoint_prompt(
     if target is None:
         raise HTTPException(status_code=422, detail="targetCardId does not exist")
 
+    target_text = target.text
+    if ir_context is not None:
+        target_ir = next(
+            (item for item in ir_context.ir.get("cards", []) if item["id"] == target.id),
+            None,
+        )
+        if target_ir is None:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "required_card_context_mismatch",
+                    "message": "Task-required card context did not fit in the IR projection",
+                },
+            )
+        target_text = target_ir["text"]
+
     lines = [
         "You propose an OPPOSING viewpoint or an evidence-gap note for the target card.",
         "Use only the provided cards, relations, and evidence. Do not add outside facts.",
@@ -1521,7 +1537,7 @@ def _build_opposing_viewpoint_prompt(
         "Ground every claim in the target and the recorded context. Distinguish an existing human judgement from a new AI proposal.",
         "If the target's evidence is missing or weak, set evidenceGap=true; recorded contradictory evidence does not by itself decide the target's truth.",
         'Return strict JSON only: {"opposingText": string, "evidenceGap": boolean, "rationale": string, "warnings": [string,...]}',
-        f"Target card: {json.dumps({'id': target.id, 'text': target.text})}",
+        f"Target card: {json.dumps({'id': target.id, 'text': target_text})}",
     ]
     if ir_context is not None:
         lines.extend(opposing_viewpoint_ir_prompt_lines(ir_context))

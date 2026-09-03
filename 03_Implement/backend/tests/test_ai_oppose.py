@@ -8,6 +8,7 @@ provider or network is needed.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -131,6 +132,8 @@ def test_route_sends_target_ir_and_human_contradiction_state(tmp_path, monkeypat
     """production routeが対象周辺IRをpromptとLLMRequest.inputsの両方へ渡す。"""
     monkeypatch.setattr(settings, "api_key", None)
     doc = _doc()
+    raw_target_text = "  待ち時間が長いと\t利用者は離れる  "
+    doc["cards"][0]["text"] = raw_target_text
     doc["evidenceLinks"][0]["contradictionState"] = "held"
     captured = {}
 
@@ -160,9 +163,18 @@ def test_route_sends_target_ir_and_human_contradiction_state(tmp_path, monkeypat
     request = captured["request"]
     assert request.inputs is not None
     assert {card["id"] for card in request.inputs["cards"]} >= {"c-claim", "c-counter"}
+    target_ir_text = next(
+        card["text"] for card in request.inputs["cards"] if card["id"] == "c-claim"
+    )
+    assert target_ir_text == raw_target_text.replace("\t", "")
+    assert target_ir_text != raw_target_text
+    assert (
+        "Target card: " + json.dumps({"id": "c-claim", "text": target_ir_text})
+        in request.prompt
+    )
+    assert json.dumps({"id": "c-claim", "text": raw_target_text}) not in request.prompt
     assert "contradictionState=held" in request.prompt
     assert "existing HUMAN judgement" in request.prompt
-    assert 'Target card: {"id": "c-claim"' in request.prompt
 
 def test_propose_opposing_viewpoint_rejects_unreviewed(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "api_key", None)
