@@ -29,7 +29,12 @@ import json
 import os
 from typing import Any, Protocol
 
-from kj_atlas_api.llm.provider import LLMRequest, LLMResponse, ProviderError, get_provider
+from kj_atlas_api.llm.provider import (
+    LLMRequest,
+    LLMResponse,
+    ProviderError,
+    get_provider,
+)
 from kj_atlas_api.models import SuggestLayoutRequest
 from kj_atlas_api.models_ai import GenerateNarrativeRequest
 from kj_atlas_api.routes.ai import (
