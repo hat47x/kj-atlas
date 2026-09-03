@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from kj_atlas_api.llm_input_ir import MAX_CARDS, MAX_TEXT_CHARS, TRUNCATED_TEXT_CHARS
+from kj_atlas_api.llm_input_ir import (
+    MAX_CARDS,
+    MAX_TEXT_CHARS,
+    TRUNCATED_TEXT_CHARS,
+)
 from scripts.measure_ai_ir_budget_pressure import measure
 
 
