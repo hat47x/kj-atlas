@@ -37,7 +37,7 @@ def _text_norm(text: str) -> str:
 def measure() -> dict[str, Any]:
     """現行上限と代表入力の関係を、token推定を交えずに返す。"""
     doc = representative_document(include_evidence=False)
-    text_lengths = [_text_norm(card["text"]).__len__() for card in doc["cards"]]
+    text_lengths = [len(_text_norm(card["text"])) for card in doc["cards"]]
     fixed_cut_lengths = [min(length, TRUNCATED_TEXT_CHARS) for length in text_lengths]
 
     unique_lengths = sorted(set(text_lengths))
