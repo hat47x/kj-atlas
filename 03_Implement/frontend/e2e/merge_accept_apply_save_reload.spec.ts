@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { WORK_MODE_BUTTON, enableAdvancedUiIfNeeded } from "./helpers/i18n";
 
 const START_PANEL = '[data-panel="start-document-entry"]';
@@ -94,6 +94,9 @@ async function installRoutes(page: Page) {
   await page.route("**/ai/provider-status", async (route) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ providerKind: "none" }) });
   });
+  await page.route("**/ai/available-models", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ models: [], unavailableReason: "no_active_models" }) });
+  });
   await page.route("**/ai/suggest-merges", async (route) => {
     await route.fulfill({
       status: 200,
@@ -116,7 +119,7 @@ async function openSample(page: Page): Promise<void> {
   await expect(startPanel).toBeHidden();
 }
 
-async function openMergePanel(page: Page): Promise<ReturnType<Page["getByRole"]>> {
+async function openMergePanel(page: Page): Promise<Locator> {
   await enableAdvancedUiIfNeeded(page);
   await page.getByRole("button", { name: WORK_MODE_BUTTON }).click();
   const workMode = page.locator('[data-ui-region="work-mode"]');
@@ -142,6 +145,7 @@ test("recorded merge accept can be explicitly applied, saved, and restored with 
   await expect(textareas).toHaveCount(2);
   await textareas.nth(1).fill("二つの観察の差分を残しつつ、同じ中心内容として統合する");
   await suggestion.getByRole("button", { name: "Accept", exact: true }).click();
+  await expect(suggestion).toContainText("Accepted");
 
   const applyButton = suggestion.getByRole("button", { name: "Apply accepted merge" });
   await expect(applyButton).toBeEnabled();
