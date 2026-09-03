@@ -1,46 +1,48 @@
-# Cognitive Dogfood Case 001 — Isolated-arm launch procedure
+# Cognitive Dogfood Case 001 — 分離実行手順
 
-- Status: Prepared before first raw run
-- Scope: Case 001 Round 1 P1 execution
-- Preregistered order: **C → D → B → A**
+- 状態: 最初のraw run実行前に準備済み
+- 対象: Case 001 Round 1 / P1
+- 事前登録済みの実行順: **C → D → B → A**
 - Product bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
-- Operator-only skill manifest ID: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
-- Arm-visible skill bundle ID for B/D: `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
+- 操作者専用skill manifest ID: `case-001-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
+- B/Dから見えるskill bundle ID: `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`
 
-## 1. Operator-only preparation
+## 1. 操作者側の準備
 
-この手順とoperator manifest類はfresh arm contextへ渡さない。
+この手順書と操作者専用manifest類は、各Armを実行する独立した新規コンテキストには渡さない。
 
-### 1.0 Preferred execution package — Actions artifact
+### 1.0 原則として使用する実行パッケージ — Actions artifact
 
-有効runでは、`Cognitive dogfood freeze` workflowが生成した当該case/arm専用artifactをfresh contextへの入力packageとして使う。
+有効なrunでは、`Cognitive dogfood freeze` workflowが生成した、対象Case・Arm専用のartifactを新規コンテキストへの入力パッケージとして使用する。
 
-Case 001のartifact名:
+Case 001のartifact名は次のとおり。
 
 - A: `cognitive-dogfood-case-001-arm-a`
 - B: `cognitive-dogfood-case-001-arm-b`
 - C: `cognitive-dogfood-case-001-arm-c`
 - D: `cognitive-dogfood-case-001-arm-d`
 
-packageには、そのarmへ見せてよいものだけが入る。
+各パッケージには、そのArmへ見せてよい資料だけを入れる。
 
-- 全arm: sanitized product evidence + 自armの`launch.md`。
-- B/D: 上記に加えfrozen canonical skill bundle。
-- C/D: 上記に加えempty `starter.json`。
+- 全Arm: sanitized product evidence と、そのArm専用の`launch.md`。
+- B/D: 上記に加えて、固定済みのcanonical skill bundle。
+- C/D: 上記に加えて、空の`starter.json`。
 
-run開始前にActions artifact metadataから次をoperator側で保存し、`cognitive-dogfood-run-record-template.md`へ転記する。
+run開始前に、Actions artifactのmetadataから次の値を操作者側で保存し、`cognitive-dogfood-run-record-template.md`へ転記する。
 
 - artifact name。
 - workflow head SHA。
-- artifact digest (`sha256:<64 hex>`)。
+- artifact digest（`sha256:<64 hex>`）。
 
-artifactの14日retention後に同じfrozen inputから再生成した場合も、古いrun recordを新しいartifact identityへ書き換えない。各runが実際に使ったpackage identityを残す。
+artifactの保持期間である14日を過ぎた後、同じ固定入力からパッケージを再生成した場合でも、過去のrun recordを新しいartifact identityへ書き換えない。各runについて、実際に使用したパッケージのidentityをそのまま残す。
 
-以下1.1/1.2の手動bundle生成は、Actions artifactを再現するための**診断・復旧・同等性確認専用**である。Round 1のvalid比較runにはActions artifactを使用する。Actions artifactを利用できない状態で手動bundleだけを使ったrunは、artifact name / workflow head / digestを持たないためstatic intakeをPASSさせず、`partial` または `invalid` として理由を残す。比較条件自体を改訂して手動packageをvalid化する必要が生じた場合は、既存条件を上書きせず別revision/deviationとして事前に記録する。
+以下の1.1、1.2に示す手動bundle生成は、Actions artifactを再現するための**診断・復旧・同等性確認専用**とする。Round 1の有効な比較runにはActions artifactを使用する。Actions artifactを利用できない状態で手動bundleだけを用いたrunは、artifact name / workflow head / digestを持たないためstatic intakeを通さず、`partial` または `invalid` として理由を記録する。
+
+比較条件そのものを改訂し、手動パッケージを有効な入力として扱う必要が生じた場合は、既存条件を上書きしない。別revisionまたはdeviationとして、実行前に記録する。
 
 ### 1.1 Product evidence bundle
 
-完全な `kj-atlas` git checkout/worktreeから、全arm共通bundleを一度生成する。Case固有の旧builderではなく、全cognitive-dogfood caseで共通のsanitized frozen-source builderを使用する。
+完全な`kj-atlas`のgit checkoutまたはworktreeから、全Arm共通のbundleを一度だけ生成する。Case 001専用の旧builderは使用せず、全cognitive-dogfood Case共通のsanitized frozen-source builderを使用する。
 
 ```bash
 python 01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py \
@@ -49,20 +51,20 @@ python 01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py \
   --output /path/to/operator-workspace/case001-product
 ```
 
-成功条件:
+成功条件は次のとおり。
 
 - 20件すべてが固定commitから抽出される。
-- 各Git blob SHAがoperator manifestと一致する。
-- bundleの `_experiment/bundle-manifest.json` に `sourceCount: 20` がある。
-- `bundleId` が `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649` と一致する。
-- `operatorOnlyMetadataCopied=false` であり、excluded input、skill treatment、cross-arm情報などoperator-only metadataがarm-visible bundleへコピーされていない。
-- bundle外のplan/PR/Case 0資料をarmへ追加しない。
+- 各Git blob SHAが操作者専用manifestと一致する。
+- bundle内の`_experiment/bundle-manifest.json`に`sourceCount: 20`が記録される。
+- `bundleId`が`case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`と一致する。
+- `operatorOnlyMetadataCopied=false`であり、excluded input、skill treatment、cross-arm情報など、操作者だけが知るmetadataがArm側のbundleへコピーされていない。
+- bundle外のplan、PR、Case 0資料をArmへ追加しない。
 
-この同一product bundleをA/B/C/Dすべてへ渡す。armごとに作り直す必要はない。
+同じproduct bundleをA/B/C/Dのすべてへ渡す。Armごとに作り直す必要はない。
 
-### 1.2 Canonical skill bundle — B/D only
+### 1.2 Canonical skill bundle — B/Dのみ
 
-完全な `cultural-substrate-weaving` git checkout/worktreeから、B/D共通の日本語正本bundleを一度生成する。
+完全な`cultural-substrate-weaving`のgit checkoutまたはworktreeから、B/D共通の日本語正本bundleを一度だけ生成する。
 
 ```bash
 python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
@@ -70,48 +72,48 @@ python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
   --output /path/to/operator-workspace/case001-skill-ja
 ```
 
-成功条件:
+成功条件は次のとおり。
 
-- `src/ja-JP` 正本12件だけが固定commitから抽出される。
-- 各Git blob SHAがoperator manifestと一致する。
-- `_experiment/skill-bundle-manifest.json` に `sourceCount: 12` がある。
-- arm-visible `manifestId` は `cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5` である。
-- `caseScopedMetadataIncluded=false` であり、arm-visible skill subtreeに `case-001` / `Case 001` を含めない。
-- docs/evals/plugins/adapters/AGENTS/README/PR discussionは入っていない。
+- `src/ja-JP`の正本12件だけが固定commitから抽出される。
+- 各Git blob SHAが操作者専用manifestと一致する。
+- `_experiment/skill-bundle-manifest.json`に`sourceCount: 12`が記録される。
+- Arm側から見える`manifestId`が`cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`である。
+- `caseScopedMetadataIncluded=false`であり、Arm側から見えるskill subtreeに`case-001` / `Case 001`を含めない。
+- docs、evals、plugins、adapters、AGENTS、README、PR discussionを含めない。
 
-operator-only skill manifestがCase 001に由来することは、Case 001結果を見る前に固定した履歴として保持する。ただし、そのcase identityはB/Dのarm-visible bundleへコピーしない。A/Cへskill bundleまたはskill manifestを渡さない。
+操作者専用skill manifestがCase 001に由来する事実は、Case 001の結果を見る前に固定した履歴として保持する。ただし、そのCase identityはB/DのArm側bundleへコピーしない。A/Cにはskill bundleもskill manifestも渡さない。
 
-## 2. Arm launch matrix
+## 2. Armの実行順と入力
 
-| Execution | Arm | Fresh context receives | KJ Atlas UI | Skill bundle |
+| 実行順 | Arm | 新規コンテキストへ渡すもの | KJ Atlas UI | Skill bundle |
 |---:|---|---|---|---|
-| 1 | C | `cognitive-dogfood-case-001-arm-c` package | yes | no |
-| 2 | D | `cognitive-dogfood-case-001-arm-d` package | yes | yes |
-| 3 | B | `cognitive-dogfood-case-001-arm-b` package | no | yes |
-| 4 | A | `cognitive-dogfood-case-001-arm-a` package | no | no |
+| 1 | C | `cognitive-dogfood-case-001-arm-c` package | 使用する | なし |
+| 2 | D | `cognitive-dogfood-case-001-arm-d` package | 使用する | あり |
+| 3 | B | `cognitive-dogfood-case-001-arm-b` package | 使用しない | あり |
+| 4 | A | `cognitive-dogfood-case-001-arm-a` package | 使用しない | なし |
 
-fresh contextにはこのmatrixやarm名をわざわざ教えず、artifact内の`launch.md`をtask instructionとして渡す。run record作成時にoperatorがarm metadataとartifact identityを補う。
+新規コンテキストには、この表やArm名をあえて伝えない。artifact内の`launch.md`だけを実行指示として渡し、run recordを作成するときに操作者がArm metadataとartifact identityを補う。
 
-## 3. C/D product execution
+## 3. C/DでのKJ Atlas実行
 
-C/Dでは別途operator-onlyの `cognitive-dogfood-case-001-cd-ui-runbook.md` を人間operatorが参照する。分析AIへrunbook全体を見せる必要はない。
+C/Dでは、操作者だけが`cognitive-dogfood-case-001-cd-ui-runbook.md`を参照する。分析を行うAIへrunbook全体を見せる必要はない。
 
-最低限:
+最低限、次の順序で進める。
 
-1. artifact内の空`starter.json`を起点にする。
-2. `launch.md`に従ってAIが生カード候補を作る。
-3. humanが最初の生カード集合をレビューしKJ Atlasへ入れる。
-4. その後にInquiryJourney originを作る。
-5. KJ統合、必要なproposal、人間の採否、意味上のsnapshot/handoffを進める。
+1. artifact内の空の`starter.json`を起点にする。
+2. `launch.md`に従い、AIが生カード候補を作る。
+3. 人間が最初の生カード集合を確認し、KJ Atlasへ入れる。
+4. その後にInquiryJourneyの起点を作る。
+5. KJ統合、必要なproposal、人間による採否、意味上のsnapshot / handoffを進める。
 6. required outputを作成する。
-7. 元カードへ戻す保持監査をする。
-8. 可能なら自然な中断点で一度resumeを試し、M6/M9/T9用の観察だけをoperator recordへ残す。
+7. 元カードへ戻り、保持監査を行う。
+8. 無理のない中断点があれば一度resumeを試し、M6 / M9 / T9に関係する観察だけを操作者側の記録へ残す。
 
-Dではskill frameworkが束・表札を先に決めていないかもoperatorが監査する。
+Dでは、skill frameworkが束や表札を先回りして決めていないかも操作者が確認する。
 
-## 4. Raw artifact freeze
+## 4. Raw artifactの凍結
 
-各runは評価前に、reviewerから見えないoperator workspaceへ次を凍結する。
+各runは評価を始める前に、reviewerから見えない操作者用workspaceへ次のファイルを凍結する。
 
 ```text
 <alias>-raw.md
@@ -121,27 +123,31 @@ Dではskill frameworkが束・表札を先に決めていないかもoperator�
 <alias>-inquiry-ref.md    # C/D
 ```
 
-- raw/resultを後の評価に合わせて書き換えない。
-- invalid/partial runも削除しない。
-- public PR branchへarm identity付きartifactをblind verdict前にpushしない。
-- run recordには実際に使用したActions artifactのname / workflow head / digestを残す。
+運用上の原則は次のとおり。
+
+- raw / resultを、後の評価結果に合わせて書き換えない。
+- invalid / partial runも削除しない。
+- blind verdictが確定する前に、Arm identityを含むartifactをpublic PR branchへpushしない。
+- run recordには、実際に使用したActions artifactのname / workflow head / digestを残す。
 
 ## 5. Static intake
 
-run recordを完成させ、中立blind aliasを割り当ててから実行する。
+run recordを完成させ、中立なblind aliasを割り当てた後で実行する。
 
 ```bash
 python 01_Plans/dogfood/validate_cognitive_run_records.py \
   /path/to/operator-workspace/<alias>-record.md
 ```
 
-`PASS`しないrunをBR1へ送らない。failの原因がexperiment record deficiencyか、実際のproduct/manual-core defectかを分ける。
+`PASS`しないrunはBR1へ送らない。失敗理由がexperiment recordの不足なのか、実際のproduct / manual-core defectなのかを分けて記録する。
 
-validatorは、case/armから期待されるartifact名と、workflow head/digestの書式も検査する。さらにCase 001は`6.1`〜`6.9`、Case 002/003は`6.1`〜`6.10`のrequired outputが連続・重複なし・過不足なしで存在することを確認する。artifact内容そのものの認知品質は採点しない。
+validatorは、Case / Armから期待されるartifact名と、workflow head / digestの書式も検査する。さらに、Case 001では`6.1`〜`6.9`、Case 002/003では`6.1`〜`6.10`のrequired outputが、連続・重複なし・過不足なしで存在することを確認する。各項目には実質的な本文が必要であり、見出しだけや空のテンプレートは有効な結果として扱わない。
+
+また、訂正・時点差チェックには解釈本文を、M1〜M9には観察内容または`not measurable`とその理由を残す。validatorはこれらの記録が存在することだけを確認し、認知的な質そのものは採点しない。
 
 ## 6. Blind package
 
-static intake後に生成する。
+static intakeに合格した後で生成する。
 
 ```bash
 python 01_Plans/dogfood/build_cognitive_blind_package.py \
@@ -149,25 +155,29 @@ python 01_Plans/dogfood/build_cognitive_blind_package.py \
   /path/to/operator-workspace/blind/package-<alias>.md
 ```
 
-warningが出た場合はmethod identityが本文から推測可能かを人手で確認する。主張・根拠・反証を言い換えて隠さない。
+builder自身もstatic intakeを実行するため、invalid / contaminated / incompleteなrecordからblind packageは生成できない。
 
-blind reviewは `cognitive-dogfood-blind-review-protocol.md` に従い、BR1 → BR2 → verdict freeze → unblindの順で行う。
+warningが出た場合は、本文からmethod identityを推測できないかを人間が確認する。ただし、隠すために主張・根拠・反証を言い換えない。
 
-## 7. Contamination stop
+blind reviewは`cognitive-dogfood-blind-review-protocol.md`に従い、BR1 → BR2 → verdict freeze → unblindの順で進める。
 
-次が起きたら、そのrunを無理に有効化しない。
+## 7. 汚染を検出した場合の停止条件
 
-- fresh contextがoperator manifest、Case 0、PR #2805の評価議論、Round 2資料を読んだ。
-- fresh contextがbundle外のKJ Atlas repoを探索した。
-- B/Dがskill bundle外のskill repo資料を探索した。
-- A/Cへskill bundleまたはskill評価情報が渡った。
-- 一部armだけ外部Web検索や追加sourceを行った。
-- current comparison-design conversationをそのままarm実行へ再利用した。
+次のいずれかが起きた場合、そのrunを無理に有効化しない。
 
-## 8. Current next action
+- 新規コンテキストが、操作者専用manifest、Case 0、PR #2805の評価議論、Round 2資料を読んだ。
+- 新規コンテキストが、bundle外のKJ Atlas repositoryを探索した。
+- B/Dが、skill bundle外のskill repository資料を探索した。
+- A/Cへ、skill bundleまたはskill評価情報が渡った。
+- 一部のArmだけが、外部Web検索や追加sourceを行った。
+- 現在の比較設計を行った会話を、そのままArm実行へ再利用した。
 
-最初の有効runは **C**。
+該当する場合はinvalid / partialの理由を記録し、結果を比較へ混ぜない。
 
-operatorは現在の比較設計contextとは別のfresh contextを作り、そこへ`cognitive-dogfood-case-001-arm-c` artifactの内容だけを渡し、KJ Atlas UIを人間operatorとして使用する。
+## 8. 現在の次工程
 
-この起動時点では、Case 0 outcome、T1〜T3の評価意図、M1〜M9、他arm、cultural-substrate-weaving、Round 2外部比較をfresh analysis contextへ教えない。
+最初に実行する有効runは **C** である。
+
+操作者は、現在の比較設計を行ったコンテキストとは別に新規コンテキストを作り、そこへ`cognitive-dogfood-case-001-arm-c` artifactの内容だけを渡す。KJ Atlas UIは人間の操作者が実際に使用する。
+
+起動時点では、Case 0 outcome、T1〜T3の評価意図、M1〜M9、他Arm、cultural-substrate-weaving、Round 2外部比較の情報を、新規の分析コンテキストへ与えない。
