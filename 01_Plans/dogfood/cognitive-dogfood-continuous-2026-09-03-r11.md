@@ -46,7 +46,7 @@ route入力の `cardA` / `cardB` 本文そのものはpromptに残り得る。�
 
 そのため、新しいP1として次を起票した。
 
-- `01_Plans/issues/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`
+- `01_Plans/issues/done/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`
 
 ## 4. 島2 — suggest-card-groupsは既知のscale lossと未測定軸が混在する
 

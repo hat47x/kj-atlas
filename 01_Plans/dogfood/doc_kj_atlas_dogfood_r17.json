@@ -45,7 +45,7 @@
     {"id":"ev01","cardId":"c02","type":"supports","url":"01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md"},
     {"id":"ev02","cardId":"c03","type":"supports","url":"03_Implement/backend/src/kj_atlas_api/routes/ai.py"},
     {"id":"ev03","cardId":"c04","type":"supports","url":"03_Implement/backend/src/kj_atlas_api/llm_input_ir.py"},
-    {"id":"ev04","cardId":"c05","type":"supports","url":"01_Plans/issues/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md"},
+    {"id":"ev04","cardId":"c05","type":"supports","url":"01_Plans/issues/done/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md"},
     {"id":"ev05","cardId":"c09","type":"supports","url":"03_Implement/backend/tests/test_ai_route_prompt_coverage.py"},
     {"id":"ev06","cardId":"c12","type":"supports","url":"01_Plans/dogfood/ai-ir-required-semantic-coverage-map-2026-09-03.md"}
   ],
