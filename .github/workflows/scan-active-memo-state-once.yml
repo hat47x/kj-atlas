@@ -1,0 +1,46 @@
+name: Temporary active memo state scan
+
+on:
+  push:
+    branches:
+      - dogfood/r18-active-memo-state-drift-20260904
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Scan root issue memo states
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path('01_Plans/issues')
+          rows = []
+          for path in sorted(root.glob('issue-*.md')):
+              text = path.read_text(encoding='utf-8')
+              def field(name):
+                  m = re.search(rf'^- {re.escape(name)}:\s*(.+)$', text, re.MULTILINE)
+                  return m.group(1).strip() if m else None
+              rows.append({
+                  'path': path.as_posix(),
+                  'status': field('Status'),
+                  'priority': field('Priority'),
+                  'source_issue': field('Source Issue'),
+              })
+
+          done_at_root = [row for row in rows if row['status'] == 'Done']
+          p1_active = [
+              row for row in rows
+              if row['priority'] == 'P1' and row['status'] in {'Draft', 'Open', 'In Progress'}
+          ]
+          print('DONE_AT_ACTIVE_ROOT=' + json.dumps(done_at_root, ensure_ascii=False, indent=2))
+          print('P1_ACTIVE=' + json.dumps(p1_active, ensure_ascii=False, indent=2))
+          print(f'COUNTS root_issue_memos={len(rows)} done_at_root={len(done_at_root)} p1_active={len(p1_active)}')
+          PY
