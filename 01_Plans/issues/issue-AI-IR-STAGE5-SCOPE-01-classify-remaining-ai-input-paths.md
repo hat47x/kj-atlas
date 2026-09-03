@@ -161,20 +161,20 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 
 KJ上の「統合」の意味を決めず、IRにある情報を便利そうだから足すことをしない。
 
-### ADR-0069の適用範囲を確認してから扱う
+### task-local structured inputとして境界確定
 
-5. `summarize-island-relation`
-6. `refine-card-text`
-7. `suggest-document-title`
+5. `summarize-island-relation` — caller-limited grounding task。`groundingCardIds` / `groundingEdgeIds` のallowlistを実効入力の上限とし、generic Document IRを併用しても最終promptを広げない。
+6. `refine-card-text` — no-document task。疑似Documentや架空IDを作らず、単一本文＋任意contextのtask-local structured inputを正式契約とする。
+7. `suggest-document-title` — no-document task。呼出側が選んだ島タイトル・本文サンプルのtask-local structured inputを正式契約とし、generic Document IRへ偽装しない。
 
-これらをgeneric document IRへ無理に寄せず、明示的な例外またはtask-local structured inputを許すかをADR-0069側で確認する。特にno-doc 2経路へ疑似Documentを作る実装は採らない。
+ADR-0069 D5=Aの追補により、この3経路はgeneric Document IRの「未移行」ではなく、別の構造化入力契約を使うことが設計上の正解と確定した。SafeModeやレビュー状態などの共通境界保護は引き続き必要である。
 
 ## 推奨する実装順序
 
 1. **完了: `suggest-island-summary` の必要意味をintegration regressionで固定し、AI実入力をIRへ揃えた。** merge後監査で専用回帰と関連回帰を実行し、二層SafeMode、provider promptと `LLMRequest.inputs` の直接メンバー本文一致、Document生本文の迂回送出防止を確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。
 2. **完了: `propose-opposing-viewpoint` を状態付きevidenceへ移した。** 対象カードと直接接続する意味を保護し、`contradictionState` を新規発見と既決判断の区別に使う。対象カード本文もIRからprovider promptへ描画する。
-3. **次: `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。**
-4. `suggest-merges` の利用仕事と受入条件を決める。
+3. **完了: `summarize-island-relation` / no-doc 2経路の適用境界をADR-0069 D5=Aで確定した。** generic Document IRを目的化せず、限定groundingはallowlistを維持し、no-doc経路はtask-local structured inputを正式契約とする。
+4. **次: `suggest-merges` の利用仕事と受入条件を決める。**
 5. `check-narrative` は `AI-IR-SCALE-01` のA2/B/C判断後に移行方式を決める。
 
 この順序は「実装しやすい順」ではなく、現在のpromptと仕事のあいだに意味上の欠落が明確な順を優先している。
@@ -191,7 +191,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 - [x] `suggest-island-summary` のroute-required meaningをintegration regressionとしてコードへ固定し、IRへ配線する。— 対象島の直接メンバーと隣接するrelation/evidenceだけへsourceを縮約し、必要意味が投影上限で欠ける場合はfail-closedにした。
 - [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。`AI-IR-STAGE5-SUMMARY-PROMPT-01` の直接メンバー本文IR描画回帰も同時に確認した。
 - [x] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定し、IRへ配線する。— 対象カードと直接接続するrelation/evidenceを保護し、人間の `contradictionState` を状態付きで保持した。対象カード本文もIRから最終promptへ描画し、生本文の迂回を回帰で禁止した。
-- [ ] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。
+- [x] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。— D5=Aとして、Document-backed / caller-limited grounding / no-documentの3分類と実入力境界を確定した。
 - [ ] `suggest-merges` のmerge意味論と受入条件を別Issueまたは本Issueの追記で固定する。
 - [ ] `check-narrative` のscale投影方式を `AI-IR-SCALE-01` の結果と整合させる。
 
