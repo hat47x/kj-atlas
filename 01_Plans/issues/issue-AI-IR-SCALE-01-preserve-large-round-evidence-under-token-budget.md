@@ -102,6 +102,61 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 
 このprobeを「全IRフィールドの一致率」ではなく、route契約に対するscale regressionのtripwireとして扱う。detect/groupsのように局所的なrequired意味を安全に保護できたrouteは成功条件へ昇格し、narrative/layoutのように未解決なものはcharacterizationとして残す。
 
+## R20: named providerの実token計測ハーネス
+
+`AI-IR-SCALE-01` の次の判断に必要なtoken予算を、推定ではなくprovider自身のusageから取得するため、`scripts/measure_ai_route_provider_tokens.py` を追加する。対象は、同じ300カード・30島の合成入力から生成した次の2ルートである。
+
+- `suggest-layout`: 正規化座標・関係・島構造を含む、移行済みルートの中で最も重いprompt。
+- `generate-narrative`: 座標を使わない代表prompt。`suggest-layout` と同じ入力・同じmodelで比較する。
+
+このハーネスは**入力token数の観測だけを目的とし、モデル品質の評価は行わない**。出力token上限はprovider層が受理する最小値の1に固定し、入力側の費用と構造を観測する。利用者の実文書は送らず、既存の `representative_document()` が生成する合成データだけを使う。
+
+### 実行境界
+
+1. 既定はdry-runとし、providerを生成せず、ネットワークにも接続しない。
+2. 外部送信には `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の**両方**を要求する。
+3. `--provider` と `--model` を必須にし、現在設定されたproviderと明示名が一致しない場合は、送信前に停止する。
+4. providerが返した `LLMResponse.input_tokens` だけを正確な入力token数として採用する。promptの文字数・UTF-8 byte数は診断情報として残すが、token数へ換算しない。
+5. providerがusageを返さない場合は `provider-did-not-report-usage` と記録し、`measurement_complete=false` のまま終了する。別tokenizerによる推定で埋めない。
+6. fallbackは使わない。計測対象として明示したprovider/modelそのもののusageを測る必要があり、別providerへのfallbackは測定の意味を変えるためである。
+
+現行provider実装では、OpenAI chat-completions互換応答の `usage.prompt_tokens` / `usage.completion_tokens` を `LLMResponse.input_tokens` / `output_tokens` へ写像している。したがって、このusageを返すproviderでは正確な実測が可能である。一方、汎用のlocal/large-scale HTTP契約は現在usageを返さないため、この経路で `measurement_complete=false` になること自体を有効な観測として扱う。
+
+### 実行手順
+
+`03_Implement/backend` を作業ディレクトリとする。
+
+ネットワークを使わず、代表promptとIRの規模だけを確認する場合:
+
+```bash
+.venv/bin/python scripts/measure_ai_route_provider_tokens.py \
+  --provider deepseek \
+  --model deepseek-chat
+```
+
+実token数を測る場合は、既存の安全な方法で `KJ_ATLAS_LLM_PROVIDER`、providerの認証情報、必要ならmodel設定を事前に構成する。認証情報をコマンドラインや成果物へ直接書かない。そのうえで次を実行する。
+
+```bash
+KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
+.venv/bin/python scripts/measure_ai_route_provider_tokens.py \
+  --provider deepseek \
+  --model deepseek-chat \
+  --execute
+```
+
+`--provider` / `--model` は例であり、実測結果には実際に使用したprovider名・model idをそのまま残す。
+
+### 回帰テスト
+
+`tests/test_ai_route_provider_token_measurement.py` では、外部ネットワークを使わず次を固定する。
+
+- 同じ300カード入力から、座標ありの `suggest-layout` と座標なしの `generate-narrative` を生成する。
+- dry-runではproviderを必要とせず、正確なtoken数を主張しない。
+- provider-reported usageをそのまま記録し、byte数からtoken数を推定しない。
+- usageが返らない場合は未完了として扱う。
+- provider名が一致しない場合は、1件も送信せず停止する。
+- 外部実行には専用opt-in環境変数が必要である。
+
 ## なぜ問題か
 
 KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
@@ -129,11 +184,11 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
    - `suggest-layout`: 全カード節を残したまま、契約上必要なrelation/island/relative-placement coverageがどこまで失われるか。
    - `generate-narrative`: reading orderと、叙述に必要なIR由来の論理構造のcoverage差。
 2. routeごとの「必要意味集合」を既存ADR・仕様・ACから明示し、測定項目をその集合へ対応づける。**完了。R19の表と `measure_ai_route_required_meaning.py` / `test_ai_route_required_meaning_scale.py` を対応づけた。** IRに存在するという理由だけで測定項目を必須化しない。
-3. 少なくとも次をnamed model/providerで実測する。
+3. 少なくとも次をnamed model/providerで実測する。**R20で実測ハーネスを用意した。実providerでの測定値そのものは未取得。**
    - `suggest-layout` 相当: 座標・島・関係を含む最重量prompt。
    - 座標を使わない代表route。
-4. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。
-5. model/providerがusageを返さない場合は、その事実を記録し、別tokenizer導入を自動的な前提にしない。
+4. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。**R20のハーネスで機械的にこの境界を固定した。**
+5. model/providerがusageを返さない場合は、その事実を記録し、別tokenizer導入を自動的な前提にしない。**R20では未完了結果として記録する。**
 
 ### 検討する方式
 
@@ -170,9 +225,11 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `scripts/measure_llm_input_ir_scale.py`
   - `scripts/measure_ai_route_prompt_coverage.py`
   - `scripts/measure_ai_route_required_meaning.py`
+  - `scripts/measure_ai_route_provider_tokens.py`
   - `tests/test_llm_input_ir_scale.py`
   - `tests/test_ai_route_prompt_coverage.py`
   - `tests/test_ai_route_required_meaning_scale.py`
+  - `tests/test_ai_route_provider_token_measurement.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
   - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
@@ -180,7 +237,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 ## 次の判断順序
 
-1. **named provider/modelの実入力tokenを測る。** `suggest-layout` 相当の最重量promptと、座標を使わない代表routeを同じmodel/providerで比較する。
+1. **named provider/modelの実入力tokenを測る。** R20のハーネスを使い、`suggest-layout` 相当の最重量promptと、座標を使わない `generate-narrative` を同じmodel/providerで比較する。
 2. `generate-narrative` は、tailの `causal` / `negate` を守るために単純にrelation端点をrequired化してよいかを検討する。readingOrder上の全島・全relationへ広げるとrequired集合自体が大きくなるため、先にtoken予算とbatch候補を比較する。
 3. `suggest-layout` は全カードに相対座標が必要な仕事であり、300枚を全て `required_card_ids` にすると `MAX_CARDS=200` を超えてfail-closedする。focus preservationの単純横展開は採らず、global cap・task別投影・batch/hierarchical projectionをtoken実測とともに比較する。
 4. coverage-loss metadataは、narrative/layoutの投影方式が決まった後に、その方式で本当に後から検証すべき欠落単位を定めて追加する。先に汎用メタデータだけを増やさない。
@@ -199,4 +256,5 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - route別最終prompt計測はPR #2820で追加した。R15ではevidenceのroute差を不具合と解釈したが、R16で仕様へ戻ってその判定を撤回した。測定値自体は変更していない。
 - `detect-contradiction` のfocus pair / 人間の既決矛盾は #2827 でscale保護した。
 - `suggest-card-groups` の要求対象に含まれるhold判断は #2830 でscale保護した。ただし候補集合全体や島全体のcoverageを解消したものではない。
+- R20のtoken計測ハーネスは、正確なtoken数をprovider-reported usageだけに限定し、実providerがusageを返さない場合も推定値で埋めない。
 - 現時点では長期アーキテクチャ判断を確定しないため、新ADRは起票しない。task別投影やbatchingが複数境界を横断する長期契約へ発展した場合にのみ `ADR-0047` のトリガーを評価する。
