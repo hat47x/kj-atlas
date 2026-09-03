@@ -1747,7 +1747,6 @@ def get_proposal_status(
     db: Session = Depends(get_db),
 ) -> ProposalStatusResponse:
     """CE4 read-only proposal lifecycle status for a document.
-
     Lets a generative-AI (via MCP or API) verify that a proposal is still
     proposal-only or was decided by a human (accepted/rejected/held) --
     traceability without mutating anything. Read-only by contract
@@ -2135,6 +2134,7 @@ def _detect_contradiction_ir(payload: DetectContradictionRequest) -> dict:
             include_coordinates=False,
             safe_mode=True,
             allow_unreviewed_text=allow_unreviewed,
+            required_card_ids=(payload.cardA.id, payload.cardB.id),
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
