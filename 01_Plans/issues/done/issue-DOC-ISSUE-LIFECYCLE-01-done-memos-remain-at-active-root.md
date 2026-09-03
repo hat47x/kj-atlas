@@ -1,7 +1,7 @@
 # Issue: DOC-ISSUE-LIFECYCLE-01 完了済みIssueメモがactive直下へ残り続ける
 
 - Type: Process / Documentation
-- Status: In Progress
+- Status: Done
 - Source Issue: 継続dogfood R18
 - Priority: P2
 - Owner: Maintainer
@@ -46,7 +46,11 @@ R19では58件を一時的なbaselineとしてコードへ固定し、実際のD
 
 専用unit契約について、基準値一致、増加拒否、減少時のbaseline更新要求、`done/` 除外の4ケースを確認した。新規テストファイルのmodule読込も、既存validator testと同じ `sys.path` / `sys.modules` 登録方式へ揃えた。
 
-現在のmainには `.github/workflows/` が存在せず、PR #2854にも自動workflow runは作られていない。このIssueのためにworkflowを再導入してpushをblockすることはしない。リポジトリ全体の `docs_check.py` を自動CI成功と誤記せず、今回確認できた専用契約と差分レビューを実装根拠として分けて記録する。
+その後、repo固有の58件baselineが `docs_check.py` のsynthetic fixtureにも適用される不整合が全体検証で判明した。PR #2859でbaselineの厳格さは変えず、通常の `validate()` では実 `01_Plans/issues/` にだけ自動適用し、synthetic rootでは必要な場合に明示的にopt-inできるよう境界を修正した。
+
+PR #2859の一回限りworkflow run `33819480592` で、`test_validate_active_issue_memos.py`、`test_issue_lifecycle_contract.py`、`python 01_Plans/docs_check.py`、`python 01_Plans/issues/validate_active_issue_memos.py`、`triage_actionable_plans.py`、`git diff --check` がすべて成功した。検証workflow/scriptは最終差分から削除済みで、恒久workflowは追加していない。
+
+本Issue自身はR18時点のlegacy Done 58件ではなく `In Progress` だったため、完了時に `done/` へ移してもbaselineを58から下げる必要はない。新たに完了するmemoをactive直下へ残さないという今回の規則を、このIssue自身にも適用して完了とする。
 
 ## 優先度
 
@@ -54,4 +58,4 @@ P2とする。現在のactive判定はstatusベースで機能しており、今
 
 ## 文書品質の仕上げ
 
-「58件あるから直ちに全件移動する」とせず、現行triageが壊れていない事実と、導線としての不整合を分けて記述した。58という数も正規状態として固定せず、段階整理の現在地を単調に減らす一時baselineとして扱う。
+「58件あるから直ちに全件移動する」とせず、現行triageが壊れていない事実と、導線としての不整合を分けて記述した。58という数も正規状態として固定せず、段階整理の現在地を単調に減らす一時baselineとして扱う。fixtureとの境界不整合もbaseline自体を弱めず、履歴負債が属する実issue rootを明確にすることで解消した。
