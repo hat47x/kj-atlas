@@ -30,17 +30,17 @@ issue = Path("01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-
 replace_once(
     issue,
     "1. `suggest-island-summary` — 2026-09-03に配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。実行回帰の確認を別ゲートとして残す。",
-    "1. `suggest-island-summary` — 2026-09-03に配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。後続のmerge後監査で追加・既存回帰の実行結果も確認した。",
+    "1. `suggest-island-summary` — 2026-09-03に配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。後続のmerge後監査で、mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認した。",
 )
 replace_once(
     issue,
     "1. **`suggest-island-summary` の必要意味をintegration regressionでコードへ固定し、IRへ配線した。** 実行回帰の確認を残す。",
-    "1. **完了: `suggest-island-summary` の必要意味をintegration regressionでコードへ固定し、IRへ配線した。** merge後監査で追加・既存回帰も実行し、二層SafeModeを含めて確認した。",
+    "1. **完了: `suggest-island-summary` の必要意味をintegration regressionでコードへ固定し、IRへ配線した。** merge後監査で専用回帰と関連回帰を実行し、二層SafeModeを含めて確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。",
 )
 replace_once(
     issue,
     "- [ ] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。",
-    "- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— merge後監査で専用IR、既存prompt、経路被覆、関連SafeMode、backend全体の回帰を実行して確認した。",
+    "- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。",
 )
 
 # Final assertions: keep these intentionally literal so drift fails closed.
@@ -54,7 +54,7 @@ for needle in (
         raise SystemExit(f"api.md synchronization failed: {needle}")
 
 issue_text = issue.read_text(encoding="utf-8")
-if "merge後監査で専用IR、既存prompt、経路被覆、関連SafeMode、backend全体の回帰を実行して確認した" not in issue_text:
+if "backend全体はmainでも再現する既知4件を基準差分として切り分け" not in issue_text:
     raise SystemExit("Stage 5 issue synchronization failed")
 
-print("PR #2839 documentation synchronized after successful regression.")
+print("PR #2839 documentation synchronized after baseline-aware regression.")
