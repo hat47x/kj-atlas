@@ -13,7 +13,7 @@
 
 ## 課題
 
-`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残した。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件だった。2026-09-03に `suggest-island-summary` をStage 5の第1経路として移行し、現在は**5経路がIR経由、未移行は6経路**である。
+`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残した。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件だった。2026-09-03に `suggest-island-summary` をStage 5の第1経路、`propose-opposing-viewpoint` を第2経路として移行し、現在は**6経路がIR経由、未移行は5経路**である。
 
 ただし、この7件を「同じ方法でIRへ移せばよい7件」と扱うのは適切ではない。実装を再確認すると、次の3種類が混在している。
 
@@ -31,7 +31,7 @@
 | --- | --- | --- | --- |
 | `check-narrative` | `DocumentV1`、narrative本文、reading order | narrativeとA型図解の往復照合、カード・島、reading order、叙述の根拠となる論理関係 | **IR移行候補**。ただし文書全体を扱うため `AI-IR-SCALE-01` と強く結合 |
 | `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03、merge後監査完了）**。対象島に必要な意味をroute固有投影で保護し、直接メンバー本文もIRからprovider promptへ描画する。必要意味の欠落時はfail-closed |
-| `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行候補。優先度高**。現行promptはevidence linkの種別だけを渡し、`contradictionState` を渡していない |
+| `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行済み（2026-09-03）**。対象カードと直接接続するrelation/evidenceを必須意味として保護し、人間の `contradictionState` を新規AI発見と区別する。対象カード本文もIRから最終promptへ描画する |
 | `suggest-merges` | `DocumentV1`、全カード | 類似カード候補。既存の島・hold・対立関係を「mergeを避ける制約」として扱うべきかは未決 | **受入条件を先に定める**。IRに情報があるという理由だけでmerge判断へ使わない |
 | `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **別契約またはhybrid候補**。現在の限定済みgrounding集合をgeneric IRで広げない |
 | `refine-card-text` | 単一カード本文、任意context。Documentなし | 元の意味を保った言い換え、レビュー状態 | **IR例外候補**。現行IRへ入れるには存在しないカードIDや疑似Documentを作る必要がある |
@@ -78,11 +78,24 @@ Stage 5の第1経路として `suggest-island-summary` をIRへ配線した。re
 
 ### 3. `propose-opposing-viewpoint`
 
-この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。現在も全カード本文と `evidenceLinks` は渡しているが、evidence linkの `contradictionState` はpromptに含めず、card relationも使っていない。
+この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。移行前のpromptには全カード本文と `evidenceLinks` を渡していたが、evidence linkの `contradictionState` は含まれず、card relationも使われていなかった。
 
 人間が既に `confirmed` / `held` とした矛盾を、新しい発見のように扱うことは避ける必要がある。ただし `detect-contradiction` と違い、この経路では既存の矛盾自体が「反対視点の根拠」として意味を持つ場合がある。したがって、既決矛盾を完全に除外するのではなく、**人間が判断済みであることを状態付きで渡し、新規発見と区別する**のが自然である。
 
 対象カードを `required_card_ids` で保護することは妥当だが、反対所見候補として全300カードを同じ優先度で保持するかは別問題である。対象カードに接続するevidence/relationと、文書全体からの反対候補探索を分けて設計する。
+
+#### 実装結果（2026-09-03）
+
+Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した。proposal-onlyの応答契約、UI側の人間判断、`Target card:` の行形式は変更していない。
+
+- 対象カードを必須カードとして保護し、対象カードへ直接接続するcard relation / evidenceの両端も必須文脈として保護する。
+- `confirmed` / `held` を含む `contradictionState` は、人間が既に行った判断としてprovider手前へ渡し、新しいAI発見として言い直さないようprompt上でも区別する。
+- 直接接続していないカードは、IRに残った範囲だけを反例探索の補助文脈として扱う。対象周辺の必須意味と文書全体からの探索を同じ重要度にしない。
+- providerへ送る `Target card:` の本文もIR正規化後の対象カード本文から描画し、Document側の生本文を中心入力へ迂回させない。merge前監査で同型の迂回を検出し、integration regressionを追加して解消した。
+- 必須カード本文が共有IRの文字数上限で短縮される場合は `required_text_truncated`、必須relation / evidenceが上限処理で欠ける場合は `required_relation_missing` / `required_evidence_missing`、必須カード集合が上限を超える場合は `required_card_budget_exceeded` でprovider呼出前にfail-closedにする。
+- SafeModeはroute側の一次検査とIR側の二次検査をともに維持し、座標は要求しない。
+
+専用IR回帰、既存 `test_ai_oppose.py`、AI経路被覆テストで、production routeがpromptと `LLMRequest.inputs` の双方へ同じIR本文・構造を渡すことまで固定した。
 
 ### 4. `suggest-merges`
 
@@ -134,12 +147,13 @@ Stage 5の第1経路として `suggest-island-summary` をIRへ配線した。re
 
 1. `suggest-island-summary` — 2026-09-03にIR移行を完了。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。merge後監査で、provider promptの直接メンバー本文もIR正規化後本文から描画するよう是正した。mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認し、`AI-IR-STAGE5-SUMMARY-PROMPT-01` は同監査で解消した。
 
-### 次にIR移行を具体化してよい
+2. `propose-opposing-viewpoint` — 2026-09-03にIR移行を完了。対象カードと直接接続するrelation/evidenceを必須意味として保護し、既決 `contradictionState` と対象カード本文をIR実入力として保持した。
 
-2. `propose-opposing-viewpoint`
-3. `check-narrative` — ただしscale方式決定後
+### IR移行候補だがscale方式決定を待つ
 
-`propose-opposing-viewpoint` は対象カードという自然なfocusを持ち、`required_card_ids` とroute固有投影を利用しやすい。`check-narrative` は文書全体を扱うため、`AI-IR-SCALE-01` の結果を待つ。
+3. `check-narrative`
+
+`check-narrative` は文書全体を扱うため、`AI-IR-SCALE-01` の結果を待つ。
 
 ### 受入条件を先に決める
 
@@ -158,8 +172,8 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 ## 推奨する実装順序
 
 1. **完了: `suggest-island-summary` の必要意味をintegration regressionで固定し、AI実入力をIRへ揃えた。** merge後監査で専用回帰と関連回帰を実行し、二層SafeMode、provider promptと `LLMRequest.inputs` の直接メンバー本文一致、Document生本文の迂回送出防止を確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。
-2. **次: `propose-opposing-viewpoint` を状態付きevidenceへ移す。** 対象カードを保護し、`contradictionState` を新規発見と既決判断の区別に使う。
-3. `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。
+2. **完了: `propose-opposing-viewpoint` を状態付きevidenceへ移した。** 対象カードと直接接続する意味を保護し、`contradictionState` を新規発見と既決判断の区別に使う。対象カード本文もIRからprovider promptへ描画する。
+3. **次: `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。**
 4. `suggest-merges` の利用仕事と受入条件を決める。
 5. `check-narrative` は `AI-IR-SCALE-01` のA2/B/C判断後に移行方式を決める。
 
@@ -176,7 +190,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 - [x] no-doc経路へ疑似Documentや架空IDを作る案を採らない。
 - [x] `suggest-island-summary` のroute-required meaningをintegration regressionとしてコードへ固定し、IRへ配線する。— 対象島の直接メンバーと隣接するrelation/evidenceだけへsourceを縮約し、必要意味が投影上限で欠ける場合はfail-closedにした。
 - [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。`AI-IR-STAGE5-SUMMARY-PROMPT-01` の直接メンバー本文IR描画回帰も同時に確認した。
-- [ ] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定する。
+- [x] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定し、IRへ配線する。— 対象カードと直接接続するrelation/evidenceを保護し、人間の `contradictionState` を状態付きで保持した。対象カード本文もIRから最終promptへ描画し、生本文の迂回を回帰で禁止した。
 - [ ] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。
 - [ ] `suggest-merges` のmerge意味論と受入条件を別Issueまたは本Issueの追記で固定する。
 - [ ] `check-narrative` のscale投影方式を `AI-IR-SCALE-01` の結果と整合させる。

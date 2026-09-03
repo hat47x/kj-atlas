@@ -28,6 +28,7 @@ IR_MIGRATED_TASKS = frozenset(
     {
         "detect_contradiction",
         "generate_narrative",
+        "propose_opposing_viewpoint",
         "re_layout",
         "suggest_card_groups",
         "suggest_island_summary",
@@ -37,7 +38,6 @@ IR_MIGRATED_TASKS = frozenset(
 EXPLICIT_STAGE5_DEBT_TASKS = frozenset(
     {
         "check_narrative",
-        "propose_opposing_viewpoint",
         "refine_card_text",
         "suggest_document_title",
         "suggest_merges",
