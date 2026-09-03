@@ -1,0 +1,93 @@
+name: 反対視点IRの最終検証（一回限り）
+
+on:
+  push:
+    branches:
+      - feat/opposing-viewpoint-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: feat/opposing-viewpoint-ir-context-20260903
+          fetch-depth: 0
+
+      - name: target本文のIR迂回を修正する
+        run: python .github/scripts/fix_opposing_target_prompt_once.py
+
+      - name: Pythonテスト環境を準備する
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: 反対視点IRの対象回帰を確認する
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_opposing_viewpoint_ir.py -q
+          pytest tests/test_ai_oppose.py -q
+          pytest tests/test_ai_llm_input_ir_coverage.py -q
+          pytest tests/test_ai_island_summary_ir.py -q
+          pytest tests/ -k 'opposing or island_summary or safe_mode or llm_input_ir' -q
+
+      - name: main既知4件を基準として再確認する
+        run: |
+          git worktree add /tmp/kj-atlas-main origin/main
+          python -m venv /tmp/kj-main-venv
+          /tmp/kj-main-venv/bin/python -m pip install -q -e '/tmp/kj-atlas-main/03_Implement/backend[test]'
+          cd /tmp/kj-atlas-main/03_Implement/backend
+          set +e
+          /tmp/kj-main-venv/bin/pytest \
+            tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys \
+            -q | tee /tmp/main-known-failures.txt
+          test_code=${PIPESTATUS[0]}
+          set -e
+          if [ "$test_code" -eq 0 ]; then
+            echo 'Expected known main failures, but they all passed; baseline changed.'
+            exit 1
+          fi
+          grep -F '4 failed' /tmp/main-known-failures.txt
+
+      - name: 既知4件を除くbackend全体回帰を確認する
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/ -q \
+            --deselect=tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            --deselect=tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            --deselect=tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            --deselect=tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys
+
+      - name: 静的検査を確認する
+        working-directory: 03_Implement/backend
+        run: ruff check src tests/test_ai_opposing_viewpoint_ir.py tests/test_ai_oppose.py
+
+      - name: 正本文書を実装結果へ同期する
+        run: python .github/scripts/sync_opposing_viewpoint_ir_docs_once.py
+
+      - name: 計画文書と差分を検査する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-opposing.txt
+          test -s /tmp/triage-opposing.txt
+          python 01_Plans/docs_check.py
+          git diff --check
+          grep -F '6経路がIR経由、未移行は5経路' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'Target card:` の本文もIR正規化後' 02_Architecture/api.md
+
+      - name: 一時ファイルを除去して実装差分だけをpushする
+        run: |
+          rm .github/workflows/finalize-opposing-viewpoint-ir-once.yml
+          rm .github/scripts/fix_opposing_target_prompt_once.py
+          rm .github/scripts/sync_opposing_viewpoint_ir_docs_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: 反対視点提案をLLM入力IRへ移行する'
+          git push origin HEAD:feat/opposing-viewpoint-ir-context-20260903
