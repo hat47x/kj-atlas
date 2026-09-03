@@ -1,7 +1,7 @@
 # 認知dogfood ナビゲーション索引
 
 - Status: Maintainer/operator navigation only
-- Date: 2026-09-03
+- Date: 2026-09-04
 - Scope: cognitive dogfood / product-value validation workstream
 - Arm input: **No** — この文書をCase 001〜003のA/B/C/Dへ渡さない。
 
@@ -123,6 +123,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R17。route固有の必要意味を正本から対応づけ、`detect-contradiction` のfocus pairに対するhuman adjudicationが300枚切り詰めで消え得ること、narrative/groups/layoutに未測定の必要意味軸が残ることを分離した記録。
 - `doc_kj_atlas_dogfood_r17.json`
   - R17のKJキャンバス。
+- `cognitive-dogfood-continuous-2026-09-04.md`
+  - R18。意味保存型mergeの実装済み利用経路を横断照合し、backendのremote提案契約とfrontendの決定論fallback契約が混線して正常なprovider応答を拒否し得ることを発見・修正した記録。
+- `doc_kj_atlas_dogfood_r18.json`
+  - R18のKJキャンバス。既存testが誤った契約前提を非退行条件として固定し得ること、Done-at-rootの計画legacy差、merge方式の追跡性を別の残差として保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 

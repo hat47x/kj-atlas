@@ -474,8 +474,9 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `instruction?: string` — 提案方針の指示（任意）
   - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SuggestMergesResponse`
-  - `suggestions: MergeSuggestion[]` — 統合候補の配列
+  - `suggestions: MergeSuggestion[]` — 統合候補の配列。各要素のAPI契約は `groupId`、2件以上の `cardIds`、`mergedTextDraft`、任意の `rationale`。
 - 類似カードの統合候補を提案する。各候補は統合対象カード群と統合理由を含む。
+- フロントエンドの決定論的ローカル候補は、このAPI契約に Stream B の `targetCardId` / `candidateCardIds` / `scoreSummary` / `reasonCodes` / `snapshotVersion` を付加した派生表現を使う。これらはローカル候補生成の再現性メタデータであり、AIプロバイダーが生成する `MergeSuggestion` の必須フィールドではない。remote AI提案に存在しないスコアやsnapshotを補作しない。
 
 **POST** `/ai/suggest-island-summary`
 
