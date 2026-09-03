@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+from fastapi import HTTPException
 
 from kj_atlas_api.island_summary_ir import (
     build_island_summary_ir_context,
@@ -55,6 +56,14 @@ def _payload() -> SuggestIslandSummaryRequest:
         ],
     )
     return SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+
+def _with_unreviewed_direct_member(payload: SuggestIslandSummaryRequest) -> SuggestIslandSummaryRequest:
+    cards = [
+        card.model_copy(update={"textReviewed": False}) if card.id == "c1" else card
+        for card in payload.doc.cards
+    ]
+    return payload.model_copy(update={"doc": payload.doc.model_copy(update={"cards": cards})})
 
 
 def test_context_preserves_only_members_and_directly_adjacent_meaning() -> None:
@@ -127,6 +136,30 @@ def test_route_passes_only_reduced_ir_and_context_to_provider(monkeypatch) -> No
     assert 'id="c3"' in llm_request.prompt
     assert 'id="c4"' not in llm_request.prompt
     assert response.candidates[0].groundingIds == ["c1", "c2"]
+
+
+def test_route_safemode_rejects_unreviewed_text_before_provider(monkeypatch) -> None:
+    payload = _with_unreviewed_direct_member(_payload())
+
+    def _unexpected_generate(_request):
+        raise AssertionError("provider must not be called for unreviewed text")
+
+    monkeypatch.setattr(ai_route, "generate_with_fallback", _unexpected_generate)
+
+    with pytest.raises(HTTPException) as captured:
+        ai_route.suggest_island_summary(payload, object(), object())
+
+    assert captured.value.status_code == 422
+    assert captured.value.detail["code"] == "unreviewed_text_not_allowed"
+
+
+def test_ir_safemode_independently_rejects_unreviewed_text() -> None:
+    payload = _with_unreviewed_direct_member(_payload())
+
+    with pytest.raises(IRGenerationError) as captured:
+        build_island_summary_ir_context(payload, allow_unreviewed_text=False)
+
+    assert captured.value.code == "unreviewed_text_not_allowed"
 
 
 def test_missing_target_island_fails_closed() -> None:
