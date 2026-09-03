@@ -39,7 +39,7 @@ jobs:
           python 01_Plans/issues/validate_active_issue_memos.py
           python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
           test -s /tmp/triage.txt
-          git diff --check
+          git -c core.whitespace=cr-at-eol diff --check
       - name: Diff size guard
         run: |
           git diff --numstat origin/main -- 03_Implement/frontend/src/App.tsx 03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts
