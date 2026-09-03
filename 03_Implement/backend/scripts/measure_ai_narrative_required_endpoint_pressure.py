@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """`generate-narrative` の論理骨格を保護するときの数値境界を測る。
 
-`AI-IR-SCALE-01` では、叙述に必要な `causal` / `negate` の両端cardだけを
+`AI-IR-SCALE-01` では、叙述に必要な `causal` / `negate` の両端のカードだけを
 `required_card_ids` で保護する方式Bを候補としている。ただし、この方式が安全に
-成立するかはrelation件数だけでは決まらない。少なくとも次の三つを分けて見る必要が
-ある。
+成立するかは、論理関係の件数だけでは決まらない。少なくとも次の三つを分けて見る
+必要がある。
 
-- 論理骨格が参照する一意card数が `MAX_CARDS` に収まるか。
-- 保持すべき論理relation数が `MAX_RELATIONS` に収まるか。
-- R21と同じ46文字/cardの代表値を置いた場合に `MAX_TEXT_CHARS` に収まるか。
+- 論理骨格が参照する一意なカード数が `MAX_CARDS` に収まるか。
+- 保持すべき論理関係の数が `MAX_RELATIONS` に収まるか。
+- R21と同じ「1枚46文字」の代表値を置いた場合に `MAX_TEXT_CHARS` に収まるか。
 
-このスクリプトは外部LLMやproviderを呼ばず、token数も推定しない。実際のcard本文は
-長さが異なるため、`representative_text_chars` はR21の合成入力との比較にだけ使う。
-また、全ての数値上限に収まっても、それだけで方式Bを採用してよいとは判断しない。
-relationを確実に保護する実装、意味上の完全性、SafeMode等は別に検証する必要がある。
+このスクリプトは外部LLMやプロバイダーを呼ばず、トークン数も推定しない。実際の
+カード本文は長さが異なるため、`representative_text_chars` はR21の合成入力との
+比較にだけ使う。また、全ての数値上限に収まっても、それだけで方式Bを採用してよい
+とは判断しない。必要な論理関係を確実に保護する実装、意味上の完全性、SafeMode等は
+別に検証する必要がある。
 """
 
 from __future__ import annotations
@@ -59,7 +60,7 @@ def _chain(card_count: int) -> list[LogicalRelation]:
 
 
 def _dense_relations(card_count: int, relation_count: int) -> list[LogicalRelation]:
-    """同一edgeを作らず、指定件数まで決定論的にrelationを生成する。"""
+    """同じedgeを重複させず、指定件数まで決定論的に論理関係を生成する。"""
 
     relations: list[LogicalRelation] = []
     for offset in range(1, card_count):
@@ -75,7 +76,7 @@ def _dense_relations(card_count: int, relation_count: int) -> list[LogicalRelati
             )
             if len(relations) == relation_count:
                 return relations
-    raise ValueError("requested relation_count exceeds the deterministic graph capacity")
+    raise ValueError("指定した `relation_count` は決定論的に生成できる関係数を超えています")
 
 
 def _summarize(name: str, relations: list[LogicalRelation]) -> dict[str, object]:
@@ -119,11 +120,11 @@ def measure() -> dict[str, object]:
         },
         "scenarios": scenarios,
         "interpretation": [
-            "required endpointが少数なら、card上限だけを見る限り方式Bは成立し得る。",
-            "一意endpointがMAX_CARDSを超える場合、required_card_idsだけでは方式Bを成立させられない。",
-            "endpointがMAX_CARDS内でも、保持すべき論理relationがMAX_RELATIONSを超える場合がある。",
-            "R21の46文字/card代表値では300-card chainはMAX_TEXT_CHARSも超える。",
-            "数値上限内であることは方式B採用の十分条件ではなく、provider実token測定と意味保存の検証は引き続き必要である。",
+            "必須となる端点カードが少数なら、カード上限の観点では方式Bは成立し得る。",
+            "一意な端点カードがMAX_CARDSを超える場合、required_card_idsだけでは方式Bを成立させられない。",
+            "端点カードがMAX_CARDS内でも、保持すべき論理関係がMAX_RELATIONSを超える場合がある。",
+            "R21と同じ1枚46文字の代表値では、300枚を全体にまたぐ連鎖はMAX_TEXT_CHARSも超える。",
+            "数値上限内に収まることだけでは方式B採用の十分条件にならず、プロバイダーの実トークン測定と意味保存の検証は引き続き必要である。",
         ],
     }
 
