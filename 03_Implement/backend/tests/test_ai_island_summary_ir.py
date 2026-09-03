@@ -85,7 +85,7 @@ def test_prompt_context_marks_external_card_as_context_only_and_keeps_human_stat
     assert "contradictionState=held" in prompt
     assert '"parentIslandId": "i-parent"' in prompt
     assert '"placardCardId": "c1"' in prompt
-    assert '"reviewState": "reviewed"' in prompt
+    assert '"reviewState": "human_reviewed"' in prompt
     assert 'id="c4"' not in prompt
 
 
