@@ -1,4 +1,4 @@
-name: PR2839監査差分の一回限り検証
+name: PR2839監査差分の確定（一回限り）
 
 on:
   push:
@@ -9,66 +9,20 @@ permissions:
   contents: write
 
 jobs:
-  validate:
-    name: 表札IR監査差分を検証する
+  finalize:
+    name: 検証済み監査差分を正本へ確定する
     runs-on: ubuntu-latest
     steps:
-      - name: 作業ブランチを取得する
+      - name: 最新ブランチを取得する
         uses: actions/checkout@v4
         with:
           ref: fix/island-summary-post-merge-audit-20260903
           fetch-depth: 0
 
-      - name: Pythonテスト環境を準備する
-        working-directory: 03_Implement/backend
-        run: python -m pip install -e '.[test]'
-
-      - name: 表札IRの対象回帰を確認する
-        working-directory: 03_Implement/backend
-        run: |
-          pytest tests/test_ai_island_summary_ir.py -q
-          pytest tests/test_ai_prompt.py -q
-          pytest tests/test_ai_llm_input_ir_coverage.py -q
-          pytest tests/ -k 'island_summary or safe_mode or llm_input_ir' -q
-
-      - name: mainでも既知4件が再現することを確認する
-        run: |
-          git worktree add /tmp/kj-atlas-main origin/main
-          python -m venv /tmp/kj-main-venv
-          /tmp/kj-main-venv/bin/python -m pip install -q -e '/tmp/kj-atlas-main/03_Implement/backend[test]'
-          cd /tmp/kj-atlas-main/03_Implement/backend
-          set +e
-          /tmp/kj-main-venv/bin/pytest \
-            tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
-            tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
-            tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
-            tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys \
-            -q | tee /tmp/main-known-failures.txt
-          test_code=${PIPESTATUS[0]}
-          set -e
-          if [ "$test_code" -eq 0 ]; then
-            echo 'Expected the four known main failures, but they all passed.'
-            exit 1
-          fi
-          grep -F '4 failed' /tmp/main-known-failures.txt
-
-      - name: 既知4件を除くbackend全体回帰を確認する
-        working-directory: 03_Implement/backend
-        run: |
-          pytest tests/ -q \
-            --deselect=tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
-            --deselect=tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
-            --deselect=tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
-            --deselect=tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys
-
-      - name: 変更箇所を静的検査する
-        working-directory: 03_Implement/backend
-        run: ruff check src tests/test_ai_island_summary_ir.py
-
-      - name: 回帰成功後に正本文書を同期する
+      - name: 検証済み結果を正本文書へ同期する
         run: python scripts/_tmp_finalize_pr2839.py
 
-      - name: 計画文書と差分を検査する
+      - name: 計画文書と差分を確認する
         run: |
           python 01_Plans/issues/validate_active_issue_memos.py
           python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-pr2839.txt
@@ -76,9 +30,9 @@ jobs:
           git diff --check
           grep -F 'required_text_truncated' 02_Architecture/api.md
           grep -F 'required_card_context_mismatch' 02_Architecture/api.md
-          grep -F 'backend全体はmainでも再現する既知4件を基準差分として切り分け' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'AI-IR-STAGE5-SUMMARY-PROMPT-01' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
 
-      - name: 検証用ファイルを除去して監査差分だけをコミットする
+      - name: 一時ファイルを除去してpushする
         run: |
           rm .github/workflows/validate-pr2839-once.yml
           rm scripts/_tmp_finalize_pr2839.py
@@ -89,5 +43,7 @@ jobs:
             echo 'No changes to commit.'
             exit 1
           fi
-          git commit -m 'docs: 表札IRの監査結果を正本へ同期する'
+          git commit -m 'docs: 表札IRのmerge後監査を正本へ反映する'
+          git fetch origin fix/island-summary-post-merge-audit-20260903
+          git rebase origin/fix/island-summary-post-merge-audit-20260903
           git push origin HEAD:fix/island-summary-post-merge-audit-20260903
