@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-"""Measure provider-reported input tokens for representative AI route prompts.
+"""代表規模のAIルートについて、providerが報告した入力token数を測定する。
 
-`AI-IR-SCALE-01` must not infer exact token counts from JSON bytes.  This tool
-renders the same deterministic 300-card / 30-island source used by the scale
-coverage probes, then optionally sends two representative prompts to one
-explicitly named provider/model and records the provider-reported usage.
+`AI-IR-SCALE-01` では、JSONのbyte数などから正確なtoken数を推定してはならない。
+このスクリプトは、既存のscale coverage計測と同じ決定論的な300カード・30島の
+入力を使って2種類の代表promptを生成し、明示的に指定したprovider/modelへ必要に
+応じて送信する。正確な入力token数として採用するのはprovider自身が返したusage
+だけである。
 
-The default is a dry run: it never constructs or calls a provider.  External
-execution requires BOTH `--execute` and `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1`.
-Only synthetic fixture-like text from `representative_document()` is sent.
+既定動作はdry-runであり、providerの生成も呼び出しも行わない。外部実行には
+`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の両方を必要とする。
+送信するのは `representative_document()` が作る合成データだけであり、利用者の
+実データは使わない。
 
-The two routes are deliberately different:
+比較対象は意図的に性質の異なる2ルートとする。
 
-- `suggest-layout`: the heaviest migrated route; normalized coordinates,
-  relations and island structure are part of the IR context.
-- `generate-narrative`: a representative non-coordinate route; reading order
-  stays document-derived while logical relations come from the IR.
+- `suggest-layout`: 移行済みルートのうち最重量。正規化座標、関係、島構造をIR文脈に含む。
+- `generate-narrative`: 座標を使わない代表ルート。reading orderはDocument由来のまま、
+  論理関係をIRから受け取る。
 
-A provider that does not report input-token usage is not estimated.  The output
-records `provider-did-not-report-usage` and `measurement_complete=false` instead.
+providerが入力token数を返さない場合は推定で補わない。出力には
+`provider-did-not-report-usage` と `measurement_complete=false` を記録する。
 """
 
 from __future__ import annotations
@@ -52,7 +53,7 @@ class _Provider(Protocol):
 
 
 def build_representative_requests(model: str) -> dict[str, LLMRequest]:
-    """Render the two prompts from the exact same deterministic source document."""
+    """同じ決定論的な代表入力から、比較対象となる2つのpromptを生成する。"""
     doc = representative_document(include_evidence=False)
 
     layout_payload = SuggestLayoutRequest.model_validate({"doc": doc})
@@ -69,8 +70,8 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
             prompt=layout_prompt,
             inputs=layout_ir,
             temperature=0.0,
-            # Input-token measurement does not need a substantive completion.
-            # Keep output cost/latency to the minimum accepted by the provider layer.
+            # 入力token数の測定には実質的な回答本文は不要である。
+            # provider層が受理する最小値まで出力上限を下げ、費用と待ち時間を抑える。
             max_tokens=1,
             model=model,
         ),
@@ -114,16 +115,16 @@ def measure(
     execute: bool = False,
     provider: _Provider | None = None,
 ) -> dict[str, Any]:
-    """Build a measurement report, optionally calling an already-resolved provider.
+    """計測レポートを作り、明示的に許可された場合だけproviderを呼び出す。
 
-    `expected_provider` and `model` are mandatory names so a measurement can
-    never silently run against whichever provider/model happens to be configured.
-    The CLI resolves the provider only after the two explicit opt-ins pass.
+    `expected_provider` と `model` は必須とする。環境に偶然設定されていた別の
+    provider/modelへ黙って送信することを防ぐためである。CLIでは、二重の実行許可を
+    確認した後にだけproviderを解決する。
     """
     if not model.strip():
-        raise ValueError("model must be a non-empty explicit model id")
+        raise ValueError("modelには空でないmodel idを明示してください")
     if not expected_provider.strip():
-        raise ValueError("expected_provider must be a non-empty explicit provider name")
+        raise ValueError("expected_providerにはprovider名を明示してください")
 
     requests = build_representative_requests(model)
     routes = {name: _route_row(req) for name, req in requests.items()}
@@ -136,18 +137,18 @@ def measure(
         "measurement_complete": False,
         "routes": routes,
         "interpretation_boundary": (
-            "Exact token counts are accepted only from provider-reported usage. "
-            "Prompt bytes/chars are diagnostics, never token estimates."
+            "正確なtoken数として採用するのはproviderが報告したusageだけとする。"
+            "promptのbyte数・文字数は診断情報であり、token数の推定には使わない。"
         ),
     }
 
     if not execute:
         return report
     if provider is None:
-        raise ValueError("provider is required when execute=True")
+        raise ValueError("execute=Trueの場合はproviderが必要です")
     if provider.provider_name != expected_provider:
         raise ValueError(
-            "configured provider does not match the explicitly named measurement provider"
+            "現在設定されているproviderが、計測対象として明示したprovider名と一致しません"
         )
 
     all_measured = True
@@ -194,19 +195,19 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--provider",
         required=True,
-        help="Exact provider_name expected from the configured provider (for example: deepseek).",
+        help="現在設定されているproviderに期待する正確なprovider_name（例: deepseek）。",
     )
     parser.add_argument(
         "--model",
         required=True,
-        help="Exact model id to use for both representative routes.",
+        help="2つの代表ルートで共通して使用する正確なmodel id。",
     )
     parser.add_argument(
         "--execute",
         action="store_true",
         help=(
-            "Actually send the synthetic representative prompts. Also requires "
-            f"{OPT_IN_ENV}=1. Without this flag the command is a no-network dry run."
+            "合成された代表promptを実際に送信する。"
+            f"{OPT_IN_ENV}=1 も必要。指定しなければネットワークを使わないdry-runとなる。"
         ),
     )
     return parser
