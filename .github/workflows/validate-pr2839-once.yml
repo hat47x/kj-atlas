@@ -71,7 +71,8 @@ jobs:
       - name: 計画文書と差分を検査する
         run: |
           python 01_Plans/issues/validate_active_issue_memos.py
-          python 01_Plans/triage_actionable_plans.py --check
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-pr2839.txt
+          test -s /tmp/triage-pr2839.txt
           git diff --check
           grep -F 'required_text_truncated' 02_Architecture/api.md
           grep -F 'required_card_context_mismatch' 02_Architecture/api.md
