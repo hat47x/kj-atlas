@@ -1,0 +1,69 @@
+name: Partial merge contract verification (one-shot)
+
+on:
+  push:
+    branches:
+      - plan/ai-merge-partial-contract-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: plan/ai-merge-partial-contract-20260903
+          fetch-depth: 0
+
+      - name: Apply partial merge patch
+        run: python .github/scripts/apply_partial_merge_contract_once.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run partial merge domain and UI regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run \
+            src/domain/merge_suggestion_decisions.test.ts \
+            src/domain/merge_suggestion_apply.test.ts \
+            src/domain/merge/decision_audit_events.test.ts \
+            src/domain/representative_merge.test.ts \
+            src/domain/merge_traceability.test.ts \
+            src/ui/MergeSuggestionsPanel.test.ts
+          npm run test:i18n
+          npm run typecheck
+
+      - name: Run partial save/reload E2E
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_suggestion_partial_persistence.spec.ts
+
+      - name: Check planning documents and diff
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
+          git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Remove one-shot files and commit validated changes
+        run: |
+          rm .github/workflows/verify-partial-merge-contract-once.yml
+          rm .github/scripts/apply_partial_merge_contract_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'merge: partialの明示部分集合を判断・適用・保存へ通す'
+          git push origin HEAD:plan/ai-merge-partial-contract-20260903
