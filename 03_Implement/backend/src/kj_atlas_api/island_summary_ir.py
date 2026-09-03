@@ -110,9 +110,17 @@ def build_island_summary_ir_context(
             "Task-required logical relations did not fit in the IR projection",
         )
 
-    projected_evidence_ids = {item["id"] for item in ir.get("evidence_links", [])}
-    expected_evidence_ids = {item.id for item in relevant_evidence}
-    if not expected_evidence_ids.issubset(projected_evidence_ids):
+    # Evidenceは共有IR側で(type, from, to)を正規化キーとして重複排除する。
+    # ここでも同じ意味単位で比較し、重複したsource IDの存在を欠落と誤判定しない。
+    projected_evidence_keys = {
+        (item["type"], item["from_card_id"], item["to_card_id"])
+        for item in ir.get("evidence_links", [])
+    }
+    expected_evidence_keys = {
+        (item.type, item.from_card_id, item.to_card_id)
+        for item in relevant_evidence
+    }
+    if not expected_evidence_keys.issubset(projected_evidence_keys):
         raise IRGenerationError(
             "required_evidence_missing",
             "Task-required evidence did not fit in the IR projection",
