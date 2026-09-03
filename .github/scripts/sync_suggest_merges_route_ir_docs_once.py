@@ -86,7 +86,6 @@ STAGE5.write_text(stage5, encoding="utf-8")
 
 api = API.read_text(encoding="utf-8")
 api_section = """
-
 ### 2.10 AIカード統合提案（`POST /ai/suggest-merges`）
 
 `POST /ai/suggest-merges` は、複数カードを一枚へ統合できる可能性を**提案するだけ**のAI APIである。AIはカードを削除・上書き・自動統合しない。04ステップ型の近接カード整理と、複数カードの意味核を保つ核融合法型の統合を候補として扱うが、単なる語彙類似や同一テーマだけでは統合理由にしない。
@@ -106,7 +105,7 @@ LLM応答は信頼境界の外側として扱う。未知ID・重複ID・2件未
 Responseの外形は従来どおり `SuggestMergesResponse` / `MergeSuggestion` を維持する。現時点では `groupId`、`cardIds`、`mergedTextDraft`、任意の `rationale` であり、統合方法や残差を表す追加フィールドは、実merge適用時の来歴・残差保持を監査した後に判断する。
 """
 if "### 2.10 AIカード統合提案（`POST /ai/suggest-merges`）" not in api:
-    api = api.rstrip() + api_section + "\n"
+    api = api.rstrip() + "\n\n" + api_section.strip() + "\n"
 API.write_text(api, encoding="utf-8")
 
 print("suggest-merges route IR docs synchronized")
