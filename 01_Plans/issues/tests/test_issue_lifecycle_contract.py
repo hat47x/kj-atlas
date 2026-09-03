@@ -69,6 +69,18 @@ class IssueLifecycleContractTests(unittest.TestCase):
                 [],
             )
 
+    def test_synthetic_root_has_no_repository_specific_legacy_debt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            self.assertEqual(MODULE.validate_done_memo_location(root), [])
+
+            write_issue(root / "issue-newly-done.md", "Done")
+            errors = MODULE.validate_done_memo_location(root)
+
+            self.assertEqual(len(errors), 1)
+            self.assertIn("1 > 0", errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()
