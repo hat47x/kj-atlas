@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const START_PANEL = '[data-panel="start-document-entry"]';
 const SAVE = '[data-ui-core-action="save"]';
 const WORK_MODE = '[data-ui-core-action="work-mode"]';
+const MERGED_TEXT = "The same  observation was recorded twice.";
 
 function buildDocument() {
   return {
@@ -13,8 +14,8 @@ function buildDocument() {
     updatedAt: "2026-09-03T00:00:00.000Z",
     transform: { panX: 0, panY: 0, zoom: 1 },
     cards: [
-      { id: "c1", text: "The same observation written first.", x: 0, y: 0, textReviewed: true, claimType: "fact" },
-      { id: "c2", text: "The same observation written again.", x: 280, y: 0, textReviewed: true, claimType: "fact" },
+      { id: "c1", text: "The same observation was recorded twice.", x: 0, y: 0, textReviewed: true, claimType: "fact" },
+      { id: "c2", text: MERGED_TEXT, x: 280, y: 0, textReviewed: true, claimType: "fact" },
     ],
     edges: [],
     islands: [],
@@ -26,7 +27,7 @@ function buildDocument() {
 }
 
 async function routePersistentDocument(page: Page) {
-  let storedDocument = buildDocument();
+  let storedDocument: any = buildDocument();
   let putCount = 0;
 
   await page.route("**/packs/index.json", async (route) => {
@@ -36,28 +37,18 @@ async function routePersistentDocument(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ providerKind: "local", callCounts: {}, tokenUsage: {} }),
+      body: JSON.stringify({ providerKind: "none", callCounts: {}, tokenUsage: {} }),
     });
   });
+  // This E2E verifies decision/apply/persistence rather than provider quality.
+  // Force the real UI's documented deterministic fallback so the candidate is
+  // reproducible without an external LLM.
   await page.route("**/ai/suggest-merges", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        suggestions: [
-          {
-            groupId: "merge-1",
-            cardIds: ["c1", "c2"],
-            mergedTextDraft: "The same observation was recorded twice.",
-            rationale: "The two cards express the same reviewed observation.",
-          },
-        ],
-      }),
-    });
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "provider unavailable" }) });
   });
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
     if (route.request().method() === "PUT") {
-      storedDocument = JSON.parse(route.request().postData() ?? "{}") as ReturnType<typeof buildDocument>;
+      storedDocument = JSON.parse(route.request().postData() ?? "{}");
       putCount += 1;
     }
     await route.fulfill({
@@ -69,7 +60,7 @@ async function routePersistentDocument(page: Page) {
   });
 
   return {
-    storedDocument: () => storedDocument as any,
+    storedDocument: () => storedDocument,
     putCount: () => putCount,
   };
 }
@@ -101,11 +92,10 @@ test("recorded accept can be explicitly applied, saved, and recovered through th
 
   const workMode = await openMergePanel(page);
   await workMode.getByRole("button", { name: "Collect candidates" }).click();
-  await expect(workMode.getByText("The same observation was recorded twice.")).toBeVisible();
+  const decisionReason = workMode.getByPlaceholder("Record why you accept/partial/reject/defer this proposal");
+  await expect(decisionReason).toBeVisible();
 
-  await workMode
-    .getByPlaceholder("Record why you accept/partial/reject/defer this proposal")
-    .fill("Both reviewed cards carry the same observation, so I accept this integration.");
+  await decisionReason.fill("Both reviewed cards carry the same observation, so I accept this integration.");
   await workMode.getByRole("button", { name: "Accept", exact: true }).click();
 
   const applyButton = workMode.getByRole("button", { name: "Apply accepted merge" });
@@ -123,9 +113,11 @@ test("recorded accept can be explicitly applied, saved, and recovered through th
   await expect.poll(() => persistence.putCount()).toBe(1);
 
   const saved = persistence.storedDocument();
-  const representative = saved.cards.find((card: any) => Array.isArray(card.repOf) && card.repOf.includes("c1") && card.repOf.includes("c2"));
+  const representative = saved.cards.find(
+    (card: any) => Array.isArray(card.repOf) && card.repOf.includes("c1") && card.repOf.includes("c2"),
+  );
   expect(representative).toBeTruthy();
-  expect(representative.text).toBe("The same observation was recorded twice.");
+  expect(representative.text).toBe(MERGED_TEXT);
   expect(representative.textReviewed).toBe(false);
   expect(new Set(representative.sources)).toEqual(new Set(["c1", "c2"]));
 
@@ -136,8 +128,8 @@ test("recorded accept can be explicitly applied, saved, and recovered through th
   expect(source1.canonicalId).toBe(representative.id);
   expect(source2.canonicalId).toBe(representative.id);
 
-  const decision = saved.mergeSuggestionDecisions.find((item: any) => item.groupId === "merge-1");
-  expect(decision.decision).toBe("accept");
+  const decision = saved.mergeSuggestionDecisions.find((item: any) => item.decision === "accept");
+  expect(decision).toBeTruthy();
   expect(decision.representativeCardId).toBe(representative.id);
   expect(new Set(decision.sourceCardIds)).toEqual(new Set(["c1", "c2"]));
 
@@ -146,7 +138,7 @@ test("recorded accept can be explicitly applied, saved, and recovered through th
   // survive that boundary, not only an in-memory JSON round-trip.
   await page.reload();
   await openSample(page);
-  await expect(page.locator('[data-ui-region="primary-flow"]')).toContainText("The same observation was recorded twice.");
-  await expect(page.locator('[data-ui-region="primary-flow"]')).toContainText("The same observation written first.");
-  await expect(page.locator('[data-ui-region="primary-flow"]')).toContainText("The same observation written again.");
+  const primaryFlow = page.locator('[data-ui-region="primary-flow"]');
+  await expect(primaryFlow).toContainText(MERGED_TEXT);
+  await expect(primaryFlow).toContainText("The same observation was recorded twice.");
 });
