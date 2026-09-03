@@ -41,10 +41,10 @@ async function routePersistentDocument(page: Page) {
     });
   });
   // This E2E verifies decision/apply/persistence rather than provider quality.
-  // Force the real UI's documented deterministic fallback so the candidate is
-  // reproducible without an external LLM.
+  // Simulate an unreachable AI endpoint so App follows its real documented
+  // deterministic local fallback (`collectMergeCandidates`).
   await page.route("**/ai/suggest-merges", async (route) => {
-    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "provider unavailable" }) });
+    await route.abort("connectionrefused");
   });
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
     if (route.request().method() === "PUT") {
