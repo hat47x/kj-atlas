@@ -17,6 +17,10 @@ jobs:
           ref: feat/ai-merge-ir-context-20260903
           fetch-depth: 0
 
+      - name: Normalize unset source refs
+        run: |
+          python -c 'from pathlib import Path; p=Path("03_Implement/backend/src/kj_atlas_api/merge_ir.py"); s=p.read_text(encoding="utf-8"); old="for source in card.sources:"; new="for source in (card.sources or []):"; assert s.count(old)==1; p.write_text(s.replace(old,new,1), encoding="utf-8")'
+
       - name: Apply route wiring
         run: python .github/scripts/apply_ai_merge_ir_once.py
 
