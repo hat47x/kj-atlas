@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Defect / AI Input Boundary
-- Status: Open
+- Status: Done
 - Source Issue: `AI-IR-PROJECTION-01` Stage 5 / `AI-IR-STAGE5-SCOPE-01`
 - Source PR: #2838
 - Priority: P1
@@ -22,11 +22,11 @@ PR #2838で `suggest-island-summary` は `LLMRequest.inputs` にLLM投入IRを�
 
 SafeMode、PII最小化、`required_text_truncated` 等はprovider呼出前のゲートとして機能するため、この欠陥はそれらを無効化するものではない。ただし、IRで行う本文正規化と、providerが実際に受け取る本文が一致しない状態は残る。
 
-## 完了状態の扱い
+## 解消結果
 
-本IssueがOpenである間、`suggest-island-summary` は「IR構造文脈の配線と回帰確認は済んだが、AI実入力経路の移行は未完了」と扱う。専用pytestやbackend回帰が成功しても、それだけを理由に `AI-IR-STAGE5-SCOPE-01` 上で本経路を実装完了へ昇格しない。
+merge後監査で、providerへ送る最終promptの直接メンバー本文をIR正規化後本文から再描画するようrouteを局所修正した。従来の島不存在・空島エラー境界を保つため、最初のprompt builder呼び出しはvalidation-onlyとして残し、IR context構築後にprovider用promptをIR本文付きで再構築する。
 
-merge後監査用の一回限りworkflow/scriptが、本Issueの発見前の前提で「回帰成功＝Stage 5第1経路完了」と記録しようとする場合、その自動更新は採用せず、本Issue解消後の事実に合わせて正本文書を更新する。
+回帰では、IR正規化で本文が変わる入力を用い、`LLMRequest.inputs` とprovider promptの直接メンバー本文が一致し、Document側の生本文が最終promptに残らないことを固定した。
 
 ## 対応方針
 
@@ -51,11 +51,11 @@ merge後監査用の一回限りworkflow/scriptが、本Issueの発見前の前�
 
 ## 完了条件
 
-- [ ] 直接メンバー本文をIRからprovider promptへ描画する。
-- [ ] Document側の生カード本文が同じ箇所へ迂回して送られないことをintegration regressionで固定する。
-- [ ] `LLMRequest.inputs` とpromptの直接メンバー本文一致を固定する。
-- [ ] 既存の表札prompt / SafeMode / proposal-only回帰を実行して成功を確認する。
-- [ ] `02_Architecture/api.md` に「直接メンバー本文もIRから描画する」境界を同期する。
+- [x] 直接メンバー本文をIRからprovider promptへ描画する。— IR context構築後にprovider用promptを再描画する。
+- [x] Document側の生カード本文が同じ箇所へ迂回して送られないことをintegration regressionで固定する。— IR正規化で変化する本文を使い、生本文が最終promptに存在しないことを確認する。
+- [x] `LLMRequest.inputs` とpromptの直接メンバー本文一致を固定する。
+- [x] 既存の表札prompt / SafeMode / proposal-only回帰を実行して成功を確認する。— 専用回帰9件、既存prompt 30件、経路被覆3件、関連SafeMode/IR 87件とbackend基準差分を確認した。
+- [x] `02_Architecture/api.md` に「直接メンバー本文もIRから描画する」境界を同期する。
 
 ## 非目標
 

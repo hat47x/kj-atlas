@@ -30,7 +30,7 @@
 | 経路 | 現在の入力 | 仕事上必要な意味 | 現時点の分類 |
 | --- | --- | --- | --- |
 | `check-narrative` | `DocumentV1`、narrative本文、reading order | narrativeとA型図解の往復照合、カード・島、reading order、叙述の根拠となる論理関係 | **IR移行候補**。ただし文書全体を扱うため `AI-IR-SCALE-01` と強く結合 |
-| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR構造文脈の配線済み／実入力経路は未完了**。対象島に必要な構造意味はroute固有投影で保護したが、直接メンバー本文は `AI-IR-STAGE5-SUMMARY-PROMPT-01` でIR描画へ移す |
+| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03、merge後監査完了）**。対象島に必要な意味をroute固有投影で保護し、直接メンバー本文もIRからprovider promptへ描画する。必要意味の欠落時はfail-closed |
 | `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行候補。優先度高**。現行promptはevidence linkの種別だけを渡し、`contradictionState` を渡していない |
 | `suggest-merges` | `DocumentV1`、全カード | 類似カード候補。既存の島・hold・対立関係を「mergeを避ける制約」として扱うべきかは未決 | **受入条件を先に定める**。IRに情報があるという理由だけでmerge判断へ使わない |
 | `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **別契約またはhybrid候補**。現在の限定済みgrounding集合をgeneric IRで広げない |
@@ -71,6 +71,7 @@ Stage 5の第1経路として `suggest-island-summary` をIRへ配線した。re
 - 外部の隣接カードは関係・根拠を理解するための文脈に限定し、`groundingIds` の許可範囲は対象島の直接メンバーから広げない。
 - 親島は親子関係を保持するための構造だけを残し、親島のカード集合を表札候補の入力へ広げない。
 - 親島、表札カード、review state、card relation、`contradictionState` をIR由来の構造としてpromptへ渡す。
+- providerへ送る最終promptの直接メンバー本文もIR正規化後の同一カード本文から描画し、Document側の生本文を同じ入力箇所へ迂回させない。
 - 必要カード集合そのものが上限を超える場合は共有IRの `required_card_budget_exceeded` を利用する。カード本文が `MAX_TEXT_CHARS` により240文字へ短縮される場合は `required_text_truncated`、必要relation / evidenceが欠ける場合は `required_relation_missing` / `required_evidence_missing` としてfail-closedにする。
 - SafeModeは従来のroute側検査を一次防御として残し、IR側検査を第二層として維持する。
 - helper単体とroute配線の回帰テスト、およびAI経路被覆テストを追加・更新した。**merge時点では当該headに対するpytest実行成功を確認できていなかったため、テスト成功は当該mergeの完了根拠には含めない。**
@@ -129,9 +130,9 @@ Stage 5の第1経路として `suggest-island-summary` をIRへ配線した。re
 
 ## Stage 5の暫定分類
 
-### IR構造文脈の配線済み（実入力経路は未完了）
+### IR移行済み
 
-1. `suggest-island-summary` — 2026-09-03に構造文脈を配線済み。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。merge後監査で、mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認した。一方、providerが実際に受け取るpromptの直接メンバー本文はまだDocument由来であり、`AI-IR-STAGE5-SUMMARY-PROMPT-01` がOpenのため実入力経路の移行は未完了とする。
+1. `suggest-island-summary` — 2026-09-03にIR移行を完了。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。merge後監査で、provider promptの直接メンバー本文もIR正規化後本文から描画するよう是正した。mainでも再現する既知4件以外に新しいbackend回帰が無いことを確認し、`AI-IR-STAGE5-SUMMARY-PROMPT-01` は同監査で解消した。
 
 ### 次にIR移行を具体化してよい
 
@@ -156,7 +157,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 
 ## 推奨する実装順序
 
-1. **回帰確認済み・実入力経路は未完了: `suggest-island-summary` の構造意味をintegration regressionで固定し、IRへ配線した。** merge後監査で専用回帰と関連回帰を実行し、二層SafeModeを含めて確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。ただし直接メンバー本文のIR描画は `AI-IR-STAGE5-SUMMARY-PROMPT-01` に残る。
+1. **完了: `suggest-island-summary` の必要意味をintegration regressionで固定し、AI実入力をIRへ揃えた。** merge後監査で専用回帰と関連回帰を実行し、二層SafeMode、provider promptと `LLMRequest.inputs` の直接メンバー本文一致、Document生本文の迂回送出防止を確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。
 2. **次: `propose-opposing-viewpoint` を状態付きevidenceへ移す。** 対象カードを保護し、`contradictionState` を新規発見と既決判断の区別に使う。
 3. `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。
 4. `suggest-merges` の利用仕事と受入条件を決める。
@@ -174,7 +175,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 - [x] `summarize-island-relation` のgrounding allowlistをgeneric IR化で広げてはならないことを記録する。
 - [x] no-doc経路へ疑似Documentや架空IDを作る案を採らない。
 - [x] `suggest-island-summary` のroute-required meaningをintegration regressionとしてコードへ固定し、IRへ配線する。— 対象島の直接メンバーと隣接するrelation/evidenceだけへsourceを縮約し、必要意味が投影上限で欠ける場合はfail-closedにした。
-- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。なおAI実入力経路の完了条件は `AI-IR-STAGE5-SUMMARY-PROMPT-01` に残る。
+- [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。`AI-IR-STAGE5-SUMMARY-PROMPT-01` の直接メンバー本文IR描画回帰も同時に確認した。
 - [ ] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定する。
 - [ ] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。
 - [ ] `suggest-merges` のmerge意味論と受入条件を別Issueまたは本Issueの追記で固定する。
