@@ -30,6 +30,7 @@ IR_MIGRATED_TASKS = frozenset(
         "generate_narrative",
         "re_layout",
         "suggest_card_groups",
+        "suggest_island_summary",
     }
 )
 
@@ -39,7 +40,6 @@ EXPLICIT_STAGE5_DEBT_TASKS = frozenset(
         "propose_opposing_viewpoint",
         "refine_card_text",
         "suggest_document_title",
-        "suggest_island_summary",
         "suggest_merges",
         "summarize_island_relation",
     }
