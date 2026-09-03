@@ -48,7 +48,7 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 ### caller-limited grounding
 
-`summary-island-relation` の `groundingCardIds` / `groundingEdgeIds` は安全境界である。generic IRを併用する場合も、このallowlistを理由なく広げない。
+`summarize-island-relation` の `groundingCardIds` / `groundingEdgeIds` は安全境界である。generic IRを併用する場合も、このallowlistを理由なく広げない。
 
 ### no-document task
 
