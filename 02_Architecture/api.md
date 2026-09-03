@@ -491,10 +491,10 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
     - `groundingIds: string[]` — 接地・根拠としたメンバーカードのID（1〜10件・重複なし・メンバー限定）
   - `warnings?: string[]`
 - 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
-- AI入力は `DocumentV1` を直接文字列化するだけでなく、LLM投入IRを経由する。対象島の全直接メンバーと、それらに接続するcard relation / evidenceの両端をroute固有の必須カードとして保護する。
+- AI入力は `DocumentV1` をそのまま広げず、対象島の全直接メンバーと、それらへ直接つながるcard relation / evidenceの両端だけへsourceを縮約してからLLM投入IRを構築する。無関係な文書カードはIRにも追加prompt文脈にも送らない。
 - 対象島の外側にある隣接カードは、relation / evidenceを理解するための**文脈専用**である。応答の `groundingIds` は従来どおり対象島の直接メンバーだけを許可し、外部カードへ広げない。
-- 親島、表札カード、review state、card relation、`contradictionState` はIR由来の構造としてAIへ渡す。`critiqueTags` / `critiqueText` と明示的なisland-to-island edgeはtask-local入力として従来の経路を維持する。
-- 対象島の仕事に必要なrelation / evidenceがIR上限で欠落する場合は、providerへ不完全な表札生成を依頼せず422でfail-closedにする。主なIRエラーコードは `required_card_budget_exceeded` / `required_relation_missing` / `required_evidence_missing`。request / responseの形は変更しない。
+- 親島、表札カード、review state、card relation、`contradictionState` はIR由来の構造としてAIへ渡す。親島は親子関係を保持する構造だけを残し、親島のカード集合まで入力へ広げない。`critiqueTags` / `critiqueText` と明示的なisland-to-island edgeはtask-local入力として従来の経路を維持する。
+- 対象島の仕事に必要な意味をIRで完全に保持できない場合は、providerへ不完全な表札生成を依頼せず422でfail-closedにする。主なIRエラーコードは、必須カード集合が上限を超える `required_card_budget_exceeded`、必須カード本文が文字数上限で短縮される `required_text_truncated`、投影後の必須カード集合が一致しない `required_card_context_mismatch`、必要なrelation / evidenceが欠ける `required_relation_missing` / `required_evidence_missing`。request / responseの形は変更しない。
 - **DX-CLEANUP-07 案B**: この直接 route はフロントエンドの直接呼び出し元を持たない（UI は proposal-only の `POST /ai/proposals/island-summary` を使用）。**後方互換・外部 API クライアント用に維持**する。`suggest_island_summary` 関数本体は proposal route の内部実装として再利用されている。
 
 **POST** `/ai/proposals/island-summary`
