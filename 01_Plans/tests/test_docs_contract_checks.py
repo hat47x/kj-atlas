@@ -640,6 +640,17 @@ class CiJobTimeoutCheckTest(unittest.TestCase):
 
         self.assertEqual(findings, [])
 
+    def test_ignores_configured_workflow_paths_that_do_not_exist(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+
+            findings = MODULE.check_ci_job_timeouts(
+                root,
+                (Path(".github/workflows/ci.yml"), Path(".github/workflows/release.yml")),
+            )
+
+        self.assertEqual(findings, [])
+
 
 class HistoryMetadataTest(unittest.TestCase):
     def test_accepts_complete_metadata_and_reverse_link(self):

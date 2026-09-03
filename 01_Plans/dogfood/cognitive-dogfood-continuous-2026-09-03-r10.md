@@ -20,7 +20,7 @@ R16では、R15を消したり書き換えたりせず、何が事実として�
 - `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`
 - `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`
 - `01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md`
-- `01_Plans/issues/issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md`（R16開始時点のActiveメモ）
+- `01_Plans/issues/done/issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md`（R16開始時点のActiveメモ）
 - `03_Implement/backend/scripts/measure_ai_route_prompt_coverage.py`
 - `03_Implement/backend/tests/test_ai_route_prompt_coverage.py`
 - R15の継続dogfood記録とKJキャンバス
