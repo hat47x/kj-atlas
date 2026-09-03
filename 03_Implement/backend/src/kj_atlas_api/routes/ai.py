@@ -85,6 +85,10 @@ from kj_atlas_api.proposal_decision_repository import (
     register_external_agent_task,
     record_proposal_decision as persist_proposal_decision,
 )
+from kj_atlas_api.island_summary_ir import (
+    build_island_summary_ir_context,
+    island_summary_ir_prompt_lines,
+)
 from kj_atlas_api.routes.docs import _authorize_request, get_document_row
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -1355,14 +1359,32 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
+    # SEC-AI-SAFEMODE-01/02: 既存のroute側検査を一次防御として維持する。
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+
+    # 既存promptを先に構築し、islandId不存在・空島の従来エラー境界を維持する。
+    base_prompt = _build_island_summary_prompt(payload)
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    try:
+        ir_context = build_island_summary_ir_context(
+            payload, allow_unreviewed_text=allow_unreviewed
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+    prompt = "\n".join(
+        [base_prompt, "", *island_summary_ir_prompt_lines(ir_context)]
+    )
+
     model_id = payload.model or resolve_model_for_task("suggest_island_summary")
     provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
-                prompt=_build_island_summary_prompt(payload),
+                prompt=prompt,
+                inputs=ir_context.ir,
                 model=model_id,
                 registered_provider=provider_config,
             )

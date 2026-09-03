@@ -8,12 +8,12 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai_relations.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`
-- Related Issue: `AI-IR-PROJECTION-01`, `AI-IR-SCALE-01`
+- Related ADR/Spec: `AI-IR-PROJECTION-01`, `AI-IR-SCALE-01`, `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`
 - Expected verification level: integration
 
 ## 課題
 
-`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残している。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件と整理されている。
+`AI-IR-PROJECTION-01` は、`detect-contradiction`、`suggest-card-groups`、`generate-narrative`、`suggest-layout` の4経路をLLM投入IRへ移行した後、Stage 5として「残りのエンドポイント」を残した。2026-08-31時点の棚卸しでは、prompt構築関数は11件、そのうちIR経由は4件、未移行は7件だった。2026-09-03に `suggest-island-summary` をStage 5の第1経路として移行し、現在は**5経路がIR経由、未移行は6経路**である。
 
 ただし、この7件を「同じ方法でIRへ移せばよい7件」と扱うのは適切ではない。実装を再確認すると、次の3種類が混在している。
 
@@ -25,12 +25,12 @@
 
 したがってStage 5では、実装件数を減らすことを目的にせず、各経路の仕事から必要な意味を逆算し、**IRへ移行する経路、受入条件を先に定める経路、明示的な例外または別の構造化入力契約として扱う候補**を分ける。
 
-## 現在の7経路
+## Stage 5で棚卸しした7経路
 
 | 経路 | 現在の入力 | 仕事上必要な意味 | 現時点の分類 |
 | --- | --- | --- | --- |
 | `check-narrative` | `DocumentV1`、narrative本文、reading order | narrativeとA型図解の往復照合、カード・島、reading order、叙述の根拠となる論理関係 | **IR移行候補**。ただし文書全体を扱うため `AI-IR-SCALE-01` と強く結合 |
-| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行候補。優先度高**。対象島に絞れるためroute固有投影と相性がよい |
+| `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03）**。対象島に必要な意味をroute固有投影で保護し、欠落時はfail-closedにした |
 | `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行候補。優先度高**。現行promptはevidence linkの種別だけを渡し、`contradictionState` を渡していない |
 | `suggest-merges` | `DocumentV1`、全カード | 類似カード候補。既存の島・hold・対立関係を「mergeを避ける制約」として扱うべきかは未決 | **受入条件を先に定める**。IRに情報があるという理由だけでmerge判断へ使わない |
 | `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **別契約またはhybrid候補**。現在の限定済みgrounding集合をgeneric IRで広げない |
@@ -62,6 +62,19 @@ Stage 5では次を必要意味として検証する。
 - `critiqueTags` / `critiqueText` は現行IRに無いため、task-local入力として維持する。
 
 対象島のメンバーはroute固有の必須集合として扱える可能性が高い。ただし1島だけで `MAX_CARDS` を超える場合に黙って一部を落とすことは表札の戻し検査と両立しない。必要ならfail-closedまたは島内分割を別途検討する。
+
+#### 実装結果（2026-09-03）
+
+Stage 5の第1経路として `suggest-island-summary` をIRへ移行した。request / response、既存の表札検査、`critiqueTags` / `critiqueText`、明示的なisland-to-island edge、proposal-only wrapperは変更していない。追加したのは、AIへ渡す意味の保全層である。
+
+- 対象島の全直接メンバーを必須カードとして保護する。
+- 直接メンバーに接続するカード間relationとevidenceの両端も文脈用カードとして保護する。
+- 外部の隣接カードは関係・根拠を理解するための文脈に限定し、`groundingIds` の許可範囲は対象島の直接メンバーから広げない。
+- 親島、表札カード、review state、card relation、`contradictionState` をIR由来の構造としてpromptへ渡す。
+- 必要なrelation / evidenceが共有IRの上限処理で欠けた場合は、存在しないものとして扱わず `required_relation_missing` / `required_evidence_missing` でfail-closedにする。必要カード集合そのものが上限を超える場合も、共有IRの `required_card_budget_exceeded` をそのまま利用する。
+- SafeModeは従来のroute側検査を一次防御として残し、IR側検査を第二層として維持する。
+
+専用回帰に加え、既存の表札prompt回帰とAI経路被覆テストを同時に実行し、`suggest_island_summary` をIR移行済みタスクへ移した状態で成功した。
 
 ### 3. `propose-opposing-viewpoint`
 
@@ -117,13 +130,16 @@ Stage 5では次を必要意味として検証する。
 
 ## Stage 5の暫定分類
 
-### IR移行を具体化してよい
+### IR移行済み
 
-1. `suggest-island-summary`
+1. `suggest-island-summary` — 2026-09-03に移行。対象島の必要意味をroute固有投影で保護し、grounding境界を維持した。
+
+### 次にIR移行を具体化してよい
+
 2. `propose-opposing-viewpoint`
 3. `check-narrative` — ただしscale方式決定後
 
-最初の2件は対象島・対象カードという自然なfocusを持ち、`required_card_ids` とroute固有投影を利用しやすい。`check-narrative` は文書全体を扱うため、`AI-IR-SCALE-01` の結果を待つ。
+`propose-opposing-viewpoint` は対象カードという自然なfocusを持ち、`required_card_ids` とroute固有投影を利用しやすい。`check-narrative` は文書全体を扱うため、`AI-IR-SCALE-01` の結果を待つ。
 
 ### 受入条件を先に決める
 
@@ -141,8 +157,8 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 
 ## 推奨する実装順序
 
-1. **`suggest-island-summary` の必要意味をintegration testで先に固定する。** 対象島の全直接メンバー、島構造、関連するrelation/evidence、既存の戻し検査を同時に保持する。
-2. **`propose-opposing-viewpoint` を状態付きevidenceへ移す。** 対象カードを保護し、`contradictionState` を新規発見と既決判断の区別に使う。
+1. **完了: `suggest-island-summary` の必要意味をintegration regressionで固定し、同じ変更でIRへ配線した。** 対象島の全直接メンバー、島構造、関連するrelation/evidence、既存の戻し検査を同時に保持している。
+2. **次: `propose-opposing-viewpoint` を状態付きevidenceへ移す。** 対象カードを保護し、`contradictionState` を新規発見と既決判断の区別に使う。
 3. `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。
 4. `suggest-merges` の利用仕事と受入条件を決める。
 5. `check-narrative` は `AI-IR-SCALE-01` のA2/B/C判断後に移行方式を決める。
@@ -158,7 +174,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 - [x] `propose-opposing-viewpoint` で `contradictionState` が現在provider手前へ届いていないことを記録する。
 - [x] `summarize-island-relation` のgrounding allowlistをgeneric IR化で広げてはならないことを記録する。
 - [x] no-doc経路へ疑似Documentや架空IDを作る案を採らない。
-- [ ] `suggest-island-summary` のroute-required meaningをintegration regressionとして固定する。
+- [x] `suggest-island-summary` のroute-required meaningをintegration regressionとして固定し、IRへ配線する。— 対象島の直接メンバーと隣接するrelation/evidenceの意味を保護し、必要意味が投影上限で欠ける場合はfail-closedにした。
 - [ ] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定する。
 - [ ] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。
 - [ ] `suggest-merges` のmerge意味論と受入条件を別Issueまたは本Issueの追記で固定する。
