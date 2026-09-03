@@ -1,0 +1,35 @@
+name: Temporary merge apply save reload E2E
+
+on:
+  push:
+    branches:
+      - test/merge-apply-save-reload-e2e-20260903
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/merge-apply-save-reload-e2e-20260903
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: 03_Implement/frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run merge save/reload E2E
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_accept_apply_save_reload.spec.ts --project=chromium
+      - name: Typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
