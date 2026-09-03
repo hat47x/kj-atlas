@@ -6,13 +6,17 @@ on:
       - test/merge-apply-persistence-e2e-20260903
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply merge suggestion preservation fix
+        run: python .github/scripts/tmp_fix_merge_suggestion_preservation.py
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -32,5 +36,19 @@ jobs:
         run: |
           npx vitest run src/domain/merge_suggestion_apply.test.ts src/domain/representative_merge.test.ts src/domain/merge_traceability.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts
           npm run typecheck
+      - name: Planning document checks
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
       - name: Check diff
         run: git diff --check
+      - name: Commit validated product and E2E changes
+        run: |
+          rm .github/workflows/tmp-verify-merge-apply-persistence-e2e.yml
+          rm .github/scripts/tmp_fix_merge_suggestion_preservation.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: merge判断後も候補を保持して明示適用できるようにする'
+          git push origin HEAD:test/merge-apply-persistence-e2e-20260903
