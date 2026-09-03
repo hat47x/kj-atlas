@@ -1,0 +1,94 @@
+name: 表札候補IRのルート接続（一回限り）
+
+on:
+  push:
+    branches:
+      - work/ai-ir-island-summary
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    name: ai.pyへ最小差分を適用する
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: work/ai-ir-island-summary
+          fetch-depth: 0
+
+      - name: 既知の箇所だけを置換する
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("03_Implement/backend/src/kj_atlas_api/routes/ai.py")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  "from kj_atlas_api.routes.docs import _authorize_request, get_document_row\n",
+                  "from kj_atlas_api.routes.ai_island_summary_ir import (\n"
+                  "    build_suggest_island_summary_ir,\n"
+                  "    render_suggest_island_summary_ir_context,\n"
+                  ")\n"
+                  "from kj_atlas_api.routes.docs import _authorize_request, get_document_row\n",
+              ),
+              (
+                  "def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:\n",
+                  "def _build_island_summary_prompt(\n"
+                  "    payload: SuggestIslandSummaryRequest, ir: dict | None = None\n"
+                  ") -> str:\n",
+              ),
+              (
+                  "    )\n    return \"\\n\".join(lines)\n\n\ndef _parse_island_summary_response(\n",
+                  "    )\n"
+                  "    if ir is not None:\n"
+                  "        lines.extend([\"\", render_suggest_island_summary_ir_context(payload, ir)])\n"
+                  "    return \"\\n\".join(lines)\n\n\ndef _parse_island_summary_response(\n",
+              ),
+              (
+                  "def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:\n"
+                  "    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)\n"
+                  "    model_id = payload.model or resolve_model_for_task(\"suggest_island_summary\")\n",
+                  "def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:\n"
+                  "    # SafeModeの一次検査は維持し、その後にIR側でも同じ境界を検査する。\n"
+                  "    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)\n"
+                  "    ir = build_suggest_island_summary_ir(payload)\n"
+                  "    model_id = payload.model or resolve_model_for_task(\"suggest_island_summary\")\n",
+              ),
+              (
+                  "                prompt=_build_island_summary_prompt(payload),\n"
+                  "                model=model_id,\n",
+                  "                prompt=_build_island_summary_prompt(payload, ir),\n"
+                  "                inputs=ir,\n"
+                  "                model=model_id,\n",
+              ),
+          ]
+
+          for before, after in replacements:
+              count = text.count(before)
+              if count != 1:
+                  raise SystemExit(
+                      f"安全のため置換を中止しました。想定一致数=1、実際={count}: {before[:80]!r}"
+                  )
+              text = text.replace(before, after, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: 表札候補IRの回帰テストを実行する
+        working-directory: 03_Implement/backend
+        run: |
+          python -m pytest tests/test_ai_island_summary_ir.py tests/test_ai_prompt.py -q
+
+      - name: 変更をコミットし補助ワークフローを削除する
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-ai-island-summary-ir-once.yml
+          git add 03_Implement/backend/src/kj_atlas_api/routes/ai.py
+          git commit -m "feat: 表札候補生成を入力IRへ接続する"
+          git push origin HEAD:work/ai-ir-island-summary
