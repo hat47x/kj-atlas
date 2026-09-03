@@ -85,6 +85,8 @@ def test_prompt_context_marks_external_card_as_context_only_and_keeps_human_stat
     context = build_island_summary_ir_context(_payload(), allow_unreviewed_text=False)
     prompt = "\n".join(island_summary_ir_prompt_lines(context))
 
+    assert "direct-member-only rule" in prompt
+    assert "do not introduce new facts from them into the placard" in prompt
     assert "never use these IDs in groundingIds" in prompt
     assert 'id="c3"' in prompt
     assert 'card "c2" --negate--> card "c3"' in prompt
@@ -103,6 +105,40 @@ def test_missing_target_island_fails_closed() -> None:
 
     assert captured.value.code == "target_island_missing"
     assert "missing" not in captured.value.message
+
+
+def test_required_card_text_truncation_fails_closed() -> None:
+    payload = _payload()
+    cards = [
+        Card(
+            id=f"c{i}",
+            text=(f"カード{i}の意味を保持する。" + "あ" * 1970),
+            x=float(i),
+            y=0,
+            textReviewed=True,
+        )
+        for i in range(1, 8)
+    ]
+    doc = payload.doc.model_copy(
+        update={
+            "cards": cards,
+            "edges": [],
+            "islands": [
+                Island(
+                    id="i1",
+                    cardIds=[card.id for card in cards],
+                    titleReviewed=True,
+                )
+            ],
+            "evidenceLinks": [],
+        }
+    )
+    oversized = SuggestIslandSummaryRequest(doc=doc, islandId="i1")
+
+    with pytest.raises(IRGenerationError) as captured:
+        build_island_summary_ir_context(oversized, allow_unreviewed_text=False)
+
+    assert captured.value.code == "required_text_truncated"
 
 
 def test_target_relevant_relation_overflow_fails_closed() -> None:
