@@ -1,9 +1,9 @@
-"""Characterization tripwires for AI-IR-SCALE-01 route-required meaning.
+"""Route-required semantic coverage tripwires for AI-IR-SCALE-01.
 
-These assertions deliberately describe the CURRENT projection at 300-card
-scale.  They are not acceptance criteria for the final remediation.  Keeping
-this baseline makes the eventual fix reviewable: a change should move the
-specific route-required dimensions, not merely increase a global count.
+The scenarios started as characterization of the 300-card baseline. When a
+route-specific remediation lands, its assertions are promoted from "known loss"
+to the contract that must now stay fixed, while unresolved routes keep their
+characterization until their own remediation is chosen.
 """
 
 from scripts.measure_ai_route_required_meaning import measure
@@ -13,22 +13,22 @@ def test_required_meaning_probe_is_deterministic() -> None:
     assert measure() == measure()
 
 
-def test_detect_tail_pair_loses_prior_human_adjudication_under_global_cap() -> None:
+def test_detect_tail_pair_preserves_prior_human_adjudication_under_global_cap() -> None:
     result = measure()["scenarios"]["detect-target-tail"]
 
     assert result["ir"]["truncation"] == {
         "truncated": True,
         "reason_codes": ["MAX_CARDS"],
     }
-    # The two cards are the explicit subject of the route, yet the shared
-    # centrality selection removes them because the 300-card ring ties and IDs
-    # c000..c199 win the deterministic tiebreak.
-    assert result["ir"]["focus_cards_present"] == []
-    # More importantly for AC-1, the already-held contradiction between the
-    # explicit pair is pruned with its endpoints, so the deterministic guard can
-    # no longer recognize the human's previous judgement.
-    assert result["ir"]["held_evidence_present"] is False
-    assert result["ir"]["adjudicated_contradiction_found"] is False
+    # The two cards are the explicit subject of this route. They are reserved
+    # before the global centrality cut, rather than competing with unrelated
+    # document cards for the ordinary top-200 slots.
+    assert result["ir"]["focus_cards_present"] == ["c298", "c299"]
+    # AC-1: preserving both endpoints also keeps their held contradiction
+    # referentially closed, so the deterministic guard can honor the human's
+    # previous judgement without asking the model again.
+    assert result["ir"]["held_evidence_present"] is True
+    assert result["ir"]["adjudicated_contradiction_found"] is True
 
 
 def test_groups_tail_island_becomes_empty_and_tail_hold_leaves_projected_set() -> None:
