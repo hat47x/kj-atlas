@@ -75,6 +75,21 @@ R18で共有IRビルダーへ `required_card_ids` と回帰テストを導入し
 
 GitHub Actionsは現在リポジトリ側で無効化されており、merge commitにもstatus checkは付いていない。このため、本Issueでは「テストコードがmainへ統合された」ことと「CIで実行成功した」ことを混同しない。外部CIの再有効化を本Issueの完了条件には追加しないが、実行可能な環境で当該integration regressionを一度通した記録は完了記録へ残す。
 
+## 仕様への反映（2026-09-03）
+
+`02_Architecture/llm_input_ir_spec.md` §5.2 / §5.2.1 に、実装済みの `required_card_ids` 契約を規範として反映した。あわせて §7.4 に「入力専用制約でありIRの直列化スキーマを変えないため `ir_version=1.2` を維持する」こと、§8 に本Issueへのトレーサビリティを追記した。反映commitは `6fffa38ab2469e53a7fdfcc587799e7d86cde278`。
+
+仕様では次を固定した。
+
+1. callerはroute契約上必須のカードID集合を入力専用の `required_card_ids` としてIRビルダーへ渡してよい。これはIRの直列化フィールドではない。
+2. required集合は正規化済みカード集合の部分集合でなければならず、欠落時は `required_card_missing` でfail-closedする。
+3. required集合の件数が `MAX_CARDS` を超える場合は `required_card_budget_exceeded` でfail-closedする。
+4. `MAX_CARDS` 超過時はrequired集合を先に保持し、残りの `MAX_CARDS - len(required)` 枠を、切り詰め前に一度だけ計算した `centrality.rank` の昇順で埋める。
+5. required指定が空の場合は従来の `rank <= MAX_CARDS` と同じ結果を得る。
+6. `MAX_TEXT_CHARS` の固定240文字化後になおカード除外が必要な場合、required cardはvictimに選ばない。required cardだけでtext予算を超える場合は `required_card_budget_exceeded` とし、required意味を黙って削除しない。
+7. カード除外後のrelation / island membership / evidence linkの参照整合規則は従来どおり適用する。required card同士を結ぶ参照は両端点が残る限り保持される。
+8. `required_card_ids` は入力専用でIR schemaを変更しないため、この規則追加だけでは `ir_version` を繰り上げない。
+
 ## 受入条件
 
 - [x] 300カード規模で `cardA` / `cardB` が通常の中心性選択では200枚の外に出る場合でも、2枚がIRに残る。
@@ -84,22 +99,9 @@ GitHub Actionsは現在リポジトリ側で無効化されており、merge com
 - [x] required指定が無いIR生成では、従来投影と同一SHA-256になる回帰を備える。
 - [x] `MAX_CARDS`、SafeMode二層、PII最小化、structured-text-onlyを変更しない。
 - [x] 同一入力と同一required集合から同一IRを得る決定性を維持する。
-- [ ] `llm_input_ir_spec.md` §5に、task-required cardを切り詰めより先に保持する規則、残り枠の決定方法、text予算に収まらない場合のfail-closedを明記する。
+- [x] `llm_input_ir_spec.md` §5に、task-required cardを切り詰めより先に保持する規則、残り枠の決定方法、text予算に収まらない場合のfail-closedを明記する。
 - [x] backend integration testで300枚規模の再発を防止するテストケースをmainへ統合する。
 - [ ] 実行可能な環境で、共有IR回帰と `/ai/detect-contradiction` の300カードintegration regressionが成功することを記録する。
-
-## 仕様追記で固定する内容
-
-`llm_input_ir_spec.md` §5では、実装済みの次の規則を規範化する。
-
-1. callerはroute契約上必須のカードID集合を入力専用の `required_card_ids` としてIRビルダーへ渡してよい。これはIRの直列化フィールドではない。
-2. required集合は正規化済みカード集合の部分集合でなければならず、欠落時は `required_card_missing` でfail-closedする。
-3. required集合の件数が `MAX_CARDS` を超える場合は `required_card_budget_exceeded` でfail-closedする。
-4. `MAX_CARDS` 超過時はrequired集合を先に保持し、残りの `MAX_CARDS - len(required)` 枠を、切り詰め前に一度だけ計算した `centrality.rank` の昇順で埋める。同順位の決定性は既存規則に従う。
-5. required指定が空の場合は従来の `rank <= MAX_CARDS` と同じ結果を得る。
-6. `MAX_TEXT_CHARS` の固定240文字化後になおカード除外が必要な場合、required cardはvictimに選ばない。required cardだけでtext予算を超える場合は `required_card_budget_exceeded` とし、required意味を黙って削除しない。
-7. カード除外後のrelation / island membership / evidence linkの参照整合規則は従来どおり適用する。required card同士を結ぶ参照は両端点が残る限り保持される。
-8. `required_card_ids` は入力専用でIR schemaを変更しないため、この規則追加だけでは `ir_version` を繰り上げない。
 
 ## 完了境界
 
