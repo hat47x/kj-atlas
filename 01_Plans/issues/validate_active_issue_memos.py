@@ -39,10 +39,10 @@ REQUIRED_FIELDS = [
 
 # DOC-ISSUE-LIFECYCLE-01: R18 observed 58 historical memos whose Status is
 # already Done while the file still lives directly under 01_Plans/issues/.
-# Keep that existing debt non-blocking, but use the count as a temporary
-# ratchet so new completions cannot silently increase it. Reducing the count is
-# always allowed; the long-term canonical location for Done remains done/.
-LEGACY_DONE_AT_ROOT_MAX = 58
+# Keep that existing debt non-blocking, but require this baseline to move down
+# in the same change whenever legacy memos are migrated. Exact equality makes
+# the ratchet monotonic: debt cannot silently grow back after it has shrunk.
+LEGACY_DONE_AT_ROOT_BASELINE = 58
 
 
 @dataclass(frozen=True)
@@ -158,25 +158,33 @@ def discover_done_memos_at_root(root: Path) -> list[Path]:
 def validate_done_memo_location(
     root: Path,
     *,
-    legacy_max: int = LEGACY_DONE_AT_ROOT_MAX,
+    legacy_baseline: int = LEGACY_DONE_AT_ROOT_BASELINE,
 ) -> list[str]:
-    """Prevent Done-at-root legacy debt from increasing.
+    """Keep Done-at-root legacy debt on a monotonic downward ratchet.
 
-    The baseline is intentionally a count ratchet rather than an allowlist.
-    This keeps the R18 legacy set non-blocking while permitting gradual moves
-    into done/. Once that migration is small enough, this rule can be tightened
-    to a concrete allowlist or to zero without changing Status semantics.
+    A count above the checked-in baseline means new debt was introduced. A
+    count below it means debt was removed but the baseline was not lowered in
+    the same change; allowing that would let later changes grow back up to the
+    stale value. Requiring equality makes each intentional migration advance
+    the baseline and prevents regression without freezing a permanent allowlist.
     """
-    done_paths = discover_done_memos_at_root(root)
-    if len(done_paths) <= legacy_max:
+    count = len(discover_done_memos_at_root(root))
+    if count == legacy_baseline:
         return []
 
-    overflow = len(done_paths) - legacy_max
+    if count > legacy_baseline:
+        return [
+            "Done-at-root count exceeds the checked-in R18 legacy baseline "
+            f"({count} > {legacy_baseline}). "
+            "Move newly completed memo(s) to 01_Plans/issues/done/; "
+            "do not increase legacy debt."
+        ]
+
     return [
-        "Done-at-root count exceeds the R18 legacy baseline "
-        f"({len(done_paths)} > {legacy_max}, +{overflow}). "
-        "Move newly completed memo(s) to 01_Plans/issues/done/; "
-        "do not increase the temporary legacy ratchet."
+        "Done-at-root legacy debt decreased but the checked-in baseline was not lowered "
+        f"({count} < {legacy_baseline}). "
+        f"Set LEGACY_DONE_AT_ROOT_BASELINE to {count} in the same migration change "
+        "so the debt cannot grow back later."
     ]
 
 
