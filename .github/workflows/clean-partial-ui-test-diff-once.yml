@@ -1,0 +1,89 @@
+name: Partial UI test diff cleanup (one-shot)
+
+on:
+  push:
+    branches:
+      - plan/ai-merge-partial-contract-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore test from main and apply CRLF-preserving assertions
+        run: |
+          git fetch origin main
+          git checkout origin/main -- 03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts')
+          b = p.read_bytes()
+          replacements = [
+              (
+                  b'    expect(html).toContain(t("merge_suggestions.action.partial"));\r\n',
+                  b'    expect(html).toContain(t("merge_suggestions.action.partial"));\r\n'
+                  b'    expect(html).toContain(t("merge_suggestions.partial_selection.title"));\r\n'
+                  b'    expect(html).toContain(t("merge_suggestions.partial_selection.hint"));\r\n',
+              ),
+              (
+                  b'  it("shows the explicit apply action only for an accepted suggestion", () => {\r\n',
+                  b'  it("shows the explicit apply action for accepted and partially accepted suggestions", () => {\r\n',
+              ),
+              (
+                  b'    expect(pendingHtml).toContain(t("merge_suggestions.action.apply"));\r\n'
+                  b'    expect(pendingHtml).not.toContain(t("merge_suggestions.action.applied"));\r\n\r\n'
+                  b'    const appliedHtml =',
+                  b'    expect(pendingHtml).toContain(t("merge_suggestions.action.apply"));\r\n'
+                  b'    expect(pendingHtml).not.toContain(t("merge_suggestions.action.applied"));\r\n\r\n'
+                  b'    const partialHtml = renderToStaticMarkup(\r\n'
+                  b'      React.createElement(MergeSuggestionsPanel, {\r\n'
+                  b'        ...base,\r\n'
+                  b'        suggestions: [{ ...base.suggestions[0], latestDecision: "partial" as const, representativeResolvedBy: "fallback" as const }],\r\n'
+                  b'      }),\r\n'
+                  b'    );\r\n'
+                  b'    expect(partialHtml).toContain(t("merge_suggestions.action.apply"));\r\n\r\n'
+                  b'    const appliedHtml =',
+              ),
+          ]
+          for old, new in replacements:
+              count = b.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one match, found {count}: {old[:80]!r}')
+              b = b.replace(old, new, 1)
+          p.write_bytes(b)
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Verify focused test and minimal diff
+        run: |
+          cd 03_Implement/frontend
+          npm ci
+          npx vitest run src/ui/MergeSuggestionsPanel.test.ts
+          cd ../..
+          git -c core.whitespace=cr-at-eol diff --check origin/main -- 03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts
+          stats=$(git diff --numstat origin/main -- 03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts)
+          echo "$stats"
+          adds=$(echo "$stats" | awk '{print $1}')
+          dels=$(echo "$stats" | awk '{print $2}')
+          test "$adds" -le 20
+          test "$dels" -le 5
+
+      - name: Remove temporary workflow and push cleanup
+        run: |
+          rm .github/workflows/clean-partial-ui-test-diff-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'test: partial UI回帰の改行差分を清掃する'
+          git push origin HEAD:plan/ai-merge-partial-contract-20260903
