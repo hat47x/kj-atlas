@@ -49,7 +49,7 @@ def test_representative_requests_compare_heaviest_and_non_coordinate_routes() ->
     assert layout.max_tokens == narrative.max_tokens == 1
 
     # 同じ300カード入力について、唯一の座標利用ルートと、座標を使わない代表ルートを
-    # 比較する。これにより、単なるprompt長ではなくルート特性の差を観測できる。
+    # 比較する。単なるプロンプトの長さではなく、ルートごとの入力特性の差を観測する。
     assert len((layout.inputs or {}).get("coordinates", [])) == 200
     assert "coordinates" not in (narrative.inputs or {})
     assert (layout.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
@@ -111,7 +111,7 @@ def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
 
 def test_provider_name_mismatch_fails_before_any_request_is_sent() -> None:
     provider = _UsageProvider()
-    with pytest.raises(ValueError, match="provider名と一致しません"):
+    with pytest.raises(ValueError, match="プロバイダー名と一致しません"):
         token_measure.measure(
             model="named-model",
             expected_provider="different-provider",

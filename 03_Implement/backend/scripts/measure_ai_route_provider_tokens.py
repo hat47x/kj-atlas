@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-"""代表規模のAIルートについて、providerが報告した入力token数を測定する。
+"""代表規模のAIルートで、プロバイダーが報告する入力トークン数を測定する。
 
-`AI-IR-SCALE-01` では、JSONのbyte数などから正確なtoken数を推定してはならない。
-このスクリプトは、既存のscale coverage計測と同じ決定論的な300カード・30島の
-入力を使って2種類の代表promptを生成し、明示的に指定したprovider/modelへ必要に
-応じて送信する。正確な入力token数として採用するのはprovider自身が返したusage
-だけである。
+`AI-IR-SCALE-01` では、JSONのバイト数などから正確なトークン数を推定しない。
+このスクリプトは、既存の代表規模の被覆状況計測と同じ、決定論的な300カード・30島の
+入力から2種類の代表プロンプトを生成する。必要な場合だけ、明示的に指定した
+プロバイダーとモデルへ送信する。正確な入力トークン数として採用するのは、
+プロバイダー自身が返した `usage` の値だけである。
 
-既定動作はdry-runであり、providerの生成も呼び出しも行わない。外部実行には
-`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の両方を必要とする。
-送信するのは `representative_document()` が作る合成データだけであり、利用者の
-実データは使わない。
+既定ではドライランとして動作し、プロバイダーの生成もネットワークへの接続も行わない。
+外部へ実際に送信するには、`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の
+両方を指定する必要がある。送信対象は `representative_document()` が生成する
+合成データだけであり、利用者の実データは使用しない。
 
-比較対象は意図的に性質の異なる2ルートとする。
+比較対象には、意図的に性質の異なる2つのルートを選ぶ。
 
-- `suggest-layout`: 移行済みルートのうち最重量。正規化座標、関係、島構造をIR文脈に含む。
-- `generate-narrative`: 座標を使わない代表ルート。reading orderはDocument由来のまま、
-  論理関係をIRから受け取る。
+- `suggest-layout`: 移行済みルートのうち最も入力が大きい。正規化座標、関係、島構造をIRの文脈に含む。
+- `generate-narrative`: 座標を使わない代表ルート。読み順はDocument由来のまま、論理関係をIRから受け取る。
 
-providerが入力token数を返さない場合は推定で補わない。出力には
+プロバイダーが入力トークン数を返さない場合も、別の方法で推定して補わない。出力には
 `provider-did-not-report-usage` と `measurement_complete=false` を記録する。
 """
 
@@ -58,7 +57,7 @@ class _Provider(Protocol):
 
 
 def build_representative_requests(model: str) -> dict[str, LLMRequest]:
-    """同じ決定論的な代表入力から、比較対象となる2つのpromptを生成する。"""
+    """同じ決定論的な代表入力から、比較対象となる2つのプロンプトを生成する。"""
     doc = representative_document(include_evidence=False)
 
     layout_payload = SuggestLayoutRequest.model_validate({"doc": doc})
@@ -75,8 +74,8 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
             prompt=layout_prompt,
             inputs=layout_ir,
             temperature=0.0,
-            # 入力token数の測定には実質的な回答本文は不要である。
-            # provider層が受理する最小値まで出力上限を下げ、費用と待ち時間を抑える。
+            # 入力トークン数の測定には、実質的な回答本文は不要である。
+            # プロバイダー層が受理する最小値まで出力上限を下げ、費用と待ち時間を抑える。
             max_tokens=1,
             model=model,
         ),
@@ -120,16 +119,16 @@ def measure(
     execute: bool = False,
     provider: _Provider | None = None,
 ) -> dict[str, Any]:
-    """計測レポートを作り、明示的に許可された場合だけproviderを呼び出す。
+    """計測レポートを作成し、明示的に許可された場合だけプロバイダーを呼び出す。
 
-    `expected_provider` と `model` は必須とする。環境に偶然設定されていた別の
-    provider/modelへ黙って送信することを防ぐためである。CLIでは、二重の実行許可を
-    確認した後にだけproviderを解決する。
+    `expected_provider` と `model` は必須である。環境に偶然設定されていた別の
+    プロバイダーやモデルへ、意図せず送信することを防ぐためである。CLIでは、
+    二重の実行許可を確認した後にだけプロバイダーを解決する。
     """
     if not model.strip():
-        raise ValueError("modelには空でないmodel idを明示してください")
+        raise ValueError("`model` には空でないモデルIDを指定してください")
     if not expected_provider.strip():
-        raise ValueError("expected_providerにはprovider名を明示してください")
+        raise ValueError("`expected_provider` にはプロバイダー名を指定してください")
 
     requests = build_representative_requests(model)
     routes = {name: _route_row(req) for name, req in requests.items()}
@@ -142,18 +141,18 @@ def measure(
         "measurement_complete": False,
         "routes": routes,
         "interpretation_boundary": (
-            "正確なtoken数として採用するのはproviderが報告したusageだけとする。"
-            "promptのbyte数・文字数は診断情報であり、token数の推定には使わない。"
+            "正確なトークン数として採用するのは、プロバイダーが報告した `usage` だけとする。"
+            "プロンプトのバイト数と文字数は診断情報であり、トークン数の推定には使わない。"
         ),
     }
 
     if not execute:
         return report
     if provider is None:
-        raise ValueError("execute=Trueの場合はproviderが必要です")
+        raise ValueError("`execute=True` の場合はプロバイダーが必要です")
     if provider.provider_name != expected_provider:
         raise ValueError(
-            "現在設定されているproviderが、計測対象として明示したprovider名と一致しません"
+            "現在設定されているプロバイダーが、計測対象として指定したプロバイダー名と一致しません"
         )
 
     all_measured = True
@@ -200,19 +199,19 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--provider",
         required=True,
-        help="現在設定されているproviderに期待する正確なprovider_name（例: deepseek）。",
+        help="現在設定されているプロバイダーに期待する正確な `provider_name`（例: deepseek）。",
     )
     parser.add_argument(
         "--model",
         required=True,
-        help="2つの代表ルートで共通して使用する正確なmodel id。",
+        help="2つの代表ルートで共通して使用する正確なモデルID。",
     )
     parser.add_argument(
         "--execute",
         action="store_true",
         help=(
-            "合成された代表promptを実際に送信する。"
-            f"{OPT_IN_ENV}=1 も必要。指定しなければネットワークを使わないdry-runとなる。"
+            "合成した代表プロンプトを実際に送信する。"
+            f"{OPT_IN_ENV}=1 も必要であり、指定しなければネットワークを使わないドライランとなる。"
         ),
     )
     return parser
