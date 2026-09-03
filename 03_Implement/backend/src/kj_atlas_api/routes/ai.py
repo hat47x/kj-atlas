@@ -85,6 +85,10 @@ from kj_atlas_api.proposal_decision_repository import (
     register_external_agent_task,
     record_proposal_decision as persist_proposal_decision,
 )
+from kj_atlas_api.routes.ai_island_summary_ir import (
+    build_suggest_island_summary_ir,
+    render_suggest_island_summary_ir_context,
+)
 from kj_atlas_api.routes.docs import _authorize_request, get_document_row
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -436,7 +440,9 @@ def _parse_narrative_check_response(
     return response
 
 
-def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
+def _build_island_summary_prompt(
+    payload: SuggestIslandSummaryRequest, ir: dict | None = None
+) -> str:
     cards_by_id = {card.id: card for card in payload.doc.cards}
     island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
     if island is None:
@@ -516,6 +522,8 @@ def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
             *card_lines,
         ]
     )
+    if ir is not None:
+        lines.extend(["", render_suggest_island_summary_ir_context(payload, ir)])
     return "\n".join(lines)
 
 
@@ -1355,14 +1363,17 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:
+    # SafeModeの一次検査は維持し、その後にIR側でも同じ境界を検査する。
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    ir = build_suggest_island_summary_ir(payload)
     model_id = payload.model or resolve_model_for_task("suggest_island_summary")
     provider_config = _assert_model_allowed(request, db, model_id)
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
-                prompt=_build_island_summary_prompt(payload),
+                prompt=_build_island_summary_prompt(payload, ir),
+                inputs=ir,
                 model=model_id,
                 registered_provider=provider_config,
             )
