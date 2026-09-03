@@ -12,6 +12,7 @@ from kj_atlas_api.llm_input_ir import (
     source_from_document,
 )
 from kj_atlas_api.models_ai import SuggestIslandSummaryRequest
+from kj_atlas_api.settings import settings
 
 
 def build_suggest_island_summary_ir(payload: SuggestIslandSummaryRequest) -> dict[str, Any]:
@@ -29,12 +30,15 @@ def build_suggest_island_summary_ir(payload: SuggestIslandSummaryRequest) -> dic
     if island is None:
         raise HTTPException(status_code=422, detail="islandId does not exist")
 
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
     try:
         return build_llm_input_ir(
             source_from_document(payload.doc),
             include_coordinates=False,
             safe_mode=True,
-            allow_unreviewed_text=bool(payload.allowUnreviewedText),
+            allow_unreviewed_text=allow_unreviewed,
             required_card_ids=tuple(island.cardIds),
         )
     except IRGenerationError as exc:
