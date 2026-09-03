@@ -1888,6 +1888,13 @@ def _suggest_card_groups_ir(payload: SuggestCardGroupsRequest) -> dict:
     every card's `hold_state`. Without it the IR degrades to the flat card list,
     which is the pre-IR request shape and stays supported (AC-11).
 
+    At representative scale, a requested card carrying `hold_state` is itself
+    route-required meaning: it must remain visible so `_card_group_candidates`
+    can honor the human's "not now" decision instead of silently losing it to
+    the global centrality cut. Only held cards in `payload.cards` are reserved;
+    unrelated held cards elsewhere in the document do not consume this route's
+    IR budget.
+
     SafeMode: the caller has ALREADY run `_reject_unreviewed_cards`. The
     `allow_unreviewed_text` argument reproduces that helper's own predicate so
     the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
@@ -1913,6 +1920,13 @@ def _suggest_card_groups_ir(payload: SuggestCardGroupsRequest) -> dict:
     else:
         source = IRSource(doc_id="", doc_version=1, cards=requested)
 
+    requested_ids = {card.id for card in payload.cards}
+    required_hold_ids = tuple(
+        card.id
+        for card in source.cards
+        if card.id in requested_ids and card.hold_state is not None
+    )
+
     try:
         # spec §2.2.1: suggest-card-groups does not request coordinates
         # (ADR-0069 D1=B). Bundling follows the similarity of what cards appeal
@@ -1922,6 +1936,7 @@ def _suggest_card_groups_ir(payload: SuggestCardGroupsRequest) -> dict:
             include_coordinates=False,
             safe_mode=True,
             allow_unreviewed_text=allow_unreviewed,
+            required_card_ids=required_hold_ids,
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
