@@ -22,14 +22,14 @@ def write_issue(path: Path, status: str) -> None:
 
 
 class IssueLifecycleContractTests(unittest.TestCase):
-    def test_legacy_done_at_root_baseline_is_non_blocking(self) -> None:
+    def test_checked_in_done_at_root_baseline_is_non_blocking(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_issue(root / "issue-a.md", "Done")
             write_issue(root / "issue-b.md", "Done")
 
             self.assertEqual(
-                MODULE.validate_done_memo_location(root, legacy_max=2),
+                MODULE.validate_done_memo_location(root, legacy_baseline=2),
                 [],
             )
 
@@ -40,23 +40,24 @@ class IssueLifecycleContractTests(unittest.TestCase):
             write_issue(root / "issue-b.md", "Done")
             write_issue(root / "issue-c.md", "Done")
 
-            errors = MODULE.validate_done_memo_location(root, legacy_max=2)
+            errors = MODULE.validate_done_memo_location(root, legacy_baseline=2)
 
             self.assertEqual(len(errors), 1)
             self.assertIn("3 > 2", errors[0])
             self.assertIn("01_Plans/issues/done/", errors[0])
 
-    def test_legacy_done_at_root_count_may_shrink(self) -> None:
+    def test_baseline_must_be_lowered_when_legacy_count_shrinks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_issue(root / "issue-a.md", "Done")
 
-            self.assertEqual(
-                MODULE.validate_done_memo_location(root, legacy_max=2),
-                [],
-            )
+            errors = MODULE.validate_done_memo_location(root, legacy_baseline=2)
 
-    def test_done_directory_does_not_consume_root_legacy_budget(self) -> None:
+            self.assertEqual(len(errors), 1)
+            self.assertIn("1 < 2", errors[0])
+            self.assertIn("LEGACY_DONE_AT_ROOT_BASELINE to 1", errors[0])
+
+    def test_done_directory_does_not_consume_root_legacy_baseline(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_issue(root / "issue-a.md", "Done")
@@ -64,7 +65,7 @@ class IssueLifecycleContractTests(unittest.TestCase):
             write_issue(root / "done" / "issue-c.md", "Done")
 
             self.assertEqual(
-                MODULE.validate_done_memo_location(root, legacy_max=2),
+                MODULE.validate_done_memo_location(root, legacy_baseline=2),
                 [],
             )
 
