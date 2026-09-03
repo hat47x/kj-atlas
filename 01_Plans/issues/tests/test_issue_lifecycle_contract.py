@@ -69,6 +69,23 @@ class IssueLifecycleContractTests(unittest.TestCase):
                 [],
             )
 
+    def test_unified_validate_enforces_checked_in_done_at_root_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for index in range(MODULE.LEGACY_DONE_AT_ROOT_BASELINE + 1):
+                write_issue(root / f"issue-done-{index:02d}.md", "Done")
+
+            errors = MODULE.validate(root)
+
+            self.assertTrue(
+                any(
+                    f"{MODULE.LEGACY_DONE_AT_ROOT_BASELINE + 1} > "
+                    f"{MODULE.LEGACY_DONE_AT_ROOT_BASELINE}" in error
+                    for error in errors
+                ),
+                errors,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
