@@ -21,5 +21,19 @@ new = '''        suggestions: [{
         }],'''
 if text.count(old) != 1:
     raise SystemExit(f'expected one E2E suggestion fixture, found {text.count(old)}')
-path.write_text(text.replace(old, new, 1), encoding='utf-8')
-print('partial E2E fixture corrected')
+text = text.replace(old, new, 1)
+
+old_open = '''  await expect(workMode.getByText("Select cards for partial acceptance")).toBeVisible();
+
+  const reason = workMode.getByPlaceholder("Record why you accept/partial/reject/defer this proposal");'''
+new_open = '''  const partialSelectionSummary = workMode.getByText("Select cards for partial acceptance");
+  await expect(partialSelectionSummary).toBeVisible();
+  await partialSelectionSummary.click();
+
+  const reason = workMode.getByPlaceholder("Record why you accept/partial/reject/defer this proposal");'''
+if text.count(old_open) != 1:
+    raise SystemExit(f'expected one partial selector opening point, found {text.count(old_open)}')
+text = text.replace(old_open, new_open, 1)
+
+path.write_text(text, encoding='utf-8')
+print('partial E2E fixture corrected and selector expanded')
