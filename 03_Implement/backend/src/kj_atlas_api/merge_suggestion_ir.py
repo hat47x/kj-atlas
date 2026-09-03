@@ -1,19 +1,21 @@
 """`suggest-merges` に必要な意味を、共有LLM入力IRとroute固有文脈へ投影する。
 
 カード統合では本文の近さだけでなく、認識上の位置づけ、島での扱われ方、論理関係、
-根拠・矛盾、既存の表現系譜、出典の同一性が「まとめてよいか」を左右する。一方、
-これらをすべて共有IRの恒久スキーマへ追加すると、他のAI経路までmerge固有の意味へ
-結び付けてしまう。
+根拠・矛盾、既存の表現系譜が「まとめてよいか」を左右する。一方、これらをすべて
+共有IRの恒久スキーマへ追加すると、他のAI経路までmerge固有の意味へ結び付けてしまう。
 
 そこで本モジュールは、共有IRを正規化・SafeMode・上限管理の基底として再利用し、
 その外側に `suggest-merges` 専用の構造化文脈を重ねる。
 
-- hold中または既に `mergedIntoCardId` を持つカードは候補集合から除外する。
+- hold中、`mergedIntoCardId` を持つカード、`canonicalId` を持つcanonicalization元カードは
+  候補集合から除外する。
 - 候補カードは全件をroute-requiredとして保護し、件数・本文・relationが欠ける場合は
   不完全な集合で統合を提案せずfail-closedにする。
-- `claimType`、全島所属、`canonicalId` / `repOf` をroute固有文脈として渡す。
-- `sources` の生文字列はproviderへ送らず、文書内で同一出典かどうかだけを比較できる
-  不透明な `sourceRefs` へ変換する。
+- `claimType`、全島所属、`canonicalId` / `repOf` / `sources` のmerge系譜を
+  route固有文脈として渡す。
+- `Card.sources` は外部出典ではなく、このカードへ統合された元カードIDであるため、
+  `lineage.sourceCardIds` としてカードIDの対応を保つ。外部元記録を指す
+  `Card.meta.source` はproviderへ送らない。
 - 座標は統合可否には使わない。
 
 SafeModeのroute側チェックは別に維持する。本モジュールのIR生成は第二の防御層であり、
@@ -35,7 +37,7 @@ from kj_atlas_api.llm_input_ir import (
 from kj_atlas_api.models import SuggestMergesRequest
 
 
-ROUTE_INPUT_VERSION = "suggest-merges-1"
+ROUTE_INPUT_VERSION = "suggest-merges-2"
 
 
 @dataclass(frozen=True)
@@ -48,12 +50,14 @@ class MergeSuggestionIRContext:
 
 
 def eligible_merge_card_ids(payload: SuggestMergesRequest) -> frozenset[str]:
-    """人間の保留判断と既存merge結果を尊重した候補ID集合を返す。"""
+    """人間の保留判断と既存merge/canonicalization結果を尊重した候補ID集合を返す。"""
 
     return frozenset(
         card.id
         for card in payload.doc.cards
-        if card.holdState is None and not card.mergedIntoCardId
+        if card.holdState is None
+        and not card.mergedIntoCardId
+        and not card.canonicalId
     )
 
 
@@ -86,22 +90,7 @@ def _reduced_islands(source, candidate_ids: frozenset[str]) -> tuple[SourceIslan
     return tuple(islands)
 
 
-def _source_ref_map(payload: SuggestMergesRequest, candidate_ids: frozenset[str]) -> dict[str, str]:
-    """raw sourceをproviderへ出さず、文書内同一性だけを表す安定した参照へ変換する。"""
-
-    raw_sources = sorted(
-        {
-            source
-            for card in payload.doc.cards
-            if card.id in candidate_ids
-            for source in (card.sources or [])
-        }
-    )
-    return {source: f"src-{index:03d}" for index, source in enumerate(raw_sources, start=1)}
-
-
 def _merge_context(payload: SuggestMergesRequest, candidate_ids: frozenset[str]) -> dict[str, Any]:
-    source_refs = _source_ref_map(payload, candidate_ids)
     island_ids_by_card: dict[str, list[str]] = {card_id: [] for card_id in candidate_ids}
     for island in payload.doc.islands:
         for card_id in island.cardIds:
@@ -113,7 +102,6 @@ def _merge_context(payload: SuggestMergesRequest, candidate_ids: frozenset[str])
         (item for item in payload.doc.cards if item.id in candidate_ids),
         key=lambda item: item.id,
     ):
-        refs = sorted({source_refs[source] for source in (card.sources or [])})
         cards.append(
             {
                 "id": card.id,
@@ -124,9 +112,8 @@ def _merge_context(payload: SuggestMergesRequest, candidate_ids: frozenset[str])
                     "mergedIntoCardId": card.mergedIntoCardId,
                     "canonicalId": card.canonicalId,
                     "repOf": sorted(set(card.repOf or [])),
+                    "sourceCardIds": sorted(set(card.sources or [])),
                 },
-                "sourceRefs": refs,
-                "sourceCount": len(refs),
             }
         )
     return {"candidateCards": cards}
