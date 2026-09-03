@@ -9,7 +9,7 @@
 - 対象島の直接メンバーは必ず投影に残す。
 - 直接メンバーに接続するカード間の論理関係・Evidenceの両端も、文脈として投影に残す。
 - IRへ渡すsource自体を対象島とその直接隣接意味へ縮約し、無関係なカードを送らない。
-- 必要な論理関係やEvidenceが投影後に欠けた場合は、プロバイダーを呼ぶ前に停止できる。
+- 必要なカード本文・論理関係・Evidenceが切り詰められる場合は、生成前に停止する。
 - 外部の隣接カードは文脈専用であり、`groundingIds` の許可範囲を広げない。
 - 座標はこの仕事では使わない。
 
@@ -90,9 +90,11 @@ def build_island_summary_ir_context(
     選び得る。そこで先にsourceを、対象島の直接メンバー、そこへ直接つながるカード間の
     論理関係・Evidence、その両端カード、対象島と直上親島へ縮約する。
 
-    さらに、論理関係そのものは`MAX_RELATIONS`で切り詰められる可能性があるため、
-    構築後に対象島へ直接関係する論理関係とEvidenceがすべて残ったことを照合する。
-    欠落時は入力内容をエラーへ反射せず、安定したcodeでfail-closedする。
+    表札候補ではカード本文の限定・留保・語感自体が意味になるため、共有IRの
+    `MAX_TEXT_CHARS`処理でrequired card本文が240文字へ短縮された状態は利用しない。
+    論理関係についても`MAX_RELATIONS`で欠落し得るため、構築後に必要意味がすべて
+    残ったことを照合する。欠落時は入力内容をエラーへ反射せず、安定したcodeで
+    fail-closedする。
     """
 
     source = source_from_document(payload.doc)
@@ -130,6 +132,13 @@ def build_island_summary_ir_context(
         allow_unreviewed_text=allow_unreviewed_text,
         required_card_ids=tuple(sorted(required_ids)),
     )
+
+    truncation_reasons = set(ir.get("truncation", {}).get("reason_codes", []))
+    if "MAX_TEXT_CHARS" in truncation_reasons:
+        raise IRGenerationError(
+            "required_text_truncated",
+            "Task-required card text exceeded the lossless IR text budget",
+        )
 
     projected_card_ids = {item["id"] for item in ir.get("cards", [])}
     if projected_card_ids != required_ids:
@@ -182,7 +191,10 @@ def island_summary_ir_prompt_lines(context: IslandSummaryIRContext) -> list[str]
     ir = context.ir
     direct_ids = context.direct_member_ids
     context_ids = context.context_only_card_ids
-    lines: list[str] = []
+    lines: list[str] = [
+        "The direct-member-only rule above still governs the placard itself and groundingIds.",
+        "Use any adjacent cards below only to interpret recorded relations/evidence; do not introduce new facts from them into the placard.",
+    ]
 
     target_structure = next(
         (item for item in ir.get("islands", []) if item.get("id") == context.target_island_id),
