@@ -35,6 +35,7 @@ class IslandSummaryIRContext:
     """表札候補生成へ渡すIRと、grounding境界を分けて保持する。"""
 
     ir: dict
+    target_island_id: str
     direct_member_ids: frozenset[str]
     context_only_card_ids: frozenset[str]
 
@@ -48,8 +49,8 @@ def _target_member_ids(payload: SuggestIslandSummaryRequest) -> frozenset[str]:
 
 def _is_card_relation(relation) -> bool:
     return (
-        (relation.from_kind in (None, "card"))
-        and (relation.to_kind in (None, "card"))
+        relation.from_kind in (None, "card")
+        and relation.to_kind in (None, "card")
         and relation.type in RELATION_TYPES
     )
 
@@ -119,6 +120,7 @@ def build_island_summary_ir_context(
 
     return IslandSummaryIRContext(
         ir=ir,
+        target_island_id=payload.islandId,
         direct_member_ids=direct_member_ids,
         context_only_card_ids=frozenset(required_ids - set(direct_member_ids)),
     )
@@ -133,11 +135,7 @@ def island_summary_ir_prompt_lines(context: IslandSummaryIRContext) -> list[str]
     lines: list[str] = []
 
     target_structure = next(
-        (
-            item
-            for item in ir.get("islands", [])
-            if set(item.get("card_ids", [])) == set(direct_ids)
-        ),
+        (item for item in ir.get("islands", []) if item.get("id") == context.target_island_id),
         None,
     )
     if target_structure is not None:
