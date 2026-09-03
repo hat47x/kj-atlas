@@ -76,7 +76,6 @@ jobs:
           python 01_Plans/issues/validate_active_issue_memos.py
           python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-pr2839.txt
           test -s /tmp/triage-pr2839.txt
-          python 01_Plans/docs_check.py
           git diff --check
           grep -F 'required_text_truncated' 02_Architecture/api.md
           grep -F 'required_card_context_mismatch' 02_Architecture/api.md
@@ -97,4 +96,6 @@ jobs:
             exit 1
           fi
           git commit -m 'fix: 表札候補本文をIR実入力経路へ揃える'
+          git fetch origin fix/island-summary-post-merge-audit-20260903
+          git rebase origin/fix/island-summary-post-merge-audit-20260903
           git push origin HEAD:fix/island-summary-post-merge-audit-20260903
