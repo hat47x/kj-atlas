@@ -121,21 +121,23 @@ new_test = """  // The newly created representative is intentionally unreviewed,
   // correctly blocks a new AI merge-suggestion request at this point. Persistence
   // is therefore verified through the actual GET/render boundary below, not by
   // recreating an ephemeral suggestion preview after reload.
-  const primaryFlow = page.locator('[data-ui-region=\"primary-flow\"]');
 """.replace("\n", test_eol)
 if test_text.count(old_test) != 1:
     raise SystemExit(f"reload persistence assertion: expected one match, got {test_text.count(old_test)}")
 test_text = test_text.replace(old_test, new_test, 1)
 
 # Source cards remain in the persisted document and were verified above through
-# their metadata/canonicalId/repOf lineage. The default canonical view is allowed to
-# hide source cards, so after reload the UI assertion targets the representative
-# that proves the saved document crossed the actual GET/render boundary.
+# their metadata/canonicalId/repOf lineage. The default canonical view may hide
+# source cards, while card text is rendered inside the transformed Canvas rather
+# than the primary-flow shell. Verify the representative by CardView's stable
+# data-card-id boundary and its rendered text.
 old_visibility = """  await expect(primaryFlow.getByText(\"利用者の待ち時間が長いという観察\", { exact: true })).toBeVisible();
   await expect(primaryFlow.getByText(\"利用者の待ち時間が長いという別の観察\", { exact: true })).toBeVisible();
   await expect(primaryFlow.getByText(\"利用者の待ち時間が長いという観察が複数ある\", { exact: true })).toBeVisible();
 """.replace("\n", test_eol)
-new_visibility = """  await expect(primaryFlow.getByText(\"利用者の待ち時間が長いという観察が複数ある\", { exact: true })).toBeVisible();
+new_visibility = """  const representativeCard = page.locator(`[data-card-id=\"${representative?.id ?? \"missing-representative\"}\"]`);
+  await expect(representativeCard).toBeVisible();
+  await expect(representativeCard).toContainText(\"利用者の待ち時間が長いという観察が複数ある\");
 """.replace("\n", test_eol)
 if test_text.count(old_visibility) != 1:
     raise SystemExit(f"canonical reload visibility: expected one match, got {test_text.count(old_visibility)}")
@@ -144,4 +146,4 @@ test_text = test_text.replace(old_visibility, new_visibility, 1)
 with test_path.open("w", encoding="utf-8", newline="") as handle:
     handle.write(test_text)
 
-print("merge decision/apply preview preservation and canonical SafeMode reload E2E patched")
+print("merge decision/apply preview preservation and Canvas reload E2E patched")
