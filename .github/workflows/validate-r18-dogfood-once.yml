@@ -1,0 +1,40 @@
+name: Temporary R18 dogfood validation
+
+on:
+  push:
+    branches:
+      - dogfood/r18-active-memo-state-drift-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: dogfood/r18-active-memo-state-drift-20260904
+          fetch-depth: 0
+      - name: Update R18 navigation index
+        run: python .github/scripts/index_r18_dogfood_once.py
+      - name: Validate planning and dogfood documents
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          git diff --check
+      - name: Remove one-shot files and commit validated R18 records
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/scripts/index_r18_dogfood_once.py
+          rm .github/workflows/validate-r18-dogfood-once.yml
+          git diff --check
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'dogfood: record R18 merge contract boundary analysis'
+          git push origin HEAD:dogfood/r18-active-memo-state-drift-20260904
