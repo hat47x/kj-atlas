@@ -1,5 +1,7 @@
 """`suggest-island-summary` のIR境界を外部プロバイダーなしで固定する。"""
 
+from types import SimpleNamespace
+
 import pytest
 
 from kj_atlas_api.island_summary_ir import (
@@ -9,6 +11,7 @@ from kj_atlas_api.island_summary_ir import (
 from kj_atlas_api.llm_input_ir import IRGenerationError
 from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, Transform
 from kj_atlas_api.models_ai import SuggestIslandSummaryRequest
+from kj_atlas_api.routes import ai as ai_route
 
 
 def _payload() -> SuggestIslandSummaryRequest:
@@ -95,6 +98,35 @@ def test_prompt_context_marks_external_card_as_context_only_and_keeps_human_stat
     assert '"placardCardId": "c1"' in prompt
     assert '"reviewState": "human_reviewed"' in prompt
     assert 'id="c4"' not in prompt
+
+
+def test_route_passes_only_reduced_ir_and_context_to_provider(monkeypatch) -> None:
+    payload = _payload().model_copy(update={"model": "model-test"})
+    captured = {}
+
+    monkeypatch.setattr(ai_route, "_assert_model_allowed", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(ai_route, "_resolve_audit_tenant", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(ai_route, "_audit_llm_trace", lambda *_args, **_kwargs: None)
+
+    def _fake_generate(request):
+        captured["request"] = request
+        return SimpleNamespace(
+            raw_text=(
+                '{"candidates":[{"summaryText":"確認負担を減らしつつ安全性を保つ必要がある",'
+                '"groundingIds":["c1","c2"]}],"warnings":[]}'
+            )
+        )
+
+    monkeypatch.setattr(ai_route, "generate_with_fallback", _fake_generate)
+
+    response = ai_route.suggest_island_summary(payload, object(), object())
+
+    llm_request = captured["request"]
+    assert llm_request.inputs is not None
+    assert {item["id"] for item in llm_request.inputs["cards"]} == {"c1", "c2", "c3"}
+    assert 'id="c3"' in llm_request.prompt
+    assert 'id="c4"' not in llm_request.prompt
+    assert response.candidates[0].groundingIds == ["c1", "c2"]
 
 
 def test_missing_target_island_fails_closed() -> None:
