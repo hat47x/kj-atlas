@@ -94,6 +94,10 @@ from kj_atlas_api.opposing_viewpoint_ir import (
     build_opposing_viewpoint_ir_context,
     opposing_viewpoint_ir_prompt_lines,
 )
+from kj_atlas_api.merge_suggestion_ir import (
+    MergeSuggestionIRContext,
+    build_merge_suggestion_ir_context,
+)
 from kj_atlas_api.routes.docs import _authorize_request, get_document_row
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -1127,11 +1131,65 @@ def _eligible_merge_cards(payload: SuggestMergesRequest):
     ]
 
 
-def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
-    card_lines = [
-        f'- id="{card.id}", text={json.dumps(card.text)}'
-        for card in _eligible_merge_cards(payload)
-    ]
+def _build_merge_prompt(
+    payload: SuggestMergesRequest,
+    ir_context: MergeSuggestionIRContext | None = None,
+) -> str:
+    """意味保存型の統合候補promptを、productionではroute固有入力から描画する。
+
+    ``ir_context=None`` は既存の単体テスト・補助呼出しとの互換経路である。
+    production routeは常に ``MergeSuggestionIRContext`` を渡し、候補本文・構造・
+    route固有metadataを ``LLMRequest.inputs`` と同じ入力から描画する。
+    """
+    context_lines: list[str] = []
+    if ir_context is None:
+        card_lines = [
+            f'- id="{card.id}", text={json.dumps(card.text)}'
+            for card in _eligible_merge_cards(payload)
+        ]
+    else:
+        ir = ir_context.document_ir
+        card_lines = [
+            f'- id="{card["id"]}", text={json.dumps(card["text"], ensure_ascii=False)}'
+            for card in ir.get("cards", [])
+            if card["id"] in ir_context.candidate_card_ids
+        ]
+
+        context_lines.extend(
+            [
+                "Merge-specific candidate context (recorded structure, not permission to merge):",
+                *[
+                    "- " + json.dumps(item, ensure_ascii=False, sort_keys=True)
+                    for item in ir_context.inputs["mergeContext"]["candidateCards"]
+                ],
+                "sourceRefs are opaque document-local equality markers only. Same ref means the recorded source string was the same; infer no person, URL, authority, truth, or content from the token itself.",
+                "islandIds are context only. Different islands do not automatically forbid a merge, and the same island does not automatically permit one.",
+                "lineage is recorded context. Never invent canonicalId, repOf, or merge ancestry.",
+                "Logical relations between eligible candidates:",
+                *(
+                    [
+                        f'- card "{item["from"]}" --{item["type"]}--> card "{item["to"]}"'
+                        for item in ir.get("relations", [])
+                    ]
+                    or ["- (none)"]
+                ),
+                "Evidence between eligible candidates:",
+                *(
+                    [
+                        f'- card "{item["from_card_id"]}" --evidence:{item["type"]}--> '
+                        f'card "{item["to_card_id"]}"'
+                        + (
+                            f' (contradictionState={item["contradiction_state"]})'
+                            if item.get("contradiction_state")
+                            else ""
+                        )
+                        for item in ir.get("evidence_links", [])
+                    ]
+                    or ["- (none)"]
+                ),
+            ]
+        )
+
     instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
 
     return "\n".join(
@@ -1154,9 +1212,9 @@ def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
             f"Instruction: {instruction}",
             "Cards eligible for integration consideration:",
             *(card_lines or ["- (none)"]),
+            *context_lines,
         ]
     )
-
 
 
 def _validate_merge_suggestion_semantics(
@@ -1243,7 +1301,10 @@ def _validate_merge_suggestion_semantics(
                     )
 
 def _parse_merge_suggestions(
-    raw_text: str, source_doc: SuggestMergesRequest
+    raw_text: str,
+    source_doc: SuggestMergesRequest,
+    *,
+    allowed_card_ids: set[str] | frozenset[str] | None = None,
 ) -> list[MergeSuggestion]:
     try:
         parsed = json.loads(raw_text)
@@ -1261,7 +1322,11 @@ def _parse_merge_suggestions(
             status_code=422, detail="LLM response included more than 10 suggestions"
         )
 
-    known_card_ids = {card.id for card in source_doc.doc.cards}
+    known_card_ids = (
+        set(allowed_card_ids)
+        if allowed_card_ids is not None
+        else {card.id for card in source_doc.doc.cards}
+    )
     parsed_suggestions: list[MergeSuggestion] = []
     seen_group_ids: set[str] = set()
 
@@ -1468,12 +1533,30 @@ def suggest_layout(payload: SuggestLayoutRequest, request: Request, db: Session 
     dependencies=[Depends(require_tenant_scoped_api_precondition)],
 )
 def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session = Depends(get_db)) -> SuggestMergesResponse:
+    # SEC-AI-SAFEMODE-01/02: route側guardを一次防御として維持する。
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+
+    # 候補が1枚以下なら統合という仕事自体が成立しない。providerへ不要な本文を送らない。
+    if len(_eligible_merge_cards(payload)) < 2:
+        return SuggestMergesResponse(suggestions=[])
+
+    allow_unreviewed = bool(
+        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
+    )
+    try:
+        ir_context = build_merge_suggestion_ir_context(
+            payload,
+            allow_unreviewed_text=allow_unreviewed,
+        )
+    except IRGenerationError as exc:
+        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_merges",
-                prompt=_build_merge_prompt(payload),
+                prompt=_build_merge_prompt(payload, ir_context),
+                inputs=ir_context.inputs,
             )
         )
     except ProviderDisabledError as exc:
@@ -1483,7 +1566,11 @@ def suggest_merges(payload: SuggestMergesRequest, request: Request, db: Session 
 
     _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "suggest_merges", llm_response)
 
-    suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
+    suggestions = _parse_merge_suggestions(
+        llm_response.raw_text,
+        payload,
+        allowed_card_ids=ir_context.candidate_card_ids,
+    )
     return SuggestMergesResponse(suggestions=suggestions)
 
 
