@@ -280,11 +280,17 @@ def build_llm_input_ir(
     include_coordinates: bool = False,
     safe_mode: bool = True,
     allow_unreviewed_text: bool = False,
+    required_card_ids: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Build `LLMRequest.inputs` per `llm_input_ir_spec.md` §2-§7.
 
     `include_coordinates` implements ADR-0069 D1=B: the caller declares whether
     this endpoint needs relative placement (§2.2.1). Only `suggest-layout` does.
+
+    `required_card_ids` is an input-only route contract. A caller may name cards
+    whose meaning is indispensable for that operation; those cards are reserved
+    before deterministic size truncation. The ids are not serialized into the
+    IR, and an empty sequence preserves the historical projection byte-for-byte.
     """
     # spec §7.1 -- checked first so a relaxed-SafeMode caller never even reaches
     # normalization. `constraints.safe_mode` is `const true`; there is no IR
@@ -304,6 +310,18 @@ def build_llm_input_ir(
     _enforce_pii_minimization(cards, meta)
 
     card_ids = {card.id for card in cards}
+    required = frozenset(required_card_ids)
+    if not required <= card_ids:
+        raise IRGenerationError(
+            "required_card_missing",
+            "A route-required card is not present in the normalized IR source.",
+        )
+    if len(required) > MAX_CARDS:
+        raise IRGenerationError(
+            "required_card_budget_exceeded",
+            "The route-required card set exceeds the IR card budget.",
+        )
+
     relations = _normalize_relations(source.relations, card_ids)
     islands = _normalize_islands(source.islands, card_ids)
     evidence_links = _normalize_evidence_links(source.evidence_links, card_ids)
@@ -312,7 +330,12 @@ def build_llm_input_ir(
     # set, before any truncation.
     rank_by_card = _rank_by_card(cards, relations)
     cards, relations, islands, evidence_links, truncation = _apply_truncation(
-        cards, relations, islands, evidence_links, rank_by_card
+        cards,
+        relations,
+        islands,
+        evidence_links,
+        rank_by_card,
+        required_card_ids=required,
     )
 
     ir: dict[str, Any] = {"ir_version": IR_VERSION}
@@ -974,6 +997,8 @@ def _apply_truncation(
     islands: list[dict[str, Any]],
     evidence_links: list[dict[str, Any]],
     rank_by_card: dict[str, int],
+    *,
+    required_card_ids: frozenset[str] = frozenset(),
 ) -> tuple[
     list[_NormalizedCard],
     list[dict[str, str]],
@@ -991,7 +1016,16 @@ def _apply_truncation(
     truncation.truncated = True  # step 1: cluster_candidates are dropped.
 
     if over_cards:  # step 2
-        keep = {card.id for card in cards if rank_by_card.get(card.id, 1) <= MAX_CARDS}
+        # Route-required cards are input semantics, not importance inferred by
+        # the projection. Reserve them first, then fill the remaining budget by
+        # the historical centrality order. With no required ids this is exactly
+        # the former `rank <= MAX_CARDS` selection.
+        keep = set(required_card_ids)
+        ranked_ids = sorted(rank_by_card, key=lambda card_id: (rank_by_card[card_id], card_id))
+        for card_id in ranked_ids:
+            if len(keep) >= MAX_CARDS:
+                break
+            keep.add(card_id)
         cards = [card for card in cards if card.id in keep]
         relations, islands, evidence_links = _prune_references(
             keep, relations, islands, evidence_links
@@ -1009,14 +1043,31 @@ def _apply_truncation(
             card.char_len = len(card.text_norm)
         truncation.reasons.add("MAX_TEXT_CHARS")
 
-        # step 5: 240 chars per card can still exceed the budget; drop the least
-        # central cards until it fits, keeping at least one (schema minItems 1).
+        # step 5: 240 chars per card can still exceed the budget. Route-required
+        # cards are not eligible victims; discard only non-required cards from
+        # the least central end. Without required ids this preserves the former
+        # ordering and minimum-one-card rule.
         while len(cards) > 1 and sum(card.char_len for card in cards) > MAX_TEXT_CHARS:
-            victim = max(cards, key=lambda card: (rank_by_card.get(card.id, 1), card.id))
+            candidates = [card for card in cards if card.id not in required_card_ids]
+            if not candidates:
+                raise IRGenerationError(
+                    "required_card_budget_exceeded",
+                    "Route-required cards alone exceed the IR text budget.",
+                )
+            victim = max(
+                candidates,
+                key=lambda card: (rank_by_card.get(card.id, 1), card.id),
+            )
             cards = [card for card in cards if card.id != victim.id]
             keep = {card.id for card in cards}
             relations, islands, evidence_links = _prune_references(
                 keep, relations, islands, evidence_links
+            )
+
+        if sum(card.char_len for card in cards) > MAX_TEXT_CHARS:
+            raise IRGenerationError(
+                "required_card_budget_exceeded",
+                "Route-required cards cannot fit within the IR text budget.",
             )
 
     return cards, relations, islands, evidence_links, truncation
@@ -1109,8 +1160,7 @@ def held_card_ids(ir: dict[str, Any]) -> list[str]:
 def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
     """Aggregate the IR's card-level `relations` up to island level.
 
-    The Python counterpart of `frontend/src/domain/island_edge_aggregate.ts`
-    `getDerivedIslandEdges()`. `AI-IR-PROJECTION-01` AC-7 asked for a TS<->Python
+    The Python counterpart of the frontend's `getDerivedIslandEdges()`. `AI-IR-PROJECTION-01` AC-7 asked for a TS<->Python
     equivalence check on the projection layer; this is the function pair it now
     has (`tests/test_derived_island_relations_ts_equivalence.py` and
     `frontend/src/domain/island_edge_aggregate.python_equivalence.test.ts` share
