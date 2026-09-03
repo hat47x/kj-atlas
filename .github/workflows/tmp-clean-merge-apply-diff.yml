@@ -50,7 +50,7 @@ jobs:
           PY
       - name: Assert minimal App diff
         run: |
-          git diff --check origin/main -- 03_Implement/frontend/src/App.tsx
+          git -c core.whitespace=cr-at-eol diff --check origin/main -- 03_Implement/frontend/src/App.tsx
           stats=$(git diff --numstat origin/main -- 03_Implement/frontend/src/App.tsx)
           echo "$stats"
           adds=$(echo "$stats" | awk '{print $1}')
