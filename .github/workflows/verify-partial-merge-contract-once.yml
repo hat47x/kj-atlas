@@ -18,7 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply partial merge patch
-        run: python .github/scripts/apply_partial_merge_contract_once.py
+        run: |
+          python .github/scripts/apply_partial_merge_contract_once.py
+          python .github/scripts/fix_partial_e2e_fixture_once.py
 
       - uses: actions/setup-node@v4
         with:
@@ -62,6 +64,7 @@ jobs:
         run: |
           rm .github/workflows/verify-partial-merge-contract-once.yml
           rm .github/scripts/apply_partial_merge_contract_once.py
+          rm .github/scripts/fix_partial_e2e_fixture_once.py
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
