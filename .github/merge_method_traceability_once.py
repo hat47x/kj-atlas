@@ -28,7 +28,7 @@ script = "\n".join(lines) + "\n"
 
 section_start = script.index("# Append-only audit record carries the same method when known.")
 section_end = script.index("# App decision + audit wiring.", section_start)
-corrected = r'''# Append-only audit record carries the same method when known.
+corrected = r"""# Append-only audit record carries the same method when known.
 audit_path = '03_Implement/frontend/src/domain/merge/decision_audit_events.ts'
 audit = read_text(audit_path)
 newline = '\r\n' if '\r\n' in audit else '\n'
@@ -120,6 +120,6 @@ audit_test = audit_test.replace(old_fragment, new_fragment, 1)
 audit_test = audit_test.replace(old_fragment, new_fragment, 1)
 write_text(audit_test_path, audit_test)
 
-'''
+"""
 script = script[:section_start] + corrected + script[section_end:]
 exec(compile(script, "<merge-method-traceability>", "exec"))
