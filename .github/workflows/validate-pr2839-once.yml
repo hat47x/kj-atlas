@@ -31,9 +31,35 @@ jobs:
           pytest tests/test_ai_llm_input_ir_coverage.py -q
           pytest tests/ -k 'island_summary or safe_mode or llm_input_ir' -q
 
-      - name: backend全体の回帰を確認する
+      - name: mainでも既知4件が再現することを確認する
+        run: |
+          git worktree add /tmp/kj-atlas-main origin/main
+          python -m venv /tmp/kj-main-venv
+          /tmp/kj-main-venv/bin/python -m pip install -q -e '/tmp/kj-atlas-main/03_Implement/backend[test]'
+          cd /tmp/kj-atlas-main/03_Implement/backend
+          set +e
+          /tmp/kj-main-venv/bin/pytest \
+            tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys \
+            -q | tee /tmp/main-known-failures.txt
+          test_code=${PIPESTATUS[0]}
+          set -e
+          if [ "$test_code" -eq 0 ]; then
+            echo 'Expected the four known main failures, but they all passed.'
+            exit 1
+          fi
+          grep -F '4 failed' /tmp/main-known-failures.txt
+
+      - name: 既知4件を除くbackend全体回帰を確認する
         working-directory: 03_Implement/backend
-        run: pytest tests/ -q
+        run: |
+          pytest tests/ -q \
+            --deselect=tests/test_ai_route_required_meaning_scale.py::test_layout_tail_cards_remain_but_their_relative_structure_is_pruned \
+            --deselect=tests/test_database_support_declarations.py::test_driver_extras_markers_tests_and_ci_stay_synchronized \
+            --deselect=tests/test_database_support_declarations.py::test_every_external_verified_backend_ci_image_matches_registry \
+            --deselect=tests/test_settings_env_prefix_migration.py::test_backend_ci_uses_canonical_database_test_keys
 
       - name: 変更箇所を静的検査する
         working-directory: 03_Implement/backend
@@ -49,7 +75,7 @@ jobs:
           git diff --check
           grep -F 'required_text_truncated' 02_Architecture/api.md
           grep -F 'required_card_context_mismatch' 02_Architecture/api.md
-          grep -F 'backend全体の回帰を実行して確認した' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'backend全体はmainでも再現する既知4件を基準差分として切り分け' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
 
       - name: 検証用ファイルを除去して監査差分だけをコミットする
         run: |
