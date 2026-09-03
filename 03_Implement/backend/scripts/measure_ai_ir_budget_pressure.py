@@ -2,8 +2,8 @@
 """代表300カード入力に対する、現在のIR文字数予算の圧力を決定論的に測る。
 
 このスクリプトはtoken数を推定しない。`AI-IR-SCALE-01` で比較中の方式A
-（global capの引上げ）について、`MAX_CARDS` だけを300へ広げても
-`MAX_TEXT_CHARS` が別の上限として残ることを確認するためのcharacterizationである。
+（全体上限の引上げ）について、`MAX_CARDS` だけを300へ広げても
+`MAX_TEXT_CHARS` が別の上限として残ることを確認するための現状計測である。
 
 対象は `measure_ai_route_prompt_coverage.py` と同じ300カード・30島の合成入力とする。
 実provider、ネットワーク、利用者の実データは一切使わない。
