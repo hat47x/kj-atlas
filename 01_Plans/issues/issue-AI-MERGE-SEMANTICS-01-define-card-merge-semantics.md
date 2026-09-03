@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-STAGE5-SCOPE-01` Stage 5
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `02_Architecture/api.md`
+- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/frontend/src/domain/representative_merge.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/domain/merge_traceability.ts`, `03_Implement/frontend/src/App.tsx`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `02_Architecture/api.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `AI-IR-PROJECTION-01`, `AI-IR-STAGE5-SCOPE-01`
 - Expected verification level: integration
 
@@ -196,6 +196,30 @@ AIへの入力と応答検査について、意味境界を実装へ反映した
 
 一方、**提案を人間が採用した後の実merge適用経路**について、元カード・`sources`・残差・canonical/representation系譜が十分に保持されることは、この変更ではまだ完了根拠を得ていない。`mergeMethod` / `residuals` をresponse契約へ追加するかどうかも、適用経路の監査後に判断する。
 
+## 適用経路監査（2026-09-03）
+
+提案生成後のUIと既存の代表カード作成処理を追跡した結果、次を確認した。
+
+- `MergeSuggestionsPanel` の `accept` / `partial` / `reject` / `defer` は、現状では `appendMergeSuggestionDecision()` と監査イベントを記録するところまでであり、`accept` や `partial` を選んでも代表カードの生成やsourceカードの系譜更新は行わない。
+- 実際の代表カード作成には別経路の `createRepresentativeMerge()` が使われている。従来実装は元カード自体を残していたが、`repOf` / `mergedIntoCardId` 系と `sources` / `canonicalId` 系が分かれており、適用結果だけから全source系譜を一貫してたどるには弱かった。
+- 従来の `rewireMembershipAndEdges` は、sourceカードの島所属を代表カードへ置き換え、既存edgeの端点も代表カードへ直接書き換えていた。このため、表示上は扱いやすくなる一方、統合前の島文脈や「どのsourceカードに付いていたrelationか」という原形を失う余地があった。
+
+PR #2847 では、まず実merge関数そのものを意味保存側へ寄せる。
+
+- sourceカードは物理削除せず、`mergedIntoCardId` と `canonicalId` を同じ代表カードへ向ける。
+- 代表カードには直接の `repOf` に加え、過去の代表カードが持つ系譜を含めた `sources` を保持する。
+- sourceカードの本文・`meta`・KA情報・既存系譜はそのまま残し、統合結果から戻して比較できるようにする。
+- 指定sourceの一部欠落、hold、既に別代表へ統合済みのsource、候補間の `negate` / `contradicts`、異なる既知 `claimType` は適用時にもfail-closedにする。
+- 同一の明示的 `claimType` が全sourceにある場合だけ代表カードへ引き継ぎ、未分類が混ざる場合は推測しない。
+- rewireを選んだ場合も、元の島所属とedgeは削除・上書きせず、代表カードのmembershipと外部relationの投影を追加する。候補内部relationは代表カードのself-loopへ変換しない。
+
+これにより、**実mergeのデータ変換自体**については元カード・source・主要なmerge/canonical系譜・元relationへ戻れる土台を作る。ただし、Issueはまだ完了させない。残る作業は次のとおり。
+
+1. `accept` を実merge適用へ接続する際のトランザクション順序を決め、decision/auditの代表カードsnapshotが実際の代表カードを指すようにする。
+2. `partial` は現契約に「採用するsourceの部分集合」がないため、意味を決めずに自動適用しない。必要なら `selectedCardIds` のUI/契約を明示してから適用する。
+3. 残差を独立フィールドとして保持する必要があるか、元sourceカードを残すことを残差の一次記録とするかを、実適用UIの戻し比較と合わせて決める。AIが残差を創作する契約にはしない。
+4. decision → merge apply → traceability → 保存／再読込までを一つのintegration regressionとして固定する。
+
 ## 受入条件
 
 - [x] `suggest-merges` とKJ法のグループ編成・表札生成の違いを定義する。
@@ -209,7 +233,7 @@ AIへの入力と応答検査について、意味境界を実装へ反映した
 - [x] promptを意味保存型の統合契約へ更新する。
 - [x] LLM応答後の決定論的merge guardを実装する。
 - [x] 同一カードが複数候補へ出た場合のfail-closedをテストで固定する。
-- [ ] 元カード・sources・残差・merge/canonical系譜が採用後も追跡可能であることを既存適用経路と統合テストで確認する。
+- [ ] 元カード・sources・残差・merge/canonical系譜が採用後も追跡可能であることを、AI提案の採用から実適用・保存／再読込まで含むintegration regressionで確認する。
 - [x] SafeMode二層、PII最小化、structured-text-only、IR上限のfail-closedを確認する。
 - [x] `02_Architecture/api.md` と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
 - [ ] 最終成果物を自然な日本語として全文ドラフトし直す。
