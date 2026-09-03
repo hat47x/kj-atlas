@@ -1,0 +1,28 @@
+name: Temporary merge lineage verification
+
+on:
+  push:
+    branches:
+      - feat/merge-lineage-sources-20260903
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 03_Implement/backend/pyproject.toml
+      - name: Install backend test dependencies
+        run: python -m pip install -e '03_Implement/backend[test]'
+      - name: Ruff changed backend files
+        run: python -m ruff check 03_Implement/backend/src/kj_atlas_api/merge_suggestion_ir.py 03_Implement/backend/tests/test_ai_merge_ir.py
+      - name: Merge IR regression
+        run: python -m pytest -q 03_Implement/backend/tests/test_ai_merge_ir.py 03_Implement/backend/tests/test_ai_llm_input_ir_coverage.py
