@@ -33,9 +33,9 @@
 | `suggest-island-summary` | `DocumentV1`、対象島、利用者の違和感 | 対象島の全直接メンバー、表札への異議、島の論理的位置、矛盾・根拠の有無 | **IR移行済み（2026-09-03、merge後監査完了）**。対象島に必要な意味をroute固有投影で保護し、直接メンバー本文もIRからprovider promptへ描画する。必要意味の欠落時はfail-closed |
 | `propose-opposing-viewpoint` | `DocumentV1`、対象カード | 対象カード、根拠・矛盾、人間が既に判断した矛盾状態、関連する反対所見 | **IR移行済み（2026-09-03）**。対象カードと直接接続するrelation/evidenceを必須意味として保護し、人間の `contradictionState` を新規AI発見と区別する。対象カード本文もIRから最終promptへ描画する |
 | `suggest-merges` | `DocumentV1`、全カード | 類似カード候補。既存の島・hold・対立関係を「mergeを避ける制約」として扱うべきかは未決 | **受入条件を先に定める**。IRに情報があるという理由だけでmerge判断へ使わない |
-| `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **別契約またはhybrid候補**。現在の限定済みgrounding集合をgeneric IRで広げない |
-| `refine-card-text` | 単一カード本文、任意context。Documentなし | 元の意味を保った言い換え、レビュー状態 | **IR例外候補**。現行IRへ入れるには存在しないカードIDや疑似Documentを作る必要がある |
-| `suggest-document-title` | 島タイトル列、カード本文サンプル、現在タイトル。Documentなし | 人間側で選ばれた概要情報から複数の同格タイトル候補を作る | **IR例外候補**。現在のtask-localな要約入力をDocument IRへ偽装しない |
+| `summarize-island-relation` | `DocumentV1` に加え、許可済みgrounding card/edgeとその本文 | 明示された2島、relation type、許可されたgrounding集合 | **限定grounding契約を維持するhybrid境界（2026-09-03確定）**。generic IRで許可集合を広げない。構造上の具体的欠落が観測されるまでは現行task-local入力を維持 |
+| `refine-card-text` | 単一カード本文、任意context。Documentなし | 元の意味を保った言い換え、レビュー状態 | **Document IR適用外（2026-09-03確定）**。request自体をtask-local structured inputとし、疑似Document・架空IDは作らない |
+| `suggest-document-title` | 島タイトル列、カード本文サンプル、現在タイトル。Documentなし | 人間側で選ばれた概要情報から複数の同格タイトル候補を作る | **Document IR適用外（2026-09-03確定）**。呼出側が選んだ概要情報をtask-local structured inputとして維持し、Document IRへ偽装しない |
 
 ## 経路ごとの分析
 
@@ -118,12 +118,13 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 
 この限定は安全境界であり、generic IRへ移すために文書全体をpromptへ広げてはならない。
 
-候補は次の2つに限る。
+ADR-0069の2026-09-03追補により、この経路は**限定grounding契約を正本とするhybrid境界**に確定した。
 
-- **現行のtask-local structured inputを明示的な例外として維持する。**
-- **hybridにする。** IRはSafeMode・関係語彙・参照整合の検査に使うが、最終promptは現在の許可済みgrounding集合だけを描画する。
-
-後者を採る場合も、IRで生成されるrelation idと、入力の永続edge idの対応が必要である。現在のIR relation idは `type:from:to` から生成されるため、`groundingEdgeIds` をそのまま置き換えられない。ここを曖昧にして実装しない。
+- `groundingCardIds` / `groundingEdgeIds` と対応する `cardTexts` / `edgeTexts` は、Document全体より強いallowlistである。generic IRを使うことで、この集合を広げない。
+- 現行応答がgrounding IDを入力allowlistの部分集合へ制限している境界を維持する。
+- 将来IRを併用する場合も、SafeMode・関係語彙・参照整合等の補助検査に限定し、provider-bound contentは許可済みgrounding集合だけから描画する。
+- IRで生成されるrelation idと永続edge idは同一ではないため、`groundingEdgeIds` をIR relation idへ暗黙置換しない。
+- 現時点では、この限定入力に構造上の具体的欠落が観測されていない。したがってIR使用率を上げるためだけの実装変更は行わない。
 
 ### 6. `refine-card-text`
 
@@ -131,7 +132,7 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 
 現行IRの `cards[*].id` は空文字を禁止する。IRを使うためだけに架空IDを作ると、追跡可能性のためのIDに虚偽の識別子を持ち込むことになる。requestへ新しいID必須項目を追加するのも、言い換え処理のためだけなら契約を不必要に重くする。
 
-したがって本経路は、ADR-0069が対象とする「Document由来の構造をAIへ届ける経路」とは性質が異なる。**明示的な例外とするか、document IRとは別のtask-local structured input契約を定義する候補**として扱う。
+ADR-0069の2026-09-03追補により、本経路は**Document IRの適用外**に確定した。`RefineCardTextRequest` 自体をtask-local structured inputとし、`cardText` / `context` / `textReviewed` / model governanceの現行境界を維持する。IR使用率のために疑似Documentや架空card IDを導入しない。
 
 ### 7. `suggest-document-title`
 
@@ -139,7 +140,7 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 
 入力はすでに「文書全体」ではなく、呼出側が選んだ概要情報である。これをgeneric IRへ載せるには、島タイトルや匿名の本文断片を架空のカード・島として再構成する必要があり、元の契約より意味が不明瞭になる。
 
-この経路も `refine-card-text` と同じく、**明示的な例外またはtask-local structured input候補**とする。もし「タイトル提案でも全Documentの構造を見せたい」という製品要件が生じるなら、先にrequest契約そのものをDocument-backedへ変更するIssueを起票する。
+ADR-0069の2026-09-03追補により、本経路も**Document IRの適用外**に確定した。現在の `islandTitles` / `cardTexts` / `currentTitle` は呼出側が選んだ概要情報であり、このtask-local structured inputを正本とする。もし「タイトル提案でも全Documentの構造を見せたい」という製品要件が生じるなら、その時点でrequest契約をDocument-backedへ変更するIssueを起票し、IR適用を再判定する。
 
 ## Stage 5の暫定分類
 
@@ -161,20 +162,20 @@ Stage 5の第2経路として `propose-opposing-viewpoint` をIRへ移行した�
 
 KJ上の「統合」の意味を決めず、IRにある情報を便利そうだから足すことをしない。
 
-### ADR-0069の適用範囲を確認してから扱う
+### ADR-0069の適用境界を確定済み
 
-5. `summarize-island-relation`
-6. `refine-card-text`
-7. `suggest-document-title`
+5. `summarize-island-relation` — 限定grounding契約を正本とするhybrid境界。generic Document IRで許可集合を広げない。
+6. `refine-card-text` — Document IR適用外。task-local structured inputを正本とする。
+7. `suggest-document-title` — Document IR適用外。呼出側が選んだ概要情報をtask-local structured inputとして扱う。
 
-これらをgeneric document IRへ無理に寄せず、明示的な例外またはtask-local structured inputを許すかをADR-0069側で確認する。特にno-doc 2経路へ疑似Documentを作る実装は採らない。
+この3経路を形式上のIR移行件数へ含めるためだけの改修は行わない。Stage 5の完了はDocument IRの11/11達成ではなく、各routeで採択された構造化入力契約をprovider-bound contentが迂回しないことによって判断する。
 
 ## 推奨する実装順序
 
 1. **完了: `suggest-island-summary` の必要意味をintegration regressionで固定し、AI実入力をIRへ揃えた。** merge後監査で専用回帰と関連回帰を実行し、二層SafeMode、provider promptと `LLMRequest.inputs` の直接メンバー本文一致、Document生本文の迂回送出防止を確認した。backend全体ではmainでも同じ4件が失敗することを別環境で再現し、その4件を除く全テストが成功することを確認した。
 2. **完了: `propose-opposing-viewpoint` を状態付きevidenceへ移した。** 対象カードと直接接続する意味を保護し、`contradictionState` を新規発見と既決判断の区別に使う。対象カード本文もIRからprovider promptへ描画する。
-3. **次: `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を短い追補で明確にする。**
-4. `suggest-merges` の利用仕事と受入条件を決める。
+3. **完了: `summarize-island-relation` / no-doc 2経路について、ADR-0069の適用範囲を追補した。** 限定groundingはgeneric IRより強い境界として維持し、no-doc 2経路はDocument IR適用外とした。
+4. **次: `suggest-merges` の利用仕事と受入条件を決める。**
 5. `check-narrative` は `AI-IR-SCALE-01` のA2/B/C判断後に移行方式を決める。
 
 この順序は「実装しやすい順」ではなく、現在のpromptと仕事のあいだに意味上の欠落が明確な順を優先している。
@@ -191,7 +192,7 @@ KJ上の「統合」の意味を決めず、IRにある情報を便利そうだ�
 - [x] `suggest-island-summary` のroute-required meaningをintegration regressionとしてコードへ固定し、IRへ配線する。— 対象島の直接メンバーと隣接するrelation/evidenceだけへsourceを縮約し、必要意味が投影上限で欠ける場合はfail-closedにした。
 - [x] `suggest-island-summary` の追加・既存回帰を実行し、結果を確認する。— 専用IR、既存prompt、経路被覆、関連SafeModeを実行して成功を確認した。backend全体はmainでも再現する既知4件を基準差分として切り分け、その4件を除く全回帰に新規失敗が無いことを確認した。`AI-IR-STAGE5-SUMMARY-PROMPT-01` の直接メンバー本文IR描画回帰も同時に確認した。
 - [x] `propose-opposing-viewpoint` のroute-required meaningをintegration regressionとして固定し、IRへ配線する。— 対象カードと直接接続するrelation/evidenceを保護し、人間の `contradictionState` を状態付きで保持した。対象カード本文もIRから最終promptへ描画し、生本文の迂回を回帰で禁止した。
-- [ ] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。
+- [x] ADR-0069にDocument IRの適用範囲とtask-local structured inputの扱いを追補する。— Document-backed構造経路、限定grounding経路、no-doc task-local経路を分け、IR化件数を完了指標にしないことを明記した。
 - [ ] `suggest-merges` のmerge意味論と受入条件を別Issueまたは本Issueの追記で固定する。
 - [ ] `check-narrative` のscale投影方式を `AI-IR-SCALE-01` の結果と整合させる。
 
