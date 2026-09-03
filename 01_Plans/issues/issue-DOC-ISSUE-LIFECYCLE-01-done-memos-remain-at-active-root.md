@@ -37,7 +37,7 @@
 - `done/` 配下の完了メモは上限へ数えず、既存legacyを移して件数が減る場合も基準値の更新を要求しない。
 - 回帰テストとして、58件の許容、59件目の拒否、57件への減少、`done/` 配下の非計上を確認した。焦点テスト4件はローカルで成功した。
 - `01_Plans/issues/README.md` に、新規完了時は `Status: Done` の記録と `done/` への移動を同じ変更で行う規則を追記した。
-- リポジトリ全体の `docs_check.py` はPR上のCIで確認し、成功後に本IssueをDoneへ移す。
+- 現行mainの `.github` には `workflows/` がなく、PR #2855 にActions run / check runは自動生成されなかった。したがって、存在しないCIを成功条件として扱わず、本Issueはリポジトリ全体の `python 01_Plans/docs_check.py` を実行できる環境での確認まで `In Progress` とする。
 
 ## 優先度
 
