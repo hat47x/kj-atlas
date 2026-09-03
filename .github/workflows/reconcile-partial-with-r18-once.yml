@@ -19,6 +19,8 @@ jobs:
 
       - name: Merge latest main without committing yet
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin main
           git merge --no-commit --no-ff origin/main
 
@@ -76,8 +78,6 @@ jobs:
         run: |
           rm .github/workflows/reconcile-partial-with-r18-once.yml
           rm .github/scripts/reconcile_partial_with_r18_once.py
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git commit -m 'merge: R18後のpartial契約をlatest mainへ統合する'
           git push origin HEAD:plan/ai-merge-partial-contract-20260903
