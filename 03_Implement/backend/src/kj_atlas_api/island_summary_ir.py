@@ -8,6 +8,7 @@
 
 - 対象島の直接メンバーは必ず投影に残す。
 - 直接メンバーに接続するカード間の論理関係・Evidenceの両端も、文脈として投影に残す。
+- IRへ渡すsource自体を対象島とその直接隣接意味へ縮約し、無関係なカードを送らない。
 - 必要な論理関係やEvidenceが投影後に欠けた場合は、プロバイダーを呼ぶ前に停止できる。
 - 外部の隣接カードは文脈専用であり、`groundingIds` の許可範囲を広げない。
 - 座標はこの仕事では使わない。
@@ -19,11 +20,12 @@ SafeModeのroute側チェックは別に維持する。ここでのIR SafeMode�
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from kj_atlas_api.llm_input_ir import (
     IRGenerationError,
     RELATION_TYPES,
+    SourceIsland,
     build_llm_input_ir,
     source_from_document,
 )
@@ -55,17 +57,42 @@ def _is_card_relation(relation) -> bool:
     )
 
 
+def _relevant_islands(source, target_island_id: str) -> tuple[SourceIsland, ...]:
+    """対象島と、その直上の親島だけを構造文脈として残す。
+
+    親島はtargetの`parent_island_id`をIRで保持するために必要だが、その親島のカード群を
+    表札候補の入力へ広げる必要はない。そのため親島はID・表札・親子関係だけを残し、
+    `card_ids`と`placard_card_id`は空にして、first-match-winsの所属規則にも干渉させない。
+    """
+
+    islands_by_id = {island.id: island for island in source.islands}
+    target = islands_by_id.get(target_island_id)
+    if target is None:
+        return ()
+
+    islands: list[SourceIsland] = [target]
+    parent_id = target.parent_island_id
+    if parent_id is not None:
+        parent = islands_by_id.get(parent_id)
+        if parent is not None:
+            islands.append(replace(parent, card_ids=(), placard_card_id=None))
+    return tuple(islands)
+
+
 def build_island_summary_ir_context(
     payload: SuggestIslandSummaryRequest,
     *,
     allow_unreviewed_text: bool,
 ) -> IslandSummaryIRContext:
-    """対象島に直接関係する意味を保護してIRを構築する。
+    """対象島に直接関係する意味だけでIRを構築する。
 
-    `required_card_ids` で両端カードを保護しても、論理関係そのものは
-    `MAX_RELATIONS` で切り詰められる可能性がある。そのため、構築後に対象島へ直接
-    関係する論理関係とEvidenceがすべて残ったことを照合する。欠落時は入力内容を
-    エラーへ反射せず、安定したcodeでfail-closedする。
+    `required_card_ids`だけで必要カードを保護しても、共有IRは文書中の他カードを追加で
+    選び得る。そこで先にsourceを、対象島の直接メンバー、そこへ直接つながるカード間の
+    論理関係・Evidence、その両端カード、対象島と直上親島へ縮約する。
+
+    さらに、論理関係そのものは`MAX_RELATIONS`で切り詰められる可能性があるため、
+    構築後に対象島へ直接関係する論理関係とEvidenceがすべて残ったことを照合する。
+    欠落時は入力内容をエラーへ反射せず、安定したcodeでfail-closedする。
     """
 
     source = source_from_document(payload.doc)
@@ -88,13 +115,28 @@ def build_island_summary_ir_context(
             required_ids.add(link.from_card_id)
             required_ids.add(link.to_card_id)
 
-    ir = build_llm_input_ir(
+    reduced_source = replace(
         source,
+        cards=tuple(card for card in source.cards if card.id in required_ids),
+        relations=tuple(relevant_relations),
+        islands=_relevant_islands(source, payload.islandId),
+        evidence_links=tuple(relevant_evidence),
+    )
+
+    ir = build_llm_input_ir(
+        reduced_source,
         include_coordinates=False,
         safe_mode=True,
         allow_unreviewed_text=allow_unreviewed_text,
         required_card_ids=tuple(sorted(required_ids)),
     )
+
+    projected_card_ids = {item["id"] for item in ir.get("cards", [])}
+    if projected_card_ids != required_ids:
+        raise IRGenerationError(
+            "required_card_context_mismatch",
+            "Task-required card context did not fit in the IR projection",
+        )
 
     projected_relation_keys = {
         (item["from"], item["to"], item["type"])
