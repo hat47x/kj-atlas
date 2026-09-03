@@ -44,6 +44,7 @@ type AppendMergeSuggestionDecisionInput = {
   groupId: string;
   decision: MergeSuggestionDecision;
   cardIds: string[];
+  selectedCardIds?: string[];
   mergedTextDraft: string;
   editedText: string;
   rationale?: string;
@@ -62,6 +63,32 @@ function assertNonEmptyString(value: string, field: string): void {
 
 function isMergeSuggestionDecision(value: unknown): value is MergeSuggestionDecision {
   return typeof value === "string" && MERGE_SUGGESTION_DECISIONS.includes(value as MergeSuggestionDecision);
+}
+
+function resolveSelectedCardIds(
+  decision: MergeSuggestionDecision,
+  cardIds: string[],
+  selectedCardIds: string[] | undefined,
+): string[] {
+  if (decision !== "partial") {
+    return cardIds;
+  }
+  if (!selectedCardIds) {
+    throw new Error("partial decision requires selectedCardIds");
+  }
+
+  const selected = sortCardIds(selectedCardIds);
+  if (selected.length < 2) {
+    throw new Error("partial selectedCardIds must contain at least two ids");
+  }
+  if (selected.length >= cardIds.length) {
+    throw new Error("partial selectedCardIds must be a strict subset of cardIds");
+  }
+  const cardIdSet = new Set(cardIds);
+  if (selected.some((cardId) => !cardIdSet.has(cardId))) {
+    throw new Error("partial selectedCardIds must be a subset of cardIds");
+  }
+  return selected;
 }
 
 export function appendMergeSuggestionDecision(
@@ -83,9 +110,14 @@ export function appendMergeSuggestionDecision(
   if (sortedCardIds.length === 0) {
     throw new Error("cardIds must contain at least one id");
   }
+  const selectedCardIds = resolveSelectedCardIds(
+    input.decision,
+    sortedCardIds,
+    input.selectedCardIds,
+  );
 
   const decisionId = idFactory();
-  const originTrace = resolveDecisionOriginTrace(document, sortedCardIds);
+  const originTrace = resolveDecisionOriginTrace(document, selectedCardIds);
   const entry: MergeSuggestionDecisionEntry = {
     id: decisionId,
     decisionId,
@@ -95,7 +127,7 @@ export function appendMergeSuggestionDecision(
     decidedAt: now,
     decidedBy: "human",
     cardIds: sortedCardIds,
-    selectedCardIds: sortedCardIds,
+    selectedCardIds,
     mergedTextDraft: input.mergedTextDraft,
     editedText: input.editedText,
     note: input.decisionReason ?? input.editedText,
