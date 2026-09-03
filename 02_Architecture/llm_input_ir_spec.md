@@ -671,19 +671,30 @@ A2 contract test では次を機械判定する。
 超過時は次を上から順に適用し、各段階で上限内か判定する。
 
 1. `cluster_candidates` を全削除（任意フィールドのため）。
-2. `centrality.rank` 低位カードからカードを除外。
+2. `centrality.rank` 低位カードからカードを除外。ただし、callerがroute契約上の必須対象として `required_card_ids` を明示した場合は、その集合を先に保持し、残り枠だけを中心性順位で埋める。
 3. 除外カードに接続する relation を除外。
 4. なお超過する場合は `text` を `text_norm` 先頭 240 文字へ固定切り詰め。
 
 **ir_version 1.1 での明文化**（AC-3「同一入力から同一切り詰め結果」を機械的に満たすため。1.0 は各段階の対象・順序・参照整合の扱いが未定義であった）:
 
 5. 判定は切り詰め前の値で1度だけ行う。`over_cards = len(cards) > MAX_CARDS`、`over_relations = len(relations) > MAX_RELATIONS`、`over_text = sum(char_len) > MAX_TEXT_CHARS`。いずれかが真なら段階1を実施する。
-6. 段階2の「低位」は §3.2 の `rank` が**大きい**方（中心性が低い方）である。除外の順序を決める `rank` は**切り詰め前の全カード集合に対して1度だけ**算出し、以後の全段階でその値を使う（段階ごとに再計算すると除外順が入力規模に依存して揺れる）。`rank <= MAX_CARDS` のカードだけを残す。理由コード `MAX_CARDS`。
+6. 段階2の「低位」は §3.2 の `rank` が**大きい**方（中心性が低い方）である。除外の順序を決める `rank` は**切り詰め前の全カード集合に対して1度だけ**算出し、以後の全段階でその値を使う（段階ごとに再計算すると除外順が入力規模に依存して揺れる）。`required_card_ids` が空なら従来どおり `rank <= MAX_CARDS` のカードだけを残す。required集合がある場合はrequired cardを先に保持し、`MAX_CARDS - len(required_card_ids)` の残り枠を `rank` の小さい順で埋める。理由コード `MAX_CARDS`。
    - IR へ出力する `graph_summary` と `cluster_candidates` は、**全段階の除外を終えた後の集合に対して算出する**。除外順の根拠に使う `rank`（切り詰め前）と、出力する `centrality`（切り詰め後）は別物である。こうしないと `graph_summary` が IR に存在しないカードを参照し、IR が参照的に閉じなくなる。
-7. 段階3では、除外カードを参照する `coordinates` / `islands[*].card_ids` / `evidence_links` も同時に除外する（参照整合を IR 内で保つ）。島は `card_ids` が空になっても保持する（§2.2A 規則7）。
+7. 段階3では、除外カードを参照する `coordinates` / `islands[*].card_ids` / `evidence_links` も同時に除外する（参照整合を IR 内で保つ）。島は `card_ids` が空になっても保持する（§2.2A 規則7）。required card同士を結ぶ relation / evidence linkは、両端点が残る限り同じ参照整合規則によって保持される。
 8. 段階3の後もなお `len(relations) > MAX_RELATIONS` の場合、`(type, from, to)` 昇順で先頭 `MAX_RELATIONS` 件だけを残す。理由コード `MAX_RELATIONS`。
 9. 段階4は `text` だけでなく `text_norm` も `text_norm[:240]` へ揃え、`char_len = len(text_norm)` を再計算する。`char_len` を据え置くと `sum(char_len)` が減らず上限判定が永久に成立しない。理由コード `MAX_TEXT_CHARS`。
-10. 段階4の後もなお `sum(char_len) > MAX_TEXT_CHARS` の場合、`rank` の大きいカードから1枚ずつ除外し（そのたびに段階3と同じ参照整合の除外を行う）、上限内へ収める。カードは最低1枚残す（§4.2 `cards.minItems = 1`）。理由コードは `MAX_TEXT_CHARS` のまま（新しいコードは増やさない）。
+10. 段階4の後もなお `sum(char_len) > MAX_TEXT_CHARS` の場合、`rank` の大きいカードから1枚ずつ除外し（そのたびに段階3と同じ参照整合の除外を行う）、上限内へ収める。required cardはこの追加除外の候補にしてはならない。required card以外をすべて除外しても `MAX_TEXT_CHARS` に収まらない場合は `required_card_budget_exceeded` でfail-closedし、route必須の意味を黙って削除しない。required指定が無い場合は従来どおりカードを最低1枚残す（§4.2 `cards.minItems = 1`）。理由コードは `MAX_TEXT_CHARS` のまま（新しいtruncation理由コードは増やさない）。
+
+### 5.2.1 route契約上の必須カード（`required_card_ids`）
+
+`required_card_ids` は、callerが「このAI操作の対象そのもの」として明示したカードを、汎用的な中心性順位による切り詰めから保護するための**IRビルダー入力専用制約**である。AIやIRビルダーが重要そうなカードを推測して追加する仕組みではない。
+
+1. `required_card_ids` はIRへ直列化しない。§4.2 のJSON Schemaに新しいフィールドを追加するものではない。
+2. required集合は正規化済み `cards.id` の部分集合でなければならない。欠落IDを含む場合は `required_card_missing` でfail-closedする。失敗応答へ欠落IDそのものを反射してはならない。
+3. required集合の件数が `MAX_CARDS` を超える場合は `required_card_budget_exceeded` でfail-closedする。
+4. required集合の入力順は選別結果へ影響させない。同一入力と同一required集合からは、required IDの列挙順が異なっても同一IRを生成する。
+5. required集合が空の場合、§5.2の切り詰め結果は本規則追加前と同一でなければならない。既存fixtureのcanonical JSON / SHA-256を変えてはならない。
+6. 現時点で `POST /ai/detect-contradiction` は `cardA.id` / `cardB.id` をrequired集合として渡す。この2枚と、その両端点に対応する `confirmed` / `held` の `evidence_links` は、人間が既に下した判断を再提案しないためのroute固有の必要意味である。
 
 ### 5.3 記録
 
@@ -777,6 +788,8 @@ A2 contract test では次を機械判定する。
 | `1.1` | 2026-08-30 | D1（`coordinates` 任意化）、D3（`islands` 追加）、`evidence_links` 追加、`meta` をIRトップレベルへ明記、§3/§5 の計算規則の明文化 | `ADR-0069`, `issue-AI-IR-PROJECTION-01` |
 | `1.2` | 2026-08-30 | `cards[*].hold_state` 追加（§2.1 規則8） | `issue-AI-IR-PROJECTION-01` AC-2（Stage 2: `suggest-card-groups`） |
 
+**2026-09-03 の `required_card_ids` 明文化では版数を上げない。** `required_card_ids` はIRビルダーへ渡す入力専用制約であり、§4.2 の直列化スキーマへフィールドを追加しない。required指定が空の経路では従来のcanonical JSON / SHA-256を維持し、required指定がある経路でも既存フィールドの部分集合を選ぶ規則だけが変わる。このため、消費側が `ir_version` で判別すべき新しいIR表現は生じず、現行 `1.2` を維持する。根拠は `AI-IR-FOCUS-PRESERVATION-01` とする。
+
 **なぜ 1.2 か（`hold_state` の追加）。** `AI-IR-PROJECTION-01` AC-2 は「`suggest-card-groups` が `holdState` を受け取り、保留中のカードを新規グループへ含めない」ことを要求する。1.1 の IR にはカードの hold 状態を表す場所が無く、**既存フィールドで代替できない** — `islands`（§2.2A）は確定した所属を、`evidence_links`（§2.2B）は根拠・矛盾を、`relations`（§2.3）はカード間の論理関係を表すが、いずれも「このカードの扱いを人間が保留している」という単項の状態を表現できない。IR を迂回して `DocumentV1` を直接読めば実装はできるが、それは `ADR-0069`（IR がAI入力の実経路である）の主張そのものを崩す。
 
 1.1→1.2 も**加算的**であり、2.0 に当たらない:
@@ -806,6 +819,7 @@ A2 contract test では次を機械判定する。
 - エスカレーション運用: `02_Architecture/llm_escalation_policy.html`。
 - 版数 1.1 の決定根拠: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（D1=B / D2=A / D3=A / D4=A）。
 - 版数 1.2（`cards[*].hold_state`）の決定根拠: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md` AC-2 と「結果（Stage 2）」節。`holdState` の意味の正本は `02_Architecture/schemas.md` §14.1。
+- route必須カードの切り詰め保護: `01_Plans/issues/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`。共有IR実装は `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`、`detect-contradiction` の配線は `03_Implement/backend/src/kj_atlas_api/routes/ai.py` を参照する。
 - 実装課題: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`。
 - SafeMode の第一層（本仕様 §7.1 が置き換えてはならない既存実装）: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`。
 - カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。
