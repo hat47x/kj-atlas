@@ -152,6 +152,11 @@ test("recorded merge accept can be explicitly applied, saved, and restored with 
   await applyButton.click();
   await expect(suggestion.getByRole("button", { name: "Merge applied" })).toBeDisabled();
 
+  // Save is a core action outside the modal Work mode surface. Leave Work mode
+  // through its real Escape close path before exercising the actual save flow.
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-ui-region="work-mode"]')).toBeHidden();
+
   const saveButton = page.locator(SAVE);
   await expect(saveButton).toBeEnabled();
   await saveButton.click();
