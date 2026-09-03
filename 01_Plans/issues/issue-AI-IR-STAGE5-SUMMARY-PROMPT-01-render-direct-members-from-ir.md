@@ -22,6 +22,12 @@ PR #2838で `suggest-island-summary` は `LLMRequest.inputs` にLLM投入IRを�
 
 SafeMode、PII最小化、`required_text_truncated` 等はprovider呼出前のゲートとして機能するため、この欠陥はそれらを無効化するものではない。ただし、IRで行う本文正規化と、providerが実際に受け取る本文が一致しない状態は残る。
 
+## 完了状態の扱い
+
+本IssueがOpenである間、`suggest-island-summary` は「IR構造文脈の配線と回帰確認は済んだが、AI実入力経路の移行は未完了」と扱う。専用pytestやbackend回帰が成功しても、それだけを理由に `AI-IR-STAGE5-SCOPE-01` 上で本経路を実装完了へ昇格しない。
+
+merge後監査用の一回限りworkflow/scriptが、本Issueの発見前の前提で「回帰成功＝Stage 5第1経路完了」と記録しようとする場合、その自動更新は採用せず、本Issue解消後の事実に合わせて正本文書を更新する。
+
 ## 対応方針
 
 直接メンバーの**本文**はIRから描画する。既存の仕事上の順序、task-local入力、応答契約は維持する。
