@@ -1,0 +1,37 @@
+name: Temporary lane C issue lifecycle verification
+
+on:
+  push:
+    branches:
+      - chore/lane-c-complete-issue-lifecycle-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: chore/lane-c-complete-issue-lifecycle-20260904
+          fetch-depth: 0
+      - name: Run repaired planning checks
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          git diff --check
+      - name: Remove one-shot workflow after successful verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-c-complete-issue-lifecycle-once.yml
+          git diff --check
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'ci: remove verified lane C lifecycle workflow'
+          git push origin HEAD:chore/lane-c-complete-issue-lifecycle-20260904
