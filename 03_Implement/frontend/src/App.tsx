@@ -65,6 +65,7 @@ import {
 } from "./domain/representative_visual_cue_assets";
 import { updateCardHoldStateAndShelf, type HoldStateSelection } from "./domain/hold_state_ops";
 import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
+import { applyRecordedMergeSuggestionDecision } from "./domain/merge_suggestion_apply";
 import { moveCardToIsland } from "./domain/island_edge_aggregate";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
@@ -3630,6 +3631,57 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       setStatusMessage(t("app.status.merge_suggestion.decision_recorded", { decision: decisionLabel }));
     },
     [applyDocumentChange, document, mergeSuggestions]
+  );
+
+
+  const handleApplyRecordedMergeSuggestion = useCallback(
+    (groupId: string, options: { isTrusted: boolean }) => {
+      if (!document) {
+        return;
+      }
+      if (!options.isTrusted) {
+        setMergeSuggestionError(t("app.status.merge_suggestion.trusted_interaction_required"));
+        return;
+      }
+
+      const latestDecision = getLatestMergeSuggestionDecisionByGroup(
+        document.mergeSuggestionDecisions,
+      ).get(groupId);
+      if (!latestDecision) {
+        setMergeSuggestionError(t("app.status.merge_suggestion.apply_failed", { code: "decision_not_recorded" }));
+        return;
+      }
+
+      const result = applyRecordedMergeSuggestionDecision(document, latestDecision);
+      if (!result.ok) {
+        setMergeSuggestionError(t("app.status.merge_suggestion.apply_failed", { code: result.code }));
+        return;
+      }
+
+      const changed = applyDocumentChange(
+        result.document,
+        t("app.history.merge_suggestion_applied"),
+        { preserveSuggestionPreview: true },
+      );
+      if (!changed) {
+        return;
+      }
+
+      setMergeSuggestions((current) =>
+        current.map((suggestion) =>
+          suggestion.groupId === groupId
+            ? {
+                ...suggestion,
+                representativeCardId: result.representativeCardId,
+                representativeResolvedBy: "repOf",
+                representativeSourceCount: result.sourceCardIds.length,
+              }
+            : suggestion,
+        ),
+      );
+      setMergeSuggestionError(null);
+    },
+    [applyDocumentChange, document],
   );
 
   const handleExport = useCallback(() => {
@@ -11668,6 +11720,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 cardsById={cardsById}
                 onMergedTextChange={handleMergeSuggestionTextChange}
                 onDecide={handleRecordMergeSuggestionDecision}
+                onApplyAccepted={handleApplyRecordedMergeSuggestion}
                 latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
                 auditEvents={mergeDecisionAuditEvents}
                 onExportAuditEvents={handleExportMergeDecisionAuditEvents}
