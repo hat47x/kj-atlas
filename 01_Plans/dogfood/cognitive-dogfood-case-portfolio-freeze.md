@@ -210,16 +210,20 @@ P0終了前後に、次を実際に確認した。
 
 最初の有効なraw runより前のfreeze検証で、次の入力不一致・比較完全性上の欠陥を検出し、補正した。いずれも実験結果を見てから変更したものではない。
 
-1. **Case 003 source manifestのADRファイル名転記**  
+1. **Case 003 source manifestのADRファイル名転記**
+
    ADR 7件について、意味上の資料選択は正しかったが、ファイル名が固定commit上の実blobと一致していなかった。`validate_dogfood_docs.py`の実commit照合で検出し、同じADR番号の正しいpathへ補正した。source件数、問い、snapshotは変更していない。
 
-2. **Case 002の反証許容文のArm間差**  
+2. **Case 002の反証許容文のArm間差**
+
    Required output直後の反証許容文がOrdinaryだけ詳細で、B/C/Dでは短縮されていた。launch treatment validatorで検出し、4Armすべてを「現状維持・特定操作だけ自律化・AI支援削減のいずれも許容」に統一した。fixed question、10項目のrequired output、product / skill snapshot、treatmentは変更していない。
 
-3. **共通skill bundleから別Caseの存在を推測できるmetadata**  
+3. **共通skill bundleから別Caseの存在を推測できるmetadata**
+
    3Case共通B/D skill bundleの操作者専用manifestがCase 001由来であるため、builderが`manifestId=case-001-skill-ja@...`をArm側metadataへコピーすると、Case 002/003へ別Caseの存在が漏れることを12 artifact化後のpackage監査で発見した。canonical skill 12件、skill commit、B/D treatmentは変更せず、Arm側metadataだけを`cognitive-dogfood-skill-ja@<skill SHA>`へCase非依存化し、`caseScopedMetadataIncluded=false`とした。Case 002 Arm Bの実ZIPでCase identityが入っていないことを確認した。
 
-4. **Run intakeとblind package入口の完全性**  
+4. **Run intakeとblind package入口の完全性**
+
    初期のrun intakeには、Required outputの一部見出しだけでも通る、見出しだけ・空template値でも通る、訂正・時点差チェックの`detected`フラグだけで解釈がなくても通る、M1〜M9が空でも通る余地があった。またblind package builderは、手順上はstatic intake必須でも、コード上は直接呼び出せた。最初のraw run前に、Case 001=9項目、Case 002/003=10項目の連続した全項目、各項目の実質記録、各test IDの`temporal/contract interpretation`、M1〜M9の実質記録、artifact identity / contaminationをfail-closed化し、builder自身にもstatic intakeを強制した。評価内容の良否やArm treatmentは変更していない。
 
 これらの補正後も、fixed question、Round 1 evidence、product / skill snapshot、4Arm treatment、required outputは変更していない。
