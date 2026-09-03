@@ -37,6 +37,13 @@ REQUIRED_FIELDS = [
     "- Expected verification level:",
 ]
 
+# DOC-ISSUE-LIFECYCLE-01: R18 observed 58 historical memos whose Status is
+# already Done while the file still lives directly under 01_Plans/issues/.
+# Keep that existing debt non-blocking, but use the count as a temporary
+# ratchet so new completions cannot silently increase it. Reducing the count is
+# always allowed; the long-term canonical location for Done remains done/.
+LEGACY_DONE_AT_ROOT_MAX = 58
+
 
 @dataclass(frozen=True)
 class ActiveMemoRow:
@@ -103,7 +110,6 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
     return rows
 
 
-
 def extract_dependency_paths(memo_text: str) -> list[str]:
     lines = memo_text.splitlines()
     in_dependencies = False
@@ -136,6 +142,42 @@ def extract_verification_level(memo_text: str) -> str | None:
     if not match:
         return None
     return match.group(1).strip()
+
+
+def discover_done_memos_at_root(root: Path) -> list[Path]:
+    """Return Done issue memos that still live directly at the active root."""
+    done_paths: list[Path] = []
+    for memo_path in sorted(root.glob("issue-*.md")):
+        text = memo_path.read_text(encoding="utf-8")
+        status = parse_issue_status(extract_field_value(text, "Status"))
+        if status == "Done":
+            done_paths.append(memo_path)
+    return done_paths
+
+
+def validate_done_memo_location(
+    root: Path,
+    *,
+    legacy_max: int = LEGACY_DONE_AT_ROOT_MAX,
+) -> list[str]:
+    """Prevent Done-at-root legacy debt from increasing.
+
+    The baseline is intentionally a count ratchet rather than an allowlist.
+    This keeps the R18 legacy set non-blocking while permitting gradual moves
+    into done/. Once that migration is small enough, this rule can be tightened
+    to a concrete allowlist or to zero without changing Status semantics.
+    """
+    done_paths = discover_done_memos_at_root(root)
+    if len(done_paths) <= legacy_max:
+        return []
+
+    overflow = len(done_paths) - legacy_max
+    return [
+        "Done-at-root count exceeds the R18 legacy baseline "
+        f"({len(done_paths)} > {legacy_max}, +{overflow}). "
+        "Move newly completed memo(s) to 01_Plans/issues/done/; "
+        "do not increase the temporary legacy ratchet."
+    ]
 
 
 def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
@@ -226,7 +268,11 @@ def validate_status_contract(root: Path) -> list[str]:
 
 
 def validate(root: Path) -> list[str]:
-    return validate_status_contract(root) + validate_rows(root, discover_active_rows(root))
+    return (
+        validate_status_contract(root)
+        + validate_done_memo_location(root)
+        + validate_rows(root, discover_active_rows(root))
+    )
 
 
 def main() -> int:
