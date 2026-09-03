@@ -1,0 +1,111 @@
+name: 表札候補IRのroute配線（一回限り）
+
+on:
+  push:
+    branches:
+      - feat/island-summary-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    name: route配線と回帰を確認する
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: feat/island-summary-ir-context-20260903
+          fetch-depth: 0
+
+      - name: Pythonテスト環境を準備する
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: ai.pyへ既知の最小差分だけを適用する
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("03_Implement/backend/src/kj_atlas_api/routes/ai.py")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  "from kj_atlas_api.routes.docs import _authorize_request, get_document_row\n",
+                  "from kj_atlas_api.island_summary_ir import (\n"
+                  "    build_island_summary_ir_context,\n"
+                  "    island_summary_ir_prompt_lines,\n"
+                  ")\n"
+                  "from kj_atlas_api.routes.docs import _authorize_request, get_document_row\n",
+              ),
+              (
+                  "def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:\n"
+                  "    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)\n"
+                  "    model_id = payload.model or resolve_model_for_task(\"suggest_island_summary\")\n",
+                  "def suggest_island_summary(payload: SuggestIslandSummaryRequest, request: Request, db: Session = Depends(get_db)) -> SuggestIslandSummaryResponse:\n"
+                  "    # SEC-AI-SAFEMODE-01/02: 既存のroute側検査を一次防御として維持する。\n"
+                  "    _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)\n"
+                  "\n"
+                  "    # 既存promptを先に構築し、islandId不存在・空島の従来エラー境界を維持する。\n"
+                  "    base_prompt = _build_island_summary_prompt(payload)\n"
+                  "    allow_unreviewed = bool(\n"
+                  "        payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text\n"
+                  "    )\n"
+                  "    try:\n"
+                  "        ir_context = build_island_summary_ir_context(\n"
+                  "            payload, allow_unreviewed_text=allow_unreviewed\n"
+                  "        )\n"
+                  "    except IRGenerationError as exc:\n"
+                  "        raise HTTPException(status_code=422, detail=exc.to_contract()) from exc\n"
+                  "    prompt = \"\\n\".join(\n"
+                  "        [base_prompt, \"\", *island_summary_ir_prompt_lines(ir_context)]\n"
+                  "    )\n"
+                  "\n"
+                  "    model_id = payload.model or resolve_model_for_task(\"suggest_island_summary\")\n",
+              ),
+              (
+                  "                task=\"suggest_island_summary\",\n"
+                  "                prompt=_build_island_summary_prompt(payload),\n"
+                  "                model=model_id,\n",
+                  "                task=\"suggest_island_summary\",\n"
+                  "                prompt=prompt,\n"
+                  "                inputs=ir_context.ir,\n"
+                  "                model=model_id,\n",
+              ),
+          ]
+
+          for before, after in replacements:
+              count = text.count(before)
+              if count != 1:
+                  raise SystemExit(
+                      f"安全のため置換を中止しました。想定一致数=1、実際={count}: {before[:100]!r}"
+                  )
+              text = text.replace(before, after, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: 対象回帰とIR経路契約を確認する
+        working-directory: 03_Implement/backend
+        run: |
+          python -m pytest \
+            tests/test_ai_island_summary_ir.py \
+            tests/test_ai_prompt.py \
+            tests/test_ai_llm_input_ir_coverage.py \
+            -q
+          python -m ruff check \
+            src/kj_atlas_api/island_summary_ir.py \
+            src/kj_atlas_api/routes/ai.py \
+            tests/test_ai_island_summary_ir.py \
+            tests/test_ai_llm_input_ir_coverage.py
+
+      - name: 変更をコミットし補助ワークフローを削除する
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-island-summary-ir-route-once.yml
+          git add 03_Implement/backend/src/kj_atlas_api/routes/ai.py
+          git commit -m "feat: 表札候補生成を入力IRへ接続する"
+          git push origin HEAD:feat/island-summary-ir-context-20260903
