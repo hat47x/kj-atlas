@@ -92,7 +92,7 @@ GitHub Actions run `33775874060` で、focused frontend regression 49件、front
 
 これを一括で58件移動すると参照先変更が大量に発生し、現在のP1修正を埋める。したがってR18ではP2として別Issueへ切り出し、まず今後の増加を止める方向とした。
 
-- `01_Plans/issues/issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md`
+- `01_Plans/issues/done/issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md`
 
 同様に、`AI-IR-STAGE5-SCOPE-01` や `AI-MERGE-SEMANTICS-01` には、直近の実装完了後も古い「次の実装」記述が一部残っている。これらは今回のP1修正をmergeした後、方式の追跡性を含めて正本を同期する。
 
