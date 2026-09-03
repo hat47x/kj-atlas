@@ -90,7 +90,9 @@ def measure_detect_target_tail() -> dict[str, Any]:
             "held_evidence": "ev-tail-held",
         },
         "ir": {
-            "focus_cards_present": [card_id for card_id in (TAIL_A, TAIL_B) if card_id in ir_card_ids],
+            "focus_cards_present": [
+                card_id for card_id in (TAIL_A, TAIL_B) if card_id in ir_card_ids
+            ],
             "held_evidence_present": "ev-tail-held" in evidence_ids,
             "adjudicated_contradiction_found": decided is not None,
             "truncation": _truncation(ir),
@@ -122,9 +124,7 @@ def measure_groups_late_island_and_hold() -> dict[str, Any]:
     prompt = _build_suggest_card_groups_prompt(payload, ir, candidate_ids)
     islands = {item["id"]: item for item in ir.get("islands", [])}
     tail_island = islands.get(TAIL_ISLAND)
-    held_in_ir = {
-        item["id"] for item in ir.get("cards", []) if item.get("hold_state") == "held"
-    }
+    held_in_ir = {item["id"] for item in ir.get("cards", []) if item.get("hold_state") == "held"}
 
     return {
         "source": {
@@ -164,9 +164,7 @@ def measure_narrative_late_causal_negate() -> dict[str, Any]:
     payload = GenerateNarrativeRequest.model_validate({"doc": doc})
     ir = _generate_narrative_ir(payload)
     prompt = _build_generate_narrative_prompt(payload, ir)
-    relations = {
-        (item["from"], item["to"], item["type"]) for item in ir.get("relations", [])
-    }
+    relations = {(item["from"], item["to"], item["type"]) for item in ir.get("relations", [])}
     expected = {
         (TAIL_A, TAIL_B, "causal"),
         (TAIL_B, "c000", "negate"),
@@ -196,9 +194,7 @@ def measure_layout_late_structure() -> dict[str, Any]:
     ir = _suggest_layout_ir(payload)
     prompt = _build_prompt(payload, ir)
     coordinate_ids = {item["card_id"] for item in ir.get("coordinates", [])}
-    relations = {
-        (item["from"], item["to"], item["type"]) for item in ir.get("relations", [])
-    }
+    relations = {(item["from"], item["to"], item["type"]) for item in ir.get("relations", [])}
     expected = {
         (TAIL_A, TAIL_B, "causal"),
         (TAIL_B, "c000", "negate"),
@@ -218,16 +214,16 @@ def measure_layout_late_structure() -> dict[str, Any]:
         },
         "prompt": {
             # The layout prompt JSON-serializes reviewed text. With the default
-    # ensure_ascii=True, Japanese appears as \u escapes, so semantic
-    # visibility must accept either equivalent representation.
-    "tail_card_a_visible_in_legacy_cards": (
-        payload.doc.cards[298].text in prompt
-        or json.dumps(payload.doc.cards[298].text) in prompt
-    ),
+            # ensure_ascii=True, Japanese appears as \u escapes, so semantic
+            # visibility must accept either equivalent representation.
+            "tail_card_a_visible_in_legacy_cards": (
+                payload.doc.cards[298].text in prompt
+                or json.dumps(payload.doc.cards[298].text) in prompt
+            ),
             "tail_card_b_visible_in_legacy_cards": (
-        payload.doc.cards[299].text in prompt
-        or json.dumps(payload.doc.cards[299].text) in prompt
-    ),
+                payload.doc.cards[299].text in prompt
+                or json.dumps(payload.doc.cards[299].text) in prompt
+            ),
             "tail_relative_coordinate_a_visible": f'- card "{TAIL_A}" at (' in prompt,
             "tail_relative_coordinate_b_visible": f'- card "{TAIL_B}" at (' in prompt,
             "causal_visible": f'card "{TAIL_A}" --causal--> card "{TAIL_B}"' in prompt,
