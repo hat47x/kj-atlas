@@ -1,0 +1,36 @@
+name: Temporary merge apply persistence E2E verification
+
+on:
+  push:
+    branches:
+      - test/merge-apply-persistence-e2e-20260903
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 03_Implement/frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+      - name: Run persistence E2E
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_suggestion_apply_persistence.spec.ts --project=chromium
+      - name: Run merge apply regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run src/domain/merge_suggestion_apply.test.ts src/domain/representative_merge.test.ts src/domain/merge_traceability.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts
+          npm run typecheck
+      - name: Check diff
+        run: git diff --check
