@@ -1,7 +1,7 @@
 """`generate-narrative` の論理骨格を方式Bで保護する際の数値境界を固定する。
 
-ここで確認するのは現在の定数に対する決定論的なcharacterizationだけであり、
-provider token数や方式Bの採択可否は判定しない。
+ここで確認するのは、現在の定数に対する決定論的なcharacterizationだけである。
+プロバイダーが報告するトークン数や、方式Bを採用すべきかどうかは判定しない。
 """
 
 from scripts.measure_ai_narrative_required_endpoint_pressure import measure
