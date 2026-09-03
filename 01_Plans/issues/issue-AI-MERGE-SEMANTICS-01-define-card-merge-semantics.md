@@ -3,243 +3,234 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Architecture / AI Integration
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-IR-STAGE5-SCOPE-01` Stage 5
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/frontend/src/domain/representative_merge.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/domain/merge_traceability.ts`, `03_Implement/frontend/src/App.tsx`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `02_Architecture/api.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `AI-IR-PROJECTION-01`, `AI-IR-STAGE5-SCOPE-01`
-- Expected verification level: integration
+- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/merge_suggestion_ir.py`, `03_Implement/frontend/src/domain/representative_merge.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/domain/merge_suggestion_apply.ts`, `03_Implement/frontend/src/domain/merge_traceability.ts`, `03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx`, `02_Architecture/api.md`
+- Related ADR/Spec: `ADR-0069`, `AI-IR-PROJECTION-01`, `AI-IR-STAGE5-SCOPE-01`, `AI-MERGE-APPLY-01`, `AI-MERGE-PARTIAL-01`
+- Verification level: backend integration / frontend unit / UI / E2E
 
 ## 課題
 
-`POST /ai/suggest-merges` は現在、文書内の全カードについて `id` と `text` を並べ、「similar cards」のmerge候補を最大10件返すようLLMへ依頼している。応答は `groupId`、2件以上の `cardIds`、`mergedTextDraft`、任意の `rationale` から成る。
+従来の `POST /ai/suggest-merges` は「similar cards」を探すことが中心で、何をどこまで同じ意味として統合してよいかが十分に定義されていなかった。
 
-しかし、現行契約には「何をどのように統合するのか」がない。候補カードの `holdState`、`claimType`、島所属、直接の `negate` 関係、矛盾を表す `evidenceLinks`、既存のmerge系譜もAI入力や決定論的な後段検査に使っていない。そのため、語彙が近いだけの少数意見、反対意見、観察と仮説、保留中のカードまで一つへ丸める余地がある。
+そのままでは、語彙が近いというだけで、少数意見、反対意見、観察と仮説、保留中のカード、既に別の代表カードへ統合されたカードまで一つへ丸める余地がある。
 
-一方、kj-atlasではカード数そのものの維持を目的化しない。近接した類似カードは山浦氏の04ステップで整理でき、複数カードの核を保って一つの意味単位へ統合する必要がある場合は川喜田氏の核融合法も利用できる。重要なのは、どちらの方法でも異なる時点・主体・感触・条件・残差を安易に圧縮せず、元カードと来歴へ戻れることである。
+一方、kj-atlasではカード数を減らすこと自体を目的にしないが、意味が十分に近いカードを整理することまで禁止しない。近接した類似カードには山浦氏の04ステップを使え、複数カードを一緒に見たときに共通の意味核を立てられる場合には川喜田氏の核融合法も使える。
 
-したがって `suggest-merges` を単なる「重複除去」にも、逆に無制約な「意味融合」にもしない。**04ステップと核融合法を使い分けるproposal-onlyの統合支援**として意味境界を固定し、そのうえでAI実入力をIRへ移行する。
+重要なのは、どちらの方法でも**元カードへ戻れること、異なる意味を消さないこと、人間の保留・矛盾・認識上の位置づけをAIより優先すること**である。
 
-## 統合の二つの方法
+このため `suggest-merges` を、単なる重複削除でも無制約な意味融合でもなく、**意味保存型・proposal-onlyの統合支援**として定義する。
 
-### 1. 04ステップによる近接カードの整理
+## 統合の二つの考え方
 
-意味・主体・時点・条件・感触が十分に近く、各カードを別々に保持することによる増分が小さい場合に使う。
+### 04ステップによる近接カードの整理
 
-- 表現が違うだけで、中心的な訴えが同じ。
-- 一方にしかない重要な条件や残差を統合後本文へ保持できる。
-- 統合によって観察と推論、事実と仮説などの認識上の位置づけを混同しない。
+意味、主体、時点、条件、感触が十分に近く、別々に保持することによる増分が小さい場合に使う。
 
-単なる語彙類似や同一テーマは十分条件ではない。
+- 表現は異なっても中心的な訴えが同じである。
+- 一方にしかない重要な条件を代表本文へ残せる。
+- 観察と推論、事実と仮説など、認識上の位置づけを混同しない。
 
-### 2. 核融合法による意味核の統合
+語彙が似ていることや、同じテーマに属することだけでは統合しない。
 
-カード同士が完全な重複ではないが、複数カードを一緒に見たときに、それぞれを生かした共通の意味核を新しい一つのカードとして表現できる場合に使う。
+### 核融合法による意味核の統合
 
-- 各カードの訴えをいったん保ったまま、全体から意味核を立てる。
-- 統合本文を元カードへ戻し、「これは自分が言っていたことか」を確認する。
-- 統合でこぼれる条件・感触・異論・例外は残差として保持する。
-- 元カードを物理削除せず、統合先・source・canonical/representation系譜から追跡可能にする。
+完全な重複ではない複数カードを一緒に見たとき、それぞれを生かした共通の意味核を新しい一枚として表現できる場合に使う。
 
-核融合法は「違う内容をきれいな一文へ丸める」ための手段ではない。核を立てても元カードへ戻せない場合、または残差が大きい場合は統合しない。
+- 各カードの訴えを消さずに意味核を立てる。
+- 代表本文を元カードへ戻して読み、「元のカードが言っていたことを失っていないか」を確認する。
+- 統合本文へ入り切らない条件、感触、異論、例外は、削除されず残る元カードから再確認できる。
 
-### 方法の選択
+核融合法は、異なるカードを整った一文へ丸めるための手段ではない。元カードへ戻したときに意味保存を確認できなければ統合しない。
 
-04ステップを常に優先する、核融合法を常に優先する、と固定しない。候補カードの関係を見て、**意味保存性・残差の少なさ・元カードへの戻しやすさ**が高い方法を選ぶ。
+### 方法を固定しない
 
-現行 `MergeSuggestion` には方法を表すフィールドがないため、実装時には後方互換を保てる形で `mergeMethod`（例: `near_duplicate` / `kernel_fusion`）と、必要なら `residuals` を追加する。名称は実装前に既存API語彙へ合わせて確定する。
+04ステップを常に先に使う、核融合法を常に先に使う、と固定しない。カードの関係を見て、意味保存性、残差の少なさ、元カードへの戻しやすさが高い方法を選ぶ。
 
-## KJ法のグループ編成との境界
+現在は方式によって実適用のデータ変換が分岐しないため、`mergeMethod` を機械可読の必須フィールドにはしない。方式名をAIに自己申告させるだけでは正本として弱い。将来、方式ごとにUI、戻し検査、適用規則が実際に変わる場合に別Issueで契約化する。
 
-カードを同じ島へ束ねることと、一枚の統合カードへまとめることは別である。
+## グループ編成・表札との違い
 
-- `suggest-card-groups` / Island: 元カードを複数枚のまま近くに置き、束として読む。
-- `suggest-merges`: 元カードを根拠として、新しい代表的な一枚へ統合できる場合だけ提案する。
+- Island / `suggest-card-groups`: 元カードを複数枚のまま近くに置き、束として読む。
+- `suggest-merges`: 元カードを残したまま、新しい代表カードを一枚作れる場合だけ提案する。
 - Placard: 島全体の訴えを代弁する上位文であり、個々のカードの統合とは別である。
 
-一匹狼のカード、他と違う感触を持つカード、対立を担うカードを「島に入りにくい」「似た語がある」という理由でmergeしない。
+一匹狼、少数意見、他と違う感触を持つカード、対立を担うカードを、「島に入りにくい」「似た語がある」という理由で統合しない。
 
-`MergeSuggestion.groupId` はKJ法のGroup/Clusterを意味しない。あくまで一つのmerge提案を識別するproposal-local IDである。
+`MergeSuggestion.groupId` はKJ法のGroup/Clusterではなく、一つのmerge提案を識別するIDである。
 
-## 統合を抑止する条件
+## AIより優先する保護条件
 
-次の条件は、LLMへの注意書きだけでなく実装側の決定論的なguardで保護する。
+次はprompt上の注意だけではなく、決定論的なguardで保護する。
 
-### 1. 保留状態
+### 保留
 
-候補のいずれかに `holdState` (`held` / `pending` / `shelved`) がある場合、その組をmerge候補として返さない。
+候補に `holdState` (`held` / `pending` / `shelved`) がある場合は統合候補にしない。保留は「まだ畳まない」という人間の判断である。
 
-保留は「まだ畳まない」という人間の判断であり、AIの統合判断より優先する。
+### 明示的な対立・矛盾
 
-### 2. 明示的な対立・矛盾
-
-候補カード間に次が存在する場合、その組をmerge候補として返さない。
+候補間に次がある場合は統合しない。
 
 - card-to-card の `negate` relation
 - `type=contradicts` の `evidenceLink`
 
-`contradictionState` が `confirmed` / `held` なら当然に保護する。`unconfirmed` でも、統合して対立の痕跡を消すより別カードとして残す側へ倒す。
+`contradictionState` が未確定でも、対立の痕跡を統合で消すより別カードとして残す側へ倒す。
 
-### 3. 認識上の位置づけ
+### 認識上の位置づけ
 
-両方に `claimType` が設定され、その値が異なる場合はmerge候補として返さない。
+複数カードに既知の `claimType` があり、その値が異なる場合は統合しない。本文が似ていても、観察、引用、解釈、仮説、問いなどの位置づけが異なれば別の情報単位である。
 
-観察・引用、解釈、仮説、問いなどの位置づけが異なる情報は、本文が似ていても同じ情報単位ではない。片方が未設定の場合は、それだけで同一とみなさない。
+### 既存のmerge系譜
 
-### 4. 既存merge系譜
+`mergedIntoCardId` / `canonicalId` によって既に別の代表へ統合されたsourceを、新しい独立候補として再利用しない。
 
-`mergedIntoCardId`、`canonicalId`、`repOf` など既存の統合系譜を確認し、既に別カードへ統合済みのカードを独立した新規候補として再mergeしない。必要ならcanonicalな代表へ解決して候補集合を作る。
+### 同一応答内の競合
 
-### 5. 同一応答内の競合提案
+同じカードを複数のmerge候補へ同時に含めない。A+BとA+Cを同時に適用可能な候補として返すと、適用順で意味と系譜が変わるためfail-closedにする。
 
-一枚のカードを同じ応答内の複数merge候補へ重複して含めない。
-
-A+BとA+Cを同時に適用可能な候補として返すと、適用順序で意味と系譜が変わる。現行契約では重複をfail-closedにする。将来、相互排他的な代替案を表現する契約を追加した場合だけ別扱いとする。
-
-## hard vetoにはしない文脈
+## hard vetoにしない文脈
 
 ### 島所属
 
-異なる島にあることだけをmerge禁止にはしない。同じ観察が重複入力され、別々の島に置かれている場合もある。
-
-ただし島の違いは、利用者が別の意味文脈で扱っている可能性を示す。IR移行時には島所属を文脈として渡し、語彙類似だけで跨島統合しないようにする。
+異なる島にあることだけでは統合禁止にしない。同じ観察が重複入力され、別の島へ置かれている場合もある。ただし、島の違いは異なる意味文脈を示す可能性があるため、AI入力には保持する。
 
 ### `equivalence` / `related`
 
-`equivalence` は04ステップ型の統合を支持する材料になり得るが、それだけで統合を決定しない。`related` はさらに弱い補助情報に留める。
+`equivalence` は近接カード整理を支持する材料になり得るが、それだけで統合を決めない。`related` はさらに弱い補助情報として扱う。
 
-### 出典・sources
+### 外部元記録
 
-異なる出典から同じ内容が独立に得られている場合、その差自体に意味がある。出典差を機械的な禁止条件にも許可条件にもせず、統合後もsourceを失わない。
+外部元記録は `Card.meta.source` の責務であり、`Card.sources` とは分ける。外部元記録の違いは、それだけで統合を許可・禁止する条件にはしない。AI入力へ不要な生の外部元記録を露出しない。
 
-## 残差と来歴の不変条件
+## 来歴と残差の不変条件
 
-統合候補を採用しても、元カードを不可逆に消さない。
+統合を採用しても元カードを不可逆に消さない。
 
-- source card IDを保持する。
-- `sources` を失わない。
-- `repOf` / `canonicalId` / `mergedIntoCardId` など、既存の系譜表現と整合させる。
-- 統合本文へ入らなかった意味を残差として記録できるようにする。
-- 統合結果から元カードへ戻して比較できる。
-- AIが出典・残差・系譜を創作しない。
+- sourceカード自体を残す。
+- 代表カードは `repOf` / `sources` でmerge元カードIDを保持する。
+- sourceカードは `mergedIntoCardId` / `canonicalId` から代表カードをたどれる。
+- sourceカードの本文、`meta`、既存の島所属、relationを失わない。
+- 必要な代表カード側の島所属・外部relationは、元構造の置換ではなく投影として追加する。
+- AIが元記録、残差、系譜を創作しない。
 
-既存の適用経路がこの不変条件を満たしていない場合、AI提案側だけを完成扱いせず、適用経路の改修を同Issueの完了条件に含める。
+`Card.sources` は外部出典ではなく、merge元カードIDの系譜である。外部元記録は `Card.meta.source` に保持する。
+
+独立した自由記述 `residuals` は追加しない。統合本文へ入らなかった意味の一次記録は、削除されず残るsourceカードそのものとする。AI生成の残差文を別の正本として持つと、元カードとの差分が二重管理になるためである。
 
 ## AI入力契約
 
-本経路は `DocumentV1` 由来の構造が統合可否の判断に直接必要な **Document-backed structured task** である。ADR-0069 D5=Aに従い、generic Document IRまたはroute固有投影をprovider実入力の正本とする。
+本経路は `DocumentV1` 由来の構造が統合可否へ直接関係するDocument-backed taskである。ADR-0069 D5=Aに従い、共有LLM入力IRとroute固有文脈をprovider実入力の正本とする。
 
-少なくとも次をprovider手前へ届ける。
+provider手前では少なくとも次を扱う。
 
-- 候補対象カードの `id` / IR正規化後本文
+- 候補カードのIDとIR正規化後本文
 - `holdState`
 - `claimType`
-- 人間が確定させた島所属
+- 島所属
 - card relation、特に `negate` / `equivalence`
 - `evidenceLinks` と `contradictionState`
-- 統合済みカードを再候補化しないために必要な系譜情報
-- 方法選択と戻し検査に必要なsource/残差情報
+- `canonicalId` / `mergedIntoCardId` / `repOf` / `sources` のmerge系譜
 
-全Documentを同じ重要度でpromptへ列挙することを目的にしない。大規模文書では、まず安全に比較できる候補集合を作り、その集合について必要意味をroute-requiredとして保護する。
+全Documentを同じ重要度でpromptへ複製することを目的にしない。必要な候補本文、relation、evidence、系譜がIR上限で欠ける場合は、不完全な入力のまま提案せずfail-closedにする。
 
-IR上限により統合判断に必要な本文・relation・evidence・系譜が欠ける場合は、不完全な入力で統合を提案せずfail-closedにする。
+SafeModeはroute側検査を一次防御、IR生成時の検査を第二層として維持する。provider promptと `LLMRequest.inputs` は同じ正規化済み入力から描画し、Document生本文を同じ意味の迂回入力として使わない。
 
-SafeModeは既存のroute側検査を一次防御として残し、IRまたはroute固有入力ビルダー側の検査を第二層として維持する。
+## 提案・判断・適用を分ける
 
-## promptと応答検査
+AI提案を直接Document変更へつなげない。
 
-promptには少なくとも次を要求する。
+1. AIはmerge候補をproposalとして出す。
+2. 人間が `accept` / `partial` / `reject` / `defer` を記録する。
+3. `accept` または有効な `partial` の判断後、利用者が別の明示的な「適用」操作を行う。
+4. 適用直前のDocumentを再検査してから代表カードを作る。
+5. Document変更後も自動保存せず、既存の明示保存操作を使う。
 
-- similarity alone and same topic are not sufficient
-- choose a near-duplicate/04-step-like consolidation only when material distinctions can be preserved
-- choose kernel fusion only when a shared meaning kernel can be stated without erasing residual differences
-- perform a return check against every source card before proposing
-- leave held, contradictory, minority, lone, or materially different cards separate
-- proposal only; never delete or overwrite source cards
+判断後にholdや矛盾が追加された場合は、古いAI提案より現在のDocumentを優先して停止する。
 
-LLM応答は信用せず、後段で決定論的に検査する。
+## `partial` の意味
 
-- 未知ID、重複ID、2件未満、上限超過を拒否する。
-- holdを含む候補を拒否する。
-- `negate` / contradiction evidenceを含む候補を拒否する。
-- 異なる既知 `claimType` を含む候補を拒否する。
-- 既存merge系譜上の無効候補を拒否する。
-- 同じカードが複数候補に出た応答をfail-closedにする。
-- `mergedTextDraft` は提案本文に過ぎず、元カードを削除・上書きしない。
+`partial` は、提案されたsourceカードの**真部分集合**だけを人間が明示的に採用する判断とする。
 
-04ステップと核融合法のどちらが意味上適切かは、LLMの提案に含められるが、人間の採否判断を置き換えない。
+- 2枚以上、かつ候補全件未満を選択する。
+- 全件を採用する場合は `accept` を使う。
+- 1枚以下ではmergeを成立させない。
+- 選択されなかったカードは実適用で変更しない。
+- 新しい `partial` では `selectedCardIds` に人間が選んだ集合を保存する。
+- 旧来の曖昧な `partial` は推測で実適用しない。
 
-## 実装方針
-
-1. route-required meaningと統合禁止条件をintegration regressionで先に固定する。
-2. `suggest-merges` 専用のIR投影または入力コンテキストビルダーを追加する。
-3. promptを「similar cards」だけの契約から、04ステップ／核融合法を使い分ける意味保存契約へ更新する。
-4. LLM応答後の決定論的merge guardを追加する。
-5. 必要なら `MergeSuggestion` に統合方法と残差を後方互換な任意フィールドとして追加する。
-6. `LLMRequest.inputs` とprovider promptが同じ正規化済み入力を使い、Document生本文から同じ意味を迂回送出しないことを回帰で固定する。
-7. 実際のmerge適用経路が元カード・sources・残差・canonical/representation系譜を保持することを確認する。
-8. API文書と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
-9. 内容・構造を確定した後、意味を変えず自然な日本語として全文を読み直す。
+詳細は `AI-MERGE-PARTIAL-01` を正本とする。
 
 ## 実装結果（2026-09-03）
 
-AIへの入力と応答検査について、意味境界を実装へ反映した。
+### 提案生成とAI入力
 
-- `holdState` が付いたカードと `mergedIntoCardId` 済みカードは候補集合から除外し、候補が2枚未満ならproviderを呼ばず空提案を返す。
-- 候補カードの本文は共有LLM入力IRで正規化し、`claimType`、全島所属、`canonicalId` / `repOf`、出典の同一性をroute固有の構造化入力として重ねる。
-- `sources` の生値はproviderへ送らず、文書内で同じ出典を共有しているかだけを比較できる不透明なローカル参照へ変換する。
-- 候補カード本文、候補間relation、候補間evidenceがIR上限によって欠ける場合は、不完全な入力で統合を提案せずfail-closedにする。
-- SafeModeはroute側検査を一次防御、IR生成時の検査を第二層として維持し、PIIを含む候補本文もprovider呼出前に拒否する。
-- provider promptは `LLMRequest.inputs` と同じroute固有入力から候補本文・relation・evidence・補助文脈を描画し、Document側の生本文を同じ意味の迂回入力として使わない。
-- 応答後は既存の決定論的guardにより、hold、既merge、`negate`、`contradicts` evidence、異なる既知 `claimType`、同一カードを複数候補へ含める競合提案を拒否する。
+- `holdState` 付きカード、既merge/canonicalization済みカードを候補化しない。
+- 共有LLM入力IRとmerge専用構造化文脈をproviderへ渡す。
+- `claimType`、島所属、relation、evidence、人間の矛盾判断、merge系譜を統合判断へ使う。
+- 必要意味がIR上限で欠ける場合はprovider呼出前に停止する。
+- promptでは04ステップ型の近接整理と核融合法型の意味核統合を区別し、全sourceへ戻して読むことを要求する。
+- provider応答後にもhold、対立・矛盾、`claimType` 差、既merge、候補競合を決定論的に拒否する。
 
-一方、**提案を人間が採用した後の実merge適用経路**について、元カード・`sources`・残差・canonical/representation系譜が十分に保持されることは、この変更ではまだ完了根拠を得ていない。`mergeMethod` / `residuals` をresponse契約へ追加するかどうかも、適用経路の監査後に判断する。
+### 実mergeとtraceability
 
-## 適用経路監査（2026-09-03）
+- sourceカードは物理削除しない。
+- 代表カードは直接sourceに加え、過去の代表カードが持つ系譜も `sources` に保持する。
+- source側の `mergedIntoCardId` / `canonicalId` と代表側の `repOf` / `sources` を同じ代表カードへ接続する。
+- rewire時も元の島所属・edgeを削除せず、代表カードへの投影を追加する。
+- 同一の既知 `claimType` が全sourceにある場合だけ代表へ引き継ぎ、不明値が混じる場合は推測しない。
 
-提案生成後のUIと既存の代表カード作成処理を追跡した結果、次を確認した。
+### 人間判断から実適用まで
 
-- `MergeSuggestionsPanel` の `accept` / `partial` / `reject` / `defer` は、現状では `appendMergeSuggestionDecision()` と監査イベントを記録するところまでであり、`accept` や `partial` を選んでも代表カードの生成やsourceカードの系譜更新は行わない。
-- 実際の代表カード作成には別経路の `createRepresentativeMerge()` が使われている。従来実装は元カード自体を残していたが、`repOf` / `mergedIntoCardId` 系と `sources` / `canonicalId` 系が分かれており、適用結果だけから全source系譜を一貫してたどるには弱かった。
-- 従来の `rewireMembershipAndEdges` は、sourceカードの島所属を代表カードへ置き換え、既存edgeの端点も代表カードへ直接書き換えていた。このため、表示上は扱いやすくなる一方、統合前の島文脈や「どのsourceカードに付いていたrelationか」という原形を失う余地があった。
+- 記録済み `accept` だけを対象にするdomain transactionを追加した。
+- UIでは `accept` と「採用した統合を適用」を別操作として維持した。
+- `decision → apply → Save → reload` のE2Eで、代表カードとsource系譜が保存後も復元できることを確認した。
+- Accept後にDocument変更処理が候補previewを消して適用へ進めない残差もE2Eで検出し、判断記録・明示適用の二経路に限って候補を保持するよう修正した。
 
-PR #2847 では、まず実merge関数そのものを意味保存側へ寄せる。
+### 部分採用
 
-- sourceカードは物理削除せず、`mergedIntoCardId` と `canonicalId` を同じ代表カードへ向ける。
-- 代表カードには直接の `repOf` に加え、過去の代表カードが持つ系譜を含めた `sources` を保持する。
-- sourceカードの本文・`meta`・KA情報・既存系譜はそのまま残し、統合結果から戻して比較できるようにする。
-- 指定sourceの一部欠落、hold、既に別代表へ統合済みのsource、候補間の `negate` / `contradicts`、異なる既知 `claimType` は適用時にもfail-closedにする。
-- 同一の明示的 `claimType` が全sourceにある場合だけ代表カードへ引き継ぎ、未分類が混ざる場合は推測しない。
-- rewireを選んだ場合も、元の島所属とedgeは削除・上書きせず、代表カードのmembershipと外部relationの投影を追加する。候補内部relationは代表カードのself-loopへ変換しない。
+- `partial` は人間が選んだ2枚以上・全件未満の `selectedCardIds` を必須化した。
+- 判断ログと監査イベントへ同じ選択集合を保持する。
+- 実適用は選択sourceだけへ行い、非選択カードを変更しない。
+- 旧来の曖昧な `partial` はfail-closedにする。
+- 3枚候補から2枚だけを選ぶE2Eで、判断 → 適用 → Save → reloadまで同じsource集合を追跡できることを確認した。
 
-これにより、**実mergeのデータ変換自体**については元カード・source・主要なmerge/canonical系譜・元relationへ戻れる土台を作る。ただし、Issueはまだ完了させない。残る作業は次のとおり。
+## 検証
 
-1. `accept` を実merge適用へ接続する際のトランザクション順序を決め、decision/auditの代表カードsnapshotが実際の代表カードを指すようにする。
-2. `partial` は現契約に「採用するsourceの部分集合」がないため、意味を決めずに自動適用しない。必要なら `selectedCardIds` のUI/契約を明示してから適用する。
-3. 残差を独立フィールドとして保持する必要があるか、元sourceカードを残すことを残差の一次記録とするかを、実適用UIの戻し比較と合わせて決める。AIが残差を創作する契約にはしない。
-4. decision → merge apply → traceability → 保存／再読込までを一つのintegration regressionとして固定する。
+主な回帰は次で固定した。
+
+- backend: merge意味guard、route固有IR、provider実入力経路
+- frontend: `merge_suggestion_decisions`, `merge_suggestion_apply`, `representative_merge`, `merge_traceability`, decision audit
+- UI: `MergeSuggestionsPanel`
+- E2E: accept適用の保存・再読込、partial適用の保存・再読込
+- i18n / frontend typecheck
+
+一回限りの検証workflowは検証後に削除し、mainへ常設しない。
 
 ## 受入条件
 
 - [x] `suggest-merges` とKJ法のグループ編成・表札生成の違いを定義する。
-- [x] 近接した類似カードには04ステップ、複数カードの意味核を保つ統合には核融合法を利用可能とし、方法を固定しない。
-- [x] 元カードID・出典・残差・系譜・戻し検査を統合の不変条件として定義する。
-- [x] hold、明示的対立・矛盾、異なる既知claimType、既存merge系譜、同一応答内の候補競合を保護対象として定義する。
-- [x] 島所属・equivalence・出典差は単純なhard veto/許可ではなく、意味文脈として扱うと定義する。
-- [x] ADR-0069 D5=Aに基づき、本経路をDocument-backed structured taskとして分類する。
-- [x] 上記のroute-required meaningをintegration regressionとして固定する。
-- [x] `suggest-merges` のprovider実入力をgeneric Document IRまたはroute固有投影へ移す。
+- [x] 近接した類似カードには04ステップ、複数カードの意味核を保つ統合には核融合法を利用可能とし、一方へ固定しない。
+- [x] 元カードID・外部元記録・残差・merge/canonical系譜・戻し検査を統合の不変条件として定義する。
+- [x] hold、明示的対立・矛盾、異なる既知 `claimType`、既存merge系譜、同一応答内の候補競合を保護する。
+- [x] 島所属・`equivalence`・外部元記録差を単純な許可／禁止条件にしない。
+- [x] ADR-0069 D5=Aに基づきDocument-backed structured taskとしてAI入力境界を固定する。
+- [x] route-required meaningをintegration regressionで固定する。
+- [x] provider実入力を共有IR＋route固有構造化文脈へ移す。
 - [x] promptを意味保存型の統合契約へ更新する。
 - [x] LLM応答後の決定論的merge guardを実装する。
-- [x] 同一カードが複数候補へ出た場合のfail-closedをテストで固定する。
-- [ ] 元カード・sources・残差・merge/canonical系譜が採用後も追跡可能であることを、AI提案の採用から実適用・保存／再読込まで含むintegration regressionで確認する。
-- [x] SafeMode二層、PII最小化、structured-text-only、IR上限のfail-closedを確認する。
-- [x] `02_Architecture/api.md` と `AI-IR-STAGE5-SCOPE-01` を実装結果へ同期する。
-- [ ] 最終成果物を自然な日本語として全文ドラフトし直す。
+- [x] 同一カードが複数候補へ出た場合のfail-closedを固定する。
+- [x] 元カード・merge元ID・残差・merge/canonical系譜を、提案採用から実適用・保存・再読込まで追跡できることをE2Eで確認する。
+- [x] `partial` の明示的な部分集合契約を判断・監査・適用・保存・再読込まで固定する。
+- [x] SafeMode二層、PII最小化、structured-text-only、IR上限のfail-closedを維持する。
+- [x] `mergeMethod` は実際に適用挙動が分岐するまで必須化しない。
+- [x] 自由記述の `residuals` を新たな正本にせず、残るsourceカードを残差の一次記録とする。
+- [x] API文書とStage 5計画文書へ実装結果を同期する。
+- [x] 最終成果物を、意味を変えず自然な日本語として全文を読み直す。
 
 ## 完了境界
 
-このIssueは、単に `suggest-merges` をIR経由へ変えた時点では完了しない。
+04ステップと核融合法を意味保存の考え方として使い分けつつ、元カード、人間判断、矛盾、来歴を失わず、AI提案から実適用・保存・再読込まで戻れることを回帰で固定した。
 
-**04ステップと核融合法をカードの関係に応じて使い分けながら、元カードの意味・出典・残差・系譜を失わず、保留・対立・少数意見を統合から守り、provider実入力がその契約を迂回しないことをintegration regressionで固定するところまで**を完了条件とする。
+AIが自動的にmergeを確定・適用する経路は設けていない。部分採用も人間の明示選択を必須とした。以上をもって、本Issueを完了とする。
