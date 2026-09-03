@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug / AI Input Projection
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-IR-SCALE-01`, `AI-IR-PROJECTION-01`
 - Priority: P1
 - Owner: Maintainer
@@ -101,7 +101,18 @@ GitHub Actionsは現在リポジトリ側で無効化されており、merge com
 - [x] 同一入力と同一required集合から同一IRを得る決定性を維持する。
 - [x] `llm_input_ir_spec.md` §5に、task-required cardを切り詰めより先に保持する規則、残り枠の決定方法、text予算に収まらない場合のfail-closedを明記する。
 - [x] backend integration testで300枚規模の再発を防止するテストケースをmainへ統合する。
-- [ ] 実行可能な環境で、共有IR回帰と `/ai/detect-contradiction` の300カードintegration regressionが成功することを記録する。
+- [x] 実行可能な環境で、共有IR回帰と `/ai/detect-contradiction` の300カードintegration regressionが成功することを記録する。
+
+## 検証結果（2026-09-03）
+
+既にmainへ統合済みの実装を変更せず、一回限りのGitHub Actions実行環境で、完了条件として残っていた回帰を実行した。外部LLMは呼び出していない。
+
+- `python -m pytest tests/test_llm_input_ir_required_cards.py tests/test_ai_detect_contradiction_ir_scale.py tests/test_ai_route_required_meaning_scale.py -q` — 成功。
+- 共有IRでは、required指定なしの従来投影、末尾required pairとevidenceの保持、決定性、予算超過時のfail-closedを実行確認した。
+- `/ai/detect-contradiction` では、300カードの末尾pairについて `confirmed` / `held` を再提案せず、`unconfirmed` / `resolved` は対象pairを保持したままLLM stubへ進むことを実行確認した。
+- 実行記録: `https://github.com/hat47x/kj-atlas/actions/runs/33723114607`（run id `33723114607`）。
+
+この確認により、本Issue固有の未完了条件は満たした。300カード全体の意味保存戦略やnamed providerのtoken予算は、引き続き `AI-IR-SCALE-01` の責務とする。
 
 ## 完了境界
 

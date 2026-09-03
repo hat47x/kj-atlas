@@ -217,8 +217,17 @@ def measure_layout_late_structure() -> dict[str, Any]:
             "truncation": _truncation(ir),
         },
         "prompt": {
-            "tail_card_a_visible_in_legacy_cards": payload.doc.cards[298].text in prompt,
-            "tail_card_b_visible_in_legacy_cards": payload.doc.cards[299].text in prompt,
+            # The layout prompt JSON-serializes reviewed text. With the default
+    # ensure_ascii=True, Japanese appears as \u escapes, so semantic
+    # visibility must accept either equivalent representation.
+    "tail_card_a_visible_in_legacy_cards": (
+        payload.doc.cards[298].text in prompt
+        or json.dumps(payload.doc.cards[298].text) in prompt
+    ),
+            "tail_card_b_visible_in_legacy_cards": (
+        payload.doc.cards[299].text in prompt
+        or json.dumps(payload.doc.cards[299].text) in prompt
+    ),
             "tail_relative_coordinate_a_visible": f'- card "{TAIL_A}" at (' in prompt,
             "tail_relative_coordinate_b_visible": f'- card "{TAIL_B}" at (' in prompt,
             "causal_visible": f'card "{TAIL_A}" --causal--> card "{TAIL_B}"' in prompt,

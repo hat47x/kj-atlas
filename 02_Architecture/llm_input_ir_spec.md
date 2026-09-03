@@ -819,7 +819,7 @@ A2 contract test では次を機械判定する。
 - エスカレーション運用: `02_Architecture/llm_escalation_policy.html`。
 - 版数 1.1 の決定根拠: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（D1=B / D2=A / D3=A / D4=A）。
 - 版数 1.2（`cards[*].hold_state`）の決定根拠: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md` AC-2 と「結果（Stage 2）」節。`holdState` の意味の正本は `02_Architecture/schemas.md` §14.1。
-- route必須カードの切り詰め保護: `01_Plans/issues/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`。共有IR実装は `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`、`detect-contradiction` の配線は `03_Implement/backend/src/kj_atlas_api/routes/ai.py` を参照する。
+- route必須カードの切り詰め保護: `01_Plans/issues/done/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`。共有IR実装は `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`、`detect-contradiction` の配線は `03_Implement/backend/src/kj_atlas_api/routes/ai.py` を参照する。
 - 実装課題: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`。
 - SafeMode の第一層（本仕様 §7.1 が置き換えてはならない既存実装）: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`。
 - カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。
