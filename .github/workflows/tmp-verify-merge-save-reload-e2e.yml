@@ -29,7 +29,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run merge save/reload E2E
         working-directory: 03_Implement/frontend
-        run: npx playwright test e2e/merge_accept_apply_save_reload.spec.ts --project=chromium
+        run: npx playwright test e2e/merge_accept_apply_save_reload.spec.ts
       - name: Typecheck
         working-directory: 03_Implement/frontend
         run: npm run typecheck
