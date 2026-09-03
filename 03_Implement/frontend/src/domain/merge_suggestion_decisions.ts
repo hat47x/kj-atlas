@@ -44,6 +44,7 @@ type AppendMergeSuggestionDecisionInput = {
   groupId: string;
   decision: MergeSuggestionDecision;
   cardIds: string[];
+  selectedCardIds?: string[];
   mergedTextDraft: string;
   editedText: string;
   rationale?: string;
@@ -84,8 +85,14 @@ export function appendMergeSuggestionDecision(
     throw new Error("cardIds must contain at least one id");
   }
 
+  const sortedCardIdSet = new Set(sortedCardIds);
+  const selectedCardIds = sortCardIds(input.selectedCardIds ?? sortedCardIds);
+  if (selectedCardIds.some((cardId) => !sortedCardIdSet.has(cardId))) {
+    throw new Error("selectedCardIds must be a subset of cardIds");
+  }
+
   const decisionId = idFactory();
-  const originTrace = resolveDecisionOriginTrace(document, sortedCardIds);
+  const originTrace = resolveDecisionOriginTrace(document, selectedCardIds.length > 0 ? selectedCardIds : sortedCardIds);
   const entry: MergeSuggestionDecisionEntry = {
     id: decisionId,
     decisionId,
@@ -95,7 +102,7 @@ export function appendMergeSuggestionDecision(
     decidedAt: now,
     decidedBy: "human",
     cardIds: sortedCardIds,
-    selectedCardIds: sortedCardIds,
+    selectedCardIds,
     mergedTextDraft: input.mergedTextDraft,
     editedText: input.editedText,
     note: input.decisionReason ?? input.editedText,
