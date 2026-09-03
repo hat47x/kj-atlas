@@ -18,7 +18,15 @@
 2. `Status` は `Draft -> Open -> In Progress -> Done` の順で更新する。
 3. `Expected verification level` は変更リスクに応じて `docs-check / unit / integration / e2e` から選ぶ。
 4. ADRは長期的、横断的、破壊的、または安全境界を変える判断に限る。
-5. 完了時は検証結果と `Status: Done` をmemoへ一度記録する。索引の手動更新は不要。
+5. 完了時は検証結果と `Status: Done` をmemoへ一度記録し、同じ変更で原則 `done/` へ移す。索引の手動更新は不要。
+
+### Done配置のlegacy境界
+
+継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っている。これらを一括移動して大量の参照差分を作ることはしない。
+
+一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は58件を一時的なlegacy baselineとして扱い、実際のDone-at-root件数との一致を要求する。新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。
+
+既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が後から古いbaselineまで増え直すことを防ぐ。この数はDoneメモの正規配置を意味せず、段階整理の現在地を単調に減らすためだけに保持する。最終的なbaselineは0である。
 
 ## 必須メタデータ
 
@@ -48,7 +56,7 @@ python 01_Plans/triage_actionable_plans.py
 
 - issue / docs変更の統一検証入口: `python 01_Plans/docs_check.py`（有効化済みruleだけをblocking実行し、未有効化ruleも表示）
 - Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査）
-- 検証ツールのテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- 検証ツールのテスト: `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
 
 過去の同期ログ、件数、Decision Queue、RACI記録はGit履歴に残っている。現在の作業判断には使用しない。
