@@ -26,7 +26,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run persistence E2E
         working-directory: 03_Implement/frontend
-        run: npx playwright test e2e/merge_suggestion_apply_persistence.spec.ts --project=chromium
+        run: npx playwright test e2e/merge_suggestion_apply_persistence.spec.ts
       - name: Run merge apply regressions
         working-directory: 03_Implement/frontend
         run: |
