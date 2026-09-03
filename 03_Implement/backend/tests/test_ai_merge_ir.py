@@ -10,6 +10,7 @@ from kj_atlas_api.merge_suggestion_ir import (
 )
 from kj_atlas_api.models import (
     Card,
+    CardMeta,
     DocumentV1,
     Edge,
     EvidenceLink,
@@ -45,13 +46,14 @@ def _context(payload: SuggestMergesRequest):
     return build_merge_suggestion_ir_context(payload, allow_unreviewed_text=False)
 
 
-def test_merge_ir_excludes_held_and_already_merged_cards() -> None:
+def test_merge_ir_excludes_held_already_merged_and_canonicalized_source_cards() -> None:
     payload = _payload(
         [
             _card("c1", "alpha"),
             _card("c2", "beta"),
             _card("c3", "held", holdState="held"),
             _card("c4", "represented", mergedIntoCardId="c1"),
+            _card("c5", "canonicalized source", canonicalId="c1"),
         ]
     )
 
@@ -61,24 +63,26 @@ def test_merge_ir_excludes_held_and_already_merged_cards() -> None:
     assert {item["id"] for item in context.document_ir["cards"]} == {"c1", "c2"}
 
 
-def test_merge_ir_carries_claim_island_lineage_and_opaque_source_identity() -> None:
+def test_merge_ir_carries_claim_island_and_card_lineage_without_external_source_text() -> None:
     payload = _payload(
         [
+            _card("old-1", "older alpha", canonicalId="c1"),
+            _card("old-2", "older alpha detail", canonicalId="c1"),
             _card(
                 "c1",
                 "alpha",
                 claimType="fact",
-                canonicalId="canonical-a",
-                repOf=["old-2", "old-1"],
-                sources=["person@example.com", "https://example.test/source-a"],
+                repOf=["rep-old-2", "rep-old-1"],
+                sources=["old-2", "old-1"],
+                meta=CardMeta(source="person@example.com"),
             ),
             _card(
                 "c2",
                 "alpha independently observed",
                 claimType="fact",
-                sources=["person@example.com"],
+                meta=CardMeta(source="https://example.test/source-a"),
             ),
-            _card("c3", "different source", sources=["source-b"]),
+            _card("c3", "different source", meta=CardMeta(source="source-b")),
         ],
         islands=[
             Island(id="i1", cardIds=["c1", "c2"]),
@@ -93,14 +97,11 @@ def test_merge_ir_carries_claim_island_lineage_and_opaque_source_identity() -> N
     }
 
     assert context.inputs["routeInputVersion"] == ROUTE_INPUT_VERSION
+    assert context.candidate_card_ids == frozenset({"c1", "c2", "c3"})
     assert by_id["c1"]["claimType"] == "fact"
     assert by_id["c1"]["islandIds"] == ["i1", "i2"]
-    assert by_id["c1"]["lineage"]["canonicalId"] == "canonical-a"
-    assert by_id["c1"]["lineage"]["repOf"] == ["old-1", "old-2"]
-
-    shared_refs = set(by_id["c1"]["sourceRefs"]) & set(by_id["c2"]["sourceRefs"])
-    assert len(shared_refs) == 1
-    assert set(by_id["c2"]["sourceRefs"]).isdisjoint(by_id["c3"]["sourceRefs"])
+    assert by_id["c1"]["lineage"]["repOf"] == ["rep-old-1", "rep-old-2"]
+    assert by_id["c1"]["lineage"]["sourceCardIds"] == ["old-1", "old-2"]
 
     serialized = json.dumps(context.inputs, ensure_ascii=False, sort_keys=True)
     assert "person@example.com" not in serialized
@@ -169,11 +170,17 @@ def test_merge_ir_fails_closed_when_candidate_count_exceeds_ir_budget() -> None:
     assert exc_info.value.code == "required_card_budget_exceeded"
 
 
-def test_merge_prompt_is_rendered_from_route_input_not_live_document_text_or_raw_sources() -> None:
+def test_merge_prompt_is_rendered_from_route_input_not_live_document_text_or_external_source() -> None:
     payload = _payload(
         [
-            _card("c1", "alpha   beta", claimType="fact", sources=["person@example.com"]),
-            _card("c2", "alpha beta again", claimType="fact", sources=["person@example.com"]),
+            _card(
+                "c1",
+                "alpha   beta",
+                claimType="fact",
+                sources=["old-1"],
+                meta=CardMeta(source="person@example.com"),
+            ),
+            _card("c2", "alpha beta again", claimType="fact"),
         ],
         islands=[Island(id="i1", cardIds=["c1", "c2"])],
         edges=[Edge(id="e1", fromId="c1", toId="c2", type="equivalence")],
@@ -190,15 +197,22 @@ def test_merge_prompt_is_rendered_from_route_input_not_live_document_text_or_raw
     assert "claimType" in prompt
     assert "islandIds" in prompt
     assert "equivalence" in prompt
-    assert "sourceRefs" in prompt
+    assert "sourceCardIds" in prompt
+    assert "old-1" in prompt
     assert "person@example.com" not in prompt
 
 
 def test_merge_route_sends_route_specific_inputs_to_provider(monkeypatch) -> None:
     payload = _payload(
         [
-            _card("c1", "alpha", claimType="fact", sources=["person@example.com"]),
-            _card("c2", "alpha again", claimType="fact", sources=["person@example.com"]),
+            _card(
+                "c1",
+                "alpha",
+                claimType="fact",
+                sources=["old-1"],
+                meta=CardMeta(source="person@example.com"),
+            ),
+            _card("c2", "alpha again", claimType="fact"),
         ]
     )
     captured = {}
@@ -216,6 +230,11 @@ def test_merge_route_sends_route_specific_inputs_to_provider(monkeypatch) -> Non
     assert response.suggestions == []
     provider_request = captured["request"]
     assert provider_request.inputs["routeInputVersion"] == ROUTE_INPUT_VERSION
+    by_id = {
+        item["id"]: item
+        for item in provider_request.inputs["mergeContext"]["candidateCards"]
+    }
+    assert by_id["c1"]["lineage"]["sourceCardIds"] == ["old-1"]
     serialized = json.dumps(provider_request.inputs, ensure_ascii=False, sort_keys=True)
     assert "person@example.com" not in serialized
 
@@ -244,12 +263,13 @@ def test_merge_parser_rejects_card_outside_route_candidate_set() -> None:
             _card("c1", "active"),
             _card("c2", "active too"),
             _card("c3", "held", holdState="held"),
+            _card("c4", "canonicalized source", canonicalId="c1"),
         ]
     )
 
     with pytest.raises(Exception) as exc_info:
         ai._parse_merge_suggestions(
-            '{"suggestions":[{"groupId":"m1","cardIds":["c1","c3"],"mergedTextDraft":"draft"}]}',
+            '{"suggestions":[{"groupId":"m1","cardIds":["c1","c4"],"mergedTextDraft":"draft"}]}',
             payload,
             allowed_card_ids=frozenset({"c1", "c2"}),
         )
