@@ -23,7 +23,9 @@
 
 R19では58件を一時的なbaselineとしてコードへ固定し、実際のDone-at-root件数との**一致**を要求する。件数が59以上なら新しいlegacy debtとして拒否する。逆に57以下へ減った場合も、その変更でbaselineを同じ値へ下げなければ検査を通さない。これにより、一度減らしたlegacyが古い上限まで増え直すことを防ぐ。
 
-個別ファイルを恒久的なallowlistとして正当化せず、baselineだけを段階的に58→57→…→0と単調減少させる。
+R20の横断監査では、legacyを1件 `done/` へ移すのと同じ変更で新しいDone-at-rootを1件増やすと、件数が58のままなので件数検査だけでは新規pathを見逃すことを確認した。そこでR18の `main@88aebae242d5d1a24278b3247d3544aeaa1ad386` から当時のDone-at-root pathを再構成し、そこに含まれない現在pathを拒否するidentity guardを件数ratchetへ追加する。
+
+個別ファイルを新しい正規配置としてallowlist化するのではなく、R18 path集合は「これ以上legacyへ新規参入させない」ための歴史境界としてだけ使い、件数baselineは段階的に58→57→…→0と単調減少させる。
 
 ## 受入条件
 
@@ -46,7 +48,17 @@ R19では58件を一時的なbaselineとしてコードへ固定し、実際のD
 
 専用unit契約について、基準値一致、増加拒否、減少時のbaseline更新要求、`done/` 除外の4ケースを確認した。新規テストファイルのmodule読込も、既存validator testと同じ `sys.path` / `sys.modules` 登録方式へ揃えた。
 
-現在のmainには `.github/workflows/` が存在せず、PR #2854にも自動workflow runは作られていない。このIssueのためにworkflowを再導入してpushをblockすることはしない。リポジトリ全体の `docs_check.py` を自動CI成功と誤記せず、今回確認できた専用契約と差分レビューを実装根拠として分けて記録する。
+## R20横断監査補正（2026-09-04）
+
+別kj-atlas作業との衝突を避けるためmainを再確認した際、R19実装がすでに統合済みであることを検出し、競合branchのPR化を中止した。その正本実装を再監査して、**同数入替**だけが件数ratchetの外側に残ることを確認した。
+
+- legacy `issue-b.md` を `done/` へ移す。
+- 同じ変更で新しい `issue-c.md` をrootの `Status: Done` とする。
+- root件数は変わらないため、件数検査だけなら通過してしまう。
+
+このケースを専用unit testへ追加し、件数検査は通る一方でpath identity guardが新規 `issue-c.md` を拒否する契約を固定した。実repoではGit checkoutからR18 path集合を再構成するため、58件のファイル名を別の手動一覧へ複製しない。
+
+現在のmainには `.github/workflows/` が存在せず、このIssueのためにworkflowを再導入してpushをblockすることはしない。リポジトリ全体の `docs_check.py` を自動CI成功と誤記せず、専用契約・Git上のbaseline再構成・差分レビューを実装根拠として分けて記録する。
 
 ## 優先度
 

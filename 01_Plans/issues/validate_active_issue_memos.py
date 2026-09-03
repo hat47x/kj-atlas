@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -43,6 +44,11 @@ REQUIRED_FIELDS = [
 # in the same change whenever legacy memos are migrated. Exact equality makes
 # the ratchet monotonic: debt cannot silently grow back after it has shrunk.
 LEGACY_DONE_AT_ROOT_BASELINE = 58
+# The count ratchet alone cannot detect a same-count replacement (one legacy
+# memo moves to done/ while one newly completed memo is left at root). Preserve
+# the R18 commit as the identity boundary so a new root path cannot hide behind
+# an offsetting legacy migration.
+LEGACY_DONE_AT_ROOT_BASELINE_COMMIT = "88aebae242d5d1a24278b3247d3544aeaa1ad386"
 
 
 @dataclass(frozen=True)
@@ -153,6 +159,91 @@ def discover_done_memos_at_root(root: Path) -> list[Path]:
         if status == "Done":
             done_paths.append(memo_path)
     return done_paths
+
+
+def _legacy_done_paths_from_git(
+    root: Path,
+    baseline_commit: str = LEGACY_DONE_AT_ROOT_BASELINE_COMMIT,
+) -> tuple[set[str] | None, str | None]:
+    """Reconstruct the R18 root Done paths when running inside a Git checkout.
+
+    Isolated unit-test fixtures are intentionally not repositories; callers can
+    skip the identity guard there and test it by injecting `legacy_paths`.
+    """
+    try:
+        repository = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+        )
+    except subprocess.CalledProcessError:
+        return None, None
+    except FileNotFoundError:
+        return None, "git executable was not found; cannot verify Done-at-root identity"
+
+    repository_root = Path(repository.stdout.strip()).resolve()
+    try:
+        relative_root = root.resolve().relative_to(repository_root).as_posix()
+    except ValueError:
+        return None, None
+
+    pathspec = f"{relative_root}/issue-*.md"
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository_root),
+            "grep",
+            "-l",
+            "-e",
+            r"^- Status: Done$",
+            baseline_commit,
+            "--",
+            pathspec,
+        ],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    if completed.returncode not in (0, 1):
+        detail = completed.stderr.strip() or f"git grep exited with {completed.returncode}"
+        return None, f"cannot read R18 Done-at-root identity baseline: {detail}"
+
+    prefix = f"{baseline_commit}:{relative_root}/"
+    paths: set[str] = set()
+    for line in completed.stdout.splitlines():
+        if not line.startswith(prefix):
+            return None, f"unexpected R18 baseline result `{line}`"
+        paths.add(line[len(prefix) :])
+    return paths, None
+
+
+def validate_done_memo_identity(
+    root: Path,
+    *,
+    legacy_paths: set[str] | None = None,
+) -> list[str]:
+    """Reject new root paths even when an old migration keeps the count flat."""
+    if legacy_paths is None:
+        legacy_paths, error = _legacy_done_paths_from_git(root)
+        if error:
+            return [error]
+        if legacy_paths is None:
+            return []
+
+    current_paths = {path.name for path in discover_done_memos_at_root(root)}
+    unexpected = sorted(current_paths - legacy_paths)
+    return [
+        f"{name}: Status: Done at active root was not part of the R18 legacy set. "
+        "Move the newly completed memo to 01_Plans/issues/done/; "
+        "a same-count replacement does not preserve the lifecycle contract."
+        for name in unexpected
+    ]
 
 
 def validate_done_memo_location(
@@ -279,6 +370,7 @@ def validate(root: Path) -> list[str]:
     return (
         validate_status_contract(root)
         + validate_done_memo_location(root)
+        + validate_done_memo_identity(root)
         + validate_rows(root, discover_active_rows(root))
     )
 

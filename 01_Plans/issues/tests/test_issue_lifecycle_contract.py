@@ -46,6 +46,28 @@ class IssueLifecycleContractTests(unittest.TestCase):
             self.assertIn("3 > 2", errors[0])
             self.assertIn("01_Plans/issues/done/", errors[0])
 
+    def test_same_count_replacement_with_new_done_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # issue-b is the legacy memo that was moved away; issue-c is a new
+            # Done-at-root memo. The count remains 2, so the count ratchet alone
+            # cannot distinguish this regression.
+            write_issue(root / "issue-a.md", "Done")
+            write_issue(root / "issue-c.md", "Done")
+
+            self.assertEqual(
+                MODULE.validate_done_memo_location(root, legacy_baseline=2),
+                [],
+            )
+            errors = MODULE.validate_done_memo_identity(
+                root,
+                legacy_paths={"issue-a.md", "issue-b.md"},
+            )
+
+            self.assertEqual(len(errors), 1)
+            self.assertIn("issue-c.md", errors[0])
+            self.assertIn("same-count replacement", errors[0])
+
     def test_baseline_must_be_lowered_when_legacy_count_shrinks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

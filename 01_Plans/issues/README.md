@@ -24,9 +24,14 @@
 
 継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っている。これらを一括移動して大量の参照差分を作ることはしない。
 
-一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は58件を一時的なlegacy baselineとして扱い、実際のDone-at-root件数との一致を要求する。新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。
+一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は二つの境界を同時に検査する。
 
-既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が後から古いbaselineまで増え直すことを防ぐ。この数はDoneメモの正規配置を意味せず、段階整理の現在地を単調に減らすためだけに保持する。最終的なbaselineは0である。
+1. **件数ratchet**: 58件を一時的なlegacy baselineとして実件数との一致を要求する。既存legacyを57件へ減らした場合は、同じ変更でbaselineも57へ下げる。これにより、一度減ったlegacy件数が古い上限まで増え直すことを防ぐ。
+2. **path identity guard**: R18の `main@88aebae242d5d1a24278b3247d3544aeaa1ad386` に存在したDone-at-root pathをGitから再構成し、そこに存在しなかった新しいpathがactive直下で `Status: Done` になることを拒否する。legacyを1件移動し、同じ変更で別の新規Done-at-rootを1件増やして件数を相殺することも許可しない。
+
+新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。R18 commitによるpath identity検査はGit checkoutで有効になり、件数ratchetは孤立したunit fixtureでも独立して検証できる。
+
+この数とR18 path集合はDoneメモの正規配置を意味せず、段階整理の現在地と「これ以上legacyを増やさない」境界を保持するためだけに使う。最終的な件数baselineは0である。
 
 ## 必須メタデータ
 
