@@ -137,6 +137,20 @@ def test_merge_ir_preserves_candidate_relations_and_contradiction_state() -> Non
     assert context.document_ir["evidence_links"][0]["contradiction_state"] == "held"
 
 
+def test_merge_ir_fails_closed_when_card_text_contains_pii() -> None:
+    payload = _payload(
+        [
+            _card("c1", "連絡先は person@example.com です"),
+            _card("c2", "連絡先を含まない観察です"),
+        ]
+    )
+
+    with pytest.raises(IRGenerationError) as exc_info:
+        _context(payload)
+
+    assert exc_info.value.code == "pii_detected"
+
+
 def test_merge_ir_fails_closed_when_required_text_would_be_truncated() -> None:
     payload = _payload([_card(f"c{i}", "x" * 2000) for i in range(7)])
 
