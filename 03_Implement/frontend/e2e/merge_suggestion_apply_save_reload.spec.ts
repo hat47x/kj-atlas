@@ -5,6 +5,7 @@ const SAVE = '[data-ui-core-action="save"]';
 const WORK_MODE = '[data-ui-core-action="work-mode"]';
 const MERGE_TAB = '#work-mode-tab-merge';
 const MERGE_PANEL = '#work-mode-panel-merge';
+const CANDIDATE_GROUP_CONTRACT = "CTR-2B-01-CANDIDATE-GROUP-V1";
 
 function seedDocument(): Record<string, unknown> {
   return {
@@ -63,6 +64,22 @@ async function routeMergePersistence(page: Page): Promise<{
     await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
   });
 
+  await page.route("**/ai/provider-status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ providerKind: "local", callCounts: {}, tokenUsage: {} }),
+    });
+  });
+
+  await page.route("**/ai/available-models", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ models: [] }),
+    });
+  });
+
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
     const method = route.request().method();
     if (method === "GET") {
@@ -108,6 +125,11 @@ async function routeMergePersistence(page: Page): Promise<{
         suggestions: [
           {
             groupId: "merge-checkout",
+            targetCardId: "source-a",
+            candidateCardIds: ["source-b"],
+            scoreSummary: { min: 0.92, max: 0.92, avg: 0.92 },
+            reasonCodes: ["semantic_similarity"],
+            snapshotVersion: CANDIDATE_GROUP_CONTRACT,
             cardIds: ["source-a", "source-b"],
             mergedTextDraft: "Long checkout waits frustrate customers.",
             rationale: "Both observations describe the same checkout-delay experience.",
