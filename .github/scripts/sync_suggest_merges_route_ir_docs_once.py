@@ -65,7 +65,7 @@ stage5 = replace_once(
     "| `suggest-merges` | `DocumentV1`、全カード | 04ステップ型の近接整理または核融合法型の意味核統合。hold、claimType、島文脈、relation/evidence、既存系譜、出典同一性を意味保存に使う | **route固有structured inputへ移行済み（2026-09-03）**。共有IRを正規化・SafeMode・上限管理の基底にし、merge固有文脈を外側へ重ねる。必要意味が欠ける場合はfail-closed |",
     "stage5 suggest-merges row",
 )
-section_anchor = "### 4. `summarize-island-relation`"
+section_anchor = "### 5. `summarize-island-relation`"
 merge_result = """#### 実装結果（2026-09-03）
 
 受入条件を `AI-MERGE-SEMANTICS-01` で先に固定したうえで、Stage 5の第3経路として `suggest-merges` をroute固有structured inputへ移行した。
