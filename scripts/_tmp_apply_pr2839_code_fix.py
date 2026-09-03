@@ -103,7 +103,10 @@ def test_route_renders_direct_member_text_from_ir_not_raw_document(monkeypatch) 
     normalized_text = next(
         item["text"] for item in llm_request.inputs["cards"] if item["id"] == "c1"
     )
-    assert normalized_text == "alphabeta gamma"
+    # IRのstructured-text正規化はタブ等の制御文字を除去するが、
+    # 前後空白や連続空白を別仕様へ勝手に畳み込まない。
+    assert normalized_text == raw_text.replace("\t", "")
+    assert normalized_text != raw_text
     assert json.dumps(normalized_text) in llm_request.prompt
     assert json.dumps(raw_text) not in llm_request.prompt
 '''
