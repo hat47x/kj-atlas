@@ -1,0 +1,83 @@
+name: Reconcile partial merge with R18 (one-shot)
+
+on:
+  push:
+    branches:
+      - plan/ai-merge-partial-contract-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: plan/ai-merge-partial-contract-20260903
+          fetch-depth: 0
+
+      - name: Merge latest main without committing yet
+        run: |
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+
+      - name: Reconcile planning docs with R18
+        run: python .github/scripts/reconcile_partial_with_r18_once.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run partial, client-boundary, UI and i18n regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npm test -- \
+            src/domain/merge_suggestion_decisions.test.ts \
+            src/domain/merge_suggestion_apply.test.ts \
+            src/domain/merge/decision_audit_events.test.ts \
+            src/ui/MergeSuggestionsPanel.test.ts \
+            src/api/client.test.ts \
+            src/domain/merge_candidates.test.ts \
+            src/i18n/translate.test.ts \
+            src/i18n/key_consistency.test.ts \
+            src/i18n/catalog_integrity.test.ts \
+            src/i18n/dynamic_key_coverage.test.ts
+          npm run typecheck
+
+      - name: Run partial save/reload E2E
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_suggestion_partial_persistence.spec.ts
+
+      - name: Check planning documents and lifecycle placement
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format json >/tmp/triage.json
+          test -s /tmp/triage.json
+          test ! -e 01_Plans/issues/issue-AI-MERGE-PARTIAL-01-define-partial-merge-selection-contract.md
+          test -e 01_Plans/issues/done/issue-AI-MERGE-PARTIAL-01-define-partial-merge-selection-contract.md
+          test -e 01_Plans/issues/issue-AI-MERGE-METHOD-TRACE-01-track-merge-method-through-decision-audit.md
+          grep -F -- '- Status: In Progress' 01_Plans/issues/issue-AI-MERGE-SEMANTICS-01-define-card-merge-semantics.md
+          grep -F -- 'AI-MERGE-METHOD-TRACE-01' 01_Plans/issues/issue-AI-MERGE-SEMANTICS-01-define-card-merge-semantics.md
+          git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Remove one-shot files and commit validated merge
+        run: |
+          rm .github/workflows/reconcile-partial-with-r18-once.yml
+          rm .github/scripts/reconcile_partial_with_r18_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'merge: R18後のpartial契約をlatest mainへ統合する'
+          git push origin HEAD:plan/ai-merge-partial-contract-20260903
