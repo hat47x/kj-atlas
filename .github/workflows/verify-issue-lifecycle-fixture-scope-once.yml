@@ -1,0 +1,41 @@
+name: Verify issue lifecycle fixture scope (one-shot)
+
+on:
+  push:
+    branches:
+      - fix/issue-lifecycle-baseline-fixture-scope-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/issue-lifecycle-baseline-fixture-scope-20260904
+          fetch-depth: 0
+
+      - name: Apply focused patch
+        run: python .github/scripts/fix_issue_lifecycle_fixture_scope_once.py
+
+      - name: Run lifecycle and docs contract regressions
+        run: |
+          python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
+          python -m unittest 01_Plans/issues/tests/test_issue_lifecycle_contract.py
+          python 01_Plans/docs_check.py
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format json >/tmp/triage.json
+          test -s /tmp/triage.json
+          git diff --check
+
+      - name: Remove one-shot files and push validated change
+        run: |
+          rm .github/workflows/verify-issue-lifecycle-fixture-scope-once.yml
+          rm .github/scripts/fix_issue_lifecycle_fixture_scope_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: lifecycle baselineを実issue rootへ限定する'
+          git push origin HEAD:fix/issue-lifecycle-baseline-fixture-scope-20260904
