@@ -7,54 +7,48 @@ RELEASE_DOC_PATH = REPO_ROOT / "04_Documentation" / "release.md"
 
 
 class ReleaseArtifactContractTest(unittest.TestCase):
-    """RELEASE-DOC-01: release.md must describe what release.yml actually does.
-
-    A tag push is a hard-to-reverse external state change; if the docs drift
-    from the workflow, a maintainer can believe a tag distributed something it
-    didn't (a registry push, a GitHub Release, a signed artifact).
-    """
+    """RELEASE-DOC-01: release.md must match the repository's automation state."""
 
     @classmethod
     def setUpClass(cls):
-        cls.workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         cls.doc_text = RELEASE_DOC_PATH.read_text(encoding="utf-8")
 
-    def test_tag_pattern_matches_documented_format(self):
-        self.assertIn(
-            "v*.*.*",
-            self.workflow_text,
-            "release.yml's tag trigger pattern changed; update release.md's vX.Y.Z description to match.",
-        )
+    def test_tag_format_stays_documented(self):
         self.assertIn("vX.Y.Z", self.doc_text)
 
-    def test_frontend_artifact_name_matches_documented_name(self):
+    def test_disabled_actions_state_is_explicit_when_workflow_is_absent(self):
+        if WORKFLOW_PATH.is_file():
+            self.skipTest("release workflow exists; enabled-workflow contract applies")
+
+        self.assertIn("GitHub Actionsによる自動リリースは無効", self.doc_text)
+        self.assertIn("自動生成される成果物はありません", self.doc_text)
+        self.assertNotIn("frontend-dist-<tag>", self.doc_text)
+
+    def test_workflow_artifact_contract_when_workflow_exists(self):
+        if not WORKFLOW_PATH.is_file():
+            self.skipTest("release workflow is intentionally absent")
+
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn(
+            "v*.*.*",
+            workflow_text,
+            "release.yml's tag trigger pattern changed; update release.md's vX.Y.Z description to match.",
+        )
         self.assertIn(
             "frontend-dist-${{ github.ref_name }}",
-            self.workflow_text,
-            "frontend artifact name changed in release.yml; update release.md's frontend-dist-<tag> description.",
+            workflow_text,
+            "frontend artifact name changed; update release.md in the same change.",
         )
         self.assertIn("frontend-dist-<tag>", self.doc_text)
-
-    def test_backend_image_stays_unpublished_and_doc_says_so(self):
-        self.assertIn(
-            "push: false",
-            self.workflow_text,
-            "backend job now pushes an image; release.md's no-distribution claim is stale.",
-        )
-        self.assertIn("kj-atlas-api:${{ github.ref_name }}", self.workflow_text)
+        self.assertIn("push: false", workflow_text)
+        self.assertIn("kj-atlas-api:${{ github.ref_name }}", workflow_text)
         self.assertIn("kj-atlas-api:<tag>", self.doc_text)
-        self.assertIn("push: false", self.doc_text)
 
-    def test_release_workflow_does_not_run_the_test_suites(self):
-        # release.yml intentionally never re-runs frontend/backend tests --
-        # release.md's "リリース判断の流れ" is the only place those run, against
-        # the exact commit SHA before it gets tagged. If a future workflow
-        # change adds test execution here, release.md's claim becomes stale.
         for marker in ("npm run test", "pytest", "playwright test"):
             self.assertNotIn(
                 marker,
-                self.workflow_text,
-                f"release.yml now runs {marker!r}; release.md's 'release.yml が再実行しない' claim is stale.",
+                workflow_text,
+                f"release.yml now runs {marker!r}; update release.md's pre-tag verification contract.",
             )
 
 

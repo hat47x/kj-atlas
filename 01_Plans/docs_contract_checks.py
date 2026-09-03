@@ -1168,10 +1168,17 @@ def check_ci_job_timeouts(
     root: Path,
     workflow_paths: tuple[Path, ...] = CI_WORKFLOW_PATHS,
 ) -> list[DocsCheckFinding]:
-    """Require every job in the maintained GitHub Actions workflows to have a bounded timeout."""
+    """Require bounded timeouts in each maintained workflow that exists.
+
+    A configured path identifies a workflow to inspect when present. It does
+    not require GitHub Actions itself to be enabled, so an absent workflow has
+    no jobs for this rule to inspect.
+    """
     findings: list[DocsCheckFinding] = []
     for relative_path in workflow_paths:
         source = root / relative_path
+        if not source.is_file():
+            continue
         lines = source.read_text(encoding="utf-8").splitlines()
         jobs_index = lines.index("jobs:")
         job_headers = [
