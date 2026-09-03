@@ -1,5 +1,4 @@
 import type { Card, Document, DocumentV1, Island, KnownEdgeType } from "../domain/types";
-import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 import {
   InvalidTenantSessionContextError,
   parseTenantSessionContext,
@@ -532,25 +531,10 @@ export async function suggestLayout(
 
 export type MergeSuggestion = {
   groupId: string;
-  targetCardId: string;
-  candidateCardIds: string[];
-  scoreSummary: {
-    min: number;
-    max: number;
-    avg: number;
-  };
-  reasonCodes: string[];
-  snapshotVersion: string;
   cardIds: string[];
   mergedTextDraft: string;
   rationale?: string;
 };
-
-const CANDIDATE_GROUP_CONTRACT_VERSION = STREAM_B_CONTRACTS.candidateGroup.contractId;
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -566,21 +550,10 @@ function isMergeSuggestion(value: unknown): value is MergeSuggestion {
   }
 
   const suggestion = value as Partial<MergeSuggestion>;
-  const summary = suggestion.scoreSummary;
-  if (!summary || typeof summary !== "object") {
-    return false;
-  }
-
   return (
     isNonEmptyString(suggestion.groupId)
-    && isNonEmptyString(suggestion.targetCardId)
-    && isStringArray(suggestion.candidateCardIds)
-    && isFiniteNumber(summary.min)
-    && isFiniteNumber(summary.max)
-    && isFiniteNumber(summary.avg)
-    && isStringArray(suggestion.reasonCodes)
-    && suggestion.snapshotVersion === CANDIDATE_GROUP_CONTRACT_VERSION
     && isStringArray(suggestion.cardIds)
+    && suggestion.cardIds.length >= 2
     && isNonEmptyString(suggestion.mergedTextDraft)
     && (suggestion.rationale === undefined || isNonEmptyString(suggestion.rationale))
   );

@@ -1,13 +1,4 @@
-import os
-from pathlib import Path
-
-run_id = os.environ["GITHUB_RUN_ID"]
-path = Path(
-    "01_Plans/issues/done/"
-    "issue-AI-MERGE-CLIENT-CONTRACT-01-remote-merge-response-rejected-by-frontend.md"
-)
-path.write_text(
-    f"""# Issue: AI-MERGE-CLIENT-CONTRACT-01 remote統合提案をfrontendがStream B契約として拒否する
+# Issue: AI-MERGE-CLIENT-CONTRACT-01 remote統合提案をfrontendがStream B契約として拒否する
 
 - Type: Bug / Integration / Contract
 - Status: Done
@@ -42,7 +33,7 @@ remote AI提案の共通 `MergeSuggestion` をbackend正本と同じ4項目へ�
 
 ## 検証結果（2026-09-04）
 
-GitHub Actions run `{run_id}` で、外部LLMを呼ばずに次を実行した。
+GitHub Actions run `33775874060` で、外部LLMを呼ばずに次を実行した。
 
 - `npm test -- src/api/client.test.ts src/domain/merge_candidates.test.ts`
 - `npm run typecheck`
@@ -56,6 +47,3 @@ GitHub Actions run `{run_id}` で、外部LLMを呼ばずに次を実行した�
 ## 文書品質の仕上げ
 
 原因を「AI提案がStream Bに従っていない」とせず、「異なる責務を持つ二つの契約をfrontendが混同していた」と記述した。remoteとlocalのどちらを正規化して消すのでもなく、それぞれの意味を残したまま境界を分ける文章へ整えた。
-""",
-    encoding="utf-8",
-)

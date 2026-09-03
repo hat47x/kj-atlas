@@ -2,6 +2,18 @@ import type { MergeSuggestion } from "../api/client";
 import type { Card, DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 
+export type DeterministicMergeSuggestion = MergeSuggestion & {
+  targetCardId: string;
+  candidateCardIds: string[];
+  scoreSummary: {
+    min: number;
+    max: number;
+    avg: number;
+  };
+  reasonCodes: string[];
+  snapshotVersion: string;
+};
+
 type CandidateReason = "normalized-text" | "token-signature";
 
 type CandidateGroup = {
@@ -45,7 +57,7 @@ function isEligible(card: Card): boolean {
   return normalizeText(card.text).length > 0;
 }
 
-function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
+function toSuggestions(groups: CandidateGroup[]): DeterministicMergeSuggestion[] {
   return groups
     .map((group) => {
       const sortedCards = [...group.cards].sort((left, right) => left.id.localeCompare(right.id));
@@ -69,7 +81,7 @@ function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
         cardIds,
         mergedTextDraft,
         rationale: `heuristic:${group.reason}`,
-      } satisfies MergeSuggestion;
+      } satisfies DeterministicMergeSuggestion;
     })
     .sort((left, right) => {
       const leftKey = left.cardIds.join(",");
@@ -78,7 +90,7 @@ function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
     });
 }
 
-export function collectMergeCandidates(document: DocumentV1): MergeSuggestion[] {
+export function collectMergeCandidates(document: DocumentV1): DeterministicMergeSuggestion[] {
   const eligibleCards = document.cards.filter(isEligible);
   if (eligibleCards.length < 2) {
     return [];
