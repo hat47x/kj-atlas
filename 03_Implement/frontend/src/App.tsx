@@ -3566,7 +3566,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const handleRecordMergeSuggestionDecision = useCallback(
-    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string }) => {
+    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string; selectedCardIds?: string[] }) => {
       if (!document) {
         return;
       }
@@ -3591,6 +3591,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         groupId: suggestion.groupId,
         decision,
         cardIds: suggestion.cardIds,
+        selectedCardIds: options.selectedCardIds,
         mergedTextDraft: suggestion.mergedTextDraft,
         editedText: suggestion.editedText,
         rationale: suggestion.rationale,
@@ -3616,6 +3617,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         decision,
         decidedAt,
         cardIds: suggestion.cardIds,
+        selectedCardIds: options.selectedCardIds,
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         decisionReason: options.decisionReason,
       });

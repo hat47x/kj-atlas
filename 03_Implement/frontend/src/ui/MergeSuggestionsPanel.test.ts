@@ -106,12 +106,14 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain(t("merge_suggestions.decision_unlock_hint"));
     expect(html).toContain(t("merge_suggestions.action.accept"));
     expect(html).toContain(t("merge_suggestions.action.partial"));
+    expect(html).toContain(t("merge_suggestions.partial_selection.title"));
+    expect(html).toContain(t("merge_suggestions.partial_selection.hint"));
     expect(html).toContain(t("merge_suggestions.action.reject"));
     expect(html).toContain(t("merge_suggestions.action.defer"));
     expect(html).toContain(t("merge_suggestions.human_in_loop_hint"));
   });
 
-  it("shows the explicit apply action only for an accepted suggestion", () => {
+  it("shows the explicit apply action for accepted and partially accepted suggestions", () => {
     const base = buildProps();
     const pendingHtml = renderToStaticMarkup(
       React.createElement(MergeSuggestionsPanel, {
@@ -127,6 +129,14 @@ describe("MergeSuggestionsPanel", () => {
     );
     expect(pendingHtml).toContain(t("merge_suggestions.action.apply"));
     expect(pendingHtml).not.toContain(t("merge_suggestions.action.applied"));
+
+    const partialHtml = renderToStaticMarkup(
+      React.createElement(MergeSuggestionsPanel, {
+        ...base,
+        suggestions: [{ ...base.suggestions[0], latestDecision: "partial" as const, representativeResolvedBy: "fallback" as const }],
+      }),
+    );
+    expect(partialHtml).toContain(t("merge_suggestions.action.apply"));
 
     const appliedHtml = renderToStaticMarkup(
       React.createElement(MergeSuggestionsPanel, {
