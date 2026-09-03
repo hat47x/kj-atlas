@@ -157,6 +157,65 @@ KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
 - provider名が一致しない場合は、1件も送信せず停止する。
 - 外部実行には専用opt-in環境変数が必要である。
 
+## R21: 上限引上げ・ルート別投影・分割処理の比較
+
+実token計測を待つ間にも、現在の決定論的な上限と代表入力だけから確定できることがある。`scripts/measure_ai_ir_budget_pressure.py` で300カード・30島の代表入力を再計測した結果、1カードの正規化後本文は46文字、300カードの本文合計は13,800文字になる。現行の `MAX_TEXT_CHARS=12,000` を超える。
+
+さらに、§5.2の固定240文字切り詰めは、この代表入力では1枚46文字しかないため何も短くしない。したがって、**`MAX_CARDS` だけを200から300へ引き上げても300枚を完全保持できない**。現行の文字数予算だけを当てはめると、46文字のカードは260枚で11,960文字、261枚で12,006文字となるため、少なくとも40枚はなお除外対象になる。
+
+これはprovider token数の推定ではない。IR自身が持つ文字数上限と、既存の合成入力を突き合わせた決定論的なcharacterizationである。providerに実際に何token届くかはR20で別に測る。
+
+### 方式A: global capを引き上げる
+
+方式Aは一括して扱わず、次の2案に分ける。
+
+- **A1: `MAX_CARDS` だけを300へ上げる**
+  - **採用候補から外す。** 代表入力では `MAX_TEXT_CHARS` が次の上限になるため、問題を解消しない。
+  - 上限を1つずつ場当たり的に広げると、別の上限へ問題を押し送るだけになる。
+- **A2: `MAX_CARDS` と文字数予算を整合させて広げる**
+  - 引き続き候補とする。
+  - 実装が最も単純で、全カードを一度に見せる意味も保ちやすい。
+  - ただし具体的な上限値は、R20で同じ300カード入力をnamed provider/modelへ送り、実入力token数と十分な余裕を確認してから決める。
+  - byte数や文字数からmodelのtoken上限を逆算して数値を決めない。
+
+### 方式B: ルート別・意味保存型の投影
+
+全Documentを一律に残す代わりに、そのルートの仕事に必要な意味を先に確保する。
+
+- `detect-contradiction` では、対象2カードと人間の既決矛盾だけをrequiredとして保護する方式が既に機能している。
+- `suggest-card-groups` でも、今回の候補集合に含まれるhold判断を局所的に保護する方式が機能している。
+- `generate-narrative` では、`causal` / `negate` の両端カードやreading order上の論理骨格を先に確保する案が考えられる。ただし、文書全体の叙述骨格を守ろうとするとrequired集合が文書規模へ近づき、A2との差が小さくなる可能性がある。
+- `suggest-layout` は全カードの相対位置が仕事そのものに近い。300カードすべてをrequiredにするだけでは現行 `MAX_CARDS=200` を超えてfail-closedするため、focus preservationをそのまま横展開する案にはしない。
+
+方式Bは、対象が少数へ自然に絞れるルートでは有効だが、すべてのルートへ同じ形で適用する前提にはしない。
+
+### 方式C: batch / hierarchical projection
+
+一度のpromptへ全量を入れず、島・reading order・構造単位で決定論的に分割して処理し、最後に統合する。
+
+利点は、1回あたりの入力予算を抑えながら全資料を処理対象にできることである。一方、単なる「何枚かずつ送る」実装では意味保存にならない。少なくとも次を設計する必要がある。
+
+- 分割境界を同一入力から同一結果になるよう決定論的にする。
+- batchをまたぐ `causal` / `negate`、島階層、少数意見、holdなどを境界で消さない。
+- 各batchの出力を、そのまま確定結果へ昇格させずproposal-onlyのまま統合する。
+- 「どの元カード・関係からどの中間結果が生じたか」を追跡できるようにする。
+
+`generate-narrative` ではreading orderや島を自然な分割単位として使える可能性がある。ただしbatchをまたぐ因果・対立を明示的に橋渡しし、最終叙述で再接続する必要がある。
+
+`suggest-layout` はさらに難しい。batchごとに局所座標を出しても、それぞれの座標系が独立していれば全体配置にはならない。局所配置の後に、島・代表点・跨り関係を使って全体座標へ整合させる第2段階が必要になる。したがってlayoutの方式Cは、単純な分割処理ではなく階層配置として設計する。
+
+### 実token計測後の判断基準
+
+R20の測定値が得られたら、ルートごとに次の順で判断する。
+
+1. 300カードを全量投影した場合でも、対象model/providerの入力上限に対して十分な余裕があるなら、まずA2を比較対象の基準にする。単純で追跡しやすく、意味を落とす規則も増やさずに済むためである。
+2. 全量投影が入力予算へ近すぎる、または余裕が不足する場合は、BまたはCをルートごとに選ぶ。一つの方式を全AIルートへ強制しない。
+3. `generate-narrative` はBで必要な論理骨格が十分小さく保てるかを先に検証し、文書規模へ膨らむならCを比較する。
+4. `suggest-layout` は全体相対配置という性質上、Bだけで解くのが難しい。A2が安全でなければ、階層配置を伴うCを主な比較対象にする。
+5. 方式を選んだ後に、その方式で実際に起こり得るcoverage lossの単位を定める。汎用的なloss metadataを先に作って設計を固定しない。
+
+現時点ではA2/B/Cのいずれも最終採択しない。R20の実測前にproduction上限やnarrative/layoutの投影方式を変更することもしない。
+
 ## なぜ問題か
 
 KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
@@ -189,19 +248,11 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
    - 座標を使わない代表route。
 4. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。**R20のハーネスで機械的にこの境界を固定した。**
 5. model/providerがusageを返さない場合は、その事実を記録し、別tokenizer導入を自動的な前提にしない。**R20では未完了結果として記録する。**
+6. `MAX_CARDS` だけの緩和で300カードを保持できるか確認する。**完了。R21の文字数予算characterizationにより不十分と確定した。**
 
 ### 検討する方式
 
-次を比較し、最初から一案へ固定しない。
-
-- **A: global capを引き上げる**
-  - 実測token予算に余裕があり、主要modelで安全に扱える場合。
-- **B: task別・意味保存型の投影へする**
-  - 各非空島から少なくとも代表カードを残す。
-  - `hold_state`、根拠/矛盾リンク、少数・反対所見などのうち、**当該taskの必要意味に含まれるもの**を明示規則で残す。
-  - taskに不要な情報を「保存のため」という理由だけでpromptへ全量複製しない。
-- **C: batch / hierarchical projection**
-  - 全量を一度にpromptへ入れず、島/ラウンド単位で分割し、最終提案へ統合する。
+方式の比較条件はR21を正本とする。要約すると、A1（`MAX_CARDS` だけの引上げ）は候補から外し、A2（カード上限と文字数予算を整合して広げる）・B（ルート別意味保存）・C（分割・階層処理）を、R20の実token測定後にルートごとに比較する。
 
 方式B/Cを採る場合でも、AIが勝手に「重要でないカード」を確定削除する設計にはしない。投影上の省略と、DocumentV1上の資料保持は別である。
 
@@ -211,6 +262,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] `suggest-layout` 相当の最重量promptと、座標を使わない代表routeのtoken/coverage差を記録できる。
 - [x] `suggest-card-groups` / `suggest-layout` / `generate-narrative` について、IR切り詰めが最終promptのどの情報を失わせるかを区別して記録できる。
 - [x] 移行済みrouteごとに、既存ADR・仕様・ACから「必要意味集合」を明示し、その集合に対する source → IR → final prompt のcoverageを評価できる。
+- [x] 300カード代表入力では、`MAX_CARDS` だけを300へ広げても `MAX_TEXT_CHARS` により全カード保持にならないことを決定論的なcharacterizationで固定する。
 - [ ] 300枚規模で、当該routeが必要とする非空島の意味構造がglobal selectionだけを理由に黙って失われない。失われる場合は、消費側がcoverage lossを明示的に判断できる契約を持つ。
 - [ ] 保留・根拠・矛盾・少数/反対所見などのうち、routeの必要意味に含まれる人間確定情報を中心性順位だけで無差別に落とさない規則、またはそれらを確実に処理するbatch規則を仕様化する。
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
@@ -226,10 +278,12 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `scripts/measure_ai_route_prompt_coverage.py`
   - `scripts/measure_ai_route_required_meaning.py`
   - `scripts/measure_ai_route_provider_tokens.py`
+  - `scripts/measure_ai_ir_budget_pressure.py`
   - `tests/test_llm_input_ir_scale.py`
   - `tests/test_ai_route_prompt_coverage.py`
   - `tests/test_ai_route_required_meaning_scale.py`
   - `tests/test_ai_route_provider_token_measurement.py`
+  - `tests/test_ai_ir_budget_pressure.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
   - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
@@ -238,9 +292,10 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 ## 次の判断順序
 
 1. **named provider/modelの実入力tokenを測る。** R20のハーネスを使い、`suggest-layout` 相当の最重量promptと、座標を使わない `generate-narrative` を同じmodel/providerで比較する。
-2. `generate-narrative` は、tailの `causal` / `negate` を守るために単純にrelation端点をrequired化してよいかを検討する。readingOrder上の全島・全relationへ広げるとrequired集合自体が大きくなるため、先にtoken予算とbatch候補を比較する。
-3. `suggest-layout` は全カードに相対座標が必要な仕事であり、300枚を全て `required_card_ids` にすると `MAX_CARDS=200` を超えてfail-closedする。focus preservationの単純横展開は採らず、global cap・task別投影・batch/hierarchical projectionをtoken実測とともに比較する。
-4. coverage-loss metadataは、narrative/layoutの投影方式が決まった後に、その方式で本当に後から検証すべき欠落単位を定めて追加する。先に汎用メタデータだけを増やさない。
+2. その測定値をR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
+3. `generate-narrative` は、必要な `causal` / `negate` の両端をBで十分小さく保護できるかを確認し、文書規模へ膨らむ場合はCを比較する。
+4. `suggest-layout` はA2が十分な余裕を持って使えない場合、局所配置と全体整合を分けた階層配置としてCを具体化する。
+5. coverage-loss metadataは方式決定後に、その方式で本当に検証すべき欠落単位へ合わせて追加する。先に汎用メタデータだけを増やさない。
 
 ## 完了境界
 
@@ -257,4 +312,5 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - `detect-contradiction` のfocus pair / 人間の既決矛盾は #2827 でscale保護した。
 - `suggest-card-groups` の要求対象に含まれるhold判断は #2830 でscale保護した。ただし候補集合全体や島全体のcoverageを解消したものではない。
 - R20のtoken計測ハーネスは、正確なtoken数をprovider-reported usageだけに限定し、実providerがusageを返さない場合も推定値で埋めない。
+- R21により、300カード代表入力では `MAX_CARDS` 単独引上げが不十分であることを固定した。production上限の変更はまだ行っていない。
 - 現時点では長期アーキテクチャ判断を確定しないため、新ADRは起票しない。task別投影やbatchingが複数境界を横断する長期契約へ発展した場合にのみ `ADR-0047` のトリガーを評価する。
