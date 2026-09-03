@@ -1,0 +1,56 @@
+name: Temporary merge apply UI verification
+
+on:
+  push:
+    branches:
+      - feat/merge-apply-ui-20260903
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/merge-apply-ui-20260903
+          fetch-depth: 0
+      - name: Apply UI patch
+        run: python .github/scripts/apply_merge_apply_ui_once.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Merge apply regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run src/domain/merge_suggestion_apply.test.ts src/domain/representative_merge.test.ts src/domain/merge_traceability.test.ts src/domain/merge_suggestion_decisions.test.ts
+          npm run typecheck
+          npm run test:i18n
+      - name: Planning document checks
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
+          git diff --check
+      - name: UI contract check
+        run: |
+          grep -F 'onApplyAccepted={handleApplyRecordedMergeSuggestion}' 03_Implement/frontend/src/App.tsx
+          grep -F 'merge_suggestions.action.apply' 03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx
+          grep -F 'applyRecordedMergeSuggestionDecision' 03_Implement/frontend/src/App.tsx
+      - name: Commit validated product changes
+        run: |
+          rm .github/workflows/tmp-verify-merge-apply-ui.yml
+          rm .github/scripts/apply_merge_apply_ui_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: 記録済みacceptの明示適用UIを追加する'
+          git push origin HEAD:feat/merge-apply-ui-20260903
