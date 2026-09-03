@@ -1,0 +1,67 @@
+name: Temporary focus preservation verification
+
+on:
+  push:
+    branches:
+      - verify/ai-ir-focus-preservation-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout verification branch
+        uses: actions/checkout@v5
+        with:
+          ref: verify/ai-ir-focus-preservation-20260903
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Run focus-preservation regressions
+        working-directory: 03_Implement/backend
+        run: >-
+          python -m pytest
+          tests/test_llm_input_ir_required_cards.py
+          tests/test_ai_detect_contradiction_ir_scale.py
+          tests/test_ai_route_required_meaning_scale.py
+          -q
+
+      - name: Close verified focus-preservation memo
+        run: python .github/scripts/verify_focus_preservation_once.py
+
+      - name: Run docs contract checks
+        run: python 01_Plans/docs_check.py
+
+      - name: Validate dogfood documents
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+
+      - name: Parse actionable planning memos
+        run: python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Remove one-shot verification files and commit result
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/scripts/verify_focus_preservation_once.py
+          rm .github/workflows/verify-focus-preservation-once.yml
+          git diff --check
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: verify AI IR focus preservation at 300-card scale'
+          git push origin HEAD:verify/ai-ir-focus-preservation-20260903
