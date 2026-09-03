@@ -3616,8 +3616,13 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         decisionReason: options.decisionReason,
       });
       setMergeDecisionAuditEvents((current) => appendMergeDecisionAuditEvent(current, auditEvent));
-      setMergeSuggestions((previousSuggestions) =>
-        previousSuggestions.map((item) =>
+      // applyDocumentChange() clears merge suggestion previews as part of a
+      // normal Document mutation. A recorded human decision must nevertheless
+      // keep the currently reviewed candidates visible so that the separate
+      // explicit apply step remains available. Rebuild from this callback's
+      // captured suggestion set instead of mapping the just-cleared state.
+      setMergeSuggestions(
+        mergeSuggestions.map((item) =>
           item.groupId === groupId
             ? {
                 ...item,
@@ -3667,8 +3672,12 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         return;
       }
 
-      setMergeSuggestions((current) =>
-        current.map((suggestion) =>
+      // The explicit apply is another Document mutation, so
+      // applyDocumentChange() clears the preview state here as well. Keep the
+      // reviewed candidate visible and replace only its lineage snapshot with
+      // the representative that was actually created.
+      setMergeSuggestions(
+        mergeSuggestions.map((suggestion) =>
           suggestion.groupId === groupId
             ? {
                 ...suggestion,
@@ -3681,7 +3690,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       );
       setMergeSuggestionError(null);
     },
-    [applyDocumentChange, document],
+    [applyDocumentChange, document, mergeSuggestions],
   );
 
   const handleExport = useCallback(() => {
