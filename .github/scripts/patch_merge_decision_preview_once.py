@@ -99,4 +99,34 @@ replace_once(
 
 with path.open("w", encoding="utf-8", newline="") as handle:
     handle.write(text)
-print("merge decision/apply preview preservation patched")
+
+# After an accepted merge is applied, its representative intentionally remains
+# textReviewed=false. SafeMode therefore blocks a fresh AI candidate collection
+# immediately after reload. The persistence E2E should verify the saved document
+# through the actual GET/render boundary rather than bypassing that safety rule by
+# asking AI to recreate an ephemeral suggestion preview.
+test_path = Path("03_Implement/frontend/e2e/merge_accept_apply_save_reload.spec.ts")
+with test_path.open("r", encoding="utf-8", newline="") as handle:
+    test_text = handle.read()
+test_eol = "\r\n" if "\r\n" in test_text else "\n"
+old_test = """  panel = await openMergePanel(page);
+  await panel.getByRole(\"button\", { name: /Collect.*candidate/i }).click();
+  suggestion = panel.locator(\"article\").filter({ hasText: \"c-source-1\" });
+  await expect(suggestion.getByRole(\"button\", { name: \"Merge applied\" })).toBeDisabled();
+  await expect(suggestion).toContainText(representative?.id ?? \"missing-representative\");
+
+  const primaryFlow = page.locator('[data-ui-region=\"primary-flow\"]');
+""".replace("\n", test_eol)
+new_test = """  // The newly created representative is intentionally unreviewed, so SafeMode
+  // correctly blocks a new AI merge-suggestion request at this point. Persistence
+  // is therefore verified through the actual GET/render boundary below, not by
+  // recreating an ephemeral suggestion preview after reload.
+  const primaryFlow = page.locator('[data-ui-region=\"primary-flow\"]');
+""".replace("\n", test_eol)
+if test_text.count(old_test) != 1:
+    raise SystemExit(f"reload persistence assertion: expected one match, got {test_text.count(old_test)}")
+test_text = test_text.replace(old_test, new_test, 1)
+with test_path.open("w", encoding="utf-8", newline="") as handle:
+    handle.write(test_text)
+
+print("merge decision/apply preview preservation and SafeMode-aligned reload E2E patched")
