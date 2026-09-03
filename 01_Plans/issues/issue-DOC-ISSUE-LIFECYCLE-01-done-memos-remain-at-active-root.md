@@ -1,7 +1,7 @@
 # Issue: DOC-ISSUE-LIFECYCLE-01 完了済みIssueメモがactive直下へ残り続ける
 
 - Type: Process / Documentation
-- Status: Open
+- Status: In Progress
 - Source Issue: 継続dogfood R18
 - Priority: P2
 - Owner: Maintainer
@@ -21,13 +21,23 @@
 
 まず、今後新たにDoneへ遷移するメモについて、状態と配置のずれを増やさない仕組みを整える。その後、既存のDone-at-rootは参照影響を確認しながら小さな単位で移行するか、legacyとして許容する範囲を明記する。
 
+R19では58件を一時的な件数ラチェットとして固定する。既存legacyを即時エラーにせず、58件以下への減少は許容し、59件以上への増加だけをdocs contractで拒否する。個別ファイルを恒久的なallowlistとして正当化せず、段階整理が進めば上限を引き下げられる形にする。
+
 ## 受入条件
 
-- [ ] `Status: Done` とactive直下配置の関係について、legacy許容範囲と新規変更時の規則を明文化する。
-- [ ] 新たにDoneへ遷移するIssueが、意図せずactive直下へ残ることをdocs contractで検出できる。ただし既存legacy 58件を即時エラーにはしない。
-- [ ] legacy baselineを固定する場合、件数または対象一覧が理由なく増えないことを検査する。
+- [x] `Status: Done` とactive直下配置の関係について、legacy許容範囲と新規変更時の規則を明文化する。
+- [x] 新たにDoneへ遷移するIssueが、意図せずactive直下へ残ることをdocs contractで検出できる。ただし既存legacy 58件を即時エラーにはしない。
+- [x] legacy baselineを固定する場合、件数または対象一覧が理由なく増えないことを検査する。
 - [ ] 既存Done-at-rootの移動は参照先を同時更新し、`docs_check.py` と関連dogfood検査を通す。
-- [ ] 大量一括移動を、このIssueの完了条件にはしない。
+- [x] 大量一括移動を、このIssueの完了条件にはしない。
+
+## R19実装結果（2026-09-04）
+
+`validate_active_issue_memos.py` に、ルート直下の `Status: Done` だけを数える配置検査を追加した。R18で観測した58件を一時上限とし、件数が増えた場合だけblocking errorにする。`done/` 配下の完了メモはこのlegacy予算へ数えない。
+
+専用unit testでは、基準件数そのものは許容すること、基準超過を拒否すること、件数減少を許容すること、`done/` 配下がルートlegacy件数へ混ざらないことを固定した。`README.md` にも、新たな完了メモは同じ変更で `done/` へ移すことと、58件が正規配置ではなく一時ラチェットであることを明記した。
+
+実リポジトリ全体での `docs_check.py` と関連検査はPR上のCIで確認する。成功後、このIssue自身を `done/` へ移して完了とする。
 
 ## 優先度
 
