@@ -1,0 +1,66 @@
+name: PR2839監査差分の一回限り検証
+
+on:
+  push:
+    branches:
+      - fix/island-summary-post-merge-audit-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: 表札IR監査差分を検証する
+    runs-on: ubuntu-latest
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: fix/island-summary-post-merge-audit-20260903
+          fetch-depth: 0
+
+      - name: Pythonテスト環境を準備する
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: 表札IRの対象回帰を確認する
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_island_summary_ir.py -q
+          pytest tests/test_ai_prompt.py -q
+          pytest tests/test_ai_llm_input_ir_coverage.py -q
+          pytest tests/ -k 'island_summary or safe_mode or llm_input_ir' -q
+
+      - name: backend全体の回帰を確認する
+        working-directory: 03_Implement/backend
+        run: pytest tests/ -q
+
+      - name: 変更箇所を静的検査する
+        working-directory: 03_Implement/backend
+        run: ruff check src tests/test_ai_island_summary_ir.py
+
+      - name: 回帰成功後に正本文書を同期する
+        run: python scripts/_tmp_finalize_pr2839.py
+
+      - name: 計画文書と差分を検査する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --check
+          git diff --check
+          grep -F 'required_text_truncated' 02_Architecture/api.md
+          grep -F 'required_card_context_mismatch' 02_Architecture/api.md
+          grep -F 'backend全体の回帰を実行して確認した' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+
+      - name: 検証用ファイルを除去して監査差分だけをコミットする
+        run: |
+          rm .github/workflows/validate-pr2839-once.yml
+          rm scripts/_tmp_finalize_pr2839.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit.'
+            exit 1
+          fi
+          git commit -m 'docs: 表札IRの監査結果を正本へ同期する'
+          git push origin HEAD:fix/island-summary-post-merge-audit-20260903
