@@ -10,6 +10,34 @@ type MergeResult = {
   mergedCardCount: number;
 };
 
+function projectedEdgeKey(
+  fromKind: "card" | "island",
+  fromId: string,
+  type: string,
+  toKind: "card" | "island",
+  toId: string,
+): string {
+  return JSON.stringify([fromKind, fromId, type, toKind, toId]);
+}
+
+function allocateProjectedEdgeId(
+  originalEdgeId: string,
+  representativeCardId: string,
+  usedEdgeIds: Set<string>,
+): string {
+  const baseId = `representative:${representativeCardId}:${originalEdgeId}`;
+  let candidate = baseId;
+  let suffix = 2;
+
+  while (usedEdgeIds.has(candidate)) {
+    candidate = `${baseId}:${suffix}`;
+    suffix += 1;
+  }
+
+  usedEdgeIds.add(candidate);
+  return candidate;
+}
+
 export function createRepresentativeMerge(
   document: DocumentV1,
   selectedCardIds: string[],
@@ -57,41 +85,62 @@ export function createRepresentativeMerge(
 
   const rewire = options.rewireMembershipAndEdges === true;
 
+  // 「再配線」は元構造の置換ではなく、代表カード側への投影追加として扱う。
+  // 統合元カードの島所属はDocumentに残し、後から統合前の構造へ戻れるようにする。
   const nextIslands = rewire
     ? document.islands.map((island) => {
         const hasMergedMember = island.cardIds.some((cardId) => selectedCardSet.has(cardId));
-        if (!hasMergedMember) {
+        if (!hasMergedMember || island.cardIds.includes(representativeCardId)) {
           return island;
         }
 
-        const filteredCardIds = island.cardIds.filter((cardId) => !selectedCardSet.has(cardId));
         return {
           ...island,
-          cardIds: filteredCardIds.includes(representativeCardId)
-            ? filteredCardIds
-            : [...filteredCardIds, representativeCardId],
+          cardIds: [...island.cardIds, representativeCardId],
         };
       })
     : document.islands;
 
   const nextEdges = rewire
-    ? document.edges.map((edge) => {
-        const fromKind = edge.fromKind ?? "card";
-        const toKind = edge.toKind ?? "card";
+    ? (() => {
+        const usedEdgeIds = new Set(document.edges.map((edge) => edge.id));
+        const projectedKeys = new Set<string>();
+        const projectedEdges: DocumentV1["edges"] = [];
 
-        const nextFromId = fromKind === "card" && selectedCardSet.has(edge.fromId) ? representativeCardId : edge.fromId;
-        const nextToId = toKind === "card" && selectedCardSet.has(edge.toId) ? representativeCardId : edge.toId;
+        for (const edge of document.edges) {
+          const fromKind = edge.fromKind ?? "card";
+          const toKind = edge.toKind ?? "card";
+          const fromSelected = fromKind === "card" && selectedCardSet.has(edge.fromId);
+          const toSelected = toKind === "card" && selectedCardSet.has(edge.toId);
 
-        if (nextFromId === edge.fromId && nextToId === edge.toId) {
-          return edge;
+          if (!fromSelected && !toSelected) {
+            continue;
+          }
+
+          const nextFromId = fromSelected ? representativeCardId : edge.fromId;
+          const nextToId = toSelected ? representativeCardId : edge.toId;
+
+          // 統合元カード同士の関係は元edgeに残る。代表カードの自己ループへ縮約しない。
+          if (fromKind === "card" && toKind === "card" && nextFromId === nextToId) {
+            continue;
+          }
+
+          const key = projectedEdgeKey(fromKind, nextFromId, edge.type, toKind, nextToId);
+          if (projectedKeys.has(key)) {
+            continue;
+          }
+          projectedKeys.add(key);
+
+          projectedEdges.push({
+            ...edge,
+            id: allocateProjectedEdgeId(edge.id, representativeCardId, usedEdgeIds),
+            fromId: nextFromId,
+            toId: nextToId,
+          });
         }
 
-        return {
-          ...edge,
-          fromId: nextFromId,
-          toId: nextToId,
-        };
-      })
+        return [...document.edges, ...projectedEdges];
+      })()
     : document.edges;
 
   return {
