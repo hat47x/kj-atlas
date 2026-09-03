@@ -9,7 +9,8 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/island_summary_ir.py`, `03_Implement/backend/tests/test_ai_island_summary_ir.py`
-- Expected verification level: integration
+- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`
+- Expected verification level: `integration`
 
 ## 課題
 
