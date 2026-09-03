@@ -24,7 +24,9 @@ jobs:
           cache: npm
           cache-dependency-path: 03_Implement/frontend/package-lock.json
       - name: Apply contract separation
-        run: python .github/scripts/fix_merge_client_contract_once.py
+        run: |
+          python .github/scripts/fix_merge_client_contract_once.py
+          python .github/scripts/restore_merge_client_validator_helpers_once.py
       - name: Install frontend dependencies
         working-directory: 03_Implement/frontend
         run: npm ci
@@ -47,6 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           rm .github/scripts/fix_merge_client_contract_once.py
+          rm .github/scripts/restore_merge_client_validator_helpers_once.py
           rm .github/scripts/record_merge_client_contract_issue_once.py
           rm .github/workflows/scan-active-memo-state-once.yml
           git diff --check
