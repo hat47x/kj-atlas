@@ -1,0 +1,52 @@
+name: 反対視点IR文書の最終整文（一回限り）
+
+on:
+  push:
+    branches:
+      - feat/opposing-viewpoint-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/opposing-viewpoint-ir-context-20260903
+          fetch-depth: 0
+
+      - name: 履歴説明と現行状態を自然な日本語で分ける
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md')
+          text = p.read_text(encoding='utf-8')
+          before = 'この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。現在も全カード本文と `evidenceLinks` は渡しているが、evidence linkの `contradictionState` はpromptに含めず、card relationも使っていない。'
+          after = 'この経路は「対象カードに対する反対視点またはevidence gapを、文書内の根拠・矛盾構造から提案する」と明記している。移行前のpromptには全カード本文と `evidenceLinks` を渡していたが、evidence linkの `contradictionState` は含まれず、card relationも使われていなかった。'
+          if text.count(before) != 1:
+              raise SystemExit('Stage 5の移行前説明を一意に特定できませんでした')
+          p.write_text(text.replace(before, after, 1), encoding='utf-8')
+          PY
+
+      - name: 文書差分を検証する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-opposing.txt
+          test -s /tmp/triage-opposing.txt
+          git diff --check
+          grep -F '移行前のpromptには全カード本文' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'required_text_truncated' 02_Architecture/api.md
+
+      - name: 一時ファイルを除去してpushする
+        run: |
+          rm .github/workflows/polish-opposing-docs-once.yml
+          rm .github/scripts/sync_opposing_required_text_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: 反対視点IRの移行前後を自然な日本語で整理する'
+          git fetch origin feat/opposing-viewpoint-ir-context-20260903
+          git rebase origin/feat/opposing-viewpoint-ir-context-20260903
+          git push origin HEAD:feat/opposing-viewpoint-ir-context-20260903
