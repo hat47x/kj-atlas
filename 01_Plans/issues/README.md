@@ -49,7 +49,7 @@ python 01_Plans/triage_actionable_plans.py
 
 - issue / docs変更の統一検証入口: `python 01_Plans/docs_check.py`（有効化済みruleだけをblocking実行し、未有効化ruleも表示）
 - Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査し、active直下のlegacy Done上限も検査）
-- 検証ツールのテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- 検証ツールのテスト: `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
 
 過去の同期ログ、件数、Decision Queue、RACI記録はGit履歴に残っている。現在の作業判断には使用しない。
