@@ -37,6 +37,12 @@ REQUIRED_FIELDS = [
     "- Expected verification level:",
 ]
 
+# DOC-ISSUE-LIFECYCLE-01:
+# 2026-09-04時点でactive直下に残っていたDone memo 58件はlegacyとして
+# 一時的に許容する。ただし、この数を「維持すべき目標値」とは扱わない。
+# 減少は許容し、増加だけをblockingする。
+LEGACY_DONE_AT_ROOT_MAX = 58
+
 
 @dataclass(frozen=True)
 class ActiveMemoRow:
@@ -102,6 +108,37 @@ def discover_active_rows(root: Path) -> list[ActiveMemoRow]:
         )
     return rows
 
+
+def discover_done_at_root(root: Path) -> list[Path]:
+    """Return legacy Done memos that still sit directly under the active root.
+
+    Only the root is inspected intentionally. `done/` is the canonical
+    destination and must not count against the legacy ceiling.
+    """
+    done_at_root: list[Path] = []
+    for memo_path in sorted(root.glob("issue-*.md")):
+        text = memo_path.read_text(encoding="utf-8")
+        status = parse_issue_status(extract_field_value(text, "Status"))
+        if status == "Done":
+            done_at_root.append(memo_path)
+    return done_at_root
+
+
+def validate_done_at_root_legacy(root: Path) -> list[str]:
+    """Keep the 2026-09-04 legacy set from growing.
+
+    The baseline is a ceiling rather than a target: moving legacy memos to
+    `done/` is always valid and must not require updating the constant.
+    """
+    done_at_root = discover_done_at_root(root)
+    if len(done_at_root) <= LEGACY_DONE_AT_ROOT_MAX:
+        return []
+
+    return [
+        "Done memo remains at active root beyond the 2026-09-04 legacy ceiling "
+        f"({len(done_at_root)} > {LEGACY_DONE_AT_ROOT_MAX}). "
+        "Move newly completed memo(s) to `01_Plans/issues/done/` in the same change."
+    ]
 
 
 def extract_dependency_paths(memo_text: str) -> list[str]:
@@ -226,7 +263,11 @@ def validate_status_contract(root: Path) -> list[str]:
 
 
 def validate(root: Path) -> list[str]:
-    return validate_status_contract(root) + validate_rows(root, discover_active_rows(root))
+    return (
+        validate_done_at_root_legacy(root)
+        + validate_status_contract(root)
+        + validate_rows(root, discover_active_rows(root))
+    )
 
 
 def main() -> int:
@@ -246,7 +287,7 @@ def main() -> int:
             print(f"- {err}")
         return 1
 
-    rows = discover_active_rows(args.root)
+    rows = discover_active_rows(root)
     print(f"ok: validated {len(rows)} active issue memos")
     return 0
 
