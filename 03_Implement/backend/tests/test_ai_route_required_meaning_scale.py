@@ -31,7 +31,7 @@ def test_detect_tail_pair_preserves_prior_human_adjudication_under_global_cap() 
     assert result["ir"]["adjudicated_contradiction_found"] is True
 
 
-def test_groups_tail_island_becomes_empty_and_tail_hold_leaves_projected_set() -> None:
+def test_groups_tail_hold_is_preserved_without_claiming_full_island_coverage() -> None:
     result = measure()["scenarios"]["groups-late-islands-and-holds"]
 
     assert result["ir"]["truncation"] == {
@@ -40,13 +40,16 @@ def test_groups_tail_island_becomes_empty_and_tail_hold_leaves_projected_set() -
     }
     assert result["source"]["tail_island_member_count"] == 10
     assert result["ir"]["tail_island_present"] is True
-    assert result["ir"]["tail_island_member_count"] == 0
-    assert result["ir"]["held_card_present"] is False
-    # The card is neither proposed nor reported as withheld: it disappeared at
-    # projection time.  The response's generic `truncated` flag is therefore the
-    # only remaining signal that the requested set is incomplete.
+    # Only the requested card carrying the human's hold decision is reserved.
+    # The other nine tail-island members remain outside the global top-200, so
+    # this remediation does not pretend to solve complete island coverage.
+    assert result["ir"]["tail_island_member_count"] == 1
+    assert result["ir"]["held_card_present"] is True
+    # AC-2: the held card must be explicitly reported as withheld and must never
+    # become a grouping candidate merely because the document is large.
     assert result["grouping"]["held_card_candidate"] is False
-    assert result["grouping"]["held_card_withheld"] is False
+    assert result["grouping"]["held_card_withheld"] is True
+    assert result["grouping"]["tail_island_membership_visible_in_prompt"] is True
 
 
 def test_narrative_tail_causal_and_negate_skeleton_is_pruned() -> None:
