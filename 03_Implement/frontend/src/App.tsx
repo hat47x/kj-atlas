@@ -68,10 +68,10 @@ import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./
 import { moveCardToIsland } from "./domain/island_edge_aggregate";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
-  appendMergeSuggestionDecision,
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
+import { applyMergeSuggestionHumanDecision } from "./domain/merge_suggestion_apply";
 import { isSourceCard, Document, DocumentV1, Island, Narrative, type CardKa, type CardMeta, type ContradictionSignalDecision, type ContradictionSignalReviewStatus, type CritiqueInput, type EvidenceLink, type KnownEdgeType, type Point, type RelationSummary, type ReproposalDiff } from "./domain/types";
 import { KNOWN_EDGE_TYPES } from "./domain/types";
 import { answerCardQualityQuestion, beginCardQualityRewrite, cardQualityRestoreTarget, openCardQualityAssist, type CardQualityAssistState, type CardQualityDecision } from "./domain/card_quality";
@@ -3562,75 +3562,92 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const handleRecordMergeSuggestionDecision = useCallback(
-    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string }) => {
-      if (!document) {
-        return;
-      }
+  (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string }) => {
+    if (!document) {
+      return;
+    }
 
-      if (!options.isTrusted) {
-        setMergeSuggestionError(t("app.status.merge_suggestion.trusted_interaction_required"));
-        return;
-      }
+    if (!options.isTrusted) {
+      setMergeSuggestionError(t("app.status.merge_suggestion.trusted_interaction_required"));
+      return;
+    }
 
-      const suggestion = mergeSuggestions.find((item) => item.groupId === groupId);
-      if (!suggestion) {
-        return;
-      }
+    const suggestion = mergeSuggestions.find((item) => item.groupId === groupId);
+    if (!suggestion) {
+      return;
+    }
 
-      const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;
-      if (availableCardCount < 2) {
-        setMergeSuggestionError(t("app.status.merge_suggestion.no_longer_applicable"));
-        return;
-      }
+    const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;
+    if (availableCardCount < 2) {
+      setMergeSuggestionError(t("app.status.merge_suggestion.no_longer_applicable"));
+      return;
+    }
 
-      const nextDocument = appendMergeSuggestionDecision(document, {
-        groupId: suggestion.groupId,
-        decision,
-        cardIds: suggestion.cardIds,
-        mergedTextDraft: suggestion.mergedTextDraft,
-        editedText: suggestion.editedText,
-        rationale: suggestion.rationale,
-        decisionReason: options.decisionReason,
-      });
-      const decisionLabel = t({
-        accept: "merge_suggestions.decision.accepted",
-        partial: "merge_suggestions.decision.partially_accepted",
-        reject: "merge_suggestions.decision.rejected",
-        defer: "merge_suggestions.decision.deferred",
-      }[decision]);
-      applyDocumentChange(
-        nextDocument,
-        t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel })
-      );
+    const decisionResult = applyMergeSuggestionHumanDecision(
+      document,
+      suggestion,
+      decision,
+      { decisionReason: options.decisionReason }
+    );
+    if (!decisionResult.ok) {
+      setMergeSuggestionError(t("app.status.merge_suggestion.no_longer_applicable"));
+      return;
+    }
 
-      const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
-      const decisionId = nextDocument.mergeSuggestionDecisions?.at(-1)?.decisionId ?? crypto.randomUUID();
-      const auditEvent = createMergeDecisionAuditEvent({
-        eventId: decisionId,
-        groupId: suggestion.groupId,
-        decision,
-        decidedAt,
-        cardIds: suggestion.cardIds,
-        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
-        decisionReason: options.decisionReason,
-      });
-      setMergeDecisionAuditEvents((current) => appendMergeDecisionAuditEvent(current, auditEvent));
-      setMergeSuggestions((previousSuggestions) =>
-        previousSuggestions.map((item) =>
-          item.groupId === groupId
-            ? {
-                ...item,
-                latestDecision: decision,
-                latestDecidedAt: decidedAt,
-              }
-            : item
-        )
-      );
-      setMergeSuggestionError(null);
-      setStatusMessage(t("app.status.merge_suggestion.decision_recorded", { decision: decisionLabel }));
-    },
-    [applyDocumentChange, document, mergeSuggestions]
-  );
+    const nextDocument = decisionResult.nextDocument;
+    const latestDecisionEntry = nextDocument.mergeSuggestionDecisions?.at(-1);
+    const decisionLabel = t({
+      accept: "merge_suggestions.decision.accepted",
+      partial: "merge_suggestions.decision.partially_accepted",
+      reject: "merge_suggestions.decision.rejected",
+      defer: "merge_suggestions.decision.deferred",
+    }[decision]);
+    applyDocumentChange(
+      nextDocument,
+      t("app.history.merge_suggestion.decision_recorded", { decision: decisionLabel })
+    );
+
+    const decidedAt = latestDecisionEntry?.decidedAt ?? new Date().toISOString();
+    const decisionId = latestDecisionEntry?.decisionId ?? crypto.randomUUID();
+    const auditEvent = createMergeDecisionAuditEvent({
+      eventId: decisionId,
+      groupId: suggestion.groupId,
+      decision,
+      decidedAt,
+      cardIds: suggestion.cardIds,
+      snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      decisionReason: options.decisionReason,
+    });
+    setMergeDecisionAuditEvents((current) => appendMergeDecisionAuditEvent(current, auditEvent));
+    setMergeSuggestions((previousSuggestions) =>
+      previousSuggestions.map((item) => {
+        if (item.groupId !== groupId) {
+return item;
+        }
+        if (decision !== "accept" || !latestDecisionEntry?.representativeCardId) {
+return {
+  ...item,
+  latestDecision: decision,
+  latestDecidedAt: decidedAt,
+};
+        }
+        return {
+...item,
+latestDecision: decision,
+latestDecidedAt: decidedAt,
+representativeCardId: latestDecisionEntry.representativeCardId,
+representativeResolvedBy: latestDecisionEntry.representativeResolvedBy,
+representativeSourceCount:
+  (latestDecisionEntry.sourceCardIds?.length ?? 0)
+  + (latestDecisionEntry.missingSourceCardIds?.length ?? 0),
+        };
+      })
+    );
+    setMergeSuggestionError(null);
+    setStatusMessage(t("app.status.merge_suggestion.decision_recorded", { decision: decisionLabel }));
+  },
+  [applyDocumentChange, document, mergeSuggestions]
+);
 
   const handleExport = useCallback(() => {
     if (!document) {
