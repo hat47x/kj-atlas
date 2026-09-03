@@ -69,6 +69,28 @@ class IssueLifecycleContractTests(unittest.TestCase):
                 [],
             )
 
+    def test_unified_validate_does_not_apply_repo_baseline_to_synthetic_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            self.assertEqual(MODULE.validate(root), [])
+
+    def test_unified_validate_can_explicitly_enforce_fixture_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_issue(root / "issue-a.md", "Done")
+            write_issue(root / "issue-b.md", "Done")
+            write_issue(root / "issue-c.md", "Done")
+
+            errors = MODULE.validate(
+                root,
+                enforce_done_baseline=True,
+                legacy_done_baseline=2,
+            )
+
+            self.assertEqual(len(errors), 1)
+            self.assertIn("3 > 2", errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()

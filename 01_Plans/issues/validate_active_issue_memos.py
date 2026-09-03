@@ -275,12 +275,36 @@ def validate_status_contract(root: Path) -> list[str]:
     return errors
 
 
-def validate(root: Path) -> list[str]:
-    return (
-        validate_status_contract(root)
-        + validate_done_memo_location(root)
-        + validate_rows(root, discover_active_rows(root))
+def validate(
+    root: Path,
+    *,
+    enforce_done_baseline: bool | None = None,
+    legacy_done_baseline: int = LEGACY_DONE_AT_ROOT_BASELINE,
+) -> list[str]:
+    """Validate issue memos without leaking repo-local debt into test fixtures.
+
+    The Done-at-root baseline is a checked-in debt value for this repository's
+    real ``01_Plans/issues`` directory. Synthetic roots used by contract tests
+    have no relationship to that historical count, so the unified validator
+    only applies the ratchet automatically to the real issues root. Callers
+    that intentionally exercise the lifecycle contract on another root can
+    opt in explicitly and supply a fixture-sized baseline.
+    """
+    real_issues_root = Path(__file__).resolve().parent
+    should_enforce_done_baseline = (
+        root.resolve() == real_issues_root
+        if enforce_done_baseline is None
+        else enforce_done_baseline
     )
+
+    errors = validate_status_contract(root)
+    if should_enforce_done_baseline:
+        errors += validate_done_memo_location(
+            root,
+            legacy_baseline=legacy_done_baseline,
+        )
+    errors += validate_rows(root, discover_active_rows(root))
+    return errors
 
 
 def main() -> int:
