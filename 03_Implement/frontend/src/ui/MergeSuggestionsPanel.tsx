@@ -32,6 +32,7 @@ type MergeSuggestionsPanelProps = {
     decision: MergeSuggestionDecision,
     options: { isTrusted: boolean; decisionReason?: string }
   ) => void;
+  onApplyAccepted: (groupId: string, options: { isTrusted: boolean }) => void;
   latestAuditEventByGroup?: ReadonlyMap<string, MergeDecisionAuditEvent>;
   auditEvents?: readonly MergeDecisionAuditEvent[];
   onExportAuditEvents?: () => void;
@@ -154,6 +155,7 @@ export function MergeSuggestionsPanel({
   cardsById,
   onMergedTextChange,
   onDecide,
+  onApplyAccepted,
   latestAuditEventByGroup,
   auditEvents,
   onExportAuditEvents,
@@ -189,6 +191,25 @@ export function MergeSuggestionsPanel({
 
     setTrustBoundaryErrorMessage(null);
     onDecide(groupId, decision, { isTrusted: event.isTrusted, decisionReason });
+  };
+
+
+  const handleApplyClick = (groupId: string, event: MouseEvent<HTMLButtonElement>) => {
+    const trustBoundary = evaluateMergeDecisionTrustBoundary({
+      isReadOnly,
+      isTrustedEvent: event.isTrusted,
+    });
+    if (!trustBoundary.allowDecision) {
+      setTrustBoundaryErrorMessage(
+        trustBoundary.rejectionReason === "read_only"
+          ? t("merge_suggestions.trust_boundary.read_only")
+          : t("merge_suggestions.trust_boundary.untrusted_event"),
+      );
+      return;
+    }
+
+    setTrustBoundaryErrorMessage(null);
+    onApplyAccepted(groupId, { isTrusted: event.isTrusted });
   };
 
   return (
@@ -248,6 +269,8 @@ export function MergeSuggestionsPanel({
       ) : null}
       {suggestions.map((suggestion) => {
         const hasDecisionReason = Boolean(normalizeHilDecisionReason(decisionReasonByGroup[suggestion.groupId]));
+        const isAccepted = suggestion.latestDecision === "accept";
+        const isApplied = isAccepted && (suggestion.representativeResolvedBy === "repOf" || suggestion.representativeResolvedBy === "mergedIntoCardId");
         return (
           <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
@@ -384,6 +407,15 @@ export function MergeSuggestionsPanel({
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "partial", event)}>{t("merge_suggestions.action.partial")}</button>
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "reject", event)}>{t("merge_suggestions.action.reject")}</button>
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "defer", event)}>{t("merge_suggestions.action.defer")}</button>
+            {isAccepted ? (
+              <button
+                type="button"
+                disabled={isReadOnly || isApplied}
+                onClick={(event) => handleApplyClick(suggestion.groupId, event)}
+              >
+                {t(isApplied ? "merge_suggestions.action.applied" : "merge_suggestions.action.apply")}
+              </button>
+            ) : null}
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
             {t("merge_suggestions.human_in_loop_hint")}

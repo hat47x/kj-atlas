@@ -43,9 +43,17 @@
 - [x] decision snapshotが適用後の実代表カードIDとsource系譜へ同期される。
 - [x] merge採用だけでは `textReviewed=true` に昇格しない。
 - [x] JSON save/reload相当のround-trip後も代表カードからsourceへ戻れることをunit testで確認する。
-- [ ] UIから、記録済みacceptに対する明示的な実適用操作を呼び出せる。
+- [x] UIから、記録済みacceptに対する明示的な実適用操作を呼び出せる。accept自体は判断記録のまま維持し、別の「採用した統合を適用」操作でdomain transactionを呼ぶ。
 - [ ] decision → apply → Document保存 → 再読込を実際のUI/API経路でintegration regressionとして固定する。
 - [ ] 最終成果物を自然な日本語として全文ドラフトし直す。
+
+## 第二段階の実装結果（2026-09-03）
+
+`MergeSuggestionsPanel` に、最新判断が `accept` の候補だけへ明示的な「採用した統合を適用」操作を追加した。`accept` ボタン自体の意味は変更せず、判断記録とDocument変更を別操作のまま保っている。
+
+適用操作もtrusted human eventを要求し、AppはDocumentに記録された最新decisionを取得して `applyRecordedMergeSuggestionDecision()` へ渡す。成功時は既存の `applyDocumentChange()` を通してDocumentをdirtyにし、保存はアプリ既存の明示的な保存操作に委ねる。したがって、AI提案やacceptクリックだけで自動保存・自動mergeは発生しない。
+
+実適用後は候補表示の代表カードID・解決方法・source件数を即時更新し、重複適用の操作を無効化する。
 
 ## 検証計画
 
