@@ -1,0 +1,87 @@
+name: 反対視点IR正本文書の確定（一回限り）
+
+on:
+  push:
+    branches:
+      - feat/opposing-viewpoint-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 最新ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: feat/opposing-viewpoint-ir-context-20260903
+          fetch-depth: 0
+
+      - name: 反対視点IRの実績を正本文書へ同期する
+        run: python .github/scripts/sync_opposing_viewpoint_ir_docs_once.py
+
+      - name: merge前監査で追加されたfail-closed境界を同期する
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, before, after):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(before)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}: {before}')
+              p.write_text(text.replace(before, after, 1), encoding='utf-8')
+
+          stage5 = '01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md'
+          replace_once(
+              stage5,
+              '必須relation / evidenceが共有IRの上限処理で欠けた場合は `required_relation_missing` / `required_evidence_missing`、必須カード集合が上限を超える場合は `required_card_budget_exceeded` でprovider呼出前にfail-closedにする。',
+              '必須カード本文が共有IRの文字数上限で短縮される場合は `required_text_truncated`、必須relation / evidenceが上限処理で欠ける場合は `required_relation_missing` / `required_evidence_missing`、必須カード集合が上限を超える場合は `required_card_budget_exceeded` でprovider呼出前にfail-closedにする。',
+          )
+
+          projection = '01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md'
+          replace_once(
+              projection,
+              '- 必須relation / evidenceが共有IRの上限処理で欠けた場合はprovider呼出前にfail-closedにする。',
+              '- 対象カードや直接文脈の本文が共有IRの文字数上限で短縮される場合は `required_text_truncated`、必須relation / evidenceが上限処理で欠けた場合はprovider呼出前にfail-closedにする。',
+          )
+
+          api = '02_Architecture/api.md'
+          replace_once(
+              api,
+              '主なコードは `required_card_budget_exceeded` / `required_card_context_mismatch` / `required_relation_missing` / `required_evidence_missing`。',
+              '主なコードは `required_card_budget_exceeded` / `required_text_truncated` / `required_card_context_mismatch` / `required_relation_missing` / `required_evidence_missing`。',
+          )
+          PY
+
+      - name: 計画文書と差分を検証する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage-opposing.txt
+          test -s /tmp/triage-opposing.txt
+          git diff --check
+          grep -F '6経路がIR経由、未移行は5経路' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'required_text_truncated' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'Target card:` の本文もIR正規化後' 02_Architecture/api.md
+          grep -F 'required_text_truncated' 02_Architecture/api.md
+
+      - name: docs_checkの既知main基盤不整合を明示する
+        run: |
+          set +e
+          python 01_Plans/docs_check.py >/tmp/docs-check.txt 2>&1
+          code=$?
+          set -e
+          test "$code" -ne 0
+          grep -F '.github/workflows/ci.yml' /tmp/docs-check.txt
+
+      - name: 一時ファイルを除去して正本差分をpushする
+        run: |
+          rm .github/workflows/finalize-opposing-docs-once.yml
+          rm .github/scripts/sync_opposing_viewpoint_ir_docs_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: 反対視点IRのStage 5実績を正本へ同期する'
+          git push origin HEAD:feat/opposing-viewpoint-ir-context-20260903
