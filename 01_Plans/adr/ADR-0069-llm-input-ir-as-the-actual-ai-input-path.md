@@ -1,6 +1,6 @@
 # ADR-0069: LLM投入IRをAI入力の実経路とする（座標・関係語彙・島階層の決着を含む）
 
-- Status: Accepted（2026-08-29、D1=B・D3=A・D4=A 仮承認。利用者からの委譲に基づく暫定決定であり、特別に重大な安全境界変更を伴わないため実行フェーズへ移行。D2は2026-08-13に別途採択済み）
+- Status: Accepted（2026-08-29、D1=B・D3=A・D4=A 仮承認。D2は2026-08-13に別途採択済み。2026-09-03にD5=Aを追補し、generic Document IRとtask-local structured inputの適用境界を明確化）
 - Date: 2026-08-09
 - Deciders: Project Maintainers
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/frontend/src/domain/island_edge_aggregate.ts`, `03_Implement/frontend/src/export/abstract_map_export.ts`, `02_Architecture/llm_input_ir_spec.md`
@@ -122,6 +122,33 @@ IR は本問題提起に既に答えを出しているが、その答えは提�
 
 **決定（2026-08-29・仮承認）**: **D4=A を採択**。サーバ側（Python）にIRビルダーを実装し、`test_ts_python_contract_drift.py` の対象へ投影ロジックを追加する。
 
+### D5: generic Document IR と task-local structured input の適用境界
+
+Stage 5の棚卸しで、残存経路には次の3種類が混在することが分かった。
+
+1. `DocumentV1` 由来の構造そのものをAIの判断材料にする経路。
+2. `DocumentV1` は受け取るが、呼出側がAIへ渡してよいgrounding集合を先に限定している経路。
+3. Documentを受け取らず、単一本文や選択済みの概要情報だけを扱う経路。
+
+ここで「すべての `/ai/*` をgeneric Document IRへ通す」ことを目的化すると、2ではgrounding境界を広げ、3では架空IDや疑似Documentを作る逆効果が生じる。したがって、**AI入力を構造化された実経路へ揃えるという原則**と、**`llm_input_ir_spec.md` のgeneric Document IRを使う条件**を分けて決める。
+
+| 案 | 内容 | 評価 |
+|---|---|---|
+| **A（採択）** | AI入力の構造化・実経路化は全AI経路に要求するが、generic Document IRはDocument由来の構造を仕事上必要とする経路に適用する。限定grounding/no-doc経路はtask-local structured inputを正式な入力契約として認める | 仕事上の意味と安全境界を保ったまま、IR利用そのものを目的化しない |
+| B | すべてのAI経路をgeneric Document IRへ統一する | 形式は揃うが、限定groundingを広げたり、no-doc経路へ虚偽の識別子を作る必要が生じる |
+| C | 各経路を個別実装のままにし、共通原則を置かない | 実入力の迂回やSafeMode・最小化のばらつきを再び許す |
+
+**決定（2026-09-03・追補）**: **D5=A を採択**。以下を不変条件とする。
+
+- **Document-backed structured task**: 文書のカード・島・relation・evidenceなど、`DocumentV1` 由来の構造が仕事上の判断材料になる経路は、generic Document IRまたはそのroute固有投影をprovider実入力の正本とする。Document生値から同じ意味をpromptへ迂回させない。
+- **Caller-limited grounding task**: 呼出側が `groundingCardIds` / `groundingEdgeIds` などで許可集合を明示する経路では、そのallowlistを安全境界の正本とする。generic Document IRを検査・正規化に併用してもよいが、最終promptや `LLMRequest.inputs` の実効意味集合をallowlistより広げてはならない。
+- **No-document task**: Documentや実在IDを持たない経路では、generic Document IRへ合わせるための疑似Document・架空カードID・架空島IDを作らない。明示的なtask-local structured inputを正式なAI入力契約とし、provider promptはその構造化入力から描画する。
+- **共通の安全境界**: generic Document IRを使わない経路も、レビュー状態、SafeMode、PII最小化、structured-text-only、決定論的な入力上限など、その入力型に適用可能な境界保護から免除されない。必要な保護はAPI境界またはtask-local入力ビルダーでfail-closedにする。
+- **契約変更時の再判定**: no-doc経路が将来 `DocumentV1` を受け取る仕事へ変わる場合は、既存の例外を暗黙に継承せず、request契約の変更時点でgeneric Document IR適用を再判定する。
+- **完了指標**: 11/11をgeneric Document IRへ揃えること自体を完了条件にしない。各AI経路について「何がproviderの実入力正本か」「何を送らないか」「どの境界でfail-closedにするか」が明示され、promptがその契約を迂回しないことを完了条件とする。
+
+この追補により、`summarize-island-relation` はcaller-limited grounding task、`refine-card-text` と `suggest-document-title` はno-document taskとして扱う。これらは「未移行だから放置する経路」ではなく、**generic Document IRを適用しないこと自体が意味保存のための明示的な設計判断**である。
+
 ### 仕様バージョンについて
 
 IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: false` で固定されている。D1〜D3 のいずれを採っても**スキーマ変更を伴うため `ir_version` の繰り上げが必要**である。採択時に新版数を決めること。
@@ -139,7 +166,7 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 |------|----------------|---------------|
 | **業務設計** | KJ法キャンバスでは座標が意味を持つのは人間側で、AIにとって意味を持つのはカード・島の論理的関係。この非対称性を踏まえ、AIは論理構造（関係語彙・島階層・holdState）を実際に受け取る必要がある | 機能: `routes/ai.py`の全プロンプト構築関数で`edges`/`evidenceLinks`/`relationSummaries`/`claimType`/`parentIslandId`を渡す。データ: 関係語彙（related/negate/causal/mutual/equivalence）をAIへ届ける |
 | **データ設計** | 凍結済みの`LLMRequest.inputs` IR（llm_input_ir_spec.md §4）をAI入力の実経路とする。`graph_summary`（中心性・連結成分・矛盾サブグラフ）は順位や等級を持たない構造的観測に限定。SafeModeの入力側強制（constraints.safe_mode）とPII最小化をサーバ側契約へ | 業務: 矛盾検出が既存`evidenceLinks`を、グルーピング提案が既存の島を見る。機能: 決定論的切り詰め（MAX_CARDS=200/MAX_RELATIONS=400/MAX_TEXT_CHARS=12000）で大規模文書のAI入力を再現可能にする |
-| **機能設計** | 既存の4投影層（island_edge_aggregate/abstract_map_export/ContextBundle/LLMRequest.inputs IR）のうちIRを実装してAI経路へ接続。`POST /ai/*`はIRを経由し、直渡し経路にエンドポイントを積み上げない | 業務: 採点API（assess-card-importance）は廃止済み（issue-AI-IMPORTANCE-SCORING-01）。データ: 座標はsuggest-layoutの出力に限定し、島を矩形でなく関係の集合として提示 |
+| **機能設計** | Document由来の構造を扱うAI経路はgeneric Document IRを実入力へ接続する。caller-limited grounding/no-doc経路はtask-local structured inputを正式契約とし、provider promptがその構造化入力を迂回しないようにする | 業務: 経路ごとの仕事に必要な意味と許可範囲を先に固定する。データ: 座標は必要な経路だけに限定し、限定groundingやno-doc入力をgeneric IRの都合で広げない |
 
 ## Consequences
 
@@ -156,7 +183,7 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - **TS↔Python の第2のドリフト源が生まれる**（D4=A の代償）。`test_ts_python_contract_drift.py` の対象を投影ロジックへ拡張して管理する。
 - **入力トークン量が変わる**。関係・階層・`graph_summary` が増える一方、生座標が減る。差し引きは未計測であり、実装時に代表規模（カード300・島30程度）で測ること。
 - **`ir_version` の繰り上げ**が必要（上述）。`llm_input_ir_spec.md` §8 のトレーサビリティと FixtureProvider 回帰データ（§6）の再生成を伴う。
-- 既存の `/ai/*` 呼び出し側（フロントエンド、`kj_canvas_demo.py`）に改修が要る。
+- generic Document IRの対象となる既存AI経路では呼び出し側やprompt構築の改修が要る。task-local structured inputを採る経路では、既存の限定入力を広げず、実際にproviderへ送る内容との一致を回帰で固定する必要がある。
 
 ### ADR-0068 との関係（重要）
 
@@ -167,13 +194,13 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - `ADR-0068` は `/ai/*` の各リクエストモデルへ `safeMode` を追加する方向（実装済み）。
 - 本ADR D4=A は、IR 構築をサーバ側へ置き、IR §7.1 が `safe_mode` を強制する方向（追加の防御層）。
 
-将来的に IR 経路が全 `/ai/*` を覆った段階で、`ADR-0068` 由来の実装を退役させるかどうかは別途判断する（本ADRの実装時点では判断しない）。
+将来的にすべてのAI経路がgeneric Document IRまたは明示的なtask-local structured inputの実経路で覆われた段階で、`ADR-0068` 由来のAPI境界実装を退役させるかどうかは別途判断する。本ADRの実装時点では二層防御を維持する。
 
 ### 移行時に必要な対応
 
 1. `llm_input_ir_spec.md` を D1〜D3 の決定に従って改訂し、`ir_version` を繰り上げる。
 2. サーバ側に IR ビルダーを実装する（D4=A の場合）。
-3. `/ai/*` の各エンドポイントを IR 経由へ切り替える。段階適用の場合は論理関係が効く順（`detect-contradiction` → `suggest-card-groups` → `generate-narrative` → `suggest-layout`）を推奨する。
+3. 各AI経路をD5の3分類へ当てはめる。Document由来の構造を扱う経路はgeneric Document IRへ、caller-limited grounding/no-doc経路は明示的なtask-local structured inputへ揃える。いずれもprovider promptが宣言済み入力契約を迂回しないことを回帰で固定する。
 4. `test_ts_python_contract_drift.py` を投影ロジックへ拡張する。
 5. `02_Architecture/api.md` のリクエスト契約を同期する。
 
@@ -193,6 +220,7 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（再起票ゲート R-3 の判定根拠）
 - Related: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`（**境界が重複する。上記「ADR-0068 との関係」を参照**）
 - Related: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`（本ADR採択後の実装課題）
+- Related: `01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md`（D5追補の根拠となった経路棚卸し）
 - Related: `01_Plans/issues/done/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 で解決される事実の記録）
 - Related: `01_Plans/issues/done/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`（非目標として分離した課題）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（F-5 = 実装前提条件）
