@@ -23,7 +23,7 @@
 - decision → apply → save → reload はE2Eで固定済み。
 - R18で検出したremote AI提案と決定論ローカルfallbackの契約混線も解消済み。remote/common `MergeSuggestion` はbackend正本へ揃え、fallback固有metadataは派生表現へ分離した。
 
-したがって、主要な利用経路を止めるP1課題は解消している。本IssueをP1のまま保持しない。残っているのは、**どの統合方法を使った提案なのかを判断・監査の来歴として残す必要があるか**というP2の追跡性である。
+したがって、主要な利用経路を止めるP1課題は解消している。本IssueをP1のまま保持しない。残っているのは、**どの統合方法を使った提案なのかを判断・監査の来歴として残す**P2の追跡性である。
 
 ## 意味境界
 
@@ -70,19 +70,58 @@
 
 元sourceカード自体を保持しているため、現時点ではAI生成 `residuals` フィールドを追加することを前提にしない。独立残差フィールドが本当に必要だと実使用で確認された場合にだけ再検討する。
 
-## 残る論点 — 統合方法の追跡性
+## R19 — 統合方法の追跡性を実装経路から再確認
 
-現在のpromptは04ステップ型と核融合法型を選び分けるよう要求する一方、remote/common `MergeSuggestion` には方法を機械可読に表すフィールドがない。
+R19では、方式フィールドを先に足すのではなく、provider出力、UI、判断記録、監査、ローカルfallbackを横断して「方式が実際にどこで失われるか」を確認した。
 
-R19では、単にフィールドを増やすことを完了条件にしない。次を満たす場合に、後方互換な任意フィールドとして方式識別を追加する。
+### 観察1 — promptは方法選択を要求するが、応答契約はその結果を捨てる
 
-1. 人間が提案を読む際、近接整理なのか意味核統合なのかが採否判断に実際に影響する。
-2. decision / auditへ残すことで、後から「なぜこの統合を採用したか」へ戻りやすくなる。
-3. remote AI提案と決定論fallbackの責務差を再び混線させず、remote → frontend → decision → auditまで同じ意味で通せる。
+backendのmerge promptは、各候補について次の二方式を使い分けるよう明示している。
 
-追加する場合の候補語彙は `near_duplicate` / `kernel_fusion` とするが、API名は実装時に既存語彙と整合させる。方式が監査上使われないと確認できた場合は、フィールドを増やさず、その理由を記録して本Issueを閉じる。
+- 04ステップ型の近接整理。
+- 核融合法型の意味核統合。
 
-`partial` は別問題である。採用するsource部分集合をUIで明示する契約がない現状では自動適用しない。必要になった時点で、曖昧な既存値を流用せず部分集合の操作契約を先に定める。
+一方、providerへ要求するJSONは `groupId`、`cardIds`、`mergedTextDraft`、任意 `rationale` だけであり、どちらを選んだかを表す欄がない。つまり**内部推論では方法を選ばせながら、人間レビューへ渡す契約でその選択を落としている**。
+
+このため、方式追跡性は単なる追加メタデータではなく、promptとreview契約の意味の切断として扱う。
+
+### 観察2 — UIはAI理由と人間理由を区別して保持している
+
+現行UIは `rationale` を提案理由として表示し、採否時には別の人間判断理由を必須にしている。Document上の `mergeSuggestionDecisions` にも、AI側 `rationale` と人間側 `note` が別々に保存される。
+
+したがって `mergeMethod` を人間理由やrationale文字列へ埋め込む必要はない。文字列prefix等の隠れプロトコルを作らず、明示的な語彙として保持する方が現在の来歴設計と整合する。
+
+### 観察3 — 決定論fallbackは核融合法ではない
+
+frontendの `collectMergeCandidates()` は、正規化本文一致またはtoken signature一致だけで候補を生成する。これは近接候補の決定論的探索であり、複数カードから新たな意味核を立てる処理ではない。
+
+したがってremote AI提案とfallbackを再び同じ内部契約へ畳まず、共通の意味語彙だけを共有する。
+
+- remote AI: モデルが `near_duplicate` / `kernel_fusion` を明示して返す。
+- deterministic fallback: 事実として `near_duplicate` を付けられる。
+
+### 観察4 — 永続decisionと短期audit eventを同一視しない
+
+Documentの `mergeSuggestionDecisions` は、提案本文、AI rationale、人間判断理由、source/representative snapshotを保存している。これを方式の永続来歴とする。
+
+別に存在する `MergeDecisionAuditEvent` は件数上限を持つ軽量イベント列であり、人間判断理由の表示・監査を主眼としている。方式フィールドを機械的に二重保存することを完了条件にしない。まずDocument decision snapshotを正本とし、短期auditにも方式が必要だと実使用で確認された場合だけ追加する。
+
+## R19実装契約
+
+方式追跡性は**必要**と確定する。実装時は次の境界を守る。
+
+1. 共通語彙は `near_duplicate` / `kernel_fusion` の2値とする。
+2. 新しいremote provider応答では `mergeMethod` を必須にする。promptが要求した方法選択をreview契約へ出すためである。
+3. 決定論fallbackは `mergeMethod: "near_duplicate"` を明示する。
+4. frontendのremote/common `MergeSuggestion` でも `mergeMethod` を必須にし、未知値をfail-closedにする。
+5. 新しく記録するDocument decision snapshotへ `mergeMethod` を渡す。
+6. 過去Documentとの後方互換のため、永続済み `MergeSuggestionDecision.mergeMethod` はoptionalとして読む。旧記録へ方式を推測補完しない。
+7. UIでは方式をAI理由と別に確認できるようにする。ただし方式ラベルだけを採否理由にしない。
+8. `rationale`、人間の `note`、`mergeMethod` を一つの文字列へ符号化しない。
+9. short-lived `MergeDecisionAuditEvent` への重複保存は本変更の必須条件にしない。
+10. `residuals`、partial自動適用、merge自動確定へ範囲を広げない。
+
+この変更は既存Documentの破壊的schema migrationではない。新しいproposal契約は厳格化するが、保存済みdecisionはoptional fieldで読むため、ADR-0047の破壊的変更ゲートには到達しない。
 
 ## 受入条件
 
@@ -94,8 +133,10 @@ R19では、単にフィールドを増やすことを完了条件にしない�
 - [x] AI提案の採用から明示適用・保存・再読込までをE2Eで確認した（`AI-MERGE-APPLY-01` / PR #2849〜#2852）。
 - [x] remote/common提案契約と決定論fallback固有契約を分離した（R18 / PR #2853）。
 - [x] SafeMode二層、PII最小化、IR上限のfail-closedを維持した。
-- [ ] 統合方法をproposal → decision → auditへ機械可読に残すことが実利用上必要かを確定し、必要なら後方互換に実装する。
+- [x] 統合方法をproposal → decisionへ機械可読に残す必要性と、remote/fallback/旧Documentの互換境界をR19で確定した。
+- [ ] `mergeMethod` をprovider出力、frontend共通契約、fallback、Document decision snapshotへ実装する。
+- [ ] 新規remote応答の欠落・未知方式を拒否し、旧decisionの方式欠落は読めることを回帰テストで固定する。
 
 ## 完了境界
 
-主要なmerge経路は実装済みである。本Issueの残作業は方式追跡性の要否判断だけに限定する。新しい実使用証拠なしに `residuals`、自動partial適用、追加のmerge自動化へ範囲を広げない。
+主要なmerge経路は実装済みである。本Issueの残作業は上記 `mergeMethod` の一本化だけに限定する。実装完了後は本Issueを `done/` へ移す。新しい実使用証拠なしに `residuals`、自動partial適用、追加のmerge自動化へ範囲を広げない。
