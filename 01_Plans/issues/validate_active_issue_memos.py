@@ -287,7 +287,7 @@ def main() -> int:
             print(f"- {err}")
         return 1
 
-    rows = discover_active_rows(root)
+    rows = discover_active_rows(args.root)
     print(f"ok: validated {len(rows)} active issue memos")
     return 0
 
