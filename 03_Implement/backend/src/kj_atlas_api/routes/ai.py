@@ -1113,14 +1113,38 @@ def _parse_suggestion(
     return transform, suggested_cards, notes_data
 
 
+def _eligible_merge_cards(payload: SuggestMergesRequest):
+    """Return cards that the AI is allowed to consider for a merge proposal.
+
+    Hold state and an existing mergedIntoCardId are human/data decisions that
+    must win over model similarity. The response parser repeats these checks as
+    defense in depth in case a provider returns an id it was not shown.
+    """
+    return [
+        card
+        for card in payload.doc.cards
+        if card.holdState is None and not card.mergedIntoCardId
+    ]
+
+
 def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
-    card_lines = [f'- id="{card.id}", text="{card.text}"' for card in payload.doc.cards]
+    card_lines = [
+        f'- id="{card.id}", text={json.dumps(card.text)}'
+        for card in _eligible_merge_cards(payload)
+    ]
     instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
 
     return "\n".join(
         [
-            "You suggest potential merge candidates for similar cards.",
-            "You must only propose suggestions. Do not apply merges and do not delete anything.",
+            "You propose KJ-compatible card integrations. This is advisory only.",
+            "Use one of two approaches when appropriate:",
+            "- 04-step-like consolidation for near-duplicate cards whose material distinctions can all be retained.",
+            "- kernel-fusion-style integration when several non-identical cards share a meaning kernel that can be stated without erasing their residual differences.",
+            "Similarity alone is not enough. Sharing a topic or vocabulary is not enough.",
+            "Before proposing, perform a Return check against every source card: would each source still recognise the draft as preserving what it says?",
+            "Leave minority, lone, contradictory, held, or materially different cards separate.",
+            "Do not invent provenance, conditions, certainty, or residual meaning that is not in the source cards.",
+            "You must only propose suggestions. Do not apply merges, delete cards, or overwrite source cards.",
             "Return strict JSON only. No markdown. No explanation text outside JSON.",
             "Return at most 10 suggestions.",
             "Use this exact schema:",
@@ -1128,11 +1152,95 @@ def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
             "Each suggestion must include at least 2 cardIds.",
             "Only use card IDs from the input.",
             f"Instruction: {instruction}",
-            "Cards:",
-            *card_lines,
+            "Cards eligible for integration consideration:",
+            *(card_lines or ["- (none)"]),
         ]
     )
 
+
+
+def _validate_merge_suggestion_semantics(
+    suggestions: list[MergeSuggestion], source_doc: SuggestMergesRequest
+) -> None:
+    """Fail closed when a provider proposes an integration that would erase
+    an explicit human/data distinction.
+
+    These are deterministic guards, not model instructions. Island membership,
+    equivalence and source differences are intentionally *not* hard vetoes;
+    they remain context for the later IR migration (AI-MERGE-SEMANTICS-01).
+    """
+    cards_by_id = {card.id: card for card in source_doc.doc.cards}
+    negate_pairs = {
+        frozenset((edge.fromId, edge.toId))
+        for edge in source_doc.doc.edges
+        if edge.fromKind == "card" and edge.toKind == "card" and edge.type == "negate"
+    }
+    contradiction_pairs = {
+        frozenset((link.fromCardId, link.toCardId))
+        for link in (source_doc.doc.evidenceLinks or [])
+        if link.type == "contradicts"
+    }
+
+    seen_card_ids: set[str] = set()
+    for suggestion in suggestions:
+        suggestion_ids = set(suggestion.cardIds)
+        if seen_card_ids & suggestion_ids:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "merge_candidate_overlap",
+                    "message": "A card appeared in more than one merge suggestion",
+                },
+            )
+        seen_card_ids.update(suggestion_ids)
+
+        cards = [cards_by_id[card_id] for card_id in suggestion.cardIds]
+        if any(card.holdState is not None for card in cards):
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "merge_candidate_held",
+                    "message": "A merge suggestion included a held card",
+                },
+            )
+        if any(card.mergedIntoCardId for card in cards):
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "merge_candidate_already_merged",
+                    "message": "A merge suggestion included a card already merged into another card",
+                },
+            )
+
+        claim_types = {card.claimType for card in cards if card.claimType is not None}
+        if len(claim_types) > 1:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "merge_candidate_claim_type_conflict",
+                    "message": "A merge suggestion crossed distinct claim types",
+                },
+            )
+
+        for index, left_id in enumerate(suggestion.cardIds):
+            for right_id in suggestion.cardIds[index + 1 :]:
+                pair = frozenset((left_id, right_id))
+                if pair in negate_pairs:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "merge_candidate_negated",
+                            "message": "A merge suggestion crossed an explicit negate relation",
+                        },
+                    )
+                if pair in contradiction_pairs:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "merge_candidate_contradicted",
+                            "message": "A merge suggestion crossed contradictory evidence",
+                        },
+                    )
 
 def _parse_merge_suggestions(
     raw_text: str, source_doc: SuggestMergesRequest
@@ -1186,6 +1294,7 @@ def _parse_merge_suggestions(
 
         parsed_suggestions.append(suggestion)
 
+    _validate_merge_suggestion_semantics(parsed_suggestions, source_doc)
     return parsed_suggestions
 
 
