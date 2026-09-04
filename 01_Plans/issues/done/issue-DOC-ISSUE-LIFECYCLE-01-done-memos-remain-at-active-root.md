@@ -51,6 +51,27 @@ R19では58件を一時的なbaselineとしてコードへ固定し、実際のD
 PR #2859の一回限りworkflow run `33819480592` で、`test_validate_active_issue_memos.py`、`test_issue_lifecycle_contract.py`、`python 01_Plans/docs_check.py`、`python 01_Plans/issues/validate_active_issue_memos.py`、`triage_actionable_plans.py`、`git diff --check` がすべて成功した。検証workflow/scriptは最終差分から削除済みで、恒久workflowは追加していない。
 
 本Issue自身はR18時点のlegacy Done 58件ではなく `In Progress` だったため、完了時に `done/` へ移してもbaselineを58から下げる必要はない。新たに完了するmemoをactive直下へ残さないという今回の規則を、このIssue自身にも適用して完了とする。
+## レーンCでの全体検証と補正（2026-09-04）
+
+#2854 がmainへ入った後、恒久workflowを追加せず、一時workflowからリポジトリ全体のplanning checksを実行した。最初のrun `33819279635` では `docs_check.py` が失敗し、exact-baseline検査が既存のsynthetic fixtureにも58件の履歴負債を適用していることが分かった。
+
+58というbaselineは一般的なIssueディレクトリの規則ではなく、このリポジトリの `01_Plans/issues/` に残る履歴負債である。そのため、次のように境界を補正した。
+
+- canonicalな `01_Plans/issues/` では、従来どおり `LEGACY_DONE_AT_ROOT_BASELINE = 58` を適用する。
+- synthetic rootや呼出側が渡す別rootには、既往負債がないため既定baseline 0を適用する。
+- ratchetそのものを検証する専用unit testでは、従来どおりbaselineを明示して58→57→…→0の単調減少契約を検証できる。
+- synthetic rootが履歴負債0として扱われ、新たなDone-at-rootを拒否する回帰testを追加した。
+
+補正後の一時workflow run `33819447926` では、次をすべて成功させた。
+
+- `python 01_Plans/docs_check.py`
+- `python 01_Plans/dogfood/validate_dogfood_docs.py`
+- `python 01_Plans/triage_actionable_plans.py --format json`
+- `git diff --check`
+
+一時workflowは成功後に自身を削除しており、mainへ恒久workflowを追加しない。これにより、exact-baselineの強さを維持したまま、validatorを再利用するcontract testとの境界も整合した。
+
+本Issue自身はlegacy 58件の一つではなく `In Progress` だったため、完了時に `done/` へ移してもbaselineを58から下げる必要はない。新規完了メモをactive直下へ残さないという今回の規則を、このIssue自身にも適用して完了とする。
 
 ## 優先度
 
@@ -59,3 +80,4 @@ P2とする。現在のactive判定はstatusベースで機能しており、今
 ## 文書品質の仕上げ
 
 「58件あるから直ちに全件移動する」とせず、現行triageが壊れていない事実と、導線としての不整合を分けて記述した。58という数も正規状態として固定せず、段階整理の現在地を単調に減らす一時baselineとして扱う。fixtureとの境界不整合もbaseline自体を弱めず、履歴負債が属する実issue rootを明確にすることで解消した。
+「58件あるから直ちに全件移動する」とせず、現行triageが壊れていない事実と、導線としての不整合を分けて記述した。58という数も正規状態として固定せず、段階整理の現在地を単調に減らす一時baselineとして扱う。全体検証で見つかったfixtureとの不整合も、baselineの制約自体を弱めず、履歴負債が属する境界を明確にすることで解消した。

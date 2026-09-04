@@ -296,12 +296,24 @@ def validate_memo_identity_and_placement(root: Path) -> list[str]:
             )
 
     return errors
+def default_legacy_done_at_root_baseline(root: Path) -> int:
+    """Return historical debt only for this repository's canonical issue root.
+
+    `LEGACY_DONE_AT_ROOT_BASELINE` is not a generic invariant for every
+    directory passed to the validator. It records historical debt in the
+    checked-in `01_Plans/issues/` tree. Temporary repositories used by contract
+    tests start with no historical debt, so their default baseline is zero.
+    Dedicated lifecycle tests can still pass an explicit baseline when they
+    exercise ratchet behaviour on synthetic roots.
+    """
+    canonical_root = Path(__file__).resolve().parent
+    return LEGACY_DONE_AT_ROOT_BASELINE if root.resolve() == canonical_root else 0
 
 
 def validate_done_memo_location(
     root: Path,
     *,
-    legacy_baseline: int = LEGACY_DONE_AT_ROOT_BASELINE,
+    legacy_baseline: int | None = None,
 ) -> list[str]:
     """Keep Done-at-root legacy debt on a monotonic downward ratchet.
 
@@ -310,7 +322,14 @@ def validate_done_memo_location(
     the same change; allowing that would let later changes grow back up to the
     stale value. Requiring equality makes each intentional migration advance
     the baseline and prevents regression without freezing a permanent allowlist.
+
+    The checked-in baseline applies only to the canonical issue directory.
+    Synthetic or caller-supplied roots default to zero historical debt unless
+    the caller provides `legacy_baseline` explicitly.
     """
+    if legacy_baseline is None:
+        legacy_baseline = default_legacy_done_at_root_baseline(root)
+
     count = len(discover_done_memos_at_root(root))
     if count == legacy_baseline:
         return []
