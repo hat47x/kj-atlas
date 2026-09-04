@@ -22,6 +22,7 @@ function buildProps() {
         snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
         cardIds: ["a", "b"],
         mergedTextDraft: "Risk mitigation",
+        mergeMethod: "near_duplicate" as const,
         editedText: "Risk mitigation",
         isEdited: false,
         rationale: "heuristic:normalized-text",
@@ -95,6 +96,7 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain(
       `${t("merge_suggestions.representative")}: a [${t("merge_suggestions.representative_resolution.fallback")}]${t("merge_suggestions.source_count_suffix", { count: 1 })}`
     );
+    expect(html).toContain(`${t("merge_suggestions.merge_method")}: ${t("merge_suggestions.merge_method.near_duplicate")}`);
     expect(html).toContain(`${t("merge_suggestions.rationale")}: heuristic:normalized-text`);
     expect(html).toContain(`判断=${t("merge_suggestions.decision.deferred")}`);
     expect(html).not.toContain("[fallback]");

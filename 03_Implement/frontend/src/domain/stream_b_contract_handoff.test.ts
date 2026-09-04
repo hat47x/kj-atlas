@@ -49,6 +49,7 @@ describe("stream_b_contract_handoff", () => {
         cardIds: ["c2", "c1"],
         mergedTextDraft: "risk mitigation",
         editedText: "risk mitigation (reviewed)",
+        mergeMethod: "near_duplicate",
       },
       { idFactory: () => "decision-1", now: "2026-03-01T10:00:00.000Z" },
     );

@@ -9594,6 +9594,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
               snapshotVersion: `agent-response.v1:${review.proposalId}`,
               cardIds,
               mergedTextDraft: mergedText,
+              mergeMethod,
               rationale: review.rationale,
               editedText: mergedText,
               isEdited: false,

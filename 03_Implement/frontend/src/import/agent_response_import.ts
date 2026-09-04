@@ -6,6 +6,7 @@ import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
 import { isMergeMethod, type MergeMethod } from "../domain/merge_method";
 import type { AgentResponseProvenance } from "../storage/agent_task_ledger";
+import { isMergeMethod, type MergeMethod } from "../domain/merge_method";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
 // §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
@@ -211,6 +212,11 @@ function parseProposal(value: unknown, mode: AgentResponseImportMode): { proposa
     }
     patch = parsedPatch.patch;
     patchHasDeleteOps = parsedPatch.hasDeleteOps;
+  }
+
+  const content = parseContent(value.content);
+  if (kind === "merge_candidate" && !isMergeMethod(content.mergeMethod)) {
+    return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };
   }
 
   const proposal: ParsedAgentProposal = {
