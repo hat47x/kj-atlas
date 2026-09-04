@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug / Domain Integrity
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-MERGE-SEMANTICS-01`
 - Priority: P1
 - Owner: Maintainer
@@ -48,7 +48,7 @@
 - [x] 統合元カード同士の関係から代表カード自己ループを生成しない。
 - [x] 同一意味の投影edgeを重複生成しない。
 - [x] `repOf` / `mergedIntoCardId` と元構造を組み合わせ、統合前の構造をDocument単体から追跡できる。
-- [ ] unit testで上記を固定する（テストは追加済みだが、下記「検証状況」のとおり本セッションでは実行を確認できていない。実行確認後にチェックすること）。
+- [x] unit testで上記を固定する。
 - [x] 内容確定後、意味を変えず自然な日本語として全文を読み直す。
 
 ## 検証計画
@@ -56,12 +56,13 @@
 - `representative_merge.test.ts` で、再配線なし・再配線あり・内部edge・重複投影・複数島を確認する。
 - frontendの型チェック／対象unit testを実行する。
 
-### 検証状況（2026-09-04）
+### 検証状況(2026-09-04)
 
-- `representative_merge.test.ts` に、上記受入条件の各項目に対応するunit testを追加・更新した（再配線なし固定、内部edge自己ループ回避、重複投影のdedup、複数島への代表カード追加を含む）。
+- `representative_merge.test.ts` に、上記受入条件の各項目に対応するunit testを追加・更新した(再配線なし固定、内部edge自己ループ回避、重複投影のdedup、複数島への代表カード追加を含む)。
 - 実装コードのロジックを手動で追跡し、追加した全testケースの期待値と一致することを確認した。
-- **本セッションの実行環境にはNode.js/npmが存在せず、WSL経由の実行もsandbox制約により不可だったため、`npm run typecheck` と `npm run test`（vitest）を実際には実行できていない。** レビュー・マージ前に、Node.js/npmまたはWSLが使える環境で以下を実行し、結果を確認すること。
-  - `cd 03_Implement/frontend && npm ci && npm run typecheck && npm run test`
+- 別セッションが `~/kjnative-fe`(WSL nix devShell、Node 20)経由で実行を確認した。
+  - `npx vitest run src/domain/representative_merge.test.ts`: 9 passed(9)
+  - `npm run typecheck`(`tsc --noEmit`): exit code 0、エラーなし
 
 ## 補足
 
