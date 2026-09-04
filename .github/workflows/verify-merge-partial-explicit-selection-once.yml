@@ -34,6 +34,18 @@ jobs:
             03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts \
             03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx
 
+      - name: Align one-shot helper with the current partial UI test title
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/assemble_merge_partial_once.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'shows the explicit apply action only for an accepted suggestion'
+          new = 'shows the explicit apply action for accepted and partially accepted suggestions'
+          assert text.count(old) == 1
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Add reload visibility and current planning contracts
         run: python .github/scripts/assemble_merge_partial_once.py
 
