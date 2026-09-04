@@ -84,6 +84,7 @@ def _payload() -> SuggestMergesRequest:
             Edge(id="r1", fromId="c1", toId="c2", type="equivalence"),
             Edge(id="r2", fromId="c2", toId="c3", type="negate"),
         ],
+        islands=[],
         evidenceLinks=[
             EvidenceLink(
                 id="ev1",
@@ -103,6 +104,7 @@ def _suggestion(group_id: str, *card_ids: str) -> MergeSuggestion:
         cardIds=list(card_ids),
         mergedTextDraft="二重入力になっている確認事項を一つにまとめられる",
         rationale="意味の重なりを確認するための提案",
+        mergeMethod="near_duplicate",
     )
 
 
@@ -246,6 +248,8 @@ def test_context_fails_closed_when_generic_ir_is_truncated() -> None:
             updatedAt="2026-09-03T00:00:00Z",
             transform=Transform(panX=0, panY=0, zoom=1),
             cards=cards,
+            edges=[],
+            islands=[],
         )
     )
 
