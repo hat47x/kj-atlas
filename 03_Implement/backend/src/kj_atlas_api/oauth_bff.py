@@ -31,6 +31,7 @@ from kj_atlas_api.oauth_broker_client import (
     exchange_code_for_tokens,
 )
 from kj_atlas_api.settings import settings
+from kj_atlas_api.session_csrf import clear_session_csrf_cookie, set_session_csrf_cookie
 from kj_atlas_api.tenant_context import VerifiedTenantClaim
 from kj_atlas_api.trusted_auth_edge import (
     JwtIdentityError,
@@ -281,6 +282,12 @@ def handle_callback(
         max_age=_AUTH_SESSION_MAX_AGE_SECONDS,
         path="/",
     )
+    set_session_csrf_cookie(
+        response=redirect,
+        raw_session_id=raw_session_id,
+        key=hash_key,
+        runtime_profile=request.app.state.runtime_profile,
+    )
     return redirect
 
 
@@ -306,4 +313,8 @@ def revoke_auth_session_cookie(*, request: Request, response: Response) -> None:
         secure=tenant_session_cookie_is_secure(request.app.state.runtime_profile),
         samesite="strict",
         path="/",
+    )
+    clear_session_csrf_cookie(
+        response=response,
+        runtime_profile=request.app.state.runtime_profile,
     )

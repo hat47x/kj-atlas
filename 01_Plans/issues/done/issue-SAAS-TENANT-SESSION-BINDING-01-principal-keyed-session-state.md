@@ -1,7 +1,7 @@
 # Issue: SAAS-TENANT-SESSION-BINDING-01 active tenant stateが認証セッションではなくprincipalへ束縛されている
 
 - Type: Security / Data Design
-- Status: Open
+- Status: Done
 - Source Issue: `SAAS-TENANT-01`
 - Priority: P1
 - Owner: Maintainer
@@ -50,7 +50,8 @@
   — 2026-08-22。4項目とも既存・新規のtestで個別に確認済み（単一の統合テストではなく、各項目を最も直接に検証するテストへ分担）: migration upgrade/downgradeは`test_saas_auth_sessions_migration.py`（2026-08-13）、複数worker CASは本checkpointで追加した`test_two_worker_instances_share_and_atomically_rotate_active_tenant`、tenant切替→次requestは`test_session_context_routes.py`のAC-3/4統合テスト、別session分離は`test_rotate_active_tenant_on_one_session_does_not_affect_another_of_the_same_principal`と`test_oauth_bff_logout_revocation.py`。
 - [x] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
   — 2026-08-22。`SAAS-TENANT-01`のAC-6注記を是正（BFF cookie経路は解決済み、現行SPAのBearer経路は対象外と明記、ACは`[~]`のまま維持）。`api.md` §10.1の2箇所（原子化未完了の記述）へ「BFF cookie経路は解決済み・Bearer経路は対象外」の是正注記を追加。`OPS-SAAS-SCALE-01` AC-1（principal単位版のCAS）・AC-3（本番gate未充足の明記）は既に正確だったため変更なし。「AC-13」は`SAAS-TENANT-01`に存在しない（`AC-6`のみが該当）——本issue起票時の参照誤りと判断し、`AC-6`のみを対象とした。
-- [ ] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
+- [x] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
+  — 2026-09-04。ADR-0074は既に案2（server-owned BFF session）をAcceptedとしており、判断待ちではなかった。unsafe methodをBFF cookieで認証する場合だけ、SameSite=Strictに加えてOrigin/Host一致とsession-bound `X-Kj-Atlas-Csrf`を共通middlewareで要求する。CSRF tokenはopaque auth-session cookieへserver keyでHMAC束縛し、非HttpOnly `Kj-Atlas-Csrf` cookieからfrontendがheaderへ複写する。未提示・別session・改ざん・cross-siteは403、server key欠落は503でfail-closed。Bearer優先の互換経路は別cutoverまで維持する。
 
 ## 非目標
 
@@ -359,6 +360,12 @@ AC-6の4条件（session ID欠損・不正・過大、共有ストア不達、�
 **回帰**: auth/session/tenant/identity該当 **480 passed・7 skipped・0 failed**（新規1件を含む）。
 
 **引き続き未着手**: AC-9のみ（cookie/anti-CSRF方針の最終決定。Maintainerの判断待ち）。
+
+### Implementation checkpoint 2026-09-04: AC-9 cookie/anti-CSRF境界を実装
+
+`ADR-0074` のAcceptance Gate回答案2を再確認すると、cookie採用・synchronizer token・Origin/Host検証は2026-08-13にMaintainer承認済みだった。そこで新たな設計判断は起こさず、既存session hash keyをdomain separationしてauth-session cookieへHMAC束縛したCSRF tokenを払い出す。unsafe requestは、BFF cookieを実際に認証に使う場合だけOrigin/Hostとheader tokenを共通middlewareで検証する。Bearer credentialが明示される現行互換経路はtrusted auth edgeと同じ優先順位で除外し、SPA Bearer cutoverを本Issueへ混ぜない。
+
+この方式ではCSRF token自体をDBへ追加保存せず、Document/tenant/sessionの正本データも増やさない。tokenはbrowser-readableだがauth-session cookieはHttpOnlyのままで、別sessionのtokenはHMAC一致しない。logoutではauth cookieと同時にCSRF cookieも削除する。
 
 ## 検証計画
 

@@ -46,7 +46,7 @@
 ## 依存関係
 
 - `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（採択が前提。DPoP/BFFの並行実装を避ける）
-- `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（BFF採択時は同一session正本として実装・検証する）
+- `01_Plans/issues/done/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（BFF採択時は同一session正本として実装・検証する）
 
 ## 根拠
 

@@ -42,7 +42,7 @@ JWKS cacheはinstanceごとでよい。これはBrokerへの取得負荷には�
 ## 依存関係
 
 - `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（**2026-08-13 採択済み**。AC-4〜8 は着手可能）
-- `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（認証session正本の実装）
+- `01_Plans/issues/done/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`（認証session正本の実装）
 
 ## 非目標
 

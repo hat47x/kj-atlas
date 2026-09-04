@@ -48,6 +48,7 @@ from kj_atlas_api.observability import (
     resolve_inbound_request_id,
 )
 from kj_atlas_api.request_body_safety import JsonRequestBodySafetyMiddleware
+from kj_atlas_api.session_csrf import BffCsrfProtectionMiddleware
 from kj_atlas_api.settings import settings
 from kj_atlas_api.oauth_broker_client import ExternalOauthBrokerConfig
 from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore, DatabaseSaasAuthStateStore
@@ -237,6 +238,7 @@ if settings.runtime_profile == "saas-multitenant":
     )
 
 app.add_middleware(JsonRequestBodySafetyMiddleware)
+app.add_middleware(BffCsrfProtectionMiddleware)
 
 
 #: Unauthenticated operational endpoints. A probe must work before credentials

@@ -132,6 +132,6 @@ Maintainerの要請により以下4項目への回答案を作成し、個別確
 
 - Derived-from: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`
 - Related: `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`
-- Implementation issue: `01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`
+- Implementation issue: `01_Plans/issues/done/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md`
 - Standards: OpenID Connect Back-Channel Logout 1.0, OAuth 2.0 for Browser-Based Applications (IETF draft)
 

@@ -742,6 +742,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 ### 2.14 Session / Admin / システム系API
 
+BFFの `Kj-Atlas-Auth-Session` cookieで認証するunsafe method（POST/PUT/PATCH/DELETE）は、ADR-0074 Decision 5に従い、SameSite=Strictだけに依存しない。`Origin` のscheme/hostが現在のrequest `Host` と一致し、かつsession cookieへHMAC束縛して `Kj-Atlas-Csrf`（非HttpOnly）で払い出した値を `X-Kj-Atlas-Csrf` headerで返送した場合だけ処理する。欠落・別session・改ざん・cross-site Originはresource lookup前に403で拒否する。明示Bearer credentialがある互換経路はtrusted auth edgeと同じ優先順位でこのcookie用guardの対象外とし、SPA Bearer廃止そのものは別のcutover境界として扱う。
+
 **GET** `/session/context`
 
 - Response: `TenantSessionContextResponse`
