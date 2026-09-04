@@ -1,0 +1,71 @@
+name: OPS SaaS semantic polish once
+
+on:
+  push:
+    branches:
+      - test/ops-saas-two-app-postgres-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/ops-saas-two-app-postgres-20260904
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bearer互換境界とAC-3を補正する
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python - <<'PY'
+          from pathlib import Path
+
+          operations = Path("04_Documentation/operations.md")
+          raw = operations.read_bytes()
+          newline = "\r\n" if b"\r\n" in raw else "\n"
+          text = raw.decode("utf-8")
+          anchor = "- JWKS cacheはinstanceごとで構いません。安全境界は共有しませんが、instance数に応じてBrokerへの取得回数が増えるため、取得失敗や集中が疑われる場合はBroker側の状態も確認します。"
+          addition_lines = [
+              anchor,
+              "",
+              "#### Bearer互換経路との境界",
+              "",
+              "明示的なBearer credentialを使う互換経路は、SPAからBFF Cookie経路への移行が完了するまで残ります。この経路では次を別の安全境界として扱います。",
+              "",
+              "- Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意のtoken識別子であり、同じ有効tokenを通常の連続API要求へ使用できます。`jti`を一回使用nonceとして扱いません。",
+              "- 現行Bearer方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出しません。より強いreplay防御の方式判断は`AUTH-ONE-TIME-JWT-01`を正本とします。",
+              "- principal-keyed互換経路で使う`Kj-Atlas-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Kj-Atlas-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。",
+          ]
+          addition = newline.join(addition_lines)
+          if text.count(anchor) != 1:
+              raise SystemExit(f"operations anchor mismatch: {text.count(anchor)}")
+          operations.write_bytes(text.replace(anchor, addition, 1).encode("utf-8"))
+
+          issue = Path("01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md")
+          text = issue.read_text(encoding="utf-8")
+          old = "- [x] AC-3: 運用・API・認証architecture文書が、現行保証をprincipal単位version共有までに限定し、本番利用gate未充足と明記する。"
+          new = """- [x] AC-3: 運用・API・認証architecture文書が、その時点で実証済みの共有保証と未検証の運用境界を区別し、実装以上の保証を記載しない。\n  - 2026-08-11時点ではprincipal単位version共有までを保証として記載した。2026-09-04の認証session単位PostgreSQL実証後は、BFF Cookie経路の共有保証を更新し、残るDB切断・client再送境界をAC-6として明示した。Bearer互換経路のreplay境界も別扱いのまま維持する。"""
+          if text.count(old) != 1:
+              raise SystemExit(f"AC-3 anchor mismatch: {text.count(old)}")
+          issue.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - name: 文書契約を検証する
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/docs_check.py
+          python 03_Implement/backend/scripts/check_design_consistency.py
+      - name: operationsをraw stagingし、一時workflowを削除する
+        run: |
+          git rm .github/workflows/ops-saas-semantic-polish-once.yml
+          raw_blob=$(git hash-object -w --no-filters 04_Documentation/operations.md)
+          git update-index --cacheinfo 100644,$raw_blob,04_Documentation/operations.md
+          git add 01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'docs: SaaS認証の互換境界を運用文書へ戻す'
+          git push origin HEAD:test/ops-saas-two-app-postgres-20260904
