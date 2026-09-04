@@ -127,6 +127,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 - 本issueはデバッグdogfoodの上位互換ではない。目的が異なるため、バグ検出件数を主指標にしない。
 - 成果が良くても、利用者一般への価値は `VALUE-REALNESS-01` の第三者検証で別途確認する。
 - `DOMAIN-W-ITERATION-01` のACは2026-08-25時点で全件完了している。本issueが狙うのは基盤の再実装ではなく、残るT9へ実使用証拠を返すことである。
+
 ### Formal Case package preflight hardening（2026-09-05）
 
 - F1として、正式Case 001〜003を実行する前のassembled arm package検証を強化した。これはCase結果やarm内の推論には触れず、fresh-context比較へ渡す凍結入力の同一性だけを守るpreflightである。
