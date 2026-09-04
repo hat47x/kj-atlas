@@ -1,0 +1,71 @@
+name: Temporary cognitive eval order sync
+
+on:
+  push:
+    branches:
+      - docs/cognitive-eval-order-sync-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Synchronize formal arm order wording
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("01_Plans/issues/issue-COGNITIVE-EVAL-01-factorial-human-ai-cognitive-control-evaluation.md")
+          text = path.read_text(encoding="utf-8")
+          old = "- 順序効果を減らすため、実行順はケースごとに入れ替える。"
+          new = "- 順序効果は制御対象とする。本Case portfolioでは、Case 001実行前に決定論的shuffleで得た **C → D → B → A** をCase 001〜003共通の正式実行順として事前登録済みであり、結果を見てケースごとに入れ替えない。"
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one old arm-order sentence, got {text.count(old)}")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+
+      - name: Verify planning and docs contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/triage.json').read_text(encoding='utf-8'))
+          if data.get('errors'):
+              raise SystemExit(f"triage errors: {data['errors']}")
+          PY
+          git diff --check
+
+      - name: Commit synchronized wording and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/cognitive-eval-order-sync-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 1
+          fi
+          git commit -m "docs: formal認知比較の実行順を正本へ同期"
+          git push origin HEAD:docs/cognitive-eval-order-sync-20260904
