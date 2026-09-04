@@ -1,0 +1,44 @@
+name: Temporary lane C issue identity audit
+
+on:
+  push:
+    branches:
+      - chore/lane-c-issue-identity-guard-20260904
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Audit issue memo placement and duplicate basenames
+        shell: bash
+        run: |
+          python - <<'PY'
+          from collections import defaultdict
+          from pathlib import Path
+          import re
+
+          root = Path('01_Plans/issues')
+          status_re = re.compile(r'^- Status:\s*(.+)$', re.M)
+          by_name = defaultdict(list)
+          active_in_done = []
+          active = {'Draft', 'Open', 'In Progress'}
+
+          for path in sorted(root.rglob('issue-*.md')):
+              rel = path.relative_to(root).as_posix()
+              by_name[path.name].append(rel)
+              text = path.read_text(encoding='utf-8')
+              match = status_re.search(text)
+              status = match.group(1).strip().strip('`') if match else '<missing>'
+              if rel.startswith('done/') and status in active:
+                  active_in_done.append((rel, status))
+
+          duplicates = {name: paths for name, paths in by_name.items() if len(paths) > 1}
+          print(f'duplicate_basenames={len(duplicates)}')
+          for name, paths in sorted(duplicates.items()):
+              print(f'DUPLICATE {name}: {paths}')
+          print(f'active_in_done={len(active_in_done)}')
+          for rel, status in active_in_done:
+              print(f'ACTIVE_IN_DONE {status} {rel}')
+          PY
