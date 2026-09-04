@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi import HTTPException
 
@@ -33,9 +35,7 @@ def _payload(cards, *, edges=None, evidence_links=None) -> SuggestMergesRequest:
     )
 
 
-def _raw(*groups: tuple[str, list[str]]) -> str:
-    import json
-
+def _raw(*groups: tuple[str, list[str]], merge_method: str = "near_duplicate") -> str:
     return json.dumps(
         {
             "suggestions": [
@@ -43,6 +43,7 @@ def _raw(*groups: tuple[str, list[str]]) -> str:
                     "groupId": group_id,
                     "cardIds": card_ids,
                     "mergedTextDraft": f"merged {group_id}",
+                    "mergeMethod": merge_method,
                     "rationale": "candidate only",
                 }
                 for group_id, card_ids in groups
@@ -71,6 +72,9 @@ def test_merge_prompt_expresses_kj_integration_contract_and_omits_ineligible_car
 
     assert "04-step-like consolidation" in prompt
     assert "kernel-fusion-style integration" in prompt
+    assert 'mergeMethod="near_duplicate"' in prompt
+    assert 'mergeMethod="kernel_fusion"' in prompt
+    assert '"mergeMethod":"near_duplicate|kernel_fusion"' in prompt
     assert "Return check" in prompt
     assert "Similarity alone is not enough" in prompt
     assert 'id="c1"' in prompt
@@ -78,12 +82,58 @@ def test_merge_prompt_expresses_kj_integration_contract_and_omits_ineligible_car
     assert 'id="c3"' not in prompt
 
 
-def test_merge_parser_accepts_safe_candidate() -> None:
-    payload = _payload([_card("c1", "alpha", claimType="fact"), _card("c2", "alpha again", claimType="fact")])
+def test_merge_parser_accepts_both_merge_methods_without_collapsing_them() -> None:
+    payload = _payload(
+        [
+            _card("c1", "alpha", claimType="fact"),
+            _card("c2", "alpha again", claimType="fact"),
+            _card("c3", "alpha detail", claimType="fact"),
+            _card("c4", "shared meaning", claimType="fact"),
+        ]
+    )
 
-    result = _parse_merge_suggestions(_raw(("m1", ["c1", "c2"])), payload)
+    near_duplicate = _parse_merge_suggestions(
+        _raw(("m1", ["c1", "c2"]), merge_method="near_duplicate"), payload
+    )
+    kernel_fusion = _parse_merge_suggestions(
+        _raw(("m2", ["c3", "c4"]), merge_method="kernel_fusion"), payload
+    )
 
-    assert [item.groupId for item in result] == ["m1"]
+    assert near_duplicate[0].mergeMethod == "near_duplicate"
+    assert kernel_fusion[0].mergeMethod == "kernel_fusion"
+
+
+def test_merge_parser_rejects_missing_merge_method() -> None:
+    payload = _payload([_card("c1", "alpha"), _card("c2", "alpha again")])
+    raw = json.dumps(
+        {
+            "suggestions": [
+                {
+                    "groupId": "m1",
+                    "cardIds": ["c1", "c2"],
+                    "mergedTextDraft": "merged",
+                }
+            ]
+        }
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        _parse_merge_suggestions(raw, payload)
+
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.detail == "Invalid merge suggestion payload"
+
+
+def test_merge_parser_rejects_unknown_merge_method() -> None:
+    payload = _payload([_card("c1", "alpha"), _card("c2", "alpha again")])
+
+    with pytest.raises(HTTPException) as exc_info:
+        _parse_merge_suggestions(
+            _raw(("m1", ["c1", "c2"]), merge_method="semantic_similarity"), payload
+        )
+
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.detail == "Invalid merge suggestion payload"
 
 
 def test_merge_parser_rejects_held_card() -> None:
