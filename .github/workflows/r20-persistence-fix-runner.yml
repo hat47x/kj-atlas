@@ -1,0 +1,26 @@
+name: R20 persistence contract runner
+on:
+  push:
+    branches:
+      - dogfood/r20-merge-method-traceability-20260904
+    paths:
+      - '.github/workflows/r20-persistence-fix-runner.yml'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dogfood/r20-merge-method-traceability-20260904
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: bash .github/scripts/r20_persistence_contract_runner.sh
