@@ -127,6 +127,67 @@ class TriageActionablePlansTest(unittest.TestCase):
         self.assertIn("ADR-9999", proposed["depends_on"])
         self.assertTrue(accepted_report["actionable_issues"][0]["ready"])
 
+    def test_adr_status_normalization_accepts_annotations_but_not_prefix_collisions(self):
+        self.assertEqual(MODULE.normalize_adr_status("Accepted (note)"), "Accepted")
+        self.assertEqual(MODULE.normalize_adr_status("Accepted（注釈）"), "Accepted")
+        self.assertEqual(MODULE.normalize_adr_status("Proposed (note)"), "Proposed")
+        self.assertEqual(MODULE.normalize_adr_status("AcceptedButPending"), "AcceptedButPending")
+
+    def test_annotated_accepted_dependency_adr_does_not_block_issue(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            (root / "issues" / "issue-AAA-01.md").write_text(textwrap.dedent("""\
+                # Issue: AAA-01
+                - Type: Contract
+                - Status: Open
+                - Source Issue: N/A
+                - Priority: P1
+                - Owner: Maintainer
+                - Expected verification level: `unit`
+
+                ## Dependencies
+                - `ADR-9999-sample.md`
+            """), encoding="utf-8")
+            (root / "adr" / "ADR-9999-sample.md").write_text(textwrap.dedent("""\
+                # ADR-9999: sample
+                - Status: Accepted（2026-09-04、条件付き採択）
+                - Date: 2026-09-04
+                - Deciders: Maintainer
+            """), encoding="utf-8")
+
+            report = MODULE.collect(root)
+
+        issue = report["actionable_issues"][0]
+        self.assertTrue(issue["ready"])
+        self.assertEqual(issue["blockers"], ())
+
+    def test_annotated_proposed_dependency_adr_still_blocks_issue(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "adr").mkdir()
+            (root / "issues").mkdir()
+            (root / "issues" / "issue-AAA-01.md").write_text(textwrap.dedent("""\
+                # Issue: AAA-01
+                - Status: Open
+                - Priority: P1
+
+                ## Dependencies
+                - `ADR-9999-sample.md`
+            """), encoding="utf-8")
+            (root / "adr" / "ADR-9999-sample.md").write_text(textwrap.dedent("""\
+                # ADR-9999: sample
+                - Status: Proposed (review pending)
+                - Date: 2026-09-04
+            """), encoding="utf-8")
+
+            report = MODULE.collect(root)
+
+        issue = report["actionable_issues"][0]
+        self.assertFalse(issue["ready"])
+        self.assertEqual(issue["blockers"], ("ADR-9999:Proposed",))
+
     def test_missing_dependency_adr_is_a_triage_error(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
