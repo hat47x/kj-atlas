@@ -141,15 +141,23 @@ def extract_dependency_paths(memo_text: str) -> list[str]:
 
 
 def extract_field_value(memo_text: str, field_name: str) -> str | None:
-    pattern = rf"^- {re.escape(field_name)}:\s*(.+)$"
+    # Keep metadata parsing line-local. ``\s`` also matches newlines, so an
+    # empty field could otherwise consume the next metadata line as its value.
+    pattern = rf"^- {re.escape(field_name)}:[ \t]*(.*)$"
     match = re.search(pattern, memo_text, re.M)
     if not match:
         return None
-    return match.group(1).strip()
+    value = match.group(1).strip()
+    return value or None
 
 
 def extract_verification_level(memo_text: str) -> str | None:
-    match = re.search(r"^- Expected verification level:\s*`([^`]+)`", memo_text, re.M)
+    # Preserve the existing contract: only the canonical backticked value is
+    # interpreted here. The whitespace matcher is line-local for the same
+    # reason as extract_field_value().
+    match = re.search(
+        r"^- Expected verification level:[ \t]*`([^`]+)`", memo_text, re.M
+    )
     if not match:
         return None
     return match.group(1).strip()
@@ -333,8 +341,9 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
 
         text = memo_path.read_text(encoding="utf-8")
         for field in REQUIRED_FIELDS:
-            if field not in text:
-                errors.append(f"{row.memo}: missing field {field}")
+            field_name = field.removeprefix("- ").removesuffix(":")
+            if extract_field_value(text, field_name) is None:
+                errors.append(f"{row.memo}: missing or empty field {field}")
 
         level = extract_verification_level(text)
         if level and level not in ALLOWED_VERIFICATION_LEVELS:
@@ -345,15 +354,11 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
 
         memo_status = extract_field_value(text, "Status")
         memo_source = extract_field_value(text, "Source Issue")
-        memo_priority = extract_field_value(text, "Priority")
 
         if row.status not in ACTIVE_ISSUE_STATUSES:
             errors.append(
                 f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ACTIVE_ISSUE_STATUSES)})"
             )
-
-        if memo_priority is None or not memo_priority.strip():
-            errors.append(f"{row.memo}: missing or empty Priority value")
 
         for dep in extract_dependency_paths(text):
             name = Path(dep).name
