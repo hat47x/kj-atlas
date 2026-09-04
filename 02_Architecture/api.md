@@ -474,7 +474,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `instruction?: string` — 提案方針の指示（任意）
   - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）
 - Response: `SuggestMergesResponse`
-  - `suggestions: MergeSuggestion[]` — 統合候補の配列。各要素のAPI契約は `groupId`、2件以上の `cardIds`、`mergedTextDraft`、任意の `rationale`。
+  - `suggestions: MergeSuggestion[]` — 統合候補の配列。各要素のAPI契約は `groupId`、2件以上の `cardIds`、`mergedTextDraft`、必須の `mergeMethod`（`near_duplicate` | `kernel_fusion`）、任意の `rationale`。方式欠落・未知値は信頼境界で拒否する。
 - 類似カードの統合候補を提案する。各候補は統合対象カード群と統合理由を含む。
 - フロントエンドの決定論的ローカル候補は、このAPI契約に Stream B の `targetCardId` / `candidateCardIds` / `scoreSummary` / `reasonCodes` / `snapshotVersion` を付加した派生表現を使う。これらはローカル候補生成の再現性メタデータであり、AIプロバイダーが生成する `MergeSuggestion` の必須フィールドではない。remote AI提案に存在しないスコアやsnapshotを補作しない。
 
@@ -1408,4 +1408,4 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 
 LLM応答は信頼境界の外側として扱う。未知ID・重複ID・2件未満・件数上限に加え、hold、既merge、明示的な `negate`、`type=contradicts` のevidence、異なる既知 `claimType`、同じカードを複数候補へ含める競合提案を決定論的に拒否する。
 
-Responseの外形は従来どおり `SuggestMergesResponse` / `MergeSuggestion` を維持する。現時点では `groupId`、`cardIds`、`mergedTextDraft`、任意の `rationale` であり、統合方法や残差を表す追加フィールドは、実merge適用時の来歴・残差保持を監査した後に判断する。
+Responseは `SuggestMergesResponse` / `MergeSuggestion` とし、各候補に `groupId`、`cardIds`、`mergedTextDraft`、`mergeMethod`、任意の `rationale` を持つ。`mergeMethod` は `near_duplicate`（類似カードの整理・04ステップ型）または `kernel_fusion`（意味核の統合・核融合法型）の2値で、promptが選んだ方法を人間レビューと後続decisionへ渡す意味属性である。決定論ローカルfallbackは実装上の性質から `near_duplicate` を付与する。保存済みの旧decisionに方式が無い場合は推測補完しない。元カードとlineageを保持しているため、独立した `residuals` フィールドは現契約の必須要素にしない。
