@@ -18,6 +18,21 @@ jobs:
           ref: dogfood/r20-merge-method-traceability-20260904
           fetch-depth: 0
 
+      - name: Align one-shot patch with current strict-validator formatting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/scripts/r20_fix_merge_method_contract.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''    '      "rationale",\\n      "representativeCardId",',
+    '      "rationale",\\n      "mergeMethod",\\n      "representativeCardId",','''
+          new = '''    '"snapshotVersion", "rationale", "representativeCardId",',
+    '"snapshotVersion", "rationale", "mergeMethod", "representativeCardId",','''
+          if s.count(old) != 1:
+              raise SystemExit(f'validator-format patch occurrence count={s.count(old)}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Apply R20 contract correction
         run: python .github/scripts/r20_fix_merge_method_contract.py
 
