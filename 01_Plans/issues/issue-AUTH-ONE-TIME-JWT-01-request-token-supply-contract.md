@@ -33,7 +33,7 @@
 - [x] 通常のBearer access tokenを連続API要求へ使用できる契約を回帰testで復元する。
 - [x] `jti`欠損tokenをRFC 7519どおり通常Bearer JWTとして扱い、docstringとtestを一致させる。
 - [x] DPoP、BFF、短命Bearer継続の業務・データ・機能trade-offを`ADR-0074`へ集約し、BFFを採用候補としてProposedにした。
-- [ ] `ADR-0074`をMaintainerがAcceptedまたはRejectedにし、本issueの実装方式を確定する。
+- [x] `ADR-0074`をMaintainerがAcceptedまたはRejectedにし、本issueの実装方式を確定する（2026-08-13、Maintainer承認によりAccepted。**案2 server-owned BFF session** を採用。同ADRの実装要件Decision 7が本issueの方針を確定させる）。
 - [ ] 強いreplay防御を採る場合、別worker間でも要求proof再利用を拒否し、通常のaccess token再利用を壊さない。
 - [ ] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
 - [ ] refresh tokenをSPAへ渡さず、XSS時のcredential露出範囲を拡大しない。
@@ -42,6 +42,10 @@
 ## 暫定運用
 
 本issueと`SAAS-TENANT-SESSION-BINDING-01`の方式決定までは、PostgreSQLが共有するのはprincipal単位versionだけであり、認証session単位のactive tenantを伴う多worker本番運用は未保証とする。JWT replay防御済みとも表明しない。Bearer tokenの保証範囲は短命、署名検証、issuer/audience制限、TLS、browser storage不使用までとする。
+
+## 2026-09-04 ADR-0074採択後の補正
+
+`ADR-0074`は候補B（同一origin BFF session）を採用し、候補A（RFC 9449 DPoP）は採らなかった。B採用下では、browserはaccess tokenそのものを保持・送信せず、HttpOnly cookieのopaque session IDだけを送る。したがってAC-5の「要求proof再利用」は、DPoP proof `jti`のような要求単位署名ではなく、B採用時にADR-0074 Decision 3〜5が定めるsession機構（`session_key_hash`主キー、CAS版数更新、session束縛anti-CSRF token）が担う。AC-5〜AC-8は、この読み替えのもとで現行実装（`SAAS-TENANT-SESSION-BINDING-01`、`OPS-SAAS-SCALE-01`）がどこまで満たしているかを確認し、未充足分だけを実装する。DPoPのための別実装は追加しない。
 
 ## 依存関係
 
