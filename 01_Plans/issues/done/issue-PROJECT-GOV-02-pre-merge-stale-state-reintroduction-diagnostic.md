@@ -1,7 +1,7 @@
 # Issue: PROJECT-GOV-02 merge前にstale state再流入候補を診断する
 
 - Type: Process / DX / Contract Integrity
-- Status: In Progress
+- Status: Done
 - Source Issue: `PROJECT-GOV-01`
 - Priority: P1
 - Owner: Maintainer
@@ -52,24 +52,24 @@ R21で確認したとおり、commit距離と意味ドリフトは同じでは�
 
 ## 3. 受入条件 / Acceptance criteria
 
-- [ ] AC-1 `merge-base..base` と `merge-base..head` の変更pathを別々に取得できる。
-- [ ] AC-2 双方変更pathをoverlapとして報告するが、それだけではstrong findingにしない。
-- [ ] AC-3 base側で削除済み・head側で存在するpathを`main_deleted_branch_present`としてstrong分類できる。
-- [ ] AC-4 base側で現存・変更済み・head側で削除されたpathを`branch_deletes_main_present`としてstrong分類できる。
-- [ ] AC-5 commit距離が大きくてもpath overlapがなければstrong findingにならない。
-- [ ] AC-6 `--json`でmerge-base、両側commit数、overlap、strong findingを機械可読出力できる。
-- [ ] AC-7 `--fail-on-strong`指定時だけstrong findingでnon-zero exitし、通常診断は観察用途として成功終了する。
-- [ ] AC-8 synthetic Git repository testで非重複、resurrection、benign overlap、destructive deletion、commit距離のみの5ケースを検証する。
-- [ ] AC-9 planning/docs/triage検証に既存エラーを増やさない。
-- [ ] AC-10 current branchをcurrent mainに統合する直前に本診断を実使用し、結果と限界をR22へ記録する。
+- [x] AC-1 `merge-base..base` と `merge-base..head` の変更pathを別々に取得できる。
+- [x] AC-2 双方変更pathをoverlapとして報告するが、それだけではstrong findingにしない。
+- [x] AC-3 base側で削除済み・head側で存在するpathを`main_deleted_branch_present`としてstrong分類できる。
+- [x] AC-4 base側で現存・変更済み・head側で削除されたpathを`branch_deletes_main_present`としてstrong分類できる。
+- [x] AC-5 commit距離が大きくてもpath overlapがなければstrong findingにならない。
+- [x] AC-6 `--json`でmerge-base、両側commit数、overlap、strong findingを機械可読出力できる。
+- [x] AC-7 `--fail-on-strong`指定時だけstrong findingでnon-zero exitし、通常診断は観察用途として成功終了する。
+- [x] AC-8 synthetic Git repository testで非重複、resurrection、benign overlap、destructive deletion、commit距離のみの5ケースを検証する。
+- [x] AC-9 planning/docs/triage検証に既存エラーを増やさない。
+- [x] AC-10 current branchをcurrent mainに統合する直前に本診断を実使用し、結果と限界をR22へ記録する。
 
 ## 4. 実装タスク / Task breakdown
 
-- [ ] T1 `01_Plans/check_stale_merge_reintroduction.py` を追加する。
-- [ ] T2 `01_Plans/test_check_stale_merge_reintroduction.py` にsynthetic Git testを追加する。
-- [ ] T3 継続dogfood R22のA型/B型記録へ、局所guardと横断診断の役割分担を残す。
-- [ ] T4 branch-only検証でunit / planning / docs / triage / diff-checkを実行する。
-- [ ] T5 merge直前のcurrent mainに対して診断を実使用し、strong findingが出た場合は自動mergeせず内容を確認する。
+- [x] T1 `01_Plans/check_stale_merge_reintroduction.py` を追加する。
+- [x] T2 `01_Plans/test_check_stale_merge_reintroduction.py` にsynthetic Git testを追加する。
+- [x] T3 継続dogfood R22のA型/B型記録へ、局所guardと横断診断の役割分担を残す。
+- [x] T4 branch-only検証でunit / planning / docs / triage / diff-checkを実行する。
+- [x] T5 merge直前のcurrent mainに対して診断を実使用し、strong findingが出た場合は自動mergeせず内容を確認する。
 
 ## 5. 検証計画 / Validation plan
 
@@ -109,3 +109,11 @@ python 01_Plans/triage_actionable_plans.py --format json
 ## 8. 完了境界
 
 このIssueは、診断script・synthetic test・current branchでの実使用までを完了境界とする。恒久required check化やbranch protection変更は、実使用で有益性と誤検知特性が確認されるまで別判断とし、本IssueのDone条件に含めない。
+
+## 9. 完了記録 / Completion evidence
+
+- synthetic Git repository 5ケース: success。
+- 初回実使用 Run `33874427426`: current mainに対して `overlap=0 / strong=0`。
+- merge直前再診断: base=`935f9fb2281aef9d7b90203b59fe22fb9eeb3885`, head=`4403e6a1dd796ccf21ac3a04e06ddad622612b84`, overlap=0, strong=0。
+- dogfood/docs/Issue lifecycle/triageはone-shot検証で再確認する。
+- 恒久required check / branch protection化は本IssueのDone条件外のまま保留する。

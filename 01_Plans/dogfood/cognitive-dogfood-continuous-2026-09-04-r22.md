@@ -139,3 +139,19 @@ branch ageを禁止規則へ変えると、独立した正当な作業まで止�
 6. 有益でも、直ちに恒久CIへ昇格させない。複数integrationで再現する場合に次段を判断する。
 
 R22はformal Case 001 Arm Cを代替しない。formal比較は引き続きfresh context + frozen runtimeで別レーンとして実走する。
+
+## 10. merge直前の実使用結果
+
+本Issueの完了境界として、PR #2899のbranchをその時点のcurrent mainへ統合する直前に診断を再実行した。
+
+- base commit: `935f9fb2281aef9d7b90203b59fe22fb9eeb3885`
+- head commit: `4403e6a1dd796ccf21ac3a04e06ddad622612b84`
+- merge-base: `4a85f850f9e1844803c129b09e770cd1761ef69a`
+- base commits since merge-base: 1
+- head commits since merge-base: 9
+- base changed paths: 10
+- head changed paths: 7
+- overlap: 0
+- strong: 0
+
+結果はstrong findingなしであった。commit距離だけを理由に拒否せず、path-levelの交差と状態反転を別に扱う診断として最初の実使用を完了した。この結果だけで恒久required check化は判断しない。
