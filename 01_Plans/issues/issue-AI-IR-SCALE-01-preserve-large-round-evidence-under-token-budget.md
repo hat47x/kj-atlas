@@ -175,6 +175,16 @@ Stage 5で最後に残る `check-narrative` を、R20のprovider token計測ハ�
 
 計測スクリプトはIssue本文に記載した直接CLI形式でも動くよう修正し、直接実行のdry-runを回帰テストへ追加した。外部送信には引き続き `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを要求する。
 
+### `check-narrative` へのRelation追加後の再計測（2026-09-05）
+
+`AI-IR-CHECK-NARRATIVE-RELATIONS-01` により、`check-narrative` のpromptへ全Edgeを列挙する `Relations:` 節を追加した（A型図解の論理接続をA/B双方向照合で使うため）。同じ300カード・30島の代表入力で、外部providerを呼ばないdry-runを再実行した結果は次のとおりである。
+
+| route | Unicode文字数 | UTF-8 bytes | 入力方式 |
+| --- | ---: | ---: | --- |
+| `check-narrative` | 195,562 | 198,083 | 現行の全量prompt + 全Edge一覧 |
+
+上記の表（Relation追加前）と比べ、UTF-8 bytesは171,426→198,083（+26,657）へ増えた。これは新たに追加した300 relationの列挙分であり、Narrative本文・reading order・全Card・全Islandの既存coverageは変更していない（回帰は `test_ai_check_narrative_required_meaning.py` で固定）。この値もtoken数ではなく診断情報であり、R20の「正確な入力token数はprovider-reported usageのみ」という境界は変わらない。実token計測・A2/B/C比較の判断順序自体もこの節では変更しない。
+
 ## 2026-09-04: named provider実測の実行可能性確認
 
 R20のハーネスを実際のnamed providerへ送れるか確認するため、branch-onlyのGitHub Actions Run `33875031314` で `KJ_ATLAS_DEEPSEEK_API_KEY` の**有無だけ**を検査した。secretの値は取得・出力していない。結果は未設定だった。

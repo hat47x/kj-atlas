@@ -381,6 +381,23 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
 
     card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards]
 
+    # AI-IR-CHECK-NARRATIVE-RELATIONS-01: the A-side diagram's explicit
+    # causal/negate/mutual/equivalence/related edges are route-required
+    # meaning for the A/B cross-check -- without them the model cannot tell
+    # whether the narrative invents a logical connection (causal, negate, ...)
+    # that the diagram never drew (kj_technique.md §6 KJT-SIGN-09). Legacy
+    # documents may omit fromKind/toKind; the existing domain contract treats
+    # an unspecified endpoint kind as a card, so the prompt resolves that
+    # ambiguity here rather than passing it through to the model.
+    relation_lines = [
+        (
+            f'- id="{edge.id}", type="{edge.type}", '
+            f'fromKind="{edge.fromKind or "card"}", fromId="{edge.fromId}", '
+            f'toKind="{edge.toKind or "card"}", toId="{edge.toId}"'
+        )
+        for edge in payload.doc.edges
+    ]
+
     return "\n".join(
         [
             "You are performing a best-effort narrative consistency check against a diagram.",
@@ -394,6 +411,9 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             "Perform the A/B cross-check in both directions (kj_technique.md §5):",
             '  - direction "b_missing_in_a": narrative claims that have no counterpart in the diagram (either remove the claim or add it to the diagram).',
             '  - direction "a_missing_in_b": diagram islands that the narrative never mentions (ask why they cannot be told).',
+            "Use the Relations section as the diagram's relation graph: flag any explicit logical connection "
+            "(causal, negate, mutual, equivalence, etc.) the narrative asserts between two elements but the "
+            "relation graph never draws, as a b_missing_in_a issue.",
             'Every A/B mismatch issue must set its "direction" to one of the two values.',
             'Report "counts" with the number of issues per direction (0 is a valid value; a 0/0 means the cross-check did not actually run).',
             'If there are no issues at all, return {"issues":[],"counts":{"bMissingInA":0,"aMissingInB":0}}.',
@@ -408,6 +428,8 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             *island_lines,
             "Cards:",
             *card_lines,
+            "Relations:",
+            *relation_lines,
         ]
     )
 

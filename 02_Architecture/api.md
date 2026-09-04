@@ -633,6 +633,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
     - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
 - 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
+- **`AI-IR-CHECK-NARRATIVE-RELATIONS-01`**: promptは `doc.edges` の全件を `id` / `type` / `fromKind` / `fromId` / `toKind` / `toId` 付きで列挙する。ナラティブが図に無い因果・対立・同値等の論理接続を作っていないか（`kj_technique.md` §6 `KJT-SIGN-09`）をA/B双方向照合の判断材料にするためで、`fromKind`/`toKind` 未指定のlegacy edgeはcard端点として解釈する。IRへは移行していない（現行の全Card・全Island coverageを維持したままの追加であり、`AI-IR-SCALE-01` のscale方式決定を待つ）。
 
 **POST** `/ai/refine-card-text`
 
