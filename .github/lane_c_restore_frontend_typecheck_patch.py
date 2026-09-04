@@ -3,14 +3,26 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+NEWLINES: dict[str, str] = {}
 
 
 def read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    with (ROOT / path).open("r", encoding="utf-8", newline="") as handle:
+        raw = handle.read()
+    if "\r\n" in raw:
+        newline = "\r\n"
+    else:
+        newline = "\n"
+    NEWLINES[path] = newline
+    return raw.replace("\r\n", "\n")
 
 
 def write(path: str, text: str) -> None:
-    (ROOT / path).write_text(text, encoding="utf-8", newline="")
+    newline = NEWLINES.get(path, "\n")
+    normalized = text.replace("\r\n", "\n")
+    rendered = normalized if newline == "\n" else normalized.replace("\n", "\r\n")
+    with (ROOT / path).open("w", encoding="utf-8", newline="") as handle:
+        handle.write(rendered)
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
@@ -167,13 +179,6 @@ for path in [
     "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts",
 ]:
     text = read(path)
-    text = replace_once(
-        text,
-        "        mergedTextDraft: \"risk mitigation\",\n        editedText:",
-        "        mergedTextDraft: \"risk mitigation\",\n        editedText:",
-        f"{path} anchor",
-    )
-    # Collapse a duplicate mergeMethod following editedText while preserving the first one near groupId.
     lines = text.splitlines(keepends=True)
     seen_in_object = False
     out: list[str] = []
@@ -213,8 +218,8 @@ write(path, text)
 path = "03_Implement/frontend/src/domain/merge_suggestion_decisions.test.ts"
 text = read(path)
 text, added = add_merge_method_to_append_literals(text)
-if added < 7:
-    raise SystemExit(f"decision tests: expected multiple missing mergeMethod inputs, added only {added}")
+if added != 7:
+    raise SystemExit(f"decision tests: expected 7 missing literal mergeMethod inputs, added {added}")
 text = replace_once(
     text,
     "        rationale: undefined,\n        representativeCardId:",
