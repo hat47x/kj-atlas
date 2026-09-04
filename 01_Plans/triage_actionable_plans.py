@@ -207,6 +207,69 @@ def parse_adr(path: Path) -> AdrRecord:
     )
 
 
+def find_active_dependency_cycles(issues: list[IssueMemo]) -> list[tuple[str, ...]]:
+    """Return strongly connected components in the active issue graph.
+
+    Done memos are deliberately excluded: once an issue is Done its historical
+    dependencies no longer participate in current actionability. Self
+    dependencies are diagnosed separately with the more specific error.
+    """
+    active = {
+        issue.path: issue
+        for issue in issues
+        if issue.status in ACTIVE_ISSUE_STATUSES
+    }
+    graph = {
+        path: tuple(
+            dep
+            for dep in issue.dependency_paths
+            if dep in active and dep != path
+        )
+        for path, issue in active.items()
+    }
+
+    index = 0
+    indices: dict[str, int] = {}
+    lowlinks: dict[str, int] = {}
+    stack: list[str] = []
+    on_stack: set[str] = set()
+    cycles: list[tuple[str, ...]] = []
+
+    def visit(path: str) -> None:
+        nonlocal index
+        indices[path] = index
+        lowlinks[path] = index
+        index += 1
+        stack.append(path)
+        on_stack.add(path)
+
+        for dep in graph[path]:
+            if dep not in indices:
+                visit(dep)
+                lowlinks[path] = min(lowlinks[path], lowlinks[dep])
+            elif dep in on_stack:
+                lowlinks[path] = min(lowlinks[path], indices[dep])
+
+        if lowlinks[path] != indices[path]:
+            return
+
+        component: list[str] = []
+        while True:
+            member = stack.pop()
+            on_stack.remove(member)
+            component.append(member)
+            if member == path:
+                break
+        if len(component) > 1:
+            cycles.append(tuple(sorted(component)))
+
+    for path in sorted(graph):
+        if path not in indices:
+            visit(path)
+
+    return sorted(cycles)
+
+
 def build_actionable_issues(
     issues: list[IssueMemo], adrs: list[AdrRecord], root: Path
 ) -> list[ActionableIssue]:
@@ -214,6 +277,8 @@ def build_actionable_issues(
     adr_by_id = {adr.adr_id: adr for adr in adrs}
     dependents: dict[str, list[str]] = {issue.path: [] for issue in issues}
     for issue in issues:
+        if issue.status not in ACTIVE_ISSUE_STATUSES:
+            continue
         for dep_path in issue.dependency_paths:
             if dep_path in dependents and dep_path != issue.path:
                 dependents[dep_path].append(issue.path)
@@ -230,6 +295,12 @@ def build_actionable_issues(
         issue = issue_by_path.get(path)
         if issue is None:
             return 999
+        # Done memos are satisfied dependency leaves. Their historical
+        # dependency notes must not re-enter the active graph and inflate a
+        # current issue's stage or create a false cycle through old edges.
+        if issue.status == "Done":
+            stage_cache[path] = 0
+            return 0
         if not issue.dependency_paths:
             stage_cache[path] = 0
             return 0
@@ -360,6 +431,13 @@ def collect(root: Path) -> dict[str, object]:
                 errors.append(
                     TriageError(path=issue.path, reason=f"dependency ADR not found: {adr_id}")
                 )
+    for cycle in find_active_dependency_cycles(issues):
+        errors.append(
+            TriageError(
+                path=cycle[0],
+                reason="dependency cycle among active issues: " + ", ".join(cycle),
+            )
+        )
     actionable_issues = build_actionable_issues(issues, adrs, root)
     actionable_adrs = build_actionable_adrs(adrs, issues)
     return {
