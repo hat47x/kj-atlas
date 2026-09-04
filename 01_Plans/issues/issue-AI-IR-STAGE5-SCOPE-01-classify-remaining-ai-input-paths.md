@@ -68,6 +68,14 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 そのため、固定 `MAX_CARDS` / `MAX_TEXT_CHARS` のまま無理に移行しない。`AI-IR-SCALE-01` で、必要意味を保持しながら大規模文書を扱う方式とtoken実測の境界が決まった後に実装する。
 
+## 2026-09-04: `check-narrative` のtoken計測基準を追加
+
+`AI-IR-SCALE-01` のR20ハーネスへ `check-narrative` を追加し、`suggest-layout` / `generate-narrative` / `check-narrative` を同じ300カード・30島の合成入力で比較できるようにした。
+
+現行 `check-narrative` はIRを介さず全300カード・全30島をprovider promptへ載せており、dry-runでは末尾要素までcoverageが残ることを確認した。ただしpromptのUTF-8 byte数は171,426で、比較3ルートの中で最大だった。この値はtoken数ではない。named provider/modelの `usage` による正確な入力token実測が終わるまでは、全量方式が安全に収まるとも、分割が必要とも断定しない。
+
+したがって本Issueの未完境界は変わらない。`check-narrative` を形式的にgeneric IRへ移すのではなく、`AI-IR-SCALE-01` で実token予算を確認し、A/B双方向の全体照合を失わない方式を選んだ後に実装する。
+
 ## 受入条件
 
 - [x] Stage 5対象7経路を、Document-backed / caller-limited grounding / no-documentで分類した。
