@@ -258,7 +258,9 @@ def build_actionable_issues(
             if dep_issue is None:
                 missing_id = Path(dep_path).name.removeprefix("issue-").removesuffix(".md")
                 blockers.append(f"{missing_id}:Missing")
-            elif dep_issue.path != issue.path and dep_issue.status != "Done":
+            elif dep_issue.path == issue.path:
+                blockers.append(f"{issue.backlog_id}:SelfDependency")
+            elif dep_issue.status != "Done":
                 blockers.append(f"{dep_issue.backlog_id}:{dep_issue.status}")
         for adr_id in issue.dependency_adr_ids:
             dep_adr = adr_by_id.get(adr_id)
@@ -349,7 +351,9 @@ def collect(root: Path) -> dict[str, object]:
         if issue.priority == "N/A" or not issue.priority.strip():
             errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))
         for dep in issue.dependency_paths:
-            if dep not in known_issue_paths:
+            if dep == issue.path:
+                errors.append(TriageError(path=issue.path, reason=f"self dependency: {dep}"))
+            elif dep not in known_issue_paths:
                 errors.append(TriageError(path=issue.path, reason=f"dependency path not found: {dep}"))
         for adr_id in issue.dependency_adr_ids:
             if adr_id not in known_adr_ids:
