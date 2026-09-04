@@ -94,6 +94,13 @@ async function fulfillJson(route: Route, status: number, body: unknown, headers:
 }
 
 async function installSaasServer(context: BrowserContext, state: ServerState) {
+  // Public packs are served from the static /packs surface rather than /api.
+  // Keep the SaaS fixture deterministic so the tenant-scoped document remains
+  // the only startup document under test.
+  await context.route("**/packs/index.json", async (route) => {
+    await fulfillJson(route, 404, {});
+  });
+
   await context.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
