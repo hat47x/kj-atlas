@@ -1,0 +1,93 @@
+name: merge method traceability final validation (one-shot)
+
+on:
+  push:
+    branches:
+      - feat/merge-method-traceability-final-r2-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/merge-method-traceability-final-r2-20260904
+          fetch-depth: 0
+
+      - name: Load validated patch script and R20 source
+        run: |
+          git fetch origin feat/merge-method-traceability-final-20260904 dogfood/r20-merge-method-traceability-20260904
+          git show origin/feat/merge-method-traceability-final-20260904:.github/scripts/apply_merge_method_traceability_final_once.py > /tmp/apply_merge_method.py
+          python /tmp/apply_merge_method.py apply
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Validate backend merge method contract
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py -q
+          pytest tests/ -k 'suggest_merges or merge_suggestion' -q
+          ruff check src tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Validate frontend merge method contract
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run \
+            src/api/client.test.ts \
+            src/domain/merge_candidates.test.ts \
+            src/domain/merge_suggestion_decisions.test.ts \
+            src/domain/merge_suggestion_apply.test.ts \
+            src/domain/validate_doc.test.ts \
+            src/ui/MergeSuggestionsPanel.test.ts
+          npm run typecheck
+          npm run test:i18n
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate decision to persistence traceability
+        working-directory: 03_Implement/frontend
+        run: npx playwright test e2e/merge_suggestion_apply_persistence.spec.ts
+
+      - name: Finalize API and issue memo
+        run: python /tmp/apply_merge_method.py finalize-docs
+
+      - name: Validate planning and documentation contracts
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/triage_actionable_plans.py --format text > /tmp/triage.txt
+          test -s /tmp/triage.txt
+          test ! -e 01_Plans/issues/issue-AI-MERGE-SEMANTICS-01-define-card-merge-semantics.md
+          test -e 01_Plans/issues/done/issue-AI-MERGE-SEMANTICS-01-define-card-merge-semantics.md
+          git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Remove one-shot workflow and push validated changes
+        run: |
+          rm .github/workflows/merge-method-traceability-final-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: merge方式を提案から判断履歴まで追跡する'
+          git push origin HEAD:feat/merge-method-traceability-final-r2-20260904
