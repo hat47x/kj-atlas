@@ -3,7 +3,7 @@
   "id": "doc_kj_atlas_dogfood_r19",
   "title": "kj-atlas 継続dogfood — merge方式の意味をproposalから判断記録まで追う",
   "createdAt": "2026-09-04T02:30:00.000Z",
-  "updatedAt": "2026-09-04T02:30:00.000Z",
+  "updatedAt": "2026-09-04T04:52:00.000Z",
   "transform": {"panX": 0, "panY": 0, "zoom": 0.78},
   "cards": [
     {"id":"c01","x":60,"y":80,"text":"merge promptは04ステップ型の近接整理と核融合法型の意味核統合を使い分けるよう要求している。","claimType":"fact","textReviewed":false,"meta":{"source":"backend routes/ai.py"}},
@@ -40,5 +40,13 @@
   ],
   "evidenceLinks": [],
   "readingOrder": ["i1","i2","i3","i4"],
-  "narratives": []
+  "narratives": [
+    {
+      "id": "n1",
+      "title": "merge方式を失わず判断履歴へ渡す",
+      "text": "merge promptは、近接した記述を整理する04ステップ型と、複数カードから意味核を立てる核融合法型を使い分けるよう求めている。一方、R18時点の応答契約にはその方法を機械可読に残す欄がなく、review境界へ届く前に方式の意味が失われていた。方式はAIのrationaleや人間の採否理由とは異なる来歴なので、文字列へ埋め込まず独立して保持する必要がある。決定論fallbackは新しい意味核を生成しないため near_duplicate と明示できるが、kernel_fusion を行ったと推測してはならない。新しいproposalとdecisionでは方式を明示し、方式を記録していない旧decisionは欠落のまま読む。この課題は既存のAI-MERGE-SEMANTICS-01へ戻し、自動merge等へ範囲を広げない。",
+      "basedOnReadingOrder": ["i1","i2","i3","i4"],
+      "reviewed": false
+    }
+  ]
 }
