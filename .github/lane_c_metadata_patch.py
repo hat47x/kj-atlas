@@ -29,12 +29,15 @@ new = '''def extract_field_value(memo_text: str, field_name: str) -> str | None:
 
 
 def extract_verification_level(memo_text: str) -> str | None:
-    raw = extract_field_value(memo_text, "Expected verification level")
-    if raw is None:
+    # Preserve the existing contract: only the canonical backticked value is
+    # interpreted here. The whitespace matcher is line-local for the same
+    # reason as extract_field_value().
+    match = re.search(
+        r"^- Expected verification level:[ \\t]*`([^`]+)`", memo_text, re.M
+    )
+    if not match:
         return None
-    if len(raw) >= 2 and raw.startswith("`") and raw.endswith("`"):
-        raw = raw[1:-1].strip()
-    return raw or None
+    return match.group(1).strip()
 '''
 if old not in text:
     raise SystemExit("extract helper block did not match expected main content")

@@ -80,22 +80,6 @@ class RequiredMetadataValuesTest(unittest.TestCase):
                         errors,
                     )
 
-    def test_validate_rejects_invalid_unquoted_verification_level(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            (root / "issue-invalid-level.md").write_text(
-                self.memo(verification="smoke"),
-                encoding="utf-8",
-            )
-            errors = validate(root)
-        self.assertTrue(
-            any(
-                "invalid Expected verification level `smoke`" in error
-                for error in errors
-            ),
-            errors,
-        )
-
     def test_validate_accepts_complete_required_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
