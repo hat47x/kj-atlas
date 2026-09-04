@@ -42,8 +42,8 @@ jobs:
               raise SystemExit('expected validateDocument test import not found')
           text = text.replace(old_import, 'import { validateImportedDocument } from "./validate";')
           call_count = text.count('validateDocument(raw)')
-          if call_count != 3:
-              raise SystemExit(f'expected 3 validateDocument(raw) calls, found {call_count}')
+          if call_count != 4:
+              raise SystemExit(f'expected 4 validateDocument(raw) calls, found {call_count}')
           text = text.replace('validateDocument(raw)', 'validateImportedDocument(raw)')
           if 'tests/test_models_backward_compat.py' not in text:
               raise SystemExit('expected stale backend compatibility test path not found')
@@ -74,4 +74,4 @@ jobs:
           PY
       - run: python .github/scripts/r20_lane_b_finalize.py
 
-# one-shot run 7: treat CRLF as end-of-line in the final staged diff check, then self-remove.
+# one-shot run 8: four persistence cases + CRLF-aware final staged diff check, then self-remove.
