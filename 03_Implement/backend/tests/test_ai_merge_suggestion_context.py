@@ -104,6 +104,7 @@ def _suggestion(group_id: str, *card_ids: str) -> MergeSuggestion:
         cardIds=list(card_ids),
         mergedTextDraft="二重入力になっている確認事項を一つにまとめられる",
         rationale="意味の重なりを確認するための提案",
+        mergeMethod="near_duplicate",
     )
 
 
