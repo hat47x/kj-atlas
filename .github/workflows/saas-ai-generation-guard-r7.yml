@@ -1,0 +1,97 @@
+name: SaaS AI generation guard proof R7
+
+on:
+  push:
+    branches:
+      - test/saas-ai-generation-guard-r7-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Baseline SaaS browser matrix
+        working-directory: 03_Implement/frontend
+        env:
+          KJ_ATLAS_E2E_SAAS: "1"
+        run: npx playwright test --config=playwright.saas.config.ts
+
+      - name: Apply generation-guard probe
+        run: python3 03_Implement/frontend/e2e/patch_generation_guard_probe.py
+
+      - name: Typecheck probed spec
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: SaaS browser matrix with generation-guard probe
+        working-directory: 03_Implement/frontend
+        env:
+          KJ_ATLAS_E2E_SAAS: "1"
+        run: npx playwright test --config=playwright.saas.config.ts
+
+      - name: Mutation proof requires generation guard
+        working-directory: 03_Implement/frontend
+        env:
+          KJ_ATLAS_E2E_SAAS: "1"
+        run: |
+          cp src/session/tenant_session_generation.ts /tmp/tenant_session_generation.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("src/session/tenant_session_generation.ts")
+          source = path.read_text(encoding="utf-8")
+          old = "      throw new StaleTenantSessionResultError();"
+          if source.count(old) != 1:
+              raise SystemExit("generation guard mutation anchor drifted")
+          path.write_text(source.replace(old, "      return result;", 1), encoding="utf-8")
+          PY
+          set +e
+          npx playwright test e2e/tenant_session_multitab.spec.ts \
+            --config=playwright.saas.config.ts \
+            --grep "cross-tab switch discards a delayed AI narrative proposal" \
+            2>&1 | tee /tmp/generation-guard-mutation.log
+          mutation_status=${PIPESTATUS[0]}
+          set -e
+          cp /tmp/tenant_session_generation.ts src/session/tenant_session_generation.ts
+          if [ "$mutation_status" -eq 0 ]; then
+            echo "Generation guard mutation unexpectedly passed"
+            exit 1
+          fi
+          grep -F "generation guard must reject the stale AI result" /tmp/generation-guard-mutation.log
+
+      - name: Production build after restore
+        working-directory: 03_Implement/frontend
+        run: npm run build
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Commit proof and retire temporary validation files
+        if: success()
+        run: |
+          rm .github/workflows/saas-ai-generation-guard-r7.yml
+          rm 03_Implement/frontend/e2e/patch_generation_guard_probe.py
+          git config user.name 'kj-atlas-validation-bot'
+          git config user.email 'kj-atlas-validation-bot@users.noreply.github.com'
+          git add -A
+          git commit -m 'test: AI stale resultのgeneration guard発火をブラウザで固定する'
+          git push origin HEAD:${GITHUB_REF_NAME}
