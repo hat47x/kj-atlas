@@ -58,7 +58,7 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 - [x] Tenant切替を含む実ブラウザPlaywright scenarioが存在する。
 - [x] cross-tab / stale mutation / bfcache / export-import系の主要browser lifecycle境界を少なくとも1本ずつ確認する。
 - [ ] `SAAS-TENANT-01`の未完consumer matrixを再棚卸しし、本Issueが担うbrowser scenarioの残差を確定する。
-- [ ] 実frontendと実backendを結ぶ縦断E2Eの担当Issueを明示し、本Issueの完了時に未検証領域を「E2E済み」と表明しない。
+- [x] 実frontendと実backendを結ぶ縦断E2Eの担当Issueを`AUTH-ONE-TIME-JWT-01`として明示し、本Issueの完了時に未検証領域を「E2E済み」と表明しない。
 - [ ] 既存specの回帰がない。
 
 ## 検証計画
