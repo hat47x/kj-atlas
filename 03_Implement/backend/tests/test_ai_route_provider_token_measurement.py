@@ -19,7 +19,11 @@ class _UsageProvider:
         input_tokens = None
         output_tokens = None
         if self.report_usage:
-            input_tokens = 7000 if req.task == "re_layout" else 5000
+            input_tokens = {
+                "re_layout": 7000,
+                "generate_narrative": 5000,
+                "check_narrative": 11000,
+            }[req.task]
             output_tokens = 1
         return LLMResponse(
             raw_text="{}",
@@ -36,24 +40,33 @@ class _UsageProvider:
         )
 
 
-def test_representative_requests_compare_heaviest_and_non_coordinate_routes() -> None:
+def test_representative_requests_compare_ir_routes_and_full_check_narrative() -> None:
     requests = token_measure.build_representative_requests("named-model")
 
-    assert set(requests) == {"suggest-layout", "generate-narrative"}
+    assert set(requests) == {"suggest-layout", "generate-narrative", "check-narrative"}
     layout = requests["suggest-layout"]
     narrative = requests["generate-narrative"]
+    check = requests["check-narrative"]
 
     assert layout.task == "re_layout"
     assert narrative.task == "generate_narrative"
-    assert layout.model == narrative.model == "named-model"
-    assert layout.max_tokens == narrative.max_tokens == 1
+    assert check.task == "check_narrative"
+    assert layout.model == narrative.model == check.model == "named-model"
+    assert layout.max_tokens == narrative.max_tokens == check.max_tokens == 1
 
-    # 同じ300カード入力について、唯一の座標利用ルートと、座標を使わない代表ルートを
-    # 比較する。単なるプロンプトの長さではなく、ルートごとの入力特性の差を観測する。
+    # 同じ300カード入力について、座標を使うIR route、座標を使わないIR route、
+    # そしてStage 5で最後に残る全量prompt routeを同じ計測面へ置く。
     assert len((layout.inputs or {}).get("coordinates", [])) == 200
     assert "coordinates" not in (narrative.inputs or {})
     assert (layout.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
     assert (narrative.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
+
+    # check-narrativeは現行production routeを忠実に再現し、まだIRを通さない。
+    # coverageを落とさず全量を載せていることを、末尾のカード・島まで確認する。
+    assert check.inputs is None
+    assert 'id="c299"' in check.prompt
+    assert 'id="i29"' in check.prompt
+    assert "観察290" in check.prompt
 
 
 def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
@@ -65,10 +78,18 @@ def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
 
     assert report["executed"] is False
     assert report["measurement_complete"] is False
+    assert set(report["routes"]) == {"suggest-layout", "generate-narrative", "check-narrative"}
     for row in report["routes"].values():
         assert row["status"] == "dry-run"
         assert row["provider_reported"]["input_tokens"] is None
         assert row["prompt"]["utf8_bytes"] > 0
+    assert report["routes"]["check-narrative"]["ir"] == {
+        "cards": 0,
+        "relations": 0,
+        "islands": 0,
+        "coordinates": 0,
+        "truncation": None,
+    }
 
 
 def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
@@ -81,7 +102,7 @@ def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
     )
 
     assert report["measurement_complete"] is True
-    assert len(provider.calls) == 2
+    assert len(provider.calls) == 3
     assert report["routes"]["suggest-layout"]["status"] == "measured"
     assert report["routes"]["suggest-layout"]["provider_reported"] == {
         "input_tokens": 7000,
@@ -89,6 +110,10 @@ def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
     }
     assert report["routes"]["generate-narrative"]["provider_reported"] == {
         "input_tokens": 5000,
+        "output_tokens": 1,
+    }
+    assert report["routes"]["check-narrative"]["provider_reported"] == {
+        "input_tokens": 11000,
         "output_tokens": 1,
     }
 
@@ -103,7 +128,7 @@ def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
     )
 
     assert report["measurement_complete"] is False
-    assert len(provider.calls) == 2
+    assert len(provider.calls) == 3
     assert {
         row["status"] for row in report["routes"].values()
     } == {"provider-did-not-report-usage"}
