@@ -141,6 +141,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R21。8月27日のformal product snapshotと9月4日のcurrent mainを混同せず、元比較の内的妥当性と現在mainへの移送妥当性を二段階へ分離した記録。C/D runtimeも既存freeze契約どおり固定product commitを使うことをoperator手順へ戻す。
 - `doc_kj_atlas_dogfood_r21.json`
   - R21のKJキャンバス。commit距離と意味ドリフトを分け、元portfolioを書き換えず後段のcurrent-state replicationで現在性を確かめる構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-04-r22.md`
+  - R22。古いbranch一般を禁止せず、merge-baseからcurrent mainとbranchの状態反転候補をmerge前に絞る診断へ変換した記録。既知path guard、path-level診断、typecheck/test・人間reviewの役割を分離する。
+- `doc_kj_atlas_dogfood_r22.json`
+  - R22のKJキャンバス。workflow・Issue lifecycle・frontend sourceで再現したstale state再流入を束ね、commit距離ではなく状態の向きが逆転する場所を見る構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
