@@ -25,14 +25,15 @@ from kj_atlas_api.runtime_bootstrap import (
 )
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.session_context import (
-    KNOWN_EFFECTIVE_CAPABILITIES,
     MAX_SESSION_CAPABILITY_VERSION_LENGTH,
     MAX_SESSION_DISPLAY_NAME_LENGTH,
     MAX_SESSION_IDENTIFIER_LENGTH,
     MAX_SESSION_RESPONSE_BYTES,
     MAX_SESSION_TENANT_COUNT,
+    WORKSPACE_SESSION_VISIBLE_CAPABILITIES,
     TenantSessionContext,
     switch_tenant_session_context,
+    workspace_session_visible_capabilities,
 )
 from kj_atlas_api.tenant_context import TenantSummary
 
@@ -63,7 +64,7 @@ class TenantSessionContextResponse(BaseModel):
         max_length=MAX_SESSION_TENANT_COUNT,
     )
     effectiveCapabilities: list[str] = Field(
-        max_length=len(KNOWN_EFFECTIVE_CAPABILITIES),
+        max_length=len(WORKSPACE_SESSION_VISIBLE_CAPABILITIES),
     )
     capabilityVersion: str = Field(
         min_length=1,
@@ -99,7 +100,11 @@ def _session_response(request_session: TenantSessionContext) -> TenantSessionCon
         principalId=request_session.principal_id,
         activeTenant=_tenant_summary(request_session.active_tenant),
         availableTenants=[_tenant_summary(tenant) for tenant in request_session.available_tenants],
-        effectiveCapabilities=list(request_session.effective_capabilities),
+        effectiveCapabilities=list(
+            workspace_session_visible_capabilities(
+                request_session.effective_capabilities
+            )
+        ),
         capabilityVersion=request_session.capability_version,
         tenantSessionVersion=request_session.tenant_session_version,
     )
