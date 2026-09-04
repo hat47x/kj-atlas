@@ -59,6 +59,21 @@ jobs:
           PY
           python /tmp/apply_merge_method.py apply
 
+      - name: Update provider-switch fixture to the new response contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('03_Implement/backend/tests/test_llm_provider.py')
+          text = path.read_text(encoding='utf-8')
+          old = '\"mergedTextDraft\":\"merged\"}'
+          new = '\"mergedTextDraft\":\"merged\",\"mergeMethod\":\"near_duplicate\"}'
+          count = text.count(old)
+          if count != 2:
+              raise SystemExit(f'expected two provider-switch merge fixtures, found {count}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -72,7 +87,7 @@ jobs:
         run: |
           pytest tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py -q
           pytest tests/ -k 'suggest_merges or merge_suggestion' -q
-          ruff check src tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py
+          ruff check src tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py tests/test_llm_provider.py
 
       - uses: actions/setup-node@v4
         with:
