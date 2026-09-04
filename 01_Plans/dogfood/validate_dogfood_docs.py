@@ -172,6 +172,37 @@ def safe_manifest_path(raw: object) -> bool:
     return not path.is_absolute() and ".." not in path.parts
 
 
+def git_commit_available(commit: str) -> tuple[bool, str | None]:
+    """Check whether a preregistered commit is available without fetching it.
+
+    Frozen-source validation is deliberately side-effect free. A caller with a
+    shallow clone must fetch the preregistered commit (or unshallow the clone)
+    before blob identity can be verified.
+    """
+    command = ["git", "-C", str(ROOT), "cat-file", "-e", f"{commit}^{{commit}}"]
+    try:
+        subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except FileNotFoundError:
+        return (
+            False,
+            f"cannot verify frozen product commit {commit}: git executable was not found",
+        )
+    except subprocess.CalledProcessError:
+        return (
+            False,
+            f"frozen product commit {commit} is unavailable in local Git history; "
+            "fetch the preregistered commit (or use a non-shallow checkout) "
+            "before running frozen-source validation",
+        )
+    return True, None
+
+
 def git_blob_at(commit: str, path: str) -> tuple[str | None, str | None]:
     command = ["git", "-C", str(ROOT), "rev-parse", f"{commit}:{path}"]
     try:
@@ -190,7 +221,12 @@ def git_blob_at(commit: str, path: str) -> tuple[str | None, str | None]:
     return completed.stdout.strip(), None
 
 
-def validate_product_source_manifest(case_id: str, expected_count: int) -> list[str]:
+def validate_product_source_manifest(
+    case_id: str,
+    expected_count: int,
+    *,
+    verify_frozen_blobs: bool = True,
+) -> list[str]:
     issues: list[str] = []
     path = DOGFOOD_DIR / f"cognitive-dogfood-{case_id}-round1-source-manifest.json"
     label = case_id.replace("case-", "Case ")
@@ -246,7 +282,7 @@ def validate_product_source_manifest(case_id: str, expected_count: int) -> list[
         if not blob_valid:
             issues.append(f"{label} source #{index} has invalid blobSha")
 
-        if path_valid and blob_valid:
+        if path_valid and blob_valid and verify_frozen_blobs:
             actual_blob, error = git_blob_at(PRODUCT_COMMIT, raw_path)
             if error:
                 issues.append(
@@ -380,8 +416,18 @@ def main() -> int:
 
     all_issues.extend(validate_continuous_index())
     all_issues.extend(validate_cognitive_tools())
+
+    frozen_history_available, frozen_history_issue = git_commit_available(PRODUCT_COMMIT)
+    if frozen_history_issue:
+        all_issues.append(frozen_history_issue)
     for case_id, expected_count in PRODUCT_MANIFEST_SPECS.items():
-        all_issues.extend(validate_product_source_manifest(case_id, expected_count))
+        all_issues.extend(
+            validate_product_source_manifest(
+                case_id,
+                expected_count,
+                verify_frozen_blobs=frozen_history_available,
+            )
+        )
     all_issues.extend(validate_shared_skill_manifest())
     for case_id, expected_id in STARTER_SPECS.items():
         all_issues.extend(validate_starter(case_id, expected_id))

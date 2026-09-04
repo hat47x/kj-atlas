@@ -10,6 +10,7 @@
 - rerun番号、Stream、固定5フェーズ、RACI通知、仮想役職、手動件数同期は使用しない。
 - Done memoは通常のAIコンテキストへ入れず、履歴確認が必要な場合だけ検索する。
 - Done memoの本体は `01_Plans/issues/done/` に置く(ADR/CHANGELOGへの昇華が追いつくまでの一時退避。`ADR-0000` rule 40-41)。保持例外(Retention Reason明記)のみ `01_Plans/issues/archive/` へ移動する。
+- 同じissue memoのbasenameを `issues/` 直下、`done/`、`archive/` 等へ複製して共存させない。状態遷移に伴う配置変更はcopyではなくmoveとして扱う。`done/` 配下には `Status: Done` のmemoだけを置く。
 - GitHub Issues運用を将来開始する場合は、その時点で必要な移行手順を新たに決める。未使用の移行runbookは維持しない。
 
 ## 起票方法
@@ -18,15 +19,22 @@
 2. `Status` は `Draft -> Open -> In Progress -> Done` の順で更新する。
 3. `Expected verification level` は変更リスクに応じて `docs-check / unit / integration / e2e` から選ぶ。
 4. ADRは長期的、横断的、破壊的、または安全境界を変える判断に限る。
-5. 完了時は検証結果と `Status: Done` をmemoへ一度記録し、同じ変更で原則 `done/` へ移す。索引の手動更新は不要。
+5. 完了時は検証結果と `Status: Done` をmemoへ一度記録し、同じ変更で原則 `done/` へ移す。索引の手動更新は不要。移動元の旧コピーを残さない。
 
 ### Done配置のlegacy境界
 
 継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っている。これらを一括移動して大量の参照差分を作ることはしない。
 
-一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は58件を一時的なlegacy baselineとして扱い、実際のDone-at-root件数との一致を要求する。新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。
+一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は次の二つを独立に検査する。
 
-既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が後から古いbaselineまで増え直すことを防ぐ。この数はDoneメモの正規配置を意味せず、段階整理の現在地を単調に減らすためだけに保持する。最終的なbaselineは0である。
+1. **件数ratchet**: 58件を一時的なlegacy baselineとして実件数との一致を要求する。既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が古い上限まで増え直すことを防ぐ。最終的なbaselineは0である。
+2. **path identity guard**: R18 commit `88aebae242d5d1a24278b3247d3544aeaa1ad386` から一度だけ機械生成した `legacy_done_at_root_r18.json` を不変の歴史境界として扱う。現在active直下に残るDone memoのbasenameは、このR18集合の部分集合でなければならない。legacyを1件移動するのと同じ変更で別の新規Done-at-rootを1件増やし、件数を相殺することも拒否する。
+
+新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。既存legacyを `done/` へ移して現在集合が縮むことは正しいため、identity manifestは更新しない。`legacy_done_at_root_r18.json` へ新規pathを追記して検査を通す運用は禁止し、固定R18 commitから得た歴史証拠として保持する。
+
+この件数とR18 path集合はDoneメモの正規配置を意味せず、「段階整理の現在地」と「これ以上legacyへ新規参入させない境界」を別々に保持するための一時的な契約である。
+
+また、このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
 
 ## 必須メタデータ
 
@@ -55,7 +63,7 @@ python 01_Plans/triage_actionable_plans.py
 ## 軽量ツール
 
 - issue / docs変更の統一検証入口: `python 01_Plans/docs_check.py`（有効化済みruleだけをblocking実行し、未有効化ruleも表示）
-- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査）
+- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査し、配置・basename一意性・Done-at-root件数/identity境界も検査）
 - 検証ツールのテスト: `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
 

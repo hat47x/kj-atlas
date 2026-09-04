@@ -27,6 +27,10 @@ kj-atlas を使った kj-atlas 開発プロセスの管理。ADR-0042（ドッ�
 4. 配置を調整し、A型図解として成立させる
 5. 空白を発見したら言語化し、次のラウンド（R2）の材料とする
 
+### `validate_dogfood_docs.py` のGit履歴前提
+
+`validate_dogfood_docs.py` は、Case 001〜003で事前登録したproduct sourceを固定commit `2232b3bb26647e5c4a083f55bdbf83c161698649` のblobと照合する。このため、そのcommitがローカルGit object databaseに存在する必要がある。shallow checkoutで実行する場合は、固定commitを明示的にfetchするか、非shallow checkoutを使う。validator自身はnetwork fetchを行わず、固定commitがなければ1件の実行環境エラーとしてfail-closedする。
+
 ## 週次運用（W型サイクル）— 2026-08-11 開始
 
 R1〜R6の完全サイクルは初期構築として完了した。以後は短縮週次サイクルで運用する。
