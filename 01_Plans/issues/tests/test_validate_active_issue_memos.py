@@ -42,7 +42,6 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
         self.assertEqual("issue-fb-1.md", rows[0].memo)
         self.assertEqual("Open", rows[1].status)
 
-
     def test_parse_active_rows_ignores_non_active_sections(self) -> None:
         readme = textwrap.dedent(
             """
@@ -274,6 +273,51 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
 
         self.assertTrue(any("duplicate active RequirementID `DUPLICATE-01`" in err for err in errors))
 
+    def test_validate_rejects_duplicate_memo_basename_across_active_and_done(self) -> None:
+        """DOC-ISSUE-IDENTITY-01: a completed memo must not coexist with an
+        old active copy of the same physical memo after it was moved."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "done").mkdir()
+            (root / "issue-duplicate.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process
+                    - Status: Draft
+                    - Source Issue: TBD
+                    - Priority: P1
+                    - Scope: `01_Plans/`
+                    - Related ADR/Spec: `ADR-0001`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "done" / "issue-duplicate.md").write_text(
+                "- Status: Done\n",
+                encoding="utf-8",
+            )
+
+            errors = validate(root)
+
+        self.assertTrue(
+            any("duplicate issue memo basename `issue-duplicate.md`" in err for err in errors),
+            errors,
+        )
+
+    def test_validate_allows_one_done_memo_in_done(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "done").mkdir()
+            (root / "done" / "issue-complete.md").write_text(
+                "- Status: Done\n",
+                encoding="utf-8",
+            )
+
+            errors = validate(root)
+
+        self.assertEqual([], errors)
+
     def test_discover_active_rows_does_not_require_readme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -299,11 +343,9 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             rows = discover_active_rows(root)
             self.assertEqual(["done/issue-misplaced.md"], [row.memo for row in rows])
 
-    def test_validate_finds_an_active_memo_left_in_done(self) -> None:
-        """The bug this reproduces: validate_rows() used to reconstruct
-        root / "issue-misplaced.md" (dropping the done/ prefix discovery
-        already found), so it reported a real, readable file as a
-        "missing memo file" instead of validating its contents."""
+    def test_validate_finds_and_rejects_an_active_memo_left_in_done(self) -> None:
+        """DOC-NORM-03 keeps the real discovered path; DOC-ISSUE-IDENTITY-01
+        adds the useful placement error instead of accepting the contradiction."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "done").mkdir()
@@ -326,6 +368,10 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
         self.assertFalse(
             any("missing memo file" in err for err in errors),
             f"a memo discovered in done/ was misreported as missing: {errors}",
+        )
+        self.assertTrue(
+            any("active Status `Draft` is not allowed under done/" in err for err in errors),
+            errors,
         )
 
     def test_validate_detects_missing_dependency_path(self) -> None:
