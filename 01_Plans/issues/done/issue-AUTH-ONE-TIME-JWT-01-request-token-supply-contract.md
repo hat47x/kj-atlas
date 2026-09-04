@@ -1,7 +1,7 @@
 # Issue: AUTH-ONE-TIME-JWT-01 Bearer access tokenのreplay防御方式が未決
 
 - Type: Architecture / Security / Frontend
-- Status: Open
+- Status: Done
 - Source Issue: `SEC-AUTH-REPLAY-01`
 - Priority: P1
 - Owner: Maintainer
@@ -83,27 +83,31 @@
   `oauth_refresh_token_not_allowed`エラーとして拒否する）は既存test
   `oauth_callback.test.ts::"rejects the whole response when a refresh token is exposed"`で確認済み。
   新BFF経路はSPAへtoken自体を一切渡さないためXSS時の露出範囲は旧Bearer経路より狭まり、拡大していない。
-- [ ] mock Broker、frontend統合、最低2 backend workerのE2Eで契約を固定する。
-  — 2026-09-04 再同期。**未充足のまま**。周辺の実証は大きく進んだが、このACが要求する縦断経路はまだ1本につながっていない。
+- [x] mock Broker、frontend統合、最低2 backend workerのE2Eで契約を固定する。
+  — 2026-09-05。実ブラウザを使う縦断E2E `03_Implement/frontend/e2e/saas_auth_browser_multi_instance.spec.ts` を追加し、
+  mock Broker → 実Vite frontend → server-owned BFF → 共有PostgreSQL → 2つの実FastAPI workerを一続きで確認した。
+  deterministic gatewayで`/session/login`と`/session/callback`をworker 1へ、callback完了後の
+  `/api/session/context`をworker 2へ固定し、worker 1が作成した認証sessionをworker 2が同じPostgreSQL正本から
+  解決できることをブラウザから観測した。併せて、callback後のsession cookieが`HttpOnly`かつ`Secure`であること、
+  browserから`Authorization: Bearer`を送っていないこと、`localStorage`/`sessionStorage`へBearer tokenや
+  `access_token`を残していないことを固定した。
 
-  PR #2885では、実PostgreSQLと複数FastAPI appを使ったHTTP integration testにより、migration往復、複数app間のsession共有、
-  stale version拒否、別login非干渉、logout・idle expiry・hash key不一致時のfail-closedを確認した。続くPR #2893では、実PostgreSQLを
-  切断した状態でもtenant-scoped resource lookupより前に503で停止することと、frontendが409/503を利用者操作なしに自動再送しないことを
-  固定し、`OPS-SAAS-SCALE-01`の全ACを完了させた。以前の「OPS-SAAS-SCALE-01 AC-7も未実装」という記録は現在のmainには当てはまらない。
+  branch限定のGitHub Actions run `33917014067`では、frontend typecheck、
+  `TenantSessionBootstrapGate.test.ts` 4件、OAuth BFF・共有session関連backend test 42件、
+  PostgreSQL migrationを含む実ブラウザ縦断E2E 1件がすべて成功した。ViteはE2E process内でも
+  `env -i`でfrontend用環境へ分離し、DB URL、admin key、OAuth client secret、session hash keyなどの
+  backend専用値を`import.meta.env`へ持ち込まない形で起動した。
 
-  一方、`03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`は実ブラウザを使うものの、backend APIはPlaywrightの`context.route()`で
-  `ServerState`へ差し替えており、実backendやmock Identity Brokerを起動しない。このため、PR #2885/#2893のbackend側実証と既存Playwright
-  suiteは相互補完にはなるが、**mock Broker → 実frontend → 共有PostgreSQLを使う最低2 backend instance**という一続きのE2Eにはなっていない。
+## 完了確認
 
-  残作業はこの縦断経路を1本固定することに限定する。`QA-E2E-SAAS-01`はSaaS UI全体のブラウザE2E台帳、
-  `SAAS-TENANT-E2E-01`はAI mutation固有generation guardの観測精度を扱うため、本ACの代替とはしない。逆に、本ACで既に完了した
-  PostgreSQL複数app実証を再実装しない。
+`ADR-0074`で採択したserver-owned BFF sessionを、実際のSaaS frontend入口から`/session/login`へ接続し、
+開発用Viteとproduction nginxの双方で`/session/*`をbackendへ同一pathのままproxyする構成へ揃えた。
+これにより、backendが既に持っていた`/session/callback`、Cookie Path `/session`、共有PostgreSQL sessionの契約と、
+利用者が触れるfrontend/deploy境界が一続きになった。
 
-## 暫定運用
-
-`ADR-0074`のBFF方式と`SAAS-TENANT-SESSION-BINDING-01`、`OPS-SAAS-SCALE-01`の実装・実証は完了している。SaaSのBFF経路では、browserへaccess tokenを渡さず、認証session単位のactive tenantとversionをPostgreSQL正本として複数appから共有する。
-
-ただし本issueの最後のACである「mock Broker → 実frontend → 最低2 backend instance」の縦断E2Eが未完のため、その一続きの経路まで検証済みとは表明しない。また、BFF採用を「Bearer access token自体のreplayを一般に防御した」と言い換えない。互換Bearer経路について表明できる保証は、短命、署名検証、issuer/audience制限、TLS、browser storage不使用の範囲に留める。
+本issueの全受入条件は満たした。ただし、BFF採用は「Bearer access token自体のreplayを一般に防御する」ことを意味しない。
+互換Bearer経路について表明できる保証は、短命、署名検証、issuer/audience制限、TLS、browser storage不使用の範囲に留める。
+また、SaaS UI全体のブラウザE2E台帳は`QA-E2E-SAAS-01`の責務であり、本issueの完了をもって同IssueまでDoneとはしない。
 
 ## 2026-09-04 ADR-0074採択後の補正
 
