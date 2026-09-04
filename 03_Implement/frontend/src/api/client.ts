@@ -1,4 +1,5 @@
 import type { Card, Document, DocumentV1, Island, KnownEdgeType } from "../domain/types";
+import { isMergeMethod, type MergeMethod } from "../domain/merge_method";
 import {
   InvalidTenantSessionContextError,
   parseTenantSessionContext,
@@ -533,6 +534,7 @@ export type MergeSuggestion = {
   groupId: string;
   cardIds: string[];
   mergedTextDraft: string;
+  mergeMethod: MergeMethod;
   rationale?: string;
 };
 
@@ -555,6 +557,7 @@ function isMergeSuggestion(value: unknown): value is MergeSuggestion {
     && isStringArray(suggestion.cardIds)
     && suggestion.cardIds.length >= 2
     && isNonEmptyString(suggestion.mergedTextDraft)
+    && isMergeMethod(suggestion.mergeMethod)
     && (suggestion.rationale === undefined || isNonEmptyString(suggestion.rationale))
   );
 }
