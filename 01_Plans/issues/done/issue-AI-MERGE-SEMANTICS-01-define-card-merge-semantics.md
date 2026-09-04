@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、Issue本文は現在の実行に必要な情報へ絞る。実装履歴はGitとPRを正本とする。
 
 - Type: Architecture / AI Integration
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-IR-STAGE5-SCOPE-01` Stage 5
 - Priority: P2
 - Owner: Maintainer
@@ -134,8 +134,14 @@ Documentの `mergeSuggestionDecisions` は、提案本文、AI rationale、人�
 - [x] remote/common提案契約と決定論fallback固有契約を分離した（R18 / PR #2853）。
 - [x] SafeMode二層、PII最小化、IR上限のfail-closedを維持した。
 - [x] 統合方法をproposal → decisionへ機械可読に残す必要性と、remote/fallback/旧Documentの互換境界をR19で確定した。
-- [ ] `mergeMethod` をprovider出力、frontend共通契約、fallback、Document decision snapshotへ実装する。
-- [ ] 新規remote応答の欠落・未知方式を拒否し、旧decisionの方式欠落は読めることを回帰テストで固定する。
+- [x] `mergeMethod` をprovider出力、frontend共通契約、fallback、Document decision snapshotへ実装した。
+- [x] 新規remote応答の欠落・未知方式を拒否し、旧decisionの方式欠落は読めることを回帰テストで固定した。
+
+## R20実装結果（2026-09-04）
+
+R19で確定した方式追跡性を実装した。remote providerは各提案に `mergeMethod` を必須で返し、backendとfrontendの双方で `near_duplicate` / `kernel_fusion` 以外をfail-closedにする。決定論的fallbackは処理実態に合わせて `near_duplicate` を付ける。UIでは方式をAI rationale・人間判断理由とは別に表示し、新しく記録するDocument decision snapshotへそのまま保存する。
+
+保存済みの旧decisionは `mergeMethod` 欠落を許容し、方式を推測補完しない。`residuals` やpartial自動適用、短期audit eventへの重複保存には範囲を広げていない。decision → apply → save → reload の既存E2Eでも方式が保持されることを確認する。
 
 ## 完了境界
 

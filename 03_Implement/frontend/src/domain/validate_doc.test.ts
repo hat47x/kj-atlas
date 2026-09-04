@@ -269,6 +269,56 @@ describe("validateDocumentV1Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts known merge methods and legacy decisions without a method, but rejects unknown methods", () => {
+    const known = validateDocumentV1Strict({
+      ...validDocument,
+      mergeSuggestionDecisions: [{
+        id: "decision-method",
+        groupId: "g1",
+        decision: "accept",
+        decidedAt: now,
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "A",
+        editedText: "A",
+        mergeMethod: "kernel_fusion",
+      }],
+    });
+    expect(known.ok).toBe(true);
+
+    const legacy = validateDocumentV1Strict({
+      ...validDocument,
+      mergeSuggestionDecisions: [{
+        id: "decision-legacy",
+        groupId: "g1",
+        decision: "defer",
+        decidedAt: now,
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "A",
+        editedText: "A",
+      }],
+    });
+    expect(legacy.ok).toBe(true);
+
+    const unknown = validateDocumentV1Strict({
+      ...validDocument,
+      mergeSuggestionDecisions: [{
+        id: "decision-unknown",
+        groupId: "g1",
+        decision: "accept",
+        decidedAt: now,
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "A",
+        editedText: "A",
+        mergeMethod: "semantic_similarity",
+      }],
+    });
+    expect(unknown.ok).toBe(false);
+    if (unknown.ok) return;
+    expect(unknown.errors).toContain(
+      "mergeSuggestionDecisions[0].mergeMethod: must be 'near_duplicate' | 'kernel_fusion' when provided",
+    );
+  });
+
   it("rejects merge suggestion decisions with invalid status", () => {
     const result = validateDocumentV1Strict({
       ...validDocument,

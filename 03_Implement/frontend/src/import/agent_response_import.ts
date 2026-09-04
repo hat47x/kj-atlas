@@ -5,6 +5,7 @@ import { parsePatchOp } from "../domain/patch/patch_apply";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
 import type { AgentResponseProvenance } from "../storage/agent_task_ledger";
+import { isMergeMethod, type MergeMethod } from "../domain/merge_method";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
 // §4/§5): parses/validates/sanitizes an external AI agent's pasted "agent-response.v1"
@@ -36,6 +37,7 @@ export type AgentResponseProposalContent = {
   title?: string;
   text?: string;
   mergedText?: string;
+  mergeMethod?: MergeMethod;
 };
 
 export type ParsedAgentProposal = {
@@ -126,6 +128,7 @@ function parseContent(value: unknown): AgentResponseProposalContent {
     title: sanitizeString(value.title),
     text: sanitizeString(value.text),
     mergedText: sanitizeString(value.mergedText),
+    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,
   };
 }
 
@@ -205,11 +208,16 @@ function parseProposal(value: unknown, mode: AgentResponseImportMode): { proposa
     patchHasDeleteOps = parsedPatch.hasDeleteOps;
   }
 
+  const content = parseContent(value.content);
+  if (kind === "merge_candidate" && !isMergeMethod(content.mergeMethod)) {
+    return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };
+  }
+
   const proposal: ParsedAgentProposal = {
     proposalId: sanitizeMarkdownForDisplay(proposalId),
     kind,
     targetRef: parseTargetRef(value.targetRef),
-    content: parseContent(value.content),
+    content,
     rationale: rationaleStated ? (rationaleRaw as string) : "(根拠未記載)",
     rationaleStated,
     patch,

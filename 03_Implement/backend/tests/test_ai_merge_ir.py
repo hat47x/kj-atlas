@@ -269,7 +269,7 @@ def test_merge_parser_rejects_card_outside_route_candidate_set() -> None:
 
     with pytest.raises(Exception) as exc_info:
         ai._parse_merge_suggestions(
-            '{"suggestions":[{"groupId":"m1","cardIds":["c1","c4"],"mergedTextDraft":"draft"}]}',
+            '{"suggestions":[{"groupId":"m1","cardIds":["c1","c4"],"mergedTextDraft":"draft","mergeMethod":"near_duplicate"}]}',
             payload,
             allowed_card_ids=frozenset({"c1", "c2"}),
         )

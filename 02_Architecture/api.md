@@ -1406,6 +1406,6 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 - 全候補カードをroute-requiredとして扱う。IR上限により候補本文、候補間relation、候補間evidenceが欠ける場合は、不完全な入力で統合を提案せず422でfail-closedにする。
 - provider promptは `LLMRequest.inputs` と同じ構造化入力から描画し、Document側の生本文を同じ意味の迂回入力として使わない。
 
-LLM応答は信頼境界の外側として扱う。未知ID・重複ID・2件未満・件数上限に加え、hold、既merge、明示的な `negate`、`type=contradicts` のevidence、異なる既知 `claimType`、同じカードを複数候補へ含める競合提案を決定論的に拒否する。
+LLM応答は信頼境界の外側として扱う。新しい提案では `mergeMethod` を必須とし、`near_duplicate`（04ステップ型の近接整理）または `kernel_fusion`（核融合法型の意味核統合）のどちらかを明示する。欠落値・未知値は拒否する。決定論的fallbackは意味核を新規生成しないため `near_duplicate` を付与する。未知ID・重複ID・2件未満・件数上限に加え、hold、既merge、明示的な `negate`、`type=contradicts` のevidence、異なる既知 `claimType`、同じカードを複数候補へ含める競合提案も決定論的に拒否する。人間が判断を記録する際は `mergeMethod` をDocumentのdecision snapshotへ保存するが、旧Documentのdecisionでは欠落を許容し、方式を推測補完しない。
 
 Responseの外形は従来どおり `SuggestMergesResponse` / `MergeSuggestion` を維持する。現時点では `groupId`、`cardIds`、`mergedTextDraft`、任意の `rationale` であり、統合方法や残差を表す追加フィールドは、実merge適用時の来歴・残差保持を監査した後に判断する。

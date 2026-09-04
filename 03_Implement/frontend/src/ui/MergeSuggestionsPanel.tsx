@@ -61,6 +61,12 @@ function decisionLabel(decision: MergeSuggestionDecision | undefined): string {
   }
 }
 
+function mergeMethodLabel(method: MergeSuggestion["mergeMethod"]): string {
+  return method === "near_duplicate"
+    ? t("merge_suggestions.merge_method.near_duplicate")
+    : t("merge_suggestions.merge_method.kernel_fusion");
+}
+
 function representativeResolvedLabel(
   resolvedBy: MergeSuggestionDraft["representativeResolvedBy"]
 ): string {
@@ -358,6 +364,9 @@ export function MergeSuggestionsPanel({
             {typeof suggestion.representativeSourceCount === "number"
               ? t("merge_suggestions.source_count_suffix", { count: suggestion.representativeSourceCount })
               : ""}
+          </div>
+          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+            {t("merge_suggestions.merge_method")}: {mergeMethodLabel(suggestion.mergeMethod)}
           </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>{t("merge_suggestions.rationale")}: {suggestion.rationale}</div>

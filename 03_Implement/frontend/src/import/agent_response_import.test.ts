@@ -156,6 +156,47 @@ describe("parseAgentResponse", () => {
     });
   });
 
+  describe("merge candidate method boundary", () => {
+    const mergeCandidate = {
+      proposalId: "merge-1",
+      kind: "merge_candidate",
+      targetRef: { cardIds: ["c1", "c2"] },
+      content: { mergedText: "統合候補", mergeMethod: "kernel_fusion" },
+      rationale: "二枚から共通する意味核を立てる",
+    };
+
+    it("keeps an explicit known merge method", () => {
+      const result = parseAgentResponse(buildValidResponseJson({ proposals: [mergeCandidate] }), "strict");
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.response.proposals[0].content.mergeMethod).toBe("kernel_fusion");
+    });
+
+    it("discards a merge candidate with no method in lenient mode instead of inferring one", () => {
+      const { mergeMethod: _ignored, ...contentWithoutMethod } = mergeCandidate.content;
+      const result = parseAgentResponse(
+        buildValidResponseJson({ proposals: [{ ...mergeCandidate, content: contentWithoutMethod }] }),
+        "lenient",
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.response.proposals).toHaveLength(0);
+      expect(result.warnings.some((warning) => warning.includes("merge_candidate_missing_or_invalid_merge_method"))).toBe(true);
+    });
+
+    it("rejects an unknown merge method in strict mode", () => {
+      const result = parseAgentResponse(
+        buildValidResponseJson({
+          proposals: [{ ...mergeCandidate, content: { ...mergeCandidate.content, mergeMethod: "semantic_similarity" } }],
+        }),
+        "strict",
+      );
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.errors[0]).toContain("merge_candidate_missing_or_invalid_merge_method");
+    });
+  });
+
   describe("patch proposals", () => {
     const patchProposal = {
       proposalId: "p1",

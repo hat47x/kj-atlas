@@ -43,6 +43,7 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1", "c2"],
           mergedTextDraft: "alpha",
           editedText: append.editedText,
+          mergeMethod: "near_duplicate",
         },
         {
           idFactory: () => append.id,
@@ -62,9 +63,15 @@ describe("merge_suggestion_decisions", () => {
     const restored = restoreMergeSuggestionDecisionsBySnapshot(updated.mergeSuggestionDecisions, "CTR-2B-02-DECISION-LOG-V1");
     expect(restored.map((entry) => entry.action)).toEqual(["accept", "partial", "reject", "defer"]);
     expect(restored.map((entry) => entry.id)).toEqual(["d1", "d2", "d3", "d4"]);
+    expect(restored.map((entry) => entry.mergeMethod)).toEqual([
+      "near_duplicate",
+      "near_duplicate",
+      "near_duplicate",
+      "near_duplicate",
+    ]);
   });
 
-  it("appends decision entries with deterministic card id ordering", () => {
+  it("appends decision entries with deterministic card id ordering and preserves merge method", () => {
     const result = appendMergeSuggestionDecision(
       createBaseDocument(),
       {
@@ -73,7 +80,8 @@ describe("merge_suggestion_decisions", () => {
         cardIds: ["c2", "c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
-        decisionReason: "Human-reviewed: normalize duplicates",
+        mergeMethod: "kernel_fusion",
+        decisionReason: "Human-reviewed: preserve the shared meaning kernel",
       },
       { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
     );
@@ -91,9 +99,10 @@ describe("merge_suggestion_decisions", () => {
         selectedCardIds: ["c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
-        note: "Human-reviewed: normalize duplicates",
+        note: "Human-reviewed: preserve the shared meaning kernel",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         rationale: undefined,
+        mergeMethod: "kernel_fusion",
         representativeCardId: "c1",
         representativeResolvedBy: "fallback",
         sourceCardIds: ["c2"],
@@ -102,7 +111,7 @@ describe("merge_suggestion_decisions", () => {
     ]);
   });
 
-  it("returns latest decision per group", () => {
+  it("returns latest legacy decision per group without inferring a missing merge method", () => {
     const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d1",
@@ -137,6 +146,7 @@ describe("merge_suggestion_decisions", () => {
 
     expect(latest.get("g1")?.id).toBe("d2");
     expect(latest.get("g2")?.id).toBe("d3");
+    expect((latest.get("g1") as { mergeMethod?: string } | undefined)?.mergeMethod).toBeUndefined();
   });
 
   it("fails fast when groupId is empty", () => {
@@ -149,6 +159,7 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: "alpha",
+          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -165,6 +176,7 @@ describe("merge_suggestion_decisions", () => {
           cardIds: [],
           mergedTextDraft: "alpha",
           editedText: "alpha",
+          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -181,6 +193,7 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: " ",
+          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -197,6 +210,7 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: "alpha",
+          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )

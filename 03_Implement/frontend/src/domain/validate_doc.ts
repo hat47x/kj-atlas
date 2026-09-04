@@ -17,6 +17,7 @@ import type {
 } from "./types";
 import { DOCUMENT_DETERMINISTIC_TIE_BREAK_ORDER, KNOWN_EDGE_TYPES } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
+import { isMergeMethod } from "./merge_method";
 
 type ValidationSuccess = {
   ok: true;
@@ -1073,7 +1074,7 @@ function validateMergeSuggestionDecisionEntry(
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale", "representativeCardId", "representativeResolvedBy", "sourceCardIds", "missingSourceCardIds"], path, errors);
+  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale", "mergeMethod", "representativeCardId", "representativeResolvedBy", "sourceCardIds", "missingSourceCardIds"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -1129,6 +1130,10 @@ function validateMergeSuggestionDecisionEntry(
   }
   if (item.rationale !== undefined && typeof item.rationale !== "string") {
     errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+  if (item.mergeMethod !== undefined && !isMergeMethod(item.mergeMethod)) {
+    errors.push(`${path}.mergeMethod: must be 'near_duplicate' | 'kernel_fusion' when provided`);
     valid = false;
   }
   if (item.representativeCardId !== undefined && typeof item.representativeCardId !== "string") {

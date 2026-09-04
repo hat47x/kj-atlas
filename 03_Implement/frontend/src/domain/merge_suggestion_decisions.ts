@@ -1,4 +1,5 @@
 import type { DocumentV1 } from "./types";
+import type { MergeMethod } from "./merge_method";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 import { resolveDecisionOriginTrace, type RepresentativeOriginTrace } from "./merge_traceability";
 
@@ -27,6 +28,11 @@ export type MergeSuggestionDecisionEntry = {
   snapshotVersion?: string;
   rationale?: string;
   /**
+   * R20: merge方式は新しい判断では必ず保存するが、R20以前のDocumentを
+   * 読み戻せるよう永続表現ではoptionalにする。欠落した旧値を推測補完しない。
+   */
+  mergeMethod?: MergeMethod;
+  /**
    * R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): the
    * representative/source resolution AT DECISION TIME, snapshotted here so a later
    * merge involving the same cards cannot silently change what an already-recorded
@@ -46,6 +52,7 @@ type AppendMergeSuggestionDecisionInput = {
   cardIds: string[];
   mergedTextDraft: string;
   editedText: string;
+  mergeMethod: MergeMethod;
   rationale?: string;
   decisionReason?: string;
 };
@@ -101,6 +108,7 @@ export function appendMergeSuggestionDecision(
     note: input.decisionReason ?? input.editedText,
     snapshotVersion: DECISION_LOG_SNAPSHOT_VERSION,
     rationale: input.rationale,
+    mergeMethod: input.mergeMethod,
     representativeCardId: originTrace.representativeCardId,
     representativeResolvedBy: originTrace.representativeResolvedBy,
     sourceCardIds: originTrace.sourceCardIds,

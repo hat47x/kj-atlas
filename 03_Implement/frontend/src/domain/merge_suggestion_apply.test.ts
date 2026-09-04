@@ -62,6 +62,7 @@ function recordDecision(
       cardIds: ["c1", "c2"],
       mergedTextDraft: "待ち時間は利用継続の負担になる",
       editedText: "待ち時間は利用継続の負担になる",
+      mergeMethod: "near_duplicate",
       decisionReason: "二つの記述の差を残したうえで代表表現として採用する",
     },
     {

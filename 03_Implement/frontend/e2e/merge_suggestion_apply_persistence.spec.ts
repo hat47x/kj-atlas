@@ -131,6 +131,7 @@ test("recorded accept can be explicitly applied, saved, and recovered through th
   const decision = saved.mergeSuggestionDecisions.find((item: any) => item.decision === "accept");
   expect(decision).toBeTruthy();
   expect(decision.representativeCardId).toBe(representative.id);
+  expect(decision.mergeMethod).toBe("near_duplicate");
   expect(new Set(decision.sourceCardIds)).toEqual(new Set(["c1", "c2"]));
 
   // Reload the application, then load the same document again through the

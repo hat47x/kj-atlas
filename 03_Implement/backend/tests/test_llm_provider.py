@@ -431,14 +431,14 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
     def _fake_local_urlopen(req, timeout_seconds=60):
         body = json.dumps(
             {
-                "text": '{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged"}]}'
+                "text": '{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged","mergeMethod":"near_duplicate"}]}'
             }
         )
         return _StubHTTPResponse(body)
 
     def _fake_large_scale_generate(self, req: LLMRequest) -> LLMResponse:
         return LLMResponse(
-            raw_text='{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged"}]}',
+            raw_text='{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged","mergeMethod":"near_duplicate"}]}',
             metadata=LLMCallMetadata(
                 provider_kind="large-scale",
                 provider_name="large-scale",

@@ -75,6 +75,7 @@ describe("Stream B A2 mock validation", () => {
           cardIds: ["c2", "c1"],
           mergedTextDraft: "risk mitigation",
           editedText: `risk mitigation (${action})`,
+          mergeMethod: "near_duplicate",
         },
         { idFactory: () => `decision-${action}`, now: decidedAtByAction[action] }
       );
