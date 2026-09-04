@@ -28,8 +28,8 @@ class TenantSessionChangedError(Exception):
 class ActiveTenantSessionPersister(Protocol):
     """Resolve and conditionally update active tenant state in the auth session.
 
-    Implementations own anti-forgery validation and the auth-edge-specific session
-    format. ``persist`` must atomically compare the expected version, update the
+    The BFF request boundary owns anti-forgery validation; persisters own the
+    auth-edge-specific session format. ``persist`` must atomically compare the expected version, update the
     selected tenant, and issue a different unpredictable version. Implementations
     must bind state to ``principal_id`` and must not read a tenant identifier from
     request headers, query parameters, or the raw body.
@@ -271,7 +271,7 @@ class InMemoryActiveTenantSessionPersister:
     - Persists sessions across process restarts
     - Supports horizontal scaling (shared session store)
     - Signs/encrypts the session cookie (currently plain token_urlsafe)
-    - Adds CSRF token binding (currently SameSite=strict cookie only)
+    - Uses the shared BFF CSRF middleware when cookie authentication is active
     """
 
     _COOKIE_KEY = "Kj-Atlas-Tenant-Session-Version"

@@ -11,6 +11,7 @@ import {
   type TenantSessionBootstrapPolicyV1,
 } from "./session_bootstrap_policy";
 import { authorizationHeader } from "../session/token_store";
+import { csrfHeader } from "../session/csrf";
 
 function resolveApiBase(): string {
   const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
@@ -70,7 +71,11 @@ export type TenantScopedRequestOptions = Readonly<{
 function tenantSessionPreconditionHeaders(
   options: TenantScopedRequestOptions,
 ): Record<string, string> {
-  const headers: Record<string, string> = { ...authorizationHeader() };
+  const authHeaders = authorizationHeader();
+  const headers: Record<string, string> = {
+    ...authHeaders,
+    ...(Object.keys(authHeaders).length === 0 ? csrfHeader() : {}),
+  };
   if (options.tenantSessionContext !== undefined) {
     const sessionContext = parseTenantSessionContext(options.tenantSessionContext);
     headers[TENANT_SESSION_VERSION_HEADER] = sessionContext.tenantSessionVersion;
@@ -331,6 +336,7 @@ export async function changeActiveTenant(
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      ...csrfHeader(),
     },
     body: JSON.stringify({
       tenantId: requestedTenant.id,
