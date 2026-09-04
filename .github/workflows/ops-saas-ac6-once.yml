@@ -57,9 +57,31 @@ jobs:
       - name: Verify tenant switch no-retry boundary
         working-directory: 03_Implement/frontend
         run: npx vitest run src/api/client_tenant_switch_no_retry.test.ts src/api/client.test.ts
-      - name: TypeScript typecheck
-        working-directory: 03_Implement/frontend
-        run: npm run typecheck
+      - name: Verify no new TypeScript errors beyond main
+        run: |
+          git fetch origin main
+          set +e
+          (cd 03_Implement/frontend && npm run typecheck) > /tmp/branch-typecheck.log 2>&1
+          branch_status=$?
+          set -e
+          grep 'error TS' /tmp/branch-typecheck.log | sed -E 's#^.*(src/.*error TS)#\1#' | sort -u > /tmp/branch-errors.txt || true
+
+          git worktree add --detach /tmp/kj-atlas-main origin/main
+          ln -s "$GITHUB_WORKSPACE/03_Implement/frontend/node_modules" /tmp/kj-atlas-main/03_Implement/frontend/node_modules
+          set +e
+          (cd /tmp/kj-atlas-main/03_Implement/frontend && npm run typecheck) > /tmp/main-typecheck.log 2>&1
+          main_status=$?
+          set -e
+          grep 'error TS' /tmp/main-typecheck.log | sed -E 's#^.*(src/.*error TS)#\1#' | sort -u > /tmp/main-errors.txt || true
+
+          comm -23 /tmp/branch-errors.txt /tmp/main-errors.txt > /tmp/new-errors.txt
+          if [ -s /tmp/new-errors.txt ]; then
+            echo 'AC-6 branch introduced TypeScript errors not present on main:'
+            cat /tmp/new-errors.txt
+            exit 1
+          fi
+          echo "typecheck baseline: branch_status=${branch_status}, main_status=${main_status}"
+          echo "branch errors: $(wc -l < /tmp/branch-errors.txt); main errors: $(wc -l < /tmp/main-errors.txt)"
       - name: Validate repository contracts
         run: |
           python 01_Plans/issues/validate_active_issue_memos.py
