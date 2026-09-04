@@ -22,16 +22,13 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import importlib.util
           import json
+          import sys
           from pathlib import Path
 
           root = Path('01_Plans')
-          module_path = root / 'triage_actionable_plans.py'
-          spec = importlib.util.spec_from_file_location('triage_actionable_plans', module_path)
-          module = importlib.util.module_from_spec(spec)
-          assert spec.loader is not None
-          spec.loader.exec_module(module)
+          sys.path.insert(0, str(root.resolve()))
+          import triage_actionable_plans as module
 
           files = sorted((root / 'issues').rglob('issue-*.md'))
           issues = [module.parse_issue(path, root) for path in files]
