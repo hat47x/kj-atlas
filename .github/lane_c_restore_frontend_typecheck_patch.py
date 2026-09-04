@@ -112,8 +112,6 @@ def add_merge_method_to_append_literals(text: str) -> tuple[str, int]:
         if obj_start is not None:
             obj_end = match_brace(text, obj_start)
             body = text[obj_start : obj_end + 1]
-            # Spread-only overrides such as { ...common, selectedCardIds: [...] }
-            # inherit mergeMethod from common and must not be rewritten here.
             if "groupId:" in body and "mergeMethod:" not in body:
                 positions.append((obj_start, obj_end))
         cursor = call + len(needle)
@@ -160,34 +158,71 @@ text = replace_once(
 )
 text = replace_once(
     text,
+    "  decision: MergeSuggestionDecision;\n  cardIds: string[];\n  mergedTextDraft: string;",
+    "  decision: MergeSuggestionDecision;\n  cardIds: string[];\n  selectedCardIds?: string[];\n  mergedTextDraft: string;",
+    "Stream B partial selectedCardIds handoff",
+)
+text = replace_once(
+    text,
     "    entry.mergeMethod === input.mergeMethod &&\n    entry.action === input.decision &&\n    entry.mergeMethod === input.mergeMethod &&",
     "    entry.mergeMethod === input.mergeMethod &&\n    entry.action === input.decision &&",
     "Stream B duplicate comparison",
 )
 write(path, text)
 
-for path in [
-    "03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts",
-    "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts",
-]:
-    text = read(path)
-    lines = text.splitlines(keepends=True)
-    seen_in_object = False
-    out: list[str] = []
-    removed = 0
-    for line in lines:
-        if 'groupId: "g1"' in line:
-            seen_in_object = True
-        if seen_in_object and "mergeMethod: \"near_duplicate\"" in line:
-            if any("mergeMethod: \"near_duplicate\"" in prior for prior in out[-8:]):
-                removed += 1
-                continue
-        out.append(line)
-        if seen_in_object and line.lstrip().startswith("},"):
-            seen_in_object = False
-    if removed != 1:
-        raise SystemExit(f"{path}: expected one duplicated mergeMethod property, removed {removed}")
-    write(path, "".join(out))
+path = "03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts"
+text = read(path)
+lines = text.splitlines(keepends=True)
+seen_in_object = False
+out: list[str] = []
+removed = 0
+for line in lines:
+    if 'groupId: "g1"' in line:
+        seen_in_object = True
+    if seen_in_object and "mergeMethod: \"near_duplicate\"" in line:
+        if any("mergeMethod: \"near_duplicate\"" in prior for prior in out[-8:]):
+            removed += 1
+            continue
+    out.append(line)
+    if seen_in_object and line.lstrip().startswith("},"):
+        seen_in_object = False
+if removed != 1:
+    raise SystemExit(f"{path}: expected one duplicated mergeMethod property, removed {removed}")
+text = "".join(out)
+text = replace_once(
+    text,
+    '        decision: "partial",\n        cardIds: ["c2", "c1"],\n        mergedTextDraft:',
+    '        decision: "partial",\n        cardIds: ["c2", "c1", "c3"],\n        selectedCardIds: ["c2", "c1"],\n        mergedTextDraft:',
+    "Stream B partial fixture selection",
+)
+write(path, text)
+
+path = "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts"
+text = read(path)
+lines = text.splitlines(keepends=True)
+seen_in_object = False
+out = []
+removed = 0
+for line in lines:
+    if 'groupId: "g1"' in line:
+        seen_in_object = True
+    if seen_in_object and "mergeMethod: \"near_duplicate\"" in line:
+        if any("mergeMethod: \"near_duplicate\"" in prior for prior in out[-8:]):
+            removed += 1
+            continue
+    out.append(line)
+    if seen_in_object and line.lstrip().startswith("},"):
+        seen_in_object = False
+if removed != 1:
+    raise SystemExit(f"{path}: expected one duplicated mergeMethod property, removed {removed}")
+text = "".join(out)
+text = replace_once(
+    text,
+    '          decision: action,\n          cardIds: ["c2", "c1"],\n          mergedTextDraft:',
+    '          decision: action,\n          cardIds: action === "partial" ? ["c2", "c1", "c3"] : ["c2", "c1"],\n          selectedCardIds: action === "partial" ? ["c2", "c1"] : undefined,\n          mergedTextDraft:',
+    "Stream B mock partial fixture selection",
+)
+write(path, text)
 
 path = "03_Implement/frontend/src/import/agent_response_import.ts"
 text = read(path)
