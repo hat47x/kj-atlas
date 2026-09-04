@@ -1,0 +1,144 @@
+name: R20 one-shot contract seam fix
+
+on:
+  push:
+    branches:
+      - dogfood/r20-merge-method-traceability-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: dogfood/r20-merge-method-traceability-20260904
+          fetch-depth: 0
+
+      - name: Patch mergeMethod contract seams
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              data = p.read_text(encoding="utf-8")
+              count = data.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, got {count}: {old[:80]!r}")
+              p.write_text(data.replace(old, new, 1), encoding="utf-8", newline="")
+
+          path = "03_Implement/frontend/src/import/agent_response_import.ts"
+          replace_once(path, 'import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";\n', 'import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";\nimport { isMergeMethod, type MergeMethod } from "../domain/merge_method";\n')
+          replace_once(path, 'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n};', 'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n  mergeMethod?: MergeMethod;\n};')
+          replace_once(path, '  return {\n    title: sanitizeString(value.title),\n    text: sanitizeString(value.text),\n    mergedText: sanitizeString(value.mergedText),\n  };', '  return {\n    title: sanitizeString(value.title),\n    text: sanitizeString(value.text),\n    mergedText: sanitizeString(value.mergedText),\n    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,\n  };')
+          replace_once(path, '  let patch: PatchV1 | undefined;\n  let patchHasDeleteOps = false;\n', '  const content = parseContent(value.content);\n  if (kind === "merge_candidate" && !content.mergeMethod) {\n    return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };\n  }\n\n  let patch: PatchV1 | undefined;\n  let patchHasDeleteOps = false;\n')
+          replace_once(path, '    targetRef: parseTargetRef(value.targetRef),\n    content: parseContent(value.content),\n', '    targetRef: parseTargetRef(value.targetRef),\n    content,\n')
+
+          path = "03_Implement/frontend/src/export/agent_task_export.ts"
+          replace_once(path, '    case "merge_candidates":\n      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。`;\n', '    case "merge_candidates":\n      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。近い記述を整理する場合は near_duplicate、完全な重複ではない複数カードから共通の意味核を立てる場合は kernel_fusion とし、各 merge_candidate の content.mergeMethod に必ず明示してください。`;\n')
+          replace_once(path, '        content: { title: "string?", text: "string?", mergedText: "string?" },\n', '        content: { title: "string?", text: "string?", mergedText: "string?", mergeMethod: "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)" },\n')
+
+          path = "03_Implement/frontend/src/App.tsx"
+          replace_once(path, '          const mergedText = review.content.mergedText ?? review.content.text;\n          if (cardIds.length < 2 || !mergedText) break;\n', '          const mergedText = review.content.mergedText ?? review.content.text;\n          const mergeMethod = review.content.mergeMethod;\n          if (cardIds.length < 2 || !mergedText || !mergeMethod) break;\n')
+          replace_once(path, '              groupId: `agent-response-${review.proposalId}`,\n              targetCardId,\n', '              groupId: `agent-response-${review.proposalId}`,\n              mergeMethod,\n              targetCardId,\n')
+
+          path = "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts"
+          replace_once(path, 'import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";\n', 'import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";\nimport type { MergeMethod } from "./merge_method";\n')
+          replace_once(path, 'type ValidateDecisionLogInput = {\n  groupId: string;\n  decision: MergeSuggestionDecision;\n', 'type ValidateDecisionLogInput = {\n  groupId: string;\n  mergeMethod: MergeMethod;\n  decision: MergeSuggestionDecision;\n')
+          replace_once(path, '    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&\n    entry.action === input.decision &&\n', '    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&\n    entry.mergeMethod === input.mergeMethod &&\n    entry.action === input.decision &&\n')
+
+          replacements = [
+              ("03_Implement/frontend/src/domain/merge_suggestion_apply.test.ts", '      groupId: "g1",\n      decision,', '      groupId: "g1",\n      mergeMethod: "near_duplicate",\n      decision,'),
+              ("03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts", '          groupId: "g1",\n          decision: action,', '          groupId: "g1",\n          mergeMethod: "near_duplicate",\n          decision: action,'),
+              ("03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts", '        groupId: "g1",\n        decision: "partial",', '        groupId: "g1",\n        mergeMethod: "near_duplicate",\n        decision: "partial",'),
+          ]
+          for path, old, new in replacements:
+              replace_once(path, old, new)
+
+          path = "03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts"
+          p = Path(path)
+          data = p.read_bytes()
+          target = b'        groupId: "heuristic-risk-a-b",\r\n'
+          if data.count(target) < 1:
+              raise SystemExit(f"{path}: candidate fixture groupId not found")
+          data = data.replace(target, target + b'        mergeMethod: "near_duplicate",\r\n', 1)
+          p.write_bytes(data)
+
+          path = "03_Implement/frontend/src/import/agent_response_import.test.ts"
+          marker = '  it("rejects an unsupported schemaVersion", () => {'
+          addition = '''  it("requires an explicit known mergeMethod for merge_candidate proposals", () => {\n    for (const mergeMethod of ["near_duplicate", "kernel_fusion"] as const) {\n      const proposal = {\n        proposalId: `merge-${mergeMethod}`,\n        kind: "merge_candidate",\n        targetRef: { cardIds: ["c1", "c2"] },\n        content: { mergedText: "統合候補", mergeMethod },\n        rationale: "統合方法を明示する",\n      };\n      const result = parseAgentResponse(buildValidResponseJson({ proposals: [proposal] }), "strict");\n      expect(result.ok).toBe(true);\n      if (!result.ok) continue;\n      expect(result.response.proposals[0].content.mergeMethod).toBe(mergeMethod);\n    }\n  });\n\n  it("does not guess a missing or unknown mergeMethod for merge_candidate proposals", () => {\n    for (const content of [\n      { mergedText: "統合候補" },\n      { mergedText: "統合候補", mergeMethod: "unknown_method" },\n    ]) {\n      const proposal = {\n        proposalId: "merge-invalid",\n        kind: "merge_candidate",\n        targetRef: { cardIds: ["c1", "c2"] },\n        content,\n        rationale: "方式が不正",\n      };\n      const lenient = parseAgentResponse(buildValidResponseJson({ proposals: [proposal] }), "lenient");\n      expect(lenient.ok).toBe(true);\n      if (lenient.ok) {\n        expect(lenient.response.proposals).toHaveLength(0);\n        expect(lenient.warnings.some((warning) => warning.includes("merge_candidate_missing_or_invalid_merge_method"))).toBe(true);\n      }\n      const strict = parseAgentResponse(buildValidResponseJson({ proposals: [proposal] }), "strict");\n      expect(strict.ok).toBe(false);\n      if (!strict.ok) expect(strict.errors[0]).toContain("merge_candidate_missing_or_invalid_merge_method");\n    }\n  });\n\n'''
+          replace_once(path, marker, addition + marker)
+
+          path = "03_Implement/frontend/src/export/agent_task_export.test.ts"
+          replace_once(path, '    expect(output.taskSheetMd).toContain(output.correlation.bundleHash);\n', '    expect(output.taskSheetMd).toContain(output.correlation.bundleHash);\n    expect(output.taskSheetMd).toContain("content.mergeMethod に必ず明示してください");\n    expect(output.taskSheetMd).toContain("near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)");\n')
+
+          path = "03_Implement/frontend/tests/fixtures/agent_task/agent_task_island_titles.md"
+          replace_once(path, '        "mergedText": "string?"\n', '        "mergedText": "string?",\n        "mergeMethod": "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)"\n')
+
+          path = "02_Architecture/external_agent_collaboration_spec.html"
+          replace_once(path, '      "content": { "title": "string?", "text": "string?", "mergedText": "string?" },\n', '      "content": { "title": "string?", "text": "string?", "mergedText": "string?", "mergeMethod": "near_duplicate | kernel_fusion?" },\n')
+          replace_once(path, '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）</td></tr>', '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）。<code>content.mergeMethod</code> は <code>near_duplicate</code> / <code>kernel_fusion</code> のいずれかを必須とし、欠落・未知値は推測せず取り込まない。</td></tr>')
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e './03_Implement/backend[test]'
+      - name: Backend merge regressions
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_ai_merge_ir.py tests/test_ai_merge_semantics.py -q
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Frontend merge and external-agent regressions
+        working-directory: 03_Implement/frontend
+        run: >-
+          npx vitest run src/api/client.test.ts src/domain/merge_candidates.test.ts
+          src/domain/merge_suggestion_decisions.test.ts src/domain/merge_suggestion_apply.test.ts
+          src/domain/stream_b_mock_validation.test.ts src/domain/stream_b_contract_handoff.test.ts
+          src/import/agent_response_import.test.ts src/export/agent_task_export.test.ts
+          src/ui/MergeSuggestionsPanel.test.ts src/ui/MergeSuggestionsPanel.merge_method.test.ts
+          src/ui/merge_method_label.test.ts
+      - name: Frontend typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+      - name: Dogfood document validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+      - name: Planning lifecycle validation
+        run: python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Whitespace check
+        run: git diff --check
+      - name: Commit verified seam fixes and remove workflow
+        run: |
+          rm -f .github/workflows/r20-one-shot-contract-seam-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'fix: merge方式を外部agentと既存経路へ通す'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
+      - name: Remove failed one-shot workflow from branch
+        if: failure()
+        run: |
+          git reset --hard
+          git fetch origin dogfood/r20-merge-method-traceability-20260904
+          git checkout -B dogfood/r20-merge-method-traceability-20260904 origin/dogfood/r20-merge-method-traceability-20260904
+          rm -f .github/workflows/r20-one-shot-contract-seam-fix.yml
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/r20-one-shot-contract-seam-fix.yml
+          git commit -m 'chore: R20失敗時の一時workflowを削除する'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
