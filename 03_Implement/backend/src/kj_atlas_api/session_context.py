@@ -18,21 +18,47 @@ from kj_atlas_api.tenant_context import (
 
 logger = logging.getLogger(__name__)
 
-KNOWN_EFFECTIVE_CAPABILITIES = frozenset(
+# ADR-0072 / SAAS-TENANT-01 AC-7: these sets describe application
+# authorization surfaces, not the OIDC/JWT ``aud`` claim.  Keeping the three
+# surfaces explicit prevents a platform-control capability from becoming a
+# Workspace capability merely because the same trusted session carries both.
+WORKSPACE_EFFECTIVE_CAPABILITIES = frozenset(
     {
         "document.read",
         "document.write",
         "document.export",
         "document.share",
+    }
+)
+TENANT_ADMIN_EFFECTIVE_CAPABILITIES = frozenset(
+    {
         "document.policy.manage",
         "membership.provision",
         "agent.register",
         "agent.revoke",
         "audit.read",
+    }
+)
+PLATFORM_CONTROL_PLANE_EFFECTIVE_CAPABILITIES = frozenset(
+    {
         "tenant.provision",
         "tenant.suspend",
     }
 )
+KNOWN_EFFECTIVE_CAPABILITIES = frozenset(
+    WORKSPACE_EFFECTIVE_CAPABILITIES
+    | TENANT_ADMIN_EFFECTIVE_CAPABILITIES
+    | PLATFORM_CONTROL_PLANE_EFFECTIVE_CAPABILITIES
+)
+# /session/context is a Workspace bootstrap/switch response.  Tenant Admin
+# capabilities remain visible there because that plane is tenant-scoped and is
+# part of the same SaaS workspace session contract.  Platform Control Plane
+# capabilities are server-side authorization inputs and must not leak into the
+# Workspace response surface.
+WORKSPACE_SESSION_VISIBLE_CAPABILITIES = frozenset(
+    WORKSPACE_EFFECTIVE_CAPABILITIES | TENANT_ADMIN_EFFECTIVE_CAPABILITIES
+)
+
 MAX_SESSION_IDENTIFIER_LENGTH = 256
 MAX_SESSION_DISPLAY_NAME_LENGTH = 256
 MAX_SESSION_CAPABILITY_VERSION_LENGTH = 128
@@ -69,6 +95,22 @@ class TenantSessionContext:
     effective_capabilities: tuple[str, ...]
     capability_version: str
     tenant_session_version: str
+
+
+def workspace_session_visible_capabilities(
+    effective_capabilities: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Project a trusted capability snapshot onto the Workspace response surface.
+
+    The trusted in-process session deliberately retains platform-control
+    capabilities so `/admin/provision/**` can authorize Stage B.  Only the
+    browser-facing Workspace bootstrap/switch representation is projected.
+    """
+    return tuple(
+        capability
+        for capability in effective_capabilities
+        if capability in WORKSPACE_SESSION_VISIBLE_CAPABILITIES
+    )
 
 
 def _session_auth_required() -> None:
