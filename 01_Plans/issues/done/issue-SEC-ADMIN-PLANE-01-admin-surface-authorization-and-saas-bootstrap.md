@@ -86,7 +86,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 
 ## 依存関係
 
-- `01_Plans/issues/issue-SAAS-TENANT-AUTHEDGE-01-no-concrete-trusted-auth-edge-implementation.md`（本件が露出した実装の親）
+- `01_Plans/issues/done/issue-SAAS-TENANT-AUTHEDGE-01-no-concrete-trusted-auth-edge-implementation.md`（本件が露出した実装の親）
 
 ## 検証
 

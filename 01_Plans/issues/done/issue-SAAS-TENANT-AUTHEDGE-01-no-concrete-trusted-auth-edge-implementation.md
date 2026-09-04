@@ -1,7 +1,7 @@
 # Issue Draft: SAAS-TENANT-AUTHEDGE-01 実trusted auth edgeが未着手のまま7件のACを塞いでいる
 
 - Type: Feature request / Security boundary
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
@@ -42,10 +42,16 @@ AGENTS.md §6は「長期的・横断的・破壊的な契約変更、安全境�
 - [x] `SaasIdentityContextResolver` の具象実装 `JwtSaasIdentityContextResolver`（`trusted_auth_edge.py`）が、RS256/ES256 JWT 検証、issuer/audience 検証、期限切れ、署名不正を fail-closed で拒否。unit test 完備（`test_trusted_auth_edge.py`: 9 tests）。
 - [x] `install_trusted_saas_runtime()` が `main.py` module scope から呼ばれ、`ClaimBasedTenantContextResolver` → `resolve_verified_claim_tenant_context()` へ実リクエストが到達する。`InMemoryActiveTenantSessionPersister` が実装済み。
 - [x] AC-4「tenant不明→deny」が HTTP レベル E2E test（`test_saas_e2e_tenant_isolation.py`: 10 tests）で証明済み。AC-8（tenantId 伝播）、AC-10（越境 negative matrix）も同ファイルでカバー。
-- [ ] saas-multitenant profile の起動拒否を緩める条件を `SAAS-TENANT-01` 側で再評価する（本 issue では緩めない。`settings.py` の無条件 `ValueError` は削除済みだが、`TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定の完備を検証する）。
+- [x] saas-multitenant profile の起動拒否を緩める条件を `SAAS-TENANT-01` 側で再評価した。本 issue では緩めず、親issueの後続checkpointでも実auth edge以外の未充足ゲートを理由に起動拒否を維持している。`settings.py` の無条件 `ValueError` は削除済みで、`TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定の完備を検証する。
 
 ## Validation
 
 - ADR受理: `python 01_Plans/issues/validate_active_issue_memos.py`、`python 01_Plans/docs_check.py`
 - 実装後: `cd 03_Implement/backend && python -m pytest tests/test_trusted_saas_runtime.py tests/test_verified_tenant_context.py tests/test_tenant_session_precondition.py tests/test_trusted_auth_edge.py tests/test_jwks_store.py tests/test_claim_tenant_resolver.py tests/test_active_tenant_session_persister.py tests/test_saas_e2e_tenant_isolation.py`
 - e2e: `test_saas_e2e_tenant_isolation.py` が実 RS256 署名 JWT を用いた HTTP レベルの tenant 解決テストを実装済み
+
+## 完了整理（2026-09-04）
+
+- 2026-08-08の記録どおり、ADR-0063受理、`JwtSaasIdentityContextResolver`、trusted runtime配線、HTTP-level tenant isolation E2Eまで本issue固有の実装は完了している。
+- 唯一未チェックだった項目は「SaaS起動拒否の解除」ではなく、親`SAAS-TENANT-01`で解除条件を再評価することだった。親issueは後続checkpointでこの判断を繰り返し更新し、auth edge以外の未充足ゲートが残るため起動拒否を維持している。
+- したがって残存作業は親issueおよび個別follow-upの所管であり、本issueをDraftのままactive triageへ残す根拠にはならない。
