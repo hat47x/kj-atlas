@@ -6,10 +6,10 @@ on:
       - fix/lane-c-restore-frontend-typecheck-20260904
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  repair-verify-and-clean:
+  repair-and-verify:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -41,54 +41,5 @@ jobs:
           python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
           python 01_Plans/docs_check.py
           python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/triage.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          report = json.loads(Path('/tmp/triage.json').read_text(encoding='utf-8'))
-          if report.get('errors'):
-              raise SystemExit(f"triage errors remain: {report['errors']}")
-          PY
+          python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
           git diff --check
-
-      - name: Record completion and remove temporary tooling
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          src = Path('01_Plans/issues/issue-DX-FRONTEND-MERGE-METHOD-DRIFT-01-restore-typecheck-after-stale-merge.md')
-          text = src.read_text(encoding='utf-8')
-          text = text.replace('- Status: In Progress', '- Status: Done', 1)
-          text = text.replace('- [ ] ', '- [x] ')
-          text += '''
-
-## 検証結果
-
-current mainから切ったbranch上で、二重挿入の除去と新規入力fixtureの同期だけを適用した。
-
-- `npm run typecheck`: success
-- mergeMethod関連の対象Vitest: success
-- planning unit tests: success
-- Active issue memo validator: success
-- docs-check: success
-- triage: `errors: []`
-- `git diff --check`: success
-
-`mergeMethod` の二値語彙、remote/commonでの必須契約、旧保存decisionでは欠落を許容して推測補完しない後方互換境界は変更していない。
-
-## 原因整理
-
-PR #2869で検証済みだった変更の一部が、後続のstale作業branch再マージで正本へ再挿入された。代表例はmerge commit `c70a0433de213980b842c4286e4305c5c3574953` で、同じimport・field・property・parser blockの追加が既存実装へ重なっていた。一方、別系統の古いtest fixtureは必須 `mergeMethod` を持たないまま残り、両方向のドリフトが同時にtypecheckを壊していた。
-'''
-          done = Path('01_Plans/issues/done') / src.name
-          done.write_text(text, encoding='utf-8')
-          src.unlink()
-          PY
-          rm .github/lane_c_restore_frontend_typecheck_patch.py
-          rm .github/workflows/lane-c-restore-frontend-typecheck-once.yml
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "fix: mergeMethod再マージ後のfrontend typecheckを復旧する"
-          git push origin HEAD:fix/lane-c-restore-frontend-typecheck-20260904
