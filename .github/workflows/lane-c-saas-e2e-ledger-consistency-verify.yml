@@ -1,0 +1,41 @@
+name: Temporary lane C SaaS E2E ledger consistency verification
+
+on:
+  push:
+    branches:
+      - docs/lane-c-saas-e2e-ledger-consistency-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: docs/lane-c-saas-e2e-ledger-consistency-20260904
+          fetch-depth: 0
+      - name: Apply consistency correction
+        run: python .github/lane_c_saas_e2e_ledger_consistency.py
+      - name: Verify planning contracts
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s 01_Plans/tests -p "test_*.py"
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/triage.json
+          python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
+          python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong > /tmp/stale.json
+          python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/stale.json").read_text(encoding="utf-8")); assert report["strongCount"] == 0, report'
+          git -c core.whitespace=cr-at-eol diff --check
+      - name: Commit verified correction and remove temporary tooling
+        run: |
+          set -euo pipefail
+          rm .github/lane_c_saas_e2e_ledger_consistency.py
+          rm .github/workflows/lane-c-saas-e2e-ledger-consistency-verify.yml
+          git config user.name "hat47x"
+          git config user.email "hat47x@gmail.com"
+          git add -A
+          git commit -m "docs: SaaS E2E台帳の採択後文面を整える"
+          git push origin HEAD:docs/lane-c-saas-e2e-ledger-consistency-20260904
