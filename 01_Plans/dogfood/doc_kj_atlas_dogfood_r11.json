@@ -170,7 +170,7 @@
     {"id": "ev04", "cardId": "c05", "type": "supports", "url": "01_Plans/issues/issue-COGNITIVE-EVAL-01-factorial-human-ai-cognitive-control-evaluation.md"},
     {"id": "ev05", "cardId": "c05", "type": "supports", "url": "01_Plans/dogfood/cognitive-dogfood-index.md"},
     {"id": "ev06", "cardId": "c06", "type": "supports", "url": "01_Plans/issues/issue-VALUE-REALNESS-01-third-party-beachhead-validation.md"},
-    {"id": "ev07", "cardId": "c12", "type": "supports", "url": "01_Plans/issues/issue-DOC-ROADMAP-01-public-roadmap-current-focus-drift.md"}
+    {"id": "ev07", "cardId": "c12", "type": "supports", "url": "01_Plans/issues/done/issue-DOC-ROADMAP-01-public-roadmap-current-focus-drift.md"}
   ],
   "readingOrder": ["i1", "i2", "i3", "i4"],
   "narratives": [

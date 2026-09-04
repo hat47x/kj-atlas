@@ -55,3 +55,11 @@ WorkingGraph / ContextProjectionGraph / Consensus Graphの許可されたデー�
 - `python 01_Plans/docs_check.py` — 実施済み（結果は本issueをコミットするPRの記録を参照）。
 - `python 03_Implement/backend/scripts/check_design_consistency.py` — 実施済み（同上）。
 - 実施した候補（1・2・3）は着手前から本文にMermaid `flowchart`/`sequenceDiagram`が存在し、`mermaid.min.js`（UMD版）を classic `<script>` で読み込む既存パターンに従っていることを目視確認した。ヘッドレスブラウザでの再描画確認は本セッションでは実施していない（既存の変換パターンを流用した既存ファイルであり、新規追加ではないため）。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは内容上すべての受入条件を満たして `Done` となっていた一方、R18以前からの経緯により、完了済みのまま作業中Issueと同じルートへ残るlegacy集合に含まれていた。
+- 既存のライフサイクル契約は、このlegacy集合を恒久的に残すものではない。移行のたびに `LEGACY_DONE_AT_ROOT_BASELINE` を同じ変更で下げ、完了済みIssueを `01_Plans/issues/done/` へ移す単調減少のラチェットである。
+- 本変更では文書系の完了済みIssue 3件をまとめて正規配置へ移し、baselineを57から54へ縮小した。R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
