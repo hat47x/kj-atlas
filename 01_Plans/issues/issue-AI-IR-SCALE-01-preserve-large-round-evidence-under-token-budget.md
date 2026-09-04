@@ -157,6 +157,24 @@ KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
 - provider名が一致しない場合は、1件も送信せず停止する。
 - 外部実行には専用opt-in環境変数が必要である。
 
+### `check-narrative` を加えたdry-run基準（2026-09-04）
+
+Stage 5で最後に残る `check-narrative` を、R20のprovider token計測ハーネスへ第3の比較対象として追加した。現行production routeをそのまま再現し、IRへ縮約せず、Narrative本文・reading order・30島・300カードを全量promptへ載せる。合成Narrativeは30島を各1行で言及する決定論的な短文とし、Narrative本文だけを恣意的に膨らませない。
+
+外部providerを呼ばないdry-runでは、同じ300カード・30島の代表入力について次の診断値になった。
+
+| route | Unicode文字数 | UTF-8 bytes | 入力方式 |
+| --- | ---: | ---: | --- |
+| `suggest-layout` | 117,389 | 117,389 | Document + IR構造文脈 |
+| `generate-narrative` | 89,321 | 89,322 | reading order + IR論理骨格 |
+| `check-narrative` | 168,905 | 171,426 | 現行の全量prompt |
+
+この表は**token数ではない**。文字数・byte数はprompt規模の診断情報としてのみ使い、model固有token数へ換算しない。正確な入力token数は、named provider/modelが返す `usage` だけを採用するというR20の境界を維持する。
+
+`check-narrative` は末尾の `c299` と `i29` までpromptへ含み、現行方式では300カード・30島のcoverageを切り落としていない。一方、dry-runのUTF-8 byte数は比較3ルート中で最大だった。したがって、Stage 5完了のために固定IR上限へ無理に押し込むのではなく、named provider/modelで実token数を測ったうえで、全量を保つA2と、全体被覆を壊さない分割・階層処理Cを主な比較対象とする。実測前にproduction上限や `check-narrative` の入力方式は変更しない。
+
+計測スクリプトはIssue本文に記載した直接CLI形式でも動くよう修正し、直接実行のdry-runを回帰テストへ追加した。外部送信には引き続き `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを要求する。
+
 ## R21: 上限引上げ・ルート別投影・分割処理の比較
 
 実token計測を待つ間にも、現在の決定論的な上限と代表入力だけから確定できることがある。`scripts/measure_ai_ir_budget_pressure.py` で300カード・30島の代表入力を再計測した結果、1カードの正規化後本文は46文字、300カードの本文合計は13,800文字になる。現行の `MAX_TEXT_CHARS=12,000` を超える。
