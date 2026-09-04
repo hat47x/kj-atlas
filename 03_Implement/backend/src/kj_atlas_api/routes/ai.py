@@ -602,6 +602,30 @@ def _parse_island_summary_response(
     return response
 
 
+def _narrative_required_card_ids(source: IRSource) -> tuple[str, ...]:
+    """Card endpoints that form the narrative's causal/oppositional spine.
+
+    `AI-IR-PROJECTION-01` AC-3 makes card-to-card `causal` and `negate`
+    relations route-required meaning for narrative generation.  At scale their
+    endpoints must therefore be reserved before the global card cut.  This
+    helper mirrors the IR's §2.3 exclusion boundary: island endpoints and
+    dangling card references do not become required merely because the source
+    edge uses a spine relation type.
+    """
+    card_ids = {card.id for card in source.cards}
+    required: set[str] = set()
+    for relation in source.relations:
+        if relation.type not in ("causal", "negate"):
+            continue
+        if relation.from_kind == "island" or relation.to_kind == "island":
+            continue
+        if relation.from_id not in card_ids or relation.to_id not in card_ids:
+            continue
+        required.add(relation.from_id)
+        required.add(relation.to_id)
+    return tuple(sorted(required))
+
+
 def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     """Build the LLM input IR for `/ai/generate-narrative` (ADR-0069 D4=A).
 
@@ -613,6 +637,13 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     `negate` edge between two cards, which is the skeleton a B型 narrative is
     supposed to follow.
 
+    At representative scale, the card endpoints of normalized `causal` /
+    `negate` relations are route-required meaning. Reserve those endpoints
+    before `MAX_CARDS` selection so the reading order cannot survive while its
+    logical joints silently disappear. If that required endpoint set itself
+    exceeds the card budget, the shared IR contract fails closed rather than
+    sending an incomplete spine to the model.
+
     SafeMode: the caller has ALREADY run `_reject_unreviewed_text`. The
     `allow_unreviewed_text` argument reproduces that helper's own predicate so
     the builder's independent check (llm_input_ir_spec.md §7.1) agrees with it
@@ -621,14 +652,17 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     allow_unreviewed = bool(
         payload.allowUnreviewedText is True and settings.allow_unreviewed_ai_text
     )
+    source = source_from_document(payload.doc)
+    required_spine_ids = _narrative_required_card_ids(source)
     try:
         # spec §2.2.1: generate-narrative does not request coordinates
         # (ADR-0069 D1=B) -- the narrative's spine is causal/negate, not layout.
         return build_llm_input_ir(
-            source_from_document(payload.doc),
+            source,
             include_coordinates=False,
             safe_mode=True,
             allow_unreviewed_text=allow_unreviewed,
+            required_card_ids=required_spine_ids,
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc

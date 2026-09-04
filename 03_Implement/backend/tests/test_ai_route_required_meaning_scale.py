@@ -52,7 +52,7 @@ def test_groups_tail_hold_is_preserved_without_claiming_full_island_coverage() -
     assert result["grouping"]["tail_island_membership_visible_in_prompt"] is True
 
 
-def test_narrative_tail_causal_and_negate_skeleton_is_pruned() -> None:
+def test_narrative_tail_causal_and_negate_skeleton_is_preserved() -> None:
     result = measure()["scenarios"]["narrative-late-causal-negate"]
 
     assert result["source"]["reading_order_contains_tail_island"] is True
@@ -60,13 +60,15 @@ def test_narrative_tail_causal_and_negate_skeleton_is_pruned() -> None:
         "truncated": True,
         "reason_codes": ["MAX_CARDS"],
     }
-    # AC-3 says causal/negate are the narrative skeleton.  The reading-order
-    # item still exists through the document-derived path, while its late-card
-    # logical joints disappear from the IR.
-    assert result["ir"]["required_relations_present"] == []
+    # AC-3で必須とした因果・対立の骨格は、カード全体が切り詰められても
+    # required cardとして端点を先に確保することで保持する。
+    assert result["ir"]["required_relations_present"] == [
+        ("c298", "c299", "causal"),
+        ("c299", "c000", "negate"),
+    ]
     assert result["prompt"]["tail_island_visible"] is True
-    assert result["prompt"]["causal_visible"] is False
-    assert result["prompt"]["negate_visible"] is False
+    assert result["prompt"]["causal_visible"] is True
+    assert result["prompt"]["negate_visible"] is True
 
 
 def test_layout_tail_cards_remain_but_their_relative_structure_is_pruned() -> None:
