@@ -1,0 +1,29 @@
+name: Temporary lane C triage self dependency fix
+on:
+  push:
+    branches:
+      - fix/lane-c-triage-self-dependency-20260904
+permissions:
+  contents: write
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Apply fix
+        run: python .github/lane_c_self_dep_patch.py
+      - name: Test triage
+        run: |
+          python -m unittest discover -s 01_Plans/tests -p "test_*.py"
+          python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json
+      - name: Commit tested changes and remove temporary files
+        run: |
+          rm .github/lane_c_self_dep_patch.py
+          rm .github/workflows/lane-c-triage-self-dep-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: 自己依存issueをtriageでBlockedにする"
+          git push
