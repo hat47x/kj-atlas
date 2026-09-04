@@ -40,3 +40,11 @@ View panelのprovider call countとtoken usageはアプリ起動時に一度だ�
 
 - View panelの静的契約testとtypecheckを実行する。
 - 実DeepSeekタイトル提案後にView panelを開き、call count/token usage更新をWindows Edgeで確認する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、利用者が実画面で状態を正しく把握・操作できるためのUI operability不具合を修正し、実ブラウザを含む確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更では独立したUI operabilityの完了済みIssue 2件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を44から42へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
