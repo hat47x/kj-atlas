@@ -1,3 +1,5 @@
+import type { MergeMethod } from "./merge_method";
+
 export type Transform = {
   panX: number;
   panY: number;
@@ -399,6 +401,8 @@ export type MergeSuggestionDecisionEntry = {
   note?: string;
   snapshotVersion?: string;
   rationale?: string;
+  /** R20: optional only for backward compatibility with decisions persisted before method traceability. */
+  mergeMethod?: MergeMethod;
   /**
    * R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): decision-time
    * provenance snapshot. Keep in sync with the identical, independently-declared copy of
