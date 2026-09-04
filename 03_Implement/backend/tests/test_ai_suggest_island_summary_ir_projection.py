@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api import llm_input_ir
 from kj_atlas_api.island_summary_ir import (
-    build_suggest_island_summary_ir,
-    island_summary_context_lines,
+    build_island_summary_ir_context,
+    island_summary_ir_prompt_lines,
 )
 from kj_atlas_api.llm_input_ir import IRGenerationError, IR_VERSION, MAX_CARDS
 from kj_atlas_api.models_ai import SuggestIslandSummaryRequest
@@ -113,10 +112,13 @@ def _request(*, member_texts: list[str] | None = None) -> SuggestIslandSummaryRe
 
 def test_direct_member_text_and_island_structure_are_preserved() -> None:
     payload = _request()
-    ir = build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
+    context = build_island_summary_ir_context(payload, allow_unreviewed_text=False)
+    ir = context.ir
 
     assert ir["ir_version"] == IR_VERSION
     assert "coordinates" not in ir
+    assert context.direct_member_ids == frozenset({"m-1", "m-2"})
+    assert context.context_only_card_ids == frozenset({"outside-1"})
 
     source_by_id = {card.id: card.text for card in payload.doc.cards}
     projected_by_id = {card["id"]: card["text"] for card in ir["cards"]}
@@ -132,17 +134,20 @@ def test_direct_member_text_and_island_structure_are_preserved() -> None:
 
 def test_context_is_scoped_to_relations_and_evidence_touching_members() -> None:
     payload = _request()
-    ir = build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
-    context = "\n".join(island_summary_context_lines(payload, ir))
+    ir_context = build_island_summary_ir_context(payload, allow_unreviewed_text=False)
+    context = "\n".join(island_summary_ir_prompt_lines(ir_context))
 
-    assert "parentIslandId=\"parent\"" in context
-    assert "placardCardId=\"m-1\"" in context
-    assert "reviewState=\"human_reviewed\"" in context
-    assert "negate: m-1 -> outside-1" in context
-    assert "contradicts: m-2 -> outside-1 (contradictionState=confirmed" in context
+    assert '\"parentIslandId\": \"parent\"' in context
+    assert '\"placardCardId\": \"m-1\"' in context
+    assert '\"reviewState\": \"human_reviewed\"' in context
+    assert 'card \"m-1\" --negate--> card \"outside-1\"' in context
+    assert (
+        'card \"m-2\" --evidence:contradicts--> card \"outside-1\" '
+        "(contradictionState=confirmed)"
+    ) in context
 
-    assert "related: outside-1 -> outside-2" not in context
-    assert "supports: outside-1 -> outside-2" not in context
+    assert 'card \"outside-1\" --related--> card \"outside-2\"' not in context
+    assert 'card \"outside-1\" --evidence:supports--> card \"outside-2\"' not in context
 
 
 def test_more_direct_members_than_card_budget_fails_closed() -> None:
@@ -150,26 +155,26 @@ def test_more_direct_members_than_card_budget_fails_closed() -> None:
     payload = _request(member_texts=texts)
 
     with pytest.raises(IRGenerationError) as exc_info:
-        build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
+        build_island_summary_ir_context(payload, allow_unreviewed_text=False)
 
-    assert exc_info.value.code == "required_cards_over_budget"
+    assert exc_info.value.code == "required_card_budget_exceeded"
 
 
-def test_direct_member_text_truncation_fails_closed(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_direct_member_text_truncation_fails_closed() -> None:
+    # Keep the required-card count below MAX_CARDS while exceeding the aggregate
+    # text budget. The shared IR can then apply its 240-char truncation and return
+    # a MAX_TEXT_CHARS reason, which this task-specific boundary must reject.
     payload = _request(
         member_texts=[
-            "対象島の第一の直接メンバー本文を完全に保持する必要がある",
-            "対象島の第二の直接メンバー本文も完全に保持する必要がある",
+            f"直接メンバー{index}:" + ("観察" * 500)
+            for index in range(13)
         ]
     )
-    monkeypatch.setattr(llm_input_ir, "MAX_TEXT_CHARS", 12)
 
     with pytest.raises(IRGenerationError) as exc_info:
-        build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
+        build_island_summary_ir_context(payload, allow_unreviewed_text=False)
 
-    assert exc_info.value.code == "required_island_member_text_not_preserved"
+    assert exc_info.value.code == "required_text_truncated"
 
 
 def test_ir_safemode_remains_an_independent_second_layer() -> None:
@@ -177,19 +182,16 @@ def test_ir_safemode_remains_an_independent_second_layer() -> None:
     payload.doc.cards[0].textReviewed = False
 
     with pytest.raises(IRGenerationError) as exc_info:
-        build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
+        build_island_summary_ir_context(payload, allow_unreviewed_text=False)
 
     assert exc_info.value.code == "unreviewed_text_not_allowed"
 
 
-def test_missing_or_empty_target_keeps_existing_input_errors() -> None:
+def test_missing_target_fails_closed_with_stable_ir_error() -> None:
     payload = _request()
     payload.islandId = "missing"
-    with pytest.raises(ValueError, match="islandId does not exist"):
-        build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
 
-    payload = _request()
-    target = next(island for island in payload.doc.islands if island.id == "target")
-    target.cardIds = []
-    with pytest.raises(ValueError, match="island has no member cards"):
-        build_suggest_island_summary_ir(payload, allow_unreviewed_text=False)
+    with pytest.raises(IRGenerationError) as exc_info:
+        build_island_summary_ir_context(payload, allow_unreviewed_text=False)
+
+    assert exc_info.value.code == "target_island_missing"
