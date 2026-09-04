@@ -21,6 +21,42 @@ jobs:
         run: |
           git fetch origin feat/merge-method-traceability-final-20260904 dogfood/r20-merge-method-traceability-20260904
           git show origin/feat/merge-method-traceability-final-20260904:.github/scripts/apply_merge_method_traceability_final_once.py > /tmp/apply_merge_method.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('/tmp/apply_merge_method.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              data = target.read_bytes()
+              old_bytes = old.encode("utf-8")
+              new_bytes = new.encode("utf-8")
+              count = data.count(old_bytes)
+              if count != 1:
+                  raise RuntimeError(f"{path}: expected one replacement, found {count}")
+              target.write_bytes(data.replace(old_bytes, new_bytes, 1))
+          '''
+          new = '''def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              data = target.read_bytes()
+              old_bytes = old.encode("utf-8")
+              new_bytes = new.encode("utf-8")
+              count = data.count(old_bytes)
+              if count == 0 and "\\n" in old and "\\r\\n" not in old:
+                  old_crlf = old.replace("\\n", "\\r\\n").encode("utf-8")
+                  crlf_count = data.count(old_crlf)
+                  if crlf_count == 1:
+                      new_crlf = new.replace("\\n", "\\r\\n").encode("utf-8")
+                      target.write_bytes(data.replace(old_crlf, new_crlf, 1))
+                      return
+              if count != 1:
+                  raise RuntimeError(f"{path}: expected one replacement, found {count}")
+              target.write_bytes(data.replace(old_bytes, new_bytes, 1))
+          '''
+          if text.count(old) != 1:
+              raise SystemExit('replace_once helper shape changed unexpectedly')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           python /tmp/apply_merge_method.py apply
 
       - uses: actions/setup-python@v5
