@@ -1,0 +1,53 @@
+name: docs-check workflow非依存性修正（一回限り）
+
+on:
+  push:
+    branches:
+      - fix/docs-check-optional-workflows-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-verify:
+    name: workflow未採用構成のdocs-checkを修正・検証する
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 作業ブランチを取得する
+        uses: actions/checkout@v4
+        with:
+          ref: fix/docs-check-optional-workflows-20260903
+          fetch-depth: 0
+
+      - name: Pythonを準備する
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: 修正を適用する
+        run: python .github/scripts/fix_docs_check_optional_workflows_once.py
+
+      - name: 文書契約単体テストを実行する
+        run: python -m unittest discover -s 01_Plans/tests -p test_docs_contract_checks.py
+
+      - name: docs-check全体を実行する
+        run: python 01_Plans/docs_check.py
+
+      - name: 計画文書triageを検査する
+        run: python 01_Plans/triage_actionable_plans.py --check
+
+      - name: 差分の空白異常を検査する
+        run: git diff --check
+
+      - name: 成功した変更を保存して一時ファイルを除去する
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-docs-check-optional-workflows-once.yml
+          git rm .github/scripts/fix_docs_check_optional_workflows_once.py
+          git add 01_Plans/docs_contract_checks.py
+          git add 01_Plans/tests/test_docs_contract_checks.py
+          git add 01_Plans/issues/done/issue-DOC-CI-DRIFT-01-docs-check-optional-workflow-paths.md
+          git commit -m "fix: workflow未採用構成でもdocs-checkを実行可能にする"
+          git push origin HEAD:fix/docs-check-optional-workflows-20260903
