@@ -75,7 +75,7 @@ R20では次を個別に固定した。
 
 R20の実装により、API文書の「MergeSuggestionは4項目」「方式フィールドは後で判断」という記述は古くなった。実装と同じ5項目契約へ更新する。
 
-`AI-MERGE-SEMANTICS-01` は、Run #9の成功で未完受入条件がなくなったため、本R20の完了同期で `done/` へ移す。`AI-IR-STAGE5-SCOPE-01` では、merge方式追跡性を残差としていた一文だけを更新し、Stage 5固有の未完である `check-narrative` のscale境界はそのまま残す。
+`AI-MERGE-SEMANTICS-01` は、Run #9の成功で未完受入条件がなくなり、並行レーンのPR #2873で現在の契約と完了根拠を保ったDone正本へ整理され、`done/` へ移動した。`AI-IR-STAGE5-SCOPE-01` では、merge方式追跡性を残差としていた一文だけを更新し、Stage 5固有の未完である `check-narrative` のscale境界はそのまま残す。
 
 ## 8. 今回完了したものと、別に残すもの
 
