@@ -1,7 +1,20 @@
+import sys
 from pathlib import Path
 
 path = Path(__file__).with_name("tenant_session_multitab.spec.ts")
 source = path.read_text(encoding="utf-8")
+
+straight_heading = 'name: "We couldn\'t verify access"'
+curly_heading = 'name: "We couldn’t verify access"'
+straight_count = source.count(straight_heading)
+if straight_count == 2:
+    source = source.replace(straight_heading, curly_heading)
+elif straight_count != 0:
+    raise SystemExit(f"unexpected straight-apostrophe heading count: {straight_count}")
+
+if "--baseline" in sys.argv:
+    path.write_text(source, encoding="utf-8")
+    raise SystemExit(0)
 
 helper = r'''
 
