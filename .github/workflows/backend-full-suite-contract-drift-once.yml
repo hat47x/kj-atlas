@@ -28,6 +28,22 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin main
           git merge --no-edit origin/main
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/fix_backend_suite_contract_drift.py')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          old_seen = new_seen = False
+          for index, line in enumerate(lines):
+              if line.startswith('old_payload = '):
+                  lines[index] = '''old_payload = '{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged"}]}' '''.rstrip()
+                  old_seen = True
+              elif line.startswith('new_payload = '):
+                  lines[index] = '''new_payload = '{"suggestions":[{"groupId":"g1","cardIds":["c1","c2"],"mergedTextDraft":"merged","mergeMethod":"near_duplicate"}]}' '''.rstrip()
+                  new_seen = True
+          if not (old_seen and new_seen):
+              raise SystemExit('provider payload assignment anchor missing')
+          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          PY
           python .github/scripts/fix_backend_suite_contract_drift.py
       - name: Install backend
         run: python -m pip install -e '03_Implement/backend[test]'
