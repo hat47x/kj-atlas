@@ -42,3 +42,11 @@
 
 - frontend client・SafeMode境界・typecheckを実行する。
 - 実DeepSeek backendへ接続したWindows Edgeで、レビュー操作→タイトル提案→候補表示→採用前不変→provider利用量表示を確認する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは受入条件を満たし、fail-closedなAI利用境界を保ったまま実画面を含む確認まで完了して `Done` となっていた一方、R18以前からの経緯により、完了済みのまま作業中Issueと同じルートへ残るlegacy集合に含まれていた。
+- 既存のライフサイクル契約は、このlegacy集合を恒久的に残すための例外ではない。完了済みIssueを `01_Plans/issues/done/` へ移すたびに `LEGACY_DONE_AT_ROOT_BASELINE` も同じ変更で下げる、単調減少のラチェットである。
+- 本変更ではAI利用画面・レビュー境界に関する完了済みIssue 2件を正規配置へ移し、baselineを52から50へ縮小した。R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
