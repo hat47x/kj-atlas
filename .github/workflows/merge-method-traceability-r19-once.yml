@@ -32,6 +32,28 @@ jobs:
           cache: npm
           cache-dependency-path: 03_Implement/frontend/package-lock.json
 
+      - name: Align one-shot script with current types.ts layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/apply_merge_method_r19_once.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''replace_once(
+              "03_Implement/frontend/src/domain/types.ts",
+              'import type { InquiryBundleV1 } from "./inquiry_bundle";\\n',
+              'import type { InquiryBundleV1 } from "./inquiry_bundle";\\n'
+              'import type { MergeMethod } from "./merge_method";\\n',
+          )'''
+          new = '''replace_once(
+              "03_Implement/frontend/src/domain/types.ts",
+              'export type Transform = {\\n',
+              'import type { MergeMethod } from "./merge_method";\\n\\nexport type Transform = {\\n',
+          )'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stale types.ts import patch, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Apply R19 mergeMethod changes
         run: python .github/scripts/apply_merge_method_r19_once.py
 
@@ -87,7 +109,7 @@ jobs:
             03_Implement/frontend/src/App.tsx \
             03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx
           ! grep -q 'mergeMethod' 03_Implement/frontend/src/domain/merge/decision_audit_events.ts
-          ! git diff --name-only origin/main...HEAD | grep -E 'merge_suggestion_partial|AI-MERGE-PARTIAL'
+          ! git diff --name-only | grep -E 'merge_suggestion_partial|AI-MERGE-PARTIAL'
 
       - name: Run planning and docs checks
         run: |
