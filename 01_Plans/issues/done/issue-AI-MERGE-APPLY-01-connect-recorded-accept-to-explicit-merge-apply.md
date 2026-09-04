@@ -75,3 +75,11 @@ PR #2850では `MergeSuggestionsPanel` に、最新判断が `accept` の候補�
 このIssueは、`accept` を押しただけで自動mergeする仕組みを作るものではない。AIはproposal-only、人間の採否判断、Documentへの実適用、永続化は別段階という既存境界を保ったまま、記録済みacceptを安全に実適用し、その結果を保存・再読込しても系譜を追えるところまでを完了範囲とする。
 
 `partial` の意味と部分集合指定UI、04ステップ／核融合法の方法表現や残差契約など、merge意味論全体の未完事項は `AI-MERGE-SEMANTICS-01` で継続する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、AI提案、人間の採否判断、Documentへの実適用、永続化を分離する境界を保ったまま、判断記録から保存・再読込までのE2E確認を終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本Issueを `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を50から49へ縮小した。
+- R18時点のidentity manifestは新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
