@@ -8,6 +8,7 @@ an entry point, not a second status registry.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,6 +44,16 @@ REQUIRED_FIELDS = [
 # in the same change whenever legacy memos are migrated. Exact equality makes
 # the ratchet monotonic: debt cannot silently grow back after it has shrunk.
 LEGACY_DONE_AT_ROOT_BASELINE = 58
+
+# DOC-ISSUE-LEGACY-PATH-01: count equality cannot detect a same-count swap in
+# which one historical Done-at-root memo is migrated while a newly completed
+# memo is left at the active root. Preserve the R18 identity boundary as an
+# immutable, machine-generated manifest. Unlike the count baseline, this file
+# never shrinks; current Done-at-root paths must remain a subset of it.
+LEGACY_DONE_AT_ROOT_IDENTITY_COMMIT = "88aebae242d5d1a24278b3247d3544aeaa1ad386"
+LEGACY_DONE_AT_ROOT_IDENTITY_MANIFEST = Path(__file__).resolve().with_name(
+    "legacy_done_at_root_r18.json"
+)
 
 
 @dataclass(frozen=True)
@@ -153,6 +164,91 @@ def discover_done_memos_at_root(root: Path) -> list[Path]:
         if status == "Done":
             done_paths.append(memo_path)
     return done_paths
+
+
+def load_done_at_root_identity_manifest(
+    manifest_path: Path = LEGACY_DONE_AT_ROOT_IDENTITY_MANIFEST,
+) -> tuple[set[str] | None, list[str]]:
+    """Load and validate the immutable R18 Done-at-root identity boundary."""
+    try:
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return None, [f"cannot read Done-at-root identity manifest: {exc}"]
+    except json.JSONDecodeError as exc:
+        return None, [f"invalid Done-at-root identity manifest JSON: {exc}"]
+
+    errors: list[str] = []
+    if not isinstance(raw, dict):
+        return None, ["Done-at-root identity manifest must be a JSON object"]
+
+    if raw.get("schemaVersion") != 1:
+        errors.append("Done-at-root identity manifest schemaVersion must be 1")
+
+    if raw.get("capturedFromCommit") != LEGACY_DONE_AT_ROOT_IDENTITY_COMMIT:
+        errors.append(
+            "Done-at-root identity manifest capturedFromCommit does not match "
+            f"the fixed R18 boundary `{LEGACY_DONE_AT_ROOT_IDENTITY_COMMIT}`"
+        )
+
+    raw_paths = raw.get("paths")
+    if not isinstance(raw_paths, list) or not all(
+        isinstance(name, str) for name in raw_paths
+    ):
+        errors.append("Done-at-root identity manifest paths must be a string array")
+        return None, errors
+
+    paths = set(raw_paths)
+    if len(paths) != len(raw_paths):
+        errors.append("Done-at-root identity manifest contains duplicate paths")
+
+    if raw.get("count") != len(paths):
+        errors.append(
+            "Done-at-root identity manifest count does not match unique path count "
+            f"({raw.get('count')} != {len(paths)})"
+        )
+
+    invalid_names = sorted(
+        name
+        for name in paths
+        if Path(name).name != name
+        or not name.startswith("issue-")
+        or not name.endswith(".md")
+    )
+    if invalid_names:
+        errors.append(
+            "Done-at-root identity manifest must contain memo basenames only: "
+            + ", ".join(invalid_names)
+        )
+
+    return (paths if not errors else None), errors
+
+
+def validate_done_memo_identity(
+    root: Path,
+    *,
+    legacy_paths: set[str] | None = None,
+    manifest_path: Path = LEGACY_DONE_AT_ROOT_IDENTITY_MANIFEST,
+) -> list[str]:
+    """Reject new Done-at-root paths even when count-neutral swaps occur.
+
+    The immutable R18 set is a historical admission boundary, not the current
+    state. Existing legacy paths may disappear as they move to done/, but no
+    path outside the R18 set may enter the root as Status Done.
+    """
+    if legacy_paths is None:
+        legacy_paths, errors = load_done_at_root_identity_manifest(manifest_path)
+        if errors:
+            return errors
+        assert legacy_paths is not None
+
+    current_paths = {path.name for path in discover_done_memos_at_root(root)}
+    unexpected = sorted(current_paths - legacy_paths)
+    return [
+        f"{name}: Status `Done` at active root was not part of the R18 legacy set; "
+        "move the newly completed memo to 01_Plans/issues/done/. "
+        "A same-count replacement does not preserve the lifecycle contract."
+        for name in unexpected
+    ]
 
 
 def validate_memo_identity_and_placement(root: Path) -> list[str]:
@@ -319,21 +415,28 @@ def validate(
     *,
     enforce_done_baseline: bool | None = None,
     legacy_done_baseline: int = LEGACY_DONE_AT_ROOT_BASELINE,
+    enforce_done_identity: bool | None = None,
+    legacy_done_paths: set[str] | None = None,
 ) -> list[str]:
     """Validate issue memos without leaking repo-local debt into test fixtures.
 
-    The Done-at-root baseline is a checked-in debt value for this repository's
-    real ``01_Plans/issues`` directory. Synthetic roots used by contract tests
-    have no relationship to that historical count, so the unified validator
-    only applies the ratchet automatically to the real issues root. Callers
-    that intentionally exercise the lifecycle contract on another root can
-    opt in explicitly and supply a fixture-sized baseline.
+    The Done-at-root count and identity baselines are repository-local history.
+    Synthetic roots used by contract tests have no relationship to that debt,
+    so the unified validator only applies them automatically to the real issues
+    root. Tests can opt into either contract explicitly with fixture-sized
+    baselines.
     """
     real_issues_root = Path(__file__).resolve().parent
+    is_real_issues_root = root.resolve() == real_issues_root
     should_enforce_done_baseline = (
-        root.resolve() == real_issues_root
+        is_real_issues_root
         if enforce_done_baseline is None
         else enforce_done_baseline
+    )
+    should_enforce_done_identity = (
+        is_real_issues_root
+        if enforce_done_identity is None
+        else enforce_done_identity
     )
 
     errors = validate_status_contract(root)
@@ -342,6 +445,11 @@ def validate(
         errors += validate_done_memo_location(
             root,
             legacy_baseline=legacy_done_baseline,
+        )
+    if should_enforce_done_identity:
+        errors += validate_done_memo_identity(
+            root,
+            legacy_paths=legacy_done_paths,
         )
     errors += validate_rows(root, discover_active_rows(root))
     return errors
