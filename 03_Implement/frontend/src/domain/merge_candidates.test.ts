@@ -29,6 +29,7 @@ describe("collectMergeCandidates", () => {
     expect(result[0]?.cardIds).toEqual(["c1", "c2", "c3"]);
     expect(result[0]?.groupId).toBe("heuristic-needs-follow-up-c1-c2-c3");
     expect(result[0]?.mergedTextDraft).toBe("Needs   follow-up");
+    expect(result[0]?.mergeMethod).toBe("near_duplicate");
     expect(result[0]?.targetCardId).toBe("c1");
     expect(result[0]?.candidateCardIds).toEqual(["c2", "c3"]);
     expect(result[0]?.scoreSummary).toEqual({ min: 1, max: 1, avg: 1 });
@@ -48,6 +49,7 @@ describe("collectMergeCandidates", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.cardIds).toEqual(["a", "b"]);
+    expect(result[0]?.mergeMethod).toBe("near_duplicate");
     expect(result[0]?.scoreSummary).toEqual({ min: 0.75, max: 0.75, avg: 0.75 });
     expect(result[0]?.reasonCodes).toEqual(["heuristic:token-signature"]);
     expect(result[0]?.rationale).toContain("token-signature");
@@ -90,6 +92,10 @@ describe("collectMergeCandidates", () => {
     expect(first.map((group) => group.cardIds)).toEqual([
       ["a", "b"],
       ["y", "z"],
+    ]);
+    expect(first.map((group) => group.mergeMethod)).toEqual([
+      "near_duplicate",
+      "near_duplicate",
     ]);
   });
 });
