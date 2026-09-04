@@ -23,9 +23,8 @@ jobs:
           from pathlib import Path
 
           issue_path = Path('01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md')
-          issue = issue_path.read_text(encoding='utf-8')
-          lines = issue.splitlines()
-
+          original_issue = issue_path.read_text(encoding='utf-8')
+          lines = original_issue.splitlines()
           replacements = {
               '- [ ] AC-4:': '- [~] AC-4: SaaS profileでtenant不明・不一致、membership停止、adapter欠損、PDP不達をreadも含めてdenyする。— **現行実装の再監査（2026-09-04）**: 旧記述の「SaaS起動ゲート解除待ち」は失効している。`test_saas_e2e_tenant_isolation.py`で未知tenant・claim欠落・越境same-docIdをHTTP境界で拒否し、`test_session_context_routes.py`でmembership停止・membership差替え・capability resolver欠損をfail-closedにしている。外部PDP transport不達をDocument readまで縦断する現行BFF経路の証拠は本ACへまだ集約できていないため、完了主張は保留する。',
               '- [~] AC-6:': '- [x] AC-6: `GET /session/context`とactive tenant変更がmembership allowlistだけを返し、自由入力tenantの発見・切替を許可しない。— **2026-09-04再監査**: 2026-08-22の「現行SPAはBearer token経路」という停止理由は、Accepted済み`ADR-0074`とその後のBFF cutoverにより失効した。`saas-multitenant` frontend entryは`TenantSessionRuntimeGate`を必須とし、server-owned cookie sessionの`/session/context`成功後だけtenant-scoped Appをmountする。active tenantは認証session keyに束縛され、切替はmembership allowlist再照合＋`tenantSessionVersion`比較を経て保存される。`test_session_context_routes.py`は未知/非membership tenant、停止membership、stale version、次requestのsession bindingを固定している。',
@@ -44,26 +43,28 @@ jobs:
           if missing:
               raise SystemExit(f'missing issue prefixes: {sorted(missing)}')
 
-          checkpoint = '''### Implementation checkpoint 2026-09-04: capability authorization surface separation
-
-- `ADR-0067`の三要素牽制設計を適用し、capabilityをWorkspace 4種、Tenant Admin 5種、Platform Control Plane 2種へ明示分類した。3集合は互いに素で、和集合は既存11 capabilityと一致する。
-- trusted server-side `TenantSessionContext`はPlatform capabilityを失わず、`/admin/provision/**` Stage Bの`tenant.provision`認可へ利用できる。一方、Workspace bootstrap/switch responseの`effectiveCapabilities`はWorkspace＋Tenant Admin 9種だけへ射影し、`tenant.provision/suspend`をbrowserへ露出しない。
-- Platform capabilityから`document.read`または`document.policy.manage`を暗黙導出する経路は追加しない。同じ主体が複数面のcapabilityを独立に持つことは許容するが、面をまたぐ継承は行わない。
-- JWT `aud`、OIDC provider契約、`ADR-0074`のserver-owned BFF session schemaは変更していない。`api.md`の「認可audience」はapplication route/capability surfaceとして実装する。
-- 検証: GitHub Actions Run `33876867421`。`test_capability_audience_separation.py`、session context routes、control-plane authorization、Tenant Admin document-accessの計88件pass、Ruff pass、diff check pass。一時workflowは成功後に自己削除した。
-'''
-          issue = '\n'.join(lines) + ('\n' if issue.endswith('\n') else '')
+          checkpoint_lines = [
+              '### Implementation checkpoint 2026-09-04: capability authorization surface separation',
+              '',
+              '- `ADR-0067`の三要素牽制設計を適用し、capabilityをWorkspace 4種、Tenant Admin 5種、Platform Control Plane 2種へ明示分類した。3集合は互いに素で、和集合は既存11 capabilityと一致する。',
+              '- trusted server-side `TenantSessionContext`はPlatform capabilityを失わず、`/admin/provision/**` Stage Bの`tenant.provision`認可へ利用できる。一方、Workspace bootstrap/switch responseの`effectiveCapabilities`はWorkspace＋Tenant Admin 9種だけへ射影し、`tenant.provision/suspend`をbrowserへ露出しない。',
+              '- Platform capabilityから`document.read`または`document.policy.manage`を暗黙導出する経路は追加しない。同じ主体が複数面のcapabilityを独立に持つことは許容するが、面をまたぐ継承は行わない。',
+              '- JWT `aud`、OIDC provider契約、`ADR-0074`のserver-owned BFF session schemaは変更していない。`api.md`の「認可audience」はapplication route/capability surfaceとして実装する。',
+              '- 検証: GitHub Actions Run `33876867421`。`test_capability_audience_separation.py`、session context routes、control-plane authorization、Tenant Admin document-accessの計88件pass、Ruff pass、diff check pass。一時workflowは成功後に自己削除した。',
+              '',
+          ]
+          checkpoint = '\n'.join(checkpoint_lines)
+          issue = '\n'.join(lines) + ('\n' if original_issue.endswith('\n') else '')
           marker = '## 検証計画\n'
-          if checkpoint.strip() not in issue:
+          if checkpoint_lines[0] not in issue:
               if marker not in issue:
                   raise SystemExit('verification-plan marker missing')
               issue = issue.replace(marker, checkpoint + '\n' + marker, 1)
           issue_path.write_text(issue, encoding='utf-8')
 
           api_path = Path('02_Architecture/api.md')
-          api = api_path.read_text(encoding='utf-8')
-          api_lines = api.splitlines()
-
+          original_api = api_path.read_text(encoding='utf-8')
+          api_lines = original_api.splitlines()
           api_replacements = {
               '`effectiveCapabilities`は表示補助であり、': '`effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。trusted server-side sessionのcapability正本はWorkspace（`document.read/write/export/share`）、Tenant Admin（`document.policy.manage`、`membership.provision`、`agent.register/revoke`、`audit.read`）、Platform Control Plane（`tenant.provision/suspend`）の3つの認可surfaceへ明示分離する。`GET /session/context`とactive tenant変更responseはWorkspace＋Tenant Adminの9種だけを返し、Platform Control Plane capabilityをbrowser向けWorkspace contextへ露出しない。server内部のtrusted sessionからPlatform capabilityを削除してはならず、`/admin/provision/**`等の専用routeで独立に再認可する。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth sessionの有効期限を越えて保持しない。',
               'frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。': 'frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、server-owned BFF cookie sessionによるsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。active tenantは認証session keyへ束縛してserver側で正本化し、frontendはBearer tokenのtenant claimをactive tenant正本として使わない。',
@@ -81,7 +82,7 @@ jobs:
           missing_api = set(api_replacements) - seen_api
           if missing_api:
               raise SystemExit(f'missing api prefixes: {sorted(missing_api)}')
-          api_path.write_text('\n'.join(api_lines) + ('\n' if api.endswith('\n') else ''), encoding='utf-8')
+          api_path.write_text('\n'.join(api_lines) + ('\n' if original_api.endswith('\n') else ''), encoding='utf-8')
           PY
       - name: Documentation checks
         run: python 01_Plans/docs_check.py
