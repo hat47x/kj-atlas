@@ -126,7 +126,7 @@ UQ（`ADR-0044`）とPB（`ADR-0046`）は既にUI操作性・応答性を包括
 - Related: `01_Plans/issues/done/issue-DOMAIN-SCORING-SURFACE-01-health-percentage-and-lone-card-defect-contradict-invariants.md`（IC-9の実例、Done）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（IC-10 = F-5の出典）
 - Related: `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`（IC-8の実例の発見経路）
-- Related: `01_Plans/issues/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと`DC-LNK-002`の実装）
+- Related: `01_Plans/issues/done/issue-DX-DOC-09-backtick-path-citations-unchecked-by-link-checker.md`（IC-11の初回監査パスと`DC-LNK-002`の実装）
 - Related: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（IC-10の追加監査で新規発見した実装課題、Draft）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（物量抑制方針。新規自動検査を作らない根拠）
 - Related: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
