@@ -136,6 +136,7 @@ def _new_engine(database_url: str) -> Engine:
 
 
 def _seed_shared_auth_data(factory: sessionmaker[Session]) -> None:
+    """FK親行を先に確定してから認証・membershipの従属行を投入する。"""
     with factory() as db:
         db.add_all(
             [
@@ -171,6 +172,13 @@ def _seed_shared_auth_data(factory: sessionmaker[Session]) -> None:
                     created_at=TIMESTAMP,
                     updated_at=TIMESTAMP,
                 ),
+            ]
+        )
+        # ORM object間のrelationshipを使わずIDだけで投入するfixtureなので、
+        # PostgreSQLのFK境界を曖昧にしないよう親行を先にflushする。
+        db.flush()
+        db.add_all(
+            [
                 TenantIdentityProviderRow(
                     tenant_id="tenant-a",
                     identity_provider_id="idp-1",
