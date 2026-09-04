@@ -131,3 +131,23 @@ formal portfolioでは比較可能性のために時計を止める。しかし�
 6. 第三者価値実証は別レーンのまま進める。
 
 R21自身を、formal Caseをさらに延期する新しいpreflight gateにはしない。今回のruntime表記補正を終えたら、次の有効な証拠は引き続きCase 001 Arm Cの実走から得る。
+
+
+## 10. 固定runtimeの実行可能性をsmoke確認
+
+R21のruntime解釈をoperator手順へ戻した後、formal product commit `2232b3bb26647e5c4a083f55bdbf83c161698649` 自体を別checkoutとして起動可能かを、分析内容を与えない技術smokeで確認した。
+
+branch-only one-shot workflowでは、固定commitのfrontend依存をそのcommit自身のtoolchain契約で導入し、次を実行した。
+
+- TypeScript typecheck。
+- Vite production build。
+- Chromium installation。
+- `first_run_document_entry.spec.ts`。
+- `inquiry_handoff_review.spec.ts`。
+- `inquiry_round_comparison.spec.ts`。
+
+これらが成功したため、少なくともCase 001 Arm C/Dで必要なDocument読込、InquiryJourney開始、handoff、保存・再開、lineage、round比較、branch操作を含む代表UI contractは、固定runtime上で現在のGitHub Actions環境から再実行可能である。
+
+このsmokeはformal Armの分析ではなくoperator/runtime setup検証であり、M1〜M9、T9、製品価値、第三者価値の証拠には数えない。また、成功を理由にformal sourceやtreatmentを変更しない。
+
+したがってR21で想定した「固定runtimeが実行不能なら別revision」という分岐は、現時点では発火しない。次工程は予定どおりCase 001 Arm Cのfresh-context実走である。
