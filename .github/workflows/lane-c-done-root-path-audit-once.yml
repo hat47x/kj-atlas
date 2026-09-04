@@ -1,0 +1,71 @@
+name: Temporary lane C Done-at-root path audit
+
+on:
+  push:
+    branches:
+      - chore/lane-c-done-root-path-guard-20260904
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Compare current Done-at-root paths with R18
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          root = Path('01_Plans/issues')
+          baseline_commit = '88aebae242d5d1a24278b3247d3544aeaa1ad386'
+          status_re = re.compile(r'^- Status:\s*Done\s*$', re.M)
+
+          current = {
+              path.name
+              for path in root.glob('issue-*.md')
+              if status_re.search(path.read_text(encoding='utf-8'))
+          }
+
+          result = subprocess.run(
+              [
+                  'git', 'grep', '-l', '-e', r'^- Status: Done$', baseline_commit,
+                  '--', '01_Plans/issues/issue-*.md',
+              ],
+              check=False,
+              text=True,
+              encoding='utf-8',
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+          )
+          if result.returncode not in (0, 1):
+              raise SystemExit(result.stderr or f'git grep failed: {result.returncode}')
+
+          prefix = f'{baseline_commit}:01_Plans/issues/'
+          baseline = set()
+          for line in result.stdout.splitlines():
+              if not line.startswith(prefix):
+                  raise SystemExit(f'unexpected git grep result: {line}')
+              baseline.add(line[len(prefix):])
+
+          unexpected = sorted(current - baseline)
+          migrated = sorted(baseline - current)
+          print(f'baseline_done_at_root={len(baseline)}')
+          print(f'current_done_at_root={len(current)}')
+          print(f'unexpected_current_paths={len(unexpected)}')
+          print(f'migrated_baseline_paths={len(migrated)}')
+          for name in unexpected:
+              print(f'UNEXPECTED {name}')
+          for name in migrated:
+              print(f'MIGRATED {name}')
+
+          if len(baseline) != 58:
+              raise SystemExit(f'R18 baseline expected 58 paths, got {len(baseline)}')
+          if unexpected:
+              raise SystemExit('current Done-at-root contains paths outside R18 legacy set')
+          PY
