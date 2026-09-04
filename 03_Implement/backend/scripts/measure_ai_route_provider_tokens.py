@@ -48,7 +48,16 @@ from kj_atlas_api.routes.ai import (
     _generate_narrative_ir,
     _suggest_layout_ir,
 )
-from scripts.measure_ai_route_prompt_coverage import representative_document
+
+# `python -m scripts.measure_ai_route_provider_tokens` と、Issue本文で案内している
+# `python scripts/measure_ai_route_provider_tokens.py` の両方を正式に動かす。
+# 後者では `scripts/` 自身が sys.path の先頭になるため sibling import が必要になる。
+try:
+    from scripts.measure_ai_route_prompt_coverage import representative_document
+except ModuleNotFoundError as exc:
+    if exc.name != "scripts":
+        raise
+    from measure_ai_route_prompt_coverage import representative_document
 
 OPT_IN_ENV = "KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN"
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
