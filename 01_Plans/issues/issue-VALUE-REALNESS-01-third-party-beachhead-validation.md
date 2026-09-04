@@ -58,8 +58,8 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
   - 結果を見る前に分析順序を固定し、内部仮説へ `support / modify / narrow / reject / unresolved` で戻す。
 - `01_Plans/dogfood/validate_third_party_value_protocol.py`
   - 中立なbaseline、停止/no-useの保持、実行時のデータ経路の開示、public Git境界などの不変条件に欠落があれば失敗させる。
-- `.github/workflows/third-party-value-protocol.yml`
-  - 上記validatorをGitHub Actionsで実行する。
+- 検証実行
+  - mainへ恒久workflowは置かず、protocol変更時または実参加前preflightで `python 01_Plans/dogfood/validate_third_party_value_protocol.py` を直接、またはbranch限定の一回限り検証から実行する。
 
 ### 現在残っている外部入力
 
