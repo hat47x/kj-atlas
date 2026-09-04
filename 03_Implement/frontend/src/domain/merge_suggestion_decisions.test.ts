@@ -40,6 +40,7 @@ describe("merge_suggestion_decisions", () => {
         doc,
         {
           groupId: "g1",
+          mergeMethod: "near_duplicate",
           decision: append.decision,
           cardIds: append.decision === "partial" ? ["c1", "c2", "c3"] : ["c1", "c2"],
           selectedCardIds: append.decision === "partial" ? ["c1", "c2"] : undefined,
@@ -71,6 +72,7 @@ describe("merge_suggestion_decisions", () => {
       createBaseDocument(),
       {
         groupId: "g1",
+        mergeMethod: "near_duplicate",
         decision: "accept",
         cardIds: ["c2", "c1", "c2"],
         mergedTextDraft: "alpha",
@@ -96,6 +98,7 @@ describe("merge_suggestion_decisions", () => {
         note: "Human-reviewed: normalize duplicates",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         rationale: undefined,
+        mergeMethod: "near_duplicate",
         representativeCardId: "c1",
         representativeResolvedBy: "fallback",
         sourceCardIds: ["c2"],
@@ -109,6 +112,7 @@ describe("merge_suggestion_decisions", () => {
       createBaseDocument(),
       {
         groupId: "g-partial",
+        mergeMethod: "near_duplicate",
         decision: "partial",
         cardIds: ["c3", "c1", "c2"],
         selectedCardIds: ["c2", "c1"],
@@ -130,6 +134,7 @@ describe("merge_suggestion_decisions", () => {
     const base = createBaseDocument();
     const common = {
       groupId: "g-partial",
+      mergeMethod: "near_duplicate" as const,
       decision: "partial" as const,
       cardIds: ["c1", "c2", "c3"],
       mergedTextDraft: "alpha",
@@ -191,6 +196,7 @@ describe("merge_suggestion_decisions", () => {
         createBaseDocument(),
         {
           groupId: "   ",
+          mergeMethod: "near_duplicate",
           decision: "accept",
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
@@ -207,6 +213,7 @@ describe("merge_suggestion_decisions", () => {
         createBaseDocument(),
         {
           groupId: "g1",
+          mergeMethod: "near_duplicate",
           decision: "accept",
           cardIds: [],
           mergedTextDraft: "alpha",
@@ -223,6 +230,7 @@ describe("merge_suggestion_decisions", () => {
         createBaseDocument(),
         {
           groupId: "g1",
+          mergeMethod: "near_duplicate",
           decision: "partial",
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
@@ -239,6 +247,7 @@ describe("merge_suggestion_decisions", () => {
         createBaseDocument(),
         {
           groupId: "g1",
+          mergeMethod: "near_duplicate",
           decision: "accept-ish" as unknown as "accept",
           cardIds: ["c1"],
           mergedTextDraft: "alpha",

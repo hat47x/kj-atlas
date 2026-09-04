@@ -46,10 +46,10 @@ describe("stream_b_contract_handoff", () => {
         groupId: "g1",
         mergeMethod: "near_duplicate",
         decision: "partial",
-        cardIds: ["c2", "c1"],
+        cardIds: ["c2", "c1", "c3"],
+        selectedCardIds: ["c2", "c1"],
         mergedTextDraft: "risk mitigation",
         editedText: "risk mitigation (reviewed)",
-        mergeMethod: "near_duplicate",
       },
       { idFactory: () => "decision-1", now: "2026-03-01T10:00:00.000Z" },
     );
