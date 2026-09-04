@@ -12,6 +12,29 @@ if straight_count == 2:
 elif straight_count != 0:
     raise SystemExit(f"unexpected straight-apostrophe heading count: {straight_count}")
 
+auth_old = '''  const blockedHeading = page.getByRole("heading", { name: "We couldn’t verify access" });
+  await expect(blockedHeading).toBeVisible();
+  await expect(blockedHeading).toBeFocused();
+
+  const signInButton = page.getByRole("button", { name: "Sign in" });
+  await expect(signInButton).toBeVisible();
+
+  const retryButton = page.getByRole("button", { name: "Retry" });
+  await expect(retryButton).toHaveCount(0);'''
+auth_new = '''  const blockedAlert = page.getByRole("alert");
+  await expect(blockedAlert).toBeVisible();
+  const blockedHeading = blockedAlert.getByRole("heading");
+  await expect(blockedHeading).toBeFocused();
+
+  const signInButton = blockedAlert.getByRole("button", { name: /^(Sign in|サインイン)$/ });
+  await expect(signInButton).toBeVisible();
+
+  const retryButton = blockedAlert.getByRole("button", { name: /^(Retry|再試行)$/ });
+  await expect(retryButton).toHaveCount(0);'''
+if source.count(auth_old) != 1:
+    raise SystemExit("authentication-required baseline anchor drifted")
+source = source.replace(auth_old, auth_new, 1)
+
 if "--baseline" in sys.argv:
     path.write_text(source, encoding="utf-8")
     raise SystemExit(0)
