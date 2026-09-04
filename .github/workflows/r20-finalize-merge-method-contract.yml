@@ -1,0 +1,386 @@
+name: R20 finalize merge-method contract
+
+on:
+  push:
+    branches:
+      - dogfood/r20-merge-method-traceability-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dogfood/r20-merge-method-traceability-20260904
+          fetch-depth: 0
+
+      - name: Patch all remaining mergeMethod seams
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def patch(path: str, old: str, new: str, expected: int = 1) -> None:
+              p = Path(path)
+              data = p.read_bytes()
+              # Preserve each file's dominant newline style; fall back to LF pattern for mixed files.
+              newline = "\r\n" if data.count(b"\r\n") > max(1, data.count(b"\n") // 2) else "\n"
+              old_b = old.replace("\n", newline).encode("utf-8")
+              new_b = new.replace("\n", newline).encode("utf-8")
+              count = data.count(old_b)
+              if count != expected and newline == "\r\n":
+                  old_b = old.encode("utf-8")
+                  new_b = new.encode("utf-8")
+                  count = data.count(old_b)
+              if count != expected:
+                  raise SystemExit(f"{path}: expected {expected} match(es), got {count}: {old[:100]!r}")
+              p.write_bytes(data.replace(old_b, new_b, expected))
+
+          # Persisted DocumentV1 type: optional only for historical compatibility.
+          patch(
+              "03_Implement/frontend/src/domain/types.ts",
+              "  snapshotVersion?: string;\n  rationale?: string;\n  /**\n   * R3-tier-1",
+              "  snapshotVersion?: string;\n  rationale?: string;\n  mergeMethod?: \"near_duplicate\" | \"kernel_fusion\";\n  /**\n   * R3-tier-1",
+          )
+
+          # Strict import accepts known methods, rejects unknown, and still accepts legacy absence.
+          patch(
+              "03_Implement/frontend/src/domain/validate_doc.ts",
+              '"snapshotVersion", "rationale", "representativeCardId"',
+              '"snapshotVersion", "rationale", "mergeMethod", "representativeCardId"',
+          )
+          patch(
+              "03_Implement/frontend/src/domain/validate_doc.ts",
+              '  if (item.rationale !== undefined && typeof item.rationale !== "string") {\n    errors.push(`${path}.rationale: must be a string when provided`);\n    valid = false;\n  }\n  if (item.representativeCardId !== undefined',
+              '  if (item.rationale !== undefined && typeof item.rationale !== "string") {\n    errors.push(`${path}.rationale: must be a string when provided`);\n    valid = false;\n  }\n  if (item.mergeMethod !== undefined && item.mergeMethod !== "near_duplicate" && item.mergeMethod !== "kernel_fusion") {\n    errors.push(`${path}.mergeMethod: must be near_duplicate or kernel_fusion when provided`);\n    valid = false;\n  }\n  if (item.representativeCardId !== undefined',
+          )
+
+          # Lenient import preserves known methods and never fabricates unknown/missing historical values.
+          patch(
+              "03_Implement/frontend/src/domain/validate.ts",
+              '      ...(typeof item.rationale === "string" ? { rationale: item.rationale } : {}),\n      ...(typeof item.representativeCardId === "string"',
+              '      ...(typeof item.rationale === "string" ? { rationale: item.rationale } : {}),\n      ...(item.mergeMethod === "near_duplicate" || item.mergeMethod === "kernel_fusion" ? { mergeMethod: item.mergeMethod } : {}),\n      ...(typeof item.representativeCardId === "string"',
+          )
+
+          # Stream B new decision writes also require and verify the method.
+          patch(
+              "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts",
+              'import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";\nimport type { DocumentV1 } from "./types";',
+              'import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";\nimport type { MergeMethod } from "./merge_method";\nimport type { DocumentV1 } from "./types";',
+          )
+          patch(
+              "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts",
+              'type ValidateDecisionLogInput = {\n  groupId: string;\n  decision: MergeSuggestionDecision;',
+              'type ValidateDecisionLogInput = {\n  groupId: string;\n  mergeMethod: MergeMethod;\n  decision: MergeSuggestionDecision;',
+          )
+          patch(
+              "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts",
+              '    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&\n    entry.action === input.decision &&',
+              '    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&\n    entry.mergeMethod === input.mergeMethod &&\n    entry.action === input.decision &&',
+          )
+
+          # Existing deterministic fixtures are factually near-duplicate candidates.
+          patch(
+              "03_Implement/frontend/src/domain/merge_suggestion_apply.test.ts",
+              '      groupId: "g1",\n      decision,',
+              '      groupId: "g1",\n      mergeMethod: "near_duplicate",\n      decision,',
+          )
+          patch(
+              "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts",
+              '          groupId: "g1",\n          decision: action,',
+              '          groupId: "g1",\n          mergeMethod: "near_duplicate",\n          decision: action,',
+          )
+          patch(
+              "03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts",
+              '        groupId: "g1",\n        decision: "partial",',
+              '        groupId: "g1",\n        mergeMethod: "near_duplicate",\n        decision: "partial",',
+          )
+          patch(
+              "03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts",
+              '        groupId: "heuristic-risk-a-b",\n        targetCardId:',
+              '        groupId: "heuristic-risk-a-b",\n        mergeMethod: "near_duplicate" as const,\n        targetCardId:',
+          )
+
+          # External-agent responses can carry the same vocabulary. In lenient import, incomplete legacy
+          # proposals are preserved with an explicit warning; strict import rejects them.
+          patch(
+              "03_Implement/frontend/src/import/agent_response_import.ts",
+              'import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";\nimport type { AgentResponseProvenance }',
+              'import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";\nimport { isMergeMethod, type MergeMethod } from "../domain/merge_method";\nimport type { AgentResponseProvenance }',
+          )
+          patch(
+              "03_Implement/frontend/src/import/agent_response_import.ts",
+              'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n};',
+              'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n  mergeMethod?: MergeMethod;\n};',
+          )
+          patch(
+              "03_Implement/frontend/src/import/agent_response_import.ts",
+              '    mergedText: sanitizeString(value.mergedText),\n  };',
+              '    mergedText: sanitizeString(value.mergedText),\n    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,\n  };',
+          )
+          patch(
+              "03_Implement/frontend/src/import/agent_response_import.ts",
+              '  let patch: PatchV1 | undefined;\n  let patchHasDeleteOps = false;',
+              '  const content = parseContent(value.content);\n  if (kind === "merge_candidate" && !content.mergeMethod) {\n    if (mode === "strict") {\n      return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };\n    }\n    warnings.push("proposal.merge_candidate_missing_or_invalid_merge_method:preserved_without_method");\n  }\n\n  let patch: PatchV1 | undefined;\n  let patchHasDeleteOps = false;',
+          )
+          patch(
+              "03_Implement/frontend/src/import/agent_response_import.ts",
+              '    targetRef: parseTargetRef(value.targetRef),\n    content: parseContent(value.content),',
+              '    targetRef: parseTargetRef(value.targetRef),\n    content,',
+          )
+
+          # New agent tasks tell the external agent to report the method instead of forcing the UI to guess.
+          patch(
+              "03_Implement/frontend/src/export/agent_task_export.ts",
+              '    case "merge_candidates":\n      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。`;',
+              '    case "merge_candidates":\n      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。近い記述を整理する場合は near_duplicate、完全な重複ではない複数カードから共通の意味核を立てる場合は kernel_fusion とし、各 merge_candidate の content.mergeMethod に必ず明示してください。`;',
+          )
+          patch(
+              "03_Implement/frontend/src/export/agent_task_export.ts",
+              '        content: { title: "string?", text: "string?", mergedText: "string?" },',
+              '        content: { title: "string?", text: "string?", mergedText: "string?", mergeMethod: "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)" },',
+          )
+          patch(
+              "03_Implement/frontend/src/export/agent_task_export.test.ts",
+              '    expect(output.taskSheetMd).toContain(output.correlation.bundleHash);\n    expect(output.taskJson)',
+              '    expect(output.taskSheetMd).toContain(output.correlation.bundleHash);\n    expect(output.taskSheetMd).toContain("content.mergeMethod に必ず明示してください");\n    expect(output.taskSheetMd).toContain("near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)");\n    expect(output.taskJson)',
+          )
+          patch(
+              "03_Implement/frontend/tests/fixtures/agent_task/agent_task_island_titles.md",
+              '        "mergedText": "string?"',
+              '        "mergedText": "string?",\n        "mergeMethod": "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)"',
+          )
+
+          # Merge drafts may be incomplete only when imported from a legacy/lenient external response.
+          patch(
+              "03_Implement/frontend/src/App.tsx",
+              'type MergeSuggestionDraft = MergeSuggestion & {\n  editedText:',
+              'type MergeSuggestionDraft = Omit<MergeSuggestion, "mergeMethod"> & {\n  mergeMethod?: MergeSuggestion["mergeMethod"];\n  editedText:',
+          )
+          patch(
+              "03_Implement/frontend/src/App.tsx",
+              '              groupId: `agent-response-${review.proposalId}`,\n              targetCardId,',
+              '              groupId: `agent-response-${review.proposalId}`,\n              mergeMethod: review.content.mergeMethod,\n              targetCardId,',
+          )
+          patch(
+              "03_Implement/frontend/src/App.tsx",
+              '      const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;',
+              '      if (!suggestion.mergeMethod) {\n        setMergeSuggestionError(t("app.status.merge_suggestion.method_required_before_decision"));\n        return;\n      }\n\n      const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;',
+          )
+          patch(
+              "03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx",
+              'type MergeSuggestionDraft = MergeSuggestion & {\n  editedText:',
+              'type MergeSuggestionDraft = Omit<MergeSuggestion, "mergeMethod"> & {\n  mergeMethod?: MergeSuggestion["mergeMethod"];\n  editedText:',
+          )
+          patch(
+              "03_Implement/frontend/src/ui/merge_method_label.ts",
+              'export function mergeMethodLabel(method: MergeMethod, locale: MergeMethodLabelLocale): string {\n  if (locale === "ja") {',
+              'export function mergeMethodLabel(method: MergeMethod | undefined, locale: MergeMethodLabelLocale): string {\n  if (!method) {\n    return locale === "ja" ? "方式未記録" : "Method not recorded";\n  }\n  if (locale === "ja") {',
+          )
+
+          # Localized decision gate: incomplete imported proposals remain visible but cannot create new history.
+          patch(
+              "03_Implement/frontend/src/i18n/locales/ja.json",
+              '  "app.status.merge_suggestion.no_longer_applicable": "このマージ候補は現在のカードに適用できません。候補を更新してから確認し直してください。",',
+              '  "app.status.merge_suggestion.no_longer_applicable": "このマージ候補は現在のカードに適用できません。候補を更新してから確認し直してください。",\n  "app.status.merge_suggestion.method_required_before_decision": "この統合候補には統合方式が記録されていません。判断を記録する前に、候補をあらためて生成してください。",',
+          )
+          patch(
+              "03_Implement/frontend/src/i18n/locales/en.json",
+              '  "app.status.merge_suggestion.no_longer_applicable": "This merge suggestion no longer applies to the current cards. Refresh suggestions and review it again.",',
+              '  "app.status.merge_suggestion.no_longer_applicable": "This merge suggestion no longer applies to the current cards. Refresh suggestions and review it again.",\n  "app.status.merge_suggestion.method_required_before_decision": "This merge candidate does not record an integration method. Generate the candidate again before recording a decision.",',
+          )
+
+          # External-agent architecture contract follows the executable exporter/importer.
+          patch(
+              "02_Architecture/external_agent_collaboration_spec.html",
+              '      "content": { "title": "string?", "text": "string?", "mergedText": "string?" },',
+              '      "content": { "title": "string?", "text": "string?", "mergedText": "string?", "mergeMethod": "near_duplicate | kernel_fusion?" },',
+          )
+          patch(
+              "02_Architecture/external_agent_collaboration_spec.html",
+              '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）</td></tr>',
+              '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）。新規応答の <code>content.mergeMethod</code> は <code>near_duplicate</code> / <code>kernel_fusion</code> のいずれかを必須とする。寛容取込では旧・不完全応答を方式未記録のまま表示できるが、方式を推測せず、新しい判断記録は作らない。</td></tr>',
+          )
+
+          # Dedicated persistence regression.
+          Path("03_Implement/frontend/src/domain/merge_method_persistence_contract.test.ts").write_text(r'''import { describe, expect, it } from "vitest";
+import { validateDocumentV1Strict } from "./validate_doc";
+import { validateImportedDocument } from "./validate";
+
+function baseDocument(mergeMethod?: unknown) {
+  const decision: Record<string, unknown> = {
+    id: "d1",
+    groupId: "g1",
+    decision: "accept",
+    decidedAt: "2026-09-04T00:00:00.000Z",
+    cardIds: ["c1", "c2"],
+    mergedTextDraft: "alpha",
+    editedText: "alpha merged",
+  };
+  if (mergeMethod !== undefined) decision.mergeMethod = mergeMethod;
+  return {
+    version: 1,
+    id: "doc-merge-method",
+    createdAt: "2026-09-04T00:00:00.000Z",
+    updatedAt: "2026-09-04T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [
+      { id: "c1", text: "alpha", x: 0, y: 0 },
+      { id: "c2", text: "beta", x: 100, y: 0 },
+    ],
+    edges: [],
+    islands: [],
+    mergeSuggestionDecisions: [decision],
+  };
+}
+
+describe("mergeMethod Document persistence contract", () => {
+  it.each(["near_duplicate", "kernel_fusion"] as const)("round-trips known method %s", (mergeMethod) => {
+    const doc = baseDocument(mergeMethod);
+    expect(validateDocumentV1Strict(doc).ok).toBe(true);
+    const lenient = validateImportedDocument(doc);
+    expect(lenient.ok).toBe(true);
+    if (lenient.ok) expect(lenient.value.mergeSuggestionDecisions?.[0]?.mergeMethod).toBe(mergeMethod);
+  });
+
+  it("keeps legacy method-less decisions readable without inventing a method", () => {
+    const doc = baseDocument();
+    expect(validateDocumentV1Strict(doc).ok).toBe(true);
+    const lenient = validateImportedDocument(doc);
+    expect(lenient.ok).toBe(true);
+    if (lenient.ok) expect(lenient.value.mergeSuggestionDecisions?.[0]?.mergeMethod).toBeUndefined();
+  });
+
+  it("rejects an unknown persisted method in strict mode and drops only that field in lenient mode", () => {
+    const doc = baseDocument("unknown_method");
+    expect(validateDocumentV1Strict(doc).ok).toBe(false);
+    const lenient = validateImportedDocument(doc);
+    expect(lenient.ok).toBe(true);
+    if (lenient.ok) expect(lenient.value.mergeSuggestionDecisions?.[0]?.mergeMethod).toBeUndefined();
+  });
+});
+''', encoding="utf-8")
+
+          Path("03_Implement/frontend/src/import/agent_merge_method_contract.test.ts").write_text(r'''import { describe, expect, it } from "vitest";
+import { parseAgentResponse } from "./agent_response_import";
+
+function response(content: Record<string, unknown>): string {
+  return JSON.stringify({
+    schemaVersion: "agent-response.v1",
+    taskId: "task-1",
+    correlation: {
+      schemaVersion: "agent-task.v1",
+      taskId: "task-1",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      docId: "doc-1",
+      baseDocSignature: "doc-1:sig",
+      bundleHash: "bundle",
+      queryCanonicalHash: "query",
+      taskKind: "merge_candidates",
+      locale: "ja",
+    },
+    proposals: [{
+      proposalId: "p1",
+      kind: "merge_candidate",
+      targetRef: { cardIds: ["c1", "c2"] },
+      content,
+      rationale: "統合理由",
+    }],
+  });
+}
+
+describe("external agent mergeMethod contract", () => {
+  it.each(["near_duplicate", "kernel_fusion"] as const)("preserves known method %s in strict import", (mergeMethod) => {
+    const result = parseAgentResponse(response({ mergedText: "統合", mergeMethod }), "strict");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.response.proposals[0]?.content.mergeMethod).toBe(mergeMethod);
+  });
+
+  it.each([
+    { mergedText: "統合" },
+    { mergedText: "統合", mergeMethod: "unknown_method" },
+  ])("strictly rejects missing/unknown method, while lenient import preserves the proposal without guessing", (content) => {
+    const strict = parseAgentResponse(response(content), "strict");
+    expect(strict.ok).toBe(false);
+    const lenient = parseAgentResponse(response(content), "lenient");
+    expect(lenient.ok).toBe(true);
+    if (lenient.ok) {
+      expect(lenient.response.proposals).toHaveLength(1);
+      expect(lenient.response.proposals[0]?.content.mergeMethod).toBeUndefined();
+      expect(lenient.warnings.some((warning) => warning.includes("merge_candidate_missing_or_invalid_merge_method"))).toBe(true);
+    }
+  });
+});
+''', encoding="utf-8")
+          PY
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip && python -m pip install -e './03_Implement/backend[test]'
+      - name: Backend merge regressions
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_ai_merge_ir.py tests/test_ai_merge_semantics.py tests/test_models_backward_compat.py -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Frontend merge/persistence/external-agent regressions
+        working-directory: 03_Implement/frontend
+        run: >-
+          npx vitest run
+          src/api/client.test.ts
+          src/domain/merge_candidates.test.ts
+          src/domain/merge_suggestion_decisions.test.ts
+          src/domain/merge_suggestion_apply.test.ts
+          src/domain/stream_b_mock_validation.test.ts
+          src/domain/stream_b_contract_handoff.test.ts
+          src/domain/merge_method_persistence_contract.test.ts
+          src/import/agent_response_import.test.ts
+          src/import/agent_merge_method_contract.test.ts
+          src/export/agent_task_export.test.ts
+          src/ui/MergeSuggestionsPanel.test.ts
+          src/ui/MergeSuggestionsPanel.merge_method.test.ts
+          src/ui/merge_method_label.test.ts
+      - name: Frontend typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+      - name: Dogfood docs
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+      - name: Issue lifecycle
+        run: python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Planning triage
+        run: python 01_Plans/triage_actionable_plans.py --format text > /tmp/triage.txt && test -s /tmp/triage.txt
+      - name: Whitespace
+        run: git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Commit verified fixes and remove this workflow
+        run: |
+          rm -f .github/workflows/r20-finalize-merge-method-contract.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'fix: merge方式を保存・外部agent境界まで追跡する'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
+
+      - name: Remove workflow after failure without committing product changes
+        if: failure()
+        run: |
+          git reset --hard
+          git fetch origin dogfood/r20-merge-method-traceability-20260904
+          git checkout -B dogfood/r20-merge-method-traceability-20260904 origin/dogfood/r20-merge-method-traceability-20260904
+          rm -f .github/workflows/r20-finalize-merge-method-contract.yml
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/r20-finalize-merge-method-contract.yml
+          git commit -m 'chore: 失敗したR20一時workflowを削除する'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
