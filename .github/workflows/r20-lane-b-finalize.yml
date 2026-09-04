@@ -30,4 +30,24 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Correct one-shot persistence test harness
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          script = Path('.github/scripts/r20_lane_b_finalize.py')
+          text = script.read_text(encoding='utf-8')
+          old_import = 'import { validateDocument } from "./validate";'
+          if old_import not in text:
+              raise SystemExit('expected validateDocument test import not found')
+          text = text.replace(old_import, 'import { validateImportedDocument } from "./validate";')
+          call_count = text.count('validateDocument(raw)')
+          if call_count != 3:
+              raise SystemExit(f'expected 3 validateDocument(raw) calls, found {call_count}')
+          text = text.replace('validateDocument(raw)', 'validateImportedDocument(raw)')
+          script.write_text(text, encoding='utf-8')
+
+          # Remove the superseded parallel one-shot verifier from the final product diff.
+          Path('.github/workflows/r20-final-contract-closure-once.yml').unlink(missing_ok=True)
+          PY
       - run: python .github/scripts/r20_lane_b_finalize.py
