@@ -109,6 +109,25 @@ class StaleMergeReintroductionTests(unittest.TestCase):
         )
         self.assertEqual(exit_code, 2)
 
+    def test_main_deletion_without_feature_touch_is_not_reintroduction(self) -> None:
+        self._branch_from_seed({"retired.txt": "old\n"})
+
+        self.repo.remove("retired.txt")
+        self.repo.commit_all("retire file on main")
+
+        self.repo.git("checkout", "feature")
+        self.repo.write("feature.txt", "independent\n")
+        self.repo.commit_all("feature changes elsewhere")
+        # The old tree still contains retired.txt, but the feature did not change
+        # that path from the merge-base. A normal three-way merge preserves the
+        # main-side deletion, so tree presence alone must not be called stale
+        # reintroduction.
+        self.repo.git("cat-file", "-e", "feature:retired.txt")
+
+        report = analyze_repository(self.repo.root, "main", "feature")
+        self.assertEqual(report.overlapCount, 0)
+        self.assertEqual(report.strongCount, 0)
+
     def test_same_path_modified_on_both_sides_is_review_not_failure(self) -> None:
         self._branch_from_seed({"shared.txt": "line1\nline2\n"})
 
@@ -141,6 +160,20 @@ class StaleMergeReintroductionTests(unittest.TestCase):
         self.assertEqual(finding.classification, "branch_deletes_main_present")
         self.assertTrue(finding.base_exists)
         self.assertFalse(finding.head_exists)
+
+    def test_feature_only_deletion_is_not_stale_reversal(self) -> None:
+        self._branch_from_seed({"contract.txt": "v1\n"})
+
+        self.repo.write("main.txt", "main advances elsewhere\n")
+        self.repo.commit_all("main changes elsewhere")
+
+        self.repo.git("checkout", "feature")
+        self.repo.remove("contract.txt")
+        self.repo.commit_all("feature intentionally deletes contract")
+
+        report = analyze_repository(self.repo.root, "main", "feature")
+        self.assertEqual(report.overlapCount, 0)
+        self.assertEqual(report.strongCount, 0)
 
     def test_commit_distance_without_overlap_does_not_fail(self) -> None:
         self._branch_from_seed({"seed.txt": "seed\n"})
