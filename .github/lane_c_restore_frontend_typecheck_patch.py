@@ -9,11 +9,7 @@ NEWLINES: dict[str, str] = {}
 def read(path: str) -> str:
     with (ROOT / path).open("r", encoding="utf-8", newline="") as handle:
         raw = handle.read()
-    if "\r\n" in raw:
-        newline = "\r\n"
-    else:
-        newline = "\n"
-    NEWLINES[path] = newline
+    NEWLINES[path] = "\r\n" if "\r\n" in raw else "\n"
     return raw.replace("\r\n", "\n")
 
 
@@ -116,30 +112,28 @@ def add_merge_method_to_append_literals(text: str) -> tuple[str, int]:
         if obj_start is not None:
             obj_end = match_brace(text, obj_start)
             body = text[obj_start : obj_end + 1]
-            if "mergeMethod:" not in body:
+            # Spread-only overrides such as { ...common, selectedCardIds: [...] }
+            # inherit mergeMethod from common and must not be rewritten here.
+            if "groupId:" in body and "mergeMethod:" not in body:
                 positions.append((obj_start, obj_end))
         cursor = call + len(needle)
 
     added = 0
     for obj_start, obj_end in reversed(positions):
         body = text[obj_start : obj_end + 1]
-        marker = "groupId:"
-        marker_pos = body.find(marker)
-        if marker_pos < 0:
-            raise SystemExit("append input object without groupId")
+        marker_pos = body.find("groupId:")
         line_end = body.find("\n", marker_pos)
         if line_end < 0:
             raise SystemExit("groupId line without newline")
         line_start = body.rfind("\n", 0, marker_pos) + 1
         indent = body[line_start:marker_pos]
-        insertion = f"\n{indent}mergeMethod: \"near_duplicate\"," 
+        insertion = f"\n{indent}mergeMethod: \"near_duplicate\","
         body = body[:line_end] + insertion + body[line_end:]
         text = text[:obj_start] + body + text[obj_end + 1 :]
         added += 1
     return text, added
 
 
-# App.tsx: stale re-merge inserted mergeMethod twice in the same suggestion literal.
 path = "03_Implement/frontend/src/App.tsx"
 text = read(path)
 text = replace_once(
@@ -150,7 +144,6 @@ text = replace_once(
 )
 write(path, text)
 
-# Stream B source: keep exactly one import, input field and comparison.
 path = "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts"
 text = read(path)
 text = replace_once(
@@ -173,7 +166,6 @@ text = replace_once(
 )
 write(path, text)
 
-# Stream B tests: remove only the duplicated second property.
 for path in [
     "03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts",
     "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts",
@@ -197,7 +189,6 @@ for path in [
         raise SystemExit(f"{path}: expected one duplicated mergeMethod property, removed {removed}")
     write(path, "".join(out))
 
-# External-agent import: restore the single validated parser block from PR #2869.
 path = "03_Implement/frontend/src/import/agent_response_import.ts"
 text = read(path)
 text = replace_once(
@@ -214,7 +205,6 @@ text = replace_once(
 )
 write(path, text)
 
-# Decision tests: new append inputs must explicitly carry mergeMethod; legacy stored decisions remain untouched.
 path = "03_Implement/frontend/src/domain/merge_suggestion_decisions.test.ts"
 text = read(path)
 text, added = add_merge_method_to_append_literals(text)
@@ -226,7 +216,6 @@ text = replace_once(
     "        rationale: undefined,\n        mergeMethod: \"near_duplicate\",\n        representativeCardId:",
     "decision exact expectation mergeMethod",
 )
-# The shared partial-invalid fixture is passed by variable rather than object literal.
 text = replace_once(
     text,
     '      groupId: "g-partial",\n      decision: "partial" as const,',
@@ -235,7 +224,6 @@ text = replace_once(
 )
 write(path, text)
 
-# UI fixture: all derived suggestion cases inherit this required field.
 path = "03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts"
 text = read(path)
 text = replace_once(
