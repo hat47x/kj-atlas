@@ -59,6 +59,106 @@ jobs:
           PY
           python /tmp/apply_merge_method.py apply
 
+      - name: Complete mergeMethod boundary wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              data = target.read_bytes()
+              old_b = old.encode('utf-8')
+              new_b = new.encode('utf-8')
+              count = data.count(old_b)
+              if count == 0 and '\n' in old and '\r\n' not in old:
+                  old_b = old.replace('\n', '\r\n').encode('utf-8')
+                  new_b = new.replace('\n', '\r\n').encode('utf-8')
+                  count = data.count(old_b)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one replacement, found {count}')
+              target.write_bytes(data.replace(old_b, new_b, 1))
+
+          # External agent merge proposals are new untrusted proposals, not old
+          # persisted decisions. Require an explicit known method; never infer it.
+          path = '03_Implement/frontend/src/import/agent_response_import.ts'
+          replace_once(
+              path,
+              'import type { AgentResponseProvenance } from "../storage/agent_task_ledger";\n',
+              'import type { AgentResponseProvenance } from "../storage/agent_task_ledger";\nimport { isMergeMethod, type MergeMethod } from "../domain/merge_method";\n',
+          )
+          replace_once(
+              path,
+              'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n};',
+              'export type AgentResponseProposalContent = {\n  title?: string;\n  text?: string;\n  mergedText?: string;\n  mergeMethod?: MergeMethod;\n};',
+          )
+          replace_once(
+              path,
+              '    mergedText: sanitizeString(value.mergedText),\n  };',
+              '    mergedText: sanitizeString(value.mergedText),\n    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,\n  };',
+          )
+          replace_once(
+              path,
+              '  const proposal: ParsedAgentProposal = {\n    proposalId: sanitizeMarkdownForDisplay(proposalId),\n    kind,\n    targetRef: parseTargetRef(value.targetRef),\n    content: parseContent(value.content),',
+              '  const content = parseContent(value.content);\n  if (kind === "merge_candidate" && !isMergeMethod(content.mergeMethod)) {\n    return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };\n  }\n\n  const proposal: ParsedAgentProposal = {\n    proposalId: sanitizeMarkdownForDisplay(proposalId),\n    kind,\n    targetRef: parseTargetRef(value.targetRef),\n    content,',
+          )
+
+          path = '03_Implement/frontend/src/import/agent_response_import.test.ts'
+          anchor = '  describe("patch proposals", () => {'
+          addition = '''  describe("merge candidate method boundary", () => {\n    const mergeCandidate = {\n      proposalId: "merge-1",\n      kind: "merge_candidate",\n      targetRef: { cardIds: ["c1", "c2"] },\n      content: { mergedText: "統合候補", mergeMethod: "kernel_fusion" },\n      rationale: "二枚から共通する意味核を立てる",\n    };\n\n    it("keeps an explicit known merge method", () => {\n      const result = parseAgentResponse(buildValidResponseJson({ proposals: [mergeCandidate] }), "strict");\n      expect(result.ok).toBe(true);\n      if (!result.ok) return;\n      expect(result.response.proposals[0].content.mergeMethod).toBe("kernel_fusion");\n    });\n\n    it("discards a merge candidate with no method in lenient mode instead of inferring one", () => {\n      const { mergeMethod: _ignored, ...contentWithoutMethod } = mergeCandidate.content;\n      const result = parseAgentResponse(\n        buildValidResponseJson({ proposals: [{ ...mergeCandidate, content: contentWithoutMethod }] }),\n        "lenient",\n      );\n      expect(result.ok).toBe(true);\n      if (!result.ok) return;\n      expect(result.response.proposals).toHaveLength(0);\n      expect(result.warnings.some((warning) => warning.includes("merge_candidate_missing_or_invalid_merge_method"))).toBe(true);\n    });\n\n    it("rejects an unknown merge method in strict mode", () => {\n      const result = parseAgentResponse(\n        buildValidResponseJson({\n          proposals: [{ ...mergeCandidate, content: { ...mergeCandidate.content, mergeMethod: "semantic_similarity" } }],\n        }),\n        "strict",\n      );\n      expect(result.ok).toBe(false);\n      if (result.ok) return;\n      expect(result.errors[0]).toContain("merge_candidate_missing_or_invalid_merge_method");\n    });\n  });\n\n'''
+          replace_once(path, anchor, addition + anchor)
+
+          # App only admits the already-validated external method into the common
+          # MergeSuggestion shape; missing method remains non-adoptable.
+          path = '03_Implement/frontend/src/App.tsx'
+          replace_once(
+              path,
+              '          const mergedText = review.content.mergedText ?? review.content.text;\n          if (cardIds.length < 2 || !mergedText) break;',
+              '          const mergedText = review.content.mergedText ?? review.content.text;\n          const mergeMethod = review.content.mergeMethod;\n          if (cardIds.length < 2 || !mergedText || !mergeMethod) break;',
+          )
+          replace_once(
+              path,
+              '              mergedTextDraft: mergedText,\n              rationale: review.rationale,',
+              '              mergedTextDraft: mergedText,\n              mergeMethod,\n              rationale: review.rationale,',
+          )
+
+          # mergeMethod is a structural enum in inquiry bundles, so preserve it;
+          # free-text rationale/note remain redacted under the existing policy.
+          replace_once(
+              '03_Implement/frontend/src/domain/inquiry_bundle_safe_mode.ts',
+              '  rationale: "redact",\n  // R3-tier-1:',
+              '  rationale: "redact",\n  mergeMethod: "preserve",\n  // R3-tier-1:',
+          )
+
+          # New Stream-B decision records must carry the method explicitly.
+          path = '03_Implement/frontend/src/domain/stream_b_contract_handoff.ts'
+          replace_once(
+              path,
+              'import type { DocumentV1 } from "./types";\n',
+              'import type { DocumentV1 } from "./types";\nimport type { MergeMethod } from "./merge_method";\n',
+          )
+          replace_once(
+              path,
+              '  mergedTextDraft: string;\n  editedText: string;\n};',
+              '  mergedTextDraft: string;\n  editedText: string;\n  mergeMethod: MergeMethod;\n};',
+          )
+          replace_once(
+              path,
+              '    entry.action === input.decision &&\n    entry.decisionId !== undefined &&',
+              '    entry.action === input.decision &&\n    entry.mergeMethod === input.mergeMethod &&\n    entry.decisionId !== undefined &&',
+          )
+
+          replace_once(
+              '03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts',
+              '        mergedTextDraft: "risk mitigation",\n        editedText: "risk mitigation (reviewed)",',
+              '        mergedTextDraft: "risk mitigation",\n        editedText: "risk mitigation (reviewed)",\n        mergeMethod: "near_duplicate",',
+          )
+          replace_once(
+              '03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts',
+              '          mergedTextDraft: "risk mitigation",\n          editedText: `risk mitigation (${action})`,',
+              '          mergedTextDraft: "risk mitigation",\n          editedText: `risk mitigation (${action})`,\n          mergeMethod: "near_duplicate",',
+          )
+          PY
+
       - name: Update provider-switch fixture to the new response contract
         run: |
           python - <<'PY'
@@ -108,6 +208,9 @@ jobs:
             src/domain/merge_suggestion_decisions.test.ts \
             src/domain/merge_suggestion_apply.test.ts \
             src/domain/validate_doc.test.ts \
+            src/domain/stream_b_contract_handoff.test.ts \
+            src/domain/stream_b_mock_validation.test.ts \
+            src/import/agent_response_import.test.ts \
             src/ui/MergeSuggestionsPanel.test.ts
           npm run typecheck
           npm run test:i18n
