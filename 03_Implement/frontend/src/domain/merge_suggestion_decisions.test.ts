@@ -18,6 +18,7 @@ function createBaseDocument(): DocumentV1 {
     cards: [
       { id: "c1", text: "alpha", x: 0, y: 0 },
       { id: "c2", text: "Alpha", x: 100, y: 0 },
+      { id: "c3", text: "Alpha context", x: 200, y: 0 },
     ],
     edges: [],
     islands: [],
@@ -40,10 +41,10 @@ describe("merge_suggestion_decisions", () => {
         {
           groupId: "g1",
           decision: append.decision,
-          cardIds: ["c1", "c2"],
+          cardIds: append.decision === "partial" ? ["c1", "c2", "c3"] : ["c1", "c2"],
+          selectedCardIds: append.decision === "partial" ? ["c1", "c2"] : undefined,
           mergedTextDraft: "alpha",
           editedText: append.editedText,
-          mergeMethod: "near_duplicate",
         },
         {
           idFactory: () => append.id,
@@ -63,15 +64,9 @@ describe("merge_suggestion_decisions", () => {
     const restored = restoreMergeSuggestionDecisionsBySnapshot(updated.mergeSuggestionDecisions, "CTR-2B-02-DECISION-LOG-V1");
     expect(restored.map((entry) => entry.action)).toEqual(["accept", "partial", "reject", "defer"]);
     expect(restored.map((entry) => entry.id)).toEqual(["d1", "d2", "d3", "d4"]);
-    expect(restored.map((entry) => entry.mergeMethod)).toEqual([
-      "near_duplicate",
-      "near_duplicate",
-      "near_duplicate",
-      "near_duplicate",
-    ]);
   });
 
-  it("appends decision entries with deterministic card id ordering and preserves merge method", () => {
+  it("appends decision entries with deterministic card id ordering", () => {
     const result = appendMergeSuggestionDecision(
       createBaseDocument(),
       {
@@ -80,8 +75,7 @@ describe("merge_suggestion_decisions", () => {
         cardIds: ["c2", "c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
-        mergeMethod: "kernel_fusion",
-        decisionReason: "Human-reviewed: preserve the shared meaning kernel",
+        decisionReason: "Human-reviewed: normalize duplicates",
       },
       { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
     );
@@ -99,10 +93,9 @@ describe("merge_suggestion_decisions", () => {
         selectedCardIds: ["c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
-        note: "Human-reviewed: preserve the shared meaning kernel",
+        note: "Human-reviewed: normalize duplicates",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         rationale: undefined,
-        mergeMethod: "kernel_fusion",
         representativeCardId: "c1",
         representativeResolvedBy: "fallback",
         sourceCardIds: ["c2"],
@@ -111,7 +104,51 @@ describe("merge_suggestion_decisions", () => {
     ]);
   });
 
-  it("returns latest legacy decision per group without inferring a missing merge method", () => {
+  it("records a valid partial decision with a strict selected subset", () => {
+    const result = appendMergeSuggestionDecision(
+      createBaseDocument(),
+      {
+        groupId: "g-partial",
+        decision: "partial",
+        cardIds: ["c3", "c1", "c2"],
+        selectedCardIds: ["c2", "c1"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha partial",
+      },
+      { idFactory: () => "d-partial", now: "2026-01-02T00:00:00.000Z" },
+    );
+
+    expect(result.mergeSuggestionDecisions?.at(-1)).toMatchObject({
+      decision: "partial",
+      cardIds: ["c1", "c2", "c3"],
+      selectedCardIds: ["c1", "c2"],
+      representativeCardId: "c1",
+    });
+  });
+
+  it("rejects partial decisions without a true subset", () => {
+    const base = createBaseDocument();
+    const common = {
+      groupId: "g-partial",
+      decision: "partial" as const,
+      cardIds: ["c1", "c2", "c3"],
+      mergedTextDraft: "alpha",
+      editedText: "alpha partial",
+    };
+
+    expect(() => appendMergeSuggestionDecision(base, common)).toThrowError("partial decision requires selectedCardIds");
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1"] })).toThrowError(
+      "partial selectedCardIds must contain at least two ids",
+    );
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1", "c2", "c3"] })).toThrowError(
+      "partial selectedCardIds must be a strict subset of cardIds",
+    );
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1", "outside"] })).toThrowError(
+      "partial selectedCardIds must be a subset of cardIds",
+    );
+  });
+
+  it("returns latest decision per group", () => {
     const decisions: DocumentV1["mergeSuggestionDecisions"] = [
       {
         id: "d1",
@@ -146,7 +183,6 @@ describe("merge_suggestion_decisions", () => {
 
     expect(latest.get("g1")?.id).toBe("d2");
     expect(latest.get("g2")?.id).toBe("d3");
-    expect((latest.get("g1") as { mergeMethod?: string } | undefined)?.mergeMethod).toBeUndefined();
   });
 
   it("fails fast when groupId is empty", () => {
@@ -159,7 +195,6 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: "alpha",
-          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -176,7 +211,6 @@ describe("merge_suggestion_decisions", () => {
           cardIds: [],
           mergedTextDraft: "alpha",
           editedText: "alpha",
-          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -193,7 +227,6 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: " ",
-          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
@@ -210,7 +243,6 @@ describe("merge_suggestion_decisions", () => {
           cardIds: ["c1"],
           mergedTextDraft: "alpha",
           editedText: "alpha",
-          mergeMethod: "near_duplicate",
         },
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )

@@ -6,13 +6,13 @@ import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_eve
 import { evaluateMergeDecisionTrustBoundary } from "../domain/hil_rs_trusted_boundary";
 import { normalizeHilDecisionReason } from "../domain/hil_rs_decision_reason";
 import { getActiveLocale, t } from "../i18n/translate";
-import { mergeMethodFieldLabel, mergeMethodLabel } from "./merge_method_label";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
   isEdited: boolean;
   latestDecision?: MergeSuggestionDecision;
   latestDecidedAt?: string;
+  latestSelectedCardIds?: string[];
   representativeCardId?: string;
   representativeResolvedBy?: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
   representativeSourceCount?: number;
@@ -31,7 +31,7 @@ type MergeSuggestionsPanelProps = {
   onDecide: (
     groupId: string,
     decision: MergeSuggestionDecision,
-    options: { isTrusted: boolean; decisionReason?: string }
+    options: { isTrusted: boolean; decisionReason?: string; selectedCardIds?: string[] }
   ) => void;
   onApplyAccepted: (groupId: string, options: { isTrusted: boolean }) => void;
   latestAuditEventByGroup?: ReadonlyMap<string, MergeDecisionAuditEvent>;
@@ -164,6 +164,7 @@ export function MergeSuggestionsPanel({
 }: MergeSuggestionsPanelProps) {
   const [trustBoundaryErrorMessage, setTrustBoundaryErrorMessage] = useState<string | null>(null);
   const [decisionReasonByGroup, setDecisionReasonByGroup] = useState<Record<string, string>>({});
+  const [partialSelectedCardIdsByGroup, setPartialSelectedCardIdsByGroup] = useState<Record<string, string[]>>({});
 
   const handleDecisionClick = (
     groupId: string,
@@ -190,9 +191,41 @@ export function MergeSuggestionsPanel({
       return;
     }
 
+    const suggestion = suggestions.find((item) => item.groupId === groupId);
+    const hasLocalPartialSelection = Object.prototype.hasOwnProperty.call(
+      partialSelectedCardIdsByGroup,
+      groupId,
+    );
+    const selectedCardIds = (
+      hasLocalPartialSelection
+        ? partialSelectedCardIdsByGroup[groupId] ?? []
+        : suggestion?.latestSelectedCardIds ?? []
+    )
+      .filter((cardId) => suggestion?.cardIds.includes(cardId))
+      .sort((left, right) => left.localeCompare(right));
+    if (decision === "partial" && (!suggestion || selectedCardIds.length < 2 || selectedCardIds.length >= suggestion.cardIds.length)) {
+      setTrustBoundaryErrorMessage(t("merge_suggestions.partial_selection.invalid"));
+      return;
+    }
+
     setTrustBoundaryErrorMessage(null);
-    onDecide(groupId, decision, { isTrusted: event.isTrusted, decisionReason });
+    onDecide(groupId, decision, {
+      isTrusted: event.isTrusted,
+      decisionReason,
+      selectedCardIds: decision === "partial" ? selectedCardIds : undefined,
+    });
   };
+
+  const handlePartialSelectionToggle = (groupId: string, cardId: string) => {
+    setPartialSelectedCardIdsByGroup((current) => {
+      const selected = new Set(current[groupId] ?? []);
+      if (selected.has(cardId)) selected.delete(cardId);
+      else selected.add(cardId);
+      return { ...current, [groupId]: [...selected].sort((left, right) => left.localeCompare(right)) };
+    });
+    setTrustBoundaryErrorMessage(null);
+  };
+
 
   const handleApplyClick = (groupId: string, event: MouseEvent<HTMLButtonElement>) => {
     const trustBoundary = evaluateMergeDecisionTrustBoundary({
@@ -269,9 +302,18 @@ export function MergeSuggestionsPanel({
       ) : null}
       {suggestions.map((suggestion) => {
         const hasDecisionReason = Boolean(normalizeHilDecisionReason(decisionReasonByGroup[suggestion.groupId]));
-        const isAccepted = suggestion.latestDecision === "accept";
-        const isApplied = isAccepted && (suggestion.representativeResolvedBy === "repOf" || suggestion.representativeResolvedBy === "mergedIntoCardId");
-        const mergeMethodLocale = getActiveLocale() === "ja" ? "ja" : "en";
+        const hasLocalPartialSelection = Object.prototype.hasOwnProperty.call(
+          partialSelectedCardIdsByGroup,
+          suggestion.groupId,
+        );
+        const partialSelectedCardIds = (
+          hasLocalPartialSelection
+            ? partialSelectedCardIdsByGroup[suggestion.groupId] ?? []
+            : suggestion.latestSelectedCardIds ?? []
+        ).filter((cardId) => suggestion.cardIds.includes(cardId));
+        const hasValidPartialSelection = partialSelectedCardIds.length >= 2 && partialSelectedCardIds.length < suggestion.cardIds.length;
+        const isApplicableDecision = suggestion.latestDecision === "accept" || suggestion.latestDecision === "partial";
+        const isApplied = isApplicableDecision && (suggestion.representativeResolvedBy === "repOf" || suggestion.representativeResolvedBy === "mergedIntoCardId");
         return (
           <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
@@ -301,6 +343,35 @@ export function MergeSuggestionsPanel({
               );
             })}
           </ul>
+          <details style={{ marginBottom: 8 }}>
+            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              {t("merge_suggestions.partial_selection.title")}
+            </summary>
+            <div style={{ fontSize: 11, color: "#64748b", margin: "6px 0" }}>
+              {t("merge_suggestions.partial_selection.hint")}
+            </div>
+            <div style={{ display: "grid", gap: 4 }}>
+              {suggestion.cardIds.map((cardId) => {
+                const card = cardsById.get(cardId);
+                return (
+                  <label key={`${suggestion.groupId}-partial-${cardId}`} style={{ fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      disabled={isReadOnly}
+                      checked={partialSelectedCardIds.includes(cardId)}
+                      onChange={() => handlePartialSelectionToggle(suggestion.groupId, cardId)}
+                    />{" "}
+                    {cardId}: {card ? snippet(card.text) : t("merge_suggestions.card_not_found")}
+                  </label>
+                );
+              })}
+            </div>
+            {!hasValidPartialSelection ? (
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+                {t("merge_suggestions.partial_selection.invalid")}
+              </div>
+            ) : null}
+          </details>
           <textarea
             value={suggestion.editedText}
             disabled={isReadOnly}
@@ -360,9 +431,6 @@ export function MergeSuggestionsPanel({
               ? t("merge_suggestions.source_count_suffix", { count: suggestion.representativeSourceCount })
               : ""}
           </div>
-          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
-            {mergeMethodFieldLabel(mergeMethodLocale)}: {mergeMethodLabel(suggestion.mergeMethod, mergeMethodLocale)}
-          </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>{t("merge_suggestions.rationale")}: {suggestion.rationale}</div>
           ) : null}
@@ -408,10 +476,10 @@ export function MergeSuggestionsPanel({
           ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "accept", event)}>{t("merge_suggestions.action.accept")}</button>
-            <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "partial", event)}>{t("merge_suggestions.action.partial")}</button>
+            <button type="button" disabled={isReadOnly || !hasDecisionReason || !hasValidPartialSelection} onClick={(event) => handleDecisionClick(suggestion.groupId, "partial", event)}>{t("merge_suggestions.action.partial")}</button>
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "reject", event)}>{t("merge_suggestions.action.reject")}</button>
             <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "defer", event)}>{t("merge_suggestions.action.defer")}</button>
-            {isAccepted ? (
+            {isApplicableDecision ? (
               <button
                 type="button"
                 disabled={isReadOnly || isApplied}
