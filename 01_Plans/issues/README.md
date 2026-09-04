@@ -34,7 +34,7 @@
 
 この件数とR18 path集合はDoneメモの正規配置を意味せず、「段階整理の現在地」と「これ以上legacyへ新規参入させない境界」を別々に保持するための一時的な契約である。
 
-また、このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
+このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
 
 ## 必須メタデータ
 
