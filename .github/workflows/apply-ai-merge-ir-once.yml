@@ -1,0 +1,61 @@
+name: suggest-merges IR validation (one-shot)
+
+on:
+  push:
+    branches:
+      - feat/ai-merge-ir-context-20260903
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ai-merge-ir-context-20260903
+          fetch-depth: 0
+
+      - name: Normalize unset source refs
+        run: |
+          python -c 'from pathlib import Path; p=Path("03_Implement/backend/src/kj_atlas_api/merge_ir.py"); s=p.read_text(encoding="utf-8"); old="for source in card.sources:"; new="for source in (card.sources or []):"; assert s.count(old)==1; p.write_text(s.replace(old,new,1), encoding="utf-8")'
+
+      - name: Apply route wiring
+        run: python .github/scripts/apply_ai_merge_ir_once.py
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Run merge IR and coverage regressions
+        working-directory: 03_Implement/backend
+        run: |
+          pytest tests/test_ai_merge_ir.py -q
+          pytest tests/test_ai_merge_semantics.py -q
+          pytest tests/test_ai_llm_input_ir_coverage.py -q
+          pytest tests/test_ai_prompt.py -q
+
+      - name: Run backend regression
+        working-directory: 03_Implement/backend
+        run: pytest tests/ -q
+
+      - name: Run static and plan checks
+        run: |
+          cd 03_Implement/backend
+          ruff check src tests/test_ai_merge_ir.py tests/test_ai_merge_semantics.py tests/test_ai_llm_input_ir_coverage.py
+          cd ../..
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
+          git diff --check
+
+      - name: Remove one-shot files and push validated changes
+        run: |
+          rm .github/workflows/apply-ai-merge-ir-once.yml
+          rm .github/scripts/apply_ai_merge_ir_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: suggest-mergesをroute固有IRへ移行する'
+          git push origin HEAD:feat/ai-merge-ir-context-20260903
