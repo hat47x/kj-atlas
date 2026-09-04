@@ -1,0 +1,99 @@
+name: Temporary merge method traceability v4
+# rerun after fixing the standalone edit script
+
+on:
+  push:
+    branches:
+      - feat/merge-method-traceability-20260904
+    paths:
+      - .github/workflows/merge-method-traceability-once-v4.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: feat/merge-method-traceability-20260904
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Apply merge method traceability changes
+        run: python .github/merge_method_traceability_once.py
+
+      - name: Inspect merge-related fixture surfaces
+        run: git grep -n "mergedTextDraft" -- ':!03_Implement/frontend/package-lock.json' | head -100 || true
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Format and lint changed Python
+        working-directory: 03_Implement/backend
+        run: |
+          python -m ruff format src/kj_atlas_api/models.py src/kj_atlas_api/routes/ai.py tests/test_ai_merge_ir.py
+          python -m ruff check src/kj_atlas_api/models.py src/kj_atlas_api/routes/ai.py tests/test_ai_merge_ir.py
+
+      - name: Run backend merge regressions
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_ai_merge_semantics.py tests/test_ai_merge_ir.py tests/test_ai_llm_input_ir_coverage.py -q
+
+      - name: Run frontend merge regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run \
+            src/api/client.test.ts \
+            src/domain/merge_candidates.test.ts \
+            src/domain/merge_suggestion_decisions.test.ts \
+            src/domain/merge/decision_audit_events.test.ts \
+            src/i18n/key_consistency.test.ts
+          npm run typecheck
+
+      - name: Run focused merge persistence E2E
+        working-directory: 03_Implement/frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test e2e/merge_suggestion_apply_persistence.spec.ts
+
+      - name: Run planning and docs checks
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/triage_actionable_plans.py >/tmp/triage.txt
+          cat /tmp/triage.txt
+          git diff --check
+
+      - name: Commit verified implementation and remove temporary files
+        shell: bash
+        run: |
+          git rm .github/merge_method_traceability_once.py
+          git rm .github/workflows/merge-method-traceability-once.yml
+          git rm .github/workflows/merge-method-traceability-once-v2.yml
+          git rm .github/workflows/merge-method-traceability-once-v3.yml
+          git rm .github/workflows/merge-method-traceability-once-v4.yml
+          git config user.name "hat47x"
+          git config user.email "hat47x@gmail.com"
+          git add -A
+          git status --short
+          git commit -m "feat: merge方式を判断記録まで追跡する"
+          git push origin HEAD:feat/merge-method-traceability-20260904
