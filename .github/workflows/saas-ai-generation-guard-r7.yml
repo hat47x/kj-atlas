@@ -30,6 +30,9 @@ jobs:
         working-directory: 03_Implement/frontend
         run: npx playwright install --with-deps chromium
 
+      - name: Apply baseline locator drift fix
+        run: python3 03_Implement/frontend/e2e/patch_generation_guard_probe.py --baseline
+
       - name: Baseline SaaS browser matrix
         working-directory: 03_Implement/frontend
         env:
