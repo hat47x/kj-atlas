@@ -78,6 +78,13 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 したがって本Issueの未完境界は変わらない。`check-narrative` を形式的にgeneric IRへ移すのではなく、`AI-IR-SCALE-01` でnamed provider/modelの実token予算を確認し、A/B双方向の全体照合を失わない方式を選んだ後に実装する。
 
+
+## Dependencies
+
+- `01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md`
+  - `check-narrative` の全体照合を維持できるscale投影方式とnamed provider/modelの実token予算を確定する実証元。
+  - `AI-IR-SCALE-01` の結果が出る前に、固定上限への切り捨てや形式的なIR移行で本Issueを完了扱いにしない。
+
 ## 受入条件
 
 - [x] Stage 5対象7経路を、Document-backed / caller-limited grounding / no-documentで分類した。
