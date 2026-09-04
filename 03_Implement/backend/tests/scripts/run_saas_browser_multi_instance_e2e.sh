@@ -88,7 +88,16 @@ python -m uvicorn tests.e2e_support.saas_browser_harness:gateway_app --host 127.
 wait_http http://127.0.0.1:8000/healthz
 
 cd "${FRONTEND_DIR}"
-npm run dev -- --host localhost --port 4173 --strictPort >"${LOG_DIR}/frontend.log" 2>&1 & pids+=("$!")
+# Vite exposes every environment variable matching envPrefix to browser code.
+# Run it with a deliberately minimal environment so backend credentials used by
+# the same E2E process cannot become part of the client-side import.meta.env.
+env -i \
+  PATH="${PATH}" \
+  HOME="${HOME:-/tmp}" \
+  CI="${CI:-}" \
+  KJ_ATLAS_RUNTIME_PROFILE="${KJ_ATLAS_RUNTIME_PROFILE}" \
+  KJ_ATLAS_FRONTEND_API_BASE="${KJ_ATLAS_FRONTEND_API_BASE}" \
+  npm run dev -- --host localhost --port 4173 --strictPort >"${LOG_DIR}/frontend.log" 2>&1 & pids+=("$!")
 wait_http "${BROWSER_BASE_URL}/"
 
 npx playwright test --config=playwright.saas-multi-instance.config.ts
