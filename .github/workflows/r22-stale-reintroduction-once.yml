@@ -28,6 +28,32 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Register R22 in cognitive dogfood index
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("01_Plans/dogfood/cognitive-dogfood-index.md")
+          text = path.read_text(encoding="utf-8")
+          marker = (
+              "- `doc_kj_atlas_dogfood_r21.json`\n"
+              "  - R21のKJキャンバス。commit距離と意味ドリフトを分け、元portfolioを書き換えず後段のcurrent-state replicationで現在性を確かめる構造を保持する。\n"
+          )
+          addition = marker + (
+              "- `cognitive-dogfood-continuous-2026-09-04-r22.md`\n"
+              "  - R22。古いbranch一般を禁止せず、merge-baseからcurrent mainとbranchの状態反転候補をmerge前に絞る診断へ変換した記録。既知path guard、path-level診断、typecheck/test・人間reviewの役割を分離する。\n"
+              "- `doc_kj_atlas_dogfood_r22.json`\n"
+              "  - R22のKJキャンバス。workflow・Issue lifecycle・frontend sourceで再現したstale state再流入を束ね、commit距離ではなく状態の向きが逆転する場所を見る構造を保持する。\n"
+          )
+          if "cognitive-dogfood-continuous-2026-09-04-r22.md" in text:
+              raise SystemExit("R22 is already registered in cognitive-dogfood-index.md")
+          if text.count(marker) != 1:
+              raise SystemExit(f"expected exactly one R21 index marker, got {text.count(marker)}")
+          path.write_text(text.replace(marker, addition), encoding="utf-8")
+          PY
+
       - name: Run stale reintroduction synthetic tests
         working-directory: 01_Plans
         run: python -m unittest -v test_check_stale_merge_reintroduction.py
