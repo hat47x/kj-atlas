@@ -139,3 +139,11 @@ ADR番号は正しいが、スラグ（タイトル部分）が引用時点の�
 - `python 01_Plans/docs_check.py` → `docs-check passed: active_memos=46, tracked_markdown=683`（2026-08-29）
 - `python -m unittest discover -s 01_Plans/tests -p "test_*.py"` → 117 tests, OK
 - 件数の推移（`DC-LNK-002`の検出件数）: 508 → 81（パターンa）→ 68（パターンb）→ 62（パターンc）→ 0（歴史的引用62件を`RETIRED_CITATION_TARGETS`へ記録）
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは内容上すべての受入条件を満たして `Done` となっていた一方、R18以前からの経緯によりactive rootに残る58件のlegacy集合へ含まれていた。
+- 既存のライフサイクル契約は、この58件を恒久的にrootへ置くことを認めるものではない。移行のたびに `LEGACY_DONE_AT_ROOT_BASELINE` を同じ変更で下げる、単調減少のラチェットとして設計されている。
+- その契約に従い、本Issueを `01_Plans/issues/done/` へ移し、baselineを58から57へ縮小した。R18時点のidentity manifestは「新しいDone-at-rootを紛れ込ませない」歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
