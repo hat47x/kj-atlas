@@ -32,3 +32,11 @@
 ## 検証記録（2026-08-17）
 
 provider/modelの初回登録、異なる内容での再登録、DB row不変、CLI error伝播を近接testで確認した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、model registryから実行transportへ渡る管理・credential・配送先の境界をfail-closedに固定し、必要な統合確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更では同じprovider/model registry境界の完了済みIssue 3件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を49から46へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
