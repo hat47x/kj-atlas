@@ -2,7 +2,6 @@ import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";
 import type { MergeMethod } from "./merge_method";
 import type { DocumentV1 } from "./types";
-import type { MergeMethod } from "./merge_method";
 import { STREAM_B_CONTRACTS, type StreamBContractId, type StreamBSchemaVersion } from "./stream_b_contract";
 
 export type StreamBValidationOwner = "A1" | "A2" | "A3";
@@ -48,9 +47,9 @@ type ValidateDecisionLogInput = {
   mergeMethod: MergeMethod;
   decision: MergeSuggestionDecision;
   cardIds: string[];
+  selectedCardIds?: string[];
   mergedTextDraft: string;
   editedText: string;
-  mergeMethod: MergeMethod;
 };
 
 export function validateDecisionLogContract(
@@ -65,7 +64,6 @@ export function validateDecisionLogContract(
     entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&
     entry.mergeMethod === input.mergeMethod &&
     entry.action === input.decision &&
-    entry.mergeMethod === input.mergeMethod &&
     entry.decisionId !== undefined &&
     entry.decisionId.length > 0;
 

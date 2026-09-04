@@ -14,6 +14,7 @@ function buildProps() {
     suggestions: [
       {
         groupId: "heuristic-risk-a-b",
+        mergeMethod: "near_duplicate" as const,
         targetCardId: "a",
         candidateCardIds: ["b"],
         scoreSummary: { min: 1, max: 1, avg: 1 },
