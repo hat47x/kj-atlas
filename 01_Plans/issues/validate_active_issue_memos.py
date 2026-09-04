@@ -155,6 +155,45 @@ def discover_done_memos_at_root(root: Path) -> list[Path]:
     return done_paths
 
 
+def validate_memo_identity_and_placement(root: Path) -> list[str]:
+    """Keep one physical memo per basename and reject active memos under done/.
+
+    DOC-ISSUE-IDENTITY-01 was triggered by a completed memo whose old Draft copy
+    reappeared at the active root while the authoritative Done copy still lived
+    under done/. Status-only discovery then treated the stale copy as a new
+    active P1. A move must therefore remain a move: the same memo basename may
+    not coexist at root, done/, archive/, or another issue subdirectory.
+
+    DOC-NORM-03 still applies: if an active memo is misplaced under done/, keep
+    the discovered relative path so validation never misreports the file as
+    missing. This check adds the more useful placement diagnosis on top.
+    """
+    errors: list[str] = []
+    paths_by_name: dict[str, list[str]] = {}
+
+    for memo_path in sorted(root.rglob("issue-*.md")):
+        relative_path = memo_path.relative_to(root).as_posix()
+        paths_by_name.setdefault(memo_path.name, []).append(relative_path)
+
+        if memo_path.parent == root / "done":
+            text = memo_path.read_text(encoding="utf-8")
+            status = parse_issue_status(extract_field_value(text, "Status"))
+            if status in ACTIVE_ISSUE_STATUSES:
+                errors.append(
+                    f"{relative_path}: active Status `{status}` is not allowed under done/; "
+                    "move the memo to the active root or complete it as Status `Done`"
+                )
+
+    for memo_name, relative_paths in sorted(paths_by_name.items()):
+        if len(relative_paths) > 1:
+            errors.append(
+                f"duplicate issue memo basename `{memo_name}`: "
+                f"{', '.join(relative_paths)}; move the memo instead of keeping multiple copies"
+            )
+
+    return errors
+
+
 def validate_done_memo_location(
     root: Path,
     *,
@@ -298,6 +337,7 @@ def validate(
     )
 
     errors = validate_status_contract(root)
+    errors += validate_memo_identity_and_placement(root)
     if should_enforce_done_baseline:
         errors += validate_done_memo_location(
             root,
