@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug / Domain Integrity
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-MERGE-SEMANTICS-01`
 - Priority: P1
 - Owner: Maintainer
@@ -40,21 +40,29 @@
 
 ## 受入条件
 
-- [ ] 再配線なしでは、従来どおり元の島所属・edgeを変更しない。
-- [ ] 再配線ありでも、統合元カードの島所属がDocumentに残る。
-- [ ] 再配線ありでも、既存edgeのID・端点・typeがそのまま残る。
-- [ ] 代表カードが、統合元カードの属していた各島へ追加される。
-- [ ] 統合元カードと外部カードを結ぶ関係は、代表カード側の投影edgeとしても利用できる。
-- [ ] 統合元カード同士の関係から代表カード自己ループを生成しない。
-- [ ] 同一意味の投影edgeを重複生成しない。
-- [ ] `repOf` / `mergedIntoCardId` と元構造を組み合わせ、統合前の構造をDocument単体から追跡できる。
-- [ ] unit testで上記を固定する。
-- [ ] 内容確定後、意味を変えず自然な日本語として全文を読み直す。
+- [x] 再配線なしでは、従来どおり元の島所属・edgeを変更しない。
+- [x] 再配線ありでも、統合元カードの島所属がDocumentに残る。
+- [x] 再配線ありでも、既存edgeのID・端点・typeがそのまま残る。
+- [x] 代表カードが、統合元カードの属していた各島へ追加される。
+- [x] 統合元カードと外部カードを結ぶ関係は、代表カード側の投影edgeとしても利用できる。
+- [x] 統合元カード同士の関係から代表カード自己ループを生成しない。
+- [x] 同一意味の投影edgeを重複生成しない。
+- [x] `repOf` / `mergedIntoCardId` と元構造を組み合わせ、統合前の構造をDocument単体から追跡できる。
+- [x] unit testで上記を固定する。
+- [x] 内容確定後、意味を変えず自然な日本語として全文を読み直す。
 
 ## 検証計画
 
 - `representative_merge.test.ts` で、再配線なし・再配線あり・内部edge・重複投影・複数島を確認する。
 - frontendの型チェック／対象unit testを実行する。
+
+### 検証状況(2026-09-04)
+
+- `representative_merge.test.ts` に、上記受入条件の各項目に対応するunit testを追加・更新した(再配線なし固定、内部edge自己ループ回避、重複投影のdedup、複数島への代表カード追加を含む)。
+- 実装コードのロジックを手動で追跡し、追加した全testケースの期待値と一致することを確認した。
+- 別セッションが `~/kjnative-fe`(WSL nix devShell、Node 20)経由で実行を確認した。
+  - `npx vitest run src/domain/representative_merge.test.ts`: 9 passed(9)
+  - `npm run typecheck`(`tsc --noEmit`): exit code 0、エラーなし
 
 ## 補足
 

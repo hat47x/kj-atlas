@@ -1,4 +1,4 @@
-import type { Card, DocumentV1 } from "./types";
+import type { Card, DocumentV1, Edge, EdgeEndpointKind } from "./types";
 
 type MergeOptions = {
   rewireMembershipAndEdges?: boolean;
@@ -86,9 +86,15 @@ function projectRepresentativeEdges(
   selectedCardSet: Set<string>,
   representativeCardId: string
 ): DocumentV1["edges"] {
-  const projected = edges.flatMap((edge) => {
-    const fromKind = edge.fromKind ?? "card";
-    const toKind = edge.toKind ?? "card";
+  // Keyed by the projected edge's own (direction, other endpoint, type) triple
+  // rather than by the source edge's id, so several original edges that would
+  // project to the same representative-side relation collapse onto one entry
+  // instead of duplicating it. The Map preserves first-seen order.
+  const projectedByTriple = new Map<string, Edge>();
+
+  for (const edge of edges) {
+    const fromKind: EdgeEndpointKind = edge.fromKind ?? "card";
+    const toKind: EdgeEndpointKind = edge.toKind ?? "card";
     const fromSelected = fromKind === "card" && selectedCardSet.has(edge.fromId);
     const toSelected = toKind === "card" && selectedCardSet.has(edge.toId);
 
@@ -96,21 +102,33 @@ function projectRepresentativeEdges(
     // internal to the merged set would become a meaningless representative
     // self-loop, so it gets no projected companion.
     if (!fromSelected && !toSelected) {
-      return [];
+      continue;
     }
     if (fromSelected && toSelected) {
-      return [];
+      continue;
     }
 
-    return [{
+    const direction = fromSelected ? "from" : "to";
+    const otherId = fromSelected ? edge.toId : edge.fromId;
+    const otherKind = fromSelected ? toKind : fromKind;
+    const triple = `${direction}:${otherKind}:${otherId}:${edge.type}`;
+
+    if (projectedByTriple.has(triple)) {
+      continue;
+    }
+
+    projectedByTriple.set(triple, {
       ...edge,
-      id: `representative-merge:${representativeCardId}:${edge.id}`,
+      // Deterministic from the projected relation itself (not the source edge
+      // id), so duplicate-shaped projections naturally share one id and the
+      // id space stays disjoint from any existing edge id via the prefix.
+      id: `representative-merge:${representativeCardId}:${triple}`,
       fromId: fromSelected ? representativeCardId : edge.fromId,
       toId: toSelected ? representativeCardId : edge.toId,
-    }];
-  });
+    });
+  }
 
-  return [...edges, ...projected];
+  return [...edges, ...projectedByTriple.values()];
 }
 
 export function createRepresentativeMerge(
