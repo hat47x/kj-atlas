@@ -25,11 +25,16 @@
 
 継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っている。これらを一括移動して大量の参照差分を作ることはしない。
 
-一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は58件を一時的なlegacy baselineとして扱い、実際のDone-at-root件数との一致を要求する。新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。
+一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は次の二つを独立に検査する。
 
-既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が後から古いbaselineまで増え直すことを防ぐ。この数はDoneメモの正規配置を意味せず、段階整理の現在地を単調に減らすためだけに保持する。最終的なbaselineは0である。
+1. **件数ratchet**: 58件を一時的なlegacy baselineとして実件数との一致を要求する。既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が古い上限まで増え直すことを防ぐ。最終的なbaselineは0である。
+2. **path identity guard**: R18 commit `88aebae242d5d1a24278b3247d3544aeaa1ad386` から一度だけ機械生成した `legacy_done_at_root_r18.json` を不変の歴史境界として扱う。現在active直下に残るDone memoのbasenameは、このR18集合の部分集合でなければならない。legacyを1件移動するのと同じ変更で別の新規Done-at-rootを1件増やし、件数を相殺することも拒否する。
 
-このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
+新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。既存legacyを `done/` へ移して現在集合が縮むことは正しいため、identity manifestは更新しない。`legacy_done_at_root_r18.json` へ新規pathを追記して検査を通す運用は禁止し、固定R18 commitから得た歴史証拠として保持する。
+
+この件数とR18 path集合はDoneメモの正規配置を意味せず、「段階整理の現在地」と「これ以上legacyへ新規参入させない境界」を別々に保持するための一時的な契約である。
+
+また、このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
 
 ## 必須メタデータ
 
@@ -58,7 +63,7 @@ python 01_Plans/triage_actionable_plans.py
 ## 軽量ツール
 
 - issue / docs変更の統一検証入口: `python 01_Plans/docs_check.py`（有効化済みruleだけをblocking実行し、未有効化ruleも表示）
-- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査し、配置・basename一意性も検査）
+- Active memo検証: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（README表ではなくmemoを直接走査し、配置・basename一意性・Done-at-root件数/identity境界も検査）
 - 検証ツールのテスト: `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"`
 - タスク候補の絞り込み: `python 01_Plans/triage_actionable_plans.py`
 
