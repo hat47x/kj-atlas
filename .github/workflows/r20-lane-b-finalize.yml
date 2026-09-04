@@ -74,4 +74,4 @@ jobs:
           PY
       - run: python .github/scripts/r20_lane_b_finalize.py
 
-# one-shot run 6: R19/R20 narratives satisfy the latest dogfood validator before this file is removed.
+# one-shot run 7: treat CRLF as end-of-line in the final staged diff check, then self-remove.
