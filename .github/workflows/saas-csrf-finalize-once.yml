@@ -1,0 +1,70 @@
+name: SaaS session CSRF finalize once
+
+on:
+  push:
+    branches:
+      - fix/saas-session-csrf-binding-20260904
+    paths:
+      - .github/workflows/saas-csrf-finalize-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/saas-session-csrf-binding-20260904
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Configure branch and apply implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-edit origin/main
+          python .github/scripts/saas_csrf_finalize.py
+      - name: Install backend test dependencies
+        run: python -m pip install -e '03_Implement/backend[test]'
+      - name: Run backend CSRF and session regressions
+        working-directory: 03_Implement/backend
+        run: |
+          pytest -q \
+            tests/test_saas_session_csrf.py \
+            tests/test_oauth_bff_login_flow.py \
+            tests/test_oauth_bff_logout_revocation.py \
+            tests/test_trusted_auth_edge_cookie_fallback.py \
+            tests/test_active_tenant_session_keyed.py \
+            tests/test_session_context_routes.py \
+            tests/test_saas_auth_session_store.py
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Run frontend CSRF and API regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run src/session/csrf.test.ts src/api/client_csrf_contract.test.ts src/api/client.test.ts
+          npm run typecheck
+      - name: Validate plans and diff
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/docs_check.py
+          python 03_Implement/backend/scripts/check_design_consistency.py
+          git -c core.whitespace=cr-at-eol diff --check
+      - name: Commit product changes and self-clean
+        run: |
+          rm .github/workflows/saas-csrf-finalize-once.yml
+          rm .github/scripts/saas_csrf_finalize.py
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'fix: BFF sessionへCSRF防御を束縛する'
+          git push origin HEAD:fix/saas-session-csrf-binding-20260904
