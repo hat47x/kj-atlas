@@ -1,0 +1,52 @@
+name: AI IR scale current-state sync (one-shot)
+
+on:
+  push:
+    branches:
+      - docs/ai-ir-scale-current-state-sync-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/ai-ir-scale-current-state-sync-20260904
+          fetch-depth: 0
+
+      - name: Apply documentation sync
+        run: python .github/scripts/sync_ai_ir_scale_current_state_once.py
+
+      - name: Validate planning documents
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/triage.json', encoding='utf-8'))
+          errors = data.get('errors', [])
+          if errors:
+              raise SystemExit(f'triage errors: {errors}')
+          PY
+          git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Verify current-state facts
+        run: |
+          grep -F '必要な論理骨格は解消済み' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '33875031314' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '33875031314' 01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md
+          grep -F 'provider-reported usageもまだ得られていない' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+
+      - name: Remove one-shot assets and push validated docs
+        run: |
+          rm .github/workflows/sync-ai-ir-scale-current-state-once.yml
+          rm .github/scripts/sync_ai_ir_scale_current_state_once.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: AI IR scaleの現在地を実績へ同期する'
+          git push origin HEAD:docs/ai-ir-scale-current-state-sync-20260904
