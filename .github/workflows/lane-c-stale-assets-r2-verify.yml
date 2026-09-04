@@ -1,0 +1,47 @@
+name: Temporary lane C stale asset r2 verification
+
+on:
+  push:
+    branches:
+      - chore/lane-c-remove-stale-one-shot-assets-r2-20260904
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: chore/lane-c-remove-stale-one-shot-assets-r2-20260904
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Verify frontend type contract
+        working-directory: 03_Implement/frontend
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+
+      - name: Verify planning contracts
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s 01_Plans/tests -p "test_*.py"
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/triage.json
+          python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
+
+      - name: Verify one-shot assets are gone
+        run: |
+          set -euo pipefail
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name '*once*' -print)"
+          test -z "$(find .github/scripts -maxdepth 1 -type f -name '*once*.py' -print)"
+          git -c core.whitespace=cr-at-eol diff --check
