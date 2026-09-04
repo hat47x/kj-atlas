@@ -1,0 +1,28 @@
+name: Lane C metadata validator patch
+on: push
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fix/lane-c-required-metadata-values-20260904
+      - name: Apply patch
+        run: python .github/lane_c_metadata_patch.py
+      - name: Test
+        run: |
+          python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+      - name: Commit
+        run: |
+          rm .github/lane_c_metadata_patch.py
+          rm .github/workflows/lane-c-required-metadata-runner.yml
+          rm .github/workflows/lane-c-required-metadata-values-once.yml
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix: issue memo必須メタデータの空値を拒否する'
+          git push origin HEAD:fix/lane-c-required-metadata-values-20260904
