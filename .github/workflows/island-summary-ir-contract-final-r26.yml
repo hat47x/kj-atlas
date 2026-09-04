@@ -1,0 +1,56 @@
+name: Island summary IR contract final R26
+
+on:
+  push:
+    branches:
+      - fix/island-summary-ir-test-contract-drift-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  validate-merge:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Merge current main in validation workspace
+        run: |
+          git config user.name 'kj-atlas-validation-bot'
+          git config user.email 'kj-atlas-validation-bot@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+
+      - name: Install backend test dependencies
+        run: python -m pip install -e './03_Implement/backend[test]'
+
+      - name: Island summary IR regression
+        run: pytest -q 03_Implement/backend/tests/test_ai_suggest_island_summary_ir_projection.py
+
+      - name: Full backend test suite
+        run: pytest -q
+        working-directory: 03_Implement/backend
+
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+
+      - name: Ruff changed regression
+        run: python -m ruff check 03_Implement/backend/tests/test_ai_suggest_island_summary_ir_projection.py
+
+      - name: Diff check
+        run: git diff --check origin/main...HEAD
+
+      - name: Retire one-shot workflow
+        if: success()
+        run: |
+          git merge --abort || true
+          rm .github/workflows/island-summary-ir-contract-final-r26.yml
+          git add .github/workflows/island-summary-ir-contract-final-r26.yml
+          git commit -m 'chore: retire R26 island summary IR validator'
+          git push origin HEAD:${GITHUB_REF_NAME}
