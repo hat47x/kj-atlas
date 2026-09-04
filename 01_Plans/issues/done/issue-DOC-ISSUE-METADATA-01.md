@@ -16,16 +16,22 @@
 
 - メタデータ抽出を行単位に限定し、空値を `None` として扱う。
 - Active issue memoの全必須メタデータに非空値を要求する。
-- verification levelはバッククォート有無に依存せず値を抽出し、許可集合を検査する。
+- verification levelの既存解釈契約は変更せず、正規のバッククォート付き値のみを検査対象として維持する。その上で、先頭空白の一致だけを行単位に限定する。
 - 空欄の行跨ぎ誤読と各必須項目の空値を回帰テストで固定する。
 
 ## 受入条件
 
 - 空の必須メタデータがvalidatorを通過しない。
 - 空欄が次行の値を取り込まない。
-- `docs-check / unit / integration / e2e` 以外のverification levelを表記形式によらず拒否する。
+- verification levelの既存表記契約を変更しない。
 - 既存のissue validatorテストと実リポジトリ検証が成功する。
+
+## 非対象
+
+- バッククォートなしのverification level表記を新たに正規化・受理すること。
+- `unit` + `integration` など複合的なverification level表記の意味を新たに定義すること。
+- verification level表記体系そのものの移行や厳格化。
 
 ## 検証結果
 
-変更ブランチで `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"` と `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行して確認する。
+当該修正では `python -m unittest discover -s 01_Plans/issues/tests -p "test_*.py"` と `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行して確認した。
