@@ -43,6 +43,19 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin main
           git merge --no-edit origin/main
+      - name: 実証用接続poolに必要な余力を持たせる
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("03_Implement/backend/tests/test_saas_auth_session_postgres_multi_instance.py")
+          text = path.read_text(encoding="utf-8")
+          old = "        pool_size=1,\n        max_overflow=0,"
+          new = "        pool_size=2,\n        max_overflow=0,"
+          if text.count(old) != 1:
+              raise SystemExit("expected exactly one isolated test pool configuration")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
       - name: backend依存関係を導入する
         run: python -m pip install -e '03_Implement/backend[test,postgres]'
       - name: PostgreSQL複数app実証を実行する
