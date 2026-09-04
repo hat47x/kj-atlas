@@ -47,7 +47,7 @@ describe("tenant session bootstrap views", () => {
       expect(html).toContain("アクセスを確認できません");
       expect(html).toContain("<button");
       if (reason === "authentication_required") {
-        expect(html).toContain("ログイン");
+        expect(html).toContain("サインイン");
       } else {
         expect(html).toContain("再試行");
       }
