@@ -80,6 +80,7 @@ function toSuggestions(groups: CandidateGroup[]): DeterministicMergeSuggestion[]
         snapshotVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
         cardIds,
         mergedTextDraft,
+        mergeMethod: "near_duplicate",
         rationale: `heuristic:${group.reason}`,
       } satisfies DeterministicMergeSuggestion;
     })
