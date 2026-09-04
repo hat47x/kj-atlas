@@ -1072,6 +1072,7 @@ describe("suggestMerges contract validation", () => {
               groupId: "m1",
               cardIds: ["c1", "c2"],
               mergedTextDraft: "Risk mitigation",
+              mergeMethod: "kernel_fusion",
               rationale: "Both cards express the same core concern.",
             },
           ],
@@ -1087,18 +1088,19 @@ describe("suggestMerges contract validation", () => {
         groupId: "m1",
         cardIds: ["c1", "c2"],
         mergedTextDraft: "Risk mitigation",
+        mergeMethod: "kernel_fusion",
         rationale: "Both cards express the same core concern.",
       },
     ]);
   });
 
-  it("preserves backend suggestion order without requiring deterministic-candidate scoring fields", async () => {
+  it("preserves backend suggestion order and method without requiring deterministic-candidate scoring fields", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
           suggestions: [
-            { groupId: "m1", cardIds: ["c1", "c2"], mergedTextDraft: "Risk mitigation" },
-            { groupId: "m2", cardIds: ["c3", "c4"], mergedTextDraft: "Timeline review" },
+            { groupId: "m1", cardIds: ["c1", "c2"], mergedTextDraft: "Risk mitigation", mergeMethod: "near_duplicate" },
+            { groupId: "m2", cardIds: ["c3", "c4"], mergedTextDraft: "Timeline review", mergeMethod: "kernel_fusion" },
           ],
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
@@ -1107,13 +1109,51 @@ describe("suggestMerges contract validation", () => {
 
     const result = await suggestMerges(createDocument());
     expect(result.suggestions.map((suggestion) => suggestion.groupId)).toEqual(["m1", "m2"]);
+    expect(result.suggestions.map((suggestion) => suggestion.mergeMethod)).toEqual(["near_duplicate", "kernel_fusion"]);
   });
 
   it("fails fast when a core backend field is missing", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
-          suggestions: [{ groupId: "m1", mergedTextDraft: "Risk mitigation" }],
+          suggestions: [{ groupId: "m1", mergedTextDraft: "Risk mitigation", mergeMethod: "near_duplicate" }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    await expect(suggestMerges(createDocument())).rejects.toMatchObject({
+      message: "Invalid merge suggestions contract payload",
+      status: 500,
+    });
+  });
+
+  it("fails fast when mergeMethod is missing", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          suggestions: [{ groupId: "m1", cardIds: ["c1", "c2"], mergedTextDraft: "Risk mitigation" }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    await expect(suggestMerges(createDocument())).rejects.toMatchObject({
+      message: "Invalid merge suggestions contract payload",
+      status: 500,
+    });
+  });
+
+  it("fails fast when mergeMethod is unknown", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          suggestions: [{
+            groupId: "m1",
+            cardIds: ["c1", "c2"],
+            mergedTextDraft: "Risk mitigation",
+            mergeMethod: "semantic_similarity",
+          }],
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
@@ -1129,7 +1169,12 @@ describe("suggestMerges contract validation", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
-          suggestions: [{ groupId: "m1", cardIds: ["c1"], mergedTextDraft: "Risk mitigation" }],
+          suggestions: [{
+            groupId: "m1",
+            cardIds: ["c1"],
+            mergedTextDraft: "Risk mitigation",
+            mergeMethod: "near_duplicate",
+          }],
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
