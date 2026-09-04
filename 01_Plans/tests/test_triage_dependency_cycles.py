@@ -1,7 +1,6 @@
 import importlib.util
 import sys
 import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 
@@ -15,20 +14,14 @@ SPEC.loader.exec_module(MODULE)
 
 
 def write_issue(path: Path, *, status: str, priority: str = "P1", dependency: str | None = None) -> None:
-    dependency_section = ""
-    if dependency is not None:
-        dependency_section = f"\n## Dependencies\n- `{dependency}`\n"
-    path.write_text(
-        textwrap.dedent(
-            f"""\
-            # Issue: {path.stem}
-            - Status: {status}
-            - Priority: {priority}
-            {dependency_section}
-            """
-        ),
-        encoding="utf-8",
+    content = (
+        f"# Issue: {path.stem}\n"
+        f"- Status: {status}\n"
+        f"- Priority: {priority}\n"
     )
+    if dependency is not None:
+        content += f"\n## Dependencies\n- `{dependency}`\n"
+    path.write_text(content, encoding="utf-8")
 
 
 class TriageDependencyCyclesTest(unittest.TestCase):
