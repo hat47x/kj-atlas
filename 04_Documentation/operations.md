@@ -70,6 +70,14 @@ BFF Cookie経路では、次を運用上の前提とします。
 - 共有認証表が未migration、または起動時にDBへ接続できない場合、SaaS APIは起動を拒否します。稼働中にDBを失った場合も、session解決やtenant切替をin-memory状態へfallbackせずfail-closedにします。
 - JWKS cacheはinstanceごとで構いません。安全境界は共有しませんが、instance数に応じてBrokerへの取得回数が増えるため、取得失敗や集中が疑われる場合はBroker側の状態も確認します。
 
+#### Bearer互換経路との境界
+
+明示的なBearer credentialを使う互換経路は、SPAからBFF Cookie経路への移行が完了するまで残ります。この経路では次を別の安全境界として扱います。
+
+- Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意のtoken識別子であり、同じ有効tokenを通常の連続API要求へ使用できます。`jti`を一回使用nonceとして扱いません。
+- 現行Bearer方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出しません。より強いreplay防御の方式判断は`AUTH-ONE-TIME-JWT-01`を正本とします。
+- principal-keyed互換経路で使う`Kj-Atlas-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Kj-Atlas-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。
+
 現行実装では、request処理用のDB sessionを保持している間に、認証session storeが別のDB sessionを開く経路があります。実PostgreSQLの複数app検証では、1 instanceあたり`pool_size=1`かつ`max_overflow=0`まで絞ると、共有sessionの解決前にconnection pool timeoutとなり503へfail-closedすることを確認しました。本番では「1 requestにつき常に1接続」と仮定せず、API replica数と同時request数に対して接続poolへ余力を持たせてください。pool timeoutが見えた場合は、DB停止だけでなくpool枯渇も切り分け対象です。
 
 ### SaaSのmigrationとrolling restart

@@ -29,7 +29,8 @@ JWKS cacheはinstanceごとでよい。これはBrokerへの取得負荷には�
 
 - [x] AC-1: PostgreSQL共有storeで、独立する2 store instanceが同じprincipal単位versionを参照し、CAS競合で一方だけが成功する。
 - [x] AC-2: 共有表が未migrationまたはDB不達ならSaaS startupを拒否し、稼働中のsession version解決・切替も503へfail-closedしてin-memoryへfallbackしない。
-- [x] AC-3: 運用・API・認証architecture文書が、現行保証をprincipal単位version共有までに限定し、本番利用gate未充足と明記する。
+- [x] AC-3: 運用・API・認証architecture文書が、その時点で実証済みの共有保証と未検証の運用境界を区別し、実装以上の保証を記載しない。
+  - 2026-08-11時点ではprincipal単位version共有までを保証として記載した。2026-09-04の認証session単位PostgreSQL実証後は、BFF Cookie経路の共有保証を更新し、残るDB切断・client再送境界をAC-6として明示した。Bearer互換経路のreplay境界も別扱いのまま維持する。
 - [x] AC-4: `ADR-0074`で採択された認証session正本を最低2 worker／2 app instanceが共有し、active tenant、version、期限、失効を一貫して解決する。
   - 2026-09-04: `test_saas_auth_session_postgres_multi_instance.py`で、別engineを持つ2 FastAPI appが同じPostgreSQL上のBFF sessionをHTTPで共有し、tenant/version、logout失効、idle expiryを同じ正本から解決することを確認した。
 - [x] AC-5: 同一sessionの複数tabはworkerをまたいでもversionを共有し、同じprincipalの別sessionは切替・logout・idle expiryで相互干渉しない。
