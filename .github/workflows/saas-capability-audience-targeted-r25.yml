@@ -1,0 +1,60 @@
+name: SaaS capability audience targeted R25
+
+on:
+  push:
+    branches:
+      - fix/saas-capability-audience-separation-20260904
+    paths:
+      - .github/workflows/saas-capability-audience-targeted-r25.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate-current-main:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Merge current main in validation workspace
+        run: |
+          git config user.name 'kj-atlas-validation-bot'
+          git config user.email 'kj-atlas-validation-bot@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+      - name: Install backend test dependencies
+        run: python -m pip install -e './03_Implement/backend[test]'
+      - name: Capability and authorization regression
+        working-directory: 03_Implement/backend
+        run: |
+          pytest -q \
+            tests/test_capability_audience_separation.py \
+            tests/test_session_context_routes.py \
+            tests/test_control_plane_authorization.py \
+            tests/test_document_access_admin_routes.py \
+            tests/test_tenant_capability.py
+      - name: Documentation and active issue checks
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Ruff capability seams
+        working-directory: 03_Implement/backend
+        run: |
+          ruff check \
+            src/kj_atlas_api/session_context.py \
+            src/kj_atlas_api/routes/session.py \
+            tests/test_capability_audience_separation.py
+      - name: Diff checks
+        run: |
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git -c core.whitespace=cr-at-eol diff --check origin/main...HEAD -- . ':!.github/workflows/saas-capability-audience-targeted-r25.yml'
+      - name: Retire one-shot workflow
+        run: |
+          git merge --abort
+          git rm .github/workflows/saas-capability-audience-targeted-r25.yml
+          git commit -m 'chore: retire R25 targeted capability validator'
+          git push
