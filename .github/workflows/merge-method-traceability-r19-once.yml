@@ -57,6 +57,25 @@ jobs:
       - name: Apply R19 mergeMethod changes
         run: python .github/scripts/apply_merge_method_r19_once.py
 
+      - name: Align existing order-only client fixture with required method
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('03_Implement/frontend/src/api/client.test.ts')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              '{ groupId: "m1", cardIds: ["c1", "c2"], mergedTextDraft: "Risk mitigation" },':
+                  '{ groupId: "m1", cardIds: ["c1", "c2"], mergedTextDraft: "Risk mitigation", mergeMethod: "near_duplicate" },',
+              '{ groupId: "m2", cardIds: ["c3", "c4"], mergedTextDraft: "Timeline review" },':
+                  '{ groupId: "m2", cardIds: ["c3", "c4"], mergedTextDraft: "Timeline review", mergeMethod: "kernel_fusion" },',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected one client order fixture anchor, found {text.count(old)}: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Install backend test dependencies
         working-directory: 03_Implement/backend
         run: python -m pip install -e '.[test]'
