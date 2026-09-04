@@ -74,7 +74,9 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 現行 `check-narrative` はIRを介さず全300カード・全30島をprovider promptへ載せており、dry-runでは末尾要素までcoverageが残ることを確認した。ただしpromptのUTF-8 byte数は171,426で、比較3ルートの中で最大だった。この値はtoken数ではない。named provider/modelの `usage` による正確な入力token実測が終わるまでは、全量方式が安全に収まるとも、分割が必要とも断定しない。
 
-したがって本Issueの未完境界は変わらない。`check-narrative` を形式的にgeneric IRへ移すのではなく、`AI-IR-SCALE-01` で実token予算を確認し、A/B双方向の全体照合を失わない方式を選んだ後に実装する。
+2026-09-04には、R20ハーネスをnamed providerへ実送信できるか確認するため、branch-onlyのGitHub Actions Run `33875031314` で `KJ_ATLAS_DEEPSEEK_API_KEY` の有無だけを検査した。secret値は取得・表示しておらず、結果は未設定だった。このため外部送信とprovider-reported usage取得は行っていない。byte数からtoken数を推定する代替も採らない。
+
+したがって本Issueの未完境界は変わらない。`check-narrative` を形式的にgeneric IRへ移すのではなく、`AI-IR-SCALE-01` でnamed provider/modelの実token予算を確認し、A/B双方向の全体照合を失わない方式を選んだ後に実装する。
 
 ## 受入条件
 

@@ -80,7 +80,7 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 | --- | --- | --- | --- |
 | `detect-contradiction` | 明示対象の `cardA` / `cardB`、およびその2枚について人間が `confirmed` / `held` とした contradiction state。既決判断は再提案しない | `payload.cardA/cardB` → `required_card_ids` → IR。pairの `evidence_links` → IR → `adjudicated_contradiction()`。未確定時はpair関連のrelation/evidenceをprompt文脈に使う | **AC-1に必要な意味は解消済み。** #2827で末尾pairを切り詰めから保護し、`confirmed` / `held` はLLMを呼ばず `alreadyRecorded=true`。座標は非要求 |
 | `suggest-card-groups` | `payload.cards` で指定された候補集合、候補に対する人間の `holdState`、既に確定した島と `parentIslandId`。少なくともhold中の候補は新規グループへ入れず、既存島を無視して再分類しない | 候補本文・hold・島階層 → IR → candidate filter / prompt。`holdState` はprompt遵守ではなくコードで候補から除外する | **hold判断は解消済み、全coverageは未解消。** #2830で要求対象のheld cardだけをrequiredとして保護。末尾10枚島の例ではheld 1枚は残るが他9枚は残らず、島全体・候補集合全体を保持したとは扱わない |
-| `generate-narrative` | `readingOrder` の完全な順序、および叙述の論理骨格となるcard-to-cardの `causal` / `negate`。明示されたisland-to-island edgeも従来文脈として維持する | `readingOrder` とisland edgeはDocumentからpromptへ。card relationはIRからpromptへ入り、`causal` / `negate` はreading-order上の位置へ写像する | **未解消。** 末尾島はreading orderに残る一方、そのカード間の `causal` / `negate` がIRで落ち、provider手前でも骨格が消える |
+| `generate-narrative` | `readingOrder` の完全な順序、および叙述の論理骨格となるcard-to-cardの `causal` / `negate`。明示されたisland-to-island edgeも従来文脈として維持する | `readingOrder` とisland edgeはDocumentからpromptへ。card relationはIRからpromptへ入り、`causal` / `negate` はreading-order上の位置へ写像する | **必要な論理骨格は解消済み。** `AI-IR-NARRATIVE-SPINE-01` / PR #2887で、正規化可能なcard-to-card `causal` / `negate` の両端をrequired cardとして保護し、300カードの末尾関係までIRと最終promptへ残す回帰を固定した。required cardだけで上限を超える場合はfail-closedする。`MAX_RELATIONS` を超える規模やtoken予算は本Issueに残る |
 | `suggest-layout` | 全カードの出力対象としてのid/text/生の絶対座標、配置判断用の正規化相対座標、typed card relation、確定島階層とcard relationから派生するisland relation | 全カードと生座標は互換 `Cards:` 節でDocumentからpromptへ。相対座標・card relation・島階層はIR、島関係は `derived_island_relations()` からpromptへ | **未解消。** 末尾カード本文・生座標は見えるが、相対座標と末尾 `causal` / `negate` がIRで落ち、構造入力が欠ける。全カードを `required_card_ids` にするだけでは `MAX_CARDS=200` と衝突するため、focus保護の単純横展開はしない |
 
 ### 必須としないものの扱い
@@ -175,6 +175,14 @@ Stage 5で最後に残る `check-narrative` を、R20のprovider token計測ハ�
 
 計測スクリプトはIssue本文に記載した直接CLI形式でも動くよう修正し、直接実行のdry-runを回帰テストへ追加した。外部送信には引き続き `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを要求する。
 
+## 2026-09-04: named provider実測の実行可能性確認
+
+R20のハーネスを実際のnamed providerへ送れるか確認するため、branch-onlyのGitHub Actions Run `33875031314` で `KJ_ATLAS_DEEPSEEK_API_KEY` の**有無だけ**を検査した。secretの値は取得・出力していない。結果は未設定だった。
+
+このため、合成データであっても外部providerへのrequestは送っていない。provider-reported usageもまだ得られていないので、上記の文字数・UTF-8 byte数をtoken数へ読み替えず、最初の2つの受入条件は未完了のまま維持する。probe用workflowは同じ成功run内で削除した。
+
+次に実測を行う条件は、計測対象として明示したprovider/modelの認証情報が安全な実行環境へ設定されていることである。その条件が満たされた後も、既存の `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを維持し、利用者データではなく決定論的な合成データだけを送る。
+
 ## R21: 上限引上げ・ルート別投影・分割処理の比較
 
 実token計測を待つ間にも、現在の決定論的な上限と代表入力だけから確定できることがある。`scripts/measure_ai_ir_budget_pressure.py` で300カード・30島の代表入力を再計測した結果、1カードの正規化後本文は46文字、300カードの本文合計は13,800文字になる。現行の `MAX_TEXT_CHARS=12,000` を超える。
@@ -261,7 +269,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
    - `suggest-layout`: 全カード節を残したまま、契約上必要なrelation/island/relative-placement coverageがどこまで失われるか。
    - `generate-narrative`: reading orderと、叙述に必要なIR由来の論理構造のcoverage差。
 2. routeごとの「必要意味集合」を既存ADR・仕様・ACから明示し、測定項目をその集合へ対応づける。**完了。R19の表と `measure_ai_route_required_meaning.py` / `test_ai_route_required_meaning_scale.py` を対応づけた。** IRに存在するという理由だけで測定項目を必須化しない。
-3. 少なくとも次をnamed model/providerで実測する。**R20で実測ハーネスを用意した。実providerでの測定値そのものは未取得。**
+3. 少なくとも次をnamed model/providerで実測する。**R20で実測ハーネスを用意した。2026-09-04にGitHub Actionsの認証情報有無だけを確認したが、`KJ_ATLAS_DEEPSEEK_API_KEY` は未設定だったため、外部送信は行わず、実providerでの測定値そのものは未取得のままである。**
    - `suggest-layout` 相当: 座標・島・関係を含む最重量prompt。
    - 座標を使わない代表route。
 4. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。**R20のハーネスで機械的にこの境界を固定した。**
@@ -311,7 +319,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 1. **named provider/modelの実入力tokenを測る。** R20のハーネスを使い、`suggest-layout` 相当の最重量promptと、座標を使わない `generate-narrative` を同じmodel/providerで比較する。
 2. その測定値をR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
-3. `generate-narrative` は、必要な `causal` / `negate` の両端をBで十分小さく保護できるかを確認し、文書規模へ膨らむ場合はCを比較する。
+3. `generate-narrative` の `causal` / `negate` 両端保護は `AI-IR-NARRATIVE-SPINE-01` で完了した。今後はrequired relationが `MAX_RELATIONS` を超える規模やtoken予算まで含めて、A2/B/Cのどれが必要かを実測後に判断する。
 4. `suggest-layout` はA2が十分な余裕を持って使えない場合、局所配置と全体整合を分けた階層配置としてCを具体化する。
 5. coverage-loss metadataは方式決定後に、その方式で本当に検証すべき欠落単位へ合わせて追加する。先に汎用メタデータだけを増やさない。
 
