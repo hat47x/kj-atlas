@@ -3,7 +3,7 @@
 
 `AI-IR-SCALE-01` では、JSONのバイト数などから正確なトークン数を推定しない。
 このスクリプトは、既存の代表規模の被覆状況計測と同じ、決定論的な300カード・30島の
-入力から2種類の代表プロンプトを生成する。必要な場合だけ、明示的に指定した
+入力から3種類の代表プロンプトを生成する。必要な場合だけ、明示的に指定した
 プロバイダーとモデルへ送信する。正確な入力トークン数として採用するのは、
 プロバイダー自身が返した `usage` の値だけである。
 
@@ -12,10 +12,15 @@
 両方を指定する必要がある。送信対象は `representative_document()` が生成する
 合成データだけであり、利用者の実データは使用しない。
 
-比較対象には、意図的に性質の異なる2つのルートを選ぶ。
+比較対象には、意図的に性質の異なる3つのルートを選ぶ。
 
 - `suggest-layout`: 移行済みルートのうち最も入力が大きい。正規化座標、関係、島構造をIRの文脈に含む。
 - `generate-narrative`: 座標を使わない代表ルート。読み順はDocument由来のまま、論理関係をIRから受け取る。
+- `check-narrative`: Stage 5で最後に残る全体照合ルート。現行実装どおりIRを介さず、Narrative・読み順・全島・全カードをpromptへ載せる。
+
+`check-narrative` の合成Narrativeは、30島を各1行で言及する決定論的な短文とする。
+Narrative本文だけを不必要に膨らませず、図解全量をA/B双方向で照合するときの入力規模を
+比較できるようにするためである。
 
 プロバイダーが入力トークン数を返さない場合も、別の方法で推定して補わない。出力には
 `provider-did-not-report-usage` と `measurement_complete=false` を記録する。
@@ -35,9 +40,10 @@ from kj_atlas_api.llm.provider import (
     get_provider,
 )
 from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import GenerateNarrativeRequest
+from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest
 from kj_atlas_api.routes.ai import (
     _build_generate_narrative_prompt,
+    _build_narrative_check_prompt,
     _build_prompt,
     _generate_narrative_ir,
     _suggest_layout_ir,
@@ -56,8 +62,19 @@ class _Provider(Protocol):
         ...
 
 
+def _representative_check_narrative_text(doc: dict[str, Any]) -> str:
+    """30島を各1行で言及する、token計測専用の決定論的Narrativeを作る。"""
+    cards_by_id = {card["id"]: card for card in doc["cards"]}
+    lines: list[str] = []
+    for island in doc["islands"]:
+        first_card_id = island["cardIds"][0]
+        first_card_text = cards_by_id[first_card_id]["text"]
+        lines.append(f'{island["title"]}: {first_card_text}')
+    return "\n".join(lines)
+
+
 def build_representative_requests(model: str) -> dict[str, LLMRequest]:
-    """同じ決定論的な代表入力から、比較対象となる2つのプロンプトを生成する。"""
+    """同じ決定論的な代表入力から、比較対象となる3つのプロンプトを生成する。"""
     doc = representative_document(include_evidence=False)
 
     layout_payload = SuggestLayoutRequest.model_validate({"doc": doc})
@@ -67,6 +84,14 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
     narrative_payload = GenerateNarrativeRequest.model_validate({"doc": doc})
     narrative_ir = _generate_narrative_ir(narrative_payload)
     narrative_prompt = _build_generate_narrative_prompt(narrative_payload, narrative_ir)
+
+    check_payload = CheckNarrativeRequest.model_validate(
+        {
+            "doc": doc,
+            "narrativeText": _representative_check_narrative_text(doc),
+        }
+    )
+    check_prompt = _build_narrative_check_prompt(check_payload)
 
     return {
         "suggest-layout": LLMRequest(
@@ -83,6 +108,16 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
             task="generate_narrative",
             prompt=narrative_prompt,
             inputs=narrative_ir,
+            temperature=0.0,
+            max_tokens=1,
+            model=model,
+        ),
+        "check-narrative": LLMRequest(
+            task="check_narrative",
+            # 現行production routeを忠実に再現する。check-narrativeはまだ
+            # generic Document IR / route固有structured inputへ移行していない。
+            prompt=check_prompt,
+            inputs=None,
             temperature=0.0,
             max_tokens=1,
             model=model,
@@ -204,7 +239,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         required=True,
-        help="2つの代表ルートで共通して使用する正確なモデルID。",
+        help="3つの代表ルートで共通して使用する正確なモデルID。",
     )
     parser.add_argument(
         "--execute",
