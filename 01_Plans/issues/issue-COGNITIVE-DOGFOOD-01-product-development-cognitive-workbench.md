@@ -127,3 +127,9 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 - 本issueはデバッグdogfoodの上位互換ではない。目的が異なるため、バグ検出件数を主指標にしない。
 - 成果が良くても、利用者一般への価値は `VALUE-REALNESS-01` の第三者検証で別途確認する。
 - `DOMAIN-W-ITERATION-01` のACは2026-08-25時点で全件完了している。本issueが狙うのは基盤の再実装ではなく、残るT9へ実使用証拠を返すことである。
+### Formal Case package preflight hardening（2026-09-05）
+
+- F1として、正式Case 001〜003を実行する前のassembled arm package検証を強化した。これはCase結果やarm内の推論には触れず、fresh-context比較へ渡す凍結入力の同一性だけを守るpreflightである。
+- `validate_cognitive_arm_packages.py` は、従来のtop-level構成・SHA-256・starter空状態に加え、arm別`launch.md`の凍結packetとの完全一致、product/skillのrepository・commit・manifest ID、事前登録source path＋Git blob SHA、実ファイルから再計算したGit blob SHAをfail-closedで照合する。
+- Run `33916954615` でdogfood tooling unit test 32件、Cases 001〜003のlaunch treatment equivalence、凍結product source（20/18/18件）とskill canonical source 12件から実組立した全12 arm package、dogfood構造検査、active Issue検査を通過した。
+- このcheckpointは「3ケースの正式比較を完了した」証拠ではない。未完受入条件はそのまま維持し、正式armは引き続き別fresh sessionで実行する。
