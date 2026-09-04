@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 import subprocess
 
@@ -10,292 +8,157 @@ def run(*args: str, cwd: str | None = None) -> None:
     subprocess.run(args, cwd=cwd, check=True)
 
 
-def read_text(path: str) -> str:
-    with open(path, "r", encoding="utf-8", newline="") as f:
-        return f.read()
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
 
 
-def write_text(path: str, text: str) -> None:
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(text)
+def write_text(path: Path, text: str) -> None:
+    path.write_text(text, encoding="utf-8")
 
 
-def newline_of(text: str) -> str:
-    return "\r\n" if "\r\n" in text else "\n"
-
-
-def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
-    text = read_text(path)
-    count = text.count(old)
-    if count != expected:
-        raise SystemExit(f"{path}: expected {expected} occurrence(s), found {count}: {old[:100]!r}")
-    write_text(path, text.replace(old, new, expected))
-
-
-def update_region(path: str, start_marker: str, end_marker: str, updater) -> None:
-    text = read_text(path)
-    start = text.find(start_marker)
-    if start < 0:
-        raise SystemExit(f"{path}: start marker not found: {start_marker}")
-    end = text.find(end_marker, start)
-    if end < 0:
-        raise SystemExit(f"{path}: end marker not found: {end_marker}")
-    region = text[start:end]
-    updated = updater(region, newline_of(text))
-    if updated == region:
-        raise SystemExit(f"{path}: updater made no change")
-    write_text(path, text[:start] + updated + text[end:])
-
-
-# Verify against latest main, not the PR's original base.
 run("git", "fetch", "origin", "main")
 run("git", "merge", "--no-edit", "origin/main")
 
-# 1. Persisted DocumentV1 type: new decisions write mergeMethod, old decisions may omit it.
-def patch_types(region: str, nl: str) -> str:
-    if "mergeMethod?:" in region:
-        return region
-    needle = f"  rationale?: string;{nl}"
-    if region.count(needle) != 1:
-        raise SystemExit("types.ts: rationale anchor mismatch in MergeSuggestionDecisionEntry")
-    return region.replace(
-        needle,
-        needle + f'  mergeMethod?: "near_duplicate" | "kernel_fusion";{nl}',
-        1,
-    )
+# ---------------------------------------------------------------------------
+# Frontend: MergeSuggestion/decision contract seams that were still outside
+# the smaller R20 patch.  Keep edits surgical and fail if anchors drift.
+# ---------------------------------------------------------------------------
 
-update_region(
-    "03_Implement/frontend/src/domain/types.ts",
-    "export type MergeSuggestionDecisionEntry = {",
-    "export type PatchConflictMeta =",
-    patch_types,
-)
-
-# 2. Strict validator: optional field for backward compatibility, known values only.
-def patch_validate_doc(region: str, nl: str) -> str:
-    if '"mergeMethod"' not in region:
-        needle = '"rationale", "representativeCardId"'
-        if region.count(needle) != 1:
-            raise SystemExit("validate_doc.ts: merge decision allowed-key anchor mismatch")
-        region = region.replace(needle, '"rationale", "mergeMethod", "representativeCardId"', 1)
-    if ".mergeMethod:" not in region:
-        anchor = f'  if (item.representativeCardId !== undefined && typeof item.representativeCardId !== "string") {{{nl}'
-        if region.count(anchor) != 1:
-            raise SystemExit("validate_doc.ts: representativeCardId validation anchor mismatch")
-        validation = (
-            f'  if ({nl}'
-            f'    item.mergeMethod !== undefined{nl}'
-            f'    && item.mergeMethod !== "near_duplicate"{nl}'
-            f'    && item.mergeMethod !== "kernel_fusion"{nl}'
-            f'  ) {{{nl}'
-            f'    errors.push(`${{path}}.mergeMethod: must be \'near_duplicate\' | \'kernel_fusion\' when provided`);{nl}'
-            f'    valid = false;{nl}'
-            f'  }}{nl}'
-        )
-        region = region.replace(anchor, validation + anchor, 1)
-    return region
-
-update_region(
-    "03_Implement/frontend/src/domain/validate_doc.ts",
-    "function validateMergeSuggestionDecisionEntry(",
-    "// DOMAIN-EXPR-04",
-    patch_validate_doc,
-)
-
-# 3. Lenient normalizer: preserve known method, never guess/retain unknown values.
-def patch_validate(region: str, nl: str) -> str:
-    if "mergeMethod: item.mergeMethod" in region:
-        return region
-    needle = f'      ...(typeof item.rationale === "string" ? {{ rationale: item.rationale }} : {{}}),{nl}'
-    if region.count(needle) != 1:
-        raise SystemExit("validate.ts: rationale normalization anchor mismatch")
-    addition = (
-        needle
-        + f'      ...((item.mergeMethod === "near_duplicate" || item.mergeMethod === "kernel_fusion"){nl}'
-        + f'        ? {{ mergeMethod: item.mergeMethod }}{nl}'
-        + f'        : {{}}),{nl}'
-    )
-    return region.replace(needle, addition, 1)
-
-update_region(
-    "03_Implement/frontend/src/domain/validate.ts",
-    "function parseMergeSuggestionDecisions(",
-    "function isContradictionSignalReviewStatus(",
-    patch_validate,
-)
-
-# 4. Stream B contract handoff must carry and validate the method.
-path = "03_Implement/frontend/src/domain/stream_b_contract_handoff.ts"
+path = Path("03_Implement/frontend/src/domain/types.ts")
 text = read_text(path)
-nl = newline_of(text)
-if 'import type { MergeMethod } from "./merge_method";' not in text:
-    anchor = f'import {{ appendMergeSuggestionDecision, type MergeSuggestionDecision }} from "./merge_suggestion_decisions";{nl}'
-    if text.count(anchor) != 1:
-        raise SystemExit("stream_b_contract_handoff.ts: import anchor mismatch")
-    text = text.replace(anchor, anchor + f'import type {{ MergeMethod }} from "./merge_method";{nl}', 1)
-if "  mergeMethod: MergeMethod;" not in text:
-    anchor = f"  groupId: string;{nl}  decision: MergeSuggestionDecision;"
-    if text.count(anchor) != 1:
-        raise SystemExit("stream_b_contract_handoff.ts: input anchor mismatch")
-    text = text.replace(anchor, f"  groupId: string;{nl}  mergeMethod: MergeMethod;{nl}  decision: MergeSuggestionDecision;", 1)
-if "entry.mergeMethod === input.mergeMethod" not in text:
-    anchor = f"    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&{nl}    entry.action === input.decision &&"
-    if text.count(anchor) != 1:
-        raise SystemExit("stream_b_contract_handoff.ts: validation anchor mismatch")
-    text = text.replace(
-        anchor,
-        f"    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&{nl}    entry.mergeMethod === input.mergeMethod &&{nl}    entry.action === input.decision &&",
-        1,
-    )
-write_text(path, text)
-
-# 5. External-agent merge candidates participate in the same common contract.
-path = "03_Implement/frontend/src/import/agent_response_import.ts"
-text = read_text(path)
-nl = newline_of(text)
-if 'from "../domain/merge_method";' not in text:
-    anchor = f'import {{ AGENT_TASK_KINDS, type AgentTaskCorrelation }} from "../export/agent_task_export";{nl}'
-    if text.count(anchor) != 1:
-        raise SystemExit("agent_response_import.ts: merge-method import anchor mismatch")
-    text = text.replace(anchor, anchor + f'import {{ isMergeMethod, type MergeMethod }} from "../domain/merge_method";{nl}', 1)
-if "  mergeMethod?: MergeMethod;" not in text:
-    anchor = f"  mergedText?: string;{nl}"
-    if text.count(anchor) != 1:
-        raise SystemExit("agent_response_import.ts: content type anchor mismatch")
-    text = text.replace(anchor, anchor + f"  mergeMethod?: MergeMethod;{nl}", 1)
-if "mergeMethod: isMergeMethod(value.mergeMethod)" not in text:
-    anchor = f"    mergedText: sanitizeString(value.mergedText),{nl}"
-    if text.count(anchor) != 1:
-        raise SystemExit("agent_response_import.ts: parseContent anchor mismatch")
-    text = text.replace(anchor, anchor + f"    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,{nl}", 1)
-if "merge_candidate_missing_or_invalid_merge_method" not in text:
-    anchor = f"  let patch: PatchV1 | undefined;{nl}"
-    if text.count(anchor) != 1:
-        raise SystemExit("agent_response_import.ts: proposal patch anchor mismatch")
-    guard = (
-        f"  const content = parseContent(value.content);{nl}"
-        f'  if (kind === "merge_candidate" && !content.mergeMethod) {{{nl}'
-        f'    return {{ errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings }};{nl}'
-        f"  }}{nl}{nl}"
-    )
-    text = text.replace(anchor, guard + anchor, 1)
-    old = f"    content: parseContent(value.content),{nl}"
+old = "  rationale?: string;\r\n  representativeCardId?: string;"
+new = "  rationale?: string;\r\n  mergeMethod?: \"near_duplicate\" | \"kernel_fusion\";\r\n  representativeCardId?: string;"
+if new not in text:
     if text.count(old) != 1:
-        raise SystemExit("agent_response_import.ts: proposal content anchor mismatch")
-    text = text.replace(old, f"    content,{nl}", 1)
-write_text(path, text)
-
-# 6. External task sheet explicitly requests the method instead of relying on inference.
-path = "03_Implement/frontend/src/export/agent_task_export.ts"
-text = read_text(path)
-nl = newline_of(text)
-old = f'    case "merge_candidates":{nl}      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${{desiredCount}}件程度、提案してください。対象範囲: ${{scopeLabel}}。`;{nl}'
-if "content.mergeMethod に必ず明示してください" not in text:
-    if text.count(old) != 1:
-        raise SystemExit("agent_task_export.ts: merge task instruction anchor mismatch")
-    new = f'    case "merge_candidates":{nl}      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${{desiredCount}}件程度、提案してください。対象範囲: ${{scopeLabel}}。近い記述を整理する場合は near_duplicate、完全な重複ではない複数カードから共通の意味核を立てる場合は kernel_fusion とし、各 merge_candidate の content.mergeMethod に必ず明示してください。`;{nl}'
+        raise SystemExit("types.ts: MergeSuggestionDecisionEntry anchor mismatch")
     text = text.replace(old, new, 1)
-if "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)" not in text:
-    old_schema = 'content: { title: "string?", text: "string?", mergedText: "string?" },'
-    if text.count(old_schema) != 1:
-        raise SystemExit("agent_task_export.ts: response schema anchor mismatch")
-    text = text.replace(
-        old_schema,
-        'content: { title: "string?", text: "string?", mergedText: "string?", mergeMethod: "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)" },',
-        1,
-    )
 write_text(path, text)
 
-# 7. App converts imported merge proposals only when the explicit method survived validation.
-path = "03_Implement/frontend/src/App.tsx"
+path = Path("03_Implement/frontend/src/App.tsx")
 text = read_text(path)
-nl = newline_of(text)
-if "const mergeMethod = review.content.mergeMethod;" not in text:
-    anchor = f"          const mergedText = review.content.mergedText ?? review.content.text;{nl}          if (cardIds.length < 2 || !mergedText) break;"
-    if text.count(anchor) != 1:
-        raise SystemExit("App.tsx: external merge candidate anchor mismatch")
-    text = text.replace(
-        anchor,
-        f"          const mergedText = review.content.mergedText ?? review.content.text;{nl}          const mergeMethod = review.content.mergeMethod;{nl}          if (cardIds.length < 2 || !mergedText || !mergeMethod) break;",
-        1,
-    )
-if "              mergeMethod," not in text:
-    anchor = f"              groupId: `agent-response-${{review.proposalId}}`,{nl}              targetCardId,"
-    if text.count(anchor) != 1:
-        raise SystemExit("App.tsx: imported suggestion group anchor mismatch")
-    text = text.replace(anchor, f"              groupId: `agent-response-${{review.proposalId}}`,{nl}              mergeMethod,{nl}              targetCardId,", 1)
-write_text(path, text)
-
-# 8. Existing test fixtures must satisfy the newly-required proposal/decision contract.
-path = "03_Implement/frontend/src/domain/merge_suggestion_apply.test.ts"
-text = read_text(path)
-nl = newline_of(text)
-anchor = f'      editedText: "待ち時間は利用継続の負担になる",{nl}'
-if "mergeMethod: \"near_duplicate\"" not in text:
-    if text.count(anchor) != 1:
-        raise SystemExit("merge_suggestion_apply.test.ts: decision fixture anchor mismatch")
-    text = text.replace(anchor, anchor + f'      mergeMethod: "near_duplicate",{nl}', 1)
-write_text(path, text)
-
-for test_path, old, new in [
-    (
-        "03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts",
-        '          groupId: "g1",\n          decision: action,',
-        '          groupId: "g1",\n          mergeMethod: "near_duplicate",\n          decision: action,',
-    ),
-    (
-        "03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts",
-        '        groupId: "g1",\n        decision: "partial",',
-        '        groupId: "g1",\n        mergeMethod: "near_duplicate",\n        decision: "partial",',
-    ),
-]:
-    text = read_text(test_path)
-    nl = newline_of(text)
-    old_n = old.replace("\n", nl)
-    new_n = new.replace("\n", nl)
-    if 'mergeMethod: "near_duplicate"' not in text:
-        if text.count(old_n) != 1:
-            raise SystemExit(f"{test_path}: Stream B fixture anchor mismatch")
-        text = text.replace(old_n, new_n, 1)
-    write_text(test_path, text)
-
-path = "03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts"
-text = read_text(path)
-nl = newline_of(text)
-if 'mergeMethod: "near_duplicate" as const' not in text:
-    anchor = f'        groupId: "heuristic-risk-a-b",{nl}'
-    if text.count(anchor) < 1:
-        raise SystemExit("MergeSuggestionsPanel.test.ts: shared fixture anchor mismatch")
-    text = text.replace(anchor, anchor + f'        mergeMethod: "near_duplicate" as const,{nl}', 1)
-write_text(path, text)
-
-# 9. Add focused regression evidence for persistence and external-agent fail-closed behavior.
-persistence_test = Path("03_Implement/frontend/src/domain/merge_method_persistence.test.ts")
-if not persistence_test.exists():
-    persistence_test.write_text(
-        '''import { describe, expect, it } from "vitest";\n\nimport { validateDocument } from "./validate";\nimport { validateDocumentV1Strict } from "./validate_doc";\n\nconst baseDocument = {\n  version: 1,\n  id: "doc-merge-method",\n  createdAt: "2026-09-04T00:00:00.000Z",\n  updatedAt: "2026-09-04T00:00:00.000Z",\n  transform: { panX: 0, panY: 0, zoom: 1 },\n  cards: [],\n  edges: [],\n  islands: [],\n};\n\nfunction decision(mergeMethod?: unknown) {\n  return {\n    id: "d1",\n    groupId: "g1",\n    decision: "accept",\n    decidedAt: "2026-09-04T00:01:00.000Z",\n    cardIds: ["c1", "c2"],\n    mergedTextDraft: "統合案",\n    editedText: "統合案",\n    ...(mergeMethod === undefined ? {} : { mergeMethod }),\n  };\n}\n\ndescribe("mergeMethod persisted decision compatibility", () => {\n  it.each(["near_duplicate", "kernel_fusion"] as const)("strictly accepts and preserves %s", (mergeMethod) => {\n    const raw = { ...baseDocument, mergeSuggestionDecisions: [decision(mergeMethod)] };\n    const strict = validateDocumentV1Strict(raw);\n    expect(strict.ok).toBe(true);\n    const normalized = validateDocument(raw);\n    expect(normalized.ok).toBe(true);\n    if (normalized.ok) expect(normalized.document.mergeSuggestionDecisions?.[0]?.mergeMethod).toBe(mergeMethod);\n  });\n\n  it("keeps legacy decisions without guessing a method", () => {\n    const raw = { ...baseDocument, mergeSuggestionDecisions: [decision()] };\n    const strict = validateDocumentV1Strict(raw);\n    expect(strict.ok).toBe(true);\n    const normalized = validateDocument(raw);\n    expect(normalized.ok).toBe(true);\n    if (normalized.ok) expect(normalized.document.mergeSuggestionDecisions?.[0]?.mergeMethod).toBeUndefined();\n  });\n\n  it("rejects unknown methods strictly and drops them in lenient normalization", () => {\n    const raw = { ...baseDocument, mergeSuggestionDecisions: [decision("unknown_method")] };\n    const strict = validateDocumentV1Strict(raw);\n    expect(strict.ok).toBe(false);\n    const normalized = validateDocument(raw);\n    expect(normalized.ok).toBe(true);\n    if (normalized.ok) expect(normalized.document.mergeSuggestionDecisions?.[0]?.mergeMethod).toBeUndefined();\n  });\n});\n''',
-        encoding="utf-8",
-    )
-
-external_test = Path("03_Implement/frontend/src/import/agent_response_merge_method.test.ts")
-if not external_test.exists():
-    external_test.write_text(
-        '''import { describe, expect, it } from "vitest";\n\nimport { parseAgentResponse } from "./agent_response_import";\n\nfunction payload(content: Record<string, unknown>) {\n  return JSON.stringify({\n    schemaVersion: "agent-response.v1",\n    taskId: "task-1",\n    proposals: [{\n      proposalId: "p1",\n      kind: "merge_candidate",\n      targetRef: { cardIds: ["c1", "c2"] },\n      content,\n      rationale: "意味を保って統合する",\n    }],\n  });\n}\n\ndescribe("external merge candidate mergeMethod", () => {\n  it.each(["near_duplicate", "kernel_fusion"] as const)("keeps explicit %s", (mergeMethod) => {\n    const result = parseAgentResponse(payload({ mergedText: "統合案", mergeMethod }), "lenient");\n    expect(result.ok).toBe(true);\n    if (result.ok) expect(result.response.proposals[0]?.content.mergeMethod).toBe(mergeMethod);\n  });\n\n  it.each([undefined, "unknown_method"])("does not infer %s", (mergeMethod) => {\n    const content = mergeMethod === undefined ? { mergedText: "統合案" } : { mergedText: "統合案", mergeMethod };\n    const result = parseAgentResponse(payload(content), "lenient");\n    expect(result.ok).toBe(true);\n    if (result.ok) {\n      expect(result.response.proposals).toHaveLength(0);\n      expect(result.warnings.some((warning) => warning.includes("merge_candidate_missing_or_invalid_merge_method"))).toBe(true);\n    }\n  });\n});\n''',
-        encoding="utf-8",
-    )
-
-# 10. Keep the human-facing external-agent contract in sync.
-path = "02_Architecture/external_agent_collaboration_spec.html"
-text = read_text(path)
-if 'merge_candidate</code></td><td>MergeSuggestions' in text and 'content.mergeMethod' not in text:
-    old = '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）</td></tr>'
-    new = '<tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）。<code>content.mergeMethod</code> は <code>near_duplicate</code> / <code>kernel_fusion</code> のいずれかを必須とし、欠落・未知値は推測せず取り込まない。</td></tr>'
+old = (
+    "          const cardIds = review.content.cardIds.filter((id) => cardsById.has(id));\r\n"
+    "          const mergedText = review.content.mergedTextDraft.trim();\r\n"
+    "          if (cardIds.length < 2 || !mergedText) break;\r\n"
+)
+new = (
+    "          const cardIds = review.content.cardIds.filter((id) => cardsById.has(id));\r\n"
+    "          const mergedText = review.content.mergedTextDraft.trim();\r\n"
+    "          const mergeMethod = review.content.mergeMethod;\r\n"
+    "          if (cardIds.length < 2 || !mergedText || !mergeMethod) break;\r\n"
+)
+if new not in text:
     if text.count(old) != 1:
-        raise SystemExit("external_agent_collaboration_spec.html: merge_candidate row anchor mismatch")
+        raise SystemExit("App.tsx: external merge review guard anchor mismatch")
     text = text.replace(old, new, 1)
-if '"mergedText": "string?"' in text and '"mergeMethod": "near_duplicate | kernel_fusion?"' not in text:
-    old = '"content": { "title": "string?", "text": "string?", "mergedText": "string?" },'
-    new = '"content": { "title": "string?", "text": "string?", "mergedText": "string?", "mergeMethod": "near_duplicate | kernel_fusion?" },'
+old = (
+    "              groupId: review.content.groupId,\r\n"
+    "              cardIds,\r\n"
+    "              mergedTextDraft: mergedText,\r\n"
+)
+new = (
+    "              groupId: review.content.groupId,\r\n"
+    "              cardIds,\r\n"
+    "              mergedTextDraft: mergedText,\r\n"
+    "              mergeMethod,\r\n"
+)
+if new not in text:
+    if text.count(old) != 1:
+        raise SystemExit("App.tsx: external merge review proposal anchor mismatch")
+    text = text.replace(old, new, 1)
+write_text(path, text)
+
+path = Path("03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts")
+text = read_text(path)
+old = "        mergedTextDraft: \"Merged\",\r\n        rationale: \"Because\","
+new = "        mergedTextDraft: \"Merged\",\r\n        mergeMethod: \"near_duplicate\" as const,\r\n        rationale: \"Because\","
+if new not in text:
+    if text.count(old) != 1:
+        raise SystemExit("MergeSuggestionsPanel.test.ts: suggestion fixture anchor mismatch")
+    text = text.replace(old, new, 1)
+write_text(path, text)
+
+# Stream-B export/import: the common contract must carry mergeMethod and reject
+# missing/unknown values rather than silently widening or dropping it.
+path = Path("03_Implement/frontend/src/domain/stream_b_contract_handoff.ts")
+text = read_text(path)
+old = (
+    "    content: {\n"
+    "      groupId: suggestion.groupId,\n"
+    "      cardIds: [...suggestion.cardIds],\n"
+    "      mergedTextDraft: suggestion.mergedTextDraft,\n"
+    "      rationale: suggestion.rationale,\n"
+    "    },\n"
+)
+new = (
+    "    content: {\n"
+    "      groupId: suggestion.groupId,\n"
+    "      cardIds: [...suggestion.cardIds],\n"
+    "      mergedTextDraft: suggestion.mergedTextDraft,\n"
+    "      mergeMethod: suggestion.mergeMethod,\n"
+    "      rationale: suggestion.rationale,\n"
+    "    },\n"
+)
+if new not in text:
+    if text.count(old) != 1:
+        raise SystemExit("stream_b_contract_handoff.ts: merge review content anchor mismatch")
+    text = text.replace(old, new, 1)
+write_text(path, text)
+
+path = Path("03_Implement/frontend/src/import/agent_response.ts")
+text = read_text(path)
+if 'import { isMergeMethod } from "../domain/merge_method";' not in text:
+    anchor = 'import type { DocumentV1 } from "../domain/types";\n'
+    if text.count(anchor) != 1:
+        raise SystemExit("agent_response.ts: import anchor mismatch")
+    text = text.replace(anchor, anchor + 'import { isMergeMethod } from "../domain/merge_method";\n', 1)
+old = (
+    '      mergedTextDraft: asString(contentRaw.mergedTextDraft, "review.content.mergedTextDraft"),\n'
+    '      rationale: asOptionalString(contentRaw.rationale, "review.content.rationale"),\n'
+)
+new = (
+    '      mergedTextDraft: asString(contentRaw.mergedTextDraft, "review.content.mergedTextDraft"),\n'
+    '      mergeMethod: isMergeMethod(contentRaw.mergeMethod)\n'
+    '        ? contentRaw.mergeMethod\n'
+    '        : (() => { throw new Error("review.content.mergeMethod must be near_duplicate or kernel_fusion"); })(),\n'
+    '      rationale: asOptionalString(contentRaw.rationale, "review.content.rationale"),\n'
+)
+if new not in text:
+    if text.count(old) != 1:
+        raise SystemExit("agent_response.ts: merge review parser anchor mismatch")
+    text = text.replace(old, new, 1)
+write_text(path, text)
+
+# Add focused regression tests for Stream-B import and Document persistence.
+path = Path("03_Implement/frontend/src/import/agent_response_merge_method.test.ts")
+write_text(path, '''import { describe, expect, it } from "vitest";\nimport { parseAgentResponseJson } from "./agent_response";\n\nfunction raw(method?: string) {\n  const content: Record<string, unknown> = {\n    groupId: "g",\n    cardIds: ["a", "b"],\n    mergedTextDraft: "merged",\n  };\n  if (method !== undefined) content.mergeMethod = method;\n  return JSON.stringify({\n    version: "1",\n    kind: "agent-response",\n    taskId: "t",\n    baseDocSignature: "sig",\n    generatedAt: "2026-09-04T00:00:00.000Z",\n    reviews: [{ id: "r", kind: "merge-suggestion", content }],\n  });\n}\n\ndescribe("agent response mergeMethod", () => {\n  it("preserves kernel_fusion", () => {\n    const parsed = parseAgentResponseJson(raw("kernel_fusion"));\n    expect(parsed.reviews[0]?.kind).toBe("merge-suggestion");\n    if (parsed.reviews[0]?.kind === "merge-suggestion") {\n      expect(parsed.reviews[0].content.mergeMethod).toBe("kernel_fusion");\n    }\n  });\n\n  it("preserves near_duplicate", () => {\n    const parsed = parseAgentResponseJson(raw("near_duplicate"));\n    if (parsed.reviews[0]?.kind === "merge-suggestion") {\n      expect(parsed.reviews[0].content.mergeMethod).toBe("near_duplicate");\n    }\n  });\n\n  it("rejects a missing method", () => {\n    expect(() => parseAgentResponseJson(raw())).toThrow(/mergeMethod/);\n  });\n\n  it("rejects an unknown method", () => {\n    expect(() => parseAgentResponseJson(raw("semantic_similarity"))).toThrow(/mergeMethod/);\n  });\n});\n''')
+
+path = Path("03_Implement/frontend/src/domain/merge_method_persistence.test.ts")
+write_text(path, '''import { describe, expect, it } from "vitest";\nimport { validateDocument } from "./validate";\n\nfunction baseDoc() {\n  return {\n    version: 1,\n    id: "d",\n    title: "test",\n    createdAt: "2026-09-04T00:00:00.000Z",\n    updatedAt: "2026-09-04T00:00:00.000Z",\n    transform: { panX: 0, panY: 0, zoom: 1 },\n    cards: [],\n    edges: [],\n    islands: [],\n    evidenceLinks: [],\n    readingOrder: [],\n    narratives: [],\n  };\n}\n\ndescribe("mergeMethod persistence", () => {\n  it("preserves near_duplicate on a new decision", () => {\n    const raw = { ...baseDoc(), mergeSuggestionDecisions: [{\n      id: "m", groupId: "g", decision: "accept", decidedAt: "2026-09-04T00:00:00.000Z",\n      cardIds: ["a", "b"], mergedTextDraft: "x", editedText: "x", mergeMethod: "near_duplicate",\n    }] };\n    const doc = validateDocument(raw);\n    expect(doc.mergeSuggestionDecisions?.[0]?.mergeMethod).toBe("near_duplicate");\n  });\n\n  it("preserves kernel_fusion on a new decision", () => {\n    const raw = { ...baseDoc(), mergeSuggestionDecisions: [{\n      id: "m", groupId: "g", decision: "accept", decidedAt: "2026-09-04T00:00:00.000Z",\n      cardIds: ["a", "b"], mergedTextDraft: "x", editedText: "x", mergeMethod: "kernel_fusion",\n    }] };\n    const doc = validateDocument(raw);\n    expect(doc.mergeSuggestionDecisions?.[0]?.mergeMethod).toBe("kernel_fusion");\n  });\n\n  it("keeps legacy decisions readable without inferring a method", () => {\n    const raw = { ...baseDoc(), mergeSuggestionDecisions: [{\n      id: "legacy", groupId: "g", decision: "accept", decidedAt: "2026-09-04T00:00:00.000Z",\n      cardIds: ["a", "b"], mergedTextDraft: "x", editedText: "x",\n    }] };\n    const doc = validateDocument(raw);\n    expect(doc.mergeSuggestionDecisions?.[0]).not.toHaveProperty("mergeMethod");\n  });\n\n  it("rejects an unknown method instead of widening it", () => {\n    const raw = { ...baseDoc(), mergeSuggestionDecisions: [{\n      id: "m", groupId: "g", decision: "accept", decidedAt: "2026-09-04T00:00:00.000Z",\n      cardIds: ["a", "b"], mergedTextDraft: "x", editedText: "x", mergeMethod: "semantic_similarity",\n    }] };\n    expect(() => validateDocument(raw)).toThrow();\n  });\n});\n''')
+
+# SafeMode field policy is applied by the workflow shim immediately before this
+# script runs, because the file is LF and independently edited by other lanes.
+
+# ---------------------------------------------------------------------------
+# Backend: dedicated old/new decision persistence test is created by the
+# workflow shim; provider parse tests already live in the branch.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Documentation seams used by external-agent collaboration and Stream B.
+# ---------------------------------------------------------------------------
+path = Path("02_Architecture/external_agent_collaboration_spec.html")
+text = read_text(path)
+old = (
+    '<code>groupId</code> / <code>cardIds</code> / <code>mergedTextDraft</code> / '
+    '<code>rationale?</code>'
+)
+new = (
+    '<code>groupId</code> / <code>cardIds</code> / <code>mergedTextDraft</code> / '
+    '<code>mergeMethod</code> (<code>near_duplicate</code> | <code>kernel_fusion</code>) / '
+    '<code>rationale?</code>'
+)
+if new not in text:
     if text.count(old) != 1:
         raise SystemExit("external_agent_collaboration_spec.html: response content schema anchor mismatch")
     text = text.replace(old, new, 1)
@@ -345,6 +208,6 @@ for temp in [
 run("git", "config", "user.name", "github-actions[bot]")
 run("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
 run("git", "add", "-A")
-run("git", "diff", "--cached", "--check")
+run("git", "-c", "core.whitespace=cr-at-eol", "diff", "--cached", "--check")
 run("git", "commit", "-m", "fix: mergeMethodの契約継ぎ目と永続化を閉じる")
 run("git", "push", "origin", f"HEAD:{BRANCH}")
