@@ -4,6 +4,7 @@ import type { PatchOp, PatchV1 } from "../domain/patch/patch_types";
 import { parsePatchOp } from "../domain/patch/patch_apply";
 import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
 import { AGENT_TASK_KINDS, type AgentTaskCorrelation } from "../export/agent_task_export";
+import { isMergeMethod, type MergeMethod } from "../domain/merge_method";
 import type { AgentResponseProvenance } from "../storage/agent_task_ledger";
 
 // EXT-AGENT-02 (ADR-0049 D3, spec `02_Architecture/external_agent_collaboration_spec.md`
@@ -36,6 +37,7 @@ export type AgentResponseProposalContent = {
   title?: string;
   text?: string;
   mergedText?: string;
+  mergeMethod?: MergeMethod;
 };
 
 export type ParsedAgentProposal = {
@@ -126,6 +128,7 @@ function parseContent(value: unknown): AgentResponseProposalContent {
     title: sanitizeString(value.title),
     text: sanitizeString(value.text),
     mergedText: sanitizeString(value.mergedText),
+    mergeMethod: isMergeMethod(value.mergeMethod) ? value.mergeMethod : undefined,
   };
 }
 
@@ -194,6 +197,11 @@ function parseProposal(value: unknown, mode: AgentResponseImportMode): { proposa
     warnings.push("proposal.missing_rationale_labeled");
   }
 
+  const content = parseContent(value.content);
+  if (kind === "merge_candidate" && !content.mergeMethod) {
+    return { errors: ["proposal.merge_candidate_missing_or_invalid_merge_method"], warnings };
+  }
+
   let patch: PatchV1 | undefined;
   let patchHasDeleteOps = false;
   if (kind === "patch") {
@@ -209,7 +217,7 @@ function parseProposal(value: unknown, mode: AgentResponseImportMode): { proposa
     proposalId: sanitizeMarkdownForDisplay(proposalId),
     kind,
     targetRef: parseTargetRef(value.targetRef),
-    content: parseContent(value.content),
+    content,
     rationale: rationaleStated ? (rationaleRaw as string) : "(根拠未記載)",
     rationaleStated,
     patch,

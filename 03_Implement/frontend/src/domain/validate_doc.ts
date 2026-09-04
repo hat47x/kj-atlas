@@ -1073,7 +1073,7 @@ function validateMergeSuggestionDecisionEntry(
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale", "representativeCardId", "representativeResolvedBy", "sourceCardIds", "missingSourceCardIds"], path, errors);
+  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale", "mergeMethod", "representativeCardId", "representativeResolvedBy", "sourceCardIds", "missingSourceCardIds"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -1129,6 +1129,14 @@ function validateMergeSuggestionDecisionEntry(
   }
   if (item.rationale !== undefined && typeof item.rationale !== "string") {
     errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+  if (
+    item.mergeMethod !== undefined
+    && item.mergeMethod !== "near_duplicate"
+    && item.mergeMethod !== "kernel_fusion"
+  ) {
+    errors.push(`${path}.mergeMethod: must be 'near_duplicate' | 'kernel_fusion' when provided`);
     valid = false;
   }
   if (item.representativeCardId !== undefined && typeof item.representativeCardId !== "string") {

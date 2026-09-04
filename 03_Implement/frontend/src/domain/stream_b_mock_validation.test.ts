@@ -71,6 +71,7 @@ describe("Stream B A2 mock validation", () => {
         current,
         {
           groupId: "g1",
+          mergeMethod: "near_duplicate",
           decision: action,
           cardIds: ["c2", "c1"],
           mergedTextDraft: "risk mitigation",
