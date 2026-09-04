@@ -31,9 +31,14 @@ auth_new = '''  const blockedAlert = page.getByRole("alert");
 
   const retryButton = blockedAlert.getByRole("button", { name: /^(Retry|再試行)$/ });
   await expect(retryButton).toHaveCount(0);'''
-if source.count(auth_old) != 1:
-    raise SystemExit("authentication-required baseline anchor drifted")
-source = source.replace(auth_old, auth_new, 1)
+auth_old_count = source.count(auth_old)
+auth_new_count = source.count(auth_new)
+if auth_old_count == 1 and auth_new_count == 0:
+    source = source.replace(auth_old, auth_new, 1)
+elif not (auth_old_count == 0 and auth_new_count == 1):
+    raise SystemExit(
+        f"authentication-required baseline anchor drifted: old={auth_old_count}, new={auth_new_count}"
+    )
 
 if "--baseline" in sys.argv:
     path.write_text(source, encoding="utf-8")
