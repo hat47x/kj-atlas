@@ -25,6 +25,15 @@ Arm C/Dでは、KJ Atlasを**完成後の清書場所ではなく、分析して
 
 Arm Dだけに、固定済みの共通canonical skill bundle `3988e12e5f7f316f377d3391e9486c8467a111d5 / src/ja-JP`を追加する。Arm Cへskill sourceを渡さない。
 
+
+### 2.1 KJ Atlas runtimeも固定product commitを使う
+
+formal Round 1のC/Dで操作するKJ Atlas runtimeは、evidence bundleと同じ `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649` を基準とする。Arm packageはruntime本体を同梱しないため、操作者が固定commitのcheckout / worktreeからKJ Atlasを起動する。
+
+current mainや別commitのUIを、同じformal runのruntimeとして黙って代用しない。固定commitで本書の必要操作経路を実行できない場合は、UI探索時間をM9へ算入して帳尻を合わせるのではなく、そのrunを`blocked / invalid / partial`として理由を残し、別revisionが必要かを判断する。
+
+この明示はproduct snapshotやtreatmentを変更するものではない。`cognitive-dogfood-case-portfolio-freeze.md`に既にある「3Caseで同じKJ Atlas product commitを使用する」という不変条件を、操作者が実行できる形へ展開したものである。
+
 ## 3. 実装上確認済みのUI経路
 
 preflightで確認した現在の操作経路は次のとおり。

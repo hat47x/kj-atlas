@@ -83,6 +83,15 @@ python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
 
 操作者専用skill manifestがCase 001に由来する事実は、Case 001の結果を見る前に固定した履歴として保持する。ただし、そのCase identityはB/DのArm側bundleへコピーしない。A/Cにはskill bundleもskill manifestも渡さない。
 
+
+### 1.3 Frozen KJ Atlas runtime — C/Dのみ
+
+C/Dで実際に操作するKJ Atlasは、formal product snapshotと同じ `2232b3bb26647e5c4a083f55bdbf83c161698649` のcheckout / worktreeから起動する。Actions artifactは分析入力を隔離するためのpackageであり、KJ Atlas runtimeそのものを含まない。
+
+run開始前に、操作者は固定commitでC/D共通runbookの必要UI経路を使用できることを確認する。現在mainや別commitしか起動できない場合、それを元のRound 1へ黙って代用しない。固定runtimeで実行不能なら`blocked / invalid / partial`として理由を保存し、別revisionとして扱う。
+
+A/BはKJ Atlas UIをtreatmentとして使用しないため、このruntime起動手順の対象外である。
+
 ## 2. Armの実行順と入力
 
 | 実行順 | Arm | 新規コンテキストへ渡すもの | KJ Atlas UI | Skill bundle |

@@ -137,6 +137,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R20。R19の契約をbackend provider、frontend decoder、決定論fallback、UI、人間の採否、Document decisionへ通し、欠落・未知値・後方互換の回帰契約を追加した記録。
 - `doc_kj_atlas_dogfood_r20.json`
   - R20のKJキャンバス。方式の意味が利用経路のどこでも落ちないことと、formal Case・第三者価値実証・scale課題を別境界として残すことを示す。
+- `cognitive-dogfood-continuous-2026-09-04-r21.md`
+  - R21。8月27日のformal product snapshotと9月4日のcurrent mainを混同せず、元比較の内的妥当性と現在mainへの移送妥当性を二段階へ分離した記録。C/D runtimeも既存freeze契約どおり固定product commitを使うことをoperator手順へ戻す。
+- `doc_kj_atlas_dogfood_r21.json`
+  - R21のKJキャンバス。commit距離と意味ドリフトを分け、元portfolioを書き換えず後段のcurrent-state replicationで現在性を確かめる構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
