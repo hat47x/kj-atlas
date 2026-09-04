@@ -1,7 +1,7 @@
 # Issue: DOGFOOD-VERIFY-HISTORY-01 frozen source検証がshallow checkoutを資料欠落として誤診断する
 
 - Type: Test / Developer Experience
-- Status: In Progress
+- Status: Done
 - Source Issue: レーンC `DOC-TRIAGE-ADR-STATUS-01` 最終検証 run `33829493679`
 - Priority: P2
 - Owner: Maintainer
@@ -26,16 +26,24 @@ run `33829493679` ではtriage unit、issue validator、docs-checkは成功し�
 
 ## 受入条件
 
-- [ ] 固定commitがないshallow checkoutで、履歴不足が1件のactionableな診断として報告される。
-- [ ] 同じ条件で56件のpath欠落診断へ展開されない。
-- [ ] 履歴不足でもmanifestの構造検査は継続される。
-- [ ] 固定commit取得後は従来どおり全sourceのpath/blob照合が行われる。
-- [ ] validatorは履歴不足を成功扱いせずexit 1を返す。
-- [ ] validatorがnetwork fetchを副作用として実行しない。
-- [ ] `test_validate_dogfood_docs.py`、dogfood validator、`docs_check.py`、active issue validator、`git diff --check` が成功する。
+- [x] 固定commitがないshallow checkoutで、履歴不足が1件のactionableな診断として報告される。
+- [x] 同じ条件で56件のpath欠落診断へ展開されない。
+- [x] 履歴不足でもmanifestの構造検査は継続される。
+- [x] 固定commit取得後は従来どおり全sourceのpath/blob照合が行われる。
+- [x] validatorは履歴不足を成功扱いせずexit 1を返す。
+- [x] validatorがnetwork fetchを副作用として実行しない。
+- [x] `test_validate_dogfood_docs.py`、dogfood validator、`docs_check.py`、active issue validator、`git diff --check` が成功する。
 
 ## 非目標
 
 - frozen product commitやmanifest内容の変更。
 - cultural-substrate-weaving側commitをkj-atlasのローカルGit履歴から照合すること。
 - 永続GitHub Actions workflowの追加。
+
+## 対応結果（2026-09-04）
+
+- `validate_dogfood_docs.py` に固定product commitの事前確認を追加した。
+- shallow checkoutでは固定commit不足を1件のactionableな環境エラーとしてfail-closedし、56件のpath欠落へ展開しないことを確認した。
+- manifestの構造検査は履歴不足時も継続し、固定commit取得後はCase 001の20 sourceを含む従来のpath/blob照合を維持した。
+- validator自身はfetchを行わず、READMEへ呼び出し側の履歴前提を明記した。
+- 一回限り検証 run `33832135592` で shallow再現 → `git fetch --unshallow` → 全dogfood検証、unit、active issue validator、docs-check、diff-checkを通過した。
