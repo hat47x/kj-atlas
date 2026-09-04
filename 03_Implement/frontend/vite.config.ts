@@ -2,6 +2,14 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   envPrefix: "KJ_ATLAS_",
+  build: {
+    rollupOptions: {
+      input: {
+        app: "index.html",
+        admin: "admin.html",
+      },
+    },
+  },
   server: {
     proxy: {
       "/api": {
