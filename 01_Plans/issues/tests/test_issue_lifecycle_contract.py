@@ -88,7 +88,6 @@ class IssueLifecycleContractTests(unittest.TestCase):
         assert paths is not None
         self.assertEqual(58, len(paths))
         self.assertTrue(all(Path(name).name == name for name in paths))
-
     def test_baseline_must_be_lowered_when_legacy_count_shrinks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

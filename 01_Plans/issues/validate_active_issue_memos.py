@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -230,6 +231,67 @@ def load_done_at_root_identity_manifest(
 
     return (paths if not errors else None), errors
 
+def _legacy_done_paths_from_git_removed_by_merge(
+    root: Path,
+    baseline_commit: str = "",
+) -> tuple[set[str] | None, str | None]:
+    """Reconstruct the R18 root Done paths when running inside a Git checkout.
+
+    Isolated unit-test fixtures are intentionally not repositories; callers can
+    skip the identity guard there and test it by injecting `legacy_paths`.
+    """
+    try:
+        repository = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+        )
+    except subprocess.CalledProcessError:
+        return None, None
+    except FileNotFoundError:
+        return None, "git executable was not found; cannot verify Done-at-root identity"
+
+    repository_root = Path(repository.stdout.strip()).resolve()
+    try:
+        relative_root = root.resolve().relative_to(repository_root).as_posix()
+    except ValueError:
+        return None, None
+
+    pathspec = f"{relative_root}/issue-*.md"
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository_root),
+            "grep",
+            "-l",
+            "-e",
+            r"^- Status: Done$",
+            baseline_commit,
+            "--",
+            pathspec,
+        ],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    if completed.returncode not in (0, 1):
+        detail = completed.stderr.strip() or f"git grep exited with {completed.returncode}"
+        return None, f"cannot read R18 Done-at-root identity baseline: {detail}"
+
+    prefix = f"{baseline_commit}:{relative_root}/"
+    paths: set[str] = set()
+    for line in completed.stdout.splitlines():
+        if not line.startswith(prefix):
+            return None, f"unexpected R18 baseline result `{line}`"
+        paths.add(line[len(prefix) :])
+    return paths, None
+
 
 def validate_done_memo_identity(
     root: Path,
@@ -308,7 +370,6 @@ def default_legacy_done_at_root_baseline(root: Path) -> int:
     """
     canonical_root = Path(__file__).resolve().parent
     return LEGACY_DONE_AT_ROOT_BASELINE if root.resolve() == canonical_root else 0
-
 
 def validate_done_memo_location(
     root: Path,
