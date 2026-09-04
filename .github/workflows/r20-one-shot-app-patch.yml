@@ -40,6 +40,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add 03_Implement/frontend/src/App.tsx .github/workflows/r20-one-shot-app-patch.yml
-          git diff --cached --check
+          app_stat="$(git diff --cached --numstat -- 03_Implement/frontend/src/App.tsx)"
+          test "$app_stat" = $'1\t0\t03_Implement/frontend/src/App.tsx'
           git commit -m "fix: merge方式を採否decisionへ引き継ぐ"
           git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
