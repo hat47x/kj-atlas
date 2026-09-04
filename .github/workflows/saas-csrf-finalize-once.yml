@@ -33,6 +33,23 @@ jobs:
           git fetch origin main
           git merge --no-edit origin/main
           python .github/scripts/saas_csrf_finalize.py
+          python - <<'PY'
+          from pathlib import Path
+
+          old = '01_Plans/issues/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md'
+          new = '01_Plans/issues/done/issue-SAAS-TENANT-SESSION-BINDING-01-principal-keyed-session-state.md'
+          paths = [
+              Path('01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md'),
+              Path('01_Plans/issues/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md'),
+              Path('01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md'),
+          ]
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'citation anchor mismatch: {path}: {count}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Install backend test dependencies
         run: python -m pip install -e '03_Implement/backend[test]'
       - name: Run backend CSRF and session regressions
