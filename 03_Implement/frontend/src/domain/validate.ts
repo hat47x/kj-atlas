@@ -966,6 +966,9 @@ function parseMergeSuggestionDecisions(value: unknown): MergeSuggestionDecisionE
       ...(typeof item.note === "string" ? { note: item.note } : {}),
       ...(typeof item.snapshotVersion === "string" ? { snapshotVersion: item.snapshotVersion } : {}),
       ...(typeof item.rationale === "string" ? { rationale: item.rationale } : {}),
+      ...((item.mergeMethod === "near_duplicate" || item.mergeMethod === "kernel_fusion")
+        ? { mergeMethod: item.mergeMethod }
+        : {}),
       ...(typeof item.representativeCardId === "string" ? { representativeCardId: item.representativeCardId } : {}),
       ...(isRepresentativeResolvedBy(item.representativeResolvedBy)
         ? { representativeResolvedBy: item.representativeResolvedBy }

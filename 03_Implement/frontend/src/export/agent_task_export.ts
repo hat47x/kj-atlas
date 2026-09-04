@@ -96,7 +96,7 @@ function buildRequestInstruction(taskKind: AgentTaskKind, scopeLabel: string, de
     case "island_titles":
       return `文脈に含まれるカード群から、島（まとまり）のタイトル候補を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。`;
     case "merge_candidates":
-      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。`;
+      return `文脈に含まれるカードの中で、統合（マージ）できそうな組を${desiredCount}件程度、提案してください。対象範囲: ${scopeLabel}。近い記述を整理する場合は near_duplicate、完全な重複ではない複数カードから共通の意味核を立てる場合は kernel_fusion とし、各 merge_candidate の content.mergeMethod に必ず明示してください。`;
     case "narrative_draft":
       return `文脈に含まれる内容をもとに、読み手に伝わる文章の草稿を1件、提案してください。対象範囲: ${scopeLabel}。`;
     case "opposing_viewpoints":
@@ -252,7 +252,7 @@ const AGENT_TASK_RESPONSE_SCHEMA_JSON = JSON.stringify(
         proposalId: "string (応答内一意)",
         kind: "island_title | merge_candidate | narrative_draft | opposing_viewpoint | critique | patch",
         targetRef: { islandId: "string?", cardIds: ["string"] },
-        content: { title: "string?", text: "string?", mergedText: "string?" },
+        content: { title: "string?", text: "string?", mergedText: "string?", mergeMethod: "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)" },
         rationale: "string (必須・なぜそう考えたか)",
         patch: "PatchV1? (kind=patch のときのみ。baseDocSignature は依頼と一致必須)",
       },

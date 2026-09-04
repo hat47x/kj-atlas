@@ -1,5 +1,6 @@
 import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";
+import type { MergeMethod } from "./merge_method";
 import type { DocumentV1 } from "./types";
 import { STREAM_B_CONTRACTS, type StreamBContractId, type StreamBSchemaVersion } from "./stream_b_contract";
 
@@ -43,6 +44,7 @@ export function validateCandidateGroupContract(document: DocumentV1): StreamBVal
 
 type ValidateDecisionLogInput = {
   groupId: string;
+  mergeMethod: MergeMethod;
   decision: MergeSuggestionDecision;
   cardIds: string[];
   mergedTextDraft: string;
@@ -59,6 +61,7 @@ export function validateDecisionLogContract(
 
   const isValid =
     entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&
+    entry.mergeMethod === input.mergeMethod &&
     entry.action === input.decision &&
     entry.decisionId !== undefined &&
     entry.decisionId.length > 0;

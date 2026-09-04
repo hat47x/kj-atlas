@@ -127,6 +127,14 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R18。意味保存型mergeの実装済み利用経路を横断照合し、backendのremote提案契約とfrontendの決定論fallback契約が混線して正常なprovider応答を拒否し得ることを発見・修正した記録。
 - `doc_kj_atlas_dogfood_r18.json`
   - R18のKJキャンバス。既存testが誤った契約前提を非退行条件として固定し得ること、Done-at-rootの計画legacy差、merge方式の追跡性を別の残差として保持する。
+- `cognitive-dogfood-continuous-2026-09-04-r19.md`
+  - R19。promptが04ステップ型／核融合法型を選ばせながら方式をreview契約で失っていたことを分析し、`near_duplicate | kernel_fusion` をproposal・decisionの独立した意味属性として確定した記録。
+- `doc_kj_atlas_dogfood_r19.json`
+  - R19のKJキャンバス。AI理由・人間理由・方式を分離し、新規記録は厳格、旧記録は推測しない境界を保持する。
+- `cognitive-dogfood-continuous-2026-09-04-r20.md`
+  - R20。R19の契約をbackend provider、frontend decoder、決定論fallback、UI、人間の採否、Document decisionへ通し、欠落・未知値・後方互換の回帰契約を追加した記録。
+- `doc_kj_atlas_dogfood_r20.json`
+  - R20のKJキャンバス。方式の意味が利用経路のどこでも落ちないことと、formal Case・第三者価値実証・scale課題を別境界として残すことを示す。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 

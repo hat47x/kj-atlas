@@ -399,6 +399,7 @@ export type MergeSuggestionDecisionEntry = {
   note?: string;
   snapshotVersion?: string;
   rationale?: string;
+  mergeMethod?: "near_duplicate" | "kernel_fusion";
   /**
    * R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): decision-time
    * provenance snapshot. Keep in sync with the identical, independently-declared copy of

@@ -161,7 +161,7 @@ flowchart LR
       "proposalId": "string (応答内一意)",
       "kind": "island_title | merge_candidate | narrative_draft | opposing_viewpoint | critique | patch",
       "targetRef": { "islandId": "string?", "cardIds": ["string"] },
-      "content": { "title": "string?", "text": "string?", "mergedText": "string?" },
+      "content": { "title": "string?", "text": "string?", "mergedText": "string?", "mergeMethod": "near_duplicate | kernel_fusion?" },
       "rationale": "string (必須・なぜそう考えたか)",
       "patch": "PatchV1? (kind=patch のときのみ)"
     }
@@ -173,7 +173,7 @@ flowchart LR
       <thead><tr><th style="width:22%;">kind</th><th>行き先（すべてAI由来・未レビューの提案として）</th></tr></thead>
       <tbody>
         <tr><td><code>island_title</code></td><td>島タイトル候補（複数候補・選択/編集/破棄）</td></tr>
-        <tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）</td></tr>
+        <tr><td><code>merge_candidate</code></td><td>MergeSuggestions（既存の採否・監査 <code>merge-decision-logs</code>）。<code>content.mergeMethod</code> は <code>near_duplicate</code> / <code>kernel_fusion</code> のいずれかを必須とし、欠落・未知値は推測せず取り込まない。</td></tr>
         <tr><td><code>narrative_draft</code></td><td>Narrativesの草稿（レビュー必須）</td></tr>
         <tr><td><code>opposing_viewpoint</code> / <code>critique</code></td><td>選択コンテキストの違和感候補（人間が確定して初めてcritiqueInputsになる）</td></tr>
         <tr><td><code>patch</code></td><td>PatchWorkspace（lint→conflict検出→採否/保留→ロールバック）</td></tr>

@@ -491,7 +491,7 @@ class DocumentRow(Base):
 
 
 class DocumentListItem(BaseModel):
-    """Row metadata for a tenant's document (GET /docs list; 第2反復).
+    """Row metadata for a tenant's document (GET /docs list; 第2反復 canvas-list foundation).
 
     Payload-independent: never card content, only identity/lifecycle metadata.
     """
@@ -1271,6 +1271,11 @@ class MergeSuggestionDecision(BaseModel):
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
     snapshotVersion: str | None = Field(default=None, exclude_if=lambda value: value is None)
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    # R20: new decisions preserve the proposal's method; optional here only so
+    # documents saved before the field existed continue to round-trip unchanged.
+    mergeMethod: Literal["near_duplicate", "kernel_fusion"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     # R3-tier-1 (functional-dependency-integrity-2026-08-06.html §08, F-9): decision-time
     # provenance snapshot. Optional for back-compat with entries persisted before this
     # field existed.
@@ -1653,6 +1658,7 @@ class MergeSuggestion(BaseModel):
     groupId: str
     cardIds: list[str]
     mergedTextDraft: str = Field(max_length=MERGE_DRAFT_MAX_LENGTH)
+    mergeMethod: Literal["near_duplicate", "kernel_fusion"]
     rationale: str | None = None
 
 

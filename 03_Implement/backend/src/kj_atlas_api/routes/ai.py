@@ -1195,9 +1195,9 @@ def _build_merge_prompt(
     return "\n".join(
         [
             "You propose KJ-compatible card integrations. This is advisory only.",
-            "Use one of two approaches when appropriate:",
-            "- 04-step-like consolidation for near-duplicate cards whose material distinctions can all be retained.",
-            "- kernel-fusion-style integration when several non-identical cards share a meaning kernel that can be stated without erasing their residual differences.",
+            "Use one of two approaches when appropriate and report the selected method for every suggestion:",
+            '- 04-step-like consolidation for near-duplicate cards whose material distinctions can all be retained: set mergeMethod="near_duplicate".',
+            '- kernel-fusion-style integration when several non-identical cards share a meaning kernel that can be stated without erasing their residual differences: set mergeMethod="kernel_fusion".',
             "Similarity alone is not enough. Sharing a topic or vocabulary is not enough.",
             "Before proposing, perform a Return check against every source card: would each source still recognise the draft as preserving what it says?",
             "Leave minority, lone, contradictory, held, or materially different cards separate.",
@@ -1206,7 +1206,7 @@ def _build_merge_prompt(
             "Return strict JSON only. No markdown. No explanation text outside JSON.",
             "Return at most 10 suggestions.",
             "Use this exact schema:",
-            '{"suggestions":[{"groupId":string,"cardIds":[string,...],"mergedTextDraft":string,"rationale":string?}]}',
+            '{"suggestions":[{"groupId":string,"cardIds":[string,...],"mergedTextDraft":string,"mergeMethod":"near_duplicate|kernel_fusion","rationale":string?}]}',
             "Each suggestion must include at least 2 cardIds.",
             "Only use card IDs from the input.",
             f"Instruction: {instruction}",

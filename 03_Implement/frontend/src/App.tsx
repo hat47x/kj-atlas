@@ -3593,6 +3593,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         cardIds: suggestion.cardIds,
         mergedTextDraft: suggestion.mergedTextDraft,
         editedText: suggestion.editedText,
+        mergeMethod: suggestion.mergeMethod,
         rationale: suggestion.rationale,
         decisionReason: options.decisionReason,
       });
@@ -9578,12 +9579,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         case "merge_candidate": {
           const cardIds = review.targetRef.cardIds ?? [];
           const mergedText = review.content.mergedText ?? review.content.text;
-          if (cardIds.length < 2 || !mergedText) break;
+          const mergeMethod = review.content.mergeMethod;
+          if (cardIds.length < 2 || !mergedText || !mergeMethod) break;
           const [targetCardId, ...candidateCardIds] = cardIds;
           setMergeSuggestions((previous) => [
             ...previous,
             {
               groupId: `agent-response-${review.proposalId}`,
+              mergeMethod,
               targetCardId,
               candidateCardIds,
               scoreSummary: { min: 0, max: 0, avg: 0 },

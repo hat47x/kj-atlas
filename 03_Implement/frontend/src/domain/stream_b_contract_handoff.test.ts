@@ -44,6 +44,7 @@ describe("stream_b_contract_handoff", () => {
       createDocument(),
       {
         groupId: "g1",
+        mergeMethod: "near_duplicate",
         decision: "partial",
         cardIds: ["c2", "c1"],
         mergedTextDraft: "risk mitigation",

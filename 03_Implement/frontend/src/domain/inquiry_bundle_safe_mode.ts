@@ -414,6 +414,7 @@ const MERGE_DECISION_FIELDS = {
   note: "redact",
   snapshotVersion: "redact",
   rationale: "redact",
+  mergeMethod: "preserve",
   // R3-tier-1: decision-time provenance snapshot. Same category as cardIds/
   // selectedCardIds/decision/action above — structural ids and an enum, not free text.
   representativeCardId: "preserve",
