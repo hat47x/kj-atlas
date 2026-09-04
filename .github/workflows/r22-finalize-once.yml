@@ -1,0 +1,143 @@
+name: Temporary R22 finalization
+
+on:
+  push:
+    branches:
+      - dogfood/r22-stale-branch-reintroduction-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-r22:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Refresh current main ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Re-run synthetic tests
+        working-directory: 01_Plans
+        run: python -m unittest -v test_check_stale_merge_reintroduction.py
+
+      - name: Diagnose final branch against current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/check_stale_merge_reintroduction.py \
+            --base-ref origin/main \
+            --head-ref HEAD \
+            --json | tee /tmp/r22-final-diagnostic.json
+          python 01_Plans/check_stale_merge_reintroduction.py \
+            --base-ref origin/main \
+            --head-ref HEAD \
+            --fail-on-strong
+
+      - name: Record real-use result and close PROJECT-GOV-02
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/r22-final-diagnostic.json').read_text(encoding='utf-8'))
+          if report.get('strongCount') != 0:
+              raise SystemExit('refuse to finalize with strong findings')
+
+          r22 = Path('01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-04-r22.md')
+          r22_text = r22.read_text(encoding='utf-8')
+          marker = 'R22はformal Case 001 Arm Cを代替しない。formal比較は引き続きfresh context + frozen runtimeで別レーンとして実走する。\n'
+          if r22_text.count(marker) != 1:
+              raise SystemExit(f'expected one R22 final marker, got {r22_text.count(marker)}')
+          evidence = (
+              '\n## 10. merge直前の実使用結果\n\n'
+              '本Issueの完了境界として、PR #2899のbranchをその時点のcurrent mainへ統合する直前に診断を再実行した。\n\n'
+              f'- base commit: `{report["baseCommit"]}`\n'
+              f'- head commit: `{report["headCommit"]}`\n'
+              f'- merge-base: `{report["mergeBase"]}`\n'
+              f'- base commits since merge-base: {report["baseCommitsSinceMergeBase"]}\n'
+              f'- head commits since merge-base: {report["headCommitsSinceMergeBase"]}\n'
+              f'- base changed paths: {report["baseChangedPathCount"]}\n'
+              f'- head changed paths: {report["headChangedPathCount"]}\n'
+              f'- overlap: {report["overlapCount"]}\n'
+              f'- strong: {report["strongCount"]}\n\n'
+              '結果はstrong findingなしであった。commit距離だけを理由に拒否せず、path-levelの交差と状態反転を別に扱う診断として最初の実使用を完了した。'
+              'この結果だけで恒久required check化は判断しない。\n'
+          )
+          r22.write_text(r22_text.replace(marker, marker + evidence), encoding='utf-8')
+
+          issue = Path('01_Plans/issues/issue-PROJECT-GOV-02-pre-merge-stale-state-reintroduction-diagnostic.md')
+          issue_text = issue.read_text(encoding='utf-8')
+          if '- Status: In Progress' not in issue_text:
+              raise SystemExit('PROJECT-GOV-02 status was not In Progress')
+          issue_text = issue_text.replace('- Status: In Progress', '- Status: Done', 1)
+          for prefix in ('- [ ] AC-', '- [ ] T'):
+              issue_text = issue_text.replace(prefix, prefix.replace('[ ]', '[x]'))
+          completion = (
+              '\n## 9. 完了記録 / Completion evidence\n\n'
+              '- synthetic Git repository 5ケース: success。\n'
+              '- 初回実使用 Run `33874427426`: current mainに対して `overlap=0 / strong=0`。\n'
+              f'- merge直前再診断: base=`{report["baseCommit"]}`, head=`{report["headCommit"]}`, '
+              f'overlap={report["overlapCount"]}, strong={report["strongCount"]}。\n'
+              '- dogfood/docs/Issue lifecycle/triageはone-shot検証で再確認する。\n'
+              '- 恒久required check / branch protection化は本IssueのDone条件外のまま保留する。\n'
+          )
+          if '## 9. 完了記録 / Completion evidence' in issue_text:
+              raise SystemExit('completion evidence already exists')
+          issue.write_text(issue_text.rstrip() + '\n' + completion, encoding='utf-8')
+          PY
+
+          git mv \
+            01_Plans/issues/issue-PROJECT-GOV-02-pre-merge-stale-state-reintroduction-diagnostic.md \
+            01_Plans/issues/done/issue-PROJECT-GOV-02-pre-merge-stale-state-reintroduction-diagnostic.md
+
+      - name: Validate final repository contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/triage.json').read_text(encoding='utf-8'))
+          if data.get('errors'):
+              raise SystemExit(f"triage errors: {data['errors']}")
+          print(json.dumps(data, ensure_ascii=False, indent=2))
+          PY
+          git diff --check
+
+      - name: Verify diagnostic after completion edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/check_stale_merge_reintroduction.py \
+            --base-ref origin/main \
+            --head-ref HEAD \
+            --fail-on-strong
+
+      - name: Commit completion and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/r22-finalize-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "dogfood: R22実使用を完了してPROJECT-GOV-02を閉じる"
+          git push origin HEAD:dogfood/r22-stale-branch-reintroduction-20260904
