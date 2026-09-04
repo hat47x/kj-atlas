@@ -95,6 +95,7 @@ def build_text_for_task(task: str, prompt: str) -> str:
                         "groupId": f"g-{cat}",
                         "cardIds": ids,
                         "mergedTextDraft": f"（モック）{cat}が共通するカードの統合案",
+                        "mergeMethod": "near_duplicate",
                         "rationale": f"{cat}をテーマとするカードの統合を提案",
                     }
                 )
