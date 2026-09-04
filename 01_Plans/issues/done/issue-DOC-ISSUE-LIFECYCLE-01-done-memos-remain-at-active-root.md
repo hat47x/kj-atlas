@@ -23,7 +23,9 @@
 
 R19では58件を一時的なbaselineとしてコードへ固定し、実際のDone-at-root件数との**一致**を要求する。件数が59以上なら新しいlegacy debtとして拒否する。逆に57以下へ減った場合も、その変更でbaselineを同じ値へ下げなければ検査を通さない。これにより、一度減らしたlegacyが古い上限まで増え直すことを防ぐ。
 
-個別ファイルを恒久的なallowlistとして正当化せず、baselineだけを段階的に58→57→…→0と単調減少させる。
+R20の横断監査では、legacyを1件 `done/` へ移すのと同じ変更で新しいDone-at-rootを1件増やすと、件数が58のままなので件数検査だけでは新規pathを見逃すことを確認した。そこでR18の `main@88aebae242d5d1a24278b3247d3544aeaa1ad386` から当時のDone-at-root pathを再構成し、そこに含まれない現在pathを拒否するidentity guardを件数ratchetへ追加する。
+
+個別ファイルを新しい正規配置としてallowlist化するのではなく、R18 path集合は「これ以上legacyへ新規参入させない」ための歴史境界としてだけ使い、件数baselineは段階的に58→57→…→0と単調減少させる。
 
 ## 受入条件
 
@@ -51,6 +53,27 @@ R19では58件を一時的なbaselineとしてコードへ固定し、実際のD
 PR #2859の一回限りworkflow run `33819480592` で、`test_validate_active_issue_memos.py`、`test_issue_lifecycle_contract.py`、`python 01_Plans/docs_check.py`、`python 01_Plans/issues/validate_active_issue_memos.py`、`triage_actionable_plans.py`、`git diff --check` がすべて成功した。検証workflow/scriptは最終差分から削除済みで、恒久workflowは追加していない。
 
 本Issue自身はR18時点のlegacy Done 58件ではなく `In Progress` だったため、完了時に `done/` へ移してもbaselineを58から下げる必要はない。新たに完了するmemoをactive直下へ残さないという今回の規則を、このIssue自身にも適用して完了とする。
+## レーンCでの全体検証と補正（2026-09-04）
+
+#2854 がmainへ入った後、恒久workflowを追加せず、一時workflowからリポジトリ全体のplanning checksを実行した。最初のrun `33819279635` では `docs_check.py` が失敗し、exact-baseline検査が既存のsynthetic fixtureにも58件の履歴負債を適用していることが分かった。
+
+58というbaselineは一般的なIssueディレクトリの規則ではなく、このリポジトリの `01_Plans/issues/` に残る履歴負債である。そのため、次のように境界を補正した。
+
+- canonicalな `01_Plans/issues/` では、従来どおり `LEGACY_DONE_AT_ROOT_BASELINE = 58` を適用する。
+- synthetic rootや呼出側が渡す別rootには、既往負債がないため既定baseline 0を適用する。
+- ratchetそのものを検証する専用unit testでは、従来どおりbaselineを明示して58→57→…→0の単調減少契約を検証できる。
+- synthetic rootが履歴負債0として扱われ、新たなDone-at-rootを拒否する回帰testを追加した。
+
+補正後の一時workflow run `33819447926` では、次をすべて成功させた。
+
+- `python 01_Plans/docs_check.py`
+- `python 01_Plans/dogfood/validate_dogfood_docs.py`
+- `python 01_Plans/triage_actionable_plans.py --format json`
+- `git diff --check`
+
+一時workflowは成功後に自身を削除しており、mainへ恒久workflowを追加しない。これにより、exact-baselineの強さを維持したまま、validatorを再利用するcontract testとの境界も整合した。
+
+本Issue自身はlegacy 58件の一つではなく `In Progress` だったため、完了時に `done/` へ移してもbaselineを58から下げる必要はない。新規完了メモをactive直下へ残さないという今回の規則を、このIssue自身にも適用して完了とする。
 
 ## 優先度
 

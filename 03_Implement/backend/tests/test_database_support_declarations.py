@@ -12,6 +12,16 @@ from sqlalchemy.engine import make_url
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BACKEND_ROOT = REPO_ROOT / "03_Implement" / "backend"
+CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+RELEASE_DOC = REPO_ROOT / "04_Documentation" / "release.md"
+
+
+def _optional_ci_workflow_text() -> str | None:
+    if CI_WORKFLOW.is_file():
+        return CI_WORKFLOW.read_text(encoding="utf-8")
+    release = RELEASE_DOC.read_text(encoding="utf-8")
+    assert "常設CIは現在無効" in release
+    return None
 
 
 def test_verified_backend_message_order_comes_from_registry() -> None:
@@ -55,11 +65,9 @@ def test_every_verified_backend_declares_an_executable_recovery_test() -> None:
             assert f"@pytest.mark.{support.test_marker}" in source, support.backend
 
 
-def test_driver_extras_markers_tests_and_ci_stay_synchronized() -> None:
+def test_driver_extras_markers_tests_and_optional_ci_stay_synchronized() -> None:
     pyproject = (BACKEND_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = _optional_ci_workflow_text()
     test_sources = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (BACKEND_ROOT / "tests").glob("test_*.py")
@@ -77,11 +85,19 @@ def test_driver_extras_markers_tests_and_ci_stay_synchronized() -> None:
 
     for dependency in dependencies:
         assert re.search(rf"(?m)^{re.escape(dependency)}\s*=\s*\[", pyproject)
-        assert re.search(rf'pip install -e "\.\[[^\]]*\b{re.escape(dependency)}\b', workflow)
+        if workflow is not None:
+            assert re.search(
+                rf'pip install -e "\.\[[^\]]*\b{re.escape(dependency)}\b',
+                workflow,
+            )
     for marker in markers:
         assert f'"{marker}: tests that require ' in pyproject
         assert f"@pytest.mark.{marker}" in test_sources
-        assert re.search(rf"pytest -m ['\"]?{re.escape(marker)}(?:['\"]|\s|$)", workflow)
+        if workflow is not None:
+            assert re.search(
+                rf"pytest -m ['\"]?{re.escape(marker)}(?:['\"]|\s|$)",
+                workflow,
+            )
 
 
 def test_canonical_support_matrix_lists_every_registered_backend_once() -> None:
@@ -99,14 +115,19 @@ def test_canonical_support_matrix_lists_every_registered_backend_once() -> None:
         assert len(rows) == 1, support.backend
 
 
-def test_every_external_verified_backend_ci_image_matches_registry() -> None:
-    workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
-        encoding="utf-8"
-    )
+def test_every_external_verified_backend_ci_image_contract_is_unambiguous() -> None:
+    workflow = _optional_ci_workflow_text()
+    images = [
+        support.ci_image
+        for support in registered_database_support()
+        if support.ci_image is not None
+    ]
+    assert len(images) == len(set(images))
 
-    for support in registered_database_support():
-        if support.ci_image is not None:
-            assert workflow.count(support.ci_image) == 1, support.backend
+    if workflow is not None:
+        for support in registered_database_support():
+            if support.ci_image is not None:
+                assert workflow.count(support.ci_image) == 1, support.backend
 
 
 def test_public_configuration_delegates_database_support_to_canonical_matrix() -> None:

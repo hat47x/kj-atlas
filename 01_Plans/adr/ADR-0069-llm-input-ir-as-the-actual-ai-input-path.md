@@ -160,6 +160,35 @@ IR スキーマは `ir_version: {"const": "1.0"}` かつ `additionalProperties: 
 - `POST /ai/assess-card-importance` の採点と `DOM-AI-07`（`00_Prompt/domain.md` §7「カード品質を点数・順位・合否で評価する」の禁止。主体を問わない上位規定は `DOM-CORE-04`）の抵触。`issue-AI-IMPORTANCE-SCORING-01` で採点APIを廃止して解消済み。本ADRが将来提供する`graph_summary`は、順位や等級を持たない構造的観測（中心性・連結成分・矛盾サブグラフ）に限定する。
 - IR の上限値（`MAX_CARDS=200` / `MAX_RELATIONS=400` / `MAX_TEXT_CHARS=12000`、§5.1）が現行規模に妥当かの再検討。実装時に代表規模で計測し、必要なら別途起票する。
 
+## Stage 5での適用範囲（2026-09-03追補）
+
+Stage 5で残存経路を棚卸しした結果、本ADRの「IRをAI入力の実経路とする」は、**すべての `/ai/*` を機械的にDocument IRへ通す**という意味ではないことを明確にする。正本にするべきなのは、その仕事に対して人間または呼出側が確定した**構造化入力契約**であり、Document IRはそのうち `DocumentV1` 由来の構造意味を扱うための契約である。
+
+適用境界を次のように固定する。
+
+1. **Document-backedで、Documentのカード・島・relation・evidence等が仕事上の意味になる経路**
+   - `llm_input_ir_spec.md` のDocument IRを実入力経路とする。
+   - route-required meaningを保護し、必要意味が投影上限で欠ける場合はprovider呼出前にfail-closedにする。
+   - provider transportがpromptのみを送る場合も、IRで正規化・保護した本文や構造をpromptへ描画し、Document生値を同じ意味入力へ迂回させない。
+
+2. **Document-backedだが、呼出側がgrounding集合を明示的に限定している経路**
+   - 限定groundingはDocument全体より**強い入力境界**として扱う。generic Document IRを使うことで許可集合を広げてはならない。
+   - `summarize-island-relation` はこの型である。現行requestは `groundingCardIds` / `groundingEdgeIds` と、それに対応する `cardTexts` / `edgeTexts` を明示し、応答側も同じallowlistの部分集合だけを許可している。
+   - 将来IRを併用する場合はhybridとし、IRはSafeMode・関係語彙・参照整合等の検査に利用してよいが、providerへ渡す内容は呼出側が許可したgrounding集合から広げない。永続edge IDとIR relation ID（`type:from:to`）は別物なので、暗黙に置換しない。
+   - 現時点では、構造上の具体的な欠落が観測されていないため、IR使用率を上げる目的だけの改修は行わない。
+
+3. **Documentを入力契約に持たないtask-local変換経路**
+   - `refine-card-text` と `suggest-document-title` はDocument IRの適用外とする。
+   - IRを使うためだけに疑似Document、架空card ID、架空islandを生成しない。追跡可能性のための識別子へ虚偽の由来を持ち込む方が、本ADRの目的に反する。
+   - Pydantic request、入力上限、route側SafeMode、model governance等からなるtask-local structured inputを、その経路の実入力契約として維持する。
+   - 複数のno-doc経路で共通の入力ガバナンス不足が実際に観測された場合に限り、Document IRとは別の共通envelopeを検討する。現時点では新しい抽象層を先回りして作らない。
+
+4. **件数は完了指標にしない**
+   - 「11経路中何件がDocument IRを持つか」は移行状況の説明には使えるが、品質KPIや完了条件にはしない。
+   - 明示的な限定grounding契約やno-doc task-local契約を、形式上の11/11達成のためにDocument IRへ偽装しない。
+
+したがってStage 5以降の「AI入力の実経路」は、**そのrouteで採択された構造化入力契約からprovider-bound contentを描画し、その契約を生入力が迂回しないこと**を共通原則とする。Document IRは重要な実装だが、唯一の入力表現ではない。
+
 ## Three-Element Verification（ADR-0067 遡及適用）
 
 | 次元 | このADRでの主張 | 他次元への制約 |
