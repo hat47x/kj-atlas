@@ -324,6 +324,42 @@ def test_two_worker_instances_share_and_atomically_rotate_active_tenant(tmp_path
     assert resolved.tenant_session_version == "version-2"
 
 
+def test_revocation_on_one_worker_is_visible_to_another_worker_immediately(
+    tmp_path,
+) -> None:
+    """AUTH-ONE-TIME-JWT-01 AC-5 (post-ADR-0074 reinterpretation): a stolen or
+    replayed session cookie must be rejected across worker processes, not just
+    within the process that revoked it. test_two_worker_instances_share_and_-
+    atomically_rotate_active_tenant already proves CAS-based stale-version
+    reuse is rejected cross-worker; this proves the complementary property --
+    revocation (logout, or a future admin/back-channel revoke) propagates to
+    every worker's next resolve_auth_session() call with no caching layer to
+    go stale, because both workers read the same shared-DB row rather than
+    process-local state."""
+    worker_a, factory = _store(tmp_path, name="shared-session-revoke.db")
+    worker_b, _ = _store(tmp_path, name="shared-session-revoke.db")
+    key_hash = derive_session_key_hash("session-multi-worker-revoke", key=_KEY)
+    _create(worker_a, key_hash)
+
+    # worker_b can resolve the session before it is revoked.
+    assert worker_b.resolve_auth_session(session_key_hash=key_hash) is not None
+
+    worker_a.revoke_auth_session(session_key_hash=key_hash)
+
+    # A replay of the same (now-revoked) session presented to worker_b must
+    # fail closed immediately -- there is no per-process cache to invalidate.
+    assert worker_b.resolve_auth_session(session_key_hash=key_hash) is None
+    # A stale-version CAS attempt against the revoked row must also fail on
+    # worker_b, mirroring test_rotate_active_tenant_fails_closed_on_a_revoked_session
+    # but proving it holds across the worker boundary, not just within one.
+    assert not worker_b.rotate_active_tenant(
+        session_key_hash=key_hash,
+        expected_version="version-1",
+        new_active_tenant_id="tenant-a",
+        new_version="version-2",
+    )
+
+
 def test_preflight_fails_when_the_auth_session_table_is_missing(tmp_path) -> None:
     engine = create_engine(f"sqlite:///{tmp_path / 'unmigrated.db'}")
     factory = sessionmaker(bind=engine, class_=Session)
