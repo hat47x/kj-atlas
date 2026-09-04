@@ -58,7 +58,7 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 以前の本文には「merge意味論を決めてからIR移行する」「次は `suggest-merges`」という起票時の記述が残っていたが、現在のmainには合わない。
 
-`AI-MERGE-SEMANTICS-01` で04ステップ型／核融合法型の意味境界を先に定めた後、`suggest-merges` はroute固有structured inputへ移行済みである。hold、claimType、島文脈、relation/evidence、既存merge系譜、出典同一性を必要意味として扱い、不足時はfail-closedにする。
+`AI-MERGE-SEMANTICS-01` で04ステップ型／核融合型の意味境界を先に定めた後、`suggest-merges` はroute固有structured inputへ移行済みである。hold、claimType、島文脈、relation/evidence、既存merge系譜、出典同一性を必要意味として扱い、不足時はfail-closedにする。
 
 採用後の実merge、保存・再読込までの意味保存も別Issue `AI-MERGE-APPLY-01` で完了している。方式追跡性はR19で契約を確定し、R20で `mergeMethod` をprovider提案からDocument decisionまで通した。Stage 5固有の未完は引き続き `check-narrative` のscale境界だけである。
 
