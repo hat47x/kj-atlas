@@ -57,18 +57,40 @@ profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://githu
 - `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
 - 外部接続（LLM / audit / external_http）を有効化する場合、接続先・timeout・秘密管理の確認記録
 
-### SaaSの複数プロセス構成
+### SaaSの複数API instance構成
 
-`saas-multitenant` はPostgreSQLでテナントセッション版数をAPI instance間共有します。ただし現行表は`principal_id`単位のversionだけを保持し、認証セッション識別子とactive tenantを原子的に保存しません。このため、複数プロセスでversionを共有できることだけをもって本番SaaS運用可能とは判断しないでください。`SAAS-TENANT-SESSION-BINDING-01`が完了するまで、active tenant切替を含む共有SaaS profileは本番利用gate未充足です。sticky sessionをこの欠落の代替策にしてはいけません。
+`saas-multitenant`では、BFFの認証session正本をPostgreSQLの`saas_auth_sessions`で共有します。各行は、server側でhash化した認証session識別子に対してprincipal、issuer、subject、active tenant、`tenantSessionVersion`、作成時刻、最終利用時刻、失効時刻を保持します。API instanceを増やしても同じPostgreSQLを参照するため、sticky sessionを正しさの前提にしてはいけません。
 
-- Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意であり、同じ有効tokenを通常の連続API要求へ使用できます。
-- 現行方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出できません。DPoP/BFF等の採否は`AUTH-ONE-TIME-JWT-01`で未決です。
-- 現行の`Kj-Atlas-Tenant-Session-Version` cookieは切替時の発行とlogout時の削除に使われますが、DB session解決時には照合されません。認証session束縛やanti-forgery保証として扱わないでください。
-- 共有認証表が未migrationまたはDBへ接続できない場合、SaaS APIは起動に失敗します。
-- 稼働中に共有DBが利用不能になった場合、session version解決・切替は503相当でfail-closedし、in-memory状態へfallbackしません。Bearer JWTの署名・issuer・audience・期限検証は別境界であり、共有DBを通常のtoken再送検出には使いません。
-- JWKS cacheだけはinstanceごとです。安全性は変わりませんが、instance数に応じてBrokerへの取得回数が増えます。
+BFF Cookie経路では、次を運用上の前提とします。
 
-更新時はmigration完了後にAPI instanceをrolling restartし、最低2つのinstanceが同じprincipal単位versionを共有できることを確認します。これは水平スケール基盤の確認に限られ、認証セッション単位のactive tenant継続性を証明しません。
+- 同じ認証sessionを別のAPI instanceが処理しても、active tenantと`tenantSessionVersion`は同じ共有行から解決します。同じprincipalでも別login sessionは別行なので、一方のtenant切替やlogoutで他方を失効させません。
+- tenant切替は期待した`tenantSessionVersion`とのCASで更新します。古いversionのrequestは409で拒否し、clientは新tenantへ自動再送せず、最新のsession contextを読み直してから利用者の操作として再試行します。
+- logout、absolute expiry、idle expiryは共有DB上の認証sessionへ反映されるため、どのAPI instanceへ次requestが到達しても同じ失効状態を見ます。
+- unsafe methodをBFF Cookieで認証する場合は、Origin / Host一致とsession-bound CSRF tokenを検証します。CSRF tokenやraw session IDをログへ出してはいけません。
+- 共有認証表が未migration、または起動時にDBへ接続できない場合、SaaS APIは起動を拒否します。稼働中にDBを失った場合も、session解決やtenant切替をin-memory状態へfallbackせずfail-closedにします。
+- JWKS cacheはinstanceごとで構いません。安全境界は共有しませんが、instance数に応じてBrokerへの取得回数が増えるため、取得失敗や集中が疑われる場合はBroker側の状態も確認します。
+
+現行実装では、request処理用のDB sessionを保持している間に、認証session storeが別のDB sessionを開く経路があります。実PostgreSQLの複数app検証では、1 instanceあたり`pool_size=1`かつ`max_overflow=0`まで絞ると、共有sessionの解決前にconnection pool timeoutとなり503へfail-closedすることを確認しました。本番では「1 requestにつき常に1接続」と仮定せず、API replica数と同時request数に対して接続poolへ余力を持たせてください。pool timeoutが見えた場合は、DB停止だけでなくpool枯渇も切り分け対象です。
+
+### SaaSのmigrationとrolling restart
+
+更新は次の順で行います。
+
+1. 新しいAPI revisionを起動する前にmigrationを適用し、`saas_auth_sessions`を含む必要schemaが揃っていることを`/readyz`で確認します。
+2. rolling restart中の全API instanceで、同じ認証session hash keyを使います。keyが揃っていれば、新しく起動したinstanceも既存Cookieから同じ共有sessionを解決できます。
+3. API instanceを一つずつ更新し、各instanceがreadyになってから次へ進みます。可能なら同じ認証sessionを旧instanceと新instanceの双方へ到達させ、active tenantとversionが一致することを確認します。
+4. 認証session hash keyを変更すると、旧keyで発行されたCookieは新keyのinstanceでは別hashとなり、既存sessionを解決できません。現行実装は旧keyへのfallbackや推測を行わないため、key rotationは既存sessionの再loginを伴う計画変更として扱い、rolling restartの途中でinstanceごとに異なるkeyを混在させないでください。
+5. `saas_auth_sessions`を削除するdowngradeは既存BFF sessionを維持できません。新しいschemaを必要とするinstanceが残っている間はdowngradeせず、rollback時はsession失効と再loginを利用者影響として明示します。
+
+実PostgreSQLの回帰テスト`test_saas_auth_session_postgres_multi_instance.py`は、migrationのupgrade→downgrade→head再upgradeに加え、別engineを持つ複数FastAPI appから同じsessionを処理し、tenant/version共有、stale CAS拒否、別login非干渉、logout失効、idle expiry、再起動後の継続、hash key変更時のfail-closedを確認します。
+
+### SaaS session障害時の初動
+
+- `session_context_unavailable`や503が増えた場合は、まず`/readyz`、PostgreSQL到達性、connection pool timeoutを確認します。DBやpoolの問題をin-memory fallbackで隠さないでください。
+- `tenant_session_changed`（409）はstale requestです。最新contextを再取得し、利用者の操作なしにtenant切替requestを別tenantへ自動再送しません。
+- `session_invalid`（401）がkey rotationやdeployment直後に増えた場合は、API instance間でsession hash keyが一致しているかを確認します。意図したrotationなら再loginを案内します。
+- logout・expiry・revocation後のsessionを復活させるためにDB行を書き戻したり、別sessionの状態を流用したりしません。
+- 障害調査ではraw auth-session Cookie、CSRF token、Bearer token、server keyをログ・Issue・Documentへ転記しません。
 
 ## 起動
 
