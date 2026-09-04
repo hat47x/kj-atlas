@@ -55,7 +55,8 @@
       "content": {
         "title": "string?",
         "text": "string?",
-        "mergedText": "string?"
+        "mergedText": "string?",
+        "mergeMethod": "near_duplicate | kernel_fusion (kind=merge_candidate のとき必須)"
       },
       "rationale": "string (必須・なぜそう考えたか)",
       "patch": "PatchV1? (kind=patch のときのみ。baseDocSignature は依頼と一致必須)"
