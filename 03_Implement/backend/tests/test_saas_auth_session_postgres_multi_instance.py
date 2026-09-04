@@ -130,7 +130,7 @@ def _isolated_postgres_database():
 def _new_engine(database_url: str) -> Engine:
     return create_engine(
         _normalize_database_url(database_url),
-        pool_size=1,
+        pool_size=2,
         max_overflow=0,
     )
 
