@@ -34,10 +34,74 @@
 - [x] `jti`欠損tokenをRFC 7519どおり通常Bearer JWTとして扱い、docstringとtestを一致させる。
 - [x] DPoP、BFF、短命Bearer継続の業務・データ・機能trade-offを`ADR-0074`へ集約し、BFFを採用候補としてProposedにした。
 - [x] `ADR-0074`をMaintainerがAcceptedまたはRejectedにし、本issueの実装方式を確定する（2026-08-13、Maintainer承認によりAccepted。**案2 server-owned BFF session** を採用。同ADRの実装要件Decision 7が本issueの方針を確定させる）。
-- [ ] 強いreplay防御を採る場合、別worker間でも要求proof再利用を拒否し、通常のaccess token再利用を壊さない。
-- [ ] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
-- [ ] refresh tokenをSPAへ渡さず、XSS時のcredential露出範囲を拡大しない。
+- [x] 強いreplay防御を採る場合、別worker間でも要求proof再利用を拒否し、通常のaccess token再利用を壊さない。
+  — 2026-09-04。B-model読み替え（本ファイル末尾の補正節）のもとで確認。CAS版数の陳腐化再利用は
+  `tests/test_saas_auth_session_store.py::test_two_worker_instances_share_and_atomically_rotate_active_tenant`
+  （2独立`DatabaseSaasAuthSessionStore`インスタンス＝別worker相当が同一DB行を共有し、片方のCAS成功後は
+  もう片方の陳腐化versionでのCASが失敗する）で既存確認済み。本checkpointで欠けていた
+  「一方のworkerでのrevoke（盗難/漏洩cookieの失効相当）がもう一方のworkerへ即時反映されるか」を
+  新規テスト`test_revocation_on_one_worker_is_visible_to_another_worker_immediately`（同ファイル）で追加確認した
+  ——worker_aでrevoke後、worker_bの`resolve_auth_session`は即座に`None`を返す（プロセスローカルcacheが
+  存在せず毎回共有DBを読むため）。通常のcookie再利用（同一session cookieでの連続request）は
+  `test_resolving_slides_the_idle_window`で非破壊を確認済み。anti-CSRF token（`session_csrf.py`）は
+  session-bound HMACによるstateless検証のため、鍵を共有する任意のworkerで同一に検証され、
+  worker間の追加同期を必要としない設計であることをソースで確認した。
+  変異検査: `saas_auth_state.py::resolve_auth_session`のrevoked判定を一時的に無効化し、新規テストを含む
+  3件（新規1件＋既存2件）が正しく失敗することを確認、復元後15件全pass。
+  **是正**: 本AC調査を委任した指示は`test_saas_auth_session_postgres_multi_instance.py`がPR #2885で
+  着地済みと述べていたが、実際のPR #2885（`2885fdbc`）は無関係な内容（`hil-rs-01`のADR参照正規化）であり、
+  該当ファイル名のテストはリポジトリに存在しない。この誤参照は本issueの追跡対象ではないため上記の
+  実在するテストで代替確認した。
+- [x] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
+  — 2026-09-04。本issueのscope（auth edge、BFF統合）が対象とする状態変更操作はactive tenant切替・
+  login・logoutの3つ。切替は既存の`tests/test_session_context_routes.py::test_active_tenant_change_uses_the_session_keyed_store_and_rejects_a_stale_second_tab`
+  （precondition versionが古いまま再送されたら行を変更せず409で拒否）と単体テスト
+  `test_rotate_active_tenant_fails_closed_on_stale_expected_version`で確認済み——応答不達後の再送は
+  同じ古いprecondition versionを再提示するため、CASが自然に「二重適用しない」を保証する。
+  login（`GET /session/callback`）は新規テスト`tests/test_oauth_bff_callback_retry_safety.py::test_retrying_the_same_code_after_success_does_not_create_a_second_session`
+  で確認した——OAuth authorization codeは仕様上一回使用（mock IdPの`_pending_codes`も交換後に削除する）
+  であり、応答不達後に同じcodeを再送すると2回目の`exchange_code_for_tokens`が失敗し、
+  `SaasAuthSessionRow`が重複作成されないことを直接DB読取で確認した。logoutは
+  `revoke_auth_session`が既に失効済みの行へ再度`revoked_at`を書いても副作用が増えない設計のため、
+  再送は本質的に安全（既存`test_oauth_bff_logout_revocation.py`で個別確認済み）。
+  変異検査: `oauth_bff.py`の`OauthBrokerInvalidResponseError`ハンドラを一時的に「失敗を握りつぶして
+  session作成を続行する」よう書き換え、新規テストが正しく失敗する（`DID NOT RAISE`）ことを確認、
+  復元後pass。
+- [x] refresh tokenをSPAへ渡さず、XSS時のcredential露出範囲を拡大しない。
+  — 2026-09-04。3層で構造的に確認した。(1) `oauth_broker_client.py::BrokerTokenResponse`は
+  `access_token`/`token_type`/`expires_in`/`id_token`のみを持つデータクラスであり、
+  brokerの応答に`refresh_token`が含まれていてもその値を保持するフィールドが存在しない——
+  新規テスト`tests/test_oauth_broker_client.py::test_exchange_drops_the_refresh_token_even_when_the_broker_returns_one`
+  でbroker応答に`refresh_token`を含めても`exchange_code_for_tokens`の戻り値に残らないことを固定した。
+  (2) `oauth_bff.py::handle_callback`のredirect responseはHttpOnlyな`Kj-Atlas-Auth-Session`
+  （opaque `secrets.token_urlsafe(32)`、broker tokenとは無関係な値）と非HttpOnlyなCSRF synchronizer
+  token（認証credentialではない）の2 cookieのみを設定し、token値はheader/bodyのどこにも現れない——
+  新規テストの`first.raw_headers`検査で直接確認した。(3) frontendの現行Bearer互換経路
+  （`token_store.ts`はaccess tokenのみをmodule memoryへ保持しrefresh tokenを一切受け付けない設計、
+  `oauth_callback.ts`はbroker応答に`refresh_token`キーが存在するだけで
+  `oauth_refresh_token_not_allowed`エラーとして拒否する）は既存test
+  `oauth_callback.test.ts::"rejects the whole response when a refresh token is exposed"`で確認済み。
+  新BFF経路はSPAへtoken自体を一切渡さないためXSS時の露出範囲は旧Bearer経路より狭まり、拡大していない。
 - [ ] mock Broker、frontend統合、最低2 backend workerのE2Eで契約を固定する。
+  — 2026-09-04調査。**未充足、未実装**。`03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`
+  （`playwright.saas.config.ts`が対象とする唯一のSaaS E2E）はPlaywrightの`context.route()`で
+  backend API全体をJSオブジェクト（`ServerState`）としてmockしており、実backendプロセスは1つも
+  起動しない。mock Identity Brokerを経由した実OAuthフローも駆動していない。backend側にも
+  「実際に2つ以上のHTTPで listenするworkerプロセスに対して2つのTestClient/repository objectではなく
+  本物のHTTP round tripを行う」統合テストの前例が存在しない（`test_saas_auth_session_store.py`等の
+  既存「multi-worker」テストは、別々のengine/connection poolを持つ2つの`DatabaseSaasAuthSessionStore`
+  インスタンスで worker を模しているが、実socketは開かない）。この要求は
+  `OPS-SAAS-SCALE-01` AC-7「migration upgrade/downgradeと、最低2 workerのHTTP integration testをCIで
+  固定する。単に2つのrepository objectを同じSQLite DBへ向けるtestで代替しない」とほぼ同一であり、
+  同issueでも実際に未チェックのまま残っている（本issueへ委任された指示は同issueのAC-4/5/7/8が
+  チェック済みと述べていたが、実ファイルを確認したところAC-1〜3のみチェック済みで
+  AC-4〜8は全て未チェックだった——是正）。実装には(a) mock Identity Brokerの実HTTPサーバ化、
+  (b) kj-atlas backendを2つ以上の実uvicorn worker（共有DB）として起動する新規テストharness、
+  (c) 実frontendをPlaywrightで駆動しつつ2 workerへ交互に到達させる経路、の3点が必要で、
+  いずれもこのリポジトリに前例のない新規test infrastructureの設計判断を要する
+  （CI環境でのPostgreSQL可用性、worker間の負荷分散方式等）。`AGENTS.md` §1条5「同じ進捗を複数の
+  台帳へ転記しない」に従い、この基盤構築はOPS-SAAS-SCALE-01側のAC-7として一度だけ実装し、
+  本issueはその完成を参照する形にすることを提案する。本issueの範囲では実装しなかった。
 
 ## 暫定運用
 

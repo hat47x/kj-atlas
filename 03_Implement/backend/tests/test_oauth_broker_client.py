@@ -103,6 +103,50 @@ def test_exchange_sends_form_encoded_request_and_returns_tokens() -> None:
     }
 
 
+def test_exchange_drops_the_refresh_token_even_when_the_broker_returns_one() -> None:
+    """AUTH-ONE-TIME-JWT-01 AC-7 / ADR-0074 decision 1: a refresh token must
+    never reach the SPA. BrokerTokenResponse (the only value this module
+    hands back to its caller, oauth_bff.handle_callback) has no refresh_token
+    field at all, so a refresh token the broker includes in its JSON response
+    is parsed out of the payload and then has nowhere further to go -- it is
+    not stored on the returned object, not logged, and not forwarded. This
+    pins that structural guarantee: even a broker response containing
+    refresh_token is accepted (refresh_token is in _ALLOWED_TOKEN_RESPONSE_KEYS,
+    so the response is not rejected outright), but the token value itself does
+    not survive the call."""
+
+    class Handler(_QuietHandler):
+        def do_POST(self):  # noqa: N802
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps(
+                    {
+                        "access_token": "atk-1",
+                        "token_type": "Bearer",
+                        "expires_in": 3600,
+                        "refresh_token": "long-lived-secret-should-not-survive",
+                    }
+                ).encode("utf-8")
+            )
+
+    server, thread = _run_server(Handler)
+    try:
+        config = _config(token_endpoint=f"http://127.0.0.1:{server.server_port}/token")
+        result = exchange_code_for_tokens(config=config, code="code-1", code_verifier="verifier-1")
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+
+    assert result == BrokerTokenResponse(
+        access_token="atk-1", token_type="Bearer", expires_in=3600, id_token=None
+    )
+    assert not hasattr(result, "refresh_token")
+    assert "long-lived-secret-should-not-survive" not in repr(result)
+    assert "refresh_token" not in BrokerTokenResponse.__dataclass_fields__
+
+
 def test_exchange_does_not_follow_redirect() -> None:
     """Mutation guard: deleting _RejectRedirectHandler in open_trusted_http()
     would make this test follow the redirect instead of failing closed."""

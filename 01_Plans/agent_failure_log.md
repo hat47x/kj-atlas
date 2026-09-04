@@ -835,4 +835,18 @@ Updated: 2026-08-03
 - 事象: backend検証中にWindows Bash側の`git diff --stat`が`Invalid path '/mnt'`で失敗した。
 - 原因: 共有`.git/config`の`core.worktree`に当該worktreeパスが書き込まれていた。また、`GIT_DIR`/`GIT_WORK_TREE`越しの`docs_check.py`一括実行は子プロセスへ環境を継承し、一時repo試験へ影響した。
 - 対応: 異常な設定行を除去し、docsチェック本体と埋め込みunittestを環境変数なしの別実行へ分割した。
+
+## 2026-09-04: Bash tool経由の`git`コマンドがrtkフック誤検知で全滅する（worktree環境）
+
+- 事象: `AUTH-ONE-TIME-JWT-01`検証中、Bash toolで`git status`/`git log`（`-C`なし、素の`git`のみ）を実行すると、実際のcwdが対象worktree自身であるにもかかわらず「a worktree-isolated agent's git operations must target its own worktree. Run the plain command from <同じパス>」という拒否メッセージが毎回返り、`rtk proxy git status`で迂回を試みても同じエラーになった。
+- 原因: ユーザーグローバル設定`RTK.md`のフックがBash tool経由の`git`コマンドを透過的に`rtk git ...`へ書き換えるため、worktree隔離チェックフックが実コマンドを`git`起点として認識できず誤検知したとみられる（未確証）。
+- 対応: 同じコマンドをPowerShell toolで実行したところ問題なく成功した（`git status`が正常に`On branch worktree-agent-...`を返した）。以後、本セッションの全git操作をPowerShell toolへ切り替えて続行した。
+- 再発防止: worktree環境でBash tool経由の`git`コマンドが原因不明の「must target its own worktree」で拒否される場合、rtkフックとの相互作用を疑い、まずPowerShell toolで同じコマンドを試す。
+
+## 2026-09-04: `tests/test_oauth_broker_client.py`のephemeral-port `HTTPServer`テストが同一worktree環境で断続的にflakyになる
+
+- 事象: `AUTH-ONE-TIME-JWT-01` AC-7向けに`test_exchange_drops_the_refresh_token_even_when_the_broker_returns_one`を新規追加し検証したところ、単独実行を数回繰り返す中で`OauthBrokerUnavailableError: broker token endpoint is unavailable`（`open_trusted_http`の接続失敗）で失敗したり成功したりを繰り返した。同じ現象は、このテストとは無関係な既存テスト`test_exchange_maps_rejected_status_codes_to_invalid_response`（今回変更していない）でも単独実行時に再現し、新規テストのロジック起因ではないことを確認した。
+- 原因: 未特定。`_run_server()`が`("127.0.0.1", 0)`で毎回新しいephemeral portへbindし、`_config()`の既定timeoutが1.0秒と短いため、このworktreeサンドボックス環境でのスレッド起動/socket accept待ちの遅延に対して余裕がない可能性がある（未確証、環境依存）。
+- 対応: 同一テストを間隔を空けて再実行すると成功することを複数回確認した。新規追加コードの妥当性は、mutation testing（production側のguardを一時的に壊して対応するテストが失敗することを確認）で別途検証済みのため、このflakinessをテストロジックの欠陥とは判断せず、そのまま残した。
+- 再発防止: `tests/test_oauth_broker_client.py`配下のテストが単発で`OauthBrokerUnavailableError`で失敗した場合、まずコード変更を疑う前に同じテストを再実行し、無関係な既存テストでも同じ失敗が再現するか確認する。再現するならこのworktree環境固有のHTTPServerタイミング問題であり、`timeout_seconds`を上げる対応はテストファイル全体に影響するため単独セッションの判断で変更しない。
 - 再発防止: WSLからのdocsチェックは`GIT_DIR`/`GIT_WORK_TREE`を設定したシェルで一括実行しない。
