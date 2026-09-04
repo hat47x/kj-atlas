@@ -1,0 +1,38 @@
+name: CSRF contract audit once
+
+on:
+  push:
+    branches:
+      - fix/saas-session-csrf-binding-20260904
+    paths:
+      - .github/workflows/csrf-audit-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/saas-session-csrf-binding-20260904
+          fetch-depth: 0
+      - name: Inspect unsafe request and auth seams
+        run: |
+          echo '=== backend csrf/origin references ==='
+          grep -RniE 'csrf|anti-forgery|origin|host' 03_Implement/backend/src/kj_atlas_api 03_Implement/backend/tests | head -n 200 || true
+          echo '=== frontend unsafe fetches ==='
+          grep -RniE 'method:[[:space:]]*"(POST|PUT|PATCH|DELETE)"' 03_Implement/frontend/src 03_Implement/frontend/e2e | head -n 300 || true
+          echo '=== frontend session/context calls ==='
+          grep -RniE 'getTenantSessionContext|changeActiveTenant|/session/logout|authorizationHeader|tenantSessionPreconditionHeaders' 03_Implement/frontend/src | head -n 300 || true
+          echo '=== backend routes using trusted saas session ==='
+          grep -Rnl 'resolve_trusted_saas_request_session' 03_Implement/backend/src/kj_atlas_api/routes | sort
+      - name: Remove one-shot workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm .github/workflows/csrf-audit-once.yml
+          git add -A
+          git commit -m 'ci: CSRF contract audit one-shotを削除する'
+          git push origin HEAD:fix/saas-session-csrf-binding-20260904
