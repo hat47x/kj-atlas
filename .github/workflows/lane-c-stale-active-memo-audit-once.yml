@@ -1,0 +1,112 @@
+name: Temporary lane C stale active memo audit
+
+on:
+  push:
+    branches:
+      - audit/lane-c-stale-active-memos-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: audit/lane-c-stale-active-memos-20260904
+      - name: Audit active memo acceptance state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import re
+          import subprocess
+          from pathlib import Path
+
+          report = json.loads(subprocess.check_output(
+              ['python', '01_Plans/triage_actionable_plans.py', '--format', 'json'],
+              text=True,
+          ))
+          by_path = {item['path']: item for item in report['actionable_issues']}
+
+          heading_re = re.compile(r'^(#{2,6})\s+(.+)$')
+          checkbox_re = re.compile(r'^\s*- \[(?P<mark>[ xX])\]\s+')
+          ac_names = ('受入条件', 'Acceptance Criteria', 'Acceptance criteria')
+
+          rows = []
+          for rel, item in sorted(by_path.items()):
+              path = Path('01_Plans') / rel
+              lines = path.read_text(encoding='utf-8').splitlines()
+              in_ac = False
+              ac_level = None
+              checked = 0
+              unchecked = 0
+              for line in lines:
+                  h = heading_re.match(line)
+                  if h:
+                      level = len(h.group(1))
+                      title = h.group(2).strip()
+                      if in_ac and level <= ac_level:
+                          in_ac = False
+                          ac_level = None
+                      if any(name in title for name in ac_names):
+                          in_ac = True
+                          ac_level = level
+                          continue
+                  if in_ac:
+                      m = checkbox_re.match(line)
+                      if m:
+                          if m.group('mark').lower() == 'x':
+                              checked += 1
+                          else:
+                              unchecked += 1
+              rows.append({
+                  'path': rel,
+                  'status': item['status'],
+                  'priority': item['priority'],
+                  'ready': item['ready'],
+                  'blockers': item['blockers'],
+                  'ac_checked': checked,
+                  'ac_unchecked': unchecked,
+              })
+
+          complete_active = [
+              row for row in rows
+              if row['ac_checked'] > 0 and row['ac_unchecked'] == 0
+          ]
+          draft_high = [
+              row for row in rows
+              if row['status'] == 'Draft' and row['priority'] in {'P0', 'P1'}
+          ]
+          no_ac_high = [
+              row for row in rows
+              if row['priority'] in {'P0', 'P1'}
+              and row['ac_checked'] == 0 and row['ac_unchecked'] == 0
+          ]
+
+          print('=== active memos whose acceptance checkboxes are all checked ===')
+          print(json.dumps(complete_active, ensure_ascii=False, indent=2))
+          print(f'count={len(complete_active)}')
+          print('=== Draft P0/P1 memos ===')
+          print(json.dumps(draft_high, ensure_ascii=False, indent=2))
+          print(f'count={len(draft_high)}')
+          print('=== P0/P1 active memos with no acceptance checkbox section detected ===')
+          print(json.dumps(no_ac_high, ensure_ascii=False, indent=2))
+          print(f'count={len(no_ac_high)}')
+          print('=== triage summary ===')
+          print(json.dumps(report['summary'], ensure_ascii=False))
+          PY
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-c-stale-active-memo-audit-once.yml
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'ci: remove lane C stale active memo audit workflow'
+          git push origin HEAD:audit/lane-c-stale-active-memos-20260904
