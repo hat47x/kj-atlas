@@ -9,13 +9,20 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Expected verification level: `integration`
 
-> **進捗（2026-09-03）: Stage 1〜4は完了し、Stage 5へ着手済み。** `suggest-island-summary` と `propose-opposing-viewpoint` までgeneric Document IRの実入力化を完了し、11件中6経路がDocument IR経由である。残る5経路のうち3経路はADR-0069 D5=Aによりtask-local structured inputを正式契約とする境界が確定したため、「11/11をgeneric Document IRへ揃える」ことは完了条件ではない。未決の実装判断は `suggest-merges` の意味論と `check-narrative` のscale方式である。AC-7 は Stage 4 で完了し、AC-10は `AI-IR-SCALE-01` へ切り出して継続している。詳細は末尾の各Stage結果を参照。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
+> **進捗（2026-09-04）: Stage 1〜4は完了し、Stage 5は `check-narrative` のscale方式だけが未確定。** `suggest-island-summary` / `propose-opposing-viewpoint` / `suggest-merges` はDocument-backed structured inputへ移行済みで、`summarize-island-relation` / `refine-card-text` / `suggest-document-title` はADR-0069 D5=Aによりtask-local structured inputを正式契約とする境界が確定した。「11/11をgeneric Document IRへ揃える」ことは完了条件ではない。残る実装判断は `check-narrative` だけであり、`AI-IR-SCALE-01` のscale方式とnamed provider/modelの実token予算確認を待つ。AC-7 はStage 4で完了し、AC-10は `AI-IR-SCALE-01` へ切り出して継続している。詳細は `AI-IR-STAGE5-SCOPE-01` と末尾の各Stage結果を参照する。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
 
 > **本issueは `ADR-0069` の採択を前提とする。** ADR が Proposed の間は着手しないこと。D1〜D4 が未決のまま実装すると、凍結仕様（`llm_input_ir_spec.md`）への非互換な改変が入る。**（2026-08-29 に Accepted・仮承認となり、この前提は解消済み。）**
 
+
+## Dependencies
+
+- `01_Plans/issues/issue-AI-IR-STAGE5-SCOPE-01-classify-remaining-ai-input-paths.md`
+  - 本Issueの残存Stage 5実装判断を集約する正本。現在の未完は `check-narrative` だけである。
+  - Stage 5が完了する前に、親Issueを完了扱いにしない。
+
 ## 課題
 
-> 以下は起票時（2026-08-09）の実測である。**Stage 1〜4 で解消した範囲は各「結果（Stage N）」節を参照**（`llm_input_ir.py` が実装され、`detect-contradiction` / `suggest-card-groups` / `generate-narrative` / `suggest-layout` が IR 経由になった）。**2026-08-31 の再実測**: プロンプト構築関数は `routes/ai.py` に10件・`routes/ai_relations.py` に1件の**計11件**（起票時の「9件」は 2026-08-09 時点の `routes/ai.py` のみの数であり、その後の増加分を含まない）。この時点ではIRを受け取るのは4件だった。**2026-09-03更新**: `suggest-island-summary` と `propose-opposing-viewpoint` をStage 5の第1・第2経路としてgeneric Document IRへ移行し、Document IR経由は6件になった。残る5経路のうち `summarize-island-relation` / `refine-card-text` / `suggest-document-title` はADR-0069 D5=Aでtask-local structured inputを正式契約とする境界を確定した。残る実装判断は `suggest-merges` と `check-narrative` であり、分類と順序は `AI-IR-STAGE5-SCOPE-01` を正本とする。
+> 以下は起票時（2026-08-09）の実測である。**Stage 1〜4 で解消した範囲は各「結果（Stage N）」節を参照**（`llm_input_ir.py` が実装され、`detect-contradiction` / `suggest-card-groups` / `generate-narrative` / `suggest-layout` が IR 経由になった）。**2026-08-31 の再実測**: プロンプト構築関数は `routes/ai.py` に10件・`routes/ai_relations.py` に1件の**計11件**（起票時の「9件」は 2026-08-09 時点の `routes/ai.py` のみの数であり、その後の増加分を含まない）。この時点ではIRを受け取るのは4件だった。**2026-09-04更新**: `suggest-island-summary` / `propose-opposing-viewpoint` / `suggest-merges` はStage 5のDocument-backed structured inputへ移行済みである。`summarize-island-relation` / `refine-card-text` / `suggest-document-title` はADR-0069 D5=Aでtask-local structured inputを正式契約とする境界を確定した。残る実装判断は `check-narrative` だけであり、分類と順序は `AI-IR-STAGE5-SCOPE-01` を正本とする。
 
 `02_Architecture/llm_input_ir_spec.md` は「LLMへ渡す前段データ」の正本であり、`ADR-0009`（Accepted）Phase B を完了させる凍結仕様である。**この仕様の実装は存在しない。**
 
