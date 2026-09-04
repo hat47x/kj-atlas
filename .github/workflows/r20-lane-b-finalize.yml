@@ -73,3 +73,5 @@ jobs:
           Path('.github/workflows/r20-final-contract-closure-once.yml').unlink(missing_ok=True)
           PY
       - run: python .github/scripts/r20_lane_b_finalize.py
+
+# one-shot run 6: R19/R20 narratives satisfy the latest dogfood validator before this file is removed.
