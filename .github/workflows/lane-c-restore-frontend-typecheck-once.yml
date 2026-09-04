@@ -6,10 +6,10 @@ on:
       - fix/lane-c-restore-frontend-typecheck-20260904
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  repair-and-verify:
+  repair-verify-and-finalize:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -43,5 +43,23 @@ jobs:
           python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/triage.json
           python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
           git -c core.whitespace=cr-at-eol diff --check
-          git diff --numstat
           python -c 'import subprocess; allowed={"03_Implement/frontend/src/App.tsx","03_Implement/frontend/src/domain/stream_b_contract_handoff.ts","03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts","03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts","03_Implement/frontend/src/domain/merge_suggestion_decisions.test.ts","03_Implement/frontend/src/import/agent_response_import.ts","03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts"}; paths=set(subprocess.check_output(["git","diff","--name-only"], text=True).splitlines()); assert paths == allowed, (paths, allowed); rows=subprocess.check_output(["git","diff","--numstat"], text=True).splitlines(); total=sum(int(a)+int(d) for a,d,_ in (row.split("\t") for row in rows)); assert total < 100, total'
+
+      - name: Record completion and clean temporary tooling
+        run: |
+          set -euo pipefail
+          python .github/lane_c_finalize_frontend_typecheck.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/final-triage.json
+          python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/final-triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
+          git -c core.whitespace=cr-at-eol diff --check
+          rm .github/lane_c_restore_frontend_typecheck_patch.py
+          rm .github/lane_c_finalize_frontend_typecheck.py
+          rm .github/workflows/lane-c-restore-frontend-typecheck-once.yml
+          git -c core.whitespace=cr-at-eol diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: stale merge後のfrontend typecheckを復旧する"
+          git push origin HEAD:fix/lane-c-restore-frontend-typecheck-20260904
