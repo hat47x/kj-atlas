@@ -1,0 +1,76 @@
+name: Lane C SaaS auth browser E2E once
+
+on:
+  push:
+    branches:
+      - fix/lane-c-auth-bff-session-proxy-e2e-r2-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kj_atlas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d kj_atlas"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      KJ_ATLAS_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/kj_atlas
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 03_Implement/backend/pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e ".[test,postgres]"
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: 03_Implement/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Frontend typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: Tenant session bootstrap unit test
+        working-directory: 03_Implement/frontend
+        run: npx vitest run src/ui/TenantSessionBootstrapGate.test.ts
+
+      - name: OAuth BFF and shared-session regression tests
+        working-directory: 03_Implement/backend
+        run: >-
+          pytest -q
+          tests/test_oauth_bff_callback_retry_safety.py
+          tests/test_oauth_bff_logout_revocation.py
+          tests/test_oauth_broker_client.py
+          tests/test_saas_auth_session_store.py
+
+      - name: Real-browser multi-instance SaaS auth E2E
+        run: bash 03_Implement/backend/tests/scripts/run_saas_browser_multi_instance_e2e.sh
