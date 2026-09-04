@@ -3,7 +3,7 @@
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
 - Type: Bug / AI Input Projection
-- Status: In Progress
+- Status: Done
 - Source Issue: `AI-IR-SCALE-01`, `AI-IR-PROJECTION-01`
 - Priority: P1
 - Owner: Maintainer
@@ -63,18 +63,29 @@ GitHub Actionsは現在リポジトリ側で無効化されているため、CI�
 
 ## 受入条件
 
-- [ ] `narrative-late-causal-negate` の300カードシナリオで `c298 --causal--> c299` がIRに残る。
-- [ ] 同シナリオで `c299 --negate--> c000` がIRに残る。
-- [ ] 上記2関係が最終プロンプトの `Logical relations` と、読み順上のspine表示の双方に残る。
-- [ ] 読み順の末尾島がDocument由来で見えるという既存挙動を変えない。
-- [ ] `related` のみを持つカードは、本Issueだけを理由にrequired cardへ昇格しない。
-- [ ] island-to-island edgeをrequired card集合の根拠にしない。
-- [ ] 存在しないカードを参照するrelationをrequired card集合の根拠にしない。
-- [ ] requiredとなるdistinct cardが `MAX_CARDS` を超える場合は `422 / required_card_budget_exceeded` でLLM呼び出し前に停止する。
-- [ ] source relationの並び順に依存せず、同じDocumentから同じrequired集合を得る。
-- [ ] SafeMode二層、PII最小化、`MAX_CARDS` / `MAX_RELATIONS` / `MAX_TEXT_CHARS` の値を変更しない。
-- [ ] `suggest-layout` の未解決なscale課題を本Issueの完了として扱わない。
-- [ ] 実行可能な環境で、追加したscale回帰が成功することを記録する。
+- [x] `narrative-late-causal-negate` の300カードシナリオで `c298 --causal--> c299` がIRに残る。
+- [x] 同シナリオで `c299 --negate--> c000` がIRに残る。
+- [x] 上記2関係が最終プロンプトの `Logical relations` と、読み順上のspine表示の双方に残る。
+- [x] 読み順の末尾島がDocument由来で見えるという既存挙動を変えない。
+- [x] `related` のみを持つカードは、本Issueだけを理由にrequired cardへ昇格しない。
+- [x] island-to-island edgeをrequired card集合の根拠にしない。
+- [x] 存在しないカードを参照するrelationをrequired card集合の根拠にしない。
+- [x] requiredとなるdistinct cardが `MAX_CARDS` を超える場合は `422 / required_card_budget_exceeded` でLLM呼び出し前に停止する（共有IRビルダーの既存fail-closed経路を再利用）。
+- [x] source relationの並び順に依存せず、同じDocumentから同じrequired集合を得る（`_narrative_required_card_ids()` はsorted tupleを返す決定論的実装）。
+- [x] SafeMode二層、PII最小化、`MAX_CARDS` / `MAX_RELATIONS` / `MAX_TEXT_CHARS` の値を変更しない。
+- [x] `suggest-layout` の未解決なscale課題を本Issueの完了として扱わない（`AI-IR-SCALE-01` に残したまま）。
+- [x] 実行可能な環境で、追加したscale回帰が成功することを記録する。
+
+## 対応記録（2026-09-04・Done）
+
+`fix/r20-narrative-spine-preservation-20260903` の実装（`_narrative_required_card_ids()` および `_generate_narrative_ir()` への配線、`03_Implement/backend/src/kj_atlas_api/routes/ai.py:605-666`）は、その後の一連のPRを通じてすでに `main` へ統合済みだった（`git merge-base --is-ancestor` で確認、ブランチ自体はmainの祖先）。本issueのAC欄だけが未更新のまま残っていたため、実装内容をAC全項目と突き合わせて確認し、下記の回帰を実行して整合を確認した。
+
+```
+.venv\Scripts\python.exe -m pytest tests/test_ai_route_required_meaning_scale.py tests/test_ai_generate_narrative_ir_scale.py -q
+9 passed in 12.43s
+```
+
+`_narrative_required_card_ids()` の実装は、causal/negateのみを対象化・island端点の除外・存在しないカード参照の除外・sorted tupleによる決定性をすべて満たしており、AC本文の境界条件と一致する。budget超過時のfail-closedは共有IRビルダー（`required_card_ids` 引数）の既存経路をそのまま再利用しており、narrative固有の別実装は追加していない。
 
 ## 完了境界
 
