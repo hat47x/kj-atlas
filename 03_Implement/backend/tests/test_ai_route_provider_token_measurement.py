@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from kj_atlas_api.llm.provider import LLMCallMetadata, LLMRequest, LLMResponse
@@ -90,6 +95,30 @@ def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
         "coordinates": 0,
         "truncation": None,
     }
+
+
+def test_documented_direct_cli_runs_as_a_dry_run_without_network_access() -> None:
+    backend_dir = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/measure_ai_route_provider_tokens.py",
+            "--provider",
+            "named-test-provider",
+            "--model",
+            "named-model",
+        ],
+        cwd=backend_dir,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    report = json.loads(completed.stdout)
+
+    assert report["executed"] is False
+    assert report["measurement_complete"] is False
+    assert set(report["routes"]) == {"suggest-layout", "generate-narrative", "check-narrative"}
+    assert report["routes"]["check-narrative"]["status"] == "dry-run"
 
 
 def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
