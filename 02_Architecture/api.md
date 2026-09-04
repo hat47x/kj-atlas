@@ -162,7 +162,15 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 - `decidedAt: string (ISO 8601)`
 - `snapshotVersion: string`
 
+`partial` の新規判断では `selectedCardIds` を**人間が明示した真部分集合**として扱う。
 
+- `2 <= len(selectedCardIds) < len(cardIds)` を満たす。
+- `selectedCardIds` は `cardIds` の部分集合で、重複を含まない。
+- 全候補を採用する場合は `accept` を使う。1枚以下の選択はmergeとして成立しない。
+- 旧データで `partial` の `selectedCardIds` が欠落している、または全候補と同一の場合、採用集合を推測せず実適用をfail-closedにする。
+- 判断ログ・監査イベント・実mergeの `sourceCardIds` は同じ選択集合を保持する。
+- 判断と実適用は別操作とし、再読込後も記録済みの選択集合をUIで確認してから適用できる。
+- 選択されなかったカードは、実適用時にも本文・系譜・島所属・relation・review状態を変更しない。
 
 ### 2.7 CE4 Audit Integration Contract（API/CLI equivalence）
 

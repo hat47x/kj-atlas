@@ -8,7 +8,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/frontend/src/domain/representative_merge.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/domain/merge_traceability.ts`, `03_Implement/frontend/src/App.tsx`, `00_Prompt/kj_technique.md`, `02_Architecture/api.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `AI-IR-PROJECTION-01`, `AI-IR-STAGE5-SCOPE-01`, `AI-MERGE-APPLY-01`
+- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `AI-IR-PROJECTION-01`, `AI-IR-STAGE5-SCOPE-01`, `AI-MERGE-APPLY-01`, `AI-MERGE-PARTIAL-01`, `AI-MERGE-METHOD-TRACE-01`
 - Expected verification level: integration
 
 ## 現在地
@@ -21,6 +21,7 @@
 - 元カード、`sources`、`repOf`、`mergedIntoCardId`、`canonicalId`、元relation・島所属へ戻れる意味保存型の実mergeを実装済み。
 - `accept` は判断記録、`apply` は明示的なDocument変更、保存はさらに別操作という境界を維持したまま接続済み。
 - decision → apply → save → reload はE2Eで固定済み。
+- `partial` は、人間が2枚以上・全候補未満の真部分集合を明示し、その集合だけを判断・監査・実merge・保存／再読込まで追跡する契約へ移行済み。
 - R18で検出したremote AI提案と決定論ローカルfallbackの契約混線も解消済み。remote/common `MergeSuggestion` はbackend正本へ揃え、fallback固有metadataは派生表現へ分離した。
 
 したがって、主要な利用経路を止めるP1課題は解消している。本IssueをP1のまま保持しない。残っているのは、**どの統合方法を使った提案なのかを判断・監査の来歴として残す必要があるか**というP2の追跡性である。
@@ -74,15 +75,11 @@
 
 現在のpromptは04ステップ型と核融合法型を選び分けるよう要求する一方、remote/common `MergeSuggestion` には方法を機械可読に表すフィールドがない。
 
-R19では、単にフィールドを増やすことを完了条件にしない。次を満たす場合に、後方互換な任意フィールドとして方式識別を追加する。
+R18/R19の横断監査から、方式は実mergeの自動分岐条件ではなくても、人間が後から「なぜこの統合を採ったか」へ戻るための判断・監査文脈として追跡価値があると判断した。`AI-MERGE-METHOD-TRACE-01` で、remote/commonと決定論fallbackの責務差を再び混線させず、proposal → decision → auditへ同じ方式を通す。
 
-1. 人間が提案を読む際、近接整理なのか意味核統合なのかが採否判断に実際に影響する。
-2. decision / auditへ残すことで、後から「なぜこの統合を採用したか」へ戻りやすくなる。
-3. remote AI提案と決定論fallbackの責務差を再び混線させず、remote → frontend → decision → auditまで同じ意味で通せる。
+候補語彙は `near_duplicate` / `kernel_fusion` とし、API名は実装時に既存語彙と整合させる。方式ラベルだけを理由に実mergeのデータ変換を自動分岐させない。
 
-追加する場合の候補語彙は `near_duplicate` / `kernel_fusion` とするが、API名は実装時に既存語彙と整合させる。方式が監査上使われないと確認できた場合は、フィールドを増やさず、その理由を記録して本Issueを閉じる。
-
-`partial` は別問題である。採用するsource部分集合をUIで明示する契約がない現状では自動適用しない。必要になった時点で、曖昧な既存値を流用せず部分集合の操作契約を先に定める。
+`partial` は `AI-MERGE-PARTIAL-01` で別途完了した。旧来の曖昧な `selectedCardIds` を推測せず、人間が明示した真部分集合だけを実適用する。
 
 ## 受入条件
 
@@ -93,9 +90,10 @@ R19では、単にフィールドを増やすことを完了条件にしない�
 - [x] 元カード・source・merge/canonical系譜・元relationへ戻れる実mergeを実装した。
 - [x] AI提案の採用から明示適用・保存・再読込までをE2Eで確認した（`AI-MERGE-APPLY-01` / PR #2849〜#2852）。
 - [x] remote/common提案契約と決定論fallback固有契約を分離した（R18 / PR #2853）。
+- [x] `partial` の真部分集合を人間が明示し、判断・監査・実適用・保存／再読込まで同じ集合として保持する（`AI-MERGE-PARTIAL-01`）。
 - [x] SafeMode二層、PII最小化、IR上限のfail-closedを維持した。
-- [ ] 統合方法をproposal → decision → auditへ機械可読に残すことが実利用上必要かを確定し、必要なら後方互換に実装する。
+- [ ] 統合方法をproposal → decision → auditへ機械可読に追跡する（`AI-MERGE-METHOD-TRACE-01`）。
 
 ## 完了境界
 
-主要なmerge経路は実装済みである。本Issueの残作業は方式追跡性の要否判断だけに限定する。新しい実使用証拠なしに `residuals`、自動partial適用、追加のmerge自動化へ範囲を広げない。
+主要なmerge経路とpartialの明示選択契約は実装済みである。本Issueの残作業は `AI-MERGE-METHOD-TRACE-01` の方式追跡だけに限定する。自由記述 `residuals` や追加のmerge自動化へ範囲を広げない。

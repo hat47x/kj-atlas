@@ -534,6 +534,7 @@ type MergeSuggestionDraft = MergeSuggestion & {
   isEdited: boolean;
   latestDecision?: MergeSuggestionDecision;
   latestDecidedAt?: string;
+  latestSelectedCardIds?: string[];
   representativeCardId?: string;
   representativeResolvedBy?: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
   representativeSourceCount?: number;
@@ -3522,6 +3523,8 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
             isEdited: (latestDecision?.editedText ?? suggestion.mergedTextDraft) !== suggestion.mergedTextDraft,
             latestDecision: latestDecision?.decision,
             latestDecidedAt: latestDecision?.decidedAt,
+            latestSelectedCardIds:
+              latestDecision?.decision === "partial" ? latestDecision.selectedCardIds : undefined,
             representativeCardId: representativeTrace.representativeCardId || undefined,
             representativeResolvedBy: representativeTrace.representativeResolvedBy,
             representativeSourceCount:
@@ -3566,7 +3569,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
   }, []);
 
   const handleRecordMergeSuggestionDecision = useCallback(
-    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string }) => {
+    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string; selectedCardIds?: string[] }) => {
       if (!document) {
         return;
       }
@@ -3591,6 +3594,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         groupId: suggestion.groupId,
         decision,
         cardIds: suggestion.cardIds,
+        selectedCardIds: options.selectedCardIds,
         mergedTextDraft: suggestion.mergedTextDraft,
         editedText: suggestion.editedText,
         rationale: suggestion.rationale,
@@ -3616,6 +3620,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         decision,
         decidedAt,
         cardIds: suggestion.cardIds,
+        selectedCardIds: options.selectedCardIds,
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         decisionReason: options.decisionReason,
       });
@@ -3627,6 +3632,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
                 ...item,
                 latestDecision: decision,
                 latestDecidedAt: decidedAt,
+                latestSelectedCardIds: decision === "partial" ? options.selectedCardIds : undefined,
               }
             : item
         )

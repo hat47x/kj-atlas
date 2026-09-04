@@ -7,13 +7,14 @@ import {
 } from "./decision_audit_events";
 
 describe("decision_audit_events", () => {
-  it("creates human-only audit event with normalized cardIds", () => {
+  it("候補全体と部分採用したカード集合を正規化して監査記録へ残す", () => {
     const event = createMergeDecisionAuditEvent({
       eventId: "evt-1",
       groupId: "g-1",
       decision: "partial",
       decidedAt: "2026-03-15T00:00:00.000Z",
-      cardIds: ["c-2", "c-1", "c-2"],
+      cardIds: ["c-3", "c-2", "c-1", "c-2"],
+      selectedCardIds: ["c-2", "c-1", "c-2"],
       snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
       decisionReason: "Reviewed by operator",
     });
@@ -24,7 +25,8 @@ describe("decision_audit_events", () => {
       decision: "partial",
       decidedAt: "2026-03-15T00:00:00.000Z",
       decidedBy: "human",
-      cardIds: ["c-1", "c-2"],
+      cardIds: ["c-1", "c-2", "c-3"],
+      selectedCardIds: ["c-1", "c-2"],
       snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
       decisionReason: "Reviewed by operator",
     });

@@ -18,6 +18,7 @@ function createBaseDocument(): DocumentV1 {
     cards: [
       { id: "c1", text: "alpha", x: 0, y: 0 },
       { id: "c2", text: "Alpha", x: 100, y: 0 },
+      { id: "c3", text: "Alpha context", x: 200, y: 0 },
     ],
     edges: [],
     islands: [],
@@ -40,7 +41,8 @@ describe("merge_suggestion_decisions", () => {
         {
           groupId: "g1",
           decision: append.decision,
-          cardIds: ["c1", "c2"],
+          cardIds: append.decision === "partial" ? ["c1", "c2", "c3"] : ["c1", "c2"],
+          selectedCardIds: append.decision === "partial" ? ["c1", "c2"] : undefined,
           mergedTextDraft: "alpha",
           editedText: append.editedText,
         },
@@ -100,6 +102,50 @@ describe("merge_suggestion_decisions", () => {
         missingSourceCardIds: [],
       },
     ]);
+  });
+
+  it("records a valid partial decision with a strict selected subset", () => {
+    const result = appendMergeSuggestionDecision(
+      createBaseDocument(),
+      {
+        groupId: "g-partial",
+        decision: "partial",
+        cardIds: ["c3", "c1", "c2"],
+        selectedCardIds: ["c2", "c1"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha partial",
+      },
+      { idFactory: () => "d-partial", now: "2026-01-02T00:00:00.000Z" },
+    );
+
+    expect(result.mergeSuggestionDecisions?.at(-1)).toMatchObject({
+      decision: "partial",
+      cardIds: ["c1", "c2", "c3"],
+      selectedCardIds: ["c1", "c2"],
+      representativeCardId: "c1",
+    });
+  });
+
+  it("rejects partial decisions without a true subset", () => {
+    const base = createBaseDocument();
+    const common = {
+      groupId: "g-partial",
+      decision: "partial" as const,
+      cardIds: ["c1", "c2", "c3"],
+      mergedTextDraft: "alpha",
+      editedText: "alpha partial",
+    };
+
+    expect(() => appendMergeSuggestionDecision(base, common)).toThrowError("partial decision requires selectedCardIds");
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1"] })).toThrowError(
+      "partial selectedCardIds must contain at least two ids",
+    );
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1", "c2", "c3"] })).toThrowError(
+      "partial selectedCardIds must be a strict subset of cardIds",
+    );
+    expect(() => appendMergeSuggestionDecision(base, { ...common, selectedCardIds: ["c1", "outside"] })).toThrowError(
+      "partial selectedCardIds must be a subset of cardIds",
+    );
   });
 
   it("returns latest decision per group", () => {

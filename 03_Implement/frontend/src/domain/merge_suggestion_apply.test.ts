@@ -59,7 +59,8 @@ function recordDecision(
     {
       groupId: "g1",
       decision,
-      cardIds: ["c1", "c2"],
+      cardIds: decision === "partial" ? ["c1", "c2", "c3"] : ["c1", "c2"],
+      selectedCardIds: decision === "partial" ? ["c1", "c2"] : undefined,
       mergedTextDraft: "待ち時間は利用継続の負担になる",
       editedText: "待ち時間は利用継続の負担になる",
       decisionReason: "二つの記述の差を残したうえで代表表現として採用する",
@@ -143,8 +144,52 @@ describe("applyRecordedMergeSuggestionDecision", () => {
     expect(reloaded.cards.find((card) => card.id === "c2")?.meta?.source).toBe("interview-02:line-08");
   });
 
-  it("refuses partial/reject/defer until partial source selection has an explicit UI contract", () => {
-    for (const decision of ["partial", "reject", "defer"] as const) {
+  it("applies only the human-selected subset for a recorded partial decision", () => {
+    const before = documentFixture();
+    const recorded = recordDecision(before, "partial");
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-0000-0000-000000000103");
+
+    const result = applyRecordedMergeSuggestionDecision(recorded.document, recorded.decision);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.sourceCardIds).toEqual(["c1", "c2"]);
+    expect(result.document.cards.find((card) => card.id === "c1")?.mergedIntoCardId).toBe(result.representativeCardId);
+    expect(result.document.cards.find((card) => card.id === "c2")?.mergedIntoCardId).toBe(result.representativeCardId);
+    expect(result.document.cards.find((card) => card.id === "c3")).toEqual(before.cards.find((card) => card.id === "c3"));
+    expect(result.document.mergeSuggestionDecisions?.at(-1)).toMatchObject({
+      decision: "partial",
+      selectedCardIds: ["c1", "c2"],
+      sourceCardIds: ["c1", "c2"],
+      representativeCardId: result.representativeCardId,
+    });
+  });
+
+  it("refuses ambiguous legacy partial decisions and still refuses reject/defer", () => {
+    const base = documentFixture();
+    const legacyMissing = {
+      id: "legacy-missing",
+      decisionId: "legacy-missing",
+      groupId: "g1",
+      decision: "partial" as const,
+      action: "partial" as const,
+      decidedAt: "2026-09-03T00:01:00.000Z",
+      cardIds: ["c1", "c2", "c3"],
+      mergedTextDraft: "draft",
+      editedText: "draft",
+    };
+    const missingDoc = { ...base, mergeSuggestionDecisions: [legacyMissing] };
+    expect(applyRecordedMergeSuggestionDecision(missingDoc, legacyMissing)).toEqual({
+      ok: false, code: "partial_selection_missing",
+    });
+
+    const legacyFull = { ...legacyMissing, id: "legacy-full", decisionId: "legacy-full", selectedCardIds: ["c1", "c2", "c3"] };
+    const fullDoc = { ...base, mergeSuggestionDecisions: [legacyFull] };
+    expect(applyRecordedMergeSuggestionDecision(fullDoc, legacyFull)).toEqual({
+      ok: false, code: "partial_selection_invalid",
+    });
+
+    for (const decision of ["reject", "defer"] as const) {
       const recorded = recordDecision(documentFixture(), decision);
       expect(applyRecordedMergeSuggestionDecision(recorded.document, recorded.decision)).toEqual({
         ok: false,

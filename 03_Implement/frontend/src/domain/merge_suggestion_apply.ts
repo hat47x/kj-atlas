@@ -5,6 +5,8 @@ import { createRepresentativeMerge } from "./representative_merge";
 export type MergeSuggestionApplyErrorCode =
   | "decision_not_recorded"
   | "decision_not_accepted"
+  | "partial_selection_missing"
+  | "partial_selection_invalid"
   | "source_card_missing"
   | "source_card_held"
   | "source_card_already_merged"
@@ -55,16 +57,43 @@ function isSameRecordedDecision(
   );
 }
 
+function resolveAppliedSourceIds(
+  recordedDecision: MergeSuggestionDecisionEntry,
+): { ok: true; sourceIds: string[] } | { ok: false; code: MergeSuggestionApplyErrorCode } {
+  const action = recordedDecision.action ?? recordedDecision.decision;
+  const candidateIds = normalizeIds(recordedDecision.cardIds);
+
+  if (action === "accept") {
+    return { ok: true, sourceIds: candidateIds };
+  }
+  if (action !== "partial") {
+    return { ok: false, code: "decision_not_accepted" };
+  }
+  if (!recordedDecision.selectedCardIds) {
+    return { ok: false, code: "partial_selection_missing" };
+  }
+
+  const selectedIds = normalizeIds(recordedDecision.selectedCardIds);
+  if (selectedIds.length < 2 || selectedIds.length >= candidateIds.length) {
+    return { ok: false, code: "partial_selection_invalid" };
+  }
+  const candidateIdSet = new Set(candidateIds);
+  if (selectedIds.some((cardId) => !candidateIdSet.has(cardId))) {
+    return { ok: false, code: "partial_selection_invalid" };
+  }
+  return { ok: true, sourceIds: selectedIds };
+}
+
 /**
- * 記録済みの人間による accept 判断を、現在のDocumentへ明示的に適用する。
+ * 記録済みの人間による accept / partial 判断を、現在のDocumentへ明示的に適用する。
  *
  * AI提案の生成、採否判断、Document変更は別の段階として保つ。この関数は
- * 「acceptを記録した後に、利用者が実適用を選んだ」第二の操作だけを担う。
+ * 「判断を記録した後に、利用者が実適用を選んだ」第二の操作だけを担う。
  * 適用直前に現在のDocumentを再検査し、判断後に追加されたhold・矛盾・別mergeを
  * 古い提案より優先する。
  *
- * partial は現UIに採用sourceの部分集合を明示する契約がないため適用しない。
- * reject/deferも当然に適用対象外とする。
+ * partial は、判断時に人間が明示した selectedCardIds が2枚以上かつ候補全体未満の
+ * 真部分集合である場合に限り適用する。legacy decisionの曖昧な値はfail-closedにする。
  */
 export function applyRecordedMergeSuggestionDecision(
   document: DocumentV1,
@@ -77,14 +106,11 @@ export function applyRecordedMergeSuggestionDecision(
     return { ok: false, code: "decision_not_recorded" };
   }
 
-  const action = recordedDecision.action ?? recordedDecision.decision;
-  if (action !== "accept") {
-    return { ok: false, code: "decision_not_accepted" };
+  const sourceSelection = resolveAppliedSourceIds(recordedDecision);
+  if (!sourceSelection.ok) {
+    return sourceSelection;
   }
-
-  // 現行acceptは提案全体の採用であり、selectedCardIdsは履歴互換用の複製に留まる。
-  // partialの部分集合契約が定まるまでは、ここから暗黙の部分適用を導入しない。
-  const selectedIds = normalizeIds(recordedDecision.cardIds);
+  const selectedIds = sourceSelection.sourceIds;
   if (selectedIds.length < 2) {
     return { ok: false, code: "merge_failed" };
   }
