@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RUNTIME_REGISTRY_DOC = REPO_ROOT / "02_Architecture" / "runtime_parameter_registry.md"
 PUBLIC_CONFIGURATION_DOC = REPO_ROOT / "04_Documentation" / "configuration.md"
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+RELEASE_DOC = REPO_ROOT / "04_Documentation" / "release.md"
 PUBLIC_ENV_CONTRACT_DOCS = [RUNTIME_REGISTRY_DOC, PUBLIC_CONFIGURATION_DOC]
 ENV_SCAN_ROOTS = [
     REPO_ROOT / "03_Implement" / "backend",
@@ -200,9 +201,13 @@ def test_settings_rejects_legacy_tenant_capability_key(monkeypatch) -> None:  # 
         assert "TENANT_CAPABILITY_RESOLVER" in str(exc)
 
 
-def test_backend_ci_uses_canonical_database_test_keys() -> None:
-    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+def test_backend_ci_uses_canonical_database_test_keys_when_present() -> None:
+    if not CI_WORKFLOW.is_file():
+        release = RELEASE_DOC.read_text(encoding="utf-8")
+        assert "常設CIは現在無効" in release
+        return
 
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
     assert not re.search(r"^\s+(?:DATABASE_URL|RUN_PG_TESTS):", workflow, re.MULTILINE)
     assert workflow.count("KJ_ATLAS_DATABASE_URL:") == 5
     assert workflow.count("KJ_ATLAS_RUN_PG_TESTS:") == 1
