@@ -1,0 +1,77 @@
+name: OPS SaaS AC6 once
+
+on:
+  push:
+    branches:
+      - test/ops-saas-ac6-failclosed-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      KJ_ATLAS_RUN_PG_TESTS: "1"
+      KJ_ATLAS_TEST_POSTGRES_CONTAINER: "github-actions-postgres-16"
+      KJ_ATLAS_DATABASE_URL: "postgresql+psycopg://postgres:postgres@127.0.0.1:5432/postgres"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/ops-saas-ac6-failclosed-20260904
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test,postgres]'
+      - name: Verify PostgreSQL session/resource gate
+        working-directory: 03_Implement/backend
+        run: >-
+          python -m pytest -m postgres
+          tests/test_saas_auth_session_postgres_multi_instance.py
+          tests/test_saas_tenant_resource_gate_postgres.py -q
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Verify tenant switch no-retry boundary
+        working-directory: 03_Implement/frontend
+        run: npx vitest run src/api/client_tenant_switch_no_retry.test.ts src/api/client.test.ts
+      - name: TypeScript typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+      - name: Validate repository contracts
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/docs_check.py
+          python 03_Implement/backend/scripts/check_design_consistency.py
+          git -c core.whitespace=cr-at-eol diff --check origin/main...HEAD
+      - name: Remove one-shot workflow after success
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/ops-saas-ac6-once.yml
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'ci: OPS SaaS AC-6 one-shot workflowを削除する'
+          git push origin HEAD:test/ops-saas-ac6-failclosed-20260904
