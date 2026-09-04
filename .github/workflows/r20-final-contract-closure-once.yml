@@ -1,0 +1,102 @@
+name: R20 mergeMethod contract closure (one-shot)
+
+on:
+  push:
+    branches:
+      - dogfood/r20-merge-method-traceability-20260904
+    paths:
+      - .github/workflows/r20-final-contract-closure-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: dogfood/r20-merge-method-traceability-20260904
+          fetch-depth: 0
+
+      - name: Apply final R20 contract patch
+        run: python .github/scripts/r20_final_contract_closure.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Frontend merge, persistence, and external-agent regressions
+        working-directory: 03_Implement/frontend
+        run: |
+          npx vitest run \
+            src/api/client.test.ts \
+            src/domain/merge_candidates.test.ts \
+            src/domain/merge_suggestion_decisions.test.ts \
+            src/domain/merge_suggestion_apply.test.ts \
+            src/domain/stream_b_mock_validation.test.ts \
+            src/domain/stream_b_contract_handoff.test.ts \
+            src/domain/validate_doc.test.ts \
+            src/domain/validate.test.ts \
+            src/import/agent_response_import.test.ts \
+            src/export/agent_task_export.test.ts \
+            src/ui/MergeSuggestionsPanel.test.ts \
+            src/ui/MergeSuggestionsPanel.merge_method.test.ts \
+            src/ui/merge_method_label.test.ts
+
+      - name: Frontend typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install backend test dependencies
+        run: python -m pip install -e './03_Implement/backend[test]'
+
+      - name: Backend merge regressions
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_ai_merge_ir.py tests/test_ai_merge_semantics.py tests/test_models_backward_compat.py -q
+
+      - name: Planning and document validation
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/triage_actionable_plans.py --format text >/tmp/triage.txt
+          test -s /tmp/triage.txt
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Commit verified product changes and remove one-shot files
+        run: |
+          rm .github/workflows/r20-final-contract-closure-once.yml
+          rm .github/scripts/r20_final_contract_closure.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'fix: mergeMethodの全入力・保存契約を閉じる'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
+
+      - name: Cleanup verifier after failure
+        if: failure()
+        run: |
+          git reset --hard
+          git fetch origin dogfood/r20-merge-method-traceability-20260904
+          git checkout -B dogfood/r20-merge-method-traceability-20260904 origin/dogfood/r20-merge-method-traceability-20260904
+          rm -f .github/workflows/r20-final-contract-closure-once.yml .github/scripts/r20_final_contract_closure.py
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore: R20失敗時の最終検証物を削除する'
+          git push origin HEAD:dogfood/r20-merge-method-traceability-20260904
