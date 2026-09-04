@@ -1,0 +1,68 @@
+name: OPS SaaS PostgreSQL two-app once
+
+on:
+  push:
+    branches:
+      - test/ops-saas-two-app-postgres-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kj_atlas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kj_atlas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      KJ_ATLAS_RUN_PG_TESTS: "1"
+      KJ_ATLAS_TEST_POSTGRES_CONTAINER: "github-actions-postgres-16"
+      KJ_ATLAS_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/kj_atlas
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/ops-saas-two-app-postgres-20260904
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 最新mainを取り込む
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-edit origin/main
+      - name: backend依存関係を導入する
+        run: python -m pip install -e '03_Implement/backend[test,postgres]'
+      - name: PostgreSQL複数app実証を実行する
+        working-directory: 03_Implement/backend
+        run: pytest -q -m postgres tests/test_saas_auth_session_postgres_multi_instance.py
+      - name: 関連する既存回帰を実行する
+        working-directory: 03_Implement/backend
+        run: >-
+          pytest -q
+          tests/test_saas_auth_session_store.py
+          tests/test_active_tenant_session_keyed.py
+          tests/test_trusted_auth_edge_cookie_fallback.py
+          tests/test_oauth_bff_logout_revocation.py
+          tests/test_saas_session_csrf.py
+      - name: 差分を検査する
+        run: git -c core.whitespace=cr-at-eol diff --check
+      - name: 成功した検証状態を保存して一時workflowを削除する
+        run: |
+          rm -f .github/workflows/ops-saas-postgres-two-app-once.yml
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'ci: SaaS複数app実証用workflowを削除する'
+          git push origin HEAD:test/ops-saas-two-app-postgres-20260904
