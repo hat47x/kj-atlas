@@ -38,6 +38,7 @@ class IssueMemo:
     related_refs: tuple[str, ...]
     dependency_paths: tuple[str, ...]
     dependency_adr_ids: tuple[str, ...]
+    ambiguous_dependency_names: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -325,9 +326,14 @@ def build_actionable_issues(
             continue
         blockers: list[str] = []
         for dep_path in issue.dependency_paths:
+            dep_name = Path(dep_path).name
+            if dep_name in issue.ambiguous_dependency_names:
+                ambiguous_id = dep_name.removeprefix("issue-").removesuffix(".md")
+                blockers.append(f"{ambiguous_id}:Ambiguous")
+                continue
             dep_issue = issue_by_path.get(dep_path)
             if dep_issue is None:
-                missing_id = Path(dep_path).name.removeprefix("issue-").removesuffix(".md")
+                missing_id = dep_name.removeprefix("issue-").removesuffix(".md")
                 blockers.append(f"{missing_id}:Missing")
             elif dep_issue.path == issue.path:
                 blockers.append(f"{issue.backlog_id}:SelfDependency")
@@ -397,22 +403,42 @@ def collect(root: Path) -> dict[str, object]:
     adr_files = sorted((root / "adr").glob("ADR-*.md"))
     issues = [parse_issue(path, root) for path in issue_files]
     adrs = [parse_adr(path) for path in adr_files]
-    # Done memos can live under issues/done/ or issues/archive/; dependency
-    # refs in still-active memos are written relative to issues/ and don't
-    # know which subfolder a graduated memo ended up in, so re-resolve by
-    # filename once here rather than requiring every reference to be rewritten.
-    name_to_path = {Path(issue.path).name: issue.path for issue in issues}
-    issues = [
-        replace(
-            issue,
-            dependency_paths=tuple(
-                name_to_path.get(Path(dep).name, dep) for dep in issue.dependency_paths
-            ),
-        )
-        for issue in issues
-    ]
-    errors: list[TriageError] = []
+    # Done memos can live under issues/done/ or issues/archive/. Keep an exact
+    # normalized path when it still exists; only fall back to basename when the
+    # original path is gone. A basename fallback must be unique: choosing one of
+    # multiple candidates by dictionary overwrite order would silently attach
+    # the dependency to an arbitrary memo.
     known_issue_paths = {issue.path for issue in issues}
+    paths_by_name: dict[str, list[str]] = {}
+    for issue in issues:
+        paths_by_name.setdefault(Path(issue.path).name, []).append(issue.path)
+
+    resolved_issues: list[IssueMemo] = []
+    for issue in issues:
+        resolved_paths: list[str] = []
+        ambiguous_names: list[str] = []
+        for dep in issue.dependency_paths:
+            if dep in known_issue_paths:
+                resolved_paths.append(dep)
+                continue
+            dep_name = Path(dep).name
+            candidates = paths_by_name.get(dep_name, [])
+            if len(candidates) == 1:
+                resolved_paths.append(candidates[0])
+            else:
+                resolved_paths.append(dep)
+                if len(candidates) > 1:
+                    ambiguous_names.append(dep_name)
+        resolved_issues.append(
+            replace(
+                issue,
+                dependency_paths=tuple(resolved_paths),
+                ambiguous_dependency_names=tuple(dict.fromkeys(ambiguous_names)),
+            )
+        )
+    issues = resolved_issues
+
+    errors: list[TriageError] = []
     known_adr_ids = {adr.adr_id for adr in adrs}
     for issue in issues:
         if issue.status == "Unknown":
@@ -422,8 +448,17 @@ def collect(root: Path) -> dict[str, object]:
         if issue.priority == "N/A" or not issue.priority.strip():
             errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))
         for dep in issue.dependency_paths:
+            dep_name = Path(dep).name
             if dep == issue.path:
                 errors.append(TriageError(path=issue.path, reason=f"self dependency: {dep}"))
+            elif dep_name in issue.ambiguous_dependency_names:
+                candidates = ", ".join(sorted(paths_by_name[dep_name]))
+                errors.append(
+                    TriageError(
+                        path=issue.path,
+                        reason=f"ambiguous dependency basename: {dep_name} -> {candidates}",
+                    )
+                )
             elif dep not in known_issue_paths:
                 errors.append(TriageError(path=issue.path, reason=f"dependency path not found: {dep}"))
         for adr_id in issue.dependency_adr_ids:
