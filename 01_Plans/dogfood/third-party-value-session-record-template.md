@@ -1,91 +1,91 @@
-# Third-Party Value Session Record Template
+# 第三者価値検証 — Session記録テンプレート
 
-> `VALUE-REALNESS-01` / `PRACTICE-CULTURE-01` の第三者実利用を、価値感想ではなく実資料・操作・停止理由へ戻れる形で記録する。
-> このテンプレートはKJ Atlasの価値語彙を参加者へ先に教えるための質問票ではない。
+> `VALUE-REALNESS-01` / `PRACTICE-CULTURE-01` の第三者実利用を、価値についての感想だけでなく、実資料、操作、停止理由へ戻れる形で記録する。
+> このテンプレートは、KJ Atlasの価値語彙を参加者へ先に教えるための質問票ではない。
 
-## 0. Session metadata
+## 0. Session情報
 
 - Session ID:
-- Date:
-- Operator:
-- Participant alias:
-- Participation basis: volunteer / collaborator / other
-- Practice context summary:
-- KJ Atlas version/commit:
-- Session launch checklist reference:
-- Launch verdict: GO / GO-WITH-REDUCTION / STOP-DATA-BOUNDARY / STOP-PARTICIPANT / STOP-OTHER
-- Data handling agreement:
+- 実施日:
+- 操作者:
+- 参加者alias:
+- 参加形態: volunteer / collaborator / other
+- 実践文脈の要約:
+- KJ Atlas version / commit:
+- Session開始前チェックリスト参照:
+- 開始判定: GO / GO-WITH-REDUCTION / STOP-DATA-BOUNDARY / STOP-PARTICIPANT / STOP-OTHER
+- Data handlingの合意内容:
 - Public / private record boundary:
-- Withdrawal / deletion agreement:
+- Withdrawal / deletionの合意内容:
 
-### 0.1 Runtime data path actually used
+### 0.1 実際に使用したruntime data path
 
 - Execution mode: local / self-hosted / hosted / other / unknown
 - AI enabled: yes / no
 - AI provider / endpoint actually used: N/A / <record>
-- Material sent outside KJ Atlas process/device: yes / no / partial / unknown
-- What was sent externally: none / raw material / selected cards / derived text / metadata / other / unknown
-- Provider-side retention/logging known: yes / no / N/A
-- Operator-side request/response logging: yes / no / unknown / N/A
-- Raw material retained after session: yes / no / partial
-- KJ Atlas document/export retained: yes / no / partial
-- Audio/video/screen capture used: yes / no / partial
-- Storage location class: participant-controlled / operator-private / organization-controlled / other / none
-- Planned retention/deletion point:
+- KJ Atlasのprocess / device外へ資料が送られたか: yes / no / partial / unknown
+- 外部へ送られた内容: none / raw material / selected cards / derived text / metadata / other / unknown
+- Provider-side retention / loggingを確認できていたか: yes / no / N/A
+- 操作者側のrequest / response logging: yes / no / unknown / N/A
+- Raw materialをsession後も保持したか: yes / no / partial
+- KJ Atlas document / exportを保持したか: yes / no / partial
+- Audio / video / screen captureを使用したか: yes / no / partial
+- 保存場所の区分: participant-controlled / operator-private / organization-controlled / other / none
+- 保持期間または削除予定時点:
 
-Record actual runtime behavior, not the product's general capability. If a field remained `unknown`, explain why it was acceptable for this material or why the session stopped.
+製品の一般的な能力ではなく、このsessionで実際に起きたruntime behaviorを記録する。`unknown`が残った場合は、その不確実性をこの資料条件で許容できた理由、または停止理由を記録する。
 
-## 1. Eligibility / safety check
+## 1. 参加条件・安全確認
 
-- [ ] Participant can explain the material/context.
-- [ ] Existing workflow can be described.
-- [ ] Participant can stop at any time.
-- [ ] Material can be handled under agreed permissions.
-- [ ] No unapproved personal/confidential/third-party material is being introduced.
-- [ ] Runtime AI/network/storage path was explained before first material entry.
-- [ ] Any unresolved data-path uncertainty is compatible with the material conditions, or the session stopped before material entry.
-- [ ] Session participation and public-Git publication were treated as separate decisions.
+- [ ] 参加者本人が資料と文脈を説明できる。
+- [ ] 現在のworkflowを説明できる。
+- [ ] 参加者はいつでも停止できる。
+- [ ] 合意した権限・条件の範囲で資料を扱える。
+- [ ] 未承認の個人情報、機密情報、第三者資料を持ち込んでいない。
+- [ ] 最初の実資料入力前に、AI / network / storage経路を説明した。
+- [ ] data pathに未解決の不確実性がある場合、その不確実性が資料条件と両立しているか、または資料投入前に停止した。
+- [ ] sessionへの参加とpublic Gitへの公開を別の判断として扱った。
 
 Deviation / limitation:
 
-## 2. Baseline — before product-value vocabulary
+## 2. Baseline — KJ Atlasの価値語彙を提示する前
 
-### 2.1 Job to be done
+### 2.1 今回の仕事
 
-- What is the participant trying to accomplish?
-- What counts as a useful output today?
-- Who consumes the output?
+- 参加者は何を達成しようとしているか:
+- 現在、どのような成果物なら役に立つか:
+- その成果物を誰が使うか:
 
-### 2.2 Existing workflow
+### 2.2 現在のworkflow
 
-- Tools:
-- Steps:
-- What already works well:
-- Where friction occurs:
-- What must remain traceable/revisitable:
-- What does not need special handling:
+- 使用している道具:
+- 手順:
+- すでに十分うまくいっていること:
+- 負担や行き詰まりが生じるところ:
+- 後から辿れる状態で残す必要があるもの:
+- 特別な扱いを必要としないもの:
 
-### 2.3 Existing-workflow sufficiency hypothesis
+### 2.3 現在のworkflowで十分な条件
 
-- Participant says existing workflow is sufficient when:
-- Participant says change would be worthwhile if:
+- 参加者が「現在のworkflowで十分」と考える条件:
+- どのような変化があれば、別の方法を使う価値があると考えるか:
 
-> Operator inference is recorded separately. Do not rewrite the participant's account into KJ Atlas value vocabulary here.
+> 操作者の推論は別に記録する。ここで参加者の説明をKJ Atlasの価値語彙へ書き換えない。
 
-## 3. Material context
+## 3. 資料の文脈
 
-- Material type(s):
-- Approximate volume:
-- Media: text / image / audio / mixed / other
-- Update frequency:
-- Sensitivity / confidentiality:
-- Source ownership / authority:
-- Can raw material be retained?: yes / no / partial
-- If not, what evidence can be retained?:
+- 資料の種類:
+- おおよその量:
+- 媒体: text / image / audio / mixed / other
+- 更新頻度:
+- 機密性・センシティブさ:
+- 資料の所有・意味確定権限:
+- Raw materialを保持できるか: yes / no / partial
+- 保持できない場合、何を証拠として残せるか:
 
-## 4. Practice-context metadata
+## 4. 実践文脈のmetadata
 
-Use only for later omission checking. Do not group KJ cards by these fields.
+後で見落としを確認するためにだけ使う。これらの項目を基準にKJカードを束ねない。
 
 - Individual / collaborative:
 - Synchronous / asynchronous:
@@ -95,166 +95,166 @@ Use only for later omission checking. Do not group KJ cards by these fields.
 - Anonymity needs:
 - Data-control constraints:
 - Accessibility considerations:
-- Other local practice norms:
+- その他の局所的な作法:
 
 ## 5. Raw observation log
 
-| Obs ID | Stage | Trigger / material | Observed behavior or statement | Immediate consequence | Artifact evidence | Operator inference |
+| Obs ID | Stage | きっかけ・対象資料 | 観察した行動・発言 | 直後に起きた変化 | Artifact evidence | 操作者の推論 |
 |---|---|---|---|---|---|---|
 | O-001 | S1-S6 |  |  |  |  |  |
 
-Do not normalize the observation into `value`, `UX issue`, or `culture issue` during collection.
+収集中の観察を、その場で`value`、`UX issue`、`culture issue`等へ正規化しない。
 
 ## 6. Value / friction / counterevidence ledger
 
-Fill after or near the end of the session, referring back to raw Obs IDs.
+sessionの終盤または終了後に、raw Obs IDへ戻りながら記入する。
 
-| Evidence ID | Type | Observation refs | What changed | Existing workflow comparison | Confidence |
+| Evidence ID | 種別 | Observation refs | 何が変わったか | 現在のworkflowとの比較 | 確からしさ |
 |---|---|---|---|---|---|
 | E-001 | value moment / friction / no-use / existing-workflow sufficient / counterevidence / unexpected value / stop |  |  |  |  |
 
-## 7. Stage notes
+## 7. 各Stageの記録
 
-### S1 — Material intake
+### S1 — 資料の受け入れ
 
-- What was difficult to bring into KJ Atlas?
-- What should remain outside the product?
-- Did data-control constraints change the session?
-- Did AI/provider/network/storage constraints require a reduced workflow?:
+- KJ Atlasへ持ち込むのが難しかったもの:
+- 製品の外に残した方がよいもの:
+- data-control条件によってsession内容が変わったか:
+- AI / provider / network / storage条件により縮小したworkflowへ切り替えたか:
 
-### S2 — Externalization
+### S2 — 外部化
 
-- Meaning-preserving cardization examples:
-- Meaning loss / over-splitting examples:
-- Need to return to sources:
-- Visual representation effect:
+- 意味を保てたカード化の例:
+- 意味が失われた例、細分化しすぎた例:
+- 元資料へ戻る必要が生じた場面:
+- 視覚表象によって理解が変わった場面:
 
-### S3 — KJ integration
+### S3 — KJ統合
 
-- New relationship discovered:
-- Nothing new beyond existing workflow:
-- Premature organization / closure:
-- Dissent / isolated material treatment:
-- Human-confirmation usefulness / burden:
+- 新しく見つかった関係:
+- 現在のworkflowを越える新しいものが得られなかった場面:
+- 早すぎる整理・収束:
+- 異論や孤立した資料の扱い:
+- 人間による確認が役立った点、負担だった点:
 
-### S4 — Decision / narrative return
+### S4 — 判断・叙述へ戻す
 
-- Can the participant explain the output from source material?:
-- What remained undecided?:
-- Handoff / export usefulness:
-- Transcription or duplication burden:
+- 元資料から成果物を説明できるか:
+- 何が未決定のまま残ったか:
+- handoff / exportは役に立ったか:
+- 転記や二重管理の負担:
 
-### S5 — Revisit
+### S5 — 再訪
 
-- Could the work be resumed?:
-- Could earlier reasoning be reconstructed?:
-- What was lost?:
-- What was easier/harder than the existing workflow?:
+- 作業を再開できたか:
+- 以前の考え方を復元できたか:
+- 何が失われていたか:
+- 現在のworkflowより楽だった点、難しかった点:
 
-### S6 — Independent post-use explanation
+### S6 — 利用後の説明
 
-Record participant wording as closely as practical.
+可能な範囲で、参加者自身の言葉を保って記録する。
 
-- What helped?
-- What was unnecessary?
-- Where was the existing workflow better?
-- What would they use next time, and why?
-- When would they not use KJ Atlas?
-- Who/what work does it seem unsuitable for?
+- 何が役立ったか:
+- 何が余計だったか:
+- 現在のworkflowの方が良かったところ:
+- 次に同じ種類の仕事をするとき何を使うか、その理由:
+- どのような条件ではKJ Atlasを使わないか:
+- どのような人や仕事には合わないと思うか:
 
-## 8. Stop / withdrawal
+## 8. 停止・撤回
 
 - Session completed: yes / no / partial
-- Stop point:
-- Stop reason:
-- Was stopping a product failure, a fit judgment, a data-control constraint, an accessibility barrier, or something else?:
-- Did runtime data-path uncertainty or external processing contribute?:
-- What should **not** be inferred from the stop?:
+- 停止した時点:
+- 停止理由:
+- 停止はproduct failure、fit judgment、data-control constraint、accessibility barrier、それ以外のどれに近いか:
+- runtime data-pathの不確実性や外部処理が停止に影響したか:
+- この停止から**推論してはいけないこと**:
 
-Stopping is a valid outcome. Do not convert it automatically into a feature request.
+停止は有効な結果である。自動的にfeature requestへ変換しない。
 
-If the session stopped before material entry because the runtime data path was unacceptable or insufficiently known, preserve that as `no-use / governance evidence`; do not mark it invalid merely because no KJ artifact was produced.
+実資料を入力する前にruntime data pathが受け入れられない、または十分に確認できないため停止した場合は、`no-use / governance evidence`として保持する。KJ artifactが作られなかったことだけを理由にinvalidとしない。
 
-## 9. Artifact references
+## 9. Artifact参照
 
 - KJ Atlas document / InquiryJourney:
-- Before/after screenshots or exports, if consented:
-- Anonymized evidence:
-- Existing-workflow comparison artifact:
-- Material intentionally not retained:
-- Private runtime/data-path evidence reference, if any:
+- 同意されたbefore / after screenshotまたはexport:
+- 匿名化したevidence:
+- 現在のworkflowとの比較artifact:
+- 意図的に保持しなかった資料:
+- privateなruntime / data-path evidence参照。存在する場合のみ:
 
-## 10. Participant-level interpretation
+## 10. 参加者単位の解釈
 
-Do this only after raw observations are recorded.
+raw observationを記録し終えた後にだけ行う。
 
 ### 10.1 Switch reason
 
-- Did a concrete switch reason emerge?: yes / no / unresolved
+- 具体的なswitch reasonが生じたか: yes / no / unresolved
 - Evidence:
 
 ### 10.2 Reuse reason
 
-- Would there be a reason to reuse KJ Atlas for a similar job?: yes / no / conditional / unresolved
+- 同じ種類の仕事でKJ Atlasを再利用する理由があるか: yes / no / conditional / unresolved
 - Evidence / condition:
 
 ### 10.3 No-use reason
 
-- Strongest reason not to use KJ Atlas:
-- Is it rational under the participant's context?:
-- Is it primarily workflow/value, runtime data boundary, practice fit, accessibility, or another condition?:
+- KJ Atlasを使わない最も強い理由:
+- 参加者の文脈では合理的な理由か:
+- 主にworkflow / value、runtime data boundary、practice fit、accessibility、その他のどれに関係するか:
 
-### 10.4 Primary-job relationship
+### 10.4 Primary jobとの関係
 
-- Candidate primary job supported:
-- Candidate primary job narrowed/modified:
-- Evidence that the hypothesized job is not needed:
+- 支持されたcandidate primary job:
+- 狭める・修正する必要があるcandidate primary job:
+- 想定した利用仕事自体が不要であることを示すevidence:
 
-## 11. Internal-hypothesis return
+## 11. 内部仮説へ戻す
 
-Do not show this section to the participant before S6.
+このsectionは、S6が終わるまで参加者へ見せない。
 
 | Internal hypothesis | Third-party evidence | Verdict | Explanation |
 |---|---|---|---|
 |  |  | support / modify / narrow / reject / unresolved |  |
 
-If third-party evidence conflicts with cognitive dogfood, preserve the conflict instead of selecting the internal account by default.
+第三者の証拠と認知dogfoodの結果が衝突した場合、内部側を自動的に正しいものとして選ばない。対立を残す。
 
-## 12. Finding triage
+## 12. Findingの振り分け
 
-| Finding | Raw evidence refs | Triage | Existing issue / new memo / ADR trigger | Why |
+| Finding | Raw evidence refs | Triage | Existing issue / new memo / ADR trigger | 理由 |
 |---|---|---|---|---|
 |  |  | V-F0 / V-F1 / V-F2 / V-F3 |  |  |
 
-Rules:
+原則:
 
-- V-F0: raw observation/card remains enough.
-- V-F1: return evidence to an existing issue.
-- V-F2: new issue only when reproducible, uncovered, actionable, and testable.
-- V-F3: ADR only when `ADR-0047` real-use trigger is present.
+- V-F0: raw observation / cardのまま保持すれば十分な所見。
+- V-F1: 既存issueへ実使用証拠を戻す。
+- V-F2: 再現可能で、既存issueでは扱えず、実行可能で、検証できる場合だけ新しいissueを作る。
+- V-F3: `ADR-0047`のreal-use triggerがある場合だけADR候補とする。
 
-A single session's provider/storage condition is not automatically a product requirement. Preserve the raw no-use reason first.
+単一sessionのprovider / storage条件だけを、直ちに一般的な製品要求へ変換しない。まずraw no-use reasonを残す。
 
-## 13. Candidate follow-up sources / sessions
+## 13. 追加で必要な資料・session候補
 
-- Missing evidence:
-- Candidate contrast context:
-- Why another session could change the conclusion:
+- 不足しているevidence:
+- 候補となる対照文脈:
+- 別のsessionによって結論が変わり得る理由:
 
-Do not add follow-up participants merely to confirm a preferred conclusion.
+好ましい結論を確認するためだけに、追加参加者を選ばない。
 
-## 14. Session validity
+## 14. Sessionの有効性
 
-- Independent baseline captured before value vocabulary: yes / no / N/A if stopped before baseline
-- Raw observations preserved: yes / no
-- Counterevidence / no-use was allowed: yes / no
-- Participant could stop: yes / no
-- Runtime data path disclosed before first material entry: yes / no / N/A because no material entered
-- Data handling followed agreement: yes / no
-- Public-Git publication treated separately from session participation: yes / no
-- Operator inference separated from observation: yes / no
+- KJ Atlasの価値語彙を提示する前に独立したbaselineを取得した: yes / no / N/A if stopped before baseline
+- Raw observationsを保持した: yes / no
+- Counterevidence / no-useを許容した: yes / no
+- 参加者は停止できた: yes / no
+- 最初の実資料入力前にruntime data pathを説明した: yes / no / N/A because no material entered
+- Data handlingは合意内容に従った: yes / no
+- session参加とpublic-Git公開を別の判断として扱った: yes / no
+- 操作者の推論を観察事実から分けた: yes / no
 - Known contamination / leading:
 
 Session validity verdict: valid / partial / invalid
 
-A `STOP-DATA-BOUNDARY` or other pre-material stop can still be valid evidence if the stopping condition and participant decision were captured without leading. Invalid/partial sessions remain in the record with the reason; do not silently delete them.
+`STOP-DATA-BOUNDARY`等により実資料投入前に停止した場合でも、停止条件と参加者の判断を誘導せず記録できていれば、有効なevidenceになり得る。invalid / partialなsessionも理由とともに残し、黙って削除しない。
