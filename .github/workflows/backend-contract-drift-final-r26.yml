@@ -1,0 +1,59 @@
+name: Backend contract drift final R26
+
+on:
+  push:
+    branches:
+      - fix/island-summary-ir-test-contract-drift-20260905
+    paths:
+      - .github/workflows/backend-contract-drift-final-r26.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate-current-main:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Merge current main in validation workspace
+        run: |
+          git config user.name 'kj-atlas-validation-bot'
+          git config user.email 'kj-atlas-validation-bot@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+      - name: Install backend test dependencies
+        run: python -m pip install -e './03_Implement/backend[test]'
+      - name: Contract drift regressions
+        working-directory: 03_Implement/backend
+        run: |
+          pytest -q \
+            tests/test_ai_suggest_island_summary_ir_projection.py \
+            tests/test_ai_merge_suggestion_context.py
+      - name: Full backend test suite
+        working-directory: 03_Implement/backend
+        run: pytest -q
+      - name: Documentation checks
+        run: |
+          python 01_Plans/docs_check.py
+          python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Ruff changed tests
+        working-directory: 03_Implement/backend
+        run: |
+          ruff check \
+            tests/test_ai_suggest_island_summary_ir_projection.py \
+            tests/test_ai_merge_suggestion_context.py
+      - name: Diff checks
+        run: |
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git -c core.whitespace=cr-at-eol diff --check origin/main...HEAD -- . ':!.github/workflows/backend-contract-drift-final-r26.yml'
+      - name: Retire one-shot workflow
+        run: |
+          git merge --abort
+          git rm .github/workflows/backend-contract-drift-final-r26.yml
+          git commit -m 'chore: retire R26 backend contract validator'
+          git push
