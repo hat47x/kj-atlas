@@ -34,7 +34,7 @@ jobs:
             src/import/agent_response_merge_method.test.ts \
             src/ui/MergeSuggestionsPanel.test.ts
 
-      - name: Verify planning contracts
+      - name: Verify planning and diff contracts
         run: |
           set -euo pipefail
           python -m unittest discover -s 01_Plans/tests -p "test_*.py"
@@ -42,4 +42,6 @@ jobs:
           python 01_Plans/docs_check.py
           python 01_Plans/triage_actionable_plans.py --root 01_Plans --format json > /tmp/triage.json
           python -c 'import json; from pathlib import Path; report=json.loads(Path("/tmp/triage.json").read_text(encoding="utf-8")); assert not report.get("errors"), report.get("errors")'
-          git diff --check
+          git -c core.whitespace=cr-at-eol diff --check
+          git diff --numstat
+          python -c 'import subprocess; allowed={"03_Implement/frontend/src/App.tsx","03_Implement/frontend/src/domain/stream_b_contract_handoff.ts","03_Implement/frontend/src/domain/stream_b_contract_handoff.test.ts","03_Implement/frontend/src/domain/stream_b_mock_validation.test.ts","03_Implement/frontend/src/domain/merge_suggestion_decisions.test.ts","03_Implement/frontend/src/import/agent_response_import.ts","03_Implement/frontend/src/ui/MergeSuggestionsPanel.test.ts"}; paths=set(subprocess.check_output(["git","diff","--name-only"], text=True).splitlines()); assert paths == allowed, (paths, allowed); rows=subprocess.check_output(["git","diff","--numstat"], text=True).splitlines(); total=sum(int(a)+int(d) for a,d,_ in (row.split("\t") for row in rows)); assert total < 100, total'
