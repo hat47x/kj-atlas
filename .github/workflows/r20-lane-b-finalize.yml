@@ -1,0 +1,29 @@
+name: R20 lane B mergeMethod finalize
+
+on:
+  push:
+    branches:
+      - dogfood/r20-merge-method-traceability-20260904
+    paths:
+      - .github/workflows/r20-lane-b-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dogfood/r20-merge-method-traceability-20260904
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python .github/scripts/r20_lane_b_finalize.py
