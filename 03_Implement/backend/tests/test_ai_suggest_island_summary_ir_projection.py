@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api import llm_input_ir
 from kj_atlas_api.island_summary_ir import (
     build_island_summary_ir_context,
     island_summary_ir_prompt_lines,
@@ -158,19 +157,19 @@ def test_more_direct_members_than_card_budget_fails_closed() -> None:
     with pytest.raises(IRGenerationError) as exc_info:
         build_island_summary_ir_context(payload, allow_unreviewed_text=False)
 
-    assert exc_info.value.code == "required_cards_over_budget"
+    assert exc_info.value.code == "required_card_budget_exceeded"
 
 
-def test_direct_member_text_truncation_fails_closed(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_direct_member_text_truncation_fails_closed() -> None:
+    # Keep the required-card count below MAX_CARDS while exceeding the aggregate
+    # text budget. The shared IR can then apply its 240-char truncation and return
+    # a MAX_TEXT_CHARS reason, which this task-specific boundary must reject.
     payload = _request(
         member_texts=[
-            "対象島の第一の直接メンバー本文を完全に保持する必要がある",
-            "対象島の第二の直接メンバー本文も完全に保持する必要がある",
+            f"直接メンバー{index}:" + ("観察" * 500)
+            for index in range(13)
         ]
     )
-    monkeypatch.setattr(llm_input_ir, "MAX_TEXT_CHARS", 12)
 
     with pytest.raises(IRGenerationError) as exc_info:
         build_island_summary_ir_context(payload, allow_unreviewed_text=False)
