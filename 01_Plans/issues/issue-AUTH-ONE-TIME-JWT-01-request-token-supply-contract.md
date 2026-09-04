@@ -26,7 +26,7 @@
 - 候補A: RFC 9449 DPoP。client鍵へaccess tokenをsender-constrainし、要求ごとのDPoP proof `jti`、`htm`、`htu`、`ath`を検証する。
 - 候補B: same-origin BFF session。Bearer tokenをbrowserへ渡さずBFFへ閉じ込め、browser要求はHttpOnly sessionとCSRF防御で扱う。
 - 候補C: 現行Bearer方式を維持し、短い有効期限、TLS、module-memory保持、audience制限を保証範囲として明記する。
-- 比較判断の正本は`ADR-0074`へ集約した。同ADRはactive tenant正本化とtoken replay露出縮小を同じserver-owned session境界で解く案Bを採用候補としている。DPoPを別系統で並行実装せず、ADRがAcceptedになるまで現行Bearer保証を超えて表明しない。
+- 比較判断は`ADR-0074`へ集約し、2026-08-13にAcceptedとなった。同ADRはactive tenant正本化とtoken replay露出縮小を同じserver-owned session境界で解く案B（server-owned BFF session）を採用した。DPoPを別系統で並行実装せず、BFF採択後もBearer access token自体へ未実装のreplay防御があるかのようには表明しない。
 
 ## 受入条件
 
