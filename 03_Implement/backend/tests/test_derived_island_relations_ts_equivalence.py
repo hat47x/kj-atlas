@@ -1,4 +1,4 @@
-"""AC-7 spot-check: `derived_island_relations()` == `getDerivedIslandEdges()`.
+"""AC-7 spot-check: `derived_island_relations()` vs `getDerivedIslandEdges()`.
 
 `AI-IR-PROJECTION-01` AC-7 (ADR-0069 D4=A) asks for the TS and Python projection
 implementations to be checked for behavioural equivalence. Stages 1-3 deferred it
@@ -28,6 +28,31 @@ two implementations on purpose; these are IR projection rules, not drift):
 - a card listed by two islands is attributed to the first only (§2.2A
   FIRST-MATCH-WINS) where TS's `getIslandsForCard()` returns every match.
 
+THE FIFTH DIFFERENCE IS OF A DIFFERENT KIND -- not a condition on the input but a
+deliberate behavioural divergence, and here the PYTHON side is the correct one:
+
+- `causal` is the one DIRECTED edge type (DOMAIN-KJ-01, `02_Architecture/schemas.md`
+  §3.3.1: 無方向種別はペアを正規化してよいが、`causal` はペア正規化を行わず方向を
+  保存する). `derived_island_relations()` obeys that -- both in the rendered pair
+  and in the aggregation key, so `A --causal--> B` and `B --causal--> A` stay two
+  rows. `getDerivedIslandEdges()` does not: its `normalizeUndirectedIslands()` call
+  has no type exemption, so it reverses roughly half of all causal island pairs
+  (island ids are `crypto.randomUUID()` values; lexical order says nothing about
+  cause/effect order) and collapses opposite directions into one aggregate.
+  That is a PRE-EXISTING TS bug -- it predates this rollout and was found
+  incidentally by Stage 4's adversarial review -- filed as
+  `01_Plans/issues/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md`
+  and deliberately NOT fixed from here. The working counter-example already in the
+  frontend is `src/export/abstract_map_export.ts`, which special-cases `causal` out
+  of its own `normalizePair()` with the same citation.
+
+  Consequence for this file: the expected fixture carries TWO arrays.
+  `derivedIslandEdges` is the contract-correct output this test asserts;
+  `tsCurrentDerivedIslandEdges` pins what TS produces today, and the TS half
+  asserts that one plus the invariant that the two differ on causal rows ONLY.
+  When the TS issue is fixed, the second array is deleted and both halves go back
+  to asserting the first.
+
 `derived_island_relations()`' docstring carries the same list next to the code.
 """
 from __future__ import annotations
@@ -52,7 +77,19 @@ def _load_document() -> DocumentV1:
 
 
 def _expected() -> list[dict]:
+    """The contract-correct rows -- what schemas.md §3.3.1 says the output is."""
     return json.loads(EXPECTED_FIXTURE.read_text(encoding="utf-8"))["derivedIslandEdges"]
+
+
+def _ts_current() -> list[dict]:
+    """What `getDerivedIslandEdges()` produces TODAY (see the module docstring).
+
+    Pinned so the divergence is enumerated rather than merely asserted; the TS
+    half of the pair holds itself to this array.
+    """
+    return json.loads(EXPECTED_FIXTURE.read_text(encoding="utf-8"))[
+        "tsCurrentDerivedIslandEdges"
+    ]
 
 
 def _as_ts_shape(row: dict) -> dict:
@@ -100,7 +137,8 @@ def test_ordering_is_by_derived_id_ascending() -> None:
     TS sorts with `localeCompare`, Python by code point. The fixture ids are
     chosen so the two orderings coincide; pinning the order here means a fixture
     edit that breaks that coincidence fails loudly instead of making the two
-    halves disagree only on some machines.
+    halves disagree only on some machines. (The causal divergence changes WHICH
+    ids exist on each side, not how either side orders the ids it has.)
     """
     ids = [row["id"] for row in derived_island_relations(_ir_from_fixture())]
 
@@ -128,11 +166,104 @@ def test_same_island_relations_are_internalized_and_lone_pairs_ignored() -> None
 
 
 def test_multiple_card_relations_between_two_islands_aggregate_into_one() -> None:
-    """`causal:c1:c3` and `causal:c2:c4` are one island-level pull, not two."""
+    """`causal:c1:c3` and `causal:c2:c4` are one island-level pull, not two.
+
+    Aggregation still happens WITHIN a direction; what §3.3.1 forbids is
+    aggregating ACROSS directions (see the next two tests).
+    """
+    rows = derived_island_relations(_ir_from_fixture())
+    a_to_b = [
+        row for row in rows if row["type"] == "causal" and row["from_id"] == "isl-a"
+    ]
+
+    assert len(a_to_b) == 1
+    assert a_to_b[0]["to_id"] == "isl-b"
+    assert a_to_b[0]["aggregate_count"] == 2
+    assert a_to_b[0]["contributing_relation_ids"] == ["causal:c1:c3", "causal:c2:c4"]
+
+
+# ---------------------------------------------------------------------------
+# DOMAIN-KJ-01 (schemas.md §3.3.1): causal direction. The one place the two
+# implementations are MEANT to differ -- see the module docstring.
+# ---------------------------------------------------------------------------
+
+
+def test_causal_pair_is_not_lexically_normalized() -> None:
+    """`causal:c7:c1` runs isl-b (cause) -> isl-a (effect).
+
+    Lexically `isl-a` sorts first, so a pair-normalizing implementation emits it
+    as `isl-a --causal--> isl-b`: the exact reversal §3.3.1 forbids. The fixture
+    is built so the naive order and the causal order disagree, because in real
+    documents island ids are `crypto.randomUUID()` values and the two orders
+    agree only by chance (~half the time) -- which is why the bug shipped
+    undetected until Stage 4's adversarial review.
+    """
+    rows = derived_island_relations(_ir_from_fixture())
+    row = next(row for row in rows if row["id"] == "derived-island:isl-b|isl-a|causal")
+
+    assert (row["from_id"], row["to_id"]) == ("isl-b", "isl-a")
+    assert row["contributing_relation_ids"] == ["causal:c7:c1"]
+    # c7 (isl-b) is the cause; c1 (isl-a) is the effect. Order preserved.
+    assert row["contributing_card_ids"] == ["c7", "c1"]
+
+
+def test_opposite_causal_directions_do_not_collapse_into_one_row() -> None:
+    """The aggregation KEY is exempted too, not only the rendered pair.
+
+    `A --causal--> B` and `B --causal--> A` are two different claims. Keying both
+    by the normalized pair would fold them into a single row and lose one of them
+    -- silently, since `aggregate_count` would simply grow.
+    """
     rows = derived_island_relations(_ir_from_fixture())
     causal = [row for row in rows if row["type"] == "causal"]
 
-    assert len(causal) == 1
-    assert causal[0]["from_id"] == "isl-a"
-    assert causal[0]["to_id"] == "isl-b"
-    assert causal[0]["aggregate_count"] == 2
+    assert [(row["from_id"], row["to_id"]) for row in causal] == [
+        ("isl-a", "isl-b"),
+        ("isl-b", "isl-a"),
+    ]
+    assert [row["aggregate_count"] for row in causal] == [2, 1]
+
+
+def test_undirected_types_still_normalize_their_pair() -> None:
+    """§3.3.1 allows it for them, and the TS side agrees on those rows.
+
+    `negate:c3:c5` runs c3 (isl-b) -> c5 (isl-c) and stays `isl-b|isl-c`; had it
+    run the other way it would still be keyed `isl-b|isl-c`, because for an
+    undirected type the two orders ARE the same relation.
+    """
+    rows = derived_island_relations(_ir_from_fixture())
+    non_causal = [row for row in rows if row["type"] != "causal"]
+
+    assert [row["id"] for row in non_causal] == [
+        "derived-card:isl-c|c9|related",
+        "derived-island:isl-b|isl-c|negate",
+    ]
+    negate = next(row for row in non_causal if row["type"] == "negate")
+    assert (negate["from_id"], negate["to_id"]) == ("isl-b", "isl-c")
+    # The key is the normalized pair, so the id and the endpoints agree.
+    assert negate["id"] == f'derived-island:{negate["from_id"]}|{negate["to_id"]}|negate'
+
+
+def test_the_divergence_from_the_ts_implementation_is_confined_to_causal() -> None:
+    """States the known TS divergence as a bounded fact, not a vague caveat.
+
+    The Python side is right (§3.3.1); `getDerivedIslandEdges()` normalizes every
+    type, so it reverses the isl-b -> isl-a pair AND merges all three causal edges
+    into one aggregate of 3. Filed as issue `DOMAIN-KJ-CAUSAL-DIRECTION-01`. Every
+    NON-causal row must still match exactly -- if this test starts failing on a
+    non-causal row, the two implementations have genuinely drifted and the fixture
+    is no longer describing one known bug.
+    """
+    rows = [_as_ts_shape(row) for row in derived_island_relations(_ir_from_fixture())]
+    ts_current = _ts_current()
+
+    def _non_causal(source: list[dict]) -> list[dict]:
+        return [row for row in source if row["type"] != "causal"]
+
+    assert _non_causal(rows) == _non_causal(ts_current)
+    assert rows != ts_current
+
+    ts_causal = [row for row in ts_current if row["type"] == "causal"]
+    assert len(ts_causal) == 1
+    assert (ts_causal[0]["fromId"], ts_causal[0]["toId"]) == ("isl-a", "isl-b")
+    assert ts_causal[0]["aggregateCount"] == 3

@@ -12,12 +12,14 @@
     { "id": "c4", "text": "窓口の待ち時間が延びると予想している", "x": 160, "y": -60, "textReviewed": true },
     { "id": "c5", "text": "人員を絞っても現場は回ると考えている", "x": 100, "y": 180, "textReviewed": true },
     { "id": "c6", "text": "業務の見直しで吸収できると考えている", "x": 140, "y": 220, "textReviewed": true },
+    { "id": "c7", "text": "現場から増員の要望が上がっている", "x": 200, "y": -140, "textReviewed": true },
     { "id": "c8", "text": "来年度の制度改正はまだ議論されていない", "x": -300, "y": 240, "textReviewed": true },
     { "id": "c9", "text": "住民説明会の開催時期が決まっていない", "x": -260, "y": 280, "textReviewed": true }
   ],
   "edges": [
     { "id": "causal:c1:c3", "fromId": "c1", "toId": "c3", "fromKind": "card", "toKind": "card", "type": "causal" },
     { "id": "causal:c2:c4", "fromId": "c2", "toId": "c4", "fromKind": "card", "toKind": "card", "type": "causal" },
+    { "id": "causal:c7:c1", "fromId": "c7", "toId": "c1", "fromKind": "card", "toKind": "card", "type": "causal" },
     { "id": "negate:c3:c5", "fromId": "c3", "toId": "c5", "fromKind": "card", "toKind": "card", "type": "negate" },
     { "id": "related:c1:c2", "fromId": "c1", "toId": "c2", "fromKind": "card", "toKind": "card", "type": "related" },
     { "id": "related:c5:c9", "fromId": "c5", "toId": "c9", "fromKind": "card", "toKind": "card", "type": "related" },
@@ -25,7 +27,7 @@
   ],
   "islands": [
     { "id": "isl-a", "cardIds": ["c1", "c2"], "title": "予算の説明", "titleReviewed": true, "placardCardId": "c1" },
-    { "id": "isl-b", "cardIds": ["c3", "c4"], "title": "現場への波及", "parentIslandId": "isl-a" },
+    { "id": "isl-b", "cardIds": ["c3", "c4", "c7"], "title": "現場への波及", "parentIslandId": "isl-a" },
     { "id": "isl-c", "cardIds": ["c5", "c6"], "title": "吸収できるという見方" }
   ]
 }

@@ -1186,6 +1186,29 @@ def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
 
     Those are exactly the projection differences the IR introduces by design;
     they are boundary conditions of the comparison, not drift.
+
+    A FIFTH difference is of a different kind -- it is not a condition on the
+    input but a deliberate behavioural divergence, and on the causal type this
+    function is the one that is right:
+
+    - `causal` KEEPS ITS DIRECTION here (`from` = cause, `to` = effect), while
+      the TS function lexically normalizes the island pair for every type.
+      DOMAIN-KJ-01 (`02_Architecture/schemas.md` §3.3.1) states the rule
+      plainly: 集約（島間派生エッジ...）では、無方向種別はペアを正規化してよいが、
+      `causal` はペア正規化を行わず方向を保存する. `getDerivedIslandEdges()`
+      violates that rule (its `normalizeUndirectedIslands()` call has no type
+      exemption) -- a pre-existing bug, filed as
+      `01_Plans/issues/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md`
+      and NOT introduced by the IR rollout. The counter-example to copy is
+      `frontend/src/export/abstract_map_export.ts`, which already special-cases
+      `causal` out of its own `normalizePair()` with the same citation.
+
+    Still inherited from the TS shape, and NOT fixed here (same new issue,
+    item 2): the island <-> lone-wolf-card promotion pins `from_kind` to
+    `"island"`, so a `causal` relation whose CAUSE is the lone-wolf card is
+    still emitted island-first. Fixing that means widening `from_kind`, which
+    changes the row shape both languages share; it is deliberately out of scope
+    for this function alone.
     """
     island_by_card: dict[str, str] = {}
     for island in ir.get("islands", []):
@@ -1230,7 +1253,29 @@ def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
             if from_island == to_island:
                 # Internal to one island; it says nothing about island layout.
                 continue
-            a, b = (from_island, to_island) if from_island <= to_island else (to_island, from_island)
+            # DOMAIN-KJ-01 (schemas.md §3.3.1): `causal` is the ONE directed
+            # type -- `from` is the cause, `to` is the effect -- and the rule
+            # says aggregation may normalize the pair of an UNDIRECTED type but
+            # must preserve direction for `causal`. Island ids are
+            # `crypto.randomUUID()` values in real documents, so lexical order
+            # carries no relation to cause/effect order: normalizing here would
+            # silently reverse about half of all causal island pairs.
+            #
+            # The exemption covers the AGGREGATION KEY as well as the rendered
+            # pair, which is the part that is easy to get wrong. `A --causal--> B`
+            # and `B --causal--> A` are two different claims; keying both as the
+            # normalized pair would collapse them into one row and lose one of
+            # them (that is exactly what the TS function still does -- see the
+            # docstring's fifth difference). Undirected types keep collapsing,
+            # because for them the two orders ARE the same relation.
+            if relation["type"] == "causal":
+                a, b = from_island, to_island
+            else:
+                a, b = (
+                    (from_island, to_island)
+                    if from_island <= to_island
+                    else (to_island, from_island)
+                )
             _contribute(f"derived-island:{a}|{b}|{relation['type']}", a, b, "island", relation)
             continue
 

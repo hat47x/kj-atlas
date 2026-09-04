@@ -351,6 +351,35 @@ def test_island_to_island_relations_are_derived_from_the_card_relations() -> Non
     )
 
 
+def test_a_derived_causal_island_relation_keeps_its_direction() -> None:
+    """DOMAIN-KJ-01 (`02_Architecture/schemas.md` §3.3.1) at the prompt surface.
+
+    `causal` is the one directed type, and §3.3.1 forbids pair normalization for
+    it in aggregation. Here `c2` (isl-right) causes `c1` (isl-left), so the line
+    must read `isl-right --causal--> isl-left` even though `isl-left` sorts
+    first -- and it must NOT merge into the existing `isl-left --causal-->
+    isl-right` row, because the two are opposite claims, not one relation seen
+    twice. See `derived_island_relations()`' docstring: this is the one place
+    the Python implementation deliberately differs from the TS
+    `getDerivedIslandEdges()`, which still normalizes every type
+    (issue `DOMAIN-KJ-CAUSAL-DIRECTION-01`).
+    """
+    doc = _doc()
+    doc["edges"].append({"id": "e-causal-back", "fromId": "c2", "toId": "c1", "type": "causal"})
+    status, _ = _post(doc)
+    assert status == 200
+    prompt = _CAPTURED[0].prompt
+
+    assert (
+        '- island "isl-left" --causal--> island "isl-right" '
+        "(aggregated from 1 card relation(s): c1, c2)" in prompt
+    )
+    assert (
+        '- island "isl-right" --causal--> island "isl-left" '
+        "(aggregated from 1 card relation(s): c2, c1)" in prompt
+    )
+
+
 def test_a_relation_internal_to_one_island_is_not_escalated() -> None:
     """`c1 --related--> c3` sits inside `isl-left`; it says nothing about where
     the islands should go relative to each other."""
