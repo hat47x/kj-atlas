@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, changeActiveTenant } from "./client";
+import { changeActiveTenant } from "./client";
 import type { TenantSessionContextV1 } from "./session_context";
 
 const currentSession: TenantSessionContextV1 = {
@@ -38,7 +38,7 @@ describe("changeActiveTenant retry boundary", () => {
     const fetchMock = vi.fn().mockResolvedValue(failedResponse(status, code));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(changeActiveTenant(currentSession, "tenant-b")).rejects.toMatchObject<ApiError>({
+    await expect(changeActiveTenant(currentSession, "tenant-b")).rejects.toMatchObject({
       status,
       code,
     });
