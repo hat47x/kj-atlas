@@ -1,0 +1,56 @@
+name: Agent task golden mergeMethod once
+
+on:
+  push:
+    branches:
+      - fix/agent-task-golden-merge-method-20260904
+    paths:
+      - .github/workflows/agent-task-golden-merge-method-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/agent-task-golden-merge-method-20260904
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Merge latest main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-edit origin/main
+      - name: Install frontend
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Run frontend full unit suite and typecheck
+        working-directory: 03_Implement/frontend
+        run: |
+          npm test
+          npm run typecheck
+      - name: Revalidate repository contracts
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/docs_check.py
+          python 03_Implement/backend/scripts/check_design_consistency.py
+          git -c core.whitespace=cr-at-eol diff --check
+      - name: Self-clean verified branch
+        run: |
+          rm .github/workflows/agent-task-golden-merge-method-once.yml
+          git add -A
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'ci: agent task golden検証one-shotを削除する'
+          git push origin HEAD:fix/agent-task-golden-merge-method-20260904
