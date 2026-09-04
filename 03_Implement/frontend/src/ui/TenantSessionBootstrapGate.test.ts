@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { setActiveLocale } from "../i18n/translate";
 import {
+  redirectToTenantSessionLogin,
   TenantSessionBlockedView,
   TenantSessionBootstrapGate,
   TenantSessionLoadingView,
@@ -29,7 +30,7 @@ describe("tenant session bootstrap views", () => {
     expect(renderApp).not.toHaveBeenCalled();
   });
 
-  it("renders every failure as an accessible retryable blocked state", () => {
+  it("renders every failure as an accessible blocked state", () => {
     for (const reason of [
       "authentication_required",
       "access_denied",
@@ -45,10 +46,23 @@ describe("tenant session bootstrap views", () => {
       expect(html).toContain('role="alert"');
       expect(html).toContain("アクセスを確認できません");
       expect(html).toContain("<button");
-      expect(html).toContain("再試行");
+      if (reason === "authentication_required") {
+        expect(html).toContain("ログイン");
+      } else {
+        expect(html).toContain("再試行");
+      }
       expect(html).not.toContain("user-1");
       expect(html).not.toContain("tenant-a");
     }
+  });
+
+  it("starts SaaS authentication through the same-origin BFF endpoint", () => {
+    const assign = vi.fn();
+
+    redirectToTenantSessionLogin({ assign } as Pick<Location, "assign">);
+
+    expect(assign).toHaveBeenCalledOnce();
+    expect(assign).toHaveBeenCalledWith("/session/login");
   });
 
   it("keeps the pre-App state available in English", () => {
