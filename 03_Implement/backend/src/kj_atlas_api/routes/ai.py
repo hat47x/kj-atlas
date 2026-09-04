@@ -978,11 +978,14 @@ def _build_prompt(payload: SuggestLayoutRequest, ir: dict | None = None) -> str:
     """Render the layout prompt, enriched from the IR when one is supplied.
 
     `ir=None` keeps the function callable on its own; the route always passes
-    the IR it built. The `Cards:` and `Islands:` line formats are unchanged
-    byte-for-byte -- they are a de-facto contract with
-    `deploy/tools/mock_local_llm.py`'s `_CARD_LINE` parser, and the `Cards:`
-    section must keep listing EVERY document card because `_parse_suggestion()`
-    requires the response to cover all of them (the IR may truncate, §5).
+    the IR it built. What is held unchanged is the LINE PREFIX of the `Cards:`
+    and `Islands:` sections (`- id="...", text=` and `- id="...", title=`), not
+    the whole line: when an IR is supplied, each island line goes on to append
+    `parentIslandId=` / `placardCardId=` / `reviewState=`. The prefix is the
+    part that is a de-facto contract with `deploy/tools/mock_local_llm.py`'s
+    `_CARD_LINE` parser, and the `Cards:` section must keep listing EVERY
+    document card because `_parse_suggestion()` requires the response to cover
+    all of them (the IR may truncate, §5).
     """
     cards_by_id = {card.id: card for card in payload.doc.cards}
     card_lines = []
