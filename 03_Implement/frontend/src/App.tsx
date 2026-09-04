@@ -3593,6 +3593,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
         cardIds: suggestion.cardIds,
         mergedTextDraft: suggestion.mergedTextDraft,
         editedText: suggestion.editedText,
+        mergeMethod: suggestion.mergeMethod,
         rationale: suggestion.rationale,
         decisionReason: options.decisionReason,
       });
