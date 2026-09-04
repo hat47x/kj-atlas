@@ -1,0 +1,75 @@
+name: Temporary R22 stale reintroduction verification
+
+on:
+  push:
+    branches:
+      - dogfood/r22-stale-branch-reintroduction-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  verify-r22:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Refresh current main ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Run stale reintroduction synthetic tests
+        working-directory: 01_Plans
+        run: python -m unittest -v test_check_stale_merge_reintroduction.py
+
+      - name: Validate dogfood and planning contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/dogfood/validate_dogfood_docs.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/triage.json').read_text(encoding='utf-8'))
+          if data.get('errors'):
+              raise SystemExit(f"triage errors: {data['errors']}")
+          print(json.dumps(data, ensure_ascii=False, indent=2))
+          PY
+          git diff --check
+
+      - name: Diagnose this branch against current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/check_stale_merge_reintroduction.py \
+            --base-ref origin/main \
+            --head-ref HEAD \
+            --json | tee /tmp/r22-diagnostic.json
+          python 01_Plans/check_stale_merge_reintroduction.py \
+            --base-ref origin/main \
+            --head-ref HEAD \
+            --fail-on-strong
+
+      - name: Remove one-shot workflow after successful verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/r22-stale-reintroduction-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: R22 one-shot検証足場を撤去"
+          git push origin HEAD:dogfood/r22-stale-branch-reintroduction-20260904
