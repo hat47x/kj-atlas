@@ -91,7 +91,6 @@ BFF Cookie経路では、次を運用上の前提とします。
 - `session_invalid`（401）がkey rotationやdeployment直後に増えた場合は、API instance間でsession hash keyが一致しているかを確認します。意図したrotationなら再loginを案内します。
 - logout・expiry・revocation後のsessionを復活させるためにDB行を書き戻したり、別sessionの状態を流用したりしません。
 - 障害調査ではraw auth-session Cookie、CSRF token、Bearer token、server keyをログ・Issue・Documentへ転記しません。
-
 ## 起動
 
 ```bash
