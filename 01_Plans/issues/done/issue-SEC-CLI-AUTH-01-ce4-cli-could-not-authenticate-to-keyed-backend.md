@@ -27,3 +27,11 @@ MCP clientは`KJ_ATLAS_API_KEY`を`X-API-Key`としてbackendへ送る一方、�
 - [x] CLIとMCPが同じbusiness-plane key境界を通る。
 - [x] キーはcommand line引数・標準出力・監査eventへ出ない。
 - [x] キー未設定のlocal-dev互換を維持する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、CLI／HTTP MCPという外部クライアント面で必要な認証・認可をfail-closedに強制し、E2Eまたは統合確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更では同じclient access-control境界の完了済みIssue 2件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を46から44へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
