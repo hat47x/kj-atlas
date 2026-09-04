@@ -145,7 +145,8 @@ describe("representative_merge", () => {
   });
 
   it("adds representative membership and external edge projections without destroying source provenance", () => {
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-0000-0000-000000000002");
+    const REP = "00000000-0000-0000-0000-000000000002";
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(REP);
     const document = createDocument();
     document.edges.push({ id: "e-internal", fromId: "c1", toId: "c2", type: "equivalence" });
 
@@ -154,54 +155,134 @@ describe("representative_merge", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.nextDocument.islands[0]?.cardIds).toEqual([
-      "c1",
-      "c2",
-      "00000000-0000-0000-0000-000000000002",
-    ]);
+    // AC: 統合元カードの島所属が残った上で、代表カードが同じ島へ追加される。
+    expect(result?.nextDocument.islands[0]?.cardIds).toEqual(["c1", "c2", REP]);
 
-    // Original edges remain untouched so source-card relation provenance survives.
-    expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")).toMatchObject({
+    // AC: 既存edgeのID・端点・typeがそのまま残る（統合元カードと非統合カード間、統合元カード同士とも）。
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")).toEqual({
+      id: "e1",
       fromId: "c1",
       toId: "c3",
       type: "related",
     });
-    expect(result?.nextDocument.edges.find((edge) => edge.id === "e2")).toMatchObject({
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e2")).toEqual({
+      id: "e2",
       fromId: "c3",
       toId: "c2",
       type: "negate",
     });
-    expect(result?.nextDocument.edges.find((edge) => edge.id === "e-internal")).toMatchObject({
+    // AC: 統合元カード同士のedgeは元edgeだけを保持し、代表カードの自己ループを生成しない。
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e-internal")).toEqual({
+      id: "e-internal",
       fromId: "c1",
       toId: "c2",
       type: "equivalence",
     });
 
+    // AC: 統合元カードと外部カードを結ぶ関係は、代表カード側の投影edgeとしても利用できる。
     expect(
-      result?.nextDocument.edges.find(
-        (edge) => edge.id === "representative-merge:00000000-0000-0000-0000-000000000002:e1"
-      )
+      result?.nextDocument.edges.find((edge) => edge.id === `representative-merge:${REP}:from:card:c3:related`)
     ).toMatchObject({
-      fromId: "00000000-0000-0000-0000-000000000002",
+      fromId: REP,
       toId: "c3",
       type: "related",
     });
     expect(
-      result?.nextDocument.edges.find(
-        (edge) => edge.id === "representative-merge:00000000-0000-0000-0000-000000000002:e2"
-      )
+      result?.nextDocument.edges.find((edge) => edge.id === `representative-merge:${REP}:to:card:c3:negate`)
     ).toMatchObject({
       fromId: "c3",
-      toId: "00000000-0000-0000-0000-000000000002",
+      toId: REP,
       type: "negate",
     });
-    expect(
-      result?.nextDocument.edges.some(
-        (edge) =>
-          edge.id.startsWith("representative-merge:")
-          && edge.fromId === "00000000-0000-0000-0000-000000000002"
-          && edge.toId === "00000000-0000-0000-0000-000000000002"
-      )
-    ).toBe(false);
+
+    // Exactly two projected edges: the internal c1-c2 edge produced none.
+    const projected = result?.nextDocument.edges.filter((edge) => edge.id.startsWith("representative-merge:"));
+    expect(projected).toHaveLength(2);
+    expect(projected?.some((edge) => edge.fromId === REP && edge.toId === REP)).toBe(false);
+  });
+
+  it("再配線なしでは島所属・edgeを一切変更しない (no-rewire path is provably unchanged)", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-0000-0000-000000000006");
+    const document = createDocument();
+
+    const withoutOption = createRepresentativeMerge(document, ["c1", "c2"], "Representative");
+    const withExplicitFalse = createRepresentativeMerge(document, ["c1", "c2"], "Representative", {
+      rewireMembershipAndEdges: false,
+    });
+
+    for (const result of [withoutOption, withExplicitFalse]) {
+      expect(result).not.toBeNull();
+      // Same array reference: nextIslands/nextEdges fall through to the
+      // original document arrays untouched, not a rebuilt equivalent copy.
+      expect(result?.nextDocument.islands).toBe(document.islands);
+      expect(result?.nextDocument.edges).toBe(document.edges);
+      expect(result?.nextDocument.islands).toEqual([{ id: "i1", cardIds: ["c1", "c2"] }]);
+      expect(result?.nextDocument.edges).toEqual([
+        { id: "e1", fromId: "c1", toId: "c3", type: "related" },
+        { id: "e2", fromId: "c3", toId: "c2", type: "negate" },
+      ]);
+    }
+  });
+
+  it("dedupes projected edges that share the same (representative, other card, type) triple", () => {
+    const REP = "00000000-0000-0000-0000-000000000007";
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(REP);
+    const document = createDocument();
+    // Two independent source→external edges of the same type, from different
+    // merged-away source cards, both pointing at the same external card.
+    document.edges = [
+      { id: "e1", fromId: "c1", toId: "c3", type: "related" },
+      { id: "e2", fromId: "c2", toId: "c3", type: "related" },
+    ];
+
+    const result = createRepresentativeMerge(document, ["c1", "c2"], "Representative", {
+      rewireMembershipAndEdges: true,
+    });
+
+    expect(result).not.toBeNull();
+    // Both original edges are preserved individually...
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")).toEqual({
+      id: "e1",
+      fromId: "c1",
+      toId: "c3",
+      type: "related",
+    });
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e2")).toEqual({
+      id: "e2",
+      fromId: "c2",
+      toId: "c3",
+      type: "related",
+    });
+    // ...but they collapse into exactly one projected edge, not two.
+    const projected = result?.nextDocument.edges.filter((edge) => edge.id.startsWith("representative-merge:"));
+    expect(projected).toHaveLength(1);
+    expect(projected?.[0]).toMatchObject({
+      id: `representative-merge:${REP}:from:card:c3:related`,
+      fromId: REP,
+      toId: "c3",
+      type: "related",
+    });
+  });
+
+  it("adds the representative card to every island a source card belonged to", () => {
+    const REP = "00000000-0000-0000-0000-000000000008";
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(REP);
+    const document = createDocument();
+    document.islands = [
+      { id: "i1", cardIds: ["c1", "c2"] },
+      { id: "i2", cardIds: ["c1", "c3"] },
+      { id: "i3", cardIds: ["c3"] },
+    ];
+
+    const result = createRepresentativeMerge(document, ["c1", "c2"], "Representative", {
+      rewireMembershipAndEdges: true,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.nextDocument.islands).toEqual([
+      { id: "i1", cardIds: ["c1", "c2", REP] },
+      { id: "i2", cardIds: ["c1", "c3", REP] },
+      { id: "i3", cardIds: ["c3"] },
+    ]);
   });
 });
