@@ -15,6 +15,7 @@ from issues.issue_memo_status import (
 )
 
 ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
+CANONICAL_ADR_STATUSES = ("Accepted", "Proposed", "Superseded", "Deprecated", "Rejected")
 META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 REL_PATH_RE = re.compile(r"`([^`]*issue-[^`]+\.md)`")
@@ -80,10 +81,17 @@ class ActionableAdr:
     active_issue_refs: tuple[str, ...] = field(default_factory=tuple)
 
 
-def normalize_status(raw: str) -> str:
-    for prefix in ("Draft", "Open", "In Progress", "Done", "Blocked", "Ready", "Active"):
-        if raw == prefix or raw.startswith(prefix + " ") or raw.startswith(prefix + "("):
-            return prefix
+def normalize_adr_status(raw: str) -> str:
+    """Return the canonical ADR status while preserving free-form annotations in docs.
+
+    ADR metadata historically allows a canonical status followed by a note,
+    using whitespace, ASCII parentheses, or Japanese full-width parentheses.
+    Only those explicit delimiters are accepted so values such as
+    ``AcceptedButPending`` cannot be mistaken for ``Accepted``.
+    """
+    for status in CANONICAL_ADR_STATUSES:
+        if raw == status or any(raw.startswith(status + delimiter) for delimiter in (" ", "(", "（")):
+            return status
     return raw
 
 
@@ -193,7 +201,7 @@ def parse_adr(path: Path) -> AdrRecord:
         path=str(path.relative_to(path.parents[1]).as_posix()),
         title=title,
         adr_id=adr_id,
-        status=normalize_status(meta.get("Status", "Unknown")),
+        status=normalize_adr_status(meta.get("Status", "Unknown")),
         source_issue=source_issue,
         related_refs=tuple(dict.fromkeys(refs)),
     )
