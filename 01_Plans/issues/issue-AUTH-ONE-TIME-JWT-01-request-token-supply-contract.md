@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: auth edge, frontend auth client, Broker/BFF integration, `ADR-0064`
-- Related ADR/Spec: `ADR-0064`, `ADR-0074`（Proposed）, `OPS-SAAS-SCALE-01`, `SEC-AUTH-REPLAY-01`
+- Related ADR/Spec: `ADR-0064`, `ADR-0074`（Accepted）, `OPS-SAAS-SCALE-01`, `SEC-AUTH-REPLAY-01`
 - Expected verification level: integration
 
 ## 課題
@@ -48,10 +48,11 @@
   worker間の追加同期を必要としない設計であることをソースで確認した。
   変異検査: `saas_auth_state.py::resolve_auth_session`のrevoked判定を一時的に無効化し、新規テストを含む
   3件（新規1件＋既存2件）が正しく失敗することを確認、復元後15件全pass。
-  **是正**: 本AC調査を委任した指示は`test_saas_auth_session_postgres_multi_instance.py`がPR #2885で
-  着地済みと述べていたが、実際のPR #2885（`2885fdbc`）は無関係な内容（`hil-rs-01`のADR参照正規化）であり、
-  該当ファイル名のテストはリポジトリに存在しない。この誤参照は本issueの追跡対象ではないため上記の
-  実在するテストで代替確認した。
+  **2026-09-04 再同期**: その後mainへ入ったPR #2885では、実PostgreSQLと複数FastAPI appを使うHTTP integration test
+  `test_saas_auth_session_postgres_multi_instance.py`が実際に追加された。migrationのupgrade / downgrade / re-upgrade、
+  app間のactive tenant・version共有、別login非干渉、logout・idle expiry・hash key不一致時のfail-closedまで確認している。
+  したがって、以前の「PR #2885は無関係で該当testも存在しない」という記録は現在のmainには当てはまらない。
+  本ACは既存の共有DB/CAS/revoke検証で満たした判断を維持しつつ、cluster-levelの追加証拠としてPR #2885を参照する。
 - [x] timeout、応答不明retryがfail-closedし、mutationを重複実行しない。
   — 2026-09-04。本issueのscope（auth edge、BFF統合）が対象とする状態変更操作はactive tenant切替・
   login・logoutの3つ。切替は既存の`tests/test_session_context_routes.py::test_active_tenant_change_uses_the_session_keyed_store_and_rejects_a_stale_second_tab`
@@ -83,29 +84,26 @@
   `oauth_callback.test.ts::"rejects the whole response when a refresh token is exposed"`で確認済み。
   新BFF経路はSPAへtoken自体を一切渡さないためXSS時の露出範囲は旧Bearer経路より狭まり、拡大していない。
 - [ ] mock Broker、frontend統合、最低2 backend workerのE2Eで契約を固定する。
-  — 2026-09-04調査。**未充足、未実装**。`03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`
-  （`playwright.saas.config.ts`が対象とする唯一のSaaS E2E）はPlaywrightの`context.route()`で
-  backend API全体をJSオブジェクト（`ServerState`）としてmockしており、実backendプロセスは1つも
-  起動しない。mock Identity Brokerを経由した実OAuthフローも駆動していない。backend側にも
-  「実際に2つ以上のHTTPで listenするworkerプロセスに対して2つのTestClient/repository objectではなく
-  本物のHTTP round tripを行う」統合テストの前例が存在しない（`test_saas_auth_session_store.py`等の
-  既存「multi-worker」テストは、別々のengine/connection poolを持つ2つの`DatabaseSaasAuthSessionStore`
-  インスタンスで worker を模しているが、実socketは開かない）。この要求は
-  `OPS-SAAS-SCALE-01` AC-7「migration upgrade/downgradeと、最低2 workerのHTTP integration testをCIで
-  固定する。単に2つのrepository objectを同じSQLite DBへ向けるtestで代替しない」とほぼ同一であり、
-  同issueでも実際に未チェックのまま残っている（本issueへ委任された指示は同issueのAC-4/5/7/8が
-  チェック済みと述べていたが、実ファイルを確認したところAC-1〜3のみチェック済みで
-  AC-4〜8は全て未チェックだった——是正）。実装には(a) mock Identity Brokerの実HTTPサーバ化、
-  (b) kj-atlas backendを2つ以上の実uvicorn worker（共有DB）として起動する新規テストharness、
-  (c) 実frontendをPlaywrightで駆動しつつ2 workerへ交互に到達させる経路、の3点が必要で、
-  いずれもこのリポジトリに前例のない新規test infrastructureの設計判断を要する
-  （CI環境でのPostgreSQL可用性、worker間の負荷分散方式等）。`AGENTS.md` §1条5「同じ進捗を複数の
-  台帳へ転記しない」に従い、この基盤構築はOPS-SAAS-SCALE-01側のAC-7として一度だけ実装し、
-  本issueはその完成を参照する形にすることを提案する。本issueの範囲では実装しなかった。
+  — 2026-09-04 再同期。**未充足のまま**。周辺の実証は大きく進んだが、このACが要求する縦断経路はまだ1本につながっていない。
+
+  PR #2885では、実PostgreSQLと複数FastAPI appを使ったHTTP integration testにより、migration往復、複数app間のsession共有、
+  stale version拒否、別login非干渉、logout・idle expiry・hash key不一致時のfail-closedを確認した。続くPR #2893では、実PostgreSQLを
+  切断した状態でもtenant-scoped resource lookupより前に503で停止することと、frontendが409/503を利用者操作なしに自動再送しないことを
+  固定し、`OPS-SAAS-SCALE-01`の全ACを完了させた。以前の「OPS-SAAS-SCALE-01 AC-7も未実装」という記録は現在のmainには当てはまらない。
+
+  一方、`03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`は実ブラウザを使うものの、backend APIはPlaywrightの`context.route()`で
+  `ServerState`へ差し替えており、実backendやmock Identity Brokerを起動しない。このため、PR #2885/#2893のbackend側実証と既存Playwright
+  suiteは相互補完にはなるが、**mock Broker → 実frontend → 共有PostgreSQLを使う最低2 backend instance**という一続きのE2Eにはなっていない。
+
+  残作業はこの縦断経路を1本固定することに限定する。`QA-E2E-SAAS-01`はSaaS UI全体のブラウザE2E台帳、
+  `SAAS-TENANT-E2E-01`はAI mutation固有generation guardの観測精度を扱うため、本ACの代替とはしない。逆に、本ACで既に完了した
+  PostgreSQL複数app実証を再実装しない。
 
 ## 暫定運用
 
-本issueと`SAAS-TENANT-SESSION-BINDING-01`の方式決定までは、PostgreSQLが共有するのはprincipal単位versionだけであり、認証session単位のactive tenantを伴う多worker本番運用は未保証とする。JWT replay防御済みとも表明しない。Bearer tokenの保証範囲は短命、署名検証、issuer/audience制限、TLS、browser storage不使用までとする。
+`ADR-0074`のBFF方式と`SAAS-TENANT-SESSION-BINDING-01`、`OPS-SAAS-SCALE-01`の実装・実証は完了している。SaaSのBFF経路では、browserへaccess tokenを渡さず、認証session単位のactive tenantとversionをPostgreSQL正本として複数appから共有する。
+
+ただし本issueの最後のACである「mock Broker → 実frontend → 最低2 backend instance」の縦断E2Eが未完のため、その一続きの経路まで検証済みとは表明しない。また、BFF採用を「Bearer access token自体のreplayを一般に防御した」と言い換えない。互換Bearer経路について表明できる保証は、短命、署名検証、issuer/audience制限、TLS、browser storage不使用の範囲に留める。
 
 ## 2026-09-04 ADR-0074採択後の補正
 
