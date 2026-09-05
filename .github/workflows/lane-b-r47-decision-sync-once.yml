@@ -1,0 +1,71 @@
+name: lane-b-r47-decision-sync-once
+
+on:
+  push:
+    branches:
+      - lane-b/ai-ir-scale-r47-decision-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/ai-ir-scale-r47-decision-sync
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Replace stale early decision summary and append R47
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md')
+          text = path.read_text()
+          start_marker = '### 実token計測後の判断基準\n\n'
+          end_marker = '\n現時点ではA2/B/Cのいずれも最終採択しない。R20の実測前にproduction上限やnarrative/layoutの投影方式を変更することもしない。\n'
+          start = text.index(start_marker) + len(start_marker)
+          end = text.index(end_marker, start)
+          replacement = '''後述の「次の判断順序」を正本とし、ここでは現在の6段階を要約する。\n\n1. named provider/modelのprovider-reported input usageを取得し、保存reportをR32/R33/R35/R37系のidentity/provenance検証へ通す。`decision_ready=true` にならないdry-run・partial・stale・fallback/non-primary結果は比較根拠へ使わない。\n2. 文書化されたcontext-window値とsourceを確認できる場合だけ、R39/R41の `input usage + 現行production output reserve` によるhard-fitを確認する。layout Cは31件aggregateではなく最大単一requestを使う。\n3. hard-fitとR21の「十分な余裕」は分け、provider/model制約・実測値・必要なら実model品質を根拠にA2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。\n4. `generate-narrative` はR22までに `causal` / `negate` のendpoint/relation保護とbudget超過fail-closedを固定済みなので、named provider/model上のtoken余裕を見ながらA2/B/Cを比較する。\n5. `suggest-layout` はR25/R27でCの決定論的partitionとlocal/global合成をmeasurement-only候補として固定済みであり、A2/B/Cのprovider-reported usageと、必要なら配置品質・latency・failure rateを比較してから方式を選ぶ。\n6. coverage-loss metadataは方式決定後に、その方式で本当に監査すべき欠落単位へ合わせて追加する。汎用loss metadataを先に作らない。\n'''
+          text = text[:start] + replacement + text[end:]
+
+          r47 = '''\n\n## R47 — V4移行後の実測判断順序を前半要約へ同期\n\nR42で後半の「次の判断順序」を1〜6へ同期していた一方、Issue前半の「実token計測後の判断基準」にはR21時点の旧い `1, 2, 4, 5, 5` の要約が残り、R32/R33/R35/R37のmeasurement identity/provenance、R39/R41のcontext hard-fit/source provenance、方式決定後にcoverage-loss metadataを設計する順序が反映されていなかった。R47では前半要約を後半の現行6段階へ揃え、判断手順の二重化によるdriftを解消した。\n\n併せてR45/R46で `AI-DEEPSEEK-V4-MIGRATION-01` が完了し、productionのDeepSeek既定は `deepseek-v4-flash`、thinking mode既定は旧non-thinking挙動を保つ `disabled` へ移行済みであることを現在地として確認した。ただし、これはnamed provider/modelのprovider-reported input usageを取得したことを意味しない。R47でも外部providerは呼ばず、最初の2つの未完了AC、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。\n'''
+          assert '## R47 — V4移行後の実測判断順序を前半要約へ同期' not in text
+          text = text.rstrip() + r47 + '\n'
+          path.write_text(text)
+          PY
+      - name: Validate docs and exact decision sequence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          python 01_Plans/docs_check.py
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md').read_text()
+          block = text.split('### 実token計測後の判断基準', 1)[1].split('## なぜ問題か', 1)[0]
+          for n in range(1, 7):
+              assert f'\n{n}. ' in block
+          assert '\n7. ' not in block
+          assert '1. named provider/modelのprovider-reported input usage' in block
+          assert '6. coverage-loss metadataは方式決定後' in block
+          assert '## R47 — V4移行後の実測判断順序を前半要約へ同期' in text
+          PY
+          git diff --check
+      - name: Commit sync and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-b-r47-decision-sync-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync scale decision order after DeepSeek V4 migration'
+          git push origin HEAD:lane-b/ai-ir-scale-r47-decision-sync
