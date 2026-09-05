@@ -44,14 +44,14 @@ describe("ModelSelector", () => {
         onChange: vi.fn(),
         dataUiRegion: "model-selector",
         models: [
-          { id: "deepseek-chat", displayName: "DeepSeek Chat", providerId: "deepseek" },
+          { id: "deepseek-v4-flash", displayName: "DeepSeek V4 Flash", providerId: "deepseek" },
           { id: "local-model", displayName: "Local Model", providerId: "local" },
         ],
       }),
     );
     expect(html).toContain("data-ui-region=\"model-selector\"");
     expect(html).toContain("Auto (default)");
-    expect(html).toContain("DeepSeek Chat");
+    expect(html).toContain("DeepSeek V4 Flash");
     expect(html).toContain("Local Model");
   });
 
