@@ -1,0 +1,34 @@
+name: lane-b-r34-readiness-sync-once
+
+on:
+  push:
+    branches:
+      - lane-b/ai-ir-scale-r34-readiness-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/ai-ir-scale-r34-readiness-sync
+      - name: Apply R34 sync
+        run: |
+          python .github/lane-b-r34-sync.py
+          grep -F 'scripts/analyze_ai_route_provider_measurement.py' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'R33 run `33951131455`' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'analyzerが `decision_ready=true`' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit sync and remove temporary files
+        run: |
+          rm .github/lane-b-r34-sync.py
+          rm .github/workflows/lane-b-r34-readiness-sync-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync provider measurement readiness after R32-R33'
+          git push origin HEAD:lane-b/ai-ir-scale-r34-readiness-sync
