@@ -1,0 +1,52 @@
+name: current frontend contract regressions once
+
+on:
+  push:
+    branches:
+      - fix/current-frontend-contract-regressions-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-record:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: fix/current-frontend-contract-regressions-20260905
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: 契約回帰を修正する
+        run: python .github/scripts/fix_current_frontend_contract_regressions_once.py
+      - name: Fresh npm dependency tree
+        working-directory: 03_Implement/frontend
+        run: npm ci
+      - name: Focused frontend regressions
+        working-directory: 03_Implement/frontend
+        run: npm test -- src/api/client.test.ts src/ui/MergeSuggestionsPanel.merge_method.test.ts src/ui/merge_method_label.test.ts src/admin/model_allowlist_admin.test.ts
+      - name: Full frontend tests
+        working-directory: 03_Implement/frontend
+        run: npm test
+      - name: Frontend build
+        working-directory: 03_Implement/frontend
+        run: npm run build
+      - name: Diff check
+        run: git diff --check
+      - name: 検証済み修正をbranchへ記録する
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 03_Implement/frontend/src/api/client.test.ts 03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx
+          git rm .github/scripts/fix_current_frontend_contract_regressions_once.py .github/workflows/current-frontend-contract-regressions-once.yml
+          git commit -m 'fix(frontend): restore current trust-boundary contracts'
+          git push origin HEAD:fix/current-frontend-contract-regressions-20260905
