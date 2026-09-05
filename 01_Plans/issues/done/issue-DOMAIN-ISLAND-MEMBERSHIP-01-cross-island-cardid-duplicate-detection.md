@@ -63,3 +63,11 @@
 
 - 本issueは `functional-dependency-integrity-2026-08-06.html` の R2(a) のうち、書込み側バグ修正（drag&drop経路）は既に別セッションで解消済みと確認した上で、その修正が及んでいなかった別の書込み経路（統合/canonicalization経路）を新たに特定したものである。§8.1 の判定（「計測してから判断」＝warn-only診断を先行）は据え置き、reject化の要否は本issueの対象外とする。
 - 本リポジトリは複数の生成AIセッションが同一ワークツリーを共有する運用がある（`01_Plans/agent_failure_lessons.md`参照）。実装前に `git status` で作業中ファイルの有無を確認する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、カード→島の関数従属性について、跨島重複所属を非ブロッキングで検出する診断境界と回帰テスト、読み取り側の暫定規則まで固定し、関連ADRの前提条件も解除済みとして `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更ではこのdomain integrityの完了済みIssueを `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を42から41へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
