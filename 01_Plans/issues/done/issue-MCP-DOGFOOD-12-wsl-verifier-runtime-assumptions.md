@@ -45,3 +45,11 @@ PATH上のNode.js v12がpackage-local `tsx`のshebangから選択され、Node 2
 
 - Node 20をPATHへ設定し、`verify_mcp_ce4_audit_e2e.py`をWindows TEMP継承状態で実行する。
 - MCP typecheck/test、docs-check、active issue validatorを実行する。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、PostgreSQL固有downgrade経路またはWSL/Node runtime差によって本来の検証が抜ける・起動不能になる問題を、既存CI／E2E契約に沿う検証基盤として解消し、実環境差を含む確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更ではverification infrastructure境界の完了済みIssue 2件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を41から39へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
