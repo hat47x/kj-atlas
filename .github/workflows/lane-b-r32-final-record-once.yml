@@ -1,0 +1,33 @@
+name: lane-b-r32-final-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/provider-measurement-result-analyzer
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/provider-measurement-result-analyzer
+      - name: Sync R32 record
+        run: |
+          python .github/lane-b-r32-final-record.py
+          grep -F '33950879266' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '**56 test**' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit sync and remove temporary files
+        run: |
+          rm .github/lane-b-r32-final-record.py
+          rm .github/workflows/lane-b-r32-final-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync R32 hardened verification record'
+          git push origin HEAD:lane-b/provider-measurement-result-analyzer
