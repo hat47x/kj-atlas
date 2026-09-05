@@ -443,7 +443,7 @@ R21で「A2が十分な余裕を持てない場合は、局所配置と全体整
 | global alignment UTF-8 bytes | — | 7,486 |
 | 全31 request合計 UTF-8 bytes | 128,562 | 87,705 |
 
-末尾の `e298: c298 --causal--> c299` は同じ `i29` local batchへ残り、`e299: c299 --negate--> c000` は `i29 -> i00` を跨ぐglobal bridgeとして残こた。したがって、batch境界を理由に論理接続を捨てず、全relationをlocalまたはglobalのどちらか一方へ**ちょうど一度**割り当てられることを固定した。
+末尾の `e298: c298 --causal--> c299` は同じ `i29` local batchへ残り、`e299: c299 --negate--> c000` は `i29 -> i00` を跨ぐglobal bridgeとして残った。したがって、batch境界を理由に論理接続を捨てず、全relationをlocalまたはglobalのどちらか一方へ**ちょうど一度**割り当てられることを固定した。
 
 分割規則もcharacterization上のfail-closed境界を持つ。1枚のcardが複数の直接島membershipへ現れる場合は任意のownerを選ばず停止し、どの島にも属さないcardはsingleton local batchとして残す。sourceのcard / island / edge順を反転しても同じbatch・relation partition・promptを得る回帰を追加した。
 
