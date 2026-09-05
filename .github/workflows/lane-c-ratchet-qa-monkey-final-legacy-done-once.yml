@@ -1,0 +1,60 @@
+name: Lane C QA-MONKEY final legacy Done ratchet once
+
+on:
+  push:
+    branches:
+      - chore/lane-c-ratchet-qa-monkey-final-legacy-done-r2-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-verify:
+    if: "github.event.head_commit.message == 'chore: 最終QA-MONKEY legacy Done移行workflowを起動する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 最終QA-MONKEY legacy Doneを正規配置へ移す
+        run: python .github/scripts/lane_c_ratchet_qa_monkey_final_legacy_done_once.py
+      - name: Issue lifecycle tests
+        run: python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+      - name: Planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Active issue memo validation
+        run: python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Documentation contract check
+        run: python 01_Plans/docs_check.py
+      - name: Live triage
+        run: python 01_Plans/triage_actionable_plans.py --format json
+      - name: Verify no Done-at-root debt remains
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, '01_Plans/issues')
+          import validate_active_issue_memos as v
+          paths = v.discover_done_memos_at_root(Path('01_Plans/issues'))
+          print(f'remaining_done_at_root={len(paths)}')
+          for path in paths:
+              print(path)
+          if paths:
+              raise SystemExit(1)
+          PY
+      - name: Diff check
+        run: git diff --check
+      - name: 検証済み移行をbranchへ記録する
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'hat47x'
+          git config user.email 'hat47x@gmail.com'
+          git add -A
+          git commit -m 'docs: QA-MONKEY legacy Done-at-root debtを解消する'
+          git push origin HEAD
