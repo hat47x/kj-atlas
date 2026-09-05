@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ120）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/ai_kj_execution_procedures.md`（文書タイトル提案）, `02_Architecture/api.md`（suggest-document-title 契約）, `01_Plans/issues/issue-DOGFOOD-18-title-suggestion-not-grounded-in-canvas-content.md`（文書テーマ接地）, `01_Plans/issues/done/issue-DOGFOOD-25-check-narrative-multi-island-omission.md`（先頭島バイアスの同型）
+- Related ADR/Spec: `00_Prompt/ai_kj_execution_procedures.md`（文書タイトル提案）, `02_Architecture/api.md`（suggest-document-title 契約）, `01_Plans/issues/done/issue-DOGFOOD-18-title-suggestion-not-grounded-in-canvas-content.md`（文書テーマ接地）, `01_Plans/issues/done/issue-DOGFOOD-25-check-narrative-multi-island-omission.md`（先頭島バイアスの同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -73,3 +73,11 @@ if task == "suggest_document_title":
 
 - モックの全島ラベル埋め込みは「タイトルが文書全体のテーマを反映する」ことを検証可能にする決定性表現であり、実LLMのタイトル生成品質とは独立（本issueは検証ハーネスの能力向上）。DOGFOOD-18（文書テーマ接地）の延長。
 - ドッグフーディング観察起点（2026-08-16・iteration 190）: アミューズメント（2島）で suggest-document-title を実行し、先頭島ラベルのみを反映するタイトル候補が返ることを再現。複数島の文書で全体テーマのタイトルが検証不能であることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、文書タイトル提案を汎用候補から文書テーマへ接地し、さらに複数島の全体テーマを反映できることをE2Eで固定した verification harness 改善として `Done` となっていた。
+- `DOGFOOD-18` がタイトル候補の文書テーマ接地を固定し、`DOGFOOD-26` が先頭島バイアスを解消して全島テーマへ拡張したため、suggest-document-title の成熟系列として同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は20から18へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
