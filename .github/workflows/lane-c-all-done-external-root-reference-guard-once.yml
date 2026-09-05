@@ -22,6 +22,8 @@ jobs:
           python-version: '3.12'
       - name: 外部旧root参照6件を正規Doneパスへ追随させる
         run: python .github/scripts/lane_c_fix_external_done_root_references_once.py
+      - name: 検証前に一時置換scriptを作業ツリーから外す
+        run: rm .github/scripts/lane_c_fix_external_done_root_references_once.py
       - name: Done root reference tests
         run: python -m unittest 01_Plans.tests.test_legacy_done_root_references
       - name: Issue lifecycle tests
