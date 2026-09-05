@@ -10,6 +10,7 @@ OLD_CHILD = ISSUES / CHILD_NAME
 NEW_CHILD = ISSUES / "done" / CHILD_NAME
 PARENT = ISSUES / "issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md"
 SCRIPT = Path(".github/scripts/lane_c_close_saas_tenant_e2e_instrumentation_once.py")
+WORKFLOW = Path(".github/workflows/lane-c-close-saas-tenant-e2e-instrumentation-once.yml")
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
@@ -79,7 +80,12 @@ def update_exact_path_references() -> None:
     old = OLD_CHILD.as_posix()
     new = NEW_CHILD.as_posix()
     completed = subprocess.run(
-        ["git", "grep", "-Il", "-F", old, "--", f":!{SCRIPT.as_posix()}", f":!{NEW_CHILD.as_posix()}"],
+        [
+            "git", "grep", "-Il", "-F", old, "--",
+            f":!{SCRIPT.as_posix()}",
+            f":!{WORKFLOW.as_posix()}",
+            f":!{NEW_CHILD.as_posix()}",
+        ],
         check=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
