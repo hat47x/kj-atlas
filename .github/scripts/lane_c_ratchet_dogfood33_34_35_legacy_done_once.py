@@ -1,0 +1,90 @@
+from __future__ import annotations
+
+from pathlib import Path
+import subprocess
+
+TARGETS = (
+    "issue-DOGFOOD-33-suggest-island-summary-multiple-candidates.md",
+    "issue-DOGFOOD-34-island-summary-critique-regeneration.md",
+    "issue-DOGFOOD-35-island-summary-critique-history-persistence.md",
+)
+ISSUES_ROOT = Path("01_Plans/issues")
+DONE_ROOT = ISSUES_ROOT / "done"
+VALIDATOR = ISSUES_ROOT / "validate_active_issue_memos.py"
+SCRIPT_PATH = Path(".github/scripts/lane_c_ratchet_dogfood33_34_35_legacy_done_once.py")
+
+
+def replace_exact_reference(old: Path, new: Path) -> list[str]:
+    completed = subprocess.run(
+        [
+            "git", "grep", "-Il", "-F", old.as_posix(), "--",
+            f":!{SCRIPT_PATH.as_posix()}", f":!{new.as_posix()}",
+        ],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    if completed.returncode not in (0, 1):
+        raise SystemExit(completed.stderr.strip() or f"git grep failed: {old}")
+
+    updated: list[str] = []
+    for name in [line for line in completed.stdout.splitlines() if line]:
+        path = Path(name)
+        body = path.read_text(encoding="utf-8")
+        replaced = body.replace(old.as_posix(), new.as_posix())
+        if replaced == body:
+            raise SystemExit(f"旧パス引用の置換が空振りしました: {name}")
+        path.write_text(replaced, encoding="utf-8")
+        updated.append(name)
+    return updated
+
+
+def append_record(path: Path) -> None:
+    body = path.read_text(encoding="utf-8")
+    heading = "## 配置の整理（2026-09-05）"
+    if heading in body:
+        raise SystemExit(f"配置整理済みです: {path}")
+    body += f"""
+
+{heading}
+
+- 本Issue群は、島要約の凝縮支援を単一候補から複数候補へ拡張し、違和感を踏まえた再生成、さらに採用時の critique / reproposal 履歴永続化まで段階的に完成させた機能契約成熟系列として `Done` となっていた。
+- `DOGFOOD-33` が複数候補と候補単位の接地検証、`DOGFOOD-34` が違和感入力を受けた再生成と代替候補採用、`DOGFOOD-35` が採用理由・再提案差分の文書永続化を完成させたため、3件を同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は17から14へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
+"""
+    path.write_text(body, encoding="utf-8")
+
+
+def main() -> None:
+    validator = VALIDATOR.read_text(encoding="utf-8")
+    before = "LEGACY_DONE_AT_ROOT_BASELINE = 17"
+    after = "LEGACY_DONE_AT_ROOT_BASELINE = 14"
+    if validator.count(before) != 1:
+        raise SystemExit("legacy Done baseline 17 を一意に特定できません")
+
+    moved: list[tuple[Path, Path]] = []
+    for name in TARGETS:
+        old = ISSUES_ROOT / name
+        new = DONE_ROOT / name
+        if not old.exists() or new.exists():
+            raise SystemExit(f"移動境界が不正です: {old} -> {new}")
+        if "- Status: Done" not in old.read_text(encoding="utf-8"):
+            raise SystemExit(f"Status Doneではありません: {old}")
+        subprocess.run(["git", "mv", old.as_posix(), new.as_posix()], check=True)
+        moved.append((old, new))
+
+    VALIDATOR.write_text(validator.replace(before, after), encoding="utf-8")
+
+    for old, new in moved:
+        refs = replace_exact_reference(old, new)
+        print(f"{old.name}: updated references={len(refs)}")
+        for ref in refs:
+            print(f"  - {ref}")
+        append_record(new)
+
+
+if __name__ == "__main__":
+    main()
