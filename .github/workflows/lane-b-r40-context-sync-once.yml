@@ -1,0 +1,35 @@
+name: lane-b-r40-context-sync-once
+
+on:
+  push:
+    branches:
+      - lane-b/ai-ir-scale-r40-context-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-delete:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/ai-ir-scale-r40-context-sync
+      - name: Apply and verify R40
+        run: |
+          python .github/lane-b-r40-sync.py
+          grep -F 'R39 run `33954945719`' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'input usage + 現行production output reserve' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '## R40 — R39後のcontext hard-fit手順をIssue前半へ同期' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '6. coverage-loss metadata' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit sync and remove temporary files
+        run: |
+          rm .github/lane-b-r40-sync.py
+          rm .github/workflows/lane-b-r40-context-sync-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync context hard-fit readiness after R39'
+          git push origin HEAD:lane-b/ai-ir-scale-r40-context-sync
