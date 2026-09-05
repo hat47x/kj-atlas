@@ -1,0 +1,66 @@
+name: Lane C stale pnpm/env close once
+
+on:
+  push:
+    branches:
+      - docs/lane-c-close-stale-pnpm-env-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  close-and-verify:
+    if: "github.event.head_commit.message == 'chore: stale pnpm/env整理workflowを起動する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: '03_Implement/frontend/package-lock.json'
+      - name: stale pnpm/env IssueをDoneへ移す
+        run: python .github/scripts/lane_c_close_stale_pnpm_env_once.py
+      - name: Fresh npm dependency tree
+        working-directory: 03_Implement/frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          test ! -e node_modules/.pnpm
+          test ! -e node_modules/.modules.yaml
+      - name: Frontend tests
+        working-directory: 03_Implement/frontend
+        run: npm test
+      - name: Frontend build
+        working-directory: 03_Implement/frontend
+        run: npm run build
+      - name: Issue lifecycle tests
+        run: python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+      - name: Planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Active issue memo validation
+        run: python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Documentation contract check
+        run: python 01_Plans/docs_check.py
+      - name: Live triage
+        run: python 01_Plans/triage_actionable_plans.py --format json
+      - name: Stale reintroduction check
+        run: python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong
+      - name: Diff check
+        run: git diff --check
+      - name: 検証済み整理をbranchへ記録する
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'hat47x'
+          git config user.email 'hat47x@gmail.com'
+          git add -A
+          git commit -m 'docs: stale pnpm/env Draftを完了状態へ整理する'
+          git push origin HEAD
