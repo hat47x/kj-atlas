@@ -8,7 +8,7 @@ from pathlib import Path
 from scripts import analyze_ai_route_provider_measurement as analysis
 
 
-def _row(tokens: int, *, task: str = "test", prompt_bytes: int = 999_999) -> dict:
+def _row(tokens: int, *, task: str, prompt_bytes: int = 999_999) -> dict:
     return {
         "task": task,
         "prompt": {"unicode_chars": 123_456, "utf8_bytes": prompt_bytes},
@@ -36,9 +36,21 @@ def _core_report() -> dict:
         "expected_model": "named-model",
         "executed": True,
         "measurement_complete": True,
-        "routes": {name: _row(tokens) for name, tokens in values.items()},
+        "routes": {
+            name: _row(tokens, task=analysis.CORE_ROUTE_TASKS[name])
+            for name, tokens in values.items()
+        },
         "layout_c_summary": {"included": False, "requests": 0},
     }
+
+
+def _add_complete_layout_c(report: dict) -> None:
+    for index in range(1, 31):
+        report["routes"][f"suggest-layout-c-local-{index:02d}"] = _row(
+            100 + index,
+            task="re_layout",
+        )
+    report["routes"]["suggest-layout-c-global"] = _row(900, task="re_layout")
 
 
 def test_complete_core_report_is_ready_and_uses_only_provider_usage() -> None:
@@ -71,7 +83,11 @@ def test_complete_core_report_is_ready_and_uses_only_provider_usage() -> None:
 
 def test_groups_a2_adds_only_provider_reported_comparison() -> None:
     report = _core_report()
-    report["routes"][analysis.GROUPS_A2_ROUTE] = _row(5_750, prompt_bytes=56_047)
+    report["routes"][analysis.GROUPS_A2_ROUTE] = _row(
+        5_750,
+        task="suggest_card_groups",
+        prompt_bytes=56_047,
+    )
 
     result = analysis.analyze(report)
 
@@ -83,11 +99,9 @@ def test_groups_a2_adds_only_provider_reported_comparison() -> None:
     assert groups["a2_input_tokens"] != 56_047
 
 
-def test_layout_c_requires_exactly_31_complete_provider_rows() -> None:
+def test_layout_c_requires_exact_canonical_31_provider_rows() -> None:
     report = _core_report()
-    for index in range(1, 31):
-        report["routes"][f"suggest-layout-c-local-{index:02d}"] = _row(100 + index)
-    report["routes"]["suggest-layout-c-global"] = _row(900)
+    _add_complete_layout_c(report)
 
     result = analysis.analyze(report)
 
@@ -104,16 +118,44 @@ def test_layout_c_requires_exactly_31_complete_provider_rows() -> None:
 
 def test_partial_layout_c_fails_closed_instead_of_aggregating() -> None:
     report = _core_report()
-    report["routes"]["suggest-layout-c-local-01"] = _row(101)
+    report["routes"]["suggest-layout-c-local-01"] = _row(101, task="re_layout")
 
     result = analysis.analyze(report)
 
     assert result["decision_ready"] is False
     assert result["layout_c_ready"] is False
-    assert "layout-c-request-count:1:31" in result["errors"]
+    assert "layout-c-missing-route:suggest-layout-c-global" in result["errors"]
     layout = result["observations"]["layout"]
     assert layout["layout_c_max_single_input_tokens"] is None
     assert layout["layout_c_aggregate_input_tokens"] is None
+
+
+def test_layout_c_wrong_route_name_cannot_pass_by_count_alone() -> None:
+    report = _core_report()
+    _add_complete_layout_c(report)
+    del report["routes"]["suggest-layout-c-local-30"]
+    report["routes"]["suggest-layout-c-local-99"] = _row(199, task="re_layout")
+
+    result = analysis.analyze(report)
+
+    assert len(
+        [name for name in report["routes"] if name.startswith(analysis.LAYOUT_C_PREFIX)]
+    ) == 31
+    assert result["decision_ready"] is False
+    assert result["layout_c_ready"] is False
+    assert "layout-c-missing-route:suggest-layout-c-local-30" in result["errors"]
+    assert "layout-c-unexpected-route:suggest-layout-c-local-99" in result["errors"]
+
+
+def test_wrong_task_identity_fails_closed() -> None:
+    report = _core_report()
+    report["routes"]["suggest-layout"]["task"] = "suggest_card_groups"
+
+    result = analysis.analyze(report)
+
+    assert result["decision_ready"] is False
+    assert result["core_ready"] is False
+    assert "task-mismatch:suggest-layout" in result["errors"]
 
 
 def test_missing_usage_and_provider_mismatch_fail_closed() -> None:
@@ -128,7 +170,10 @@ def test_missing_usage_and_provider_mismatch_fail_closed() -> None:
 
     assert result["decision_ready"] is False
     assert result["core_ready"] is False
-    assert any(error.startswith("route-not-measured:suggest-card-groups-route-b") for error in result["errors"])
+    assert any(
+        error.startswith("route-not-measured:suggest-card-groups-route-b")
+        for error in result["errors"]
+    )
     assert "provider-mismatch:suggest-layout" in result["errors"]
 
 
