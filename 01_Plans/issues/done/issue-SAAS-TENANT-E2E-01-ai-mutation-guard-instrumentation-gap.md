@@ -1,7 +1,7 @@
-# Issue Draft: SAAS-TENANT-E2E-01 AI mutation向けtenant session generation guardの機構固有E2E計装が無い
+# Issue: SAAS-TENANT-E2E-01 AI mutation向けtenant session generation guardの機構固有E2E計装が無い
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -35,9 +35,18 @@ test 3・4の観測点は、production codeが元々持つ低レベルAPI境界�
 
 ## Acceptance
 
-- [ ] 上記(a)/(b)/(c)のいずれかを選択する。
-- [ ] (a)または(b)を選ぶ場合、AI mutation 7種のうち残り6種（layout、merge、island summary、proposal audit、relation summary、narrative check）にも同水準の計装を展開するか、narrative generationの1種で代表させて十分とするかを判断する。
+- [x] 選択肢(b)に相当するtest-harness-only観測を採用する。PR #2917でPlaywright page側から `StaleTenantSessionResultError` の生成を直接観測し、production codeへtest専用hookを追加せず機構固有E2Eを成立させた。
+- [x] narrative generation 1種をshared `TenantSessionGenerationGuard` の機構代表とする。残り6種へ同一probeを複製せず、各tenant-scoped callが共通guard境界を通ることは既存のfail-closed frontend call-site/session-header契約で担保する。これは各AI機能の業務意味や全越境matrixの完了を主張するものではない。
 
 ## Validation
 
-- 選択した対応を実装した場合、「production codeの該当行を削除・無効化してもtestが失敗しなくなる」ことを1回確認する（ミューテーションテスト）ことで、testが実際に対象機構を検証していることを示す。
+- PR #2917（merge `3d6ed603a4cd9d19aed5287525dc544602367f23`）でreal Chromium SaaS baseline 8/8とprobe付きmatrix 8/8が成功した。
+- tenant switch前とblocked直後はprobe count=0、遅延AI narrative response解放後にcount=1となることを固定し、generic blocked viewだけでは満たせないassertへ分離した。
+- mutation proofとして `TenantSessionGenerationGuard.run()` のstale throwを一時無効化すると、対象scenarioが `generation guard must reject the stale AI result` で失敗することを確認した。production source復元後のbuildも成功した。
+- probeはPlaywright harness内で `Error.prototype.name` を観測するため、production code/API/schemaへtest専用surfaceを追加していない。
+
+## 完了判断（2026-09-05）
+
+- 元Issueの欠落は「汎用blocked viewとは独立にgeneration guard固有の発火を観測できない」ことであり、PR #2917のprobe＋mutation proofで解消した。
+- shared guardそのものの判別力を1つの実ブラウザ経路で固定できたため、同一機構の確認だけを目的として7種類すべてへprobeを複製する必要はない。route/call-siteのguard包含は既存のfail-closed contract testに委ねる。
+- `SAAS-TENANT-01` のAC-10は別責務であり、API/MCP/worker/browser cacheを含むsame-docId越境negative matrix全体が未完のため、親Issueは引き続きactiveとする。

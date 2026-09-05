@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`, SaaS browser / backend integration境界
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/issues/done/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`, `01_Plans/issues/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/issues/done/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`, `01_Plans/issues/done/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`
 - Expected verification level: `e2e`
 
 ## 課題
@@ -43,14 +43,14 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 ## 近接Issueとの責務境界
 
 - `AUTH-ONE-TIME-JWT-01`: Broker → frontend → 複数backend instanceという認証sessionの縦断E2Eを正本として完了した。
-- `SAAS-TENANT-E2E-01`: delayed AI responseが汎用blocked viewで見えなくなるだけでなく、`TenantSessionGenerationGuard`自体が旧generationを破棄したことを観測できるかという、機構固有のE2E計装を追う。
+- `SAAS-TENANT-E2E-01`: delayed AI responseで`TenantSessionGenerationGuard`自体が旧generationを破棄したことを、汎用blocked viewとは独立に観測する機構固有E2EをPR #2917で完了した。完了記録は`issues/done/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`を正本とし、本Issueでは同一probeを重複実装しない。
 - 本Issue: SaaS UIのPlaywright被覆を俯瞰し、browser lifecycle / tenant switch / cross-tenant残留の穴を追う。上の2件の専門的な条件を二重計上しない。
 
 ## 対応方針
 
 - 既存`tenant_session_multitab.spec.ts`を「実backendまで含むE2E」と誤認しない。
 - `SAAS-TENANT-01`の残ACに応じ、browser lifecycleやconsumer matrixに不足するscenarioだけを本Issueで追加する。
-- 認証縦断harnessはDoneとなった`AUTH-ONE-TIME-JWT-01`を証拠として参照し、AI generation guardの計装判断は`SAAS-TENANT-E2E-01`へ委ねる。
+- 認証縦断harnessはDoneとなった`AUTH-ONE-TIME-JWT-01`を証拠として参照する。AI generation guardの機構固有計装もDoneとなった`SAAS-TENANT-E2E-01`を証拠として参照し、本Issueではbrowser lifecycle / tenant switch / cross-tenant残留の未被覆だけを追う。
 - product codeへテスト専用hookを加えるかどうかは、本Issueでは決めない。
 
 ## 受入条件
@@ -69,7 +69,7 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 
 ## 2026-09-05: SAAS-TENANT-01残ACの再棚卸しと本Issueが担う残差
 
-`SAAS-TENANT-01`の現行AC-10/12/13を確認した。AC-10の「AI mutation種別ごとの実ブラウザ多タブ確認」は`SAAS-TENANT-E2E-01`が所管する（同issueは計装方式(a)/(b)/(c)の価値判断が未決のためDraftのまま）。AC-12はAC-1〜11完了後のRound 8 UI検証で、本Issueより後段。AC-13の残差（実backendを含む縦断matrix）は`AUTH-ONE-TIME-JWT-01`の完了により認証層は解消済みである。
+`SAAS-TENANT-01`の現行AC-10/12/13を再確認した。AC-10で停止理由だったAI generation guardの機構固有計装はPR #2917とDoneとなった`SAAS-TENANT-E2E-01`で解消済みであり、同一shared guardを7種類へ重複probeすることは残条件としない。AC-10に残るのはAPI/MCP/worker/browser cacheを一体化したsame-docId越境negative matrix、AC-12はAC-1〜11完了後のRound 8 UI検証で本Issueより後段、AC-13は認証層の縦断経路を`AUTH-ONE-TIME-JWT-01`で完了しつつbrowser/consumer側の残差を引き続き追う。
 
 `tenant_session_multitab.spec.ts`の既存8 testを実際に読み、実行して確認した（Docker Playwright `v1.58.2-jammy`、`KJ_ATLAS_E2E_SAAS=1`、8 passed）。全testは**単一の認証済みsessionが自分のactive tenantを切り替える**シナリオであり、`ServerState`も`activeTenantId`を1つだけ持つ設計になっている。
 
@@ -81,7 +81,7 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 
 > **tenant切替後、実ブラウザ上で「最近使った文書」ダイアログとQueryPreset panelが、切替前tenantの項目を一切表示しないこと**を検証するscenarioが存在しない。unit testはstorage utility関数の正しさを示すが、実際のUIコンポーネントが正しいscopeでそれを呼び出し、切替後に再読込されることまでは実ブラウザで固定していない。
 
-これはAI mutation固有の計装判断（`SAAS-TENANT-E2E-01`）でも、認証縦断経路（`AUTH-ONE-TIME-JWT-01`）でもない、本Issueの定義（「SaaS UIのPlaywright被覆を俯瞰し、browser lifecycle / tenant switch / cross-tenant残留の穴を追う」）にそのまま該当する browser lifecycle gapである。production codeへの価値判断を伴わないため、`SAAS-TENANT-E2E-01`のような人的判断待ちのブロッカーはない。
+これは完了済みのAI generation guard機構固有計装（`SAAS-TENANT-E2E-01`）でも、認証縦断経路（`AUTH-ONE-TIME-JWT-01`）でもない。本Issueの定義（「SaaS UIのPlaywright被覆を俯瞰し、browser lifecycle / tenant switch / cross-tenant残留の穴を追う」）にそのまま該当するbrowser lifecycle gapであり、既存のrecent/QueryPreset UIとtenant切替パターンを組み合わせて検証する残課題である。
 
 実装（新規scenario追加）は本checkpointでは行わない。`recent_documents_dialog.spec.ts`のdialog操作パターンと`tenant_session_multitab.spec.ts`のtenant切替パターンを両方読み、両者を安全に組み合わせる設計を先に固めてから着手する。
 
