@@ -1,0 +1,35 @@
+name: lane-b-r27-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/layout-c-composition-characterization
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/layout-c-composition-characterization
+
+      - name: Record R27
+        run: |
+          python .github/lane-b-r27-record.py
+          git diff --check
+
+      - name: Commit record and remove temporary files
+        run: |
+          rm .github/lane-b-r27-record.py
+          rm .github/workflows/lane-b-r27-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): record R27 layout C composition characterization'
+          git push origin HEAD:lane-b/layout-c-composition-characterization
+
+# retry after normalizing the Issue EOF newline
