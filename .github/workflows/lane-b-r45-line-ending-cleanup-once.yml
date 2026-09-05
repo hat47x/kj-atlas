@@ -40,7 +40,7 @@ jobs:
           assert data.count(old) == 1
           p.write_bytes(data.replace(old, new))
           PY
-          blob=$(git hash-object -w /tmp/configuration.md)
+          blob=$(git hash-object -w --no-filters /tmp/configuration.md)
           git update-index --cacheinfo 100644,$blob,04_Documentation/configuration.md
       - name: Verify exact main-relative diff
         shell: bash
