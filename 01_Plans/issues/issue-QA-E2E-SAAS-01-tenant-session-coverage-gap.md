@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`, SaaS browser / backend integration境界
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/issues/done/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`, `01_Plans/issues/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`, `01_Plans/issues/done/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`, `01_Plans/issues/done/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md`
 - Expected verification level: `e2e`
 
 ## 課題
