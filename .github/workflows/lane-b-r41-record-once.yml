@@ -1,0 +1,34 @@
+name: lane-b-r41-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/context-window-source-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-self-delete:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/context-window-source-provenance
+      - name: Record R41
+        run: |
+          python .github/lane-b-r41-record.py
+          grep -F '## R41 — context-window hard-fitへ資料source provenanceを必須化' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '**80 test**' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'context_window_source_kind=operator-supplied-document-reference' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit record and remove temporary files
+        run: |
+          rm .github/lane-b-r41-record.py
+          rm .github/workflows/lane-b-r41-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): record R41 context-window source provenance'
+          git push origin HEAD:lane-b/context-window-source-provenance
