@@ -37,7 +37,7 @@ jobs:
 
           r47 = '''\n\n## R47 — V4移行後の実測判断順序を前半要約へ同期\n\nR42で後半の「次の判断順序」を1〜6へ同期していた一方、Issue前半の「実token計測後の判断基準」にはR21時点の旧い `1, 2, 4, 5, 5` の要約が残り、R32/R33/R35/R37のmeasurement identity/provenance、R39/R41のcontext hard-fit/source provenance、方式決定後にcoverage-loss metadataを設計する順序が反映されていなかった。R47では前半要約を後半の現行6段階へ揃え、判断手順の二重化によるdriftを解消した。\n\n併せてR45/R46で `AI-DEEPSEEK-V4-MIGRATION-01` が完了し、productionのDeepSeek既定は `deepseek-v4-flash`、thinking mode既定は旧non-thinking挙動を保つ `disabled` へ移行済みであることを現在地として確認した。ただし、これはnamed provider/modelのprovider-reported input usageを取得したことを意味しない。R47でも外部providerは呼ばず、最初の2つの未完了AC、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。\n'''
           assert '## R47 — V4移行後の実測判断順序を前半要約へ同期' not in text
-          text = text.rstrip() + r47 + '\n'
+          text = text.rstrip() + r47.rstrip() + '\n'
           path.write_text(text)
           PY
       - name: Validate docs and exact decision sequence
