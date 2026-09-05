@@ -51,3 +51,11 @@ W型探求の結論は「凝縮（核融合法）の『志』は単発の自動�
 - 追加（2026-08-19・Phase 2b 前提）: `ProposalDiff.candidates`（全候補・1〜3件）を加算し、`propose_island_summary` が `after`/`groundingIds`（=候補[0]）に加えて全候補を返すようにした。UI が代替候補を提示できる前提（`api.md`・frontend `IslandSummaryProposal.diff.candidates` も同期）。チャットパネルUI・対話履歴は引き続き Phase 2b の残。
 - 追加（2026-08-19・Phase 2b フロント最小スライス）: `SidePanel.tsx` に候補一覧表示（`diff.candidates`）＋違和感入力＋「違和感を踏まえて再生成」ボタンを追加。`client.ts` の `proposeIslandSummary` が `critiqueText` を受け取り、`App.tsx` の `handleSuggestIslandSummary(critiqueText?)` がパススルー。i18n キー（`side_panel.summary.candidates`/`critique_placeholder`/`regenerate`）を en/ja に追加。tsc typecheck・i18n 整合テスト通過。**残は「代替候補の採用（現状 adopt は候補[0]固定）」と「対話履歴の永続化（`CritiqueInput`/`reproposalDiffs`）」**。
 - 追加（2026-08-21・Phase 2b 代替候補の採用）: 候補一覧を選択可能なボタンにし、選択した候補（`selectedIslandSummaryCandidateIndex`）を adopt できるようにした。`onAdoptIslandSummaryProposal(candidateIndex)` / `handleAdoptIslandSummaryProposal(candidateIndex)` に変更し、`diff.candidates?.[index]` を採用（欠落時は `diff.after`/`diff.groundingIds` へフォールバック）。tsc typecheck 通過。**「対話履歴の永続化」は DOGFOOD-35 へ切り出し**（2026-08-21 実装済み・Done）。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、島要約の凝縮支援を単一候補から複数候補へ拡張し、違和感を踏まえた再生成、さらに採用時の critique / reproposal 履歴永続化まで段階的に完成させた機能契約成熟系列として `Done` となっていた。
+- `DOGFOOD-33` が複数候補と候補単位の接地検証、`DOGFOOD-34` が違和感入力を受けた再生成と代替候補採用、`DOGFOOD-35` が採用理由・再提案差分の文書永続化を完成させたため、3件を同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は17から14へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
