@@ -304,7 +304,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R30 run `33948026246` ではR23〜R30関連を含む45 test・ruff・`git diff --check` が成功した。恒久workflowの有無とは分けて記録する。
+- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R33 run `33951131455` ではR23〜R33関連を含む62 test・ruff・`git diff --check` が成功した。provider実測reportについてもR32/R33でroute/task/provider/model/usageとcanonical prompt fingerprintのfail-closed検証を固定した。恒久workflowの有無とは分けて記録する。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
@@ -314,6 +314,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `scripts/measure_ai_route_prompt_coverage.py`
   - `scripts/measure_ai_route_required_meaning.py`
   - `scripts/measure_ai_route_provider_tokens.py`
+  - `scripts/analyze_ai_route_provider_measurement.py`
   - `scripts/measure_ai_ir_budget_pressure.py`
   - `scripts/measure_ai_route_projection_candidates.py`
   - `scripts/measure_ai_route_a2_candidate.py`
@@ -323,6 +324,8 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_route_prompt_coverage.py`
   - `tests/test_ai_route_required_meaning_scale.py`
   - `tests/test_ai_route_provider_token_measurement.py`
+  - `tests/test_ai_route_provider_measurement_analysis.py`
+  - `tests/test_ai_route_provider_prompt_fingerprint.py`
   - `tests/test_ai_ir_budget_pressure.py`
   - `tests/test_ai_route_projection_candidates.py`
   - `tests/test_ai_route_a2_candidate.py`
@@ -330,13 +333,13 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_layout_hierarchical_composition.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
-  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageを保存する。
+  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usageとcanonical prompt SHA-256を含むmeasurement reportを保存する。保存reportは `scripts/analyze_ai_route_provider_measurement.py` を通し、route/task/provider/model/usage/fingerprintが現在のcanonical builderと一致した場合だけ方式比較の入力にする。
   - 外部LLMを呼ばない通常の回帰では、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
 
 ## 次の判断順序
 
-1. **named provider/modelの実入力tokenを測る。** R30まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。
-2. その測定値をR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
+1. **named provider/modelの実入力tokenを測り、保存reportをR32/R33 analyzerへ通す。** R33まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。R33以降のreportにはexact UTF-8 promptのSHA-256を含め、現在のcanonical builderと一致しないstale/legacy reportは比較根拠へ使わない。
+2. analyzerが `decision_ready=true` と判定したprovider-reported usageだけをR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。ここでの `decision_ready` はmeasurement reportの内部整合性だけを意味し、方式採択そのものではない。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
 3. `generate-narrative` の `causal` / `negate` はR22までにendpointとrelationの両方をrequired保護した。required card >200 / required relation >400は既にfail-closedであり、今後の判断対象は主にnamed provider/model上のtoken余裕と、文書規模でA2/B/Cのどれが妥当かである。
 4. `suggest-layout` のCはR25/R27でmeasurement-only候補として、決定論的partitionとlocal/global合成まで具体化済みである。A2/B/Cの採択は、provider-reported token usageと、必要なら実model出力の配置品質・latency・failure rateを比較してから行う。
 5. coverage-loss metadataは方式決定後に、その方式で本当に検証すべき欠落単位へ合わせて追加する。先に汎用メタデータだけを増やさない。
@@ -600,3 +603,9 @@ R32で保存measurement JSONのroute/task/provider/model/usage整合はfail-clos
 branch-only GitHub Actions run `33951131455` で、R23〜R33関連を含む **62 test**、ruff、`git diff --check` が成功した。38-request dry-runの全prompt fingerprint、1文字変更時のfingerprint変化、stale/legacy reportのfail-closedを回帰へ固定し、一時patch/workflowも同run内で自己削除した。
 
 **非主張**: fingerprintはprovider responseの暗号学的署名ではなく、偶発的なstale/mismatched measurementを防ぐための再現可能なprompt identityである。外部providerは呼んでおらず、実token値・context余裕・cost・latency・品質、A2/B/C採択、production cap/routeは引き続き未変更である。
+
+## R34 — R32/R33後のprovider実測readiness同期
+
+R32/R33でprovider measurementの保存・検証境界が強化されたため、Issue前半の受入条件注記・検証計画・次の判断順序を現行実装へ同期した。named provider/model実測後は、usageを直接A2/B/C比較へ持ち込まず、canonical prompt fingerprintを含む保存reportをR32/R33 analyzerへ通し、route/task/provider/model/usage/prompt identityが現在のbuilderと一致した結果だけをR21の比較入力にする。
+
+本同期はdocs-onlyであり、未完了ACを完了へ変更せず、provider実測・A2/B/C採択・production cap/route変更を行わない。
