@@ -42,7 +42,9 @@ def test_a2_candidate_restores_full_groups_required_coverage_and_caps() -> None:
     assert candidate["groupable_candidates"] == 299
     assert candidate["withheld_held_cards"] == 1
     assert candidate["truncation"] == {"truncated": False, "reason_codes": []}
-    assert candidate["prompt"]["utf8_bytes"] > 0
+    assert candidate["prompt"]["utf8_bytes"] == 56_047
+    assert groups["route_b_candidate"]["prompt"]["utf8_bytes"] == 48_791
+    assert groups["rendered_prompt_equivalent_to_b"] is False
 
 
 def test_a2_candidate_restores_full_layout_structure_and_tail_meaning() -> None:
@@ -61,7 +63,9 @@ def test_a2_candidate_restores_full_layout_structure_and_tail_meaning() -> None:
         ("c299", "c000", "negate"),
     ]
     assert candidate["truncation"] == {"truncated": False, "reason_codes": []}
-    assert candidate["prompt"]["utf8_bytes"] > 0
+    assert candidate["prompt"]["utf8_bytes"] == 128_562
+    assert layout["route_b_candidate"]["prompt"]["utf8_bytes"] == 128_562
+    assert layout["rendered_prompt_equivalent_to_b"] is True
 
 
 def test_temporary_budget_restores_constants_even_when_body_raises() -> None:

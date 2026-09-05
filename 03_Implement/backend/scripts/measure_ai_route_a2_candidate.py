@@ -39,7 +39,6 @@ try:
     from scripts.measure_ai_route_projection_candidates import (
         TAIL_A,
         TAIL_B,
-        TAIL_ISLAND,
         _groups_candidate_context,
         _late_layout_document,
         _layout_candidate_context,
@@ -51,7 +50,6 @@ except ModuleNotFoundError as exc:
     from measure_ai_route_projection_candidates import (
         TAIL_A,
         TAIL_B,
-        TAIL_ISLAND,
         _groups_candidate_context,
         _late_layout_document,
         _layout_candidate_context,
@@ -71,8 +69,12 @@ def representative_fit_budget(doc: Any) -> dict[str, int]:
 
     This intentionally does not invent headroom. It only answers what the
     deterministic 300-card representative source needs to avoid those two
-    current truncation reasons.
+    current truncation reasons. Raw representative-document dicts are accepted
+    too, so the measurement helper cannot silently interpret them as empty
+    duck-typed objects.
     """
+    if isinstance(doc, dict):
+        doc = SuggestLayoutRequest.model_validate({"doc": doc}).doc
     source = source_from_document(doc)
     normalized = _normalize_cards(source.cards)
     return {
