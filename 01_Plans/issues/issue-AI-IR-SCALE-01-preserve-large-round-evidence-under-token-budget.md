@@ -748,3 +748,18 @@ GitHub Actions run `33963862577` でR23〜R43関連 **81 test**、ruff、`git di
 R42で後半の「次の判断順序」を1〜6へ同期していた一方、Issue前半の「実token計測後の判断基準」にはR21時点の旧い `1, 2, 4, 5, 5` の要約が残り、R32/R33/R35/R37のmeasurement identity/provenance、R39/R41のcontext hard-fit/source provenance、方式決定後にcoverage-loss metadataを設計する順序が反映されていなかった。R47では前半要約を後半の現行6段階へ揃え、判断手順の二重化によるdriftを解消した。
 
 併せてR45/R46で `AI-DEEPSEEK-V4-MIGRATION-01` が完了し、productionのDeepSeek既定は `deepseek-v4-flash`、thinking mode既定は旧non-thinking挙動を保つ `disabled` へ移行済みであることを現在地として確認した。ただし、これはnamed provider/modelのprovider-reported input usageを取得したことを意味しない。R47でも外部providerは呼ばず、最初の2つの未完了AC、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
+
+
+## R48 — DeepSeek V4 thinking modeをprovider測定provenanceへ固定
+
+R45でDeepSeek V4へ移行した結果、`thinking.type=disabled|enabled` がprovider requestの明示的なgeneration modeになった。一方、R37までのDeepSeek measurement identityはsystem+user message contentを固定していたが、このmodeは保存reportに残らず、production既定の`disabled`で測った結果か、環境overrideで`enabled`になった結果かを後から区別できなかった。R48ではtoken推定とは切り離した**request-mode provenance**としてこの穴だけを閉じた。
+
+- `LLMCallMetadata` にprovider固有の `thinking_mode` を追加し、DeepSeek/OpenAI-compatible transportが実際に送った `thinking.type` をresponse metadataへ残す。generic audit fieldsのR35契約は変更しない。
+- measurement reportは `provider_generation_provenance={version: 1, deepseek_field: "thinking.type"}`、`expected_deepseek_thinking_mode`、各DeepSeek routeの `provider_generation.thinking_mode` を保存する。
+- DeepSeekを実行する場合はexpected modeを必須とし、現在の `settings.deepseek_thinking_mode` と一致しなければ**provider call前**に停止する。これにより誤った環境overrideのまま6件/7件/37件/38件を送信しない。
+- analyzerはDeepSeek reportについてgeneration provenance契約・expected mode・routeごとの実mode一致をfail-closedで検証する。modeはrequest provenanceであり、bytes/chars/hashと同様にtoken数へ換算しない。provider-reported `input_tokens` だけをtoken観測の正本とする。
+- production既定 `deepseek-v4-flash` + `thinking.type=disabled`、A2/B/C候補、shared IR cap、SafeMode、防PII、structured-text-only、proposal-only境界は変更しない。
+
+GitHub Actions run `33997380006` でDeepSeek transport metadata、measurement/analyzer provenance、R23〜R43近接回帰、compile check、R48対象のfatal/static lint、`git diff --check` を検証した。一時patch/workflowは同run内で自己削除する。
+
+**非主張**: R48でも外部DeepSeek APIは呼んでおらず、provider-reported input tokenは未取得である。thinking modeを記録したこと自体はinput token差・品質差・費用差を意味せず、A2/B/C採択・十分な余裕policy・production cap/routeも変更しない。
