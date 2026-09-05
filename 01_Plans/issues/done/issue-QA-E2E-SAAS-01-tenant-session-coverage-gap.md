@@ -1,7 +1,7 @@
 # Issue: QA-E2E-SAAS-01 TenantSession UIの実ブラウザ層と実backend縦断層を区別する
 
 - Type: Bug / QA
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
@@ -84,6 +84,22 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 これは完了済みのAI generation guard機構固有計装（`SAAS-TENANT-E2E-01`）でも、認証縦断経路（`AUTH-ONE-TIME-JWT-01`）でもない。本Issueの定義（「SaaS UIのPlaywright被覆を俯瞰し、browser lifecycle / tenant switch / cross-tenant残留の穴を追う」）にそのまま該当するbrowser lifecycle gapであり、既存のrecent/QueryPreset UIとtenant切替パターンを組み合わせて検証する残課題である。
 
 実装（新規scenario追加）は本checkpointでは行わない。`recent_documents_dialog.spec.ts`のdialog操作パターンと`tenant_session_multitab.spec.ts`のtenant切替パターンを両方読み、両者を安全に組み合わせる設計を先に固めてから着手する。
+
+## 2026-09-05: tenant-scoped UI残差の完了
+
+上記で確定したbrowser lifecycle gapに対し、`tenant_session_multitab.spec.ts`へ実ブラウザscenarioを追加した。単一の認証済みsessionでtenant Aからtenant Bへ切り替える既存のproduct経路を使い、両tenantのscoped localStorageへ異なるrecent documentとQueryPresetを事前投入して、実UIが正しいscopeだけを読むことを確認する。
+
+- [x] tenant Aでは「最近使った文書」ダイアログに`doc_tenant_a_recent`だけが現れ、tenant Bのrecent項目を表示しない。
+- [x] tenant AではQueryPreset panelに`Tenant A preset`だけが現れ、tenant Bのpresetを表示しない。
+- [x] tenant A→B切替後のhard reloadで、recent dialogは`doc_tenant_b_recent`を表示し、tenant Aのrecent項目を表示しない。
+- [x] 同じ切替後にQueryPreset panelは`Tenant B preset`を表示し、tenant Aのpresetを表示しない。
+- [x] transition後、旧tenant Aの`kj-atlas/tenant-scope/v1/...` localStorage keyが残っていないことも同じbrowser scenarioで確認する。
+
+初期seedは`sessionStorage` markerで一度だけ投入する。tenant切替のhard reload時には再seedしないため、`executeTenantSessionTransition()`が旧scopeを消去してから新scopeでAppを再bootstrapする実際の契約を迂回しない。`/api/docs`だけは既存`ServerState`に現在tenantの一覧応答を追加し、recent dialogのserver-side canvas listも決定的に保つ。
+
+このscenarioはmock APIを用いるbrowser lifecycle層の証拠であり、実Broker / PostgreSQL / 複数backend workerの認証縦断証拠は引き続きDoneの`AUTH-ONE-TIME-JWT-01`を正本とする。AI generation guardの機構固有証拠もDoneの`SAAS-TENANT-E2E-01`を正本とし、責務を重複させない。
+
+本Issueが2026-09-05再棚卸しで確定した唯一のbrowser側残差を閉じたため、Issueを`Done`とする。
 
 ## 補足
 
