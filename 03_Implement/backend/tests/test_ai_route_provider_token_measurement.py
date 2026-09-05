@@ -19,6 +19,10 @@ EXPECTED_ROUTES = {
     "generate-narrative",
     "check-narrative",
 }
+LAYOUT_C_ROUTES = {
+    *(f"suggest-layout-c-local-{index:02d}" for index in range(1, 31)),
+    "suggest-layout-c-global",
+}
 
 
 class _UsageProvider:
@@ -37,7 +41,9 @@ class _UsageProvider:
             # Fake provider-reported usage. The values are intentionally arbitrary
             # and are not derived from bytes/chars; the test only proves that the
             # measurement harness records each provider response under the right row.
-            input_tokens = (4000, 5000, 7000, 8000, 6000, 11000)[len(self.calls) - 1]
+            base = (4000, 5000, 7000, 8000, 6000, 11000)
+            index = len(self.calls) - 1
+            input_tokens = base[index] if index < len(base) else 100 + index
             output_tokens = 1
         return LLMResponse(
             raw_text="{}",
@@ -100,6 +106,52 @@ def test_representative_requests_compare_current_b_and_full_routes() -> None:
     assert 'id="i29"' in check.prompt
 
 
+def test_layout_c_requests_are_explicit_opt_in_and_match_r25_diagnostics() -> None:
+    default_requests = token_measure.build_representative_requests("named-model")
+    requests = token_measure.build_representative_requests(
+        "named-model", include_layout_c=True
+    )
+
+    assert set(default_requests) == EXPECTED_ROUTES
+    assert set(requests) == EXPECTED_ROUTES | LAYOUT_C_ROUTES
+    assert len(requests) == 37
+
+    c_requests = [requests[name] for name in sorted(LAYOUT_C_ROUTES)]
+    assert {req.task for req in c_requests} == {"re_layout"}
+    assert {req.model for req in c_requests} == {"named-model"}
+    assert {req.max_tokens for req in c_requests} == {1}
+    assert all(req.inputs is None for req in c_requests)
+
+    c_prompt_bytes = [len(req.prompt.encode("utf-8")) for req in c_requests]
+    assert max(c_prompt_bytes) == 7_486
+    assert sum(c_prompt_bytes) == 87_705
+
+
+def test_layout_c_dry_run_never_calls_provider_or_claims_tokens() -> None:
+    report = token_measure.measure(
+        model="named-model",
+        expected_provider="named-test-provider",
+        execute=False,
+        include_layout_c=True,
+    )
+
+    assert report["executed"] is False
+    assert report["measurement_complete"] is False
+    assert set(report["routes"]) == EXPECTED_ROUTES | LAYOUT_C_ROUTES
+    summary = report["layout_c_summary"]
+    assert summary["included"] is True
+    assert summary["requests"] == 31
+    assert summary["prompt"] == {
+        "max_single_utf8_bytes": 7_486,
+        "aggregate_utf8_bytes": 87_705,
+    }
+    assert summary["provider_reported"] == {
+        "input_tokens_complete": False,
+        "aggregate_input_tokens": None,
+        "max_single_input_tokens": None,
+    }
+
+
 def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
     report = token_measure.measure(
         model="named-model",
@@ -148,6 +200,31 @@ def test_documented_direct_cli_runs_as_a_dry_run_without_network_access() -> Non
     assert report["routes"]["suggest-layout-route-b"]["status"] == "dry-run"
 
 
+def test_direct_cli_layout_c_dry_run_is_network_free() -> None:
+    backend_dir = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/measure_ai_route_provider_tokens.py",
+            "--provider",
+            "named-test-provider",
+            "--model",
+            "named-model",
+            "--include-layout-c",
+        ],
+        cwd=backend_dir,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    report = json.loads(completed.stdout)
+
+    assert report["executed"] is False
+    assert len(report["routes"]) == 37
+    assert report["layout_c_summary"]["requests"] == 31
+    assert report["layout_c_summary"]["prompt"]["aggregate_utf8_bytes"] == 87_705
+
+
 def test_provider_reported_usage_is_recorded_per_comparison_without_estimation() -> None:
     provider = _UsageProvider()
     report = token_measure.measure(
@@ -173,6 +250,51 @@ def test_provider_reported_usage_is_recorded_per_comparison_without_estimation()
             "input_tokens": expected,
             "output_tokens": 1,
         }
+
+
+def test_layout_c_provider_usage_aggregates_only_reported_usage() -> None:
+    provider = _UsageProvider()
+    report = token_measure.measure(
+        model="named-model",
+        expected_provider=provider.provider_name,
+        execute=True,
+        provider=provider,
+        include_layout_c=True,
+    )
+
+    assert report["measurement_complete"] is True
+    assert len(provider.calls) == 37
+    summary = report["layout_c_summary"]
+    assert summary["included"] is True
+    assert summary["requests"] == 31
+    # Calls 7..37 receive arbitrary provider-reported values 106..136.
+    assert summary["provider_reported"] == {
+        "input_tokens_complete": True,
+        "aggregate_input_tokens": 3_751,
+        "max_single_input_tokens": 136,
+    }
+    assert summary["provider_reported"]["aggregate_input_tokens"] != summary["prompt"][
+        "aggregate_utf8_bytes"
+    ]
+
+
+def test_layout_c_missing_usage_stays_incomplete_without_estimation() -> None:
+    provider = _UsageProvider(report_usage=False)
+    report = token_measure.measure(
+        model="named-model",
+        expected_provider=provider.provider_name,
+        execute=True,
+        provider=provider,
+        include_layout_c=True,
+    )
+
+    assert report["measurement_complete"] is False
+    assert len(provider.calls) == 37
+    assert report["layout_c_summary"]["provider_reported"] == {
+        "input_tokens_complete": False,
+        "aggregate_input_tokens": None,
+        "max_single_input_tokens": None,
+    }
 
 
 def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
