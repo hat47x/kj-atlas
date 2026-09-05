@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ121）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
+- Related ADR/Spec: `00_Prompt/kj_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/done/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -74,3 +74,11 @@ if "トレードオフ" in prompt:
 
 - モックのカード本文埋め込みは「矛盾の説明がカード対に接地する」ことを検証可能にする決定性表現であり、実LLMの矛盾説明品質とは独立（本issueは検証ハーネスの能力向上）。
 - ドッグフーディング観察起点（2026-08-16・iteration 191）: 温浴・スパ（衛生・品質 vs 快適・コスト）で detect-contradiction を実行し、説明文がカード対を一切参照しないことを再現。矛盾説明の接地（カード対への言語化）がE2Eで検証不能であることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、矛盾検出の成立またはその説明文のカード対への接地を決定的にE2E検証できるようにし、製品API契約を変えずに `Done` となっていた。
+- `DOGFOOD-11` が `hasContradiction:true` の決定的正パスを固定し、`DOGFOOD-27` がその正パスの `explanation` を実際のカード対へ接地させたため、detect-contradiction の「検出成立 → 根拠説明成立」という完了系列として同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は25から23へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
