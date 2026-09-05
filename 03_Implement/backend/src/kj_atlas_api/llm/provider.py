@@ -785,6 +785,18 @@ def registered_provider_available(config: RegisteredProviderConfig) -> bool:
     return True
 
 
+def _openai_chat_messages(req: LLMRequest) -> list[dict[str, str]]:
+    """Build the exact system+user message content sent by chat transports."""
+    system_prompt = (
+        f"You are performing the task: {req.task}. "
+        "Respond with only the requested output, no preamble."
+    )
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": req.prompt},
+    ]
+
+
 def _generate_via_openai_chat(
     req: LLMRequest,
     *,
@@ -835,13 +847,9 @@ def _generate_via_openai_chat(
             metadata,
         )
 
-    system_prompt = f"You are performing the task: {req.task}. Respond with only the requested output, no preamble."
     payload = {
         "model": model_id,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": req.prompt},
-        ],
+        "messages": _openai_chat_messages(req),
         "temperature": req.temperature,
         "max_tokens": req.max_tokens,
         "stream": False,

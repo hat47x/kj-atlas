@@ -27,6 +27,7 @@ from typing import Any
 
 try:
     from scripts.measure_ai_route_provider_tokens import (
+        _openai_chat_messages_sha256,
         _prompt_sha256,
         build_representative_requests,
     )
@@ -34,6 +35,7 @@ except ModuleNotFoundError as exc:
     if exc.name != "scripts":
         raise
     from measure_ai_route_provider_tokens import (
+        _openai_chat_messages_sha256,
         _prompt_sha256,
         build_representative_requests,
     )
@@ -42,6 +44,12 @@ MEASUREMENT_NAME = "ai-route-provider-reported-input-tokens"
 SCENARIO_NAME = "300-cards-30-islands-ring"
 PROMPT_FINGERPRINT = {"algorithm": "sha256", "encoding": "utf-8"}
 PROVIDER_CALL_PROVENANCE = {"version": 1}
+PROVIDER_INPUT_PROVENANCE = {
+    "version": 1,
+    "deepseek_kind": "openai-chat-messages-v1",
+    "algorithm": "sha256",
+    "encoding": "utf-8",
+}
 CORE_ROUTE_TASKS = {
     "suggest-card-groups": "suggest_card_groups",
     "suggest-card-groups-route-b": "suggest_card_groups",
@@ -75,6 +83,7 @@ def _validate_measured_route(
     expected_provider: str,
     expected_model: str,
     expected_prompt_sha256: str | None,
+    expected_deepseek_input_sha256: str | None,
     errors: list[str],
 ) -> int | None:
     if not isinstance(row, dict):
@@ -127,6 +136,21 @@ def _validate_measured_route(
     if provider_call.get("execution_path") != "primary":
         errors.append(f"provider-call-non-primary-path:{name}")
         return None
+
+    if row.get("actual_provider_kind") == "deepseek":
+        provider_input = row.get("provider_input")
+        if not isinstance(provider_input, dict):
+            errors.append(f"provider-input-fingerprint-missing:{name}")
+            return None
+        if provider_input.get("kind") != "openai-chat-messages-v1":
+            errors.append(f"provider-input-kind-mismatch:{name}")
+            return None
+        if (
+            expected_deepseek_input_sha256 is None
+            or provider_input.get("sha256") != expected_deepseek_input_sha256
+        ):
+            errors.append(f"provider-input-fingerprint-mismatch:{name}")
+            return None
 
     token = _int_token(row)
     if token is None:
@@ -186,6 +210,19 @@ def analyze(report: Any) -> dict[str, Any]:
     canonical_prompt_hashes = {
         name: _prompt_sha256(req.prompt) for name, req in canonical_requests.items()
     }
+    canonical_deepseek_input_hashes = {
+        name: _openai_chat_messages_sha256(req)
+        for name, req in canonical_requests.items()
+    }
+    has_deepseek_measurement = any(
+        isinstance(row, dict) and row.get("actual_provider_kind") == "deepseek"
+        for row in routes.values()
+    )
+    if (
+        has_deepseek_measurement
+        and report.get("provider_input_provenance") != PROVIDER_INPUT_PROVENANCE
+    ):
+        errors.append("unsupported-or-missing-provider-input-provenance")
     for unexpected in sorted(set(routes) - set(canonical_requests)):
         errors.append(f"unexpected-route:{unexpected}")
 
@@ -201,6 +238,7 @@ def analyze(report: Any) -> dict[str, Any]:
             expected_provider=expected_provider,
             expected_model=expected_model,
             expected_prompt_sha256=canonical_prompt_hashes.get(name),
+            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),
             errors=errors,
         )
         if token is not None:
@@ -215,6 +253,9 @@ def analyze(report: Any) -> dict[str, Any]:
             expected_provider=expected_provider,
             expected_model=expected_model,
             expected_prompt_sha256=canonical_prompt_hashes.get(GROUPS_A2_ROUTE),
+            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(
+                GROUPS_A2_ROUTE
+            ),
             errors=errors,
         )
         if token is not None:
@@ -238,6 +279,7 @@ def analyze(report: Any) -> dict[str, Any]:
                 expected_provider=expected_provider,
                 expected_model=expected_model,
                 expected_prompt_sha256=canonical_prompt_hashes.get(name),
+                expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),
                 errors=errors,
             )
             if token is not None and name in expected_layout_c:
@@ -330,8 +372,9 @@ def analyze(report: Any) -> dict[str, Any]:
         },
         "interpretation_boundary": (
             "All token observations and deltas come only from provider_reported.input_tokens. "
-            "Prompt SHA-256 is used only for exact UTF-8 prompt identity/provenance; bytes, chars, "
-            "and hashes are never converted into tokens. This report does not know the "
+            "Prompt/provider-input SHA-256 values are identity/provenance only; bytes, chars, "
+            "and hashes are never converted into tokens. DeepSeek measurements additionally bind "
+            "the exact current OpenAI-chat system+user message content. This report does not know the "
             "model context limit or choose A2/B/C; optional A2/C readiness only records whether "
             "those explicit measurements are present and internally complete."
         ),

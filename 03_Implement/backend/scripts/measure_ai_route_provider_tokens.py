@@ -38,6 +38,7 @@ from kj_atlas_api.llm.provider import (
     LLMRequest,
     LLMResponse,
     ProviderError,
+    _openai_chat_messages,
     get_provider,
 )
 from kj_atlas_api.models import SuggestLayoutRequest
@@ -284,6 +285,18 @@ def _prompt_sha256(prompt: str) -> str:
     return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 
+def _openai_chat_messages_sha256(req: LLMRequest) -> str:
+    """Fingerprint the exact system+user message content for DeepSeek chat input."""
+    serialized = json.dumps(
+        _openai_chat_messages(req),
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
+
+
 def _route_row(req: LLMRequest) -> dict[str, Any]:
     return {
         "task": req.task,
@@ -300,6 +313,7 @@ def _route_row(req: LLMRequest) -> dict[str, Any]:
             "truncation": (req.inputs or {}).get("truncation"),
         },
         "provider_call": None,
+        "provider_input": None,
         "provider_reported": {
             "input_tokens": None,
             "output_tokens": None,
@@ -391,6 +405,12 @@ def measure(
         "expected_model": model,
         "prompt_fingerprint": {"algorithm": "sha256", "encoding": "utf-8"},
         "provider_call_provenance": {"version": 1},
+        "provider_input_provenance": {
+            "version": 1,
+            "deepseek_kind": "openai-chat-messages-v1",
+            "algorithm": "sha256",
+            "encoding": "utf-8",
+        },
         "executed": execute,
         "measurement_complete": False,
         "routes": routes,
@@ -427,6 +447,11 @@ def measure(
         row["actual_provider_kind"] = response.metadata.provider_kind
         row["actual_model"] = response.metadata.model_id
         row["provider_call"] = response.metadata.as_audit_fields()
+        if response.metadata.provider_kind == "deepseek":
+            row["provider_input"] = {
+                "kind": "openai-chat-messages-v1",
+                "sha256": _openai_chat_messages_sha256(req),
+            }
         row["provider_reported"] = {
             "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens,
