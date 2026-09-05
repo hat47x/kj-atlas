@@ -43,3 +43,11 @@
 - 最新文書をrefで参照し、`handleTransformChange`を文書参照の更新だけでは再生成しないcallbackへ変更した。これによりCanvasShellの同期effectが新旧camera transformを交互に書き戻す循環を止めた。
 - A13の共有カードを持つ複数島fixtureで警告0件、seed 808・390pxの150操作と300 loopでfinding 0件を確認した。
 - A14で通常のwheel zoom後にSaveが有効化されることを確認し、利用者操作によるtransform永続化は維持した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、モンキーテストで見つかった直接のUI／キーボード操作不具合を修正し、個別の回帰確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 2026-09-05の残存39件参照グラフ監査で、本Issueは他のlegacy Doneとの系列内ID参照を持たない孤立成分であり、旧rootパスの外部引用もないことを確認した。
+- 既存のライフサイクル契約に従い、本変更ではこの条件を満たすQA-MONKEY完了Issue 5件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を39から34へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。

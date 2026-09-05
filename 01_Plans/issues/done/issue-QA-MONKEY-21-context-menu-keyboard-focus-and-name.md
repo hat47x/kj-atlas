@@ -55,3 +55,11 @@
 - 全明示プローブ10件: 10 `ok` / 0 `SUSPECT`。
 - frontend typecheck成功。`ux_operability_regression`とi18n key/catalogの対象3 files・39 tests成功。
 - SafeMode、項目の実処理、文書保存・共有・import境界は変更していない。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、モンキーテストで見つかった直接のUI／キーボード操作不具合を修正し、個別の回帰確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 2026-09-05の残存39件参照グラフ監査で、本Issueは他のlegacy Doneとの系列内ID参照を持たない孤立成分であり、旧rootパスの外部引用もないことを確認した。
+- 既存のライフサイクル契約に従い、本変更ではこの条件を満たすQA-MONKEY完了Issue 5件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を39から34へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
