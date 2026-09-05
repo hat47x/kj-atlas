@@ -75,3 +75,11 @@ if task == "generate_narrative":
 
 - モックの島ID埋め込みは「ナラティブ本文が読み順の島に接地する」ことを検証可能にする決定性表現であり、実LLMの叙述品質とは独立（本issueは検証ハーネスの能力向上）。
 - ドッグフーディング観察起点（2026-08-16・iteration 186）: ドラッグストア（読み順 `drg-i`）で generate-narrative を実行し、本文が汎用文字列で島を参照しないことを再現。ナラティブ本文の接地（読み順の島への叙述）がE2Eで検証不能であることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、reading order を単なるID宣言ではなく、生成本文または配置提案の構造として実際に保持・反映することをE2Eで固定した verification harness 改善として `Done` となっていた。
+- `DOGFOOD-21` はナラティブ本文の読み順接地、`DOGFOOD-30` は layout 提案の島・readingOrder構造保全を固定しており、reading-order invariant の意味側と構造側をなす小さなまとまりとして同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は27から25へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。

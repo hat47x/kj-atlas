@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ124）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/done/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
+- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/done/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -67,3 +67,11 @@ case "$dp_layout" in *'"suggestedDoc"'*'d1'*'d2'*'d3'*'d4'*)  # 全カードの�
 
 - 配置の構造保全（島・読み順）は、バックエンドが既に `suggestedDoc` で完全な文書を返すためモック変更は不要。本issueは**検証深度の向上**（DOGFOOD-23 の全カード保持に加え、島・読み順の保持を固定）。
 - ドッグフーディング観察起点（2026-08-16・iteration 194）: フラワーショップ（2島 flr-gift/flr-ops）で suggest-layout を実行し、`suggestedDoc` が島・読み順を保持している一方、業務フローE2E が全カードIDのみを検証して島・読み順を確認しないことを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、reading order を単なるID宣言ではなく、生成本文または配置提案の構造として実際に保持・反映することをE2Eで固定した verification harness 改善として `Done` となっていた。
+- `DOGFOOD-21` はナラティブ本文の読み順接地、`DOGFOOD-30` は layout 提案の島・readingOrder構造保全を固定しており、reading-order invariant の意味側と構造側をなす小さなまとまりとして同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は27から25へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
