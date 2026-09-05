@@ -1,0 +1,45 @@
+name: Lane C triage snapshot once
+
+on:
+  push:
+    branches:
+      - lane-c/triage-snapshot-20260905-r1
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    if: github.event.head_commit.message != 'ci(lane-c): write triage snapshot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run live triage
+        run: |
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/triage.json').read_text())
+          snapshot = {
+              'summary': report['summary'],
+              'ready': [item for item in report['actionable_issues'] if item['ready']],
+              'errors': report['errors'],
+          }
+          Path('01_Plans/lane_c_triage_snapshot.json').write_text(
+              json.dumps(snapshot, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+      - name: Commit snapshot to diagnostic branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 01_Plans/lane_c_triage_snapshot.json
+          git commit -m 'ci(lane-c): write triage snapshot'
+          git push
