@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ115）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §2（束ねは「訴えの類似性」に基づく）, `00_Prompt/ai_kj_execution_procedures.md` §2, `02_Architecture/api.md`（suggest-card-groups 契約）, `01_Plans/issues/issue-DOGFOOD-19-merge-suggestions-lack-deterministic-positive-path.md`（同カテゴリのマージ提案と同型）
+- Related ADR/Spec: `00_Prompt/kj_technique.md` §2（束ねは「訴えの類似性」に基づく）, `00_Prompt/ai_kj_execution_procedures.md` §2, `02_Architecture/api.md`（suggest-card-groups 契約）, `01_Plans/issues/done/issue-DOGFOOD-19-merge-suggestions-lack-deterministic-positive-path.md`（同カテゴリのマージ提案と同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -77,3 +77,11 @@ if task == "suggest_card_groups":
 
 - モックのカテゴリ一致は「束ねがテーマ類似性に基づく」ことを検証可能にする決定性表現であり、実LLMの束ね品質とは独立（本issueは検証ハーネスの能力向上）。DOGFOOD-19（マージ提案）と同型の設計。
 - ドッグフーディング観察起点（2026-08-16・iteration 185）: コンビニ本部（オペレーション/商品戦略の交互配置）で AI束ね を実行し、位置分割が誤グループ化（c1+c2）を返すことを再現。束ねのテーマ類似性がE2Eで検証不能であることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、KJのテーマ類似性をE2Eで決定的に検証できるようモック／業務フロー検証を強化し、製品API契約を変えずに `Done` となっていた。
+- `DOGFOOD-19` と `DOGFOOD-20` は、同カテゴリの統合候補からテーマ類似性による束ねへ同型の検証設計を継承する小さな連結成分として扱い、2件を同時に `01_Plans/issues/done/` へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は33から31へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は現在の `done/` パスへ同時更新した。
