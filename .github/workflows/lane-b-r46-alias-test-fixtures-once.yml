@@ -1,0 +1,96 @@
+name: lane-b-r46-alias-test-fixtures-once
+
+on:
+  push:
+    branches:
+      - lane-b/deepseek-v4-migration-closeout
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/deepseek-v4-migration-closeout
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+      - name: Replace non-historical legacy-alias fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('03_Implement/backend/tests/test_llm_provider.py')
+          s = p.read_text()
+          old = '''        settings.llm_high_reasoning_model = "deepseek-reasoner"\n        settings.local_llm_model = "deepseek-chat"\n        settings.llm_task_model_map = ""\n        from kj_atlas_api.llm.provider import resolve_model_for_task\n\n        # final_judgement task → high-reasoning model\n        assert resolve_model_for_task("check_narrative") == "deepseek-reasoner"\n        # intermediate task → default model\n        assert resolve_model_for_task("refine_card_text") == "deepseek-chat"\n'''
+          new = '''        settings.llm_high_reasoning_model = "high-reasoning-model"\n        settings.local_llm_model = "default-model"\n        settings.llm_task_model_map = ""\n        from kj_atlas_api.llm.provider import resolve_model_for_task\n\n        # final_judgement task → high-reasoning model\n        assert resolve_model_for_task("check_narrative") == "high-reasoning-model"\n        # intermediate task → default model\n        assert resolve_model_for_task("refine_card_text") == "default-model"\n'''
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, new))
+
+          p = Path('03_Implement/backend/tests/test_model_governance.py')
+          s = p.read_text()
+          replacements = {
+              '(("deepseek-chat", "intermediate,generate"), ("deepseek-reasoner", "final_judgement"))': '(("deepseek-v4-flash", "intermediate,generate"), ("deepseek-v4-pro", "final_judgement"))',
+              '{"deepseek-chat", "deepseek-reasoner"}': '{"deepseek-v4-flash", "deepseek-v4-pro"}',
+              '"/admin/provision/models/deepseek-reasoner"': '"/admin/provision/models/deepseek-v4-pro"',
+              'db.get(LLMModelRegistryRow, "deepseek-reasoner")': 'db.get(LLMModelRegistryRow, "deepseek-v4-pro")',
+              '"id": "deepseek-chat",': '"id": "deepseek-v4-flash",',
+              '"displayName": "DeepSeek Chat",': '"displayName": "DeepSeek V4 Flash",',
+              '"model": "deepseek-chat"': '"model": "deepseek-v4-flash"',
+          }
+          for old, new in replacements.items():
+              count = s.count(old)
+              assert count >= 1, (old, count)
+              s = s.replace(old, new)
+          p.write_text(s)
+
+          p = Path('03_Implement/frontend/src/ui/ModelSelector.test.ts')
+          s = p.read_text()
+          assert s.count('{ id: "deepseek-chat", displayName: "DeepSeek Chat", providerId: "deepseek" }') == 1
+          s = s.replace(
+              '{ id: "deepseek-chat", displayName: "DeepSeek Chat", providerId: "deepseek" }',
+              '{ id: "deepseek-v4-flash", displayName: "DeepSeek V4 Flash", providerId: "deepseek" }',
+          ).replace('expect(html).toContain("DeepSeek Chat");', 'expect(html).toContain("DeepSeek V4 Flash");')
+          p.write_text(s)
+          PY
+      - name: Install and run backend regressions
+        working-directory: 03_Implement/backend
+        run: |
+          python -m pip install -e '.[test]'
+          python -m pytest -q tests/test_llm_provider.py tests/test_model_governance.py
+          python -m ruff check tests/test_llm_provider.py tests/test_model_governance.py
+      - name: Install and run frontend selector regression
+        working-directory: 03_Implement/frontend
+        run: |
+          npm ci
+          npm test -- src/ui/ModelSelector.test.ts
+      - name: Confirm legacy aliases remain only in history/migration explanation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RIn --exclude-dir=.git --exclude='lane-b-r46-alias-test-fixtures-once.yml' -E 'deepseek-chat|deepseek-reasoner' 03_Implement/backend/tests 03_Implement/frontend/src; then
+            echo 'unexpected legacy alias remains in active test source' >&2
+            exit 1
+          fi
+          git diff --check
+      - name: Commit tested cleanup and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-b-r46-alias-test-fixtures-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'test(ai): retire legacy DeepSeek alias fixtures'
+          git push origin HEAD:lane-b/deepseek-v4-migration-closeout
