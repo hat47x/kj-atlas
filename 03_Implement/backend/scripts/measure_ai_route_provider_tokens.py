@@ -60,6 +60,9 @@ from kj_atlas_api.routes.ai import (
 # `python scripts/measure_ai_route_provider_tokens.py` の両方を正式に動かす。
 # 後者では `scripts/` 自身が sys.path の先頭になるため sibling import が必要になる。
 try:
+    from scripts.measure_ai_layout_hierarchical_candidate import (
+        build_hierarchical_layout_candidate,
+    )
     from scripts.measure_ai_route_prompt_coverage import representative_document
     from scripts.measure_ai_route_projection_candidates import (
         _groups_candidate_context,
@@ -69,6 +72,9 @@ try:
 except ModuleNotFoundError as exc:
     if exc.name != "scripts":
         raise
+    from measure_ai_layout_hierarchical_candidate import (
+        build_hierarchical_layout_candidate,
+    )
     from measure_ai_route_prompt_coverage import representative_document
     from measure_ai_route_projection_candidates import (
         _groups_candidate_context,
@@ -99,7 +105,9 @@ def _representative_check_narrative_text(doc: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def build_representative_requests(model: str) -> dict[str, LLMRequest]:
+def build_representative_requests(
+    model: str, *, include_layout_c: bool = False
+) -> dict[str, LLMRequest]:
     """同じ代表規模でcurrent投影・route-B候補・全量routeを比較する。
 
     R23のmeasurement-only B候補をここでも同じbuilderから生成し、認証情報が
@@ -153,7 +161,7 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
     )
     check_prompt = _build_narrative_check_prompt(check_payload)
 
-    return {
+    requests = {
         "suggest-card-groups": LLMRequest(
             task="suggest_card_groups",
             prompt=groups_prompt,
@@ -207,6 +215,30 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
         ),
     }
 
+    if include_layout_c:
+        layout_c = build_hierarchical_layout_candidate(layout_doc)
+        for index, item in enumerate(layout_c["local_prompts"], start=1):
+            requests[f"suggest-layout-c-local-{index:02d}"] = LLMRequest(
+                task="re_layout",
+                prompt=item["prompt"],
+                # R25 measurement-only prompt. Provider transports send only the
+                # prompt; this is not a production IR contract.
+                inputs=None,
+                temperature=0.0,
+                max_tokens=1,
+                model=model,
+            )
+        requests["suggest-layout-c-global"] = LLMRequest(
+            task="re_layout",
+            prompt=layout_c["global_prompt"],
+            inputs=None,
+            temperature=0.0,
+            max_tokens=1,
+            model=model,
+        )
+
+    return requests
+
 
 def _route_row(req: LLMRequest) -> dict[str, Any]:
     return {
@@ -230,12 +262,63 @@ def _route_row(req: LLMRequest) -> dict[str, Any]:
     }
 
 
+def _layout_c_summary(
+    routes: dict[str, dict[str, Any]], *, included: bool
+) -> dict[str, Any]:
+    if not included:
+        return {
+            "included": False,
+            "requests": 0,
+            "prompt": {
+                "max_single_utf8_bytes": None,
+                "aggregate_utf8_bytes": None,
+            },
+            "provider_reported": {
+                "input_tokens_complete": False,
+                "aggregate_input_tokens": None,
+                "max_single_input_tokens": None,
+            },
+        }
+
+    names = sorted(
+        name for name in routes if name.startswith("suggest-layout-c-")
+    )
+    prompt_bytes = [routes[name]["prompt"]["utf8_bytes"] for name in names]
+    token_values = [
+        routes[name]["provider_reported"]["input_tokens"] for name in names
+    ]
+    tokens_complete = bool(token_values) and all(
+        isinstance(value, int) for value in token_values
+    )
+    measured_tokens = [
+        int(value) for value in token_values if isinstance(value, int)
+    ]
+    return {
+        "included": True,
+        "requests": len(names),
+        "prompt": {
+            "max_single_utf8_bytes": max(prompt_bytes) if prompt_bytes else None,
+            "aggregate_utf8_bytes": sum(prompt_bytes) if prompt_bytes else None,
+        },
+        "provider_reported": {
+            "input_tokens_complete": tokens_complete,
+            "aggregate_input_tokens": (
+                sum(measured_tokens) if tokens_complete else None
+            ),
+            "max_single_input_tokens": (
+                max(measured_tokens) if tokens_complete else None
+            ),
+        },
+    }
+
+
 def measure(
     *,
     model: str,
     expected_provider: str,
     execute: bool = False,
     provider: _Provider | None = None,
+    include_layout_c: bool = False,
 ) -> dict[str, Any]:
     """計測レポートを作成し、明示的に許可された場合だけプロバイダーを呼び出す。
 
@@ -248,7 +331,9 @@ def measure(
     if not expected_provider.strip():
         raise ValueError("`expected_provider` にはプロバイダー名を指定してください")
 
-    requests = build_representative_requests(model)
+    requests = build_representative_requests(
+        model, include_layout_c=include_layout_c
+    )
     routes = {name: _route_row(req) for name, req in requests.items()}
     report: dict[str, Any] = {
         "measurement": "ai-route-provider-reported-input-tokens",
@@ -258,6 +343,9 @@ def measure(
         "executed": execute,
         "measurement_complete": False,
         "routes": routes,
+        "layout_c_summary": _layout_c_summary(
+            routes, included=include_layout_c
+        ),
         "interpretation_boundary": (
             "正確なトークン数として採用するのは、プロバイダーが報告した `usage` だけとする。"
             "プロンプトのバイト数と文字数は診断情報であり、トークン数の推定には使わない。"
@@ -304,6 +392,9 @@ def measure(
         else:
             row["status"] = "measured"
 
+    report["layout_c_summary"] = _layout_c_summary(
+        routes, included=include_layout_c
+    )
     report["measurement_complete"] = all_measured
     return report
 
@@ -332,6 +423,15 @@ def _parser() -> argparse.ArgumentParser:
             f"{OPT_IN_ENV}=1 も必要であり、指定しなければネットワークを使わないドライランとなる。"
         ),
     )
+    parser.add_argument(
+        "--include-layout-c",
+        action="store_true",
+        help=(
+            "R25の階層layout C候補（local 30 + global 1）も比較する。"
+            "--execute と併用すると31件の追加provider requestが発生するため、"
+            "Cを明示的に測る場合だけ指定する。"
+        ),
+    )
     return parser
 
 
@@ -345,6 +445,7 @@ def main() -> int:
                     model=args.model,
                     expected_provider=args.provider,
                     execute=False,
+                    include_layout_c=args.include_layout_c,
                 ),
                 ensure_ascii=False,
                 indent=2,
@@ -374,6 +475,7 @@ def main() -> int:
             expected_provider=args.provider,
             execute=True,
             provider=provider,
+            include_layout_c=args.include_layout_c,
         )
     except ValueError as exc:
         print(
