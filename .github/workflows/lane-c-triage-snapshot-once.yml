@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   snapshot:
-    if: github.event.head_commit.message != 'ci(lane-c): write triage snapshot'
+    if: "${{ github.event.head_commit.message != 'ci(lane-c): write triage snapshot' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
