@@ -20,6 +20,7 @@ from kj_atlas_api.llm_input_ir import (
     build_llm_input_ir,
     derived_island_relations,
     held_card_ids,
+    relation_id,
     source_from_document,
 )
 from kj_atlas_api.settings import settings
@@ -648,6 +649,21 @@ def _narrative_required_card_ids(source: IRSource) -> tuple[str, ...]:
     return tuple(sorted(required))
 
 
+def _narrative_required_relation_ids(source: IRSource) -> tuple[str, ...]:
+    """Normalized causal/oppositional relations required by narrative generation."""
+    card_ids = {card.id for card in source.cards}
+    required: set[str] = set()
+    for relation in source.relations:
+        if relation.type not in ("causal", "negate"):
+            continue
+        if relation.from_kind == "island" or relation.to_kind == "island":
+            continue
+        if relation.from_id not in card_ids or relation.to_id not in card_ids:
+            continue
+        required.add(relation_id(relation.type, relation.from_id, relation.to_id))
+    return tuple(sorted(required))
+
+
 def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     """Build the LLM input IR for `/ai/generate-narrative` (ADR-0069 D4=A).
 
@@ -659,12 +675,12 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     `negate` edge between two cards, which is the skeleton a B型 narrative is
     supposed to follow.
 
-    At representative scale, the card endpoints of normalized `causal` /
-    `negate` relations are route-required meaning. Reserve those endpoints
-    before `MAX_CARDS` selection so the reading order cannot survive while its
-    logical joints silently disappear. If that required endpoint set itself
-    exceeds the card budget, the shared IR contract fails closed rather than
-    sending an incomplete spine to the model.
+    At representative scale, normalized `causal` / `negate` relations and their
+    card endpoints are route-required meaning. Reserve the relations before
+    `MAX_RELATIONS` selection and their endpoints before `MAX_CARDS` selection so the
+    reading order cannot survive while its logical joints silently disappear. If either
+    required set itself exceeds its shared IR budget, fail closed rather than sending an
+    incomplete spine to the model.
 
     SafeMode: the caller has ALREADY run `_reject_unreviewed_text`. The
     `allow_unreviewed_text` argument reproduces that helper's own predicate so
@@ -676,6 +692,7 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     )
     source = source_from_document(payload.doc)
     required_spine_ids = _narrative_required_card_ids(source)
+    required_spine_relation_ids = _narrative_required_relation_ids(source)
     try:
         # spec §2.2.1: generate-narrative does not request coordinates
         # (ADR-0069 D1=B) -- the narrative's spine is causal/negate, not layout.
@@ -685,6 +702,7 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
             safe_mode=True,
             allow_unreviewed_text=allow_unreviewed,
             required_card_ids=required_spine_ids,
+            required_relation_ids=required_spine_relation_ids,
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc

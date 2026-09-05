@@ -350,3 +350,17 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - R20のtoken計測ハーネスは、正確なtoken数をprovider-reported usageだけに限定し、実providerがusageを返さない場合も推定値で埋めない。
 - R21により、300カード代表入力では `MAX_CARDS` 単独引上げが不十分であることを固定した。production上限の変更はまだ行っていない。
 - 現時点では長期アーキテクチャ判断を確定しないため、新ADRは起票しない。task別投影やbatchingが複数境界を横断する長期契約へ発展した場合にのみ `ADR-0047` のトリガーを評価する。
+
+
+## R22 — required relation budget の fail-closed 化
+
+named provider/model の token 実測待ちとは独立に、`generate-narrative` の論理骨格について `MAX_RELATIONS` 境界を詰めた。
+
+- 従来は `causal` / `negate` の**端点カード**だけが `required_card_ids` として保護され、relation自体は `(type, from, to)` 順の先頭400件で通常切り詰めされていた。このため端点がIRに残っても、必要な論理接続だけが消える余地があった。
+- shared IR builder に入力専用 `required_relation_ids` を追加した。正規化済みrelation IDだけを受け付け、欠落は `required_relation_missing`、required relation自体が400件を超える場合は `required_relation_budget_exceeded` でfail-closedする。
+- required relationの両端点はrequired card集合へ自動的に合流させる。relationを残してendpointを捨てる状態を作らない。
+- relation全体が400件を超える場合、required relationを先に予約し、残りだけを従来の決定論的順序で埋める。required指定が空の既存callerでは従来結果を変えない。
+- `generate-narrative` は正規化可能な card-to-card `causal` / `negate` のrelation IDを明示的にrequired指定する。これにより「required endpoint <= 200 だが required logical relation > 400」のcharacterizationは、黙った欠落ではなく422で停止する契約になった。
+- 回帰テストでは (1) optional relation圧力下で末尾のrequired `negate` が残ること、(2) required relationがendpoint cardも保護すること、(3) 欠落IDを反射せずfail-closedすること、(4) required relation 401件でfail-closedすること、(5) narrative route統合を固定する。
+
+**非主張**: 本変更はproviderが報告するtoken数を測定したものではない。named provider/model実測は引き続き本Issueの別ゲートであり、A2/B/Cの最終選択をここでは行わない。

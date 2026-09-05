@@ -680,8 +680,8 @@ A2 contract test では次を機械判定する。
 5. 判定は切り詰め前の値で1度だけ行う。`over_cards = len(cards) > MAX_CARDS`、`over_relations = len(relations) > MAX_RELATIONS`、`over_text = sum(char_len) > MAX_TEXT_CHARS`。いずれかが真なら段階1を実施する。
 6. 段階2の「低位」は §3.2 の `rank` が**大きい**方（中心性が低い方）である。除外の順序を決める `rank` は**切り詰め前の全カード集合に対して1度だけ**算出し、以後の全段階でその値を使う（段階ごとに再計算すると除外順が入力規模に依存して揺れる）。`required_card_ids` が空なら従来どおり `rank <= MAX_CARDS` のカードだけを残す。required集合がある場合はrequired cardを先に保持し、`MAX_CARDS - len(required_card_ids)` の残り枠を `rank` の小さい順で埋める。理由コード `MAX_CARDS`。
    - IR へ出力する `graph_summary` と `cluster_candidates` は、**全段階の除外を終えた後の集合に対して算出する**。除外順の根拠に使う `rank`（切り詰め前）と、出力する `centrality`（切り詰め後）は別物である。こうしないと `graph_summary` が IR に存在しないカードを参照し、IR が参照的に閉じなくなる。
-7. 段階3では、除外カードを参照する `coordinates` / `islands[*].card_ids` / `evidence_links` も同時に除外する（参照整合を IR 内で保つ）。島は `card_ids` が空になっても保持する（§2.2A 規則7）。required card同士を結ぶ relation / evidence linkは、両端点が残る限り同じ参照整合規則によって保持される。
-8. 段階3の後もなお `len(relations) > MAX_RELATIONS` の場合、`(type, from, to)` 昇順で先頭 `MAX_RELATIONS` 件だけを残す。理由コード `MAX_RELATIONS`。
+7. 段階3では、除外カードを参照する `coordinates` / `islands[*].card_ids` / `evidence_links` も同時に除外する（参照整合を IR 内で保つ）。島は `card_ids` が空になっても保持する（§2.2A 規則7）。required card同士を結ぶ relation / evidence linkも、カード除外の段階では両端点が残る限り保持される。relation件数上限に対する保護は規則8および§5.2.2に従う。
+8. 段階3の後もなお `len(relations) > MAX_RELATIONS` の場合、callerが `required_relation_ids` を指定していればその正規化済みrelationを先に保持し、残り枠を `(type, from, to)` 昇順の非required relationで埋める。required集合が空なら従来どおり `(type, from, to)` 昇順で先頭 `MAX_RELATIONS` 件だけを残す。理由コード `MAX_RELATIONS`。
 9. 段階4は `text` だけでなく `text_norm` も `text_norm[:240]` へ揃え、`char_len = len(text_norm)` を再計算する。`char_len` を据え置くと `sum(char_len)` が減らず上限判定が永久に成立しない。理由コード `MAX_TEXT_CHARS`。
 10. 段階4の後もなお `sum(char_len) > MAX_TEXT_CHARS` の場合、`rank` の大きいカードから1枚ずつ除外し（そのたびに段階3と同じ参照整合の除外を行う）、上限内へ収める。required cardはこの追加除外の候補にしてはならない。required card以外をすべて除外しても `MAX_TEXT_CHARS` に収まらない場合は `required_card_budget_exceeded` でfail-closedし、route必須の意味を黙って削除しない。required指定が無い場合は従来どおりカードを最低1枚残す（§4.2 `cards.minItems = 1`）。理由コードは `MAX_TEXT_CHARS` のまま（新しいtruncation理由コードは増やさない）。
 
@@ -695,6 +695,20 @@ A2 contract test では次を機械判定する。
 4. required集合の入力順は選別結果へ影響させない。同一入力と同一required集合からは、required IDの列挙順が異なっても同一IRを生成する。
 5. required集合が空の場合、§5.2の切り詰め結果は本規則追加前と同一でなければならない。既存fixtureのcanonical JSON / SHA-256を変えてはならない。
 6. 現時点で `POST /ai/detect-contradiction` は `cardA.id` / `cardB.id` をrequired集合として渡す。この2枚と、その両端点に対応する `confirmed` / `held` の `evidence_links` は、人間が既に下した判断を再提案しないためのroute固有の必要意味である。
+7. `POST /ai/generate-narrative` は、正規化対象となる card-to-card `causal` / `negate` relation の両端点をrequired cardとして渡す。さらにrelation自体も§5.2.2の `required_relation_ids` として渡し、端点だけ残って論理接続が失われる状態を許可しない。
+
+### 5.2.2 route契約上の必須relation（`required_relation_ids`）
+
+`required_relation_ids` は、callerが「このAI操作の論理接続そのもの」として明示した正規化relationを、汎用的な件数切り詰めから保護するための**IRビルダー入力専用制約**である。relationの重要度をAIやIRビルダーが推測する仕組みではない。
+
+1. `required_relation_ids` はIRへ直列化しない。relation IDは§2.3の正規化後ID（`<type>:<fromId>:<toId>`）で指定する。
+2. required集合は正規化済み `relations.id` の部分集合でなければならない。欠落IDを含む場合は `required_relation_missing` でfail-closedし、失敗応答へ欠落IDそのものを反射してはならない。
+3. required集合の件数が `MAX_RELATIONS` を超える場合は `required_relation_budget_exceeded` でfail-closedする。
+4. required relationの両端点は自動的に `required_card_ids` と同じ保護集合へ加える。これによりrelationを保持しながら端点カードだけを切り落とすことを禁止する。結果として必要端点が `MAX_CARDS` を超える場合は `required_card_budget_exceeded` でfail-closedする。
+5. relation件数が `MAX_RELATIONS` を超える場合はrequired relationを先に全件保持し、残り枠を正規化済み `(type, from, to)` 昇順で埋め、最終配列も同じ順に再整列する。
+6. required集合の入力順は選別結果へ影響させない。同一入力と同一required集合からは同一IRを生成する。
+7. required集合が空の場合、relationの切り詰め結果は本規則追加前と同一でなければならない。既存fixtureのcanonical JSON / SHA-256を変えてはならない。
+8. `POST /ai/generate-narrative` は、§2.3で正規化可能な card-to-card `causal` / `negate` relationをrequired集合として渡す。required relationが `MAX_RELATIONS` を超える場合は、B型文章化の論理骨格を部分的に送信せずfail-closedする。
 
 ### 5.3 記録
 
