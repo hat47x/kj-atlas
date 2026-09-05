@@ -1,0 +1,39 @@
+name: Lane C audit remaining legacy Done once
+
+on:
+  push:
+    branches:
+      - audit/lane-c-remaining-legacy-done-20260905-r2
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: "github.event.head_commit.message == 'chore: remaining legacy Done監査を起動する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: rootに残るStatus Doneを列挙する
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          root = Path('01_Plans/issues')
+          rows = []
+          for p in sorted(root.glob('issue-*.md')):
+              text = p.read_text(encoding='utf-8')
+              m = re.search(r'^- Status:[ \t]*(.*)$', text, re.M)
+              if m and m.group(1).strip() == 'Done':
+                  rows.append(p.as_posix())
+          print(f'LEGACY_DONE_ROOT_COUNT={len(rows)}')
+          for row in rows:
+              print(row)
+          if len(rows) != 14:
+              raise SystemExit(f'expected 14, got {len(rows)}')
+          PY
