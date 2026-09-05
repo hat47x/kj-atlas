@@ -246,8 +246,8 @@ R20の測定値が得られたら、ルートごとに次の順で判断する�
 
 1. 300カードを全量投影した場合でも、対象model/providerの入力上限に対して十分な余裕があるなら、まずA2を比較対象の基準にする。単純で追跡しやすく、意味を落とす規則も増やさずに済むためである。
 2. 全量投影が入力予算へ近すぎる、または余裕が不足する場合は、BまたはCをルートごとに選ぶ。一つの方式を全AIルートへ強制しない。
-3. `generate-narrative` はBで必要な論理骨格が十分小さく保てるかを先に検証し、文書規模へ膨らむならCを比較する。
-4. `suggest-layout` は全体相対配置という性質上、Bだけで解くのが難しい。A2が安全でなければ、階層配置を伴うCを主な比較対象にする。
+4. `generate-narrative` はBで必要な論理骨格が十分小さく保てるかを先に検証し、文書規模へ膨らむならCを比較する。
+5. `suggest-layout` は全体相対配置という性質上、Bだけで解くのが難しい。A2が安全でなければ、階層配置を伴うCを主な比較対象にする。
 5. 方式を選んだ後に、その方式で実際に起こり得るcoverage lossの単位を定める。汎用的なloss metadataを先に作って設計を固定しない。
 
 現時点ではA2/B/Cのいずれも最終採択しない。R20の実測前にproduction上限やnarrative/layoutの投影方式を変更することもしない。
@@ -304,7 +304,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R37 run `33953053815` ではR23〜R37関連を含む73 test・ruff・`git diff --check` が成功した。provider実測reportについてもR32/R33/R35/R37でroute/task/provider/model/usage、canonical user prompt fingerprint、primary call provenanceに加え、DeepSeekでは実transportが送るsystem+user message content fingerprintまでfail-closed検証を固定した。恒久workflowの有無とは分けて記録する。
+- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R39 run `33954945719` ではR23〜R39関連を含む77 test・ruff・`git diff --check` が成功した。provider実測reportについてもR32/R33/R35/R37でroute/task/provider/model/usage、canonical user prompt fingerprint、primary call provenanceに加え、DeepSeekでは実transportが送るsystem+user message content fingerprintまでfail-closed検証を固定し、R39ではmeasurementの `max_tokens=1` と現行production output reserveを分離したcontext hard-fit計算を固定した。恒久workflowの有無とは分けて記録する。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
@@ -335,16 +335,17 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_layout_hierarchical_composition.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
-  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usage、canonical user prompt SHA-256、primary call provenanceを含むmeasurement reportを保存する。DeepSeekの場合はさらに、実transportと同じbuilderから得たsystem+user message contentのprovider-input SHA-256を保存する。保存reportは `scripts/analyze_ai_route_provider_measurement.py` を通し、route/task/provider/model/usage/user-prompt fingerprint、transport/requested_at/trace_id、fallbackなし、primary execution pathに加え、DeepSeekではprovider-input fingerprintが現在のtransport inputと一致した場合だけ方式比較の入力にする。
+  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usage、canonical user prompt SHA-256、primary call provenanceを含むmeasurement reportを保存する。DeepSeekの場合はさらに、実transportと同じbuilderから得たsystem+user message contentのprovider-input SHA-256を保存する。保存reportは `scripts/analyze_ai_route_provider_measurement.py` を通し、route/task/provider/model/usage/user-prompt fingerprint、transport/requested_at/trace_id、fallbackなし、primary execution pathに加え、DeepSeekではprovider-input fingerprintが現在のtransport inputと一致した場合だけ方式比較の入力にする。named model/providerの文書化されたcontext-window値を確認できる場合は `--context-window-tokens` を明示し、provider-reported input usageに現行production output reserveを加えた最低context必要量がhard-fitするかを別途確認する。hard-fitはR21の「十分な余裕」そのものとは扱わない。
   - 外部LLMを呼ばない通常の回帰では、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
 
 ## 次の判断順序
 
-1. **named provider/modelの実入力tokenを測り、保存reportをR32/R33/R35/R37 analyzerへ通す。** R37まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。reportにはexact UTF-8 user promptのSHA-256とprimary provider call provenanceを含め、DeepSeekでは実transportが送るsystem+user message contentのSHA-256も含める。現在のcanonical builder/transport inputと一致しないstale/legacy report、fallback/non-primary call、trace欠落reportは比較根拠へ使わない。
-2. analyzerが `decision_ready=true` と判定したprovider-reported usageだけをR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。ここでの `decision_ready` はmeasurement reportの内部整合性だけを意味し、方式採択そのものではない。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
+1. **named provider/modelの実入力tokenを測り、保存reportをR32/R33/R35/R37/R39 analyzerへ通す。** R37まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。reportにはexact UTF-8 user promptのSHA-256とprimary provider call provenanceを含め、DeepSeekでは実transportが送るsystem+user message contentのSHA-256も含める。現在のcanonical builder/transport inputと一致しないstale/legacy report、fallback/non-primary call、trace欠落reportは比較根拠へ使わない。
+2. analyzerが `decision_ready=true` と判定したprovider-reported usageについて、named model/providerの文書化されたcontext-window値を確認できる場合はR39の `--context-window-tokens` で **input usage + 現行production output reserve** のhard-fitを確認する。layout Cは31件aggregateではなく最大単一requestを対象にする。context-window値が未確認ならhard-fitを推測しない。
+3. hard-fitを満たすこととR21の「十分な余裕」は分ける。安全余裕policyを後付けで捏造せず、provider/modelの制約・実測値・必要なら実model品質を根拠にA2/B/Cを**ルートごと**に比較する。ここでの `decision_ready` と `hard_context_fit` は方式採択そのものではない。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
 3. `generate-narrative` の `causal` / `negate` はR22までにendpointとrelationの両方をrequired保護した。required card >200 / required relation >400は既にfail-closedであり、今後の判断対象は主にnamed provider/model上のtoken余裕と、文書規模でA2/B/Cのどれが妥当かである。
 4. `suggest-layout` のCはR25/R27でmeasurement-only候補として、決定論的partitionとlocal/global合成まで具体化済みである。A2/B/Cの採択は、provider-reported token usageと、必要なら実model出力の配置品質・latency・failure rateを比較してから行う。
-5. coverage-loss metadataは方式決定後に、その方式で本当に検証すべき欠落単位へ合わせて追加する。先に汎用メタデータだけを増やさない。
+6. coverage-loss metadataは方式決定後に、その方式で本当に検証すべき欠落単位へ合わせて追加する。先に汎用メタデータだけを増やさない。
 
 ## 完了境界
 
@@ -668,3 +669,11 @@ R39では `analyze_ai_route_provider_measurement.py` にcontext budget summary�
 branch-only GitHub Actions run `33954945719` でR23〜R39関連を含む **77 test**、ruff、`git diff --check` が成功した。一時patch/workflowは同run内で自己削除した。
 
 **非主張**: R39は実modelのcontext-window値を決めず、外部providerを呼ばず、実token値・cost・latency・品質・安全余裕policyを取得/決定していない。A2/B/C採択、production cap/route、SafeMode・防PII・structured-text-only・proposal-only境界は未変更であり、未完了ACは完了扱いにしない。
+
+## R40 — R39後のcontext hard-fit手順をIssue前半へ同期
+
+R39でprovider-reported input usageと現行production output reserveを分離し、operatorがnamed model/providerの文書化されたcontext-window値を明示した場合だけhard-fitを計算できるようになったため、Issue前半の受入条件注記・実使用確認・次の判断順序を現行実装へ同期した。
+
+実測後の順序は、(1) R32/R33/R35/R37のmeasurement provenance/identity検証、(2) R39の `input + production output reserve` hard-fit確認、(3) R21の「十分な余裕」と方式比較、の三段階とする。layout Cではaggregate usageをcontext windowへ誤適用せず最大単一requestを使う。hard-fitと安全余裕policyは同一視しない。
+
+本同期はdocs-onlyであり、外部provider実測、context-window値の推測、A2/B/C採択、production cap/route変更、未完了ACの完了化を行わない。
