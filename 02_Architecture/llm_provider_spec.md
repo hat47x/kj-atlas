@@ -63,12 +63,14 @@ KJ_ATLAS_LARGE_SCALE_LLM_MODEL=<model_id>
 KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 KJ_ATLAS_DEEPSEEK_API_KEY=<secret>
 KJ_ATLAS_DEEPSEEK_BASE_URL=https://api.deepseek.com
-KJ_ATLAS_DEEPSEEK_MODEL=deepseek-chat
+KJ_ATLAS_DEEPSEEK_MODEL=deepseek-v4-flash
+KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled
 ```
 
 - `KJ_ATLAS_LLM_PROVIDER=none` を既定値とする。
 - `KJ_ATLAS_LLM_PROVIDER=external` は `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
 - `KJ_ATLAS_LLM_PROVIDER=deepseek` は `KJ_ATLAS_DEEPSEEK_API_KEY` を必須とし、未設定時は起動を拒否する。
+- `KJ_ATLAS_DEEPSEEK_THINKING_MODE` は `disabled|enabled`。既定 `disabled` は旧 `deepseek-chat` のnon-thinking semanticsを維持する。
 
 ### 3.1 AI-MODEL-GOVERNANCE-03: per-model動的dispatch（2026-08-27追記）
 

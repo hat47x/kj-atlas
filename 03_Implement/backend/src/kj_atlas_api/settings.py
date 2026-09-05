@@ -248,6 +248,7 @@ LEGACY_ENV_KEYS = {
     "DEEPSEEK_API_KEY",
     "DEEPSEEK_BASE_URL",
     "DEEPSEEK_MODEL",
+    "DEEPSEEK_THINKING_MODE",
     "API_KEY",
     "AUDIT_EXPORT_ENABLED",
     "AUDIT_TRANSPORT",
@@ -340,9 +341,16 @@ class Settings(BaseSettings):
         default="https://api.deepseek.com",
         validation_alias="KJ_ATLAS_DEEPSEEK_BASE_URL",
     )
+    # DeepSeek retired the legacy deepseek-chat/deepseek-reasoner aliases on 2026-07-24.
+    # V4 enables thinking by default, but the historical KJ Atlas deepseek-chat default
+    # was non-thinking. Preserve that behavior explicitly unless the operator opts in.
     deepseek_model: str = Field(
-        default="deepseek-chat",
+        default="deepseek-v4-flash",
         validation_alias="KJ_ATLAS_DEEPSEEK_MODEL",
+    )
+    deepseek_thinking_mode: str = Field(
+        default="disabled",
+        validation_alias="KJ_ATLAS_DEEPSEEK_THINKING_MODE",
     )
     # AI-ROUTE-01 MMR-04: high-reasoning model for final_judgement tasks
     # (check_narrative, detect_contradiction).
@@ -582,7 +590,7 @@ class Settings(BaseSettings):
         validation_alias="KJ_ATLAS_AUTH_SUBJECT_FIELD",
     )
     # ADR-0065: per-task model override (comma-separated task=model pairs).
-    # Example: "re_layout=deepseek-chat,generate_narrative=deepseek-reasoner"
+    # Example: "re_layout=deepseek-v4-flash,generate_narrative=deepseek-v4-pro"
     # Unlisted tasks use the default model (local_llm_model).
     llm_task_model_map: str = Field(
         default="",
@@ -765,6 +773,16 @@ class Settings(BaseSettings):
             value=self.large_scale_llm_model,
             value_key="KJ_ATLAS_LARGE_SCALE_LLM_MODEL",
         )
+        _validate_optional_llm_model_id(
+            value=self.deepseek_model,
+            value_key="KJ_ATLAS_DEEPSEEK_MODEL",
+        )
+        normalized_deepseek_thinking_mode = self.deepseek_thinking_mode.strip().lower()
+        if normalized_deepseek_thinking_mode not in {"disabled", "enabled"}:
+            raise ValueError(
+                "KJ_ATLAS_DEEPSEEK_THINKING_MODE must be one of disabled|enabled"
+            )
+        self.deepseek_thinking_mode = normalized_deepseek_thinking_mode
         self.large_scale_llm_allowlist = _normalize_llm_allowlist(
             self.large_scale_llm_allowlist
         )

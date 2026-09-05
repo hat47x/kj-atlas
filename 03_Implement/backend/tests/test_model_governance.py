@@ -430,7 +430,7 @@ def test_admin_surface_requires_control_plane(tmp_path, monkeypatch) -> None:
 def test_env_seeding_registers_provider_and_model(tmp_path, monkeypatch) -> None:
     """U4: the env-configured provider/model is seeded into the registry."""
     monkeypatch.setattr(settings, "llm_provider", "deepseek")
-    monkeypatch.setattr(settings, "deepseek_model", "deepseek-chat")
+    monkeypatch.setattr(settings, "deepseek_model", "deepseek-v4-flash")
     from kj_atlas_api.model_registry_seed import seed_registry_from_env
 
     engine = create_engine(f"sqlite:///{tmp_path / 'seed.sqlite3'}")
@@ -441,7 +441,7 @@ def test_env_seeding_registers_provider_and_model(tmp_path, monkeypatch) -> None
 
     with session_local() as db:
         assert db.get(LLMProviderRegistryRow, "deepseek") is not None
-        assert db.get(LLMModelRegistryRow, "deepseek-chat") is not None
+        assert db.get(LLMModelRegistryRow, "deepseek-v4-flash") is not None
 
 
 def test_allowlist_repository_semantics(tmp_path, monkeypatch) -> None:
