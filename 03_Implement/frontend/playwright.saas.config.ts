@@ -2,7 +2,10 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "tenant_session_multitab.spec.ts",
+  testMatch: [
+    "tenant_session_multitab.spec.ts",
+    "tenant_session_round8_acceptance.spec.ts",
+  ],
   timeout: 30_000,
   retries: 0,
   workers: 1,
