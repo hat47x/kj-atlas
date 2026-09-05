@@ -6,12 +6,23 @@ import sys
 from pathlib import Path
 
 from scripts import analyze_ai_route_provider_measurement as analysis
+from scripts import measure_ai_route_provider_tokens as token_measure
 
 
-def _row(tokens: int, *, task: str, prompt_bytes: int = 999_999) -> dict:
+def _row(
+    tokens: int,
+    *,
+    task: str,
+    prompt_sha256: str,
+    prompt_bytes: int = 999_999,
+) -> dict:
     return {
         "task": task,
-        "prompt": {"unicode_chars": 123_456, "utf8_bytes": prompt_bytes},
+        "prompt": {
+            "unicode_chars": 123_456,
+            "utf8_bytes": prompt_bytes,
+            "sha256": prompt_sha256,
+        },
         "provider_reported": {"input_tokens": tokens, "output_tokens": 1},
         "actual_provider": "named-provider",
         "actual_provider_kind": "test",
@@ -21,6 +32,7 @@ def _row(tokens: int, *, task: str, prompt_bytes: int = 999_999) -> dict:
 
 
 def _core_report() -> dict:
+    requests = token_measure.build_representative_requests("named-model")
     values = {
         "suggest-card-groups": 4_000,
         "suggest-card-groups-route-b": 5_000,
@@ -36,8 +48,13 @@ def _core_report() -> dict:
         "expected_model": "named-model",
         "executed": True,
         "measurement_complete": True,
+        "prompt_fingerprint": analysis.PROMPT_FINGERPRINT.copy(),
         "routes": {
-            name: _row(tokens, task=analysis.CORE_ROUTE_TASKS[name])
+            name: _row(
+                tokens,
+                task=analysis.CORE_ROUTE_TASKS[name],
+                prompt_sha256=token_measure._prompt_sha256(requests[name].prompt),
+            )
             for name, tokens in values.items()
         },
         "layout_c_summary": {"included": False, "requests": 0},
@@ -45,12 +62,22 @@ def _core_report() -> dict:
 
 
 def _add_complete_layout_c(report: dict) -> None:
+    requests = token_measure.build_representative_requests(
+        "named-model", include_layout_c=True
+    )
     for index in range(1, 31):
-        report["routes"][f"suggest-layout-c-local-{index:02d}"] = _row(
+        name = f"suggest-layout-c-local-{index:02d}"
+        report["routes"][name] = _row(
             100 + index,
             task="re_layout",
+            prompt_sha256=token_measure._prompt_sha256(requests[name].prompt),
         )
-    report["routes"]["suggest-layout-c-global"] = _row(900, task="re_layout")
+    name = "suggest-layout-c-global"
+    report["routes"][name] = _row(
+        900,
+        task="re_layout",
+        prompt_sha256=token_measure._prompt_sha256(requests[name].prompt),
+    )
 
 
 def test_complete_core_report_is_ready_and_uses_only_provider_usage() -> None:
@@ -83,9 +110,15 @@ def test_complete_core_report_is_ready_and_uses_only_provider_usage() -> None:
 
 def test_groups_a2_adds_only_provider_reported_comparison() -> None:
     report = _core_report()
+    requests = token_measure.build_representative_requests(
+        "named-model", include_groups_a2=True
+    )
     report["routes"][analysis.GROUPS_A2_ROUTE] = _row(
         5_750,
         task="suggest_card_groups",
+        prompt_sha256=token_measure._prompt_sha256(
+            requests[analysis.GROUPS_A2_ROUTE].prompt
+        ),
         prompt_bytes=56_047,
     )
 
@@ -118,7 +151,15 @@ def test_layout_c_requires_exact_canonical_31_provider_rows() -> None:
 
 def test_partial_layout_c_fails_closed_instead_of_aggregating() -> None:
     report = _core_report()
-    report["routes"]["suggest-layout-c-local-01"] = _row(101, task="re_layout")
+    requests = token_measure.build_representative_requests(
+        "named-model", include_layout_c=True
+    )
+    name = "suggest-layout-c-local-01"
+    report["routes"][name] = _row(
+        101,
+        task="re_layout",
+        prompt_sha256=token_measure._prompt_sha256(requests[name].prompt),
+    )
 
     result = analysis.analyze(report)
 
@@ -134,7 +175,11 @@ def test_layout_c_wrong_route_name_cannot_pass_by_count_alone() -> None:
     report = _core_report()
     _add_complete_layout_c(report)
     del report["routes"]["suggest-layout-c-local-30"]
-    report["routes"]["suggest-layout-c-local-99"] = _row(199, task="re_layout")
+    report["routes"]["suggest-layout-c-local-99"] = _row(
+        199,
+        task="re_layout",
+        prompt_sha256="0" * 64,
+    )
 
     result = analysis.analyze(report)
 
@@ -156,6 +201,27 @@ def test_wrong_task_identity_fails_closed() -> None:
     assert result["decision_ready"] is False
     assert result["core_ready"] is False
     assert "task-mismatch:suggest-layout" in result["errors"]
+
+
+def test_changed_prompt_fingerprint_fails_closed() -> None:
+    report = _core_report()
+    report["routes"]["suggest-layout-route-b"]["prompt"]["sha256"] = "0" * 64
+
+    result = analysis.analyze(report)
+
+    assert result["decision_ready"] is False
+    assert result["core_ready"] is False
+    assert "prompt-fingerprint-mismatch:suggest-layout-route-b" in result["errors"]
+
+
+def test_legacy_report_without_fingerprint_contract_fails_closed() -> None:
+    report = _core_report()
+    del report["prompt_fingerprint"]
+
+    result = analysis.analyze(report)
+
+    assert result["decision_ready"] is False
+    assert "unsupported-or-missing-prompt-fingerprint" in result["errors"]
 
 
 def test_missing_usage_and_provider_mismatch_fail_closed() -> None:

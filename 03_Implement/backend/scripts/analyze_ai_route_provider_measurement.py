@@ -25,8 +25,22 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from scripts.measure_ai_route_provider_tokens import (
+        _prompt_sha256,
+        build_representative_requests,
+    )
+except ModuleNotFoundError as exc:
+    if exc.name != "scripts":
+        raise
+    from measure_ai_route_provider_tokens import (
+        _prompt_sha256,
+        build_representative_requests,
+    )
+
 MEASUREMENT_NAME = "ai-route-provider-reported-input-tokens"
 SCENARIO_NAME = "300-cards-30-islands-ring"
+PROMPT_FINGERPRINT = {"algorithm": "sha256", "encoding": "utf-8"}
 CORE_ROUTE_TASKS = {
     "suggest-card-groups": "suggest_card_groups",
     "suggest-card-groups-route-b": "suggest_card_groups",
@@ -59,6 +73,7 @@ def _validate_measured_route(
     expected_task: str,
     expected_provider: str,
     expected_model: str,
+    expected_prompt_sha256: str | None,
     errors: list[str],
 ) -> int | None:
     if not isinstance(row, dict):
@@ -66,6 +81,16 @@ def _validate_measured_route(
         return None
     if row.get("task") != expected_task:
         errors.append(f"task-mismatch:{name}")
+        return None
+    prompt = row.get("prompt")
+    if not isinstance(prompt, dict):
+        errors.append(f"prompt-diagnostics-missing:{name}")
+        return None
+    if expected_prompt_sha256 is None:
+        errors.append(f"canonical-prompt-missing:{name}")
+        return None
+    if prompt.get("sha256") != expected_prompt_sha256:
+        errors.append(f"prompt-fingerprint-mismatch:{name}")
         return None
     if row.get("status") != "measured":
         errors.append(f"route-not-measured:{name}:{row.get('status')}")
@@ -97,6 +122,8 @@ def analyze(report: Any) -> dict[str, Any]:
         errors.append("unexpected-measurement-kind")
     if report.get("scenario") != SCENARIO_NAME:
         errors.append("unexpected-scenario")
+    if report.get("prompt_fingerprint") != PROMPT_FINGERPRINT:
+        errors.append("unsupported-or-missing-prompt-fingerprint")
 
     expected_provider = report.get("expected_provider")
     expected_model = report.get("expected_model")
@@ -116,6 +143,23 @@ def analyze(report: Any) -> dict[str, Any]:
         errors.append("routes-not-object")
         routes = {}
 
+    include_groups_a2 = GROUPS_A2_ROUTE in routes
+    include_layout_c = any(name.startswith(LAYOUT_C_PREFIX) for name in routes)
+    canonical_requests = (
+        build_representative_requests(
+            expected_model,
+            include_groups_a2=include_groups_a2,
+            include_layout_c=include_layout_c,
+        )
+        if expected_model
+        else {}
+    )
+    canonical_prompt_hashes = {
+        name: _prompt_sha256(req.prompt) for name, req in canonical_requests.items()
+    }
+    for unexpected in sorted(set(routes) - set(canonical_requests)):
+        errors.append(f"unexpected-route:{unexpected}")
+
     tokens: dict[str, int] = {}
     for name, expected_task in CORE_ROUTE_TASKS.items():
         if name not in routes:
@@ -127,6 +171,7 @@ def analyze(report: Any) -> dict[str, Any]:
             expected_task=expected_task,
             expected_provider=expected_provider,
             expected_model=expected_model,
+            expected_prompt_sha256=canonical_prompt_hashes.get(name),
             errors=errors,
         )
         if token is not None:
@@ -140,6 +185,7 @@ def analyze(report: Any) -> dict[str, Any]:
             expected_task="suggest_card_groups",
             expected_provider=expected_provider,
             expected_model=expected_model,
+            expected_prompt_sha256=canonical_prompt_hashes.get(GROUPS_A2_ROUTE),
             errors=errors,
         )
         if token is not None:
@@ -162,6 +208,7 @@ def analyze(report: Any) -> dict[str, Any]:
                 expected_task="re_layout",
                 expected_provider=expected_provider,
                 expected_model=expected_model,
+                expected_prompt_sha256=canonical_prompt_hashes.get(name),
                 errors=errors,
             )
             if token is not None and name in expected_layout_c:
@@ -254,7 +301,8 @@ def analyze(report: Any) -> dict[str, Any]:
         },
         "interpretation_boundary": (
             "All token observations and deltas come only from provider_reported.input_tokens. "
-            "Prompt bytes/chars are never converted into tokens. This report does not know the "
+            "Prompt SHA-256 is used only for exact UTF-8 prompt identity/provenance; bytes, chars, "
+            "and hashes are never converted into tokens. This report does not know the "
             "model context limit or choose A2/B/C; optional A2/C readiness only records whether "
             "those explicit measurements are present and internally complete."
         ),
