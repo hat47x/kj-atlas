@@ -1,0 +1,60 @@
+name: Lane C close SaaS tenant E2E instrumentation once
+
+on:
+  push:
+    branches:
+      - docs/lane-c-close-saas-tenant-e2e-instrumentation-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    if: "github.event.head_commit.message == 'chore: SaaS generation guard台帳同期workflowを起動する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: SaaS generation guard台帳を同期する
+        run: python .github/scripts/lane_c_close_saas_tenant_e2e_instrumentation_once.py
+      - name: Issue lifecycle tests
+        run: python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+      - name: Planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Active issue memo validation
+        run: python 01_Plans/issues/validate_active_issue_memos.py
+      - name: Documentation contract check
+        run: python 01_Plans/docs_check.py
+      - name: Live triage
+        run: python 01_Plans/triage_actionable_plans.py --format json
+      - name: Verify old child path is gone
+        shell: bash
+        run: |
+          set -euo pipefail
+          old='01_Plans/issues/issue-SAAS-TENANT-E2E-01-ai-mutation-guard-instrumentation-gap.md'
+          if git grep -n -F "$old" -- ':!.github/scripts/lane_c_close_saas_tenant_e2e_instrumentation_once.py'; then
+            echo 'old active-root child path remains' >&2
+            exit 1
+          fi
+      - name: Stale merge reintroduction check
+        shell: bash
+        run: |
+          if [ -f 01_Plans/check_stale_merge_reintroduction.py ]; then
+            python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong
+          fi
+      - name: Diff check
+        run: git diff --check
+      - name: 検証済み同期をbranchへ記録する
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'hat47x'
+          git config user.email 'hat47x@gmail.com'
+          git add -A
+          git commit -m 'docs: SaaS generation guard台帳を現行証拠へ同期する'
+          git push origin HEAD
