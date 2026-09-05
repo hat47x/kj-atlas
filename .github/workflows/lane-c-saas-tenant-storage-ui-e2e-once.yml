@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   patch-and-verify:
-    if: "github.event.head_commit.message == 'chore: run SaaS tenant storage UI E2E validation'"
+    if: "github.event.head_commit.message == 'chore: rerun SaaS tenant storage UI E2E validation'"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -22,6 +22,13 @@ jobs:
           python-version: '3.12'
       - name: Apply scoped UI E2E patch
         run: python .github/scripts/lane_c_add_saas_tenant_storage_ui_e2e_once.py
+      - name: Normalize generated text EOF
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("03_Implement/frontend/e2e/tenant_session_multitab.spec.ts")
+          path.write_text(path.read_text(encoding="utf-8").rstrip() + "\n", encoding="utf-8")
+          PY
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
