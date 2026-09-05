@@ -175,6 +175,7 @@ def _context_budget_summary(
     *,
     layout_c_tokens: list[int],
     context_window_tokens: int | None,
+    context_window_source: str | None,
 ) -> dict[str, Any]:
     """Separate measured input usage from the current production output reserve.
 
@@ -187,6 +188,18 @@ def _context_budget_summary(
         or context_window_tokens <= 0
     ):
         raise ValueError("context_window_tokens must be a positive integer")
+    if context_window_tokens is None:
+        if context_window_source is not None:
+            raise ValueError(
+                "context_window_source requires context_window_tokens"
+            )
+        normalized_context_window_source = None
+    else:
+        if not isinstance(context_window_source, str) or not context_window_source.strip():
+            raise ValueError(
+                "context_window_source is required when context_window_tokens is supplied"
+            )
+        normalized_context_window_source = context_window_source.strip()
 
     route_requirements: dict[str, dict[str, Any]] = {}
     for name in sorted(tokens):
@@ -229,8 +242,11 @@ def _context_budget_summary(
         ),
         "output_reserve_source": "LLMRequest.default.max_tokens",
         "context_window_tokens": context_window_tokens,
-        "context_window_source": (
-            "operator-supplied" if context_window_tokens is not None else None
+        "context_window_source": normalized_context_window_source,
+        "context_window_source_kind": (
+            "operator-supplied-document-reference"
+            if normalized_context_window_source is not None
+            else None
         ),
         "route_requirements": route_requirements,
         "core_hard_context_fit": _all_fit(
@@ -251,7 +267,9 @@ def _context_budget_summary(
         "interpretation": (
             "minimum_context_tokens = provider-reported input_tokens + the current "
             "production LLMRequest output reserve. A supplied context window only "
-            "answers hard fit; this analyzer does not define a safety-margin percentage."
+            "answers hard fit and must carry an operator-supplied documentation reference; "
+            "the analyzer records but does not verify that reference. It does not define a "
+            "safety-margin percentage."
         ),
     }
 
@@ -260,6 +278,7 @@ def analyze(
     report: Any,
     *,
     context_window_tokens: int | None = None,
+    context_window_source: str | None = None,
 ) -> dict[str, Any]:
     """Return a fail-closed comparison-readiness summary for one saved report."""
     errors: list[str] = []
@@ -464,6 +483,7 @@ def analyze(
         tokens,
         layout_c_tokens=layout_c_tokens,
         context_window_tokens=context_window_tokens,
+        context_window_source=context_window_source,
     )
 
     return {
@@ -489,8 +509,10 @@ def analyze(
             "and hashes are never converted into tokens. DeepSeek measurements additionally bind "
             "the exact current OpenAI-chat system+user message content. Context minimums add the "
             "current production LLMRequest output reserve to provider-reported input usage; an "
-            "operator-supplied context window can establish hard fit only. No safety-margin "
-            "percentage is invented and this analyzer does not choose A2/B/C."
+            "operator-supplied context window can establish hard fit only when its documentation "
+            "reference is recorded. The reference is provenance, not independently verified by "
+            "this analyzer. No safety-margin percentage is invented and this analyzer does not "
+            "choose A2/B/C."
         ),
     }
 
@@ -525,6 +547,14 @@ def _parser() -> argparse.ArgumentParser:
             "or define an architectural safety-margin percentage."
         ),
     )
+    parser.add_argument(
+        "--context-window-source",
+        default=None,
+        help=(
+            "Required with --context-window-tokens: provider/model documentation URL, "
+            "document identifier, or equivalent audit reference for that context-window value."
+        ),
+    )
     return parser
 
 
@@ -534,12 +564,19 @@ def main() -> int:
         result = analyze(
             _load(args.report),
             context_window_tokens=args.context_window_tokens,
+            context_window_source=args.context_window_source,
         )
     except (OSError, json.JSONDecodeError) as exc:
         result = {
             "analysis": "ai-route-provider-measurement-readiness",
             "decision_ready": False,
             "errors": [f"measurement-report-read-error:{type(exc).__name__}"],
+        }
+    except ValueError as exc:
+        result = {
+            "analysis": "ai-route-provider-measurement-readiness",
+            "decision_ready": False,
+            "errors": [f"context-window-argument-error:{exc}"],
         }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result.get("decision_ready") else 2

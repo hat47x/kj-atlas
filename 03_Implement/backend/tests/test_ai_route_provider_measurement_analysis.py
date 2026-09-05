@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from scripts import analyze_ai_route_provider_measurement as analysis
 from scripts import measure_ai_route_provider_tokens as token_measure
 
@@ -141,12 +143,17 @@ def test_context_budget_separates_measurement_cap_from_production_output_reserve
 
 
 def test_context_window_option_reports_hard_fit_without_inventing_margin() -> None:
-    result = analysis.analyze(_core_report(), context_window_tokens=10_000)
+    result = analysis.analyze(
+        _core_report(),
+        context_window_tokens=10_000,
+        context_window_source=" https://provider.example/models/named-model ",
+    )
 
     budget = result["context_budget"]
     assert result["decision_ready"] is True
     assert budget["context_window_tokens"] == 10_000
-    assert budget["context_window_source"] == "operator-supplied"
+    assert budget["context_window_source"] == "https://provider.example/models/named-model"
+    assert budget["context_window_source_kind"] == "operator-supplied-document-reference"
     assert budget["core_hard_context_fit"] is False
     assert budget["route_requirements"]["suggest-layout-route-b"]["minimum_context_tokens"] == 10_000
     assert budget["route_requirements"]["suggest-layout-route-b"]["remaining_context_tokens"] == 0
@@ -160,7 +167,11 @@ def test_layout_c_context_budget_uses_max_single_request_not_aggregate() -> None
     report = _core_report()
     _add_complete_layout_c(report)
 
-    result = analysis.analyze(report, context_window_tokens=3_000)
+    result = analysis.analyze(
+        report,
+        context_window_tokens=3_000,
+        context_window_source="provider-doc: named-model context window",
+    )
 
     budget = result["context_budget"]
     assert result["layout_c_ready"] is True
@@ -168,6 +179,25 @@ def test_layout_c_context_budget_uses_max_single_request_not_aggregate() -> None
     assert budget["layout_c_hard_context_fit"] is True
     # Aggregate C input usage is a cost/throughput observation, not one context window.
     assert result["observations"]["layout"]["layout_c_aggregate_input_tokens"] > 3_000
+
+
+def test_context_window_tokens_require_documentation_source() -> None:
+    with pytest.raises(
+        ValueError,
+        match="context_window_source is required",
+    ):
+        analysis.analyze(_core_report(), context_window_tokens=10_000)
+
+
+def test_context_window_source_cannot_exist_without_token_value() -> None:
+    with pytest.raises(
+        ValueError,
+        match="context_window_source requires context_window_tokens",
+    ):
+        analysis.analyze(
+            _core_report(),
+            context_window_source="https://provider.example/models/named-model",
+        )
 
 
 def test_groups_a2_adds_only_provider_reported_comparison() -> None:
@@ -370,6 +400,8 @@ def test_cli_accepts_explicit_context_window_for_hard_fit_only(tmp_path: Path) -
             str(report_path),
             "--context-window-tokens",
             "10000",
+            "--context-window-source",
+            "https://provider.example/models/named-model",
         ],
         cwd=backend_dir,
         check=True,
@@ -380,9 +412,40 @@ def test_cli_accepts_explicit_context_window_for_hard_fit_only(tmp_path: Path) -
 
     assert result["decision_ready"] is True
     assert result["context_budget"]["context_window_tokens"] == 10_000
+    assert result["context_budget"]["context_window_source"] == (
+        "https://provider.example/models/named-model"
+    )
     assert result["context_budget"]["core_hard_context_fit"] is False
     assert result["context_budget"]["sufficient_headroom_policy"] is None
 
+
+
+def test_cli_rejects_context_window_without_source(tmp_path: Path) -> None:
+    backend_dir = Path(__file__).resolve().parents[1]
+    report_path = tmp_path / "measurement.json"
+    report_path.write_text(json.dumps(_core_report()), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/analyze_ai_route_provider_measurement.py",
+            str(report_path),
+            "--context-window-tokens",
+            "10000",
+        ],
+        cwd=backend_dir,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout)
+
+    assert completed.returncode == 2
+    assert result["decision_ready"] is False
+    assert result["errors"] == [
+        "context-window-argument-error:context_window_source is required when "
+        "context_window_tokens is supplied"
+    ]
 
 
 def test_cli_returns_nonzero_for_incomplete_report(tmp_path: Path) -> None:
