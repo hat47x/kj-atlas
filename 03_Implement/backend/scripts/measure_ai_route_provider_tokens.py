@@ -63,6 +63,9 @@ try:
     from scripts.measure_ai_layout_hierarchical_candidate import (
         build_hierarchical_layout_candidate,
     )
+    from scripts.measure_ai_route_a2_candidate import (
+        _temporary_representative_fit_budget,
+    )
     from scripts.measure_ai_route_prompt_coverage import representative_document
     from scripts.measure_ai_route_projection_candidates import (
         _groups_candidate_context,
@@ -74,6 +77,9 @@ except ModuleNotFoundError as exc:
         raise
     from measure_ai_layout_hierarchical_candidate import (
         build_hierarchical_layout_candidate,
+    )
+    from measure_ai_route_a2_candidate import (
+        _temporary_representative_fit_budget,
     )
     from measure_ai_route_prompt_coverage import representative_document
     from measure_ai_route_projection_candidates import (
@@ -106,7 +112,10 @@ def _representative_check_narrative_text(doc: dict[str, Any]) -> str:
 
 
 def build_representative_requests(
-    model: str, *, include_layout_c: bool = False
+    model: str,
+    *,
+    include_layout_c: bool = False,
+    include_groups_a2: bool = False,
 ) -> dict[str, LLMRequest]:
     """同じ代表規模でcurrent投影・route-B候補・全量routeを比較する。
 
@@ -141,6 +150,21 @@ def build_representative_requests(
     groups_b_prompt = _build_suggest_card_groups_prompt(
         groups_payload, groups_b_context, groups_b_candidate_ids
     )
+
+    groups_a2_ir: dict[str, Any] | None = None
+    groups_a2_prompt: str | None = None
+    if include_groups_a2:
+        # R29 measurement-only A2 lower bound. The context manager temporarily
+        # fits this synthetic fixture and restores production caps before any
+        # provider request can be sent.
+        with _temporary_representative_fit_budget(groups_payload.doc):
+            groups_a2_ir = _suggest_card_groups_ir(groups_payload)
+        groups_a2_candidate_ids, _ = _card_group_candidates(
+            groups_payload, groups_a2_ir
+        )
+        groups_a2_prompt = _build_suggest_card_groups_prompt(
+            groups_payload, groups_a2_ir, groups_a2_candidate_ids
+        )
 
     layout_doc = _late_layout_document()
     layout_payload = SuggestLayoutRequest.model_validate({"doc": layout_doc})
@@ -214,6 +238,20 @@ def build_representative_requests(
             model=model,
         ),
     }
+
+    if include_groups_a2:
+        assert groups_a2_ir is not None
+        assert groups_a2_prompt is not None
+        requests["suggest-card-groups-a2-lower-bound"] = LLMRequest(
+            task="suggest_card_groups",
+            prompt=groups_a2_prompt,
+            # Measurement-only R29 lower-bound shared IR, not a production cap
+            # or production projection contract.
+            inputs=groups_a2_ir,
+            temperature=0.0,
+            max_tokens=1,
+            model=model,
+        )
 
     if include_layout_c:
         layout_c = build_hierarchical_layout_candidate(layout_doc)
@@ -319,6 +357,7 @@ def measure(
     execute: bool = False,
     provider: _Provider | None = None,
     include_layout_c: bool = False,
+    include_groups_a2: bool = False,
 ) -> dict[str, Any]:
     """計測レポートを作成し、明示的に許可された場合だけプロバイダーを呼び出す。
 
@@ -332,7 +371,9 @@ def measure(
         raise ValueError("`expected_provider` にはプロバイダー名を指定してください")
 
     requests = build_representative_requests(
-        model, include_layout_c=include_layout_c
+        model,
+        include_layout_c=include_layout_c,
+        include_groups_a2=include_groups_a2,
     )
     routes = {name: _route_row(req) for name, req in requests.items()}
     report: dict[str, Any] = {
@@ -432,6 +473,15 @@ def _parser() -> argparse.ArgumentParser:
             "Cを明示的に測る場合だけ指定する。"
         ),
     )
+    parser.add_argument(
+        "--include-groups-a2",
+        action="store_true",
+        help=(
+            "R29のsuggest-card-groups A2下限候補も比較する。"
+            "--execute と併用すると1件の追加provider requestが発生する。"
+            "layout A2はR29でroute-Bとprompt完全一致のため重複送信しない。"
+        ),
+    )
     return parser
 
 
@@ -446,6 +496,7 @@ def main() -> int:
                     expected_provider=args.provider,
                     execute=False,
                     include_layout_c=args.include_layout_c,
+                    include_groups_a2=args.include_groups_a2,
                 ),
                 ensure_ascii=False,
                 indent=2,
@@ -476,6 +527,7 @@ def main() -> int:
             execute=True,
             provider=provider,
             include_layout_c=args.include_layout_c,
+            include_groups_a2=args.include_groups_a2,
         )
     except ValueError as exc:
         print(
