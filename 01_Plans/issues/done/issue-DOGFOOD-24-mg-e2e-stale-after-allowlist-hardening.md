@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer（並行編集者＝モデルガバナンス強化の当事者と協調）
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ47・MG）, `03_Implement/backend/src/kj_atlas_api/routes/model_registry.py`
-- Related ADR/Spec: `01_Plans/issues/done/issue-AI-MODEL-GOVERNANCE-03-registry-provider-dispatch-drift.md`（並行編集者が起票）, `02_Architecture/api.md`（allowlist 契約）, `01_Plans/issues/issue-DOGFOOD-10-concurrent-iteration-edits-race-with-ci-harness.md`（並行レースの記録）
+- Related ADR/Spec: `01_Plans/issues/done/issue-AI-MODEL-GOVERNANCE-03-registry-provider-dispatch-drift.md`（並行編集者が起票）, `02_Architecture/api.md`（allowlist 契約）, `01_Plans/issues/done/issue-DOGFOOD-10-concurrent-iteration-edits-race-with-ci-harness.md`（並行レースの記録）
 - Expected verification level: `e2e`
 
 > 追記（iteration 188 検証時）: 本コミット `1fc48873` は **backend単体テストの `test_ai_safemode.py` にも10件の失敗**を引き起こしている（`assert 503 == 200`）。`KJ_ATLAS_LLM_PROVIDER=none`（project settings.json 既定）の環境で、AIルートのモデルプロバイダ解決（`ai.py` の `model_provider_unavailable` → 503）が `generate_with_fallback` スタブより先に発火するようになった。同じく並行編集者コミット由来であり、単体テストの追従も並行編集者の責務範囲。
@@ -79,3 +79,13 @@ FAIL: MG ⑤b code=model_not_allowed
 
 - 本issueは**私（ドッグフーディング）が観察した検証ドリフトの記録**であり、修正は並行編集者（モデルガバナンス強化の当事者）の責務範囲。iteration 188の私の成果物（シナリオ118・DOGFOOD-23）は独立に検証済み。
 - DOGFOOD-10（並行イテレーションのレース）と同種の現象。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、並行開発・並行ドッグフーディングによって検証入力や期待値が実行中／変更後の実装とずれ、実回帰ではない失敗を生む verification drift を解消した完了系列として `Done` となっていた。
+- `DOGFOOD-10` は E2E スクリプトを実行時スナップショットへコピーしてから走らせることで、`/loop` の並行追記と共有作業ツリー実行のraceを遮断した。
+- `DOGFOOD-24` は model governance の allowlist 強化後に古いE2E期待値・テストfixtureが残ったdriftを、登録済み活性モデルを用いるシナリオとprovider設定fixtureへ追随させて解消した。
+- いずれも並行編集そのものを禁止するのではなく、検証ハーネスと期待値を現在の実装契約へ整合させることで、検証結果の信頼性を回復した記録である。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は10から8へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
