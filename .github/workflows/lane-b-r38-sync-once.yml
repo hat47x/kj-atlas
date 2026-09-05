@@ -1,0 +1,34 @@
+name: lane-b-r38-sync-once
+
+on:
+  push:
+    branches:
+      - lane-b/ai-ir-scale-r38-provider-input-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/ai-ir-scale-r38-provider-input-sync
+      - name: Sync R38 readiness docs
+        run: |
+          python .github/lane-b-r38-sync.py
+          grep -F 'tests/test_ai_route_provider_transport_input_provenance.py' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'R32/R33/R35/R37 analyzer' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '## R38 — R37後のprovider-input readiness同期' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit sync and remove temporary files
+        run: |
+          rm .github/lane-b-r38-sync.py
+          rm .github/workflows/lane-b-r38-sync-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync provider input readiness after R37'
+          git push origin HEAD:lane-b/ai-ir-scale-r38-provider-input-sync
