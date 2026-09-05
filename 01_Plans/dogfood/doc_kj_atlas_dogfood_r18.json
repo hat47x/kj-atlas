@@ -47,7 +47,7 @@
     {"id":"ev03","cardId":"c04","type":"supports","url":"03_Implement/frontend/src/api/client.ts"},
     {"id":"ev04","cardId":"c05","type":"supports","url":"03_Implement/frontend/src/domain/merge_candidates.ts"},
     {"id":"ev05","cardId":"c08","type":"supports","url":"01_Plans/issues/done/issue-AI-MERGE-CLIENT-CONTRACT-01-remote-merge-response-rejected-by-frontend.md"},
-    {"id":"ev06","cardId":"c10","type":"supports","url":"01_Plans/issues/issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md"}
+    {"id":"ev06","cardId":"c10","type":"supports","url":"01_Plans/issues/done/issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md"}
   ],
   "readingOrder": ["i1","i2","i3","i4"],
   "narratives": [
