@@ -1,0 +1,47 @@
+name: lane-b-r44-v4-readiness-once
+
+on:
+  push:
+    branches:
+      - lane-b/deepseek-v4-default-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/deepseek-v4-default-readiness
+      - name: Apply R44 docs and follow-up issue
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          issue = Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md')
+          text = issue.read_text(encoding='utf-8')
+          assert text.count('--model deepseek-chat') == 2
+          text = text.replace('--model deepseek-chat', '--model deepseek-v4-flash')
+          assert '## R44 — current DeepSeek measurement model / context source の更新' not in text
+          text += '''\n\n## R44 — current DeepSeek measurement model / context source の更新\n\n2026-09-05時点のDeepSeek公式API資料を再確認したところ、R20作成時の例に残っていた `deepseek-chat` は現行のnamed measurement modelとして使えないことが判明した。公式Change Logは2026-04-24に `deepseek-chat` / `deepseek-reasoner` を2026-07-24で廃止すると告知しており、現在のQuick Startは `deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp` を現行model IDとして列挙している。したがって、本IssueのDeepSeek実測例は **`deepseek-v4-flash`** へ更新する。productionの `KJ_ATLAS_DEEPSEEK_MODEL` 既定値そのものは本Issueで黙って変更せず、thinking/non-thinking semanticsを含む別issue `AI-DEEPSEEK-V4-MIGRATION-01` へ切り出す。\n\n公式Models & PricingはV4 Flashのcontext lengthを `1M` と記載する。一方、DeepSeek自身のagent integration例ではPi/Oh My Piが `contextWindow: 1000000`、Codex/Crushが `1048576` を記載しており、公開資料だけから「APIの唯一の厳密な整数上限」を断定しない。R41のhard-fitを実行する場合は、過大評価を避けるため、公式Pi integrationが明示する小さい方の **1,000,000 token** を保守的な運用値として使用できる。これはAPIの厳密最大値が1,000,000であるという主張ではない。\n\n保存済みprovider measurement reportにhard-fitを付加する例:\n\n```bash\n.venv/bin/python scripts/analyze_ai_route_provider_measurement.py measurement.json \\\n  --context-window-tokens 1000000 \\\n  --context-window-source https://api-docs.deepseek.com/quick_start/agent_integrations/pi_mono/\n```\n\n資料provenance（2026-09-05確認）:\n\n- current model IDs / versions / `1M` context: `https://api-docs.deepseek.com/quick_start/pricing`\n- legacy alias retirement: `https://api-docs.deepseek.com/updates`（2026-04-24 entry）\n- conservative integer context value `1000000`: `https://api-docs.deepseek.com/quick_start/agent_integrations/pi_mono/`\n- comparison evidence `1048576`: `https://api-docs.deepseek.com/quick_start/agent_integrations/codex/` / `crush/`\n\n**非主張**: R44は公開公式資料の確認と実測手順の更新だけであり、DeepSeek APIを呼んでいない。provider-reported input tokenはまだ未取得で、A2/B/Cの採択、production cap、production model既定、thinking mode、SafeMode等の境界も変更していない。\n'''
+          issue.write_text(text, encoding='utf-8')
+
+          followup = Path('01_Plans/issues/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md')
+          assert not followup.exists()
+          followup.write_text('''# Issue: AI-DEEPSEEK-V4-MIGRATION-01 退役DeepSeek既定modelとV4 thinking semanticsを移行する\n\n- Type: Bug / Compatibility / Contract\n- Status: Open\n- Lifecycle: Draft -> Open\n- Source Issue: `AI-IR-SCALE-01` R44（2026-09-05の公式DeepSeek資料再確認）\n- Priority: P1\n- Owner: Maintainer\n- Scope: `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, model registry seed/docs/tests\n- Related Backlog: `AI-DEEPSEEK-V4-MIGRATION-01`\n- Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `02_Architecture/runtime_parameter_registry.md`, `ADR-0065`\n- Expected verification level: integration（外部API実行は別途明示opt-in）\n\n## 課題\n\nKJ Atlasの `KJ_ATLAS_DEEPSEEK_MODEL` 既定値は現在も `deepseek-chat` である。DeepSeek公式Change Logは2026-04-24に `deepseek-chat` / `deepseek-reasoner` を2026-07-24で廃止すると告知し、2026-09-05時点のQuick Start / Chat CompletionsはV4 model IDを現行値として扱っている。このため、DeepSeek providerを既定設定で使う運用はvendor側model lifecycleと不整合になっている。\n\nただし旧 `deepseek-chat` はV4移行期間中に `deepseek-v4-flash` の**non-thinking**相当へ対応づけられていた一方、現行V4はthinking/non-thinkingを明示的に持つ。model文字列だけを `deepseek-v4-flash` へ置換すると、transportが `thinking` を送っていない現状ではvendor既定modeへ挙動が変わり、費用・latency・structured output特性まで暗黙に変える可能性がある。したがってmodel ID更新とthinking semanticsの決定を一体で行う。\n\n## 対応方針\n\n- 現行公式model IDへ既定値を移す。候補は一般用途の `deepseek-v4-flash` を第一候補とするが、単純文字列置換だけでは完了としない。\n- 旧 `deepseek-chat` のnon-thinking性をproduction既定で維持するか、V4のthinking既定へ移行するかを明示し、transport payload・task routing・cost/latencyへの影響を回帰で固定する。\n- `KJ_ATLAS_LLM_TASK_MODEL_MAP` / `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` / request overrideの優先順位を変えない。\n- env seed / registry例 / runtime parameter registry / configuration / active operational scriptsを現行model IDへ同期する。\n- 過去のDone issue、dated dogfood実API結果、当時のmodel IDを示す履歴資料は書き換えない。\n- 実DeepSeek API確認を行う場合は、credentialと外部費用を伴うため明示opt-inで別途実施する。\n\n## 受入条件\n\n- [ ] DeepSeek providerの既定model IDが2026-09-05時点の公式supported modelに一致する。\n- [ ] thinking/non-thinkingのproduction既定が仕様として明示され、transport payloadの回帰で固定される。\n- [ ] task model map / high-reasoning model / request overrideの既存優先順位を維持する。\n- [ ] env model registry seedとoperator向け登録例が新しい既定model IDに整合する。\n- [ ] active configuration/spec/evaluation scriptsに退役aliasを既定値・推奨値として残さない。\n- [ ] dated historical evidenceに記録された旧model IDは改変しない。\n- [ ] SafeMode、proposal-only、防PII、provider allowlist/audit境界を弱めない。\n\n## 検証計画\n\n- DeepSeek provider/settings/model-governance近接testを実行する。\n- request payload testでmodel IDとthinking modeの明示契約を確認する。\n- repo内 `deepseek-chat` / `deepseek-reasoner` inventoryを再取得し、残存が歴史資料または意図的互換testだけであることを分類する。\n- 外部APIを呼ばない回帰を先行し、実API確認は明示opt-in時のみ行う。\n\n## 公式資料provenance（2026-09-05確認）\n\n- `https://api-docs.deepseek.com/updates` — 2026-04-24 entryでlegacy aliasの2026-07-24廃止を告知。\n- `https://api-docs.deepseek.com/` — 現行Quick StartでV4 model IDsを列挙。\n- `https://api-docs.deepseek.com/quick_start/pricing` — V4 Flash/Proとcontext `1M` を掲載。\n\n''', encoding='utf-8')
+          PY
+          git diff --check
+          test "$(grep -c -- '--model deepseek-v4-flash' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md)" -ge 2
+          test -f 01_Plans/issues/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
+      - name: Commit R44 and remove temporary workflows
+        run: |
+          rm .github/workflows/lane-b-r44-deepseek-inventory-once.yml
+          rm .github/workflows/lane-b-r44-v4-readiness-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): refresh DeepSeek scale measurement model for V4'
+          git push origin HEAD:lane-b/deepseek-v4-default-readiness
