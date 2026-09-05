@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ119）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は双方向・件数）, `02_Architecture/api.md`（check-narrative 契約）, `01_Plans/issues/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（島ID非依存化）, `01_Plans/issues/issue-DOGFOOD-14-check-narrative-lacks-b-missing-in-a-positive-path.md`（双方向の正パス）
+- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は双方向・件数）, `02_Architecture/api.md`（check-narrative 契約）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（島ID非依存化）, `01_Plans/issues/done/issue-DOGFOOD-14-check-narrative-lacks-b-missing-in-a-positive-path.md`（双方向の正パス）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -75,3 +75,11 @@ if "未検証の主張" in prompt:
 
 - モックの全島報告は「複数島の取りこぼしを検出可能」にする決定性表現であり、実LLMのA/B照合品質とは独立（本issueは検証ハーネスの能力向上）。DOGFOOD-12（島ID非依存）・DOGFOOD-14（双方向）の延長。
 - ドッグフーディング観察起点（2026-08-16・iteration 189）: 精肉・鮮魚（2島 meat-i/fish-i）で、ナラティブが鮮度・品揃えに言及し魚・ロスに触れない場合に、モックが先頭島（meat-i）を誤報告することを再現。複数島のA/B取りこぼし検出が単一島に限定されていることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、`check-narrative` のA/B照合を島ID非依存・双方向・複数島へ段階的に拡張し、任意の図解／ナラティブで検出セマンティクスをE2E固定できるようにした verification harness 改善として `Done` となっていた。
+- `DOGFOOD-12` が島ID固定を解消し、`DOGFOOD-14` が反対方向 `b_missing_in_a` の正パスを追加し、`DOGFOOD-25` が複数島の取りこぼしへ拡張したため、check-narrative の成熟系列として3件を同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は23から20へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。

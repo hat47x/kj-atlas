@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ120）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/ai_kj_execution_procedures.md`（文書タイトル提案）, `02_Architecture/api.md`（suggest-document-title 契約）, `01_Plans/issues/issue-DOGFOOD-18-title-suggestion-not-grounded-in-canvas-content.md`（文書テーマ接地）, `01_Plans/issues/issue-DOGFOOD-25-check-narrative-multi-island-omission.md`（先頭島バイアスの同型）
+- Related ADR/Spec: `00_Prompt/ai_kj_execution_procedures.md`（文書タイトル提案）, `02_Architecture/api.md`（suggest-document-title 契約）, `01_Plans/issues/issue-DOGFOOD-18-title-suggestion-not-grounded-in-canvas-content.md`（文書テーマ接地）, `01_Plans/issues/done/issue-DOGFOOD-25-check-narrative-multi-island-omission.md`（先頭島バイアスの同型）
 - Expected verification level: `e2e`
 
 ## 課題
