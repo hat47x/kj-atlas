@@ -1,0 +1,77 @@
+name: lane-b-record-r23-once
+
+on:
+  push:
+    branches:
+      - lane-b/route-b-projection-characterization
+
+permissions:
+  contents: write
+
+jobs:
+  record-r23:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/route-b-projection-characterization
+
+      - name: Append measured R23 characterization
+        shell: bash
+        run: |
+          target='01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md'
+          if ! grep -q '^## R23 — route別B候補の300カードcharacterization$' "$target"; then
+            cat >> "$target" <<'EOF'
+
+## R23 — route別B候補の300カードcharacterization
+
+R20のnamed provider/model実測を待つ間に、production配線・shared IR上限を変えず、R19で定義したroute-required meaningだけを残す**測定専用の方式B候補**を300カード代表入力へ当てた。`scripts/measure_ai_route_projection_candidates.py` は既存prompt rendererを使い、source → current shared IR → route-B candidate のcoverageと最終prompt bytesを決定論的に比較する。candidate contextは方式比較用のIR-shaped fixtureであり、新しいproduction IR schemaではない。
+
+### `suggest-card-groups`
+
+| 指標 | current shared IR | route-B candidate |
+| --- | ---: | ---: |
+| projected requested card | 200/300 | 300/300 |
+| providerへ提示可能なgrouping candidate | 199 | 299 |
+| holdとして除外されるcard | 1 | 1 |
+| requested 300枚のうちaccounted-for | 200 | 300 |
+| 完全な島membership | 19/30 | 30/30 |
+| 末尾島 `i29` のmember | 1/10 | 10/10 |
+| final prompt UTF-8 bytes | 38,044 | 48,791 |
+
+方式B候補では、候補card本文・hold state・確定島階層/membershipを保持し、R19でcompletion criterionではないrelation/derived clusterを外した。その結果、held `c298` を候補へ戻さず、299枚のgroupable cardと30島の完全membershipを同時に表現できた。これはshared `MAX_CARDS=200` を上げずにgrouping-required meaningを全量表現できる構造が存在するというcharacterizationであり、production採用やモデル品質の主張ではない。
+
+### `suggest-layout`
+
+| 指標 | current shared IR | route-B candidate |
+| --- | ---: | ---: |
+| relative coordinate | 200/300 | 300/300 |
+| typed card relation | 199/300 | 300/300 |
+| 完全な島membership | 20/30 | 30/30 |
+| 末尾 `c298/c299` relative coordinate | 0/2 | 2/2 |
+| 末尾 `causal/negate` | 0/2 | 2/2 |
+| final prompt UTF-8 bytes | 117,389 | 128,562 |
+
+layoutはlegacy `Cards:` 節が全300枚のid/text/raw座標を既に保持するため、方式B候補では重複するcard本文を増やさず、欠落していた全300枚の正規化相対座標・全card relation・確定島構造を補った。末尾のrelative coordinateと `causal` / `negate` も最終promptまで復元できた。layoutのBはtoken節約策というより、coverageをshared global selectionから分離する手段として評価すべきである。
+
+### 判断への影響
+
+- `suggest-card-groups`: Bは300カードのrequired meaningをglobal capから独立して保持できる具体候補になった。named provider/model実測後はA2とcompact Bを同一modelのprovider-reported usageで比較する価値がある。
+- `suggest-layout`: Bでcoverageは回復するが、全体配置に必要な構造は文書規模へ比例する。A2/B/Cのtoken余裕比較は依然必要で、B採用済みとはしない。
+- Unicode文字数・UTF-8 bytesをtoken数へ換算しない。正確なtoken数はR20どおりprovider-reported usageだけを採用する。
+- production route、`MAX_CARDS/MAX_RELATIONS/MAX_TEXT_CHARS`、SafeMode/PII/structured-text/proposal-only境界は本characterizationでは変更していない。
+EOF
+          fi
+
+      - name: Commit note and self-delete workflow
+        shell: bash
+        run: |
+          rm .github/workflows/lane-b-record-r23-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md \
+            .github/workflows/lane-b-record-r23-once.yml
+          git commit -m "docs(ai): record route projection scale characterization"
+          git push origin HEAD:lane-b/route-b-projection-characterization
