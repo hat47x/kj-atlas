@@ -131,7 +131,7 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 ```bash
 .venv/bin/python scripts/measure_ai_route_provider_tokens.py \
   --provider deepseek \
-  --model deepseek-chat
+  --model deepseek-v4-flash
 ```
 
 実token数を測る場合は、既存の安全な方法で `KJ_ATLAS_LLM_PROVIDER`、providerの認証情報、必要ならmodel設定を事前に構成する。認証情報をコマンドラインや成果物へ直接書かない。そのうえで次を実行する。
@@ -140,7 +140,7 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
 .venv/bin/python scripts/measure_ai_route_provider_tokens.py \
   --provider deepseek \
-  --model deepseek-chat \
+  --model deepseek-v4-flash \
   --execute
 ```
 
@@ -717,3 +717,27 @@ R43ではproduction本体を測定都合で変更せず、`tests/test_ai_route_p
 GitHub Actions run `33963862577` でR23〜R43関連 **81 test**、ruff、`git diff --check` が成功した。one-shot workflowはrun内で自己削除済みである。
 
 **非主張**: R43でも外部providerは呼んでいない。実input token、実model context-window、十分な安全余裕、費用、latency、品質は未測定であり、A2/B/Cの採択、production cap、route挙動は変更していない。
+
+
+## R44 — current DeepSeek measurement model / context source の更新
+
+2026-09-05時点のDeepSeek公式API資料を再確認したところ、R20作成時の例に残っていた `deepseek-chat` は現行のnamed measurement modelとして使えないことが判明した。公式Change Logは2026-04-24に `deepseek-chat` / `deepseek-reasoner` を2026-07-24で廃止すると告知しており、現在のQuick Startは `deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp` を現行model IDとして列挙している。したがって、本IssueのDeepSeek実測例は **`deepseek-v4-flash`** へ更新する。productionの `KJ_ATLAS_DEEPSEEK_MODEL` 既定値そのものは本Issueで黙って変更せず、thinking/non-thinking semanticsを含む別issue `AI-DEEPSEEK-V4-MIGRATION-01` へ切り出す。
+
+公式Models & PricingはV4 Flashのcontext lengthを `1M` と記載する。一方、DeepSeek自身のagent integration例ではPi/Oh My Piが `contextWindow: 1000000`、Codex/Crushが `1048576` を記載しており、公開資料だけから「APIの唯一の厳密な整数上限」を断定しない。R41のhard-fitを実行する場合は、過大評価を避けるため、公式Pi integrationが明示する小さい方の **1,000,000 token** を保守的な運用値として使用できる。これはAPIの厳密最大値が1,000,000であるという主張ではない。
+
+保存済みprovider measurement reportにhard-fitを付加する例:
+
+```bash
+.venv/bin/python scripts/analyze_ai_route_provider_measurement.py measurement.json \
+  --context-window-tokens 1000000 \
+  --context-window-source https://api-docs.deepseek.com/quick_start/agent_integrations/pi_mono/
+```
+
+資料provenance（2026-09-05確認）:
+
+- current model IDs / versions / `1M` context: `https://api-docs.deepseek.com/quick_start/pricing`
+- legacy alias retirement: `https://api-docs.deepseek.com/updates`（2026-04-24 entry）
+- conservative integer context value `1000000`: `https://api-docs.deepseek.com/quick_start/agent_integrations/pi_mono/`
+- comparison evidence `1048576`: `https://api-docs.deepseek.com/quick_start/agent_integrations/codex/` / `crush/`
+
+**非主張**: R44は公開公式資料の確認と実測手順の更新だけであり、DeepSeek APIを呼んでいない。provider-reported input tokenはまだ未取得で、A2/B/Cの採択、production cap、production model既定、thinking mode、SafeMode等の境界も変更していない。
