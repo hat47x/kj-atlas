@@ -1,11 +1,11 @@
-# Issue Draft: DX-CI-DEDUP-01 CIジョブ間で重複するsetup/base_commit解決ブロック
+# Issue: DX-CI-DEDUP-01 CIジョブ間で重複するsetup/base_commit解決ブロック
 
 - Type: Process
-- Status: Draft
+- Status: Done
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `.github/workflows/ci.yml`
+- Scope: `.github/workflows/ci.yml`, `.github/actions/setup-frontend/action.yml`
 - Related ADR/Spec: N/A
 - Expected verification level: `docs-check`
 
@@ -35,10 +35,26 @@
 
 ## Acceptance
 
-- [ ] Node/PM検出＋installブロックが1箇所（composite actionまたは等価な仕組み）に集約されている。
-- [ ] base_commit解決ロジックが1箇所に集約されているか、各箇所の重複が正当化されている。
-- [ ] リファクタリング後もCIの実行結果（各ジョブの成否）が変わらないことを実際のPRで確認する。
+- [x] Node/PM検出＋installブロックが1箇所（composite actionまたは等価な仕組み）に集約されている。
+- [x] base_commit解決ロジックが1箇所に集約されているか、各箇所の重複が正当化されている。
+- [x] リファクタリング後もCIの実行結果（各ジョブの成否）が変わらないことを実際のPRで確認する。
 
 ## Validation
 
 - リファクタリング後のPRで全CIジョブがpassすることを確認する。
+
+## 対応記録（2026-09-05）
+
+本Issueの実装は PR #2727 `ci: 重複setupを共通化しCI差異を最小化` で 2026-08-06 に既に完了していたが、Issueメモ側の状態更新が追随していなかったため、現行履歴からAcceptanceを再検証してDoneへ正規化した。
+
+- frontendの重複setupは `.github/actions/setup-frontend/action.yml` へ集約され、`frontend-test` と `frontend-typecheck` が同一composite actionを利用する形へ変更された。
+- backend側のbase_commit再導出は削除され、`change-scope` が算出した値を利用する形へ整理された。
+- docs-contract側のbase_commit解決は、独立実行時の仕様差があるため統合せず、意図的な別契約として残す判断がPR内で明記された。したがってAcceptance第2項の「各箇所の重複が正当化されている」を満たす。
+- PR #2727 のhead commit `f3ec8ce6c054a2f9796e0f40944a79bd67a09cbf` に対する GitHub Actions `CI` Run `31062823717` は `success`。`Frontend test + build` と `Frontend typecheck` の双方で `Setup frontend toolchain` が成功し、backend・docs-contract・change-scopeを含む同runの各ジョブも成功した。これをAcceptance第3項の実CI証拠とする。
+
+その後、常設GitHub Actions workflow自体は別の運用判断で意図的に無効化・削除され、`DOC-CI-DRIFT-01` で現行文書／検査もworkflow不在の構成へ同期された。本Issueの完了は、その後のworkflow無効化を取り消したり、`.github/workflows/ci.yml` の復活を要求するものではない。ここでは #2727 実施時点のCI契約に対して重複整理が完了し、実CIで成立したという履歴証拠を保存する。
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは実装・実CI検証とも完了済みであり、active rootに残すべき未解決作業はない。
+- 既存のIssueライフサイクル契約に従い、`01_Plans/issues/` から `01_Plans/issues/done/` へ移動する。
