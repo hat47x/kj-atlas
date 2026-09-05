@@ -1,0 +1,28 @@
+name: lane-b-fix-r25-typo-once
+
+on:
+  push:
+    branches:
+      - lane-b/layout-c-hierarchical-characterization
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/layout-c-hierarchical-characterization
+
+      - name: Fix R25 typo and self-delete
+        run: |
+          python -c "from pathlib import Path; p=Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md'); s=p.read_text(encoding='utf-8'); old='global bridgeとして残こた。'; assert s.count(old)==1; p.write_text(s.replace(old,'global bridgeとして残った。'), encoding='utf-8')"
+          rm .github/workflows/lane-b-fix-r25-typo-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): fix R25 wording'
+          git push origin HEAD:lane-b/layout-c-hierarchical-characterization
