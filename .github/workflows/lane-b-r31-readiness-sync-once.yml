@@ -1,0 +1,37 @@
+name: lane-b-r31-readiness-sync-once
+
+on:
+  push:
+    branches:
+      - lane-b/ai-ir-scale-r31-readiness-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/ai-ir-scale-r31-readiness-sync
+
+      - name: Apply R31 sync
+        run: |
+          python .github/lane-b-r31-sync.py
+          git diff --check
+          grep -F 'R30まで拡張したR20ハーネス' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'measure_ai_route_a2_candidate.py' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '45 test' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '未完了の受入条件を完了扱いにしない' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+
+      - name: Commit sync and remove temporary files
+        run: |
+          rm .github/lane-b-r31-sync.py
+          rm .github/workflows/lane-b-r31-readiness-sync-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): sync provider measurement readiness after R29-R30'
+          git push origin HEAD:lane-b/ai-ir-scale-r31-readiness-sync
