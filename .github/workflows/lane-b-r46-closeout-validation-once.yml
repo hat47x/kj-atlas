@@ -1,0 +1,47 @@
+name: lane-b-r46-closeout-validation-once
+
+on:
+  push:
+    branches:
+      - lane-b/deepseek-v4-migration-closeout
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/deepseek-v4-migration-closeout
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate issue lifecycle and docs contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e 01_Plans/issues/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
+          test -e 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
+          grep -q -- '- Status: Done' 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
+          test "$(grep -c '\- \[x\]' 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md)" -eq 7
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          python 01_Plans/docs_check.py
+          if grep -RIn -E 'deepseek-chat|deepseek-reasoner' 03_Implement/backend/tests 03_Implement/frontend/src; then
+            echo 'legacy DeepSeek alias unexpectedly remains in active test source' >&2
+            exit 1
+          fi
+          git diff --check
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-b-r46-closeout-validation-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'ci(lane-b): remove DeepSeek V4 closeout workflow'
+          git push origin HEAD:lane-b/deepseek-v4-migration-closeout
