@@ -1,0 +1,57 @@
+name: lane-b-r45-config-typo-once
+
+on:
+  push:
+    branches:
+      - lane-b/deepseek-v4-migration
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/deepseek-v4-migration
+      - name: Fix only the configuration typo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show HEAD:04_Documentation/configuration.md > /tmp/configuration.md
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/configuration.md')
+          data = p.read_bytes()
+          old = '旧既定けの'.encode()
+          new = '旧既定の'.encode()
+          assert data.count(old) == 1
+          p.write_bytes(data.replace(old, new))
+          PY
+          blob=$(git hash-object -w --no-filters /tmp/configuration.md)
+          git update-index --cacheinfo 100644,$blob,04_Documentation/configuration.md
+      - name: Verify final main-relative patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --cached --numstat origin/main -- 04_Documentation/configuration.md)" = $'2\t1\t04_Documentation/configuration.md'
+          git show :04_Documentation/configuration.md > /tmp/staged.md
+          python - <<'PY'
+          from pathlib import Path
+          data = Path('/tmp/staged.md').read_bytes()
+          assert '旧既定けの'.encode() not in data
+          assert '旧既定のnon-thinking挙動'.encode() in data
+          assert b'`KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash`' in data
+          assert b'`KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled`' in data
+          PY
+      - name: Commit fix and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git update-index --force-remove .github/workflows/lane-b-r45-config-typo-once.yml
+          git commit -m 'docs(ai): fix DeepSeek thinking-mode wording'
+          git push origin HEAD:lane-b/deepseek-v4-migration
