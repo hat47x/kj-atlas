@@ -59,11 +59,13 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           text = Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md').read_text()
-          assert text.count('--deepseek-thinking-mode disabled') == 2
-          assert 'R32/R33/R35/R37/R39/R41/R48 analyzer' in text
-          assert 'provider-generation provenance' in text
-          assert 'R48 run `33997380006`' in text
-          assert '## R49 — R48 thinking-mode実測手順をIssue前半へ同期' in text
+          before_history = text.split('## R49 — R48 thinking-mode実測手順をIssue前半へ同期', 1)[0]
+          history = text.split('## R49 — R48 thinking-mode実測手順をIssue前半へ同期', 1)[1]
+          assert before_history.count('--deepseek-thinking-mode disabled') == 2
+          assert history.count('--deepseek-thinking-mode disabled') == 1
+          assert 'R32/R33/R35/R37/R39/R41/R48 analyzer' in before_history
+          assert 'provider-generation provenance' in before_history
+          assert 'R48 run `33997380006`' in before_history
           PY
           git diff --check
       - name: Commit sync and remove workflow
