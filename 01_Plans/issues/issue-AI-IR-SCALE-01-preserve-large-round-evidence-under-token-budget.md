@@ -242,13 +242,14 @@ R20のハーネスを実際のnamed providerへ送れるか確認するため、
 
 ### 実token計測後の判断基準
 
-R20の測定値が得られたら、ルートごとに次の順で判断する。
+後述の「次の判断順序」を正本とし、ここでは現在の6段階を要約する。
 
-1. 300カードを全量投影した場合でも、対象model/providerの入力上限に対して十分な余裕があるなら、まずA2を比較対象の基準にする。単純で追跡しやすく、意味を落とす規則も増やさずに済むためである。
-2. 全量投影が入力予算へ近すぎる、または余裕が不足する場合は、BまたはCをルートごとに選ぶ。一つの方式を全AIルートへ強制しない。
-4. `generate-narrative` はBで必要な論理骨格が十分小さく保てるかを先に検証し、文書規模へ膨らむならCを比較する。
-5. `suggest-layout` は全体相対配置という性質上、Bだけで解くのが難しい。A2が安全でなければ、階層配置を伴うCを主な比較対象にする。
-5. 方式を選んだ後に、その方式で実際に起こり得るcoverage lossの単位を定める。汎用的なloss metadataを先に作って設計を固定しない。
+1. named provider/modelのprovider-reported input usageを取得し、保存reportをR32/R33/R35/R37系のidentity/provenance検証へ通す。`decision_ready=true` にならないdry-run・partial・stale・fallback/non-primary結果は比較根拠へ使わない。
+2. 文書化されたcontext-window値とsourceを確認できる場合だけ、R39/R41の `input usage + 現行production output reserve` によるhard-fitを確認する。layout Cは31件aggregateではなく最大単一requestを使う。
+3. hard-fitとR21の「十分な余裕」は分け、provider/model制約・実測値・必要なら実model品質を根拠にA2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
+4. `generate-narrative` はR22までに `causal` / `negate` のendpoint/relation保護とbudget超過fail-closedを固定済みなので、named provider/model上のtoken余裕を見ながらA2/B/Cを比較する。
+5. `suggest-layout` はR25/R27でCの決定論的partitionとlocal/global合成をmeasurement-only候補として固定済みであり、A2/B/Cのprovider-reported usageと、必要なら配置品質・latency・failure rateを比較してから方式を選ぶ。
+6. coverage-loss metadataは方式決定後に、その方式で本当に監査すべき欠落単位へ合わせて追加する。汎用loss metadataを先に作らない。
 
 現時点ではA2/B/Cのいずれも最終採択しない。R20の実測前にproduction上限やnarrative/layoutの投影方式を変更することもしない。
 
@@ -741,3 +742,9 @@ GitHub Actions run `33963862577` でR23〜R43関連 **81 test**、ruff、`git di
 - comparison evidence `1048576`: `https://api-docs.deepseek.com/quick_start/agent_integrations/codex/` / `crush/`
 
 **非主張**: R44は公開公式資料の確認と実測手順の更新だけであり、DeepSeek APIを呼んでいない。provider-reported input tokenはまだ未取得で、A2/B/Cの採択、production cap、production model既定、thinking mode、SafeMode等の境界も変更していない。
+
+## R47 — V4移行後の実測判断順序を前半要約へ同期
+
+R42で後半の「次の判断順序」を1〜6へ同期していた一方、Issue前半の「実token計測後の判断基準」にはR21時点の旧い `1, 2, 4, 5, 5` の要約が残り、R32/R33/R35/R37のmeasurement identity/provenance、R39/R41のcontext hard-fit/source provenance、方式決定後にcoverage-loss metadataを設計する順序が反映されていなかった。R47では前半要約を後半の現行6段階へ揃え、判断手順の二重化によるdriftを解消した。
+
+併せてR45/R46で `AI-DEEPSEEK-V4-MIGRATION-01` が完了し、productionのDeepSeek既定は `deepseek-v4-flash`、thinking mode既定は旧non-thinking挙動を保つ `disabled` へ移行済みであることを現在地として確認した。ただし、これはnamed provider/modelのprovider-reported input usageを取得したことを意味しない。R47でも外部providerは呼ばず、最初の2つの未完了AC、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
