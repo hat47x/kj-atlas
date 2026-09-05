@@ -1,0 +1,26 @@
+name: Lane C legacy dense reference audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-c-legacy-dense-reference-graph-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: "github.event.head_commit.message == 'chore: legacy dense reference audit workflowを起動する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 残存legacy Doneの参照グラフを棚卸しする
+        run: python .github/scripts/lane_c_audit_legacy_dense_reference_graph_once.py
