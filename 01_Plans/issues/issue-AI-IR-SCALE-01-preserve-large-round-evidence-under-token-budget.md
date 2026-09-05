@@ -304,7 +304,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R41 run `33955296602` ではR23〜R41関連を含む80 test・ruff・`git diff --check` が成功した。provider実測reportについてもR32/R33/R35/R37でroute/task/provider/model/usage、canonical user prompt fingerprint、primary call provenanceに加え、DeepSeekでは実transportが送るsystem+user message content fingerprintまでfail-closed検証を固定し、R39ではmeasurementの `max_tokens=1` と現行production output reserveを分離したcontext hard-fit計算、R41ではcontext-window値と資料source provenanceの対を固定した。恒久workflowの有無とは分けて記録する。
+- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R43 run `33963862577` ではR23〜R43関連を含む81 test・ruff・`git diff --check` が成功した。provider実測reportについてもR32/R33/R35/R37でroute/task/provider/model/usage、canonical user prompt fingerprint、primary call provenanceに加え、DeepSeekでは実transportが送るsystem+user message content fingerprintまでfail-closed検証を固定し、R39ではmeasurementの `max_tokens=1` と現行production output reserveを分離したcontext hard-fit計算、R41ではcontext-window値と資料source provenanceの対、R43ではそのproduction output reserve前提と実route call siteの一致を回帰で固定した。恒久workflowの有無とは分けて記録する。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
@@ -325,6 +325,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_route_required_meaning_scale.py`
   - `tests/test_ai_route_provider_token_measurement.py`
   - `tests/test_ai_route_provider_measurement_analysis.py`
+  - `tests/test_ai_route_production_output_budget_contract.py`
   - `tests/test_ai_route_provider_prompt_fingerprint.py`
   - `tests/test_ai_route_provider_call_provenance.py`
   - `tests/test_ai_route_provider_transport_input_provenance.py`
@@ -700,3 +701,19 @@ R41でcontext-window hard-fitへ資料source provenanceが必須になったた�
 併せてR40同期時に生じていた「次の判断順序」の番号崩れ（3の重複と5の欠落）を修正し、1〜6の連番へ戻した。これは表示上の整合修正であり判断内容の追加・削除ではない。
 
 本同期はdocs-onlyであり、外部provider実測、実context-window値の取得、source資料の自動検証、安全余裕policy、A2/B/C採択、production cap/route変更、未完了ACの完了化を行わない。
+
+
+## R43 — production output reserve前提の回帰固定
+
+R39のcontext hard-fit計算は、provider実測時の `max_tokens=1` とは別に、現行production routeが確保するoutput token予算を加算する。R39時点では4つの測定対象production taskが `LLMRequest` の共通既定値を使うことを前提にしていたが、その前提と実call siteの間に恒久回帰はなかった。将来1 routeだけが `max_tokens` を個別指定すると、provider-reported input token自体は正しくてもhard-fitだけが黙って古いreserveで計算される余地があった。
+
+R43ではproduction本体を測定都合で変更せず、`tests/test_ai_route_production_output_budget_contract.py` を追加して次を固定した。
+
+- analyzerの `CORE_ROUTE_TASKS` が表すunique production taskは `suggest_card_groups` / `re_layout` / `generate_narrative` / `check_narrative` の4つであり、実production functionと一致する。
+- 各production functionの実sourceを `inspect` + ASTで確認し、対象 `LLMRequest` がちょうど1件、期待task idを持つことを確認する。
+- 現状4routeはいずれもroute固有 `max_tokens` overrideを持たず、`LLMRequest` 共通既定reserveを使う。analyzerの `CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS` も同じ既定値から導出される。
+- 将来どれかのrouteが個別 `max_tokens` を導入した場合、この回帰を単に緩めず、先にanalyzerをroute別reserveへ更新する必要がある。
+
+GitHub Actions run `33963862577` でR23〜R43関連 **81 test**、ruff、`git diff --check` が成功した。one-shot workflowはrun内で自己削除済みである。
+
+**非主張**: R43でも外部providerは呼んでいない。実input token、実model context-window、十分な安全余裕、費用、latency、品質は未測定であり、A2/B/Cの採択、production cap、route挙動は変更していない。
