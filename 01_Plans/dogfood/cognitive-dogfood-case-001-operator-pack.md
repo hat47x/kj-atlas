@@ -61,8 +61,8 @@ ROADMAP.md
 01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json
 01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md
 01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md
-01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md
-01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md
+01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md
+01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md
 ```
 
 `DOMAIN-W-ITERATION-01` を追加した理由は、ADR本文の `L0: Planned` だけを読んで現在実装を過小評価しないためである。このissueは2026-08-25時点でAC-1〜AC-13が完了し、T9/T10だけが外部トリガー待ちである。

@@ -62,3 +62,12 @@
 - バックエンドは257枚の束ね・島統合・叙述を整合的に処理できる（欠落なし・14領域・接地キャップ）。
 - 進捗（2026-08-21・正本確認で再訂正）: 初回の「UI/ワークフロー未実装」は**過大申告**。① 往復保持＝`test_docs_roundtrip.py`＋`verify_business_flow_e2e.sh` 3b。② 循環・欠損 import 正規化＝`validate.ts` `resolveParentIslandId`＋`document_import.ts`。③ 親子 CRUD＝`App.tsx` `handleIslandParentChange`＋`SidePanel.tsx`。④ 一行見出し＝`summaryView`。⑤ 多層図解＝`hierarchyLevel`（overview/mid/detail）＋`abstractMapView`＋`abstract_map_export.ts`。
 - 最終評価（2026-08-22）: 「card-groups の最大10グループ収束支援」は、凝縮ロードマップの **Phase 1（`suggest-island-summary` の凝縮・表札）＋ Phase 3（`parentIslandId` の多段編成）＋ `suggest-merges`（カード統合）で既に充足**。収束は (1)`suggest-card-groups`（第1段の束ね）→(2)`suggest-island-summary`（各束の表札＝凝縮）→(3)`parentIslandId`（束→上位島）の既存導線で実現でき、専用の「再グルーピング」機能は nice-to-have であり必須ギャップではない（最大10グループは Tips の位置づけ）。**本issueは Done（初回の前提が過大申告だった）**。残る任意タスクは「1000枚実規模の E2E」のみ。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、数百枚規模のKJ実践で顕在化したAI操作上限と、大量カードを一行見出し・階層島・多層図解へ畳む導線を段階的に整備し、実規模のKJ実践可能性を高めた完了系列として `Done` となっていた。
+- `DOGFOOD-31` は200枚の束ねを成立させる入力上限緩和と代表接地10件の品質境界を実走行で固定し、`DOGFOOD-32` は `parentIslandId`・summaryView・hierarchyLevel・abstractMapView/export による見出し化・階層化が既に成立していることを正本確認して要件ギャップを解消した。
+- `DOGFOOD-32` に残る1000枚実規模E2Eは最終評価で任意タスクへ切り分けられており、Issue自体の `Done` 判定とは分離されている。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は14から12へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。

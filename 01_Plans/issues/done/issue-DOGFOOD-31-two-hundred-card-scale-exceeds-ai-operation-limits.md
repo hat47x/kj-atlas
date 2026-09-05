@@ -79,3 +79,12 @@
 - モックのテーマ抽出（`suggest_card_groups`/`suggest_island_summary`/`suggest_merges`）を **`re.search`（先頭）→ `re.findall`（末尾）** へ変更し、記述用`（）`と末尾カテゴリを区別。200枚が10領域に正しく束ねられる。
 - シナリオ170（第1ラウンド200枚・丁寧な実観察カード）を E2E で固定。**1026/1026 pass**（200枚→10領域・欠落なし・接地キャップ・叙述・A/B照合）。
 - `verify_dogfood_records.sh`・`DOGFOODING_MANIFEST.md`・シナリオ文書を **1026/1084・22 Done** へ同期。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、数百枚規模のKJ実践で顕在化したAI操作上限と、大量カードを一行見出し・階層島・多層図解へ畳む導線を段階的に整備し、実規模のKJ実践可能性を高めた完了系列として `Done` となっていた。
+- `DOGFOOD-31` は200枚の束ねを成立させる入力上限緩和と代表接地10件の品質境界を実走行で固定し、`DOGFOOD-32` は `parentIslandId`・summaryView・hierarchyLevel・abstractMapView/export による見出し化・階層化が既に成立していることを正本確認して要件ギャップを解消した。
+- `DOGFOOD-32` に残る1000枚実規模E2Eは最終評価で任意タスクへ切り分けられており、Issue自体の `Done` 判定とは分離されている。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は14から12へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
