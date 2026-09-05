@@ -46,9 +46,7 @@ jobs:
             src/kj_atlas_api/llm/provider.py \
             tests/test_llm_provider.py \
             tests/test_ai_eval_pipeline.py \
-            tests/test_model_governance.py \
-            scripts/run_ai_eval.py \
-            scripts/generate_from_design_decision.py
+            tests/test_model_governance.py
           cd ../..
           git diff --check
           grep -n 'default="deepseek-v4-flash"' 03_Implement/backend/src/kj_atlas_api/settings.py
