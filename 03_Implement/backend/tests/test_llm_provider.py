@@ -758,15 +758,15 @@ def test_final_judgement_routes_to_high_reasoning_model(monkeypatch: pytest.Monk
     original_local = settings.local_llm_model
     original_map = settings.llm_task_model_map
     try:
-        settings.llm_high_reasoning_model = "deepseek-reasoner"
-        settings.local_llm_model = "deepseek-chat"
+        settings.llm_high_reasoning_model = "high-reasoning-model"
+        settings.local_llm_model = "default-model"
         settings.llm_task_model_map = ""
         from kj_atlas_api.llm.provider import resolve_model_for_task
 
         # final_judgement task → high-reasoning model
-        assert resolve_model_for_task("check_narrative") == "deepseek-reasoner"
+        assert resolve_model_for_task("check_narrative") == "high-reasoning-model"
         # intermediate task → default model
-        assert resolve_model_for_task("refine_card_text") == "deepseek-chat"
+        assert resolve_model_for_task("refine_card_text") == "default-model"
     finally:
         settings.llm_high_reasoning_model = original_high
         settings.local_llm_model = original_local

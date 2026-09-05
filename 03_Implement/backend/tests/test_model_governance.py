@@ -74,7 +74,7 @@ def test_register_list_disable_model_flow(tmp_path, monkeypatch) -> None:
         assert resp.status_code == 201, resp.text
 
         # Register two models under it.
-        for model_id, caps in (("deepseek-chat", "intermediate,generate"), ("deepseek-reasoner", "final_judgement")):
+        for model_id, caps in (("deepseek-v4-flash", "intermediate,generate"), ("deepseek-v4-pro", "final_judgement")):
             resp = client.post(
                 "/admin/provision/models",
                 json={"id": model_id, "providerId": "deepseek", "displayName": model_id, "capabilities": caps},
@@ -85,17 +85,17 @@ def test_register_list_disable_model_flow(tmp_path, monkeypatch) -> None:
         # List.
         registry = client.get("/admin/provision/models", headers={"X-Admin-Api-Key": _ADMIN_KEY}).json()
         assert [p["id"] for p in registry["providers"]] == ["deepseek"]
-        assert {m["id"] for m in registry["models"]} == {"deepseek-chat", "deepseek-reasoner"}
+        assert {m["id"] for m in registry["models"]} == {"deepseek-v4-flash", "deepseek-v4-pro"}
 
         # Disable a model -> fail-closed lifecycle.
         resp = client.patch(
-            "/admin/provision/models/deepseek-reasoner",
+            "/admin/provision/models/deepseek-v4-pro",
             json={"lifecycleState": "disabled"},
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 200, resp.text
         with session_local() as db:
-            assert db.get(LLMModelRegistryRow, "deepseek-reasoner").lifecycle_state == "disabled"
+            assert db.get(LLMModelRegistryRow, "deepseek-v4-pro").lifecycle_state == "disabled"
 
 
 def test_provider_api_key_ref_never_exposed_to_api_or_audit(tmp_path, monkeypatch) -> None:
@@ -786,9 +786,9 @@ def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> N
         client.post(
             "/admin/provision/models",
             json={
-                "id": "deepseek-chat",
+                "id": "deepseek-v4-flash",
                 "providerId": "deepseek",
-                "displayName": "DeepSeek Chat",
+                "displayName": "DeepSeek V4 Flash",
                 "capabilities": "intermediate,generate",
             },
             headers=admin_headers,
@@ -801,7 +801,7 @@ def test_model_provider_must_match_runtime_transport(tmp_path, monkeypatch) -> N
 
         attempted = client.post(
             "/ai/suggest-island-summary",
-            json={"doc": doc, "islandId": "i1", "model": "deepseek-chat"},
+            json={"doc": doc, "islandId": "i1", "model": "deepseek-v4-flash"},
             headers={"X-API-Key": _BUSINESS_KEY},
         )
         assert attempted.status_code == 503
