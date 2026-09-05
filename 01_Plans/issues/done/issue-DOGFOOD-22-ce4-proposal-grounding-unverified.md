@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ117）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md`（CE4・proposal 連鎖）, `02_Architecture/api.md`（proposals/island-summary 契約・diff.groundingIds）, `01_Plans/issues/issue-DOGFOOD-13-island-summary-grounding-capped-at-three-cards.md`（接地の検証深度）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（scenario 9 が CE4 を固定）
+- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md`（CE4・proposal 連鎖）, `02_Architecture/api.md`（proposals/island-summary 契約・diff.groundingIds）, `01_Plans/issues/done/issue-DOGFOOD-13-island-summary-grounding-capped-at-three-cards.md`（接地の検証深度）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（scenario 9 が CE4 を固定）
 - Expected verification level: `e2e`
 
 ## 課題

@@ -44,7 +44,7 @@ REQUIRED_FIELDS = [
 # Keep that existing debt non-blocking, but require this baseline to move down
 # in the same change whenever legacy memos are migrated. Exact equality makes
 # the ratchet monotonic: debt cannot silently grow back after it has shrunk.
-LEGACY_DONE_AT_ROOT_BASELINE = 18
+LEGACY_DONE_AT_ROOT_BASELINE = 17
 
 # DOC-ISSUE-LEGACY-PATH-01: count equality cannot detect a same-count swap in
 # which one historical Done-at-root memo is migrated while a newly completed
