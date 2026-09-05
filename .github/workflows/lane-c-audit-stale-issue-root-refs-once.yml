@@ -1,0 +1,62 @@
+name: Lane C stale issue root ref audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-c-stale-issue-paths-post-legacy-zero-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: "github.event.head_commit.message == 'chore: legacy Done移行後の旧root参照を監査する'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 旧root参照を全tracked textから検出する
+        shell: bash
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import re
+          import subprocess
+          from pathlib import Path
+
+          root = Path('01_Plans/issues')
+          done = root / 'done'
+          patterns = (
+              re.compile(r'01_Plans/issues/(issue-[A-Za-z0-9._-]+\.md)'),
+              re.compile(r'(?<!01_Plans/)issues/(issue-[A-Za-z0-9._-]+\.md)'),
+          )
+
+          raw = subprocess.check_output(['git', 'ls-files', '-z'])
+          names = [name for name in raw.decode('utf-8').split('\0') if name]
+          stale: list[tuple[str, int, str, str]] = []
+          scanned = 0
+
+          for name in names:
+              path = Path(name)
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              scanned += 1
+              for lineno, line in enumerate(text.splitlines(), start=1):
+                  for pattern in patterns:
+                      for match in pattern.finditer(line):
+                          basename = match.group(1)
+                          active_target = root / basename
+                          done_target = done / basename
+                          if not active_target.exists() and done_target.exists():
+                              stale.append((name, lineno, match.group(0), done_target.as_posix()))
+
+          print(f'scanned_text_files={scanned}')
+          print(f'stale_reference_count={len(stale)}')
+          for name, lineno, old, new in stale:
+              print(f'{name}:{lineno}: {old} -> {new}')
+          PY
