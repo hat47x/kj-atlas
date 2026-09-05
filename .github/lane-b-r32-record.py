@@ -22,4 +22,4 @@ branch-only GitHub Actions run `33950682087` で、R32とR23〜R30関連を含�
 
 **非主張**: 外部providerは呼んでいない。実token値、modelの安全余裕、cost、latency、品質は未取得であり、A2/B/Cの採択・production cap・production routeは変更しない。本Issueは引き続きIn Progressである。
 '''
-path.write_text(text.rstrip() + record + "\n", encoding="utf-8")
+path.write_text(text.rstrip() + record.rstrip() + "\n", encoding="utf-8")
