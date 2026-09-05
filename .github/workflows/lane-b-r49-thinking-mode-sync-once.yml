@@ -46,8 +46,8 @@ jobs:
 
           heading = '## R49 — R48 thinking-mode実測手順をIssue前半へ同期'
           assert heading not in text
-          text = text.rstrip() + f'''\n\n\n{heading}\n\nR48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode provenanceへ追加した一方、Issue前半の「実使用/外部依存確認」と「次の判断順序」はR37時点のprovider-input fingerprintまでしか記載しておらず、外部実測時に新必須引数を落とす余地が残っていた。R49ではproduction既定と比較するDeepSeek V4実測を `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` + `--deepseek-thinking-mode disabled` と明示し、保存report/analyzerのgeneration-mode検証まで前半手順へ同期した。\n\n併せて、checked済みroute-required regressionの証拠行をR43の81 testからR48 run `33997380006` の129 testへ更新した。未完了ACは変更せず、外部provider実測、provider-reported token取得、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。\n''' + '\n'
-          path.write_text(text)
+          text = text.rstrip() + f'''\n\n\n{heading}\n\nR48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode provenanceへ追加した一方、Issue前半の「実使用/外部依存確認」と「次の判断順序」はR37時点のprovider-input fingerprintまでしか記載しておらず、外部実測時に新必須引数を落とす余地が残っていた。R49ではproduction既定と比較するDeepSeek V4実測を `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` + `--deepseek-thinking-mode disabled` と明示し、保存report/analyzerのgeneration-mode検証まで前半手順へ同期した。\n\n併せて、checked済みroute-required regressionの証拠行をR43の81 testからR48 run `33997380006` の129 testへ更新した。未完了ACは変更せず、外部provider実測、provider-reported token取得、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。\n'''
+          path.write_text(text.rstrip() + '\n')
           PY
       - name: Validate R49 docs sync
         shell: bash
