@@ -37,4 +37,4 @@ GitHub Actions run `33947383473` では、R27新規回帰にR25/R26/R23系を加
 **非主張**: R27で使ったstage出力はすべてsynthetic fixtureであり、外部providerは呼んでいない。したがって、実modelが良いlocal offset / global anchorを返すか、31出力を用いた最終配置がone-shot Bより良いか、token費用・latency・failure rateが許容できるかは未評価である。R27が閉じたのは「有効なstage出力が揃ったなら、意味のある二段座標系を決定論的かつ完全に1配置へ合成できる」という構造契約までであり、Cのproduction採択やA2/B/Cの最終選択ではない。
 '''
 
-path.write_text(text.rstrip() + section + "\n", encoding="utf-8")
+path.write_text(text.rstrip() + section.rstrip() + "\n", encoding="utf-8")
