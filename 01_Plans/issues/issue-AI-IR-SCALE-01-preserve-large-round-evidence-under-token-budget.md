@@ -583,6 +583,6 @@ R30まででnamed provider/modelへ実測する入力集合は揃ったが、保
 - Cの `max_single_input_tokens` は1 requestあたりの圧力、`aggregate_input_tokens` は31 request総量として別々に保持する。A2/Bの1 request値とC aggregateを同じ意味の数字として扱わない。
 - analyzer自身はmodel context limitを知らず、A2/B/Cを選択しない。`decision_ready` は「少なくとも既定6 routeの実測reportが内部整合している」ことだけを表し、方式採択の判定ではない。
 
-branch-only GitHub Actions run `33950682087` で、R32とR23〜R30関連を含む **54 test**、ruff、`git diff --check` が成功した。workflowは同run内で自己削除した。テストではprompt byte値をprovider token値と意図的に無関係な数へ崩し、差分計算が `provider_reported.input_tokens` のみを使うことも固定した。
+branch-only GitHub Actions run `33950682087` で初期54 test、hardening後のrun `33950879266` でR32とR23〜R30関連を含む **56 test**、ruff、`git diff --check` が成功した。後者ではcanonicalなlocal-01〜30 + globalのexact setとroute task identityも固定し、31件という件数だけを満たす改変reportをfail-closedする。workflowは各run内で自己削除した。テストではprompt byte値をprovider token値と意図的に無関係な数へ崩し、差分計算が `provider_reported.input_tokens` のみを使うことも固定した。
 
 **非主張**: 外部providerは呼んでいない。実token値、modelの安全余裕、cost、latency、品質は未取得であり、A2/B/Cの採択・production cap・production routeは変更しない。本Issueは引き続きIn Progressである。
