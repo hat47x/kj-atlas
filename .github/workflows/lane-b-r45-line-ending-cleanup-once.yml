@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: lane-b/deepseek-v4-migration
-      - name: Build exact CRLF configuration blob
+      - name: Build exact main-relative configuration blob
         shell: bash
         run: |
           set -euo pipefail
@@ -25,7 +25,6 @@ jobs:
           from pathlib import Path
           p = Path('/tmp/configuration.md')
           data = p.read_bytes()
-          assert b'\r\n' in data
           old = (
               b'| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-chat` | DeepSeek API '
               b'\xe3\x81\xab\xe6\xb8\xa1\xe3\x81\x99model ID |\r\n'
@@ -50,11 +49,11 @@ jobs:
           git show :04_Documentation/configuration.md > /tmp/staged-configuration.md
           python - <<'PY'
           from pathlib import Path
-          data = Path('/tmp/staged-configuration.md').read_bytes()
-          assert b'\r\n' in data
-          assert data.count(b'\n') == data.count(b'\r\n')
-          assert b'`KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash`' in data
-          assert b'`KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled`' in data
+          expected = Path('/tmp/configuration.md').read_bytes()
+          staged = Path('/tmp/staged-configuration.md').read_bytes()
+          assert staged == expected
+          assert b'`KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash`' in staged
+          assert b'`KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled`' in staged
           PY
       - name: Commit exact blob and remove workflow
         shell: bash
@@ -63,5 +62,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git update-index --force-remove .github/workflows/lane-b-r45-line-ending-cleanup-once.yml
-          git commit -m 'chore(docs): preserve configuration CRLF in R45'
+          git commit -m 'chore(docs): preserve configuration line endings in R45'
           git push origin HEAD:lane-b/deepseek-v4-migration
