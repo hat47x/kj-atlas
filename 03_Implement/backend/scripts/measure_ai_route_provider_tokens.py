@@ -29,6 +29,7 @@ Narrative本文だけを不必要に膨らませず、図解全量をA/B双方�
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from typing import Any, Protocol
@@ -278,12 +279,18 @@ def build_representative_requests(
     return requests
 
 
+def _prompt_sha256(prompt: str) -> str:
+    """Return an identity fingerprint for the exact UTF-8 provider prompt."""
+    return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+
 def _route_row(req: LLMRequest) -> dict[str, Any]:
     return {
         "task": req.task,
         "prompt": {
             "unicode_chars": len(req.prompt),
             "utf8_bytes": len(req.prompt.encode("utf-8")),
+            "sha256": _prompt_sha256(req.prompt),
         },
         "ir": {
             "cards": len((req.inputs or {}).get("cards", [])),
@@ -381,6 +388,7 @@ def measure(
         "scenario": "300-cards-30-islands-ring",
         "expected_provider": expected_provider,
         "expected_model": model,
+        "prompt_fingerprint": {"algorithm": "sha256", "encoding": "utf-8"},
         "executed": execute,
         "measurement_complete": False,
         "routes": routes,
