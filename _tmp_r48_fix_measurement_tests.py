@@ -11,14 +11,20 @@ new = '''                requested_at="2026-09-05T00:00:00+00:00",
             ),'''
 assert text.count(old) == 1
 text = text.replace(old, new, 1)
+
+# Only the six tests that actually execute measurement rows need the explicit
+# DeepSeek mode. Keep the provider-name mismatch test focused on its earlier
+# fail-fast boundary.
+marker = '\ndef test_provider_name_mismatch_fails_before_any_request_is_sent() -> None:\n'
+prefix, suffix = text.split(marker, 1)
 needle = '''        provider=provider,
 '''
-count = text.count(needle)
+count = prefix.count(needle)
 assert count == 6, count
-text = text.replace(
+prefix = prefix.replace(
     needle,
     '''        provider=provider,
         expected_deepseek_thinking_mode="disabled",
 ''',
 )
-path.write_text(text)
+path.write_text(prefix + marker + suffix)
