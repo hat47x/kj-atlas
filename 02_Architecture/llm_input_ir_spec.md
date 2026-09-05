@@ -822,7 +822,7 @@ A2 contract test では次を機械判定する。
 - route必須カードの切り詰め保護: `01_Plans/issues/done/issue-AI-IR-FOCUS-PRESERVATION-01-preserve-focus-adjudication-under-truncation.md`。共有IR実装は `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`、`detect-contradiction` の配線は `03_Implement/backend/src/kj_atlas_api/routes/ai.py` を参照する。
 - 実装課題: `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`。
 - SafeMode の第一層（本仕様 §7.1 が置き換えてはならない既存実装）: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/issues/done/issue-SEC-AI-SAFEMODE-01-safemode-not-enforced-at-api-boundary.md`。
-- カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。
+- カード→島の一意化規則（先勝ち）の出典: `01_Plans/issues/done/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`。
 - Python 実装（D4=A）: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`。
 
 
