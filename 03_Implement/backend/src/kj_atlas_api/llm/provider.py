@@ -159,7 +159,7 @@ def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
 
     # 4. Provider default. Resolve this before model-governance checks run in
     # the route layer. DeepSeekProvider used to translate "default" only after
-    # that gate, so an otherwise valid deepseek-chat registration was rejected
+    # that gate, so an otherwise valid DeepSeek default-model registration was rejected
     # as model_not_registered whenever the caller omitted `model`.
     if settings.llm_provider.strip().lower() == "deepseek":
         return settings.deepseek_model
@@ -604,6 +604,7 @@ class DeepSeekProvider:
             api_key=settings.deepseek_api_key,
             provider_name=self.provider_name,
             provider_kind=self.provider_kind,
+            thinking_mode=settings.deepseek_thinking_mode,
         )
 
 
@@ -658,6 +659,7 @@ class RegisteredDeepSeekProvider:
             api_key=self._api_key,
             provider_name=self.provider_name,
             provider_kind=self.provider_kind,
+            thinking_mode=settings.deepseek_thinking_mode,
         )
 
 
@@ -805,6 +807,7 @@ def _generate_via_openai_chat(
     api_key: str,
     provider_name: str,
     provider_kind: str,
+    thinking_mode: str,
 ) -> LLMResponse:
     metadata = _new_metadata(
         provider_kind=provider_kind,
@@ -853,6 +856,7 @@ def _generate_via_openai_chat(
         "temperature": req.temperature,
         "max_tokens": req.max_tokens,
         "stream": False,
+        "thinking": {"type": thinking_mode},
     }
     serialized = json.dumps(payload, allow_nan=False, ensure_ascii=False).encode("utf-8")
     if len(serialized) > MAX_LLM_PROVIDER_REQUEST_BYTES:

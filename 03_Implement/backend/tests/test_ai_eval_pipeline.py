@@ -41,7 +41,7 @@ def _stub_metadata() -> LLMCallMetadata:
     return LLMCallMetadata(
         provider_kind="deepseek",
         provider_name="deepseek",
-        model_id="deepseek-chat",
+        model_id="deepseek-v4-flash",
         transport="http",
         requested_at="2026-08-11T00:00:00Z",
         trace_id="llm-eval-mock",
@@ -139,11 +139,11 @@ def test_deepseek_provider_wired_for_eval_tasks(monkeypatch: pytest.MonkeyPatch)
     try:
         settings.llm_provider = "deepseek"
         settings.llm_task_model_map = ""
-        settings.deepseek_model = "deepseek-chat"
+        settings.deepseek_model = "deepseek-v4-flash"
         from kj_atlas_api.llm.provider import resolve_model_for_task
 
-        assert resolve_model_for_task("refine_card_text") == "deepseek-chat"
-        assert resolve_model_for_task("suggest_island_summary") == "deepseek-chat"
+        assert resolve_model_for_task("refine_card_text") == "deepseek-v4-flash"
+        assert resolve_model_for_task("suggest_island_summary") == "deepseek-v4-flash"
     finally:
         settings.llm_provider = original_provider
         settings.llm_task_model_map = original_map
@@ -285,5 +285,5 @@ def test_ai_route_emits_routing_audit_event(
     assert meta.get("task") == "refine_card_text"
     assert "routingStage" in meta  # MMR-05 routing stage recorded
     assert meta.get("provider") == "deepseek"
-    assert meta.get("model_id") == "deepseek-chat"
+    assert meta.get("model_id") == "deepseek-v4-flash"
     assert meta.get("trace_id") == "llm-eval-mock"

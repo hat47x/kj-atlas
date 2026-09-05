@@ -127,12 +127,12 @@ python -m kj_atlas_api.cli admin providers register \
   --id deepseek --kind deepseek --display-name DeepSeek \
   --base-url https://api.deepseek.com --api-key-ref KJ_ATLAS_DEEPSEEK_API_KEY
 python -m kj_atlas_api.cli admin models register \
-  --id deepseek-chat --provider-id deepseek --display-name 'DeepSeek Chat' \
+  --id deepseek-v4-flash --provider-id deepseek --display-name 'DeepSeek V4 Flash' \
   --capabilities intermediate,generate
 python -m kj_atlas_api.cli admin tenants model-allowlist-set \
-  --tenant-id local-default --model-id deepseek-chat
+  --tenant-id local-default --model-id deepseek-v4-flash
 python -m kj_atlas_api.cli admin models set-lifecycle \
-  --id deepseek-chat --state disabled
+  --id deepseek-v4-flash --state disabled
 python -m kj_atlas_api.cli admin audit list --limit 50
 ```
 

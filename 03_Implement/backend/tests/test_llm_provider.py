@@ -596,17 +596,20 @@ def test_deepseek_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     loaded = Settings()
     assert loaded.llm_provider == "deepseek"
     assert loaded.deepseek_base_url == "https://api.deepseek.com"
-    assert loaded.deepseek_model == "deepseek-chat"
+    assert loaded.deepseek_model == "deepseek-v4-flash"
+    assert loaded.deepseek_thinking_mode == "disabled"
     assert loaded.deepseek_api_key == "sk-test-key"
 
 
 def test_deepseek_settings_custom_model(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
     monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_MODEL", "deepseek-reasoner")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_MODEL", "deepseek-v4-pro")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_THINKING_MODE", "enabled")
 
     loaded = Settings()
-    assert loaded.deepseek_model == "deepseek-reasoner"
+    assert loaded.deepseek_model == "deepseek-v4-pro"
+    assert loaded.deepseek_thinking_mode == "enabled"
 
 
 def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -615,13 +618,14 @@ def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.Monk
     original_model = settings.deepseek_model
     settings.deepseek_api_key = "sk-test-key"
     settings.deepseek_base_url = "https://api.deepseek.com"
-    settings.deepseek_model = "deepseek-chat"
+    settings.deepseek_model = "deepseek-v4-flash"
 
     def _fake_urlopen(req, timeout_seconds=120):
         assert req.full_url == "https://api.deepseek.com/v1/chat/completions"
         assert req.headers["Authorization"] == "Bearer sk-test-key"
         payload = json.loads(req.data.decode("utf-8"))
-        assert payload["model"] == "deepseek-chat"
+        assert payload["model"] == "deepseek-v4-flash"
+        assert payload["thinking"] == {"type": "disabled"}
         assert len(payload["messages"]) == 2
         assert payload["messages"][0]["role"] == "system"
         assert payload["messages"][1]["role"] == "user"
@@ -640,7 +644,7 @@ def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.Monk
         assert response.raw_text == "提案タイトル：地域ヒアリングの構造化"
         assert response.provider == "deepseek"
         assert response.metadata.provider_kind == "deepseek"
-        assert response.metadata.model_id == "deepseek-chat"
+        assert response.metadata.model_id == "deepseek-v4-flash"
         assert response.transport == "http"
         assert response.trace_id.startswith("llm-")
     finally:
@@ -656,13 +660,14 @@ def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> No
     original_map = settings.llm_task_model_map
     settings.deepseek_api_key = "sk-test-key"
     settings.deepseek_base_url = "https://api.deepseek.com"
-    settings.deepseek_model = "deepseek-chat"
-    settings.llm_task_model_map = "suggest_document_title=deepseek-reasoner"
+    settings.deepseek_model = "deepseek-v4-flash"
+    settings.llm_task_model_map = "suggest_document_title=deepseek-v4-pro"
 
     def _fake_urlopen(req, timeout_seconds=120):
         payload = json.loads(req.data.decode("utf-8"))
         # Task-model map should override the default model
-        assert payload["model"] == "deepseek-reasoner"
+        assert payload["model"] == "deepseek-v4-pro"
+        assert payload["thinking"] == {"type": "disabled"}
         return _StubHTTPResponse(
             '{"choices":[{"message":{"content":"ok"}}]}'
         )
@@ -673,12 +678,21 @@ def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> No
         response = DeepSeekProvider().generate(
             LLMRequest(task="suggest_document_title", prompt="test")
         )
-        assert response.metadata.model_id == "deepseek-reasoner"
+        assert response.metadata.model_id == "deepseek-v4-pro"
     finally:
         settings.deepseek_api_key = original_key
         settings.deepseek_base_url = original_url
         settings.deepseek_model = original_model
         settings.llm_task_model_map = original_map
+
+
+def test_deepseek_settings_reject_invalid_thinking_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
+    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_THINKING_MODE", "auto")
+
+    with pytest.raises(ValueError, match="KJ_ATLAS_DEEPSEEK_THINKING_MODE"):
+        Settings()
 
 
 def test_deepseek_auth_error_401(monkeypatch: pytest.MonkeyPatch) -> None:

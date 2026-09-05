@@ -130,7 +130,7 @@ class TestExternalLLMIntegration:
     - Ollama:       python3 openai_compatible_adapter.py --port 8001
     - DeepSeek:     LLM_API_KEY=sk-... python3 openai_compatible_adapter.py
                     --port 8001 --base-url https://api.deepseek.com/v1
-                    --model deepseek-chat
+                    --model deepseek-v4-flash
     - OpenAI:       LLM_API_KEY=sk-... python3 openai_compatible_adapter.py
                     --port 8001 --base-url https://api.openai.com/v1
                     --model gpt-4o-mini
