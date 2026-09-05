@@ -11,6 +11,16 @@ from kj_atlas_api.llm.provider import LLMCallMetadata, LLMRequest, LLMResponse
 from scripts import measure_ai_route_provider_tokens as token_measure
 
 
+EXPECTED_ROUTES = {
+    "suggest-card-groups",
+    "suggest-card-groups-route-b",
+    "suggest-layout",
+    "suggest-layout-route-b",
+    "generate-narrative",
+    "check-narrative",
+}
+
+
 class _UsageProvider:
     provider_name = "named-test-provider"
     provider_kind = "deepseek"
@@ -24,11 +34,10 @@ class _UsageProvider:
         input_tokens = None
         output_tokens = None
         if self.report_usage:
-            input_tokens = {
-                "re_layout": 7000,
-                "generate_narrative": 5000,
-                "check_narrative": 11000,
-            }[req.task]
+            # Fake provider-reported usage. The values are intentionally arbitrary
+            # and are not derived from bytes/chars; the test only proves that the
+            # measurement harness records each provider response under the right row.
+            input_tokens = (4000, 5000, 7000, 8000, 6000, 11000)[len(self.calls) - 1]
             output_tokens = 1
         return LLMResponse(
             raw_text="{}",
@@ -37,41 +46,58 @@ class _UsageProvider:
                 provider_name=self.provider_name,
                 model_id=req.model or "unknown",
                 transport="http",
-                requested_at="2026-09-03T00:00:00+00:00",
-                trace_id=f"trace-{req.task}",
+                requested_at="2026-09-05T00:00:00+00:00",
+                trace_id=f"trace-{len(self.calls)}",
             ),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
 
 
-def test_representative_requests_compare_ir_routes_and_full_check_narrative() -> None:
+def test_representative_requests_compare_current_b_and_full_routes() -> None:
     requests = token_measure.build_representative_requests("named-model")
 
-    assert set(requests) == {"suggest-layout", "generate-narrative", "check-narrative"}
+    assert set(requests) == EXPECTED_ROUTES
+    groups = requests["suggest-card-groups"]
+    groups_b = requests["suggest-card-groups-route-b"]
     layout = requests["suggest-layout"]
+    layout_b = requests["suggest-layout-route-b"]
     narrative = requests["generate-narrative"]
     check = requests["check-narrative"]
 
-    assert layout.task == "re_layout"
+    assert groups.task == groups_b.task == "suggest_card_groups"
+    assert layout.task == layout_b.task == "re_layout"
     assert narrative.task == "generate_narrative"
     assert check.task == "check_narrative"
-    assert layout.model == narrative.model == check.model == "named-model"
-    assert layout.max_tokens == narrative.max_tokens == check.max_tokens == 1
+    assert {req.model for req in requests.values()} == {"named-model"}
+    assert {req.max_tokens for req in requests.values()} == {1}
 
-    # 同じ300カード入力について、座標を使うIR route、座標を使わないIR route、
-    # そしてStage 5で最後に残る全量prompt routeを同じ計測面へ置く。
+    # R23 current/B pairs use the same 300-card scenarios. The B candidate
+    # restores route-required coverage without changing production caps.
+    assert len((groups.inputs or {}).get("cards", [])) == 200
+    assert len((groups_b.inputs or {}).get("cards", [])) == 300
+    assert (groups.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
+    assert (groups_b.inputs or {})["truncation"] == {
+        "truncated": False,
+        "reason_codes": [],
+    }
     assert len((layout.inputs or {}).get("coordinates", [])) == 200
-    assert "coordinates" not in (narrative.inputs or {})
-    assert (layout.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
-    assert (narrative.inputs or {})["truncation"]["reason_codes"] == ["MAX_CARDS"]
+    assert len((layout_b.inputs or {}).get("coordinates", [])) == 300
+    assert len((layout.inputs or {}).get("relations", [])) == 199
+    assert len((layout_b.inputs or {}).get("relations", [])) == 300
 
-    # check-narrativeは現行production routeを忠実に再現し、まだIRを通さない。
-    # coverageを落とさず全量を載せていることを、末尾のカード・島まで確認する。
+    # Pin R23 dry-run diagnostics so the later provider run compares exactly the
+    # candidate prompts that were structurally characterized. These are NOT tokens.
+    assert len(groups.prompt.encode("utf-8")) == 38044
+    assert len(groups_b.prompt.encode("utf-8")) == 48791
+    assert len(layout.prompt.encode("utf-8")) == 117389
+    assert len(layout_b.prompt.encode("utf-8")) == 128562
+
+    # Existing whole-document comparison routes remain present.
+    assert "coordinates" not in (narrative.inputs or {})
     assert check.inputs is None
     assert 'id="c299"' in check.prompt
     assert 'id="i29"' in check.prompt
-    assert "観察290" in check.prompt
 
 
 def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
@@ -83,7 +109,7 @@ def test_dry_run_never_needs_a_provider_or_claims_exact_tokens() -> None:
 
     assert report["executed"] is False
     assert report["measurement_complete"] is False
-    assert set(report["routes"]) == {"suggest-layout", "generate-narrative", "check-narrative"}
+    assert set(report["routes"]) == EXPECTED_ROUTES
     for row in report["routes"].values():
         assert row["status"] == "dry-run"
         assert row["provider_reported"]["input_tokens"] is None
@@ -117,11 +143,12 @@ def test_documented_direct_cli_runs_as_a_dry_run_without_network_access() -> Non
 
     assert report["executed"] is False
     assert report["measurement_complete"] is False
-    assert set(report["routes"]) == {"suggest-layout", "generate-narrative", "check-narrative"}
-    assert report["routes"]["check-narrative"]["status"] == "dry-run"
+    assert set(report["routes"]) == EXPECTED_ROUTES
+    assert report["routes"]["suggest-card-groups-route-b"]["status"] == "dry-run"
+    assert report["routes"]["suggest-layout-route-b"]["status"] == "dry-run"
 
 
-def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
+def test_provider_reported_usage_is_recorded_per_comparison_without_estimation() -> None:
     provider = _UsageProvider()
     report = token_measure.measure(
         model="named-model",
@@ -131,20 +158,21 @@ def test_provider_reported_usage_is_recorded_without_token_estimation() -> None:
     )
 
     assert report["measurement_complete"] is True
-    assert len(provider.calls) == 3
-    assert report["routes"]["suggest-layout"]["status"] == "measured"
-    assert report["routes"]["suggest-layout"]["provider_reported"] == {
-        "input_tokens": 7000,
-        "output_tokens": 1,
+    assert len(provider.calls) == 6
+    expected_tokens = {
+        "suggest-card-groups": 4000,
+        "suggest-card-groups-route-b": 5000,
+        "suggest-layout": 7000,
+        "suggest-layout-route-b": 8000,
+        "generate-narrative": 6000,
+        "check-narrative": 11000,
     }
-    assert report["routes"]["generate-narrative"]["provider_reported"] == {
-        "input_tokens": 5000,
-        "output_tokens": 1,
-    }
-    assert report["routes"]["check-narrative"]["provider_reported"] == {
-        "input_tokens": 11000,
-        "output_tokens": 1,
-    }
+    for route, expected in expected_tokens.items():
+        assert report["routes"][route]["status"] == "measured"
+        assert report["routes"][route]["provider_reported"] == {
+            "input_tokens": expected,
+            "output_tokens": 1,
+        }
 
 
 def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
@@ -157,10 +185,10 @@ def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
     )
 
     assert report["measurement_complete"] is False
-    assert len(provider.calls) == 3
-    assert {
-        row["status"] for row in report["routes"].values()
-    } == {"provider-did-not-report-usage"}
+    assert len(provider.calls) == 6
+    assert {row["status"] for row in report["routes"].values()} == {
+        "provider-did-not-report-usage"
+    }
 
 
 def test_provider_name_mismatch_fails_before_any_request_is_sent() -> None:

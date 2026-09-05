@@ -40,12 +40,19 @@ from kj_atlas_api.llm.provider import (
     get_provider,
 )
 from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest
+from kj_atlas_api.models_ai import (
+    CheckNarrativeRequest,
+    GenerateNarrativeRequest,
+    SuggestCardGroupsRequest,
+)
 from kj_atlas_api.routes.ai import (
     _build_generate_narrative_prompt,
     _build_narrative_check_prompt,
     _build_prompt,
+    _build_suggest_card_groups_prompt,
+    _card_group_candidates,
     _generate_narrative_ir,
+    _suggest_card_groups_ir,
     _suggest_layout_ir,
 )
 
@@ -54,10 +61,20 @@ from kj_atlas_api.routes.ai import (
 # 後者では `scripts/` 自身が sys.path の先頭になるため sibling import が必要になる。
 try:
     from scripts.measure_ai_route_prompt_coverage import representative_document
+    from scripts.measure_ai_route_projection_candidates import (
+        _groups_candidate_context,
+        _late_layout_document,
+        _layout_candidate_context,
+    )
 except ModuleNotFoundError as exc:
     if exc.name != "scripts":
         raise
     from measure_ai_route_prompt_coverage import representative_document
+    from measure_ai_route_projection_candidates import (
+        _groups_candidate_context,
+        _late_layout_document,
+        _layout_candidate_context,
+    )
 
 OPT_IN_ENV = "KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN"
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
@@ -83,33 +100,92 @@ def _representative_check_narrative_text(doc: dict[str, Any]) -> str:
 
 
 def build_representative_requests(model: str) -> dict[str, LLMRequest]:
-    """同じ決定論的な代表入力から、比較対象となる3つのプロンプトを生成する。"""
-    doc = representative_document(include_evidence=False)
+    """同じ代表規模でcurrent投影・route-B候補・全量routeを比較する。
 
-    layout_payload = SuggestLayoutRequest.model_validate({"doc": doc})
+    R23のmeasurement-only B候補をここでも同じbuilderから生成し、認証情報が
+    利用可能になった時点でcurrent/Bを同じnamed provider/modelへ送れるようにする。
+    production routeやshared IR上限は変更しない。
+    """
+    base_doc = representative_document(include_evidence=False)
+
+    groups_doc = representative_document(include_evidence=False)
+    next(card for card in groups_doc["cards"] if card["id"] == "c298")["holdState"] = "held"
+    groups_payload = SuggestCardGroupsRequest.model_validate(
+        {
+            "doc": groups_doc,
+            "cards": [
+                {
+                    "id": card["id"],
+                    "text": card["text"],
+                    "textReviewed": True,
+                }
+                for card in groups_doc["cards"]
+            ],
+        }
+    )
+    groups_ir = _suggest_card_groups_ir(groups_payload)
+    groups_candidate_ids, _ = _card_group_candidates(groups_payload, groups_ir)
+    groups_prompt = _build_suggest_card_groups_prompt(
+        groups_payload, groups_ir, groups_candidate_ids
+    )
+    groups_b_context = _groups_candidate_context(groups_payload)
+    groups_b_candidate_ids, _ = _card_group_candidates(groups_payload, groups_b_context)
+    groups_b_prompt = _build_suggest_card_groups_prompt(
+        groups_payload, groups_b_context, groups_b_candidate_ids
+    )
+
+    layout_doc = _late_layout_document()
+    layout_payload = SuggestLayoutRequest.model_validate({"doc": layout_doc})
     layout_ir = _suggest_layout_ir(layout_payload)
     layout_prompt = _build_prompt(layout_payload, layout_ir)
+    layout_b_context = _layout_candidate_context(layout_payload)
+    layout_b_prompt = _build_prompt(layout_payload, layout_b_context)
 
-    narrative_payload = GenerateNarrativeRequest.model_validate({"doc": doc})
+    narrative_payload = GenerateNarrativeRequest.model_validate({"doc": base_doc})
     narrative_ir = _generate_narrative_ir(narrative_payload)
     narrative_prompt = _build_generate_narrative_prompt(narrative_payload, narrative_ir)
 
     check_payload = CheckNarrativeRequest.model_validate(
         {
-            "doc": doc,
-            "narrativeText": _representative_check_narrative_text(doc),
+            "doc": base_doc,
+            "narrativeText": _representative_check_narrative_text(base_doc),
         }
     )
     check_prompt = _build_narrative_check_prompt(check_payload)
 
     return {
+        "suggest-card-groups": LLMRequest(
+            task="suggest_card_groups",
+            prompt=groups_prompt,
+            inputs=groups_ir,
+            temperature=0.0,
+            max_tokens=1,
+            model=model,
+        ),
+        "suggest-card-groups-route-b": LLMRequest(
+            task="suggest_card_groups",
+            prompt=groups_b_prompt,
+            # Measurement-only R23 candidate context. Provider transports ignore
+            # inputs and send prompt only; carrying it here keeps diagnostics paired.
+            inputs=groups_b_context,
+            temperature=0.0,
+            max_tokens=1,
+            model=model,
+        ),
         "suggest-layout": LLMRequest(
             task="re_layout",
             prompt=layout_prompt,
             inputs=layout_ir,
             temperature=0.0,
-            # 入力トークン数の測定には、実質的な回答本文は不要である。
-            # プロバイダー層が受理する最小値まで出力上限を下げ、費用と待ち時間を抑える。
+            max_tokens=1,
+            model=model,
+        ),
+        "suggest-layout-route-b": LLMRequest(
+            task="re_layout",
+            prompt=layout_b_prompt,
+            # Measurement-only R23 candidate context; not a production IR contract.
+            inputs=layout_b_context,
+            temperature=0.0,
             max_tokens=1,
             model=model,
         ),
@@ -123,8 +199,6 @@ def build_representative_requests(model: str) -> dict[str, LLMRequest]:
         ),
         "check-narrative": LLMRequest(
             task="check_narrative",
-            # 現行production routeを忠実に再現する。check-narrativeはまだ
-            # generic Document IR / route固有structured inputへ移行していない。
             prompt=check_prompt,
             inputs=None,
             temperature=0.0,
@@ -248,7 +322,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         required=True,
-        help="3つの代表ルートで共通して使用する正確なモデルID。",
+        help="すべての比較対象で共通して使用する正確なモデルID。",
     )
     parser.add_argument(
         "--execute",

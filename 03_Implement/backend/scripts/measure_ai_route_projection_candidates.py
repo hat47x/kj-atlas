@@ -31,7 +31,12 @@ from kj_atlas_api.routes.ai import (
     _suggest_card_groups_ir,
     _suggest_layout_ir,
 )
-from scripts.measure_ai_route_prompt_coverage import representative_document
+try:
+    from scripts.measure_ai_route_prompt_coverage import representative_document
+except ModuleNotFoundError as exc:
+    if exc.name != "scripts":
+        raise
+    from measure_ai_route_prompt_coverage import representative_document
 
 TAIL_A = "c298"
 TAIL_B = "c299"
