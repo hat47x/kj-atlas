@@ -55,6 +55,7 @@ class _UsageProvider:
                 transport="http",
                 requested_at="2026-09-05T00:00:00+00:00",
                 trace_id=f"trace-{len(self.calls)}",
+                thinking_mode="disabled",
             ),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -333,6 +334,7 @@ def test_provider_reported_usage_is_recorded_per_comparison_without_estimation()
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
     )
 
     assert report["measurement_complete"] is True
@@ -360,6 +362,7 @@ def test_groups_a2_provider_usage_is_reported_without_estimation() -> None:
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
         include_groups_a2=True,
     )
 
@@ -383,6 +386,7 @@ def test_groups_a2_missing_usage_remains_incomplete_without_estimation() -> None
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
         include_groups_a2=True,
     )
 
@@ -401,6 +405,7 @@ def test_layout_c_provider_usage_aggregates_only_reported_usage() -> None:
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
         include_layout_c=True,
     )
 
@@ -427,6 +432,7 @@ def test_layout_c_missing_usage_stays_incomplete_without_estimation() -> None:
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
         include_layout_c=True,
     )
 
@@ -446,6 +452,7 @@ def test_missing_provider_usage_is_recorded_as_measurement_incomplete() -> None:
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
     )
 
     assert report["measurement_complete"] is False

@@ -190,6 +190,9 @@ class LLMCallMetadata:
     trace_id: str
     fallback_to_none: bool = False
     execution_path: str = "primary"
+    # DeepSeek V4 request mode. Kept separate from generic audit fields because
+    # it is a provider-specific generation setting, not prompt/token content.
+    thinking_mode: str | None = None
 
     def as_audit_fields(self) -> dict[str, object]:
         return {
@@ -304,7 +307,7 @@ def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, transport: str, fallback_to_none: bool = False) -> LLMCallMetadata:
+def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, transport: str, fallback_to_none: bool = False, thinking_mode: str | None = None) -> LLMCallMetadata:
     return LLMCallMetadata(
         provider_kind=provider_kind,
         provider_name=provider_name,
@@ -313,6 +316,7 @@ def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, tran
         requested_at=_now_utc_iso(),
         trace_id=f"llm-{uuid4()}",
         fallback_to_none=fallback_to_none,
+        thinking_mode=thinking_mode,
     )
 
 
@@ -814,6 +818,7 @@ def _generate_via_openai_chat(
         provider_name=provider_name,
         model_id=model_id,
         transport="http",
+        thinking_mode=thinking_mode,
     )
 
     if (

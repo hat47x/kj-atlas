@@ -57,6 +57,7 @@ from kj_atlas_api.routes.ai import (
     _suggest_card_groups_ir,
     _suggest_layout_ir,
 )
+from kj_atlas_api.settings import settings
 
 # `python -m scripts.measure_ai_route_provider_tokens` と、Issue本文で案内している
 # `python scripts/measure_ai_route_provider_tokens.py` の両方を正式に動かす。
@@ -92,6 +93,11 @@ except ModuleNotFoundError as exc:
 
 OPT_IN_ENV = "KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN"
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
+_DEEPSEEK_THINKING_MODES = frozenset({"disabled", "enabled"})
+PROVIDER_GENERATION_PROVENANCE = {
+    "version": 1,
+    "deepseek_field": "thinking.type",
+}
 
 
 class _Provider(Protocol):
@@ -314,6 +320,7 @@ def _route_row(req: LLMRequest) -> dict[str, Any]:
         },
         "provider_call": None,
         "provider_input": None,
+        "provider_generation": None,
         "provider_reported": {
             "input_tokens": None,
             "output_tokens": None,
@@ -380,6 +387,7 @@ def measure(
     provider: _Provider | None = None,
     include_layout_c: bool = False,
     include_groups_a2: bool = False,
+    expected_deepseek_thinking_mode: str | None = None,
 ) -> dict[str, Any]:
     """計測レポートを作成し、明示的に許可された場合だけプロバイダーを呼び出す。
 
@@ -391,6 +399,11 @@ def measure(
         raise ValueError("`model` には空でないモデルIDを指定してください")
     if not expected_provider.strip():
         raise ValueError("`expected_provider` にはプロバイダー名を指定してください")
+    if (
+        expected_deepseek_thinking_mode is not None
+        and expected_deepseek_thinking_mode not in _DEEPSEEK_THINKING_MODES
+    ):
+        raise ValueError("DeepSeek thinking mode must be disabled or enabled")
 
     requests = build_representative_requests(
         model,
@@ -411,6 +424,8 @@ def measure(
             "algorithm": "sha256",
             "encoding": "utf-8",
         },
+        "provider_generation_provenance": PROVIDER_GENERATION_PROVENANCE,
+        "expected_deepseek_thinking_mode": expected_deepseek_thinking_mode,
         "executed": execute,
         "measurement_complete": False,
         "routes": routes,
@@ -430,6 +445,19 @@ def measure(
     if provider.provider_name != expected_provider:
         raise ValueError(
             "現在設定されているプロバイダーが、計測対象として指定したプロバイダー名と一致しません"
+        )
+    if provider.provider_kind == "deepseek":
+        if expected_deepseek_thinking_mode not in _DEEPSEEK_THINKING_MODES:
+            raise ValueError(
+                "DeepSeek measurement requires an explicit expected thinking mode"
+            )
+        if settings.deepseek_thinking_mode != expected_deepseek_thinking_mode:
+            raise ValueError(
+                "configured DeepSeek thinking mode does not match the measurement expectation"
+            )
+    elif expected_deepseek_thinking_mode is not None:
+        raise ValueError(
+            "DeepSeek thinking mode expectation is only valid for a DeepSeek provider"
         )
 
     all_measured = True
@@ -452,6 +480,9 @@ def measure(
                 "kind": "openai-chat-messages-v1",
                 "sha256": _openai_chat_messages_sha256(req),
             }
+            row["provider_generation"] = {
+                "thinking_mode": response.metadata.thinking_mode,
+            }
         row["provider_reported"] = {
             "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens,
@@ -462,6 +493,12 @@ def measure(
             all_measured = False
         elif response.metadata.model_id != model:
             row["status"] = "model-mismatch"
+            all_measured = False
+        elif (
+            response.metadata.provider_kind == "deepseek"
+            and response.metadata.thinking_mode != expected_deepseek_thinking_mode
+        ):
+            row["status"] = "generation-mode-mismatch"
             all_measured = False
         elif response.input_tokens is None:
             row["status"] = "provider-did-not-report-usage"
@@ -491,6 +528,16 @@ def _parser() -> argparse.ArgumentParser:
         "--model",
         required=True,
         help="すべての比較対象で共通して使用する正確なモデルID。",
+    )
+    parser.add_argument(
+        "--deepseek-thinking-mode",
+        choices=("disabled", "enabled"),
+        default=None,
+        help=(
+            "Expected DeepSeek V4 thinking.type for this measurement. "
+            "Required before executing a DeepSeek provider so an environment override "
+            "cannot silently change the measured request mode."
+        ),
     )
     parser.add_argument(
         "--execute",
@@ -533,6 +580,7 @@ def main() -> int:
                     execute=False,
                     include_layout_c=args.include_layout_c,
                     include_groups_a2=args.include_groups_a2,
+                    expected_deepseek_thinking_mode=args.deepseek_thinking_mode,
                 ),
                 ensure_ascii=False,
                 indent=2,
@@ -564,6 +612,7 @@ def main() -> int:
             provider=provider,
             include_layout_c=args.include_layout_c,
             include_groups_a2=args.include_groups_a2,
+            expected_deepseek_thinking_mode=args.deepseek_thinking_mode,
         )
     except ValueError as exc:
         print(

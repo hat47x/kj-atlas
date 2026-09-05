@@ -52,6 +52,11 @@ PROVIDER_INPUT_PROVENANCE = {
     "algorithm": "sha256",
     "encoding": "utf-8",
 }
+PROVIDER_GENERATION_PROVENANCE = {
+    "version": 1,
+    "deepseek_field": "thinking.type",
+}
+_DEEPSEEK_THINKING_MODES = frozenset({"disabled", "enabled"})
 CORE_ROUTE_TASKS = {
     "suggest-card-groups": "suggest_card_groups",
     "suggest-card-groups-route-b": "suggest_card_groups",
@@ -94,6 +99,7 @@ def _validate_measured_route(
     expected_model: str,
     expected_prompt_sha256: str | None,
     expected_deepseek_input_sha256: str | None,
+    expected_deepseek_thinking_mode: str | None,
     errors: list[str],
 ) -> int | None:
     if not isinstance(row, dict):
@@ -160,6 +166,13 @@ def _validate_measured_route(
             or provider_input.get("sha256") != expected_deepseek_input_sha256
         ):
             errors.append(f"provider-input-fingerprint-mismatch:{name}")
+            return None
+        provider_generation = row.get("provider_generation")
+        if not isinstance(provider_generation, dict):
+            errors.append(f"provider-generation-metadata-missing:{name}")
+            return None
+        if provider_generation.get("thinking_mode") != expected_deepseek_thinking_mode:
+            errors.append(f"provider-generation-mode-mismatch:{name}")
             return None
 
     token = _int_token(row)
@@ -343,11 +356,18 @@ def analyze(
         isinstance(row, dict) and row.get("actual_provider_kind") == "deepseek"
         for row in routes.values()
     )
-    if (
-        has_deepseek_measurement
-        and report.get("provider_input_provenance") != PROVIDER_INPUT_PROVENANCE
-    ):
-        errors.append("unsupported-or-missing-provider-input-provenance")
+    expected_deepseek_thinking_mode = report.get("expected_deepseek_thinking_mode")
+    if has_deepseek_measurement:
+        if report.get("provider_input_provenance") != PROVIDER_INPUT_PROVENANCE:
+            errors.append("unsupported-or-missing-provider-input-provenance")
+        if (
+            report.get("provider_generation_provenance")
+            != PROVIDER_GENERATION_PROVENANCE
+        ):
+            errors.append("unsupported-or-missing-provider-generation-provenance")
+        if expected_deepseek_thinking_mode not in _DEEPSEEK_THINKING_MODES:
+            errors.append("missing-or-invalid-expected-deepseek-thinking-mode")
+            expected_deepseek_thinking_mode = None
     for unexpected in sorted(set(routes) - set(canonical_requests)):
         errors.append(f"unexpected-route:{unexpected}")
 
@@ -364,6 +384,7 @@ def analyze(
             expected_model=expected_model,
             expected_prompt_sha256=canonical_prompt_hashes.get(name),
             expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),
+            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,
             errors=errors,
         )
         if token is not None:
@@ -381,6 +402,7 @@ def analyze(
             expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(
                 GROUPS_A2_ROUTE
             ),
+            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,
             errors=errors,
         )
         if token is not None:
@@ -405,6 +427,7 @@ def analyze(
                 expected_model=expected_model,
                 expected_prompt_sha256=canonical_prompt_hashes.get(name),
                 expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),
+                expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,
                 errors=errors,
             )
             if token is not None and name in expected_layout_c:
@@ -507,7 +530,9 @@ def analyze(
             "All token observations and deltas come only from provider_reported.input_tokens. "
             "Prompt/provider-input SHA-256 values are identity/provenance only; bytes, chars, "
             "and hashes are never converted into tokens. DeepSeek measurements additionally bind "
-            "the exact current OpenAI-chat system+user message content. Context minimums add the "
+            "the exact current OpenAI-chat system+user message content and record the explicit "
+            "thinking.type used by the transport. That generation mode is provenance, not a token "
+            "estimate. Context minimums add the "
             "current production LLMRequest output reserve to provider-reported input usage; an "
             "operator-supplied context window can establish hard fit only when its documentation "
             "reference is recorded. The reference is provenance, not independently verified by "

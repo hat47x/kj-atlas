@@ -31,6 +31,7 @@ class _DeepSeekUsageProvider:
                 trace_id=f"deepseek-trace-{index}",
                 fallback_to_none=False,
                 execution_path="primary",
+                thinking_mode="disabled",
             ),
             input_tokens=2000 + index,
             output_tokens=1,
@@ -44,6 +45,7 @@ def _measured_report() -> dict:
         expected_provider=provider.provider_name,
         execute=True,
         provider=provider,
+        expected_deepseek_thinking_mode="disabled",
     )
     assert len(provider.calls) == 6
     return report
@@ -68,10 +70,18 @@ def test_deepseek_measurement_records_exact_message_fingerprint() -> None:
     requests = token_measure.build_representative_requests("named-model")
 
     assert report["provider_input_provenance"] == analysis.PROVIDER_INPUT_PROVENANCE
+    assert (
+        report["provider_generation_provenance"]
+        == analysis.PROVIDER_GENERATION_PROVENANCE
+    )
+    assert report["expected_deepseek_thinking_mode"] == "disabled"
     for name, req in requests.items():
         assert report["routes"][name]["provider_input"] == {
             "kind": "openai-chat-messages-v1",
             "sha256": token_measure._openai_chat_messages_sha256(req),
+        }
+        assert report["routes"][name]["provider_generation"] == {
+            "thinking_mode": "disabled",
         }
 
     result = analysis.analyze(report)
@@ -97,6 +107,44 @@ def test_missing_deepseek_provider_input_contract_fails_closed() -> None:
 
     assert result["decision_ready"] is False
     assert "unsupported-or-missing-provider-input-provenance" in result["errors"]
+
+
+def test_deepseek_measurement_requires_expected_thinking_mode_before_calls() -> None:
+    provider = _DeepSeekUsageProvider()
+
+    try:
+        token_measure.measure(
+            model="named-model",
+            expected_provider=provider.provider_name,
+            execute=True,
+            provider=provider,
+        )
+    except ValueError as exc:
+        assert "explicit expected thinking mode" in str(exc)
+    else:
+        raise AssertionError("DeepSeek measurement must require an explicit thinking mode")
+
+    assert provider.calls == []
+
+
+def test_changed_deepseek_thinking_mode_fails_closed() -> None:
+    report = _measured_report()
+    report["routes"]["suggest-layout"]["provider_generation"]["thinking_mode"] = "enabled"
+
+    result = analysis.analyze(report)
+
+    assert result["decision_ready"] is False
+    assert "provider-generation-mode-mismatch:suggest-layout" in result["errors"]
+
+
+def test_missing_deepseek_generation_provenance_fails_closed() -> None:
+    report = _measured_report()
+    del report["provider_generation_provenance"]
+
+    result = analysis.analyze(report)
+
+    assert result["decision_ready"] is False
+    assert "unsupported-or-missing-provider-generation-provenance" in result["errors"]
 
 
 def test_system_task_content_changes_message_fingerprint_even_with_same_user_prompt() -> None:

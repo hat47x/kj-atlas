@@ -645,6 +645,7 @@ def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.Monk
         assert response.provider == "deepseek"
         assert response.metadata.provider_kind == "deepseek"
         assert response.metadata.model_id == "deepseek-v4-flash"
+        assert response.metadata.thinking_mode == "disabled"
         assert response.transport == "http"
         assert response.trace_id.startswith("llm-")
     finally:
