@@ -1,0 +1,58 @@
+name: lane-b-r37-provider-input-once
+
+on:
+  push:
+    branches:
+      - lane-b/provider-transport-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/provider-transport-provenance
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply R37 patch
+        run: python .github/lane-b-r37-patch.py
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+      - name: Run R37 and related regressions
+        working-directory: 03_Implement/backend
+        run: |
+          python -m pytest -q \
+            tests/test_ai_route_provider_transport_input_provenance.py \
+            tests/test_ai_route_provider_call_provenance.py \
+            tests/test_ai_route_provider_prompt_fingerprint.py \
+            tests/test_ai_route_provider_measurement_analysis.py \
+            tests/test_ai_route_provider_token_measurement.py \
+            tests/test_ai_route_a2_candidate.py \
+            tests/test_ai_route_projection_candidates.py \
+            tests/test_ai_layout_hierarchical_candidate.py \
+            tests/test_ai_layout_hierarchical_composition.py
+      - name: Lint and hygiene
+        run: |
+          cd 03_Implement/backend
+          python -m ruff check \
+            src/kj_atlas_api/llm/provider.py \
+            scripts/measure_ai_route_provider_tokens.py \
+            scripts/analyze_ai_route_provider_measurement.py \
+            tests/test_ai_route_provider_transport_input_provenance.py
+          cd ../..
+          git diff --check
+      - name: Commit tested slice and remove temporary files
+        run: |
+          rm .github/lane-b-r37-patch.py
+          rm .github/workflows/lane-b-r37-provider-input-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'test(ai): bind DeepSeek token usage to exact chat input'
+          git push origin HEAD:lane-b/provider-transport-provenance
