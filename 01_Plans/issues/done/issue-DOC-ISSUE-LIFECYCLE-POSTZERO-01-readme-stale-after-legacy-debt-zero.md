@@ -38,7 +38,7 @@ R18で観測された58件のlegacy Done-at-rootは、PR #2950までの段階移
 - [x] `LEGACY_DONE_AT_ROOT_BASELINE = 0` を現行契約として説明し、baseline再増加を運用として禁止する。
 - [x] `legacy_done_at_root_r18.json` を歴史証拠として位置づけ、移行許可リストではないことを明示する。
 - [x] `test_legacy_done_root_references.py` による旧root参照回帰guardをREADMEへ反映する。
-- [ ] planning unit tests、active memo validator、docs-check、triage、stale merge reintroduction、`git diff --check` が通る。
+- [x] planning unit tests、active memo validator、docs-check、triage、stale merge reintroduction、`git diff --check` が通る。
 
 ## 検証計画
 
@@ -49,6 +49,20 @@ R18で観測された58件のlegacy Done-at-rootは、PR #2950までの段階移
 - `python 01_Plans/triage_actionable_plans.py --format json`
 - `python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong`
 - `git diff --check origin/main...HEAD`
+
+## 検証結果（2026-09-05）
+
+branch限定の GitHub Actions Run `33954837379` で、post-zero README差分と完了メモを検証した。
+
+- Issue lifecycle: 35 tests passed
+- Planning tests: 134 tests passed / 1 skipped
+- Active issue memo validation: 43 memos validated
+- docs-check: active_memos=43, tracked_markdown=782
+- triage: active=43 / ready=7 / blocked=36 / actionable ADR=0 / errors=[]
+- stale merge reintroduction: overlapCount=0 / strongCount=0 / findings=[]
+- `git diff --check origin/main...HEAD`: pass
+
+最初の一時workflow定義 Run `33954749696` はjob作成前に失敗したため検証結果として扱わず、定義をread-onlyの単純なbranch限定workflowへ修正して上記Runで再検証した。成功後、一時workflowは最終差分から削除した。恒久CI、branch protection、required status checkは変更していない。
 
 ## 補足
 
