@@ -156,6 +156,11 @@ async function installSaasServer(context: BrowserContext, state: ServerState) {
 
 async function seedTenantCaches(context: BrowserContext) {
   await context.addInitScript(() => {
+    const seedMarker = "kj-atlas-e2e-round8-tenant-storage-seeded";
+    if (window.sessionStorage.getItem(seedMarker) === "1") {
+      return;
+    }
+
     const principalId = "principal-1";
     const prefixFor = (tenantId: "tenant-a" | "tenant-b") => (
       `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
@@ -172,6 +177,7 @@ async function seedTenantCaches(context: BrowserContext) {
       scopedKey("tenant-b", "kj-atlas/recent-doc-ids"),
       JSON.stringify(["doc_tenant_b_round8"]),
     );
+    window.sessionStorage.setItem(seedMarker, "1");
   });
 }
 
