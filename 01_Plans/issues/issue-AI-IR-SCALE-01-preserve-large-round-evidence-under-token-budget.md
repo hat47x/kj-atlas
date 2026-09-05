@@ -402,3 +402,21 @@ layoutはlegacy `Cards:` 節が全300枚のid/text/raw座標を既に保持す�
 - `suggest-layout`: Bでcoverageは回復するが、全体配置に必要な構造は文書規模へ比例する。A2/B/Cのtoken余裕比較は依然必要で、B採用済みとはしない。
 - Unicode文字数・UTF-8 bytesをtoken数へ換算しない。正確なtoken数はR20どおりprovider-reported usageだけを採用する。
 - production route、`MAX_CARDS/MAX_RELATIONS/MAX_TEXT_CHARS`、SafeMode/PII/structured-text/proposal-only境界は本characterizationでは変更していない。
+
+
+## R24 — named provider実測をcurrent/B同一run比較へ拡張
+
+R23で方式B候補のcoverageを構造的に比較できたため、R20のprovider token計測ハーネスへ同じ候補promptを接続した。production routeやshared IR上限は変えず、認証情報が利用可能になった時点で**同じnamed provider/modelへの1回の計測run**からcurrent/B差をprovider-reported usageで直接比較できるようにする。
+
+| 比較対象 | UTF-8 bytes (dry-run) | provider-reported input tokens |
+| --- | ---: | ---: |
+| `suggest-card-groups` current | 38,044 | 実測待ち |
+| `suggest-card-groups` route-B | 48,791 | 実測待ち |
+| `suggest-layout` current | 117,389 | 実測待ち |
+| `suggest-layout` route-B | 128,562 | 実測待ち |
+| `generate-narrative` | 89,322 | 実測待ち |
+| `check-narrative` | 198,083 | 実測待ち |
+
+このbyte数は診断情報でありtoken推定には使わない。正確な入力token数として採用するのは従来どおりprovider自身が返したusageだけである。`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-in、provider/model一致確認、fallback禁止、usage非返却時の`measurement_complete=false`も変更しない。
+
+R24により、認証情報が設定された後の作業は「currentだけを測ってからB用ハーネスを追加する」のではなく、groups/layoutのcurrent/Bとnarrative/checkを同一model上で一度に観測するところから開始できる。A2/B/Cの採択自体は引き続き実測後に行う。
