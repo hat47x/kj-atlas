@@ -46,3 +46,11 @@ ADR-0077 の Three-Element Verification を踏襲（業務: 人間が志を adop
 
 - 本issueは凝縮（核融合法）のロードマップ Phase 1（凝縮具体策）の実装。Phase 2（壁打ち）、Phase 3（多段）は後続issue/ADR。
 - モデル分業（ADR-0065）: flash が複数候補の初期生成、pro が深い凝縮・代替候補。本issueではスキーマ変更に注力し、flash/pro のルーティング適用は `resolve_model_for_task("suggest_island_summary")` の既存経路に委ねる。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、島要約の凝縮支援を単一候補から複数候補へ拡張し、違和感を踏まえた再生成、さらに採用時の critique / reproposal 履歴永続化まで段階的に完成させた機能契約成熟系列として `Done` となっていた。
+- `DOGFOOD-33` が複数候補と候補単位の接地検証、`DOGFOOD-34` が違和感入力を受けた再生成と代替候補採用、`DOGFOOD-35` が採用理由・再提案差分の文書永続化を完成させたため、3件を同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は17から14へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
