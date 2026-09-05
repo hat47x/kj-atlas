@@ -28,3 +28,39 @@ prefix = prefix.replace(
 ''',
 )
 path.write_text(prefix + marker + suffix)
+
+# The main patch adds the settings dependency; place it with the rest of the
+# kj_atlas_api imports instead of between models and models_ai.
+measure_path = Path('03_Implement/backend/scripts/measure_ai_route_provider_tokens.py')
+measure = measure_path.read_text()
+old = '''from kj_atlas_api.models import SuggestLayoutRequest
+from kj_atlas_api.settings import settings
+from kj_atlas_api.models_ai import (
+'''
+new = '''from kj_atlas_api.models import SuggestLayoutRequest
+from kj_atlas_api.models_ai import (
+'''
+assert measure.count(old) == 1
+measure = measure.replace(old, new, 1)
+old = '''    SuggestCardGroupsRequest,
+)
+from kj_atlas_api.routes.ai import (
+'''
+new = '''    SuggestCardGroupsRequest,
+)
+from kj_atlas_api.routes.ai import (
+'''
+assert measure.count(old) == 1
+# settings sorts after routes.ai as a top-level module path.
+measure = measure.replace(old, new, 1)
+route_end = '''    _suggest_layout_ir,
+)
+
+# `python -m scripts.measure_ai_route_provider_tokens`'''
+route_new = '''    _suggest_layout_ir,
+)
+from kj_atlas_api.settings import settings
+
+# `python -m scripts.measure_ai_route_provider_tokens`'''
+assert measure.count(route_end) == 1
+measure_path.write_text(measure.replace(route_end, route_new, 1))
