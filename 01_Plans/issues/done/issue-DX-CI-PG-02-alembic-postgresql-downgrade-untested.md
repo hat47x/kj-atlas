@@ -73,3 +73,11 @@
 - 発見経緯: 第19ラウンドの「alembic migration downgrade()正しさ」観点監査で発見。全13migrationファイルのdowngrade()自体は2名の独立検証者によりコード面で正しいことが確認済み（機械的に直すべきバグは0件）。本issueは実装の誤りではなく、テスト・CIカバレッジの欠落を対象とする。
 - 別件（既存・未解決）: `20260716_0006_add_tenant_foundation.py`のdowngrade()がデータ件数を確認せず無条件にtenant関連4テーブルをdropする点は、既存の`issue-SAAS-TENANT-MIGRATION-01-downgrade-lacks-data-safety-guard.md`（Status: Draft）で既に追跡済みであり、本issueでは重複して扱わない。
 - 軽微な附随所見（未issue化、低優先度）: `20260717_0008_use_tenant_document_keys.py`の`_postgres_downgrade()`が再作成する`documents`のPK/`merge_decision_logs`のFKに、元のmigration（0001/0003）が付与しなかった明示的な名前（`pk_documents_id`/`fk_merge_decision_logs_doc_id`）を新たに与えている。2回目以降のround-tripでは安定するため機能的な問題はなく、カタログのメタデータ表記が変わるだけの美観上の差異。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、PostgreSQL固有downgrade経路またはWSL/Node runtime差によって本来の検証が抜ける・起動不能になる問題を、既存CI／E2E契約に沿う検証基盤として解消し、実環境差を含む確認まで終えて `Done` となっていた。一方、R18時点のlegacy集合に含まれたため、完了済みのまま作業中Issueと同じルートへ残っていた。
+- 既存のライフサイクル契約に従い、本変更ではverification infrastructure境界の完了済みIssue 2件を `01_Plans/issues/done/` へ移し、`LEGACY_DONE_AT_ROOT_BASELINE` を41から39へ縮小した。
+- R18時点のidentity manifestは、新しいDone-at-rootの混入を防ぐ歴史境界なので変更しない。
+- 旧rootパスを引用していた箇所は、現在の `done/` パスへ同時に更新した。
