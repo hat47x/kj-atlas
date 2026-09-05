@@ -1,0 +1,8 @@
+from pathlib import Path
+
+path = Path(".github/lane-b-r37-patch.py")
+s = path.read_text(encoding="utf-8")
+old = '''needle = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n            errors=errors,\\n\'\'\'\nreplacement = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\\n            errors=errors,\\n\'\'\'\nassert a.count(needle) == 2\na = a.replace(needle, replacement)\nneedle = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(GROUPS_A2_ROUTE),\\n            errors=errors,\\n\'\'\'\n'''
+new = '''needle = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n            errors=errors,\\n\'\'\'\nreplacement = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\\n            errors=errors,\\n\'\'\'\nassert a.count(needle) == 1\na = a.replace(needle, replacement, 1)\nneedle = \'\'\'                expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n                errors=errors,\\n\'\'\'\nreplacement = \'\'\'                expected_prompt_sha256=canonical_prompt_hashes.get(name),\\n                expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\\n                errors=errors,\\n\'\'\'\nassert a.count(needle) == 1\na = a.replace(needle, replacement, 1)\nneedle = \'\'\'            expected_prompt_sha256=canonical_prompt_hashes.get(GROUPS_A2_ROUTE),\\n            errors=errors,\\n\'\'\'\n'''
+assert s.count(old) == 1
+path.write_text(s.replace(old, new, 1), encoding="utf-8")
