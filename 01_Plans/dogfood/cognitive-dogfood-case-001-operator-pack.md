@@ -59,7 +59,7 @@ ROADMAP.md
 01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json
 01_Plans/dogfood/doc_kj_atlas_dogfood_r4.json
 01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json
-01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md
+01_Plans/issues/done/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md
 01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md
 01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md
 01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md

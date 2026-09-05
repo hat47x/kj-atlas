@@ -73,3 +73,13 @@ if task == "propose_opposing_viewpoint":
 
 - モックの対象カード埋め込みは「反対視点が対象主張に応答する」ことを検証可能にする決定性表現であり、実LLMの反対視点生成品質とは独立（本issueは検証ハーネスの能力向上）。
 - ドッグフーディング観察起点（2026-08-16・iteration 182）: 訪問看護（target `v1`・訪問効率の主張）へ反対視点を送り、scenario 1 の「待ち時間」を参照する無関係な文面が返ることを再現。反対視点の接地（対象主張への応答）がE2Eで検証不能であることを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、AI提案が対象データへ意味的に接地していることを、決定的なローカルLLMモックと業務フローE2Eで検証可能にした verification harness 改善として `Done` となっていた。
+- `DOGFOOD-15` は島間関係要約の allowed groundingCardIds / groundingEdgeIds をモック応答へ反映し、関係の根拠接地をE2Eで固定した。
+- `DOGFOOD-17` は反対視点提案が Target card の主張本文へ応答するようモックを接地し、proposal-only境界を維持したまま対象主張への応答をE2Eで固定した。
+- いずれも実LLMの生成品質や製品API契約の変更ではなく、既存契約の意味的な検証能力を高めた完了記録である。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は12から10へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
