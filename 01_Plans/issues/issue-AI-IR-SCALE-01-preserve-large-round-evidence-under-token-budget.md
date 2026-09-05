@@ -420,3 +420,35 @@ R23で方式B候補のcoverageを構造的に比較できたため、R20のprovi
 このbyte数は診断情報でありtoken推定には使わない。正確な入力token数として採用するのは従来どおりprovider自身が返したusageだけである。`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-in、provider/model一致確認、fallback禁止、usage非返却時の`measurement_complete=false`も変更しない。
 
 R24により、認証情報が設定された後の作業は「currentだけを測ってからB用ハーネスを追加する」のではなく、groups/layoutのcurrent/Bとnarrative/checkを同一model上で一度に観測するところから開始できる。A2/B/Cの採択自体は引き続き実測後に行う。
+
+
+## R25 — `suggest-layout` 階層C候補の決定論的characterization
+
+R21で「A2が十分な余裕を持てない場合は、局所配置と全体整合を分けた階層配置Cを具体化する」としていたため、named provider/model実測を待つ間に **production変更を伴わない測定専用C候補**を300カード・30島・300 relationへ適用した。`scripts/measure_ai_layout_hierarchical_candidate.py` は、R23と同じ末尾 `causal` / `negate` を含む代表入力を、次の二段へ決定論的に分ける。
+
+1. 30個の島内local batch: 各島の直接member 10枚と、両端が同じbatchに属するcard relationを保持する。
+2. 1個のglobal alignment batch: 各島を1 nodeとして扱い、島境界を跨ぐcard relationを元のcard IDとrelation type付きbridgeとして保持する。
+
+代表入力での結果は次のとおり。
+
+| 指標 | one-shot route-B | hierarchical C candidate |
+| --- | ---: | ---: |
+| request数 | 1 | 31（local 30 + global 1） |
+| card coverage | 300/300 | 300/300（各cardちょうど1 local batch） |
+| relation coverage | 300/300 | 300/300（local 270 + global bridge 30） |
+| island coverage | 30/30 | 30/30 |
+| 1 request最大 UTF-8 bytes | 128,562 | 7,486 |
+| local request UTF-8 bytes | — | 2,673〜2,674 |
+| local 30 request合計 UTF-8 bytes | — | 80,219 |
+| global alignment UTF-8 bytes | — | 7,486 |
+| 全31 request合計 UTF-8 bytes | 128,562 | 87,705 |
+
+末尾の `e298: c298 --causal--> c299` は同じ `i29` local batchへ残り、`e299: c299 --negate--> c000` は `i29 -> i00` を跨ぐglobal bridgeとして残こた。したがって、batch境界を理由に論理接続を捨てず、全relationをlocalまたはglobalのどちらか一方へ**ちょうど一度**割り当てられることを固定した。
+
+分割規則もcharacterization上のfail-closed境界を持つ。1枚のcardが複数の直接島membershipへ現れる場合は任意のownerを選ばず停止し、どの島にも属さないcardはsingleton local batchとして残す。sourceのcard / island / edge順を反転しても同じbatch・relation partition・promptを得る回帰を追加した。
+
+**非主張**:
+- 上記bytesはtoken数ではなく、providerの入力上限・費用を推定する値として使わない。
+- 31回呼出しのモデル品質、出力token、latency、失敗率、local座標とglobal anchorの最終合成品質はまだ評価していない。
+- Cをproduction方式として採択していない。R24のcurrent/B比較と同様、named provider/modelのprovider-reported usageが得られた後にA2/B/Cをrouteごとに比較する。
+- production route、shared IR cap、SafeMode、防PII、structured-text-only、proposal-only境界は変更していない。
