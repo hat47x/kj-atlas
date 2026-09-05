@@ -124,18 +124,23 @@ replace_once(
     '    has_deepseek_measurement = any(\n        isinstance(row, dict) and row.get("actual_provider_kind") == "deepseek"\n        for row in routes.values()\n    )\n    if (\n        has_deepseek_measurement\n        and report.get("provider_input_provenance") != PROVIDER_INPUT_PROVENANCE\n    ):\n        errors.append("unsupported-or-missing-provider-input-provenance")\n',
     '    has_deepseek_measurement = any(\n        isinstance(row, dict) and row.get("actual_provider_kind") == "deepseek"\n        for row in routes.values()\n    )\n    expected_deepseek_thinking_mode = report.get("expected_deepseek_thinking_mode")\n    if has_deepseek_measurement:\n        if report.get("provider_input_provenance") != PROVIDER_INPUT_PROVENANCE:\n            errors.append("unsupported-or-missing-provider-input-provenance")\n        if (\n            report.get("provider_generation_provenance")\n            != PROVIDER_GENERATION_PROVENANCE\n        ):\n            errors.append("unsupported-or-missing-provider-generation-provenance")\n        if expected_deepseek_thinking_mode not in _DEEPSEEK_THINKING_MODES:\n            errors.append("missing-or-invalid-expected-deepseek-thinking-mode")\n            expected_deepseek_thinking_mode = None\n',
 )
-# Pass the expected mode through every route validator invocation.
-needle = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n            errors=errors,\n'
-replacement = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,\n            errors=errors,\n'
+# Pass the expected mode through core, A2, and layout-C route validators.
 text = Path(analyzer).read_text()
-if text.count(needle) != 2:
-    raise AssertionError(f"analyzer: expected 2 direct route validator calls, got {text.count(needle)}")
-text = text.replace(needle, replacement)
-needle_multiline = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(\n                GROUPS_A2_ROUTE\n            ),\n            errors=errors,\n'
-replacement_multiline = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(\n                GROUPS_A2_ROUTE\n            ),\n            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,\n            errors=errors,\n'
-if text.count(needle_multiline) != 1:
+core_needle = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n            errors=errors,\n'
+core_replacement = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,\n            errors=errors,\n'
+if text.count(core_needle) != 1:
+    raise AssertionError(f"analyzer: core validator call count {text.count(core_needle)}")
+text = text.replace(core_needle, core_replacement, 1)
+a2_needle = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(\n                GROUPS_A2_ROUTE\n            ),\n            errors=errors,\n'
+a2_replacement = '            expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(\n                GROUPS_A2_ROUTE\n            ),\n            expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,\n            errors=errors,\n'
+if text.count(a2_needle) != 1:
     raise AssertionError("analyzer: groups A2 validator call not found")
-text = text.replace(needle_multiline, replacement_multiline, 1)
+text = text.replace(a2_needle, a2_replacement, 1)
+layout_c_needle = '                expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n                errors=errors,\n'
+layout_c_replacement = '                expected_deepseek_input_sha256=canonical_deepseek_input_hashes.get(name),\n                expected_deepseek_thinking_mode=expected_deepseek_thinking_mode,\n                errors=errors,\n'
+if text.count(layout_c_needle) != 1:
+    raise AssertionError("analyzer: layout C validator call not found")
+text = text.replace(layout_c_needle, layout_c_replacement, 1)
 Path(analyzer).write_text(text)
 replace_once(
     analyzer,
@@ -164,7 +169,6 @@ replace_once(
     '        assert report["routes"][name]["provider_input"] == {\n            "kind": "openai-chat-messages-v1",\n            "sha256": token_measure._openai_chat_messages_sha256(req),\n        }\n\n    result = analysis.analyze(report)',
     '        assert report["routes"][name]["provider_input"] == {\n            "kind": "openai-chat-messages-v1",\n            "sha256": token_measure._openai_chat_messages_sha256(req),\n        }\n        assert report["routes"][name]["provider_generation"] == {\n            "thinking_mode": "disabled",\n        }\n\n    result = analysis.analyze(report)',
 )
-# Add focused fail-closed/preflight cases before the final fingerprint-difference test.
 insert_marker = '\ndef test_system_task_content_changes_message_fingerprint_even_with_same_user_prompt() -> None:\n'
 addition = '''\ndef test_deepseek_measurement_requires_expected_thinking_mode_before_calls() -> None:\n    provider = _DeepSeekUsageProvider()\n\n    try:\n        token_measure.measure(\n            model="named-model",\n            expected_provider=provider.provider_name,\n            execute=True,\n            provider=provider,\n        )\n    except ValueError as exc:\n        assert "explicit expected thinking mode" in str(exc)\n    else:\n        raise AssertionError("DeepSeek measurement must require an explicit thinking mode")\n\n    assert provider.calls == []\n\n\ndef test_changed_deepseek_thinking_mode_fails_closed() -> None:\n    report = _measured_report()\n    report["routes"]["suggest-layout"]["provider_generation"]["thinking_mode"] = "enabled"\n\n    result = analysis.analyze(report)\n\n    assert result["decision_ready"] is False\n    assert "provider-generation-mode-mismatch:suggest-layout" in result["errors"]\n\n\ndef test_missing_deepseek_generation_provenance_fails_closed() -> None:\n    report = _measured_report()\n    del report["provider_generation_provenance"]\n\n    result = analysis.analyze(report)\n\n    assert result["decision_ready"] is False\n    assert "unsupported-or-missing-provider-generation-provenance" in result["errors"]\n\n'''
 replace_once(test_transport, insert_marker, addition + insert_marker)
