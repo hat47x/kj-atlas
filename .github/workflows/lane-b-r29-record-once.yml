@@ -1,0 +1,37 @@
+name: lane-b-r29-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/a2-representative-characterization
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/a2-representative-characterization
+
+      - name: Record R29
+        run: |
+          python .github/lane-b-r29-record.py
+          git diff --check
+          grep -F '56,047 UTF-8 bytes' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '128,562 UTF-8 bytes' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'rendered promptは完全一致' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F 'productionの `MAX_CARDS=200 / MAX_TEXT_CHARS=12,000 / MAX_RELATIONS=400` は変更していない' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+
+      - name: Commit record and remove temporary files
+        run: |
+          rm .github/lane-b-r29-record.py
+          rm .github/workflows/lane-b-r29-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): record R29 A2 characterization'
+          git push origin HEAD:lane-b/a2-representative-characterization
