@@ -27,17 +27,22 @@ from typing import Any
 
 MEASUREMENT_NAME = "ai-route-provider-reported-input-tokens"
 SCENARIO_NAME = "300-cards-30-islands-ring"
-CORE_ROUTES = (
-    "suggest-card-groups",
-    "suggest-card-groups-route-b",
-    "suggest-layout",
-    "suggest-layout-route-b",
-    "generate-narrative",
-    "check-narrative",
-)
+CORE_ROUTE_TASKS = {
+    "suggest-card-groups": "suggest_card_groups",
+    "suggest-card-groups-route-b": "suggest_card_groups",
+    "suggest-layout": "re_layout",
+    "suggest-layout-route-b": "re_layout",
+    "generate-narrative": "generate_narrative",
+    "check-narrative": "check_narrative",
+}
+CORE_ROUTES = tuple(CORE_ROUTE_TASKS)
 GROUPS_A2_ROUTE = "suggest-card-groups-a2-lower-bound"
 LAYOUT_C_PREFIX = "suggest-layout-c-"
-LAYOUT_C_REQUESTS = 31
+LAYOUT_C_ROUTES = tuple(
+    [f"suggest-layout-c-local-{index:02d}" for index in range(1, 31)]
+    + ["suggest-layout-c-global"]
+)
+LAYOUT_C_REQUESTS = len(LAYOUT_C_ROUTES)
 
 
 def _int_token(row: dict[str, Any]) -> int | None:
@@ -51,12 +56,16 @@ def _validate_measured_route(
     *,
     name: str,
     row: Any,
+    expected_task: str,
     expected_provider: str,
     expected_model: str,
     errors: list[str],
 ) -> int | None:
     if not isinstance(row, dict):
         errors.append(f"route-not-object:{name}")
+        return None
+    if row.get("task") != expected_task:
+        errors.append(f"task-mismatch:{name}")
         return None
     if row.get("status") != "measured":
         errors.append(f"route-not-measured:{name}:{row.get('status')}")
@@ -108,13 +117,14 @@ def analyze(report: Any) -> dict[str, Any]:
         routes = {}
 
     tokens: dict[str, int] = {}
-    for name in CORE_ROUTES:
+    for name, expected_task in CORE_ROUTE_TASKS.items():
         if name not in routes:
             errors.append(f"missing-core-route:{name}")
             continue
         token = _validate_measured_route(
             name=name,
             row=routes[name],
+            expected_task=expected_task,
             expected_provider=expected_provider,
             expected_model=expected_model,
             errors=errors,
@@ -127,6 +137,7 @@ def analyze(report: Any) -> dict[str, Any]:
         token = _validate_measured_route(
             name=GROUPS_A2_ROUTE,
             row=routes[GROUPS_A2_ROUTE],
+            expected_task="suggest_card_groups",
             expected_provider=expected_provider,
             expected_model=expected_model,
             errors=errors,
@@ -136,28 +147,31 @@ def analyze(report: Any) -> dict[str, Any]:
 
     layout_c_names = sorted(name for name in routes if name.startswith(LAYOUT_C_PREFIX))
     layout_c_present = bool(layout_c_names)
+    expected_layout_c = set(LAYOUT_C_ROUTES)
+    actual_layout_c = set(layout_c_names)
     layout_c_tokens: list[int] = []
     if layout_c_present:
-        if len(layout_c_names) != LAYOUT_C_REQUESTS:
-            errors.append(
-                f"layout-c-request-count:{len(layout_c_names)}:{LAYOUT_C_REQUESTS}"
-            )
+        for missing in sorted(expected_layout_c - actual_layout_c):
+            errors.append(f"layout-c-missing-route:{missing}")
+        for unexpected in sorted(actual_layout_c - expected_layout_c):
+            errors.append(f"layout-c-unexpected-route:{unexpected}")
         for name in layout_c_names:
             token = _validate_measured_route(
                 name=name,
                 row=routes[name],
+                expected_task="re_layout",
                 expected_provider=expected_provider,
                 expected_model=expected_model,
                 errors=errors,
             )
-            if token is not None:
+            if token is not None and name in expected_layout_c:
                 layout_c_tokens.append(token)
 
     core_ready = all(name in tokens for name in CORE_ROUTES)
     groups_a2_ready = groups_a2_present and GROUPS_A2_ROUTE in tokens
     layout_c_ready = (
         layout_c_present
-        and len(layout_c_names) == LAYOUT_C_REQUESTS
+        and actual_layout_c == expected_layout_c
         and len(layout_c_tokens) == LAYOUT_C_REQUESTS
     )
 
