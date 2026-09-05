@@ -119,6 +119,57 @@ def test_complete_core_report_is_ready_and_uses_only_provider_usage() -> None:
     assert result["observations"]["whole_document"]["check_minus_generate_input_tokens"] == 5_000
 
 
+
+def test_context_budget_separates_measurement_cap_from_production_output_reserve() -> None:
+    result = analysis.analyze(_core_report())
+
+    budget = result["context_budget"]
+    assert budget["measurement_request_max_tokens"] == 1
+    assert budget["current_production_output_reserve_tokens"] == 2_000
+    assert budget["output_reserve_source"] == "LLMRequest.default.max_tokens"
+    assert budget["context_window_tokens"] is None
+    assert budget["core_hard_context_fit"] is None
+    assert budget["sufficient_headroom_policy"] is None
+    check = budget["route_requirements"]["check-narrative"]
+    assert check == {
+        "provider_reported_input_tokens": 11_000,
+        "output_reserve_tokens": 2_000,
+        "minimum_context_tokens": 13_000,
+        "remaining_context_tokens": None,
+        "hard_context_fit": None,
+    }
+
+
+def test_context_window_option_reports_hard_fit_without_inventing_margin() -> None:
+    result = analysis.analyze(_core_report(), context_window_tokens=10_000)
+
+    budget = result["context_budget"]
+    assert result["decision_ready"] is True
+    assert budget["context_window_tokens"] == 10_000
+    assert budget["context_window_source"] == "operator-supplied"
+    assert budget["core_hard_context_fit"] is False
+    assert budget["route_requirements"]["suggest-layout-route-b"]["minimum_context_tokens"] == 10_000
+    assert budget["route_requirements"]["suggest-layout-route-b"]["remaining_context_tokens"] == 0
+    assert budget["route_requirements"]["suggest-layout-route-b"]["hard_context_fit"] is True
+    assert budget["route_requirements"]["check-narrative"]["remaining_context_tokens"] == -3_000
+    assert budget["route_requirements"]["check-narrative"]["hard_context_fit"] is False
+    assert budget["sufficient_headroom_policy"] is None
+
+
+def test_layout_c_context_budget_uses_max_single_request_not_aggregate() -> None:
+    report = _core_report()
+    _add_complete_layout_c(report)
+
+    result = analysis.analyze(report, context_window_tokens=3_000)
+
+    budget = result["context_budget"]
+    assert result["layout_c_ready"] is True
+    assert budget["layout_c_max_single_minimum_context_tokens"] == 2_900
+    assert budget["layout_c_hard_context_fit"] is True
+    # Aggregate C input usage is a cost/throughput observation, not one context window.
+    assert result["observations"]["layout"]["layout_c_aggregate_input_tokens"] > 3_000
+
+
 def test_groups_a2_adds_only_provider_reported_comparison() -> None:
     report = _core_report()
     requests = token_measure.build_representative_requests(
@@ -303,6 +354,35 @@ def test_cli_reads_saved_json_and_returns_machine_readable_summary(tmp_path: Pat
     assert result["decision_ready"] is True
     assert result["provider"] == "named-provider"
     assert result["model"] == "named-model"
+    assert result["context_budget"]["context_window_tokens"] is None
+
+
+
+def test_cli_accepts_explicit_context_window_for_hard_fit_only(tmp_path: Path) -> None:
+    backend_dir = Path(__file__).resolve().parents[1]
+    report_path = tmp_path / "measurement.json"
+    report_path.write_text(json.dumps(_core_report()), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/analyze_ai_route_provider_measurement.py",
+            str(report_path),
+            "--context-window-tokens",
+            "10000",
+        ],
+        cwd=backend_dir,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout)
+
+    assert result["decision_ready"] is True
+    assert result["context_budget"]["context_window_tokens"] == 10_000
+    assert result["context_budget"]["core_hard_context_fit"] is False
+    assert result["context_budget"]["sufficient_headroom_policy"] is None
+
 
 
 def test_cli_returns_nonzero_for_incomplete_report(tmp_path: Path) -> None:

@@ -25,6 +25,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from kj_atlas_api.llm.provider import LLMRequest
+
 try:
     from scripts.measure_ai_route_provider_tokens import (
         _openai_chat_messages_sha256,
@@ -66,6 +68,14 @@ LAYOUT_C_ROUTES = tuple(
     + ["suggest-layout-c-global"]
 )
 LAYOUT_C_REQUESTS = len(LAYOUT_C_ROUTES)
+MEASUREMENT_REQUEST_MAX_TOKENS = 1
+# The four measured production tasks currently rely on LLMRequest's default
+# output cap. Keep the comparison reserve derived from that source instead of
+# copying the literal 2000 into token-budget arithmetic. Measurement requests
+# deliberately use max_tokens=1 only to minimize external measurement cost.
+CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS = LLMRequest(
+    task="context_budget_probe", prompt="probe"
+).max_tokens
 
 
 def _int_token(row: dict[str, Any]) -> int | None:
@@ -159,7 +169,98 @@ def _validate_measured_route(
     return token
 
 
-def analyze(report: Any) -> dict[str, Any]:
+
+def _context_budget_summary(
+    tokens: dict[str, int],
+    *,
+    layout_c_tokens: list[int],
+    context_window_tokens: int | None,
+) -> dict[str, Any]:
+    """Separate measured input usage from the current production output reserve.
+
+    This is a hard context-fit calculation only. It intentionally does not invent
+    an architectural headroom percentage or choose A2/B/C.
+    """
+    if context_window_tokens is not None and (
+        isinstance(context_window_tokens, bool)
+        or not isinstance(context_window_tokens, int)
+        or context_window_tokens <= 0
+    ):
+        raise ValueError("context_window_tokens must be a positive integer")
+
+    route_requirements: dict[str, dict[str, Any]] = {}
+    for name in sorted(tokens):
+        input_tokens = tokens[name]
+        minimum = input_tokens + CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS
+        remaining = (
+            None
+            if context_window_tokens is None
+            else context_window_tokens - minimum
+        )
+        route_requirements[name] = {
+            "provider_reported_input_tokens": input_tokens,
+            "output_reserve_tokens": CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS,
+            "minimum_context_tokens": minimum,
+            "remaining_context_tokens": remaining,
+            "hard_context_fit": None if remaining is None else remaining >= 0,
+        }
+
+    core_requirements = [
+        route_requirements[name]
+        for name in CORE_ROUTES
+        if name in route_requirements
+    ]
+    layout_c_minimum_context = (
+        max(layout_c_tokens) + CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS
+        if len(layout_c_tokens) == LAYOUT_C_REQUESTS
+        else None
+    )
+    groups_a2_requirement = route_requirements.get(GROUPS_A2_ROUTE)
+
+    def _all_fit(rows: list[dict[str, Any]], *, complete: bool) -> bool | None:
+        if context_window_tokens is None or not complete:
+            return None
+        return all(row["hard_context_fit"] is True for row in rows)
+
+    return {
+        "measurement_request_max_tokens": MEASUREMENT_REQUEST_MAX_TOKENS,
+        "current_production_output_reserve_tokens": (
+            CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS
+        ),
+        "output_reserve_source": "LLMRequest.default.max_tokens",
+        "context_window_tokens": context_window_tokens,
+        "context_window_source": (
+            "operator-supplied" if context_window_tokens is not None else None
+        ),
+        "route_requirements": route_requirements,
+        "core_hard_context_fit": _all_fit(
+            core_requirements, complete=len(core_requirements) == len(CORE_ROUTES)
+        ),
+        "groups_a2_hard_context_fit": (
+            None
+            if context_window_tokens is None or groups_a2_requirement is None
+            else groups_a2_requirement["hard_context_fit"]
+        ),
+        "layout_c_hard_context_fit": (
+            None
+            if context_window_tokens is None or layout_c_minimum_context is None
+            else layout_c_minimum_context <= context_window_tokens
+        ),
+        "layout_c_max_single_minimum_context_tokens": layout_c_minimum_context,
+        "sufficient_headroom_policy": None,
+        "interpretation": (
+            "minimum_context_tokens = provider-reported input_tokens + the current "
+            "production LLMRequest output reserve. A supplied context window only "
+            "answers hard fit; this analyzer does not define a safety-margin percentage."
+        ),
+    }
+
+
+def analyze(
+    report: Any,
+    *,
+    context_window_tokens: int | None = None,
+) -> dict[str, Any]:
     """Return a fail-closed comparison-readiness summary for one saved report."""
     errors: list[str] = []
     if not isinstance(report, dict):
@@ -210,6 +311,11 @@ def analyze(report: Any) -> dict[str, Any]:
     canonical_prompt_hashes = {
         name: _prompt_sha256(req.prompt) for name, req in canonical_requests.items()
     }
+    for name, req in canonical_requests.items():
+        if req.max_tokens != MEASUREMENT_REQUEST_MAX_TOKENS:
+            errors.append(
+                f"measurement-max-tokens-drift:{name}:{req.max_tokens}"
+            )
     canonical_deepseek_input_hashes = {
         name: _openai_chat_messages_sha256(req)
         for name, req in canonical_requests.items()
@@ -354,6 +460,12 @@ def analyze(report: Any) -> dict[str, Any]:
     if executed and core_ready and not measurement_complete_claim:
         errors.append("measurement-complete-claim-false")
 
+    context_budget = _context_budget_summary(
+        tokens,
+        layout_c_tokens=layout_c_tokens,
+        context_window_tokens=context_window_tokens,
+    )
+
     return {
         "analysis": "ai-route-provider-measurement-readiness",
         "scenario": report.get("scenario"),
@@ -370,13 +482,15 @@ def analyze(report: Any) -> dict[str, Any]:
             "layout": layout,
             "whole_document": whole_document,
         },
+        "context_budget": context_budget,
         "interpretation_boundary": (
             "All token observations and deltas come only from provider_reported.input_tokens. "
             "Prompt/provider-input SHA-256 values are identity/provenance only; bytes, chars, "
             "and hashes are never converted into tokens. DeepSeek measurements additionally bind "
-            "the exact current OpenAI-chat system+user message content. This report does not know the "
-            "model context limit or choose A2/B/C; optional A2/C readiness only records whether "
-            "those explicit measurements are present and internally complete."
+            "the exact current OpenAI-chat system+user message content. Context minimums add the "
+            "current production LLMRequest output reserve to provider-reported input usage; an "
+            "operator-supplied context window can establish hard fit only. No safety-margin "
+            "percentage is invented and this analyzer does not choose A2/B/C."
         ),
     }
 
@@ -388,16 +502,39 @@ def _load(path: str) -> Any:
         return json.load(handle)
 
 
+def _positive_token_count(raw: str) -> int:
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be greater than zero")
+    return value
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", help="measurement JSON path, or '-' to read stdin")
+    parser.add_argument(
+        "--context-window-tokens",
+        type=_positive_token_count,
+        default=None,
+        help=(
+            "Optional documented context-window size for the named model. "
+            "Used only for hard-fit arithmetic; it does not change measurement readiness "
+            "or define an architectural safety-margin percentage."
+        ),
+    )
     return parser
 
 
 def main() -> int:
     args = _parser().parse_args()
     try:
-        result = analyze(_load(args.report))
+        result = analyze(
+            _load(args.report),
+            context_window_tokens=args.context_window_tokens,
+        )
     except (OSError, json.JSONDecodeError) as exc:
         result = {
             "analysis": "ai-route-provider-measurement-readiness",
