@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ121）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
+- Related ADR/Spec: `00_Prompt/kj_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
 - Expected verification level: `e2e`
 
 ## 課題
