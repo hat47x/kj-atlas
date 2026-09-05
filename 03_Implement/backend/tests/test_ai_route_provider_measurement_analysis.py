@@ -27,6 +27,16 @@ def _row(
         "actual_provider": "named-provider",
         "actual_provider_kind": "test",
         "actual_model": "named-model",
+        "provider_call": {
+            "provider": "named-provider",
+            "provider_kind": "test",
+            "model_id": "named-model",
+            "transport": "http",
+            "requested_at": "2026-09-05T00:00:00+00:00",
+            "trace_id": "trace-fixture",
+            "fallback_to_none": False,
+            "execution_path": "primary",
+        },
         "status": "measured",
     }
 
@@ -49,6 +59,7 @@ def _core_report() -> dict:
         "executed": True,
         "measurement_complete": True,
         "prompt_fingerprint": analysis.PROMPT_FINGERPRINT.copy(),
+        "provider_call_provenance": analysis.PROVIDER_CALL_PROVENANCE.copy(),
         "routes": {
             name: _row(
                 tokens,
