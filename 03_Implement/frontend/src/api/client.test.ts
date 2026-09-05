@@ -303,6 +303,7 @@ describe("SafeMode AI request certification", () => {
 const FRONTEND_SRC_ROOT = resolve(__dirname, "..");
 const CLIENT_MODULE_PATH = "api/client.ts";
 const APP_MODULE_PATH = "App.tsx";
+const ADMIN_MODEL_ALLOWLIST_MODULE_PATH = "admin/model_allowlist_api.ts";
 const OAUTH_CALLBACK_MODULE_PATH = "session/oauth_callback.ts";
 const TENANT_SCOPED_WRAPPERS = [
   "runTenantScopedApiRequest(() => ",
@@ -480,16 +481,17 @@ function isCommentedOccurrence(source: string, index: number): boolean {
 }
 
 describe("tenant session version client coverage contract", () => {
-  it("keeps every backend request inside the shared api client module", () => {
+  it("keeps every backend request inside an explicitly reviewed transport module", () => {
     const modulesWithFetch = productionSourceModules(FRONTEND_SRC_ROOT).filter(
       (modulePath) => fetchCallSites(readFrontendModule(modulePath)).length > 0,
     );
 
     expect([...modulesWithFetch].sort()).toEqual([
+      ADMIN_MODEL_ALLOWLIST_MODULE_PATH,
       APP_MODULE_PATH,
       CLIENT_MODULE_PATH,
       OAUTH_CALLBACK_MODULE_PATH,
-    ]);
+    ].sort());
 
     // App's own fetches load bundled public-pack files from the frontend
     // origin, never the backend API, so they address no tenant-scoped
@@ -507,6 +509,17 @@ describe("tenant session version client coverage contract", () => {
       const { url } = splitRequestArguments(site.args);
       expect(url).toContain("brokerBase");
       expect(url).not.toContain("API_BASE");
+    }
+
+    // The model allowlist console is a deliberately separate control-plane entry
+    // (admin.html). Its transport must stay confined to the reviewed admin
+    // provisioning namespace and same-origin credential boundary rather than
+    // silently becoming a second business-plane tenant-scoped client.
+    for (const site of fetchCallSites(readFrontendModule(ADMIN_MODEL_ALLOWLIST_MODULE_PATH))) {
+      const { url, init } = splitRequestArguments(site.args);
+      expect(url).toContain("${API_BASE}/admin/provision/models/tenants/");
+      expect(init).toContain('credentials: "same-origin"');
+      expect(init).not.toContain("tenantSessionPreconditionHeaders");
     }
   });
 

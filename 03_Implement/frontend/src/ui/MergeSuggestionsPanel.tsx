@@ -6,6 +6,7 @@ import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_eve
 import { evaluateMergeDecisionTrustBoundary } from "../domain/hil_rs_trusted_boundary";
 import { normalizeHilDecisionReason } from "../domain/hil_rs_decision_reason";
 import { getActiveLocale, t } from "../i18n/translate";
+import { mergeMethodFieldLabel, mergeMethodLabel } from "./merge_method_label";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
@@ -314,6 +315,7 @@ export function MergeSuggestionsPanel({
         const hasValidPartialSelection = partialSelectedCardIds.length >= 2 && partialSelectedCardIds.length < suggestion.cardIds.length;
         const isApplicableDecision = suggestion.latestDecision === "accept" || suggestion.latestDecision === "partial";
         const isApplied = isApplicableDecision && (suggestion.representativeResolvedBy === "repOf" || suggestion.representativeResolvedBy === "mergedIntoCardId");
+        const mergeMethodLocale = getActiveLocale() === "ja" ? "ja" : "en";
         return (
           <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
@@ -430,6 +432,9 @@ export function MergeSuggestionsPanel({
             {typeof suggestion.representativeSourceCount === "number"
               ? t("merge_suggestions.source_count_suffix", { count: suggestion.representativeSourceCount })
               : ""}
+          </div>
+          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+            {mergeMethodFieldLabel(mergeMethodLocale)}: {mergeMethodLabel(suggestion.mergeMethod, mergeMethodLocale)}
           </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>{t("merge_suggestions.rationale")}: {suggestion.rationale}</div>
