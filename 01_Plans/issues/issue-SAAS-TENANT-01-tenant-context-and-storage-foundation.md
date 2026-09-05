@@ -52,7 +52,7 @@
 残る既知のギャップ: `agent_registrations`（`api.md` §9.5）は現状 `docId` にのみ束縛され、D10が求める tenant 束縛を持たない。これは `schemas.md` §10.4 で既に将来対応事項として明記済みで、対応要否・時期は本チェックポイントでは判断しない。
 
 - 複雑性予算（`ADR-0043` CB-1..4）: 初期表示への純増=`+1`（検証済みSaaS session時だけ、active tenantを誤認しないための`TenantSessionControl`をcore toolbarへ表示） / 保留操作の距離=不変（カード・島の保留導線は変更しない） / 取り消し導線=あり（切替前confirmationの取消、切替後はallowlist内のtenantを同じselectorから再選択）。CB-1/CB-3は安全境界を利用者へ常時示すための限定的な純増として許容する。
-- 性能予算（`ADR-0046` PB-1..5）: 代表規模でのKJ主要操作=bootstrap完了後は不変 / 100ms超同期処理=追加なし。PB-2初期表示はruntime policy確認とsession context取得を逐次実行するため**要改善（所要時間未計測）**。現在は両待機中に`aria-busy`付きloading viewを表示してPB-5の無反応状態を避ける。AC-12の実ブラウザ検証で、代表環境の操作可能化時間を計測し、数秒超なら段階表示または待機理由の具体化を行う。
+- 性能予算（`ADR-0046` PB-1..5）: 代表規模でのKJ主要操作=bootstrap完了後は不変 / 100ms超同期処理=追加なし。PB-2初期表示はruntime policy確認とsession context取得を逐次実行する。**2026-09-06 AC-12実測済み**: real Chromium（Ubuntu hosted runner、ja/en × 390/768/1440px）でstart panel操作可能化=485.2〜552.6ms、active tenant文書＋tenant switcher操作可能化=577.7〜635.0ms。数秒超には該当せず、現時点で段階表示または待機理由の追加は不要と判断する。両待機中の`aria-busy`付きloading viewはPB-5の無反応状態回避として維持する。
 - 触れるUQ次元（`ADR-0044`）: UQ-1（active tenantの理解）、UQ-2（切替・取消の操作）、UQ-3（keyboard/focus）、UQ-4（390/768/1440px）、UQ-5（loading/blocked/switching状態）、UQ-6（ja/en）。
 
 ## 受入条件
@@ -68,8 +68,14 @@
 - [x] AC-9: exportはtenant権限を移送せず、importはactive tenantで再認可・検証・人手レビューされる。— 2026-08-13チェックポイント参照。server側export/import/share endpointが存在しないことをroute全数列挙で確認し、唯一のserver接点（`export-audit`と`PUT /docs/{doc_id}`）が既にtenant-scoped guardの対象であることを確認した。
 - [x] AC-10: tenant A/Bの越境negative matrixが、API/MCP/worker/browser cacheそれぞれの実際の攻撃面でfail-closedとなる。— **2026-09-05 Lane C完了確認（GitHub Actions Run `33964657276`）**: APIは`test_saas_e2e_tenant_isolation.py`でtenant A/Bに同一`shared-doc`を作成し、GETが各tenant固有payloadだけを返し、PUTが選択tenantだけを更新することを再実行した。MCPはtenant-bound credential未実装のため`saas-multitenant`を`validateMcpRuntimeProfile()`で起動時拒否し、same-docId read自体へ到達させない。worker/async resultは共通`TenantSessionGenerationGuard`の遅延成功拒否をunit testで再実行し、real Chromiumの`tenant_session_multitab.spec.ts`ではPR #2917由来のAI代表probeとtenant切替lifecycleを通過した。browser cacheは同specでtenant A→B切替後にrecent/QueryPresetが新scopeだけを表示し、旧tenant Aのscoped localStorage keyが残らないことを再実行した。consumerごとに境界形状が異なるため、MCP/worker/browserへ架空のsame-docId DB readを作るのではなく、各consumerが越境を成立させない現行契約を同一Runで検証した。
 - [x] AC-11: single-tenantのlocal-dev/evaluation/enterprise-production互換テストが維持され、SafeMode既定ON、proposal-only、provider=`none`を弱めない。
-- [ ] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。
+- [x] AC-12: Round 8 R8-E/FはAC-1〜11完了後だけ有効化され、390/768/1440px、ja/en、keyboard/focus、tenant切替時の旧DOM/cache破棄を検証する。— **2026-09-06 Lane C完了確認**: `tenant_session_round8_acceptance.spec.ts`をSaaS専用Playwright configへ追加し、ja/en × 390/768/1440pxの6条件でnative keyboardによるtenant切替、`:focus-visible`、旧tenant DOM/scoped cache破棄、horizontal overflowなし、操作可能化時間をreal Chromiumで固定した。GitHub Actions Run `33997373678` は既存SaaS回帰9件＋新規Round 8 1件の10/10 pass。
 - [~] AC-13: 同じ認証セッションの複数タブ、同時tenant切替、bfcache復帰、遅延responseで古い`tenantSessionVersion`を持つ現存tenant-scoped操作がresource lookup/commit前に拒否され、client通知が欠落しても新tenantへ自動再送・commitされない。— **2026-09-05 Lane C再整理**: mock-API実ブラウザではcross-tab、bfcache、stale PUT 409非再送、遅延response、bundle export/review-pack/AI結果破棄まで固定済みで、`AUTH-ONE-TIME-JWT-01`はmock Broker→実frontend→shared PostgreSQL→2 backend workerの認証縦断を完了している。ただし両者を同一scenarioとして接続した「同一認証sessionの複数タブが実backendへ競合操作するmatrix」はまだ存在しない。Doneの`QA-E2E-SAAS-01`はbrowser storage/lifecycle残差、Doneの`AUTH-ONE-TIME-JWT-01`は認証縦断の正本であり、どちらか単独をAC-13完了証拠へ読み替えない。server-side export/import routeのように現存しない操作を新設して試験することも要件化せず、現存surfaceの実backend複数タブ競合を残条件とする。
+
+### Lane C checkpoint 2026-09-06: AC-12 Round 8 real-browser acceptance
+
+- `03_Implement/frontend/e2e/tenant_session_round8_acceptance.spec.ts`を追加し、SaaS runtimeでja/en × 390/768/1440pxの6条件を1本の受入matrixとして固定した。各条件でtenant switcherへTab到達でき`:focus-visible`になること、native selectのkeyboard操作でtenant A→Bへ切り替わること、tenant Aの文書DOMとtenant-scoped localStorageが残らないこと、横overflowが生じないことを確認する。
+- GitHub Actions Run `33997373678` では既存`tenant_session_multitab.spec.ts` 9件を含む10/10がreal Chromiumでpassした。6条件のstart panel操作可能化は485.2〜552.6ms、active tenant文書＋switcher操作可能化は577.7〜635.0msで、Issueが改善条件としていた「数秒超」には該当しなかった。
+- AC-12を完了とする。一時workflowはこのcheckpointと同じcommitで削除し、恒久CIを復活させない。AC-13は実backendを通す同一認証session・複数tab競合matrixが残る別軸のため、`[~]`のまま維持する。
 
 ### Lane C checkpoint 2026-09-05: AC-10 consumer-specific negative matrix
 
