@@ -288,7 +288,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 ### 検討する方式
 
-方式の比較条件はR21を正本とする。要約すると、A1（`MAX_CARDS` だけの引上げ）は候補から外し、A2（カード上限と文字数予算を整合して広げる）・B（ルート別意味保存）・C（分割・階層処理）を、R20の実token測定後にルートごとに比較する。
+方式の比較条件はR21を正本とする。要約すると、A1（`MAX_CARDS` だけの引上げ）は候補から外し、A2（カード上限と文字数予算を整合して広げる）・B（ルート別意味保存）・C（分割・階層処理）を、R20系の実token測定後にルートごとに比較する。R29でA2の300カード下限fixture、R23でB、R25/R27でlayout Cをmeasurement-only候補として具体化済みである。
 
 方式B/Cを採る場合でも、AIが勝手に「重要でないカード」を確定削除する設計にはしない。投影上の省略と、DocumentV1上の資料保持は別である。
 
@@ -304,7 +304,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 - [ ] 切り詰め時に、単なる `MAX_CARDS` だけでなく、少なくとも必要意味のcoverage欠落を後から検証できる情報を残す。
 - [ ] 同一入力から同一投影/分割結果を得られる決定性を維持する。
 - [ ] SafeMode二層、防PII、structured-text-only、proposal-onlyの既存境界を弱めない。
-- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22〜R27ではbranch-only GitHub Actionsで関連回帰を繰り返し実行し、直近R27 run `33947383473` では33 test・ruff・`git diff --check` が成功した。恒久workflowの有無とは分けて記録する。
+- [x] 300カード規模のroute-required regressionをテストスイートへ固定する。R22以降branch-only GitHub Actionsで関連回帰を繰り返し実行し、R30 run `33948026246` ではR23〜R30関連を含む45 test・ruff・`git diff --check` が成功した。恒久workflowの有無とは分けて記録する。
 - [ ] 上限値の変更を行う場合、named model/providerの実測根拠を記録する。
 
 ## 検証計画
@@ -316,6 +316,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `scripts/measure_ai_route_provider_tokens.py`
   - `scripts/measure_ai_ir_budget_pressure.py`
   - `scripts/measure_ai_route_projection_candidates.py`
+  - `scripts/measure_ai_route_a2_candidate.py`
   - `scripts/measure_ai_layout_hierarchical_candidate.py`
   - `scripts/measure_ai_layout_hierarchical_composition.py`
   - `tests/test_llm_input_ir_scale.py`
@@ -324,6 +325,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_route_provider_token_measurement.py`
   - `tests/test_ai_ir_budget_pressure.py`
   - `tests/test_ai_route_projection_candidates.py`
+  - `tests/test_ai_route_a2_candidate.py`
   - `tests/test_ai_layout_hierarchical_candidate.py`
   - `tests/test_ai_layout_hierarchical_composition.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
@@ -333,7 +335,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
 
 ## 次の判断順序
 
-1. **named provider/modelの実入力tokenを測る。** R24/R26まで拡張したR20ハーネスを使い、既定ではgroups/layoutのcurrent/Bとnarrative/checkの6比較を同じmodel/providerで測る。layout Cも比較する場合だけ `--include-layout-c` を明示し、30 local + 1 globalを追加する。
+1. **named provider/modelの実入力tokenを測る。** R30まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。
 2. その測定値をR21の判断基準へ当てはめ、A2/B/Cを**ルートごと**に比較する。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
 3. `generate-narrative` の `causal` / `negate` はR22までにendpointとrelationの両方をrequired保護した。required card >200 / required relation >400は既にfail-closedであり、今後の判断対象は主にnamed provider/model上のtoken余裕と、文書規模でA2/B/Cのどれが妥当かである。
 4. `suggest-layout` のCはR25/R27でmeasurement-only候補として、決定論的partitionとlocal/global合成まで具体化済みである。A2/B/Cの採択は、provider-reported token usageと、必要なら実model出力の配置品質・latency・failure rateを比較してから行う。
@@ -555,3 +557,16 @@ R29でA2下限候補をcharacterizeした結果、`suggest-card-groups` はA2と
 GitHub Actions run `33948026246` では、既定6 / A2 7 / A2+C 38のdry-run件数、direct CLIのnetwork-free性、provider-reported usageのみを採用する境界、R23〜R29関連を含む **45 test**、ruff、`git diff --check` が成功した。一時workflow/patch helperは成功後に自己削除済みである。
 
 **非主張**: R30でも外部providerは呼んでいない。groups A2のexact token数は未測定であり、layout B/A2やCの実token数も未測定である。A2/B/Cのproduction採択、shared IR cap変更、route変更は行っておらず、本Issueは引き続きIn Progressである。
+
+
+## R31 — R29/R30後のprovider実測readiness同期
+
+R29でA2下限fixtureをcharacterizeし、R30でgroups A2だけを追加明示opt-inとしてprovider計測ハーネスへ接続したため、Issue前半の方式要約・検証計画・次の判断順序を現在地へ同期した。
+
+- A2/B/Cはいずれもproduction非変更のmeasurement-only候補として比較可能になったことを方式要約へ反映した。
+- 検証計画へ `measure_ai_route_a2_candidate.py` / `test_ai_route_a2_candidate.py` を追加した。
+- named provider/model実測手順を、既定6件、groups A2追加時7件、layout C追加時37件、両方追加時38件となるR30契約へ更新した。
+- layout A2はR29でroute-Bとrendered promptが完全一致したため、重複provider requestを送らない判断を明記した。
+- branch-only regressionの記録をR30 run `33948026246` の45 test成功へ更新した。
+
+**非主張**: R31は正本同期のみであり、未完了の受入条件を完了扱いにしない。provider-reported usageは依然未取得で、production strategy、上限値、A2/B/Cの採択、本IssueのIn Progress状態は変更しない。
