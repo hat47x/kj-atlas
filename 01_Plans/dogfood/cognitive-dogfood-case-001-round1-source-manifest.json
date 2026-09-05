@@ -26,8 +26,8 @@
     {"path": "01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json", "blobSha": "9aa694d334409ce3bf3c29fc8a84f61c9b64cf17"},
     {"path": "01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md", "blobSha": "ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1"},
     {"path": "01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md", "blobSha": "50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829"},
-    {"path": "01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md", "blobSha": "455185f1e12490c6a1d97c45a221491b5c2131cc"},
-    {"path": "01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md", "blobSha": "49cb747ab1cbb7cf4756eb505c965ee532f8b3fe"}
+    {"path": "01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md", "blobSha": "455185f1e12490c6a1d97c45a221491b5c2131cc"},
+    {"path": "01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md", "blobSha": "49cb747ab1cbb7cf4756eb505c965ee532f8b3fe"}
   ],
   "round1ExcludedInputs": [
     "01_Plans/dogfood/cognitive-dogfood-case-000-r1-r5-audit.md",

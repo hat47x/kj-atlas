@@ -36,8 +36,8 @@ operator packで指定したRound 1の共通入力20件を、すべてproduct sn
 | 16 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json` | `9aa694d334409ce3bf3c29fc8a84f61c9b64cf17` | present |
 | 17 | `01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md` | `ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1` | present |
 | 18 | `01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md` | `50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829` | present |
-| 19 | `01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md` | `455185f1e12490c6a1d97c45a221491b5c2131cc` | present |
-| 20 | `01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md` | `49cb747ab1cbb7cf4756eb505c965ee532f8b3fe` | present |
+| 19 | `01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md` | `455185f1e12490c6a1d97c45a221491b5c2131cc` | present |
+| 20 | `01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md` | `49cb747ab1cbb7cf4756eb505c965ee532f8b3fe` | present |
 
 Round 1のcommon source manifest IDは、次で固定する。
 
