@@ -38,8 +38,6 @@ def main() -> None:
         count = body.count(old)
         if count != 1:
             raise SystemExit(f"expected exactly one stale reference in {raw_path}, found {count}")
-        if new in body:
-            raise SystemExit(f"canonical done path already exists in {raw_path}")
         path.write_text(body.replace(old, new), encoding="utf-8")
         print(f"updated {raw_path}: {old} -> {new}")
 
