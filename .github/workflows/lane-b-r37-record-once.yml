@@ -1,0 +1,33 @@
+name: lane-b-r37-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/provider-transport-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/provider-transport-provenance
+      - name: Record R37
+        run: |
+          python .github/lane-b-r37-record.py
+          grep -F '## R37 — DeepSeek usage を exact chat input message content に結び付ける' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '73 test' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          git diff --check
+      - name: Commit record and remove temporary files
+        run: |
+          rm .github/lane-b-r37-record.py
+          rm .github/workflows/lane-b-r37-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): record R37 provider input provenance'
+          git push origin HEAD:lane-b/provider-transport-provenance
