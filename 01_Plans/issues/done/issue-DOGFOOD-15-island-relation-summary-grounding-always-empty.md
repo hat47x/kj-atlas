@@ -74,3 +74,13 @@ if task == "summarize_island_relation":
 
 - モックの接地エコーは「allowed 接地集合をそのまま返す」だけであり、実LLMの接地選択品質とは独立（本issueは検証ハーネスの能力向上）。
 - ドッグフーディング観察起点（2026-08-16・iteration 180）: 動物園・水族館の運営方針（体験価値と運営コストのトレードオフ・2島構成）で `summarize-island-relation` に `groundingCardIds:["z4"]` を指定して実行し、応答の接地が空になることを再現。関係の根拠が保全されるかを E2E で固定できないことを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、AI提案が対象データへ意味的に接地していることを、決定的なローカルLLMモックと業務フローE2Eで検証可能にした verification harness 改善として `Done` となっていた。
+- `DOGFOOD-15` は島間関係要約の allowed groundingCardIds / groundingEdgeIds をモック応答へ反映し、関係の根拠接地をE2Eで固定した。
+- `DOGFOOD-17` は反対視点提案が Target card の主張本文へ応答するようモックを接地し、proposal-only境界を維持したまま対象主張への応答をE2Eで固定した。
+- いずれも実LLMの生成品質や製品API契約の変更ではなく、既存契約の意味的な検証能力を高めた完了記録である。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は12から10へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
