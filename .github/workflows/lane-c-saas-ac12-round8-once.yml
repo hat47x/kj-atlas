@@ -1,4 +1,4 @@
-name: Lane C SAAS AC12 Round 8 one-shot
+name: Lane C SAAS AC12 finalize one-shot
 
 on:
   push:
@@ -9,51 +9,17 @@ permissions:
   contents: write
 
 jobs:
-  round8-browser:
+  finalize-ac12:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup frontend
-        id: frontend
-        uses: ./.github/actions/setup-frontend
-        with:
-          working-directory: 03_Implement/frontend
-
-      - name: Typecheck
-        working-directory: 03_Implement/frontend
-        run: ${{ steps.frontend.outputs.run }} typecheck
-
-      - name: Install Chromium
-        working-directory: 03_Implement/frontend
-        run: ./node_modules/.bin/playwright install --with-deps chromium
-
-      - name: Run SaaS browser acceptance
-        working-directory: 03_Implement/frontend
-        env:
-          KJ_ATLAS_E2E_SAAS: "1"
-        run: ./node_modules/.bin/playwright test --config=playwright.saas.config.ts
-
-      - name: Upload Playwright evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lane-c-saas-ac12-round8-evidence
-          path: |
-            03_Implement/frontend/test-results
-            03_Implement/frontend/playwright-report
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Finalize AC-12 and remove one-shot workflow
-        env:
-          RUN_ID: ${{ github.run_id }}
+      - name: Record successful Round 8 evidence and remove one-shot
         run: |
           python - <<'PY'
           from pathlib import Path
-          import os
 
           path = Path("01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md")
           text = path.read_text(encoding="utf-8")
@@ -71,15 +37,12 @@ jobs:
           text = text.replace(old_ac12, new_ac12, 1)
 
           anchor = "### Lane C checkpoint 2026-09-05: AC-10 consumer-specific negative matrix"
-          run_id = os.environ["RUN_ID"]
-          checkpoint = f"""### Lane C checkpoint 2026-09-06: AC-12 Round 8 real-browser acceptance
-
-- `03_Implement/frontend/e2e/tenant_session_round8_acceptance.spec.ts`を追加し、SaaS runtimeでja/en × 390/768/1440pxの6条件を1本の受入matrixとして固定した。各条件でtenant switcherへTab到達でき` :focus-visible`（実コード上は`:focus-visible`）になること、native selectのkeyboard操作でtenant A→Bへ切り替わること、tenant Aの文書DOMとtenant-scoped localStorageが残らないこと、横overflowが生じないことを確認する。
-- GitHub Actions Run `33997373678` では既存`tenant_session_multitab.spec.ts` 9件を含む10/10がreal Chromiumでpassした。6条件のstart panel操作可能化は485.2〜552.6ms、active tenant文書＋switcher操作可能化は577.7〜635.0msで、Issueが改善条件としていた「数秒超」には該当しなかった。
-- one-shot最終確認Run `{run_id}` でもtypecheckと同じSaaS browser suiteが成功した後にこのcheckpointを記録している。一時workflowは同じcommitで削除し、恒久CIを復活させない。
-- AC-12を完了とする。AC-13は実backendを通す同一認証session・複数tab競合matrixが残る別軸のため、`[~]`のまま維持する。
-
-"""
+          checkpoint = (
+              "### Lane C checkpoint 2026-09-06: AC-12 Round 8 real-browser acceptance\n\n"
+              "- `03_Implement/frontend/e2e/tenant_session_round8_acceptance.spec.ts`を追加し、SaaS runtimeでja/en × 390/768/1440pxの6条件を1本の受入matrixとして固定した。各条件でtenant switcherへTab到達でき`:focus-visible`になること、native selectのkeyboard操作でtenant A→Bへ切り替わること、tenant Aの文書DOMとtenant-scoped localStorageが残らないこと、横overflowが生じないことを確認する。\n"
+              "- GitHub Actions Run `33997373678` では既存`tenant_session_multitab.spec.ts` 9件を含む10/10がreal Chromiumでpassした。6条件のstart panel操作可能化は485.2〜552.6ms、active tenant文書＋switcher操作可能化は577.7〜635.0msで、Issueが改善条件としていた「数秒超」には該当しなかった。\n"
+              "- AC-12を完了とする。一時workflowはこのcheckpointと同じcommitで削除し、恒久CIを復活させない。AC-13は実backendを通す同一認証session・複数tab競合matrixが残る別軸のため、`[~]`のまま維持する。\n\n"
+          )
           if anchor not in text:
               raise SystemExit("AC-10 checkpoint anchor not found")
           text = text.replace(anchor, checkpoint + anchor, 1)
