@@ -58,3 +58,13 @@
 - `01_Plans/dogfood/DOGFOODING_MANIFEST.md` §2.2 — check 10 の配線対象（本課題の競合対象）
 - `03_Implement/backend/verify_all.sh` — check 10（E2Eスクリプト直接実行）
 - `01_Plans/dogfood/README.md` — イテレーション履歴（シナリオ62〜67 を並行ファイアが追加）
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issue群は、並行開発・並行ドッグフーディングによって検証入力や期待値が実行中／変更後の実装とずれ、実回帰ではない失敗を生む verification drift を解消した完了系列として `Done` となっていた。
+- `DOGFOOD-10` は E2E スクリプトを実行時スナップショットへコピーしてから走らせることで、`/loop` の並行追記と共有作業ツリー実行のraceを遮断した。
+- `DOGFOOD-24` は model governance の allowlist 強化後に古いE2E期待値・テストfixtureが残ったdriftを、登録済み活性モデルを用いるシナリオとprovider設定fixtureへ追随させて解消した。
+- いずれも並行編集そのものを禁止するのではなく、検証ハーネスと期待値を現在の実装契約へ整合させることで、検証結果の信頼性を回復した記録である。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は10から8へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
