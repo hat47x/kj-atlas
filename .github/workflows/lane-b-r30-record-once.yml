@@ -1,0 +1,37 @@
+name: lane-b-r30-record-once
+
+on:
+  push:
+    branches:
+      - lane-b/provider-token-groups-a2-optin
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-self-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/provider-token-groups-a2-optin
+
+      - name: Record R30
+        run: |
+          python .github/lane-b-r30-record.py
+          git diff --check
+          grep -F '既定動作は従来どおり6 request' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '38 request' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '45 test' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+          grep -F '引き続きIn Progress' 01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md
+
+      - name: Commit record and remove temporary files
+        run: |
+          rm .github/lane-b-r30-record.py
+          rm .github/workflows/lane-b-r30-record-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(ai): record R30 groups A2 provider measurement boundary'
+          git push origin HEAD:lane-b/provider-token-groups-a2-optin
