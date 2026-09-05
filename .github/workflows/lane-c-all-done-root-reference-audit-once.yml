@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 全Done memoの旧root参照を完全一致監査する
+      - name: 全Done memoの旧root参照を履歴内部と外部参照に分ける
         shell: bash
         run: |
           python - <<'PY'
@@ -27,7 +27,8 @@ jobs:
           done_root = Path('01_Plans/issues/done')
           workflow = '.github/workflows/lane-c-all-done-root-reference-audit-once.yml'
           names = sorted(path.name for path in done_root.glob('issue-*.md'))
-          stale = []
+          inside_done = []
+          outside_done = []
           for name in names:
               retired = f'01_Plans/issues/{name}'
               completed = subprocess.run(
@@ -40,12 +41,18 @@ jobs:
               )
               if completed.returncode not in (0, 1):
                   raise SystemExit(completed.stderr.strip() or f'git grep failed: {retired}')
-              if completed.returncode == 0:
-                  stale.extend(completed.stdout.splitlines())
+              if completed.returncode != 0:
+                  continue
+              for line in completed.stdout.splitlines():
+                  if line.startswith('01_Plans/issues/done/'):
+                      inside_done.append(line)
+                  else:
+                      outside_done.append(line)
           print(f'canonical_done_issue_count={len(names)}')
-          print(f'stale_root_reference_count={len(stale)}')
-          for line in stale:
+          print(f'historical_inside_done_count={len(inside_done)}')
+          print(f'external_stale_root_reference_count={len(outside_done)}')
+          for line in outside_done:
               print(line)
-          if stale:
-              raise SystemExit('stale root references found')
+          if outside_done:
+              raise SystemExit('external stale root references found')
           PY
