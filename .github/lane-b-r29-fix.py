@@ -26,6 +26,8 @@ new = '''def representative_fit_budget(doc: Any) -> dict[str, int]:
 '''
 assert s.count(old) == 1
 s = s.replace(old, new)
+assert s.count("        TAIL_ISLAND,\n") == 2
+s = s.replace("        TAIL_ISLAND,\n", "")
 script_path.write_text(s, encoding="utf-8")
 
 test_path = Path("03_Implement/backend/tests/test_ai_route_a2_candidate.py")
