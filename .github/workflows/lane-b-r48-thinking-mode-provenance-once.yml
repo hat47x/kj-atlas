@@ -24,6 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           python _tmp_r48_patch.py
+          python _tmp_r48_fix_measurement_tests.py
       - name: Install backend dependencies
         shell: bash
         working-directory: 03_Implement/backend
@@ -53,6 +54,7 @@ jobs:
             scripts/measure_ai_route_provider_tokens.py \
             scripts/analyze_ai_route_provider_measurement.py \
             tests/test_llm_provider.py \
+            tests/test_ai_route_provider_token_measurement.py \
             tests/test_ai_route_provider_transport_input_provenance.py
           git diff --check
       - name: Record R48 and commit
@@ -71,13 +73,13 @@ jobs:
           assert heading not in text
           run_id = os.environ['R48_RUN_ID']
           text += f'''\n\n\n{heading}\n\nR45でDeepSeek V4へ移行した結果、`thinking.type=disabled|enabled` がprovider requestの明示的なgeneration modeになった。一方、R37までのDeepSeek measurement identityはsystem+user message contentを固定していたが、このmodeは保存reportに残らず、production既定の`disabled`で測った結果か、環境overrideで`enabled`になった結果かを後から区別できなかった。R48ではtoken推定とは切り離した**request-mode provenance**としてこの穴だけを閉じた。\n\n- `LLMCallMetadata` にprovider固有の `thinking_mode` を追加し、DeepSeek/OpenAI-compatible transportが実際に送った `thinking.type` をresponse metadataへ残す。generic audit fieldsのR35契約は変更しない。\n- measurement reportは `provider_generation_provenance={{version: 1, deepseek_field: "thinking.type"}}`、`expected_deepseek_thinking_mode`、各DeepSeek routeの `provider_generation.thinking_mode` を保存する。\n- DeepSeekを実行する場合はexpected modeを必須とし、現在の `settings.deepseek_thinking_mode` と一致しなければ**provider call前**に停止する。これにより誤った環境overrideのまま6件/7件/37件/38件を送信しない。\n- analyzerはDeepSeek reportについてgeneration provenance契約・expected mode・routeごとの実mode一致をfail-closedで検証する。modeはrequest provenanceであり、bytes/chars/hashと同様にtoken数へ換算しない。provider-reported `input_tokens` だけをtoken観測の正本とする。\n- production既定 `deepseek-v4-flash` + `thinking.type=disabled`、A2/B/C候補、shared IR cap、SafeMode、防PII、structured-text-only、proposal-only境界は変更しない。\n\nGitHub Actions run `{run_id}` でDeepSeek transport metadata、measurement/analyzer provenance、R23〜R43近接回帰、ruff、`git diff --check` を検証した。一時patch/workflowは同run内で自己削除する。\n\n**非主張**: R48でも外部DeepSeek APIは呼んでおらず、provider-reported input tokenは未取得である。thinking modeを記録したこと自体はinput token差・品質差・費用差を意味せず、A2/B/C採択・十分な余裕policy・production cap/routeも変更しない。\n'''
-          path.write_text(text + '\n')
+          path.write_text(text.rstrip() + '\n')
           PY
           python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
           python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
           python 01_Plans/docs_check.py
           git diff --check
-          rm _tmp_r48_patch.py .github/workflows/lane-b-r48-thinking-mode-provenance-once.yml
+          rm _tmp_r48_patch.py _tmp_r48_fix_measurement_tests.py .github/workflows/lane-b-r48-thinking-mode-provenance-once.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
