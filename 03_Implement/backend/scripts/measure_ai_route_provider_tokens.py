@@ -299,6 +299,7 @@ def _route_row(req: LLMRequest) -> dict[str, Any]:
             "coordinates": len((req.inputs or {}).get("coordinates", [])),
             "truncation": (req.inputs or {}).get("truncation"),
         },
+        "provider_call": None,
         "provider_reported": {
             "input_tokens": None,
             "output_tokens": None,
@@ -389,6 +390,7 @@ def measure(
         "expected_provider": expected_provider,
         "expected_model": model,
         "prompt_fingerprint": {"algorithm": "sha256", "encoding": "utf-8"},
+        "provider_call_provenance": {"version": 1},
         "executed": execute,
         "measurement_complete": False,
         "routes": routes,
@@ -424,6 +426,7 @@ def measure(
         row["actual_provider"] = response.metadata.provider_name
         row["actual_provider_kind"] = response.metadata.provider_kind
         row["actual_model"] = response.metadata.model_id
+        row["provider_call"] = response.metadata.as_audit_fields()
         row["provider_reported"] = {
             "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens,

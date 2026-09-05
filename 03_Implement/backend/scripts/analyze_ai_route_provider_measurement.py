@@ -41,6 +41,7 @@ except ModuleNotFoundError as exc:
 MEASUREMENT_NAME = "ai-route-provider-reported-input-tokens"
 SCENARIO_NAME = "300-cards-30-islands-ring"
 PROMPT_FINGERPRINT = {"algorithm": "sha256", "encoding": "utf-8"}
+PROVIDER_CALL_PROVENANCE = {"version": 1}
 CORE_ROUTE_TASKS = {
     "suggest-card-groups": "suggest_card_groups",
     "suggest-card-groups-route-b": "suggest_card_groups",
@@ -101,6 +102,32 @@ def _validate_measured_route(
     if row.get("actual_model") != expected_model:
         errors.append(f"model-mismatch:{name}")
         return None
+
+    provider_call = row.get("provider_call")
+    if not isinstance(provider_call, dict):
+        errors.append(f"provider-call-metadata-missing:{name}")
+        return None
+    if provider_call.get("provider") != expected_provider:
+        errors.append(f"provider-call-provider-mismatch:{name}")
+        return None
+    if provider_call.get("provider_kind") != row.get("actual_provider_kind"):
+        errors.append(f"provider-call-kind-mismatch:{name}")
+        return None
+    if provider_call.get("model_id") != expected_model:
+        errors.append(f"provider-call-model-mismatch:{name}")
+        return None
+    for field in ("transport", "requested_at", "trace_id"):
+        value = provider_call.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"provider-call-{field}-missing:{name}")
+            return None
+    if provider_call.get("fallback_to_none") is not False:
+        errors.append(f"provider-call-fallback-detected:{name}")
+        return None
+    if provider_call.get("execution_path") != "primary":
+        errors.append(f"provider-call-non-primary-path:{name}")
+        return None
+
     token = _int_token(row)
     if token is None:
         errors.append(f"input-usage-missing:{name}")
@@ -124,6 +151,8 @@ def analyze(report: Any) -> dict[str, Any]:
         errors.append("unexpected-scenario")
     if report.get("prompt_fingerprint") != PROMPT_FINGERPRINT:
         errors.append("unsupported-or-missing-prompt-fingerprint")
+    if report.get("provider_call_provenance") != PROVIDER_CALL_PROVENANCE:
+        errors.append("unsupported-or-missing-provider-call-provenance")
 
     expected_provider = report.get("expected_provider")
     expected_model = report.get("expected_model")
