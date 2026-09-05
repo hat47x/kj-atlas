@@ -23,10 +23,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test ! -e 01_Plans/issues/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
-          test -e 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
-          grep -q -- '- Status: Done' 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
-          test "$(grep -c '\- \[x\]' 01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md)" -eq 7
+          done_memo=01_Plans/issues/done/issue-AI-DEEPSEEK-V4-MIGRATION-01-retired-default-and-thinking-semantics.md
+          test -e "$done_memo"
+          grep -q -- '- Status: Done' "$done_memo"
+          test "$(grep -c '\- \[x\]' "$done_memo")" -eq 7
           python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
           python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
           python 01_Plans/docs_check.py
