@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ124）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
+- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/done/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
 - Expected verification level: `e2e`
 
 ## 課題

@@ -70,3 +70,11 @@ case "$p9_propose" in *'"status":"proposed"'*) ...
 
 - CE4提案の接地は内部 `suggest_island_summary`（DOGFOOD-13 で全接地）を引き継ぐため、モック側の変更は不要。本issueは**検証深度の向上**（CE4提案の根拠をE2Eで固定）。
 - ドッグフーディング観察起点（2026-08-16・iteration 187）: ホームセンター（`hc-i`・4カード島）で propose-island-summary を実行し、応答に `diff.groundingIds:["h1","h2","h3","h4"]` が含まれる一方、業務フローE2E が status のみを検証して接地を確認しないことを特定した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、AI提案が根拠カードまたは入力カードを欠落させない preservation invariant を業務フローE2Eで固定し、製品API契約を変えずに `Done` となっていた。
+- `DOGFOOD-22` と `DOGFOOD-23` は直接の実装依存は持たないが、CE4提案の grounding 保全と layout 提案の全カード保全という、提案結果の情報欠落を回帰から守る同型の完了記録として同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は29から27へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
