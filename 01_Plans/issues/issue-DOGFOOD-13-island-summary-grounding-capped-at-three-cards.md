@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ108）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `01_Plans/issues/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じくモックの暗黙制約）, `02_Architecture/api.md`（suggest-island-summary 契約・groundingIds）, `00_Prompt/kj_technique.md` §3（表札作成・接地）
+- Related ADR/Spec: `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じくモックの暗黙制約）, `02_Architecture/api.md`（suggest-island-summary 契約・groundingIds）, `00_Prompt/kj_technique.md` §3（表札作成・接地）
 - Expected verification level: `e2e`
 
 ## 課題

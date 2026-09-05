@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ109）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は**双方向**・方向と件数で報告）, `02_Architecture/api.md`（check-narrative 契約・direction `b_missing_in_a | a_missing_in_b`）, `01_Plans/issues/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じく check-narrative の正パス盲点）
+- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は**双方向**・方向と件数で報告）, `02_Architecture/api.md`（check-narrative 契約・direction `b_missing_in_a | a_missing_in_b`）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じく check-narrative の正パス盲点）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -66,3 +66,11 @@ return json.dumps({"issues": []})
 - これで **A/B照合の双方向（b_missing_in_a / a_missing_in_b）が揃って E2E 固定**された（DOGFOOD-12 の島ID非依存化と併せて、check-narrative の検出セマンティクスが双方向で回帰から保護される）。
 - モックのマーカー設計は既存の「未検証の主張」と同型。実LLM利用時はマーカーに依存せず本文から判断する。
 - ドッグフーディング観察起点（2026-08-16・iteration 179）: 放送局・番組編成のナラティブ草稿に「視聴者満足度が過去最高を記録した」という根拠のない主張を含めて check-narrative を実行し、`{"issues":[],"counts":null}` が返り方向を報告できないことを再現した。
+
+
+## 配置の整理（2026-09-05）
+
+- 本Issueは、`check-narrative` のA/B照合を島ID非依存・双方向・複数島へ段階的に拡張し、任意の図解／ナラティブで検出セマンティクスをE2E固定できるようにした verification harness 改善として `Done` となっていた。
+- `DOGFOOD-12` が島ID固定を解消し、`DOGFOOD-14` が反対方向 `b_missing_in_a` の正パスを追加し、`DOGFOOD-25` が複数島の取りこぼしへ拡張したため、check-narrative の成熟系列として3件を同時に正規配置へ移した。
+- `LEGACY_DONE_AT_ROOT_BASELINE` は23から20へ縮小し、R18 identity manifestは不変の歴史境界として維持する。
+- 旧rootパス引用は完全一致探索で検出し、現在の `done/` パスへ同時更新した。
