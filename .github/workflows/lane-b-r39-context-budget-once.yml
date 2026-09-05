@@ -19,6 +19,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Fix R39 patch assertion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/lane-b-r39-patch.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''# There are two return dictionaries with this start; replace the last/main one only.\nassert a.count(needle) == 2\nindex = a.rfind(needle)\na = a[:index] + a[index:].replace(needle, replacement, 1)'''
+          new = '''assert a.count(needle) == 1\na = a.replace(needle, replacement, 1)'''
+          assert old in text
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Apply R39 patch
         run: python .github/lane-b-r39-patch.py
       - name: Install backend test dependencies
