@@ -32,6 +32,30 @@ jobs:
           PY
       - name: Apply R39 patch
         run: python .github/lane-b-r39-patch.py
+      - name: Fix R39 layout C context summary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('03_Implement/backend/scripts/analyze_ai_route_provider_measurement.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''def _context_budget_summary(\n    tokens: dict[str, int],\n    *,\n    context_window_tokens: int | None,\n) -> dict[str, Any]:'''
+          new = '''def _context_budget_summary(\n    tokens: dict[str, int],\n    *,\n    layout_c_tokens: list[int],\n    context_window_tokens: int | None,\n) -> dict[str, Any]:'''
+          assert old in text
+          text = text.replace(old, new, 1)
+          old = '''    layout_c_requirements = [\n        route_requirements[name]\n        for name in LAYOUT_C_ROUTES\n        if name in route_requirements\n    ]\n    groups_a2_requirement = route_requirements.get(GROUPS_A2_ROUTE)\n'''
+          new = '''    layout_c_minimum_context = (\n        max(layout_c_tokens) + CURRENT_PRODUCTION_OUTPUT_RESERVE_TOKENS\n        if len(layout_c_tokens) == LAYOUT_C_REQUESTS\n        else None\n    )\n    groups_a2_requirement = route_requirements.get(GROUPS_A2_ROUTE)\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+          old = '''        "layout_c_hard_context_fit": _all_fit(\n            layout_c_requirements,\n            complete=len(layout_c_requirements) == LAYOUT_C_REQUESTS,\n        ),\n        "layout_c_max_single_minimum_context_tokens": (\n            max(row["minimum_context_tokens"] for row in layout_c_requirements)\n            if len(layout_c_requirements) == LAYOUT_C_REQUESTS\n            else None\n        ),\n'''
+          new = '''        "layout_c_hard_context_fit": (\n            None\n            if context_window_tokens is None or layout_c_minimum_context is None\n            else layout_c_minimum_context <= context_window_tokens\n        ),\n        "layout_c_max_single_minimum_context_tokens": layout_c_minimum_context,\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+          old = '''    context_budget = _context_budget_summary(\n        tokens,\n        context_window_tokens=context_window_tokens,\n    )\n'''
+          new = '''    context_budget = _context_budget_summary(\n        tokens,\n        layout_c_tokens=layout_c_tokens,\n        context_window_tokens=context_window_tokens,\n    )\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
       - name: Install backend test dependencies
         working-directory: 03_Implement/backend
         run: python -m pip install -e '.[test]'
