@@ -62,6 +62,12 @@ def _request(dispatcher=None):
     return SimpleNamespace(app=SimpleNamespace(state=state))
 
 
+@pytest.fixture(autouse=True)
+def _r2_provider_failure_tests_start_after_governance(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ai, "resolve_model_for_task", lambda _task: "final-model")
+    monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: None)
+
+
 def _register_external(db: Session, *, proposal_id: str = "proposal-ext-1") -> DocumentV1:
     doc = _doc()
     register_external_agent_task(

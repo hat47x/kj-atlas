@@ -37,6 +37,12 @@ TENANT = TenantContext(
 )
 
 
+@pytest.fixture(autouse=True)
+def _linkage_tests_do_not_own_model_governance(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ai, "resolve_model_for_task", lambda _task: "final-model")
+    monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: None)
+
+
 def _doc() -> DocumentV1:
     return DocumentV1.model_validate(json.loads(FIXTURE_PATH.read_text(encoding="utf-8")))
 
