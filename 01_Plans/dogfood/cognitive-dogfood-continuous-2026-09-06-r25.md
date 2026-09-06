@@ -21,7 +21,7 @@ R24は、`01_Plans/issues/<name>`という同じ文字列でも、current reposi
 
 が据え置かれていた。変更されたのはpathだけである。
 
-frozen commit上でこのblobが存在した座標は`01_Plans/issues/issue-AI-ROUTE-01-...md`であり、current `done/` pathではない。したがって#3001の変更はcurrent lifecycle参照としては自然でも、frozen snapshot coordinateとしては不正だった。
+frozen commit上でこのblobが存在した座標は、当時のactive-rootに置かれていた同Issueファイルであり、current `done/` pathではない。したがって#3001の変更はcurrent lifecycle参照としては自然でも、frozen snapshot coordinateとしては不正だった。
 
 ## 2. R24だけでは止められなかった理由
 

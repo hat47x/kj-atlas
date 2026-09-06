@@ -35,28 +35,8 @@ FROZEN_SOURCE_MANIFESTS = {
 # requires review.
 EXTERNAL_HISTORICAL_EXCEPTIONS = {
     (
-        "01_Plans/dogfood/doc_kj_atlas_dogfood_r15.json",
-        "issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md",
-    ),
-    (
-        "01_Plans/dogfood/doc_kj_atlas_dogfood_r18.json",
-        "issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md",
-    ),
-    (
-        "01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json",
-        "issue-DX-CI-MCP-01-mcp-tests-not-run-in-ci.md",
-    ),
-    (
         "01_Plans/research/phase-exit-evaluation-ENV-ARCH-01-2026-03-11.md",
         "issue-ENV-ARCH-01-global-env-prefix-migration.md",
-    ),
-    (
-        "01_Plans/research/core-value-realization-priorities-2026-07-18.md",
-        "issue-MVP-EXIT-01-productization-readiness.md",
-    ),
-    (
-        "01_Plans/research/mvp-exit-01-human-acceptance-handoff.md",
-        "issue-MVP-EXIT-01-productization-readiness.md",
     ),
 }
 
