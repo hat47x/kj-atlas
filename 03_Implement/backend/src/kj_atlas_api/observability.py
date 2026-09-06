@@ -125,6 +125,7 @@ _STANDARD_RECORD_FIELDS = frozenset(
         "threadName",
         "requestId",
         "actorRefHash",
+        "appRevision",
     }
 )
 
@@ -153,18 +154,21 @@ _REDACTED_PLACEHOLDER = "[redacted]"
 
 
 class RequestIdFilter(logging.Filter):
-    """Attach the current request id and actor pseudo-identifier to every record.
+    """Attach request correlation plus the process build revision to each record.
 
-    Applied as a filter rather than inside the formatter so that a future
-    non-JSON formatter still gets both fields. `actorRefHash` is `None` for any
-    record emitted outside a request that resolved a principal (health checks,
-    unauthenticated single-tenant requests, background/startup code) -- that is
-    the expected, common case, not an error.
+    `requestId` / `actorRefHash` vary by request. `appRevision` is process-wide
+    and is injected here for the same reason: JSON and human-readable formatters
+    must not diverge on which deployed build produced a line.
     """
+
+    def __init__(self, app_revision: str = "unknown") -> None:
+        super().__init__()
+        self._app_revision = app_revision or "unknown"
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.requestId = request_id_var.get()
         record.actorRefHash = actor_ref_hash_var.get()
+        record.appRevision = self._app_revision
         return True
 
 
@@ -192,6 +196,8 @@ class JsonLogFormatter(logging.Formatter):
         if actor_ref_hash:
             payload["actorRefHash"] = actor_ref_hash
 
+        payload["appRevision"] = getattr(record, "appRevision", "unknown") or "unknown"
+
         for key, value in record.__dict__.items():
             if key in _STANDARD_RECORD_FIELDS or key.startswith("_"):
                 continue
@@ -205,7 +211,12 @@ class JsonLogFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-def configure_logging(*, level: str, json_format: bool) -> None:
+def configure_logging(
+    *,
+    level: str,
+    json_format: bool,
+    app_revision: str = "unknown",
+) -> None:
     """Install the process-wide logging configuration.
 
     Uvicorn's own loggers are routed through the same handler so that access
@@ -226,14 +237,22 @@ def configure_logging(*, level: str, json_format: bool) -> None:
             # entirely when there is no principal), %-formatting can't
             # conditionally drop a field, so an anonymous request reads
             # literally as "actor=None" here.
-            "format": "%(asctime)s %(levelname)s %(name)s [%(requestId)s] [actor=%(actorRefHash)s] %(message)s"
+            "format": (
+                "%(asctime)s %(levelname)s %(name)s [%(requestId)s] "
+                "[actor=%(actorRefHash)s] [rev=%(appRevision)s] %(message)s"
+            )
         }
 
     logging.config.dictConfig(
         {
             "version": 1,
             "disable_existing_loggers": False,
-            "filters": {"request_id": {"()": f"{__name__}.RequestIdFilter"}},
+            "filters": {
+                "request_id": {
+                    "()": f"{__name__}.RequestIdFilter",
+                    "app_revision": app_revision or "unknown",
+                }
+            },
             "formatters": {"default": formatter},
             "handlers": {
                 "default": {

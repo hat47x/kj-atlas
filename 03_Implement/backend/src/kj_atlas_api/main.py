@@ -64,7 +64,11 @@ from kj_atlas_api.trusted_saas_runtime import (
 )
 
 
-configure_logging(level=settings.log_level, json_format=settings.log_json)
+configure_logging(
+    level=settings.log_level,
+    json_format=settings.log_json,
+    app_revision=settings.app_revision,
+)
 
 logger = logging.getLogger(__name__)
 
