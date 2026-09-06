@@ -256,6 +256,19 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "inquiry_bundles.created_by": EXTERNAL_ID,
     # ADR-0080: guest identity is tenant-scoped but deliberately not a TenantMembership.
     # Keep every persisted guest string under the same portable shape catalog as existing SaaS state.
+    "guest_auth_sessions.session_key_hash": _bounded(
+        256, "server-owned keyed hash of the opaque guest session cookie value"
+    ),
+    "guest_auth_sessions.tenant_id": INTERNAL_ID,
+    "guest_auth_sessions.guest_principal_id": INTERNAL_ID,
+    "guest_auth_sessions.issuer": _bounded(
+        OIDC_ISSUER_MAX_CHARS, "verified guest session issuer acceptance bound"
+    ),
+    "guest_auth_sessions.subject": EXTERNAL_ID,
+    "guest_auth_sessions.created_at": TIMESTAMP,
+    "guest_auth_sessions.last_used_at": TIMESTAMP,
+    "guest_auth_sessions.absolute_expires_at": TIMESTAMP,
+    "guest_auth_sessions.revoked_at": TIMESTAMP,
     "guest_principals.tenant_id": INTERNAL_ID,
     "guest_principals.guest_principal_id": INTERNAL_ID,
     "guest_principals.invited_email": _bounded(320, "email address acceptance bound"),

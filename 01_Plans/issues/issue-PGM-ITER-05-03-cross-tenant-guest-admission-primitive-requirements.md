@@ -5,7 +5,7 @@
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §18（Maintainer直接指示、2026-08-25）, `01_Plans/issues/done/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md`（外部比較調査）
 - Priority: P2
 - Owner: Maintainer
-- Scope: `01_Plans/adr/`, `03_Implement/backend/src/kj_atlas_api/guest_admission_models.py`, `03_Implement/backend/src/kj_atlas_api/guest_admission_repository.py`, `03_Implement/backend/src/kj_atlas_api/tenant_db_guard.py`, `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`
+- Scope: `01_Plans/adr/`, `03_Implement/backend/src/kj_atlas_api/guest_admission_models.py`, `03_Implement/backend/src/kj_atlas_api/guest_admission_repository.py`, `03_Implement/backend/src/kj_atlas_api/guest_auth_session_models.py`, `03_Implement/backend/src/kj_atlas_api/guest_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/guest_request_auth.py`, `03_Implement/backend/src/kj_atlas_api/tenant_db_guard.py`, `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`, `01_Plans/adr/ADR-0080-idp-independent-guest-admission-primitive.md`, `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`
 - Expected verification level: `integration`
 
@@ -41,7 +41,7 @@
 
 ### R1: 永続化・認可プリミティブ（2026-09-06）
 
-`lane-c/guest-admission-primitive-r1-20260906`で、`ADR-0080` D2/D3/D4の下層primitiveを実装した。
+`lane-c/guest-admission-primitive-r1-20260906`で、`ADR-0080` D2/D3/D4の下層primitiveを実装した（PR #3018 / merge `cab0c3451bb6950e457c86faac17b384101a1a5c`）。
 
 - `guest_principals`と`guest_document_grants`を独立tableとして追加し、guestを`TenantMembershipRow`へ混在させない。
 - `(tenant_id, invited_email)`のdedup、安定した`guest_principal_id`、verified issuer/subjectの一意性、principal/grantのtenant複合FK、documentのtenant複合FKをDDL/ORM双方で固定した。
@@ -53,25 +53,43 @@
 
 R1は**外部IdP/OAuthからguest identityを検証してserver-owned sessionへ交換し、HTTP requestのdocument read/writeへ接続するtrusted-auth-edge経路までは実装しない**。そのためAC-3/AC-4はこの時点では完了扱いにしない。
 
-### R2に残す境界
+### R2a: server-owned guest session → exact document read（2026-09-06）
+
+`lane-c/guest-admission-auth-edge-r2-20260906`で、R1のexact-grant predicateを実HTTP requestへ接続する第二段を実装した。
+
+- member用`saas_auth_sessions`とは別に`guest_auth_sessions`を追加し、`Kj-Atlas-Guest-Session`のopaque valueは既存と同じkeyed-hash方式でサーバー側hashだけを正本にする。
+- guest session rowはcookie hashから**tenant確定前**に引く認証状態であるため、それ自体をtenant RLS tableにはしない。rowからtenantを得た直後にtransaction-local tenant scopeを設定し、`guest_principals`・`guest_document_grants`・`documents`のFORCE RLS境界へ戻る。これはguestをmembershipへ昇格させる例外ではなく、pre-tenant authentication stateとtenant-scoped authorization stateを分離するための境界である。
+- session作成時と各session解決時の双方で、active principalかつverified `(issuer, subject)`が完全一致することを再検査する。principal revoke後は、cookie自体が期限内でも次requestで401となる。
+- guest cookieが存在するrequestはmember resolverへfall-throughしない。unknown / malformed / expired / revoked guest sessionは401、session persistence未構成は503でfail closedする。
+- document routeではguest principalの存在だけを許可根拠にせず、**active exact non-revoked grant**があるreadだけを許可する。同tenant未付与文書と別tenant文書はいずれも404としてresource enumerationを避ける。
+- R2aはguest write/export/shareを一般化しない。`action != read`は明示403とし、既存SafeModeより狭いread-only境界を維持する。member用PDP/capabilityへguestを偽装して通すこともしない。
+- 実HTTP integration testで、exact grantのみ200、membership行0件、same-tenant ungranted/cross-tenantは404、grant revokeは同一live cookieの次GETで404、principal revokeは同一cookieの次GETで401、PUTは403を固定した。
+- PostgreSQL 16 restricted runtime roleで、`guest_auth_sessions`がpre-tenant stateとして非RLS、`guest_principals`が引き続きFORCE RLSであること、session解決後だけtenant-scoped principalへ到達できることを固定した。
+- 最終verification run `34039105022`でRuff、59 focused tests、PostgreSQL 16、migration lineage、persistence shapes、`docs_check`、`git diff --check`がすべて成功し、一時helper/workflowは成功後に自己退役した。
+
+R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外部IdP/OAuth callbackからそのsessionを安全に発行する入口はまだ実装していない。内部`issue_guest_auth_session()`も、active principalとverified issuer/subjectの完全一致を要求するだけで、client supplied tenant/principalを信頼する公開login endpointではない。
+
+### R2bに残す境界
 
 - `ADR-0080` D1=A1/A2に従うguest identity verification（home organization IdP / general personal account）。
-- verified `(issuer, subject)`を、招待済み`guest_principal_id`へ安全にbindするredeem境界。
-- member用`VerifiedTenantClaim` / `tenant_identity_providers`経路と構造的に混線しないguest auth/session境界。
-- server-owned guest sessionからexact document grantを評価し、実HTTP requestでdefault zero / revoke immediateを固定するintegration test。
-- SafeModeその他のdocument response制約は通常利用者と同じ既存境界を通し、本issueで別の抜け道を作らない。
+- 既存memberの`UserIdentityRow` / `TenantIdentityProviderRow` / `VerifiedTenantClaim`をguestへ流用せず、署名/JWKS/issuer/audience検証結果だけをguest専用境界へ渡すこと。
+- 招待先tenant / `guest_principal_id`をclient query parameterの自己申告で決めず、hostが作った招待状態へ暗号学的またはserver-ownedにbindされたpending login handleから復元すること。
+- verified `(issuer, subject)`を招待済み`guest_principal_id`へbind/redeemし、その結果から`Kj-Atlas-Guest-Session`を発行するOAuth/BFF callback。
+- guest session logout / explicit revokeの公開境界が必要なら、そのCSRF・cookie属性・監査契約をmember cookieとは別に固定すること。
+- R2aではread-onlyで閉じたguest writeを将来開く場合は、document grantの「read/write」意味、CSRF、PDPとの責務分離を別途設計してから扱うこと。
 
 ## 受入条件
 
 - [x] AC-1: 上記4要求への対応方針が三要素分析（`ADR-0067`）で決定され、着工前チェックリストを通過する。— 2026-08-25、`ADR-0080`とこのADRを反映した`post-mvp-business-scope-design-program.html` §19、`three-element-constraint-checklist.html`の適用記録を参照。D1（ゲスト本人確認）・D2（信頼レコードの形）・D3（既定拒否・既定ゼロ件の保証層）・D4（取り消しの独立性）の4論点を、基本チェック・クロスチェックを通した三要素分析として決定した。2026-08-26、保守者の指示によりD1（単一方式→多方式対応）・要求2の文言・D2（関数従属性再検査による`guest_principals`への精緻化）を補正した。
 - [x] AC-2: 決定内容が新規ADRとして起票され、Maintainerの承認（Accepted）を得る。— 2026-08-26、`ADR-0080`がAcceptedとなった（D1=多方式対応、D2=A、D3=A、D4=A）。
-- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— 2026-09-06 R1で永続化・repository・RLSのdefault-zero/exact-grant primitiveまでは実装・integration test固定済み。残りはD1のverified guest identity→server-owned session→実HTTP document authorization接続（R2）。
-- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— 2026-09-06 R1でgrant/principal revokeと次のrepository authorization predicateでの即時denyまでは固定済み。残りはR2の実HTTP/session経路で、既発行sessionを含むrequest境界の挙動を固定すること。
+- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— R1でstorage/repository/RLS、R2aでserver-owned guest session→実HTTP exact document readのdefault-zeroまで固定した。残りはD1の外部verified guest identityをhost-created invitationへ安全にbind/redeemし、guest sessionを発行するR2b入口。公開入口がない段階では「個人単位・IdP不問の受入journey」全体の完了とは扱わない。
+- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— R1のrepository predicateに加え、R2aではgrant revoke→同じlive cookieの次GETが404、principal revoke→同じcookieの次GETが401となる実HTTP挙動まで固定済み。ただし外部IdPからsessionを発行する公開journey自体がR2b未実装のため、親issue closeoutまでは未完了として維持する。
 
 ## 検証
 
 - `python 01_Plans/docs_check.py`
 - `cd 03_Implement/backend && python -m ruff check ...`
-- `cd 03_Implement/backend && python -m pytest -q tests/test_guest_admission_repository.py tests/test_guest_admission_postgres_rls.py tests/test_tenant_db_guard.py tests/test_alembic_lineage.py tests/test_persistence_shapes.py tests/test_database_support.py`
-- PostgreSQL 16 restricted runtime roleでguest tableの`ENABLE/FORCE RLS`、contextなし0件、別tenant不可視・write拒否、transaction-local tenant scopeを確認
-- R1 verification: GitHub Actions run `34036961877`, governance re-verification run `34037370856`
+- `cd 03_Implement/backend && python -m pytest -q tests/test_guest_auth_session_store.py tests/test_guest_auth_session_postgres.py tests/test_guest_docs_http_authorization.py tests/test_guest_admission_repository.py tests/test_guest_admission_postgres_rls.py tests/test_tenant_db_guard.py tests/test_alembic_lineage.py tests/test_persistence_shapes.py tests/test_database_support.py`
+- PostgreSQL 16 restricted runtime roleでguest principal/grantのFORCE RLSと、pre-tenant `guest_auth_sessions`→tenant scope設定→FORCE-RLS principal lookupの遷移を確認
+- R1 verification: GitHub Actions run `34036961877`, governance re-verification run `34037370856`, final docs run `34038175292`
+- R2a verification: GitHub Actions run `34039105022`（59 focused tests + docs/diff hygiene）

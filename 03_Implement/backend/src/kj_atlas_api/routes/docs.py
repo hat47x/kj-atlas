@@ -42,6 +42,8 @@ from kj_atlas_api.document_repository import (
     list_merge_decision_logs_by_snapshot as list_merge_log_rows_by_snapshot,
 )
 from kj_atlas_api.generation_repository import RevisionHeadConflict
+from kj_atlas_api.guest_admission_repository import GuestAdmissionRepository
+from kj_atlas_api.guest_request_auth import resolve_guest_request_session
 from kj_atlas_api.models import (
     Card,
     CandidateListViewModel,
@@ -202,6 +204,73 @@ def _authorize_request(
     safe_mode: bool,
     read_only: bool,
 ) -> tuple[AccessRequest, AccessDecision, TenantContext]:
+    guest_session = resolve_guest_request_session(request=request)
+    if guest_session is not None:
+        # ADR-0080 D3: the guest principal itself conveys zero document
+        # visibility. R2a intentionally supports read only; broader guest
+        # actions remain closed until separately designed and tested.
+        if action != "read":
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "guest_write_not_enabled",
+                    "message": "Guest write access is not enabled.",
+                },
+            )
+        guest_repo = GuestAdmissionRepository(db, tenant_id=guest_session.tenant_id)
+        if not guest_repo.can_read_document(
+            guest_principal_id=guest_session.guest_principal_id,
+            doc_id=doc_id,
+        ):
+            # Preserve resource anti-enumeration: an ungranted existing doc is
+            # indistinguishable from a non-existent/cross-tenant doc.
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "guest_document_not_granted",
+                    "message": "Document is not available.",
+                },
+            )
+        tenant = TenantContext(
+            tenant_id=guest_session.tenant_id,
+            membership_id=None,
+            resolved_by="guest_session",
+        )
+        resource_resolver: DocumentAccessResourceResolver = getattr(
+            request.app.state,
+            "document_access_resource_resolver",
+            SingleTenantHeaderResourceResolver(),
+        )
+        resource = resource_resolver.resolve(
+            db=db,
+            request=request,
+            tenant=tenant,
+            action=action,
+            doc_id=doc_id,
+        )
+        access_request = AccessRequest(
+            action=action,
+            safe_mode=safe_mode,
+            read_only=True,
+            auth=AuthContext(
+                actor_ref=guest_session.guest_principal_id,
+                user_id=None,
+                provider="guest_session",
+                external_uid=guest_session.guest_principal_id,
+                trace_id=request.headers.get("x-trace-id"),
+            ),
+            tenant=tenant,
+            resource=resource,
+        )
+        tenant_boundary = apply_tenant_boundary_guard(access_request, required=True)
+        if tenant_boundary is not None:
+            enforce_access(tenant_boundary, action=action)
+        return (
+            access_request,
+            AccessDecision(allow=True, read_only=True, reason="guest_document_grant"),
+            tenant,
+        )
+
     tenant_scoped_session_required = tenant_session_precondition_required(request)
     if tenant_scoped_session_required:
         trusted_session = resolve_trusted_saas_request_session(

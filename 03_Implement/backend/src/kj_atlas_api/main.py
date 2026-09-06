@@ -21,6 +21,7 @@ from kj_atlas_api.db import SessionLocal, init_db
 from kj_atlas_api.database_content_store import DocumentRevisionDivergence
 from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
+from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
 from kj_atlas_api.generation_repository import (
     GenerationBlobConflict,
     GenerationBlobUnavailable,
@@ -155,6 +156,7 @@ async def lifespan(app: FastAPI):
     if settings.runtime_profile == "saas-multitenant":
         _saas_auth_state_store.preflight()
         _saas_auth_session_store.preflight()
+        _guest_auth_session_store.preflight()
     # ADR-0063 D9-6: post-DB-init check for active identity providers.
     if settings.runtime_profile == "saas-multitenant":
         validate_saas_providers_exist()
@@ -193,6 +195,7 @@ app = FastAPI(
 
 _saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
 _saas_auth_session_store = DatabaseSaasAuthSessionStore(SessionLocal)
+_guest_auth_session_store = DatabaseGuestAuthSessionStore(SessionLocal)
 
 # ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
 # scope so that initialize_trusted_saas_runtime() can find it during lifespan.
@@ -218,6 +221,8 @@ if settings.runtime_profile == "saas-multitenant":
     app.state.saas_auth_session_store = _saas_auth_session_store
     app.state.saas_auth_state_store = _saas_auth_state_store
     app.state.saas_auth_session_hash_key = _saas_auth_session_hash_key
+    app.state.guest_auth_session_store = _guest_auth_session_store
+    app.state.guest_auth_session_hash_key = _saas_auth_session_hash_key
 
     install_trusted_saas_runtime(
         app,
