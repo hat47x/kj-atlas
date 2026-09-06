@@ -1,0 +1,59 @@
+name: R30 dogfood sync and verify once
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dogfood/r30-declaration-uniqueness-20260906
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: R30を継続dogfood索引へ同期する
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('01_Plans/dogfood/cognitive-dogfood-index.md')
+          text = path.read_text(encoding='utf-8')
+          block = """- `cognitive-dogfood-continuous-2026-09-06-r30.md`
+            - R30。PR #3016/#3017で、Backend settings表とCompose配送面に同じpublic keyの重複宣言が実在したことを分析し、必要な層間複製と同一authority/delivery surface内の宣言一意性を分離した記録。
+          - `doc_kj_atlas_dogfood_r30.json`
+            - R30のKJキャンバス。R28の不要な複製を持たない、R29の必要な複製は意味一致を守る、R30の各層内部では宣言点を一意にする、という三段の境界を保持する。
+          """
+          if 'cognitive-dogfood-continuous-2026-09-06-r30.md' not in text:
+              anchor = """- `doc_kj_atlas_dogfood_r29.json`
+            - R29のKJキャンバス。契約項目の存在と意味値一致を分け、静的に安全に読めるdefaultだけを照合し、R28の「複製をやめる」境界とは別に「必要な複製は意味まで守る」構造を保持する。
+          """
+              if anchor not in text:
+                  raise SystemExit('R29 index anchor not found')
+              text = text.replace(anchor, anchor + block, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+      - name: Dogfood validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+      - name: Repository-wide planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py' -v
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+      - name: Working-tree hygiene
+        run: git diff --check
+      - name: 検証済みR30をbranchへ記録しone-shotを退役する
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 01_Plans/dogfood/cognitive-dogfood-index.md
+          git rm .github/workflows/r30-dogfood-sync-verify-once.yml
+          git commit -m 'dogfood: sync R30 index and retire verification workflow'
+          git diff --check origin/main...HEAD
+          git push origin HEAD:dogfood/r30-declaration-uniqueness-20260906
