@@ -146,7 +146,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | ADR-0074 BFF: broker HTTP timeout 秒数（0 より大きく 30 以下） |
 | `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | ADR-0074 decision 2: 認証 session cookie の HMAC-SHA256 キー（64 文字 lowercase hex = 32 bytes）。`saas-multitenant` では必須。生cookie値はDBへ保存せず、このキーでハッシュする |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） |
-| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01） |
+| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `50000` | DocumentV1 のカード件数（SEC-DOC-BOUND-01。meta-dogfoodingの数万枚規模と20,000-card targetに対する余白を確保） |
 | `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | AI リクエストの `allowUnreviewedText` 緩和を許可するか（SEC-AI-SAFEMODE-01・ADR-0068） |
 | `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
 | `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
