@@ -1,0 +1,40 @@
+name: Lane C SAAS-TENANT-01 closeout diagnose once
+
+on:
+  push:
+    branches:
+      - docs/lane-c-saas-tenant-01-closeout-20260906
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: "github.event.head_commit.message == 'chore: diagnose SAAS-TENANT-01 closeout references'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enumerate exact active-root references
+        shell: bash
+        run: |
+          set -euo pipefail
+          old='01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md'
+          echo '=== exact active-root references ==='
+          git grep -n -F "$old" -- . || true
+          echo '=== SAAS-TENANT-01 textual references ==='
+          git grep -n -F 'SAAS-TENANT-01' -- . || true
+      - name: Check current planning baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+          python 01_Plans/issues/validate_active_issue_memos.py
+          python 01_Plans/docs_check.py
+          git diff --check
