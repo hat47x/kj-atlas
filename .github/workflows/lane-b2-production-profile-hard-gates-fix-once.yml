@@ -20,6 +20,7 @@ jobs:
       - name: Align production profile hard gates
         run: |
           python - <<'PY'
+          import base64
           from pathlib import Path
 
           registry_path = Path('02_Architecture/runtime_parameter_registry.md')
@@ -46,125 +47,8 @@ jobs:
               raw = raw.replace(old, new, 1)
           config_path.write_bytes(raw)
 
-          test_path = Path('01_Plans/tests/test_production_profile_required_settings_contract.py')
-          test_path.write_text(r'''from __future__ import annotations
-
-import unittest
-from pathlib import Path
-
-
-ROOT = Path(__file__).resolve().parents[2]
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-SAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
-MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
-
-
-def _profile_row(registry: str, profile: str) -> list[str]:
-    section = registry.split("## Runtime profiles", 1)[1].split(
-        "### Profile default vs recommendation", 1
-    )[0]
-    prefix = f"| `{profile}` |"
-    rows = [line for line in section.splitlines() if line.startswith(prefix)]
-    if len(rows) != 1:
-        raise AssertionError(f"expected one row for {profile}, got {len(rows)}")
-    return [cell.strip() for cell in rows[0].strip().strip("|").split("|")]
-
-
-class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.registry = REGISTRY.read_text(encoding="utf-8")
-        self.configuration = CONFIGURATION.read_text(encoding="utf-8")
-        self.settings = SETTINGS.read_text(encoding="utf-8")
-        self.saas_policy = SAAS_POLICY.read_text(encoding="utf-8")
-        self.main = MAIN.read_text(encoding="utf-8")
-
-    def test_enterprise_profile_exposes_settings_fail_fast_credentials(self) -> None:
-        required = _profile_row(self.registry, "enterprise-production")[2]
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY=<secret>`", required)
-        self.assertIn("`KJ_ATLAS_API_KEY=<secret>`", required)
-        self.assertIn('if self.admin_api_key is None:', self.settings)
-        self.assertIn(
-            'if profile == "enterprise-production" and self.api_key is None:',
-            self.settings,
-        )
-        summary = next(
-            line
-            for line in self.configuration.splitlines()
-            if line.startswith("- `enterprise-production`:")
-        )
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", summary)
-        self.assertIn("`KJ_ATLAS_API_KEY`", summary)
-
-    def test_saas_profile_exposes_startup_hard_gate_without_promoting_callback_only_fields(self) -> None:
-        row = _profile_row(self.registry, "saas-multitenant")
-        required, notes = row[2], row[3]
-        required_tokens = (
-            "`KJ_ATLAS_ADMIN_API_KEY=<secret>`",
-            "`KJ_ATLAS_DATABASE_URL=<PostgreSQL URL>`",
-            "`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`",
-            "`KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`",
-            "`KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`",
-            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http`",
-            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_TENANT_CAPABILITY_RESOLVER=external_http`",
-            "`KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY=<64 lowercase hex>`",
-        )
-        for token in required_tokens:
-            with self.subTest(token=token):
-                self.assertIn(token, required)
-
-        hard_gate_fragments = (
-            'self.database_backend == "postgresql"',
-            'not self.allow_jit_provisioning',
-            'self.access_control_adapter == "external_http"',
-            'self.access_control_fail_safe_mode == "deny"',
-            'self.document_policy_binding_resolver == "external_http"',
-            'self.tenant_capability_resolver == "external_http"',
-            'self.saas_oauth_broker_http_authorize_endpoint is not None',
-            'self.saas_auth_session_hash_key is not None',
-        )
-        for fragment in hard_gate_fragments:
-            with self.subTest(fragment=fragment):
-                self.assertIn(fragment, self.saas_policy)
-
-        for endpoint_key in (
-            'KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT',
-            'KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT',
-            'KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT',
-        ):
-            self.assertIn(endpoint_key, self.settings)
-
-        self.assertIn("token endpoint / redirect URI / client ID / client secret", notes)
-        self.assertIn("503", notes)
-        callback_guard = (
-            "if token_endpoint is None or redirect_uri is None or client_id is None "
-            "or client_secret is None:"
-        )
-        self.assertIn(callback_guard, self.main)
-        self.assertIn("return None", self.main.split(callback_guard, 1)[1].split("return ExternalOauthBrokerConfig", 1)[0])
-
-        summary = next(
-            line
-            for line in self.configuration.splitlines()
-            if line.startswith("- `saas-multitenant`:")
-        )
-        for fragment in (
-            "`KJ_ATLAS_ADMIN_API_KEY`",
-            "PostgreSQL",
-            "OAuth authorize endpoint",
-            "auth-session hash key",
-        ):
-            self.assertIn(fragment, summary)
-
-
-if __name__ == "__main__":
-    unittest.main()
-''', encoding='utf-8')
+          encoded = 'ZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKaW1wb3J0IHVuaXR0ZXN0CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKClJPT1QgPSBQYXRoKF9fZmlsZV9fKS5yZXNvbHZlKCkucGFyZW50c1syXQpSRUdJU1RSWSA9IFJPT1QgLyAiMDJfQXJjaGl0ZWN0dXJlL3J1bnRpbWVfcGFyYW1ldGVyX3JlZ2lzdHJ5Lm1kIgpDT05GSUdVUkFUSU9OID0gUk9PVCAvICIwNF9Eb2N1bWVudGF0aW9uL2NvbmZpZ3VyYXRpb24ubWQiClNFVFRJTkdTID0gUk9PVCAvICIwM19JbXBsZW1lbnQvYmFja2VuZC9zcmMva2pfYXRsYXNfYXBpL3NldHRpbmdzLnB5IgpTQUFTX1BPTElDWSA9IFJPT1QgLyAiMDNfSW1wbGVtZW50L2JhY2tlbmQvc3JjL2tqX2F0bGFzX2FwaS90cnVzdGVkX3NhYXNfcnVudGltZS5weSIKTUFJTiA9IFJPT1QgLyAiMDNfSW1wbGVtZW50L2JhY2tlbmQvc3JjL2tqX2F0bGFzX2FwaS9tYWluLnB5IgoKCmRlZiBfcHJvZmlsZV9yb3cocmVnaXN0cnk6IHN0ciwgcHJvZmlsZTogc3RyKSAtPiBsaXN0W3N0cl06CiAgICBzZWN0aW9uID0gcmVnaXN0cnkuc3BsaXQoIiMjIFJ1bnRpbWUgcHJvZmlsZXMiLCAxKVsxXS5zcGxpdCgKICAgICAgICAiIyMjIFByb2ZpbGUgZGVmYXVsdCB2cyByZWNvbW1lbmRhdGlvbiIsIDEKICAgIClbMF0KICAgIHByZWZpeCA9IGYifCBge3Byb2ZpbGV9YCB8IgogICAgcm93cyA9IFtsaW5lIGZvciBsaW5lIGluIHNlY3Rpb24uc3BsaXRsaW5lcygpIGlmIGxpbmUuc3RhcnRzd2l0aChwcmVmaXgpXQogICAgaWYgbGVuKHJvd3MpICE9IDE6CiAgICAgICAgcmFpc2UgQXNzZXJ0aW9uRXJyb3IoZiJleHBlY3RlZCBvbmUgcm93IGZvciB7cHJvZmlsZX0sIGdvdCB7bGVuKHJvd3MpfSIpCiAgICByZXR1cm4gW2NlbGwuc3RyaXAoKSBmb3IgY2VsbCBpbiByb3dzWzBdLnN0cmlwKCkuc3RyaXAoInwiKS5zcGxpdCgifCIpXQoKCmNsYXNzIFByb2R1Y3Rpb25Qcm9maWxlUmVxdWlyZWRTZXR0aW5nc0NvbnRyYWN0VGVzdHModW5pdHRlc3QuVGVzdENhc2UpOgogICAgZGVmIHNldFVwKHNlbGYpIC0+IE5vbmU6CiAgICAgICAgc2VsZi5yZWdpc3RyeSA9IFJFR0lTVFJZLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQogICAgICAgIHNlbGYuY29uZmlndXJhdGlvbiA9IENPTkZJR1VSQVRJT04ucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCiAgICAgICAgc2VsZi5zZXR0aW5ncyA9IFNFVFRJTkdTLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQogICAgICAgIHNlbGYuc2Fhc19wb2xpY3kgPSBTQUFTX1BPTElDWS5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKICAgICAgICBzZWxmLm1haW4gPSBNQUlOLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQoKICAgIGRlZiB0ZXN0X2VudGVycHJpc2VfcHJvZmlsZV9leHBvc2VzX3NldHRpbmdzX2ZhaWxfZmFzdF9jcmVkZW50aWFscyhzZWxmKSAtPiBOb25lOgogICAgICAgIHJlcXVpcmVkID0gX3Byb2ZpbGVfcm93KHNlbGYucmVnaXN0cnksICJlbnRlcnByaXNlLXByb2R1Y3Rpb24iKVsyXQogICAgICAgIHNlbGYuYXNzZXJ0SW4oImBLSl9BVExBU19BRE1JTl9BUElfS0VZPTxzZWNyZXQ+YCIsIHJlcXVpcmVkKQogICAgICAgIHNlbGYuYXNzZXJ0SW4oImBLSl9BVExBU19BUElfS0VZPTxzZWNyZXQ+YCIsIHJlcXVpcmVkKQogICAgICAgIHNlbGYuYXNzZXJ0SW4oJ2lmIHNlbGYuYWRtaW5fYXBpX2tleSBpcyBOb25lOicsIHNlbGYuc2V0dGluZ3MpCiAgICAgICAgc2VsZi5hc3NlcnRJbigKICAgICAgICAgICAgJ2lmIHByb2ZpbGUgPT0gImVudGVycHJpc2UtcHJvZHVjdGlvbiIgYW5kIHNlbGYuYXBpX2tleSBpcyBOb25lOicsCiAgICAgICAgICAgIHNlbGYuc2V0dGluZ3MsCiAgICAgICAgKQogICAgICAgIHN1bW1hcnkgPSBuZXh0KAogICAgICAgICAgICBsaW5lCiAgICAgICAgICAgIGZvciBsaW5lIGluIHNlbGYuY29uZmlndXJhdGlvbi5zcGxpdGxpbmVzKCkKICAgICAgICAgICAgaWYgbGluZS5zdGFydHN3aXRoKCItIGBlbnRlcnByaXNlLXByb2R1Y3Rpb25gOiIpCiAgICAgICAgKQogICAgICAgIHNlbGYuYXNzZXJ0SW4oImBLSl9BVExBU19BRE1JTl9BUElfS0VZYCIsIHN1bW1hcnkpCiAgICAgICAgc2VsZi5hc3NlcnRJbigiYEtKX0FUTEFTX0FQSV9LRVlgIiwgc3VtbWFyeSkKCiAgICBkZWYgdGVzdF9zYWFzX3Byb2ZpbGVfZXhwb3Nlc19zdGFydHVwX2hhcmRfZ2F0ZV93aXRob3V0X3Byb21vdGluZ19jYWxsYmFja19vbmx5X2ZpZWxkcyhzZWxmKSAtPiBOb25lOgogICAgICAgIHJvdyA9IF9wcm9maWxlX3JvdyhzZWxmLnJlZ2lzdHJ5LCAic2Fhcy1tdWx0aXRlbmFudCIpCiAgICAgICAgcmVxdWlyZWQsIG5vdGVzID0gcm93WzJdLCByb3dbM10KICAgICAgICByZXF1aXJlZF90b2tlbnMgPSAoCiAgICAgICAgICAgICJgS0pfQVRMQVNfQURNSU5fQVBJX0tFWT08c2VjcmV0PmAiLAogICAgICAgICAgICAiYEtKX0FUTEFTX0RBVEFCQVNFX1VSTD08UG9zdGdyZVNRTCBVUkw+YCIsCiAgICAgICAgICAgICJgS0pfQVRMQVNfQUxMT1dfSklUX1BST1ZJU0lPTklORz1mYWxzZWAiLAogICAgICAgICAgICAiYEtKX0FUTEFTX0FDQ0VTU19DT05UUk9MX0FEQVBURVI9ZXh0ZXJuYWxfaHR0cGAiLAogICAgICAgICAgICAiYEtKX0FUTEFTX0FDQ0VTU19DT05UUk9MX0VYVEVSTkFMX0hUVFBfRU5EUE9JTlQ9PEhUVFBTIFVSTD5gIiwKICAgICAgICAgICAgImBLSl9BVExBU19BQ0NFU1NfQ09OVFJPTF9GQUlMX1NBRkVfTU9ERT1kZW55YCIsCiAgICAgICAgICAgICJgS0pfQVRMQVNfRE9DVU1FTlRfUE9MSUNZX0JJTkRJTkdfUkVTT0xWRVI9ZXh0ZXJuYWxfaHR0cGAiLAogICAgICAgICAgICAiYEtKX0FUTEFTX0RPQ1VNRU5UX1BPTElDWV9CSU5ESU5HX0hUVFBfRU5EUE9JTlQ9PEhUVFBTIFVSTD5gIiwKICAgICAgICAgICAgImBLSl9BVExBU19URU5BTlRfQ0FQQUJJTElUWV9SRVNPTFZFUj1leHRlcm5hbF9odHRwYCIsCiAgICAgICAgICAgICJgS0pfQVRMQVNfVEVOQU5UX0NBUEFCSUxJVFlfSFRUUF9FTkRQT0lOVD08SFRUUFMgVVJMPmAiLAogICAgICAgICAgICAiYEtKX0FUTEFTX1NBQVNfT0FVVEhfQlJPS0VSX0hUVFBfQVVUSE9SSVpFX0VORFBPSU5UPTxIVFRQUyBVUkw+YCIsCiAgICAgICAgICAgICJgS0pfQVRMQVNfU0FBU19BVVRIX1NFU1NJT05fSEFTSF9LRVk9PDY0IGxvd2VyY2FzZSBoZXg+YCIsCiAgICAgICAgKQogICAgICAgIGZvciB0b2tlbiBpbiByZXF1aXJlZF90b2tlbnM6CiAgICAgICAgICAgIHdpdGggc2VsZi5zdWJUZXN0KHRva2VuPXRva2VuKToKICAgICAgICAgICAgICAgIHNlbGYuYXNzZXJ0SW4odG9rZW4sIHJlcXVpcmVkKQoKICAgICAgICBoYXJkX2dhdGVfZnJhZ21lbnRzID0gKAogICAgICAgICAgICAnc2VsZi5kYXRhYmFzZV9iYWNrZW5kID09ICJwb3N0Z3Jlc3FsIicsCiAgICAgICAgICAgICdub3Qgc2VsZi5hbGxvd19qaXRfcHJvdmlzaW9uaW5nJywKICAgICAgICAgICAgJ3NlbGYuYWNjZXNzX2NvbnRyb2xfYWRhcHRlciA9PSAiZXh0ZXJuYWxfaHR0cCInLAogICAgICAgICAgICAnc2VsZi5hY2Nlc3NfY29udHJvbF9mYWlsX3NhZmVfbW9kZSA9PSAiZGVueSInLAogICAgICAgICAgICAnc2VsZi5kb2N1bWVudF9wb2xpY3lfYmluZGluZ19yZXNvbHZlciA9PSAiZXh0ZXJuYWxfaHR0cCInLAogICAgICAgICAgICAnc2VsZi50ZW5hbnRfY2FwYWJpbGl0eV9yZXNvbHZlciA9PSAiZXh0ZXJuYWxfaHR0cCInLAogICAgICAgICAgICAnc2VsZi5zYWFzX29hdXRoX2Jyb2tlcl9odHRwX2F1dGhvcml6ZV9lbmRwb2ludCBpcyBub3QgTm9uZScsCiAgICAgICAgICAgICdzZWxmLnNhYXNfYXV0aF9zZXNzaW9uX2hhc2hfa2V5IGlzIG5vdCBOb25lJywKICAgICAgICApCiAgICAgICAgZm9yIGZyYWdtZW50IGluIGhhcmRfZ2F0ZV9mcmFnbWVudHM6CiAgICAgICAgICAgIHdpdGggc2VsZi5zdWJUZXN0KGZyYWdtZW50PWZyYWdtZW50KToKICAgICAgICAgICAgICAgIHNlbGYuYXNzZXJ0SW4oZnJhZ21lbnQsIHNlbGYuc2Fhc19wb2xpY3kpCgogICAgICAgIGZvciBlbmRwb2ludF9rZXkgaW4gKAogICAgICAgICAgICAiS0pfQVRMQVNfQUNDRVNTX0NPTlRST0xfRVhURVJOQUxfSFRUUF9FTkRQT0lOVCIsCiAgICAgICAgICAgICJLSl9BVExBU19ET0NVTUVOVF9QT0xJQ1lfQklORElOR19IVFRQX0VORFBPSU5UIiwKICAgICAgICAgICAgIktKX0FUTEFTX1RFTkFOVF9DQVBBQklMSVRZX0hUVFBfRU5EUE9JTlQiLAogICAgICAgICk6CiAgICAgICAgICAgIHNlbGYuYXNzZXJ0SW4oZW5kcG9pbnRfa2V5LCBzZWxmLnNldHRpbmdzKQoKICAgICAgICBzZWxmLmFzc2VydEluKCJ0b2tlbiBlbmRwb2ludCAvIHJlZGlyZWN0IFVSSSAvIGNsaWVudCBJRCAvIGNsaWVudCBzZWNyZXQiLCBub3RlcykKICAgICAgICBzZWxmLmFzc2VydEluKCI1MDMiLCBub3RlcykKICAgICAgICBjYWxsYmFja19ndWFyZCA9ICgKICAgICAgICAgICAgImlmIHRva2VuX2VuZHBvaW50IGlzIE5vbmUgb3IgcmVkaXJlY3RfdXJpIGlzIE5vbmUgb3IgY2xpZW50X2lkIGlzIE5vbmUgIgogICAgICAgICAgICAib3IgY2xpZW50X3NlY3JldCBpcyBOb25lOiIKICAgICAgICApCiAgICAgICAgc2VsZi5hc3NlcnRJbihjYWxsYmFja19ndWFyZCwgc2VsZi5tYWluKQogICAgICAgIHNlbGYuYXNzZXJ0SW4oCiAgICAgICAgICAgICJyZXR1cm4gTm9uZSIsCiAgICAgICAgICAgIHNlbGYubWFpbi5zcGxpdChjYWxsYmFja19ndWFyZCwgMSlbMV0uc3BsaXQoCiAgICAgICAgICAgICAgICAicmV0dXJuIEV4dGVybmFsT2F1dGhCcm9rZXJDb25maWciLCAxCiAgICAgICAgICAgIClbMF0sCiAgICAgICAgKQoKICAgICAgICBzdW1tYXJ5ID0gbmV4dCgKICAgICAgICAgICAgbGluZQogICAgICAgICAgICBmb3IgbGluZSBpbiBzZWxmLmNvbmZpZ3VyYXRpb24uc3BsaXRsaW5lcygpCiAgICAgICAgICAgIGlmIGxpbmUuc3RhcnRzd2l0aCgiLSBgc2Fhcy1tdWx0aXRlbmFudGA6IikKICAgICAgICApCiAgICAgICAgZm9yIGZyYWdtZW50IGluICgKICAgICAgICAgICAgImBLSl9BVExBU19BRE1JTl9BUElfS0VZYCIsCiAgICAgICAgICAgICJQb3N0Z3JlU1FMIiwKICAgICAgICAgICAgIk9BdXRoIGF1dGhvcml6ZSBlbmRwb2ludCIsCiAgICAgICAgICAgICJhdXRoLXNlc3Npb24gaGFzaCBrZXkiLAogICAgICAgICk6CiAgICAgICAgICAgIHNlbGYuYXNzZXJ0SW4oZnJhZ21lbnQsIHN1bW1hcnkpCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHVuaXR0ZXN0Lm1haW4oKQo='
+          Path('01_Plans/tests/test_production_profile_required_settings_contract.py').write_bytes(base64.b64decode(encoded))
           PY
       - name: Verify focused production profile contract
         run: python 01_Plans/tests/test_production_profile_required_settings_contract.py
