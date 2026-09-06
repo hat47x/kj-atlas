@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from kj_atlas_api.models import Base
@@ -35,21 +35,21 @@ class GuestPrincipalRow(Base):
     )
 
     tenant_id: Mapped[str] = mapped_column(
-        Text,
+        String(128),
         ForeignKey("tenants.id", ondelete="NO ACTION"),
         primary_key=True,
     )
-    guest_principal_id: Mapped[str] = mapped_column(Text, primary_key=True)
-    invited_email: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(Text, nullable=False)
-    verification_method: Mapped[str] = mapped_column(Text, nullable=False)
-    verified_issuer: Mapped[str | None] = mapped_column(Text, nullable=True)
-    verified_subject: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_by: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[str] = mapped_column(Text, nullable=False)
-    redeemed_at: Mapped[str | None] = mapped_column(Text, nullable=True)
-    revoked_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+    guest_principal_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    invited_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    verification_method: Mapped[str] = mapped_column(String(32), nullable=False)
+    verified_issuer: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    verified_subject: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(512), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False)
+    expires_at: Mapped[str] = mapped_column(String(40), nullable=False)
+    redeemed_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    revoked_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
 
 class GuestDocumentGrantRow(Base):
@@ -71,9 +71,9 @@ class GuestDocumentGrantRow(Base):
         ),
     )
 
-    tenant_id: Mapped[str] = mapped_column(Text, primary_key=True)
-    guest_principal_id: Mapped[str] = mapped_column(Text, primary_key=True)
-    doc_id: Mapped[str] = mapped_column(Text, primary_key=True)
-    granted_by: Mapped[str] = mapped_column(Text, nullable=False)
-    granted_at: Mapped[str] = mapped_column(Text, nullable=False)
-    revoked_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tenant_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    guest_principal_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    doc_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    granted_by: Mapped[str] = mapped_column(String(512), nullable=False)
+    granted_at: Mapped[str] = mapped_column(String(40), nullable=False)
+    revoked_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
