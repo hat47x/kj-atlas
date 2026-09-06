@@ -209,7 +209,7 @@ export KJ_ATLAS_API_KEY='change-me'
 
 ## Frontend の API 接続先
 
-frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。値は `/` で始まる path のみ受理し、それ以外を指定した場合は frontend 側で `/api` にフォールバックします。
+frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。値は same-origin の絶対 path として扱い、`/` 自体または単一の `/` で始まる path だけを受理します。`//host` のような network-path reference、backslash、query (`?`)、fragment (`#`) を含む値や相対 path は受理せず、frontend 側で `/api` にフォールバックします。`/` は root API base として扱います。
 
 ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
 
