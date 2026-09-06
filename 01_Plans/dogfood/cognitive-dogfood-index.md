@@ -169,6 +169,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R27。R26のfull planning runが、実参照の消滅後もhistorical exception allow-listに5件が残っていたことを逆向きの陽性として検出した記録。例外を追加時だけでなく不要時にも縮退させる。
 - `doc_kj_atlas_dogfood_r27.json`
   - R27のKJキャンバス。`observed == expected`の対称性により、未承認参照の増加とstale exception残存の両方をfailさせ、ENV-ARCHの実在1件だけを残す構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r28.md`
+  - R28。PR #3011で、Architecture索引が正本上Done済みのQA-E2E-SAAS-01をDraftと表示し続けた実docs driftを分析し、navigationが別正本の可変lifecycle/decision stateを複製して第二正本にならない境界へ戻した記録。
+- `doc_kj_atlas_dogfood_r28.json`
+  - R28のKJキャンバス。索引はtopic・ID・関係・正本への導線を持てる一方、current state authorityは各正本へ戻し、一例だけで状態語一般を禁止するguardへ飛躍しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
