@@ -26,15 +26,11 @@ jobs:
           def replace_once(path: str, old: str, new: str) -> None:
               target = Path(path)
               data = target.read_bytes()
-              matches = []
-              for newline in ('\r\n', '\n'):
-                  old_bytes = old.replace('\n', newline).encode('utf-8')
-                  count = data.count(old_bytes)
-                  if count:
-                      matches.append((newline, old_bytes, count))
-              if len(matches) != 1 or matches[0][2] != 1:
-                  raise SystemExit(f'unexpected match count for {path}: {[(m[0], m[2]) for m in matches]}')
-              newline, old_bytes, _ = matches[0]
+              newline = '\r\n' if b'\r\n' in data else '\n'
+              old_bytes = old.replace('\n', newline).encode('utf-8')
+              count = data.count(old_bytes)
+              if count != 1:
+                  raise SystemExit(f'unexpected match count for {path}: {count}')
               new_bytes = new.replace('\n', newline).encode('utf-8')
               target.write_bytes(data.replace(old_bytes, new_bytes, 1))
 
