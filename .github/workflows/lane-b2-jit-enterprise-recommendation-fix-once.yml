@@ -1,0 +1,81 @@
+name: Lane B2 JIT enterprise recommendation fix once
+
+on:
+  push:
+    branches:
+      - docs/lane-b2-jit-enterprise-recommendation-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Align JIT enterprise recommendation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          registry_path = Path('02_Architecture/runtime_parameter_registry.md')
+          data = registry_path.read_bytes()
+          old = ('| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | `false` または `true` | '
+                 '未認証の未知ヘッダー由来ユーザー自動作成（濫用可能）を防ぐため既定は `false`（SEC-RATE-LIMIT-01・2026-08-13）。'
+                 '`local-dev` / `evaluation` でヘッダー由来ユーザーを使う場合は明示 `true`。本番は `false` 固定推奨。 |').encode('utf-8')
+          new = ('| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | `false` | '
+                 '未認証の未知ヘッダー由来ユーザー自動作成（濫用可能）を防ぐため既定は `false`（SEC-RATE-LIMIT-01・2026-08-13）。'
+                 '`local-dev` / `evaluation` でヘッダー由来ユーザーを使う場合は明示 `true`。本番は `false` 固定推奨。 |').encode('utf-8')
+          if data.count(old) != 1:
+              raise SystemExit(f'JIT profile recommendation row drifted: {data.count(old)} matches')
+          registry_path.write_bytes(data.replace(old, new, 1))
+
+          test_path = Path('01_Plans/tests/test_jit_profile_recommendation_contract.py')
+          test_path.write_text('''from __future__ import annotations\n\nimport unittest\nfrom pathlib import Path\n\n\nROOT = Path(__file__).resolve().parents[2]\nREGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"\nSAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"\nKEY = "KJ_ATLAS_ALLOW_JIT_PROVISIONING"\n\n\ndef _table_row(section: str, key: str) -> list[str]:\n    prefix = f"| `{key}` |"\n    rows = [line for line in section.splitlines() if line.startswith(prefix)]\n    if len(rows) != 1:\n        raise AssertionError(f"expected one row for {key}, got {len(rows)}")\n    return [cell.strip() for cell in rows[0].strip().strip("|").split("|")]\n\n\nclass JitProfileRecommendationContractTests(unittest.TestCase):\n    def setUp(self) -> None:\n        self.registry = REGISTRY.read_text(encoding="utf-8")\n\n    def test_enterprise_recommendation_is_fail_closed(self) -> None:\n        section = self.registry.split(\n            "### Profile default vs recommendation（既定値と推奨値）", 1\n        )[1].split("## Profile selection criteria", 1)[0]\n        row = _table_row(section, KEY)\n        self.assertEqual(row[1], "`false`")\n        self.assertEqual(row[2], "`false`")\n        self.assertIn("`local-dev` / `evaluation`", row[3])\n        self.assertIn("本番は `false` 固定推奨", row[3])\n\n    def test_production_profiles_and_saas_runtime_require_jit_disabled(self) -> None:\n        profiles = self.registry.split("## Runtime profiles", 1)[1].split(\n            "### Profile default vs recommendation", 1\n        )[0]\n        enterprise = next(\n            line for line in profiles.splitlines() if line.startswith("| `enterprise-production` |")\n        )\n        saas = next(\n            line for line in profiles.splitlines() if line.startswith("| `saas-multitenant` |")\n        )\n        for row in (enterprise, saas):\n            self.assertIn("`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`", row)\n\n        policy = SAAS_POLICY.read_text(encoding="utf-8")\n        self.assertIn(\n            '(not self.allow_jit_provisioning, "disabled JIT provisioning")',\n            policy,\n        )\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8', newline='\n')
+          PY
+
+      - name: Verify focused JIT recommendation contract
+        run: python -m unittest 01_Plans.tests.test_jit_profile_recommendation_contract -v
+
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+
+      - name: Verify narrow diff
+        run: |
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '01_Plans/tests/test_jit_profile_recommendation_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          changed.update(subprocess.check_output(
+              ['git', 'ls-files', '--others', '--exclude-standard'], text=True
+          ).splitlines())
+          if changed != expected:
+              raise SystemExit(f'unexpected patch scope: {sorted(changed)}')
+          for path in expected:
+              data = open(path, 'rb').read().splitlines()
+              bad = [i for i, line in enumerate(data, 1) if line.rstrip(b' \t\r') != line.rstrip(b'\r')]
+              if bad:
+                  raise SystemExit(f'{path}: trailing space/tab on lines {bad[:10]}')
+          PY
+          git diff --check -- 01_Plans/tests/test_jit_profile_recommendation_contract.py 02_Architecture/runtime_parameter_registry.md
+
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_jit_profile_recommendation_contract.py 02_Architecture/runtime_parameter_registry.md
+          git commit -m "docs(config): JITのEnterprise推奨値をfalseへ揃える"
+          git rm .github/workflows/lane-b2-jit-enterprise-recommendation-fix-once.yml
+          git commit -m "ci: retire Lane B2 JIT recommendation workflow"
+          git push
