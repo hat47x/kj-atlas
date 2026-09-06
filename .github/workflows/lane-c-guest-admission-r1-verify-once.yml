@@ -77,7 +77,7 @@ jobs:
             tests/test_database_support.py \
             tests/test_alembic_lineage.py
       - name: Repository diff check
-        run: git diff --check main...HEAD
+        run: git diff --check origin/main...HEAD
       - name: Retire this one-shot verifier
         if: success()
         run: |
