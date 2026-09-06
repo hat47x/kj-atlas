@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.llm.provider import RegisteredProviderConfig
+from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse, RegisteredProviderConfig
 from kj_atlas_api.models import AIProposalDecisionStateRow, Base, DocumentV1
 from kj_atlas_api.models_ai import CheckNarrativeRequest, DetectContradictionRequest
 from kj_atlas_api.proposal_decision_repository import (
@@ -45,6 +45,17 @@ def _provider_config() -> RegisteredProviderConfig:
         base_url="https://llm.example.test",
         api_key_ref=None,
         model_id="final-model",
+    )
+
+
+def _metadata(trace_id: str = "mmr05-linked-audit") -> LLMCallMetadata:
+    return LLMCallMetadata(
+        provider_kind="large-scale",
+        provider_name="provider-final",
+        model_id="final-model",
+        transport="http",
+        requested_at="2026-09-06T00:00:00Z",
+        trace_id=trace_id,
     )
 
 
@@ -156,6 +167,59 @@ def test_detect_contradiction_governance_pins_selected_model_and_registered_prov
     assert captured[0].registered_provider == config
 
 
+def test_linked_final_judgement_success_audit_preserves_proposal_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    with Session(engine) as db:
+        doc = _register_external(db)
+        config = _provider_config()
+        dispatcher = _CaptureDispatcher()
+        request = _request(dispatcher)
+
+        monkeypatch.setattr(ai, "_resolve_audit_tenant", lambda *_args, **_kwargs: TENANT)
+        monkeypatch.setattr(ai, "_validate_check_narrative_input", lambda _payload: None)
+        monkeypatch.setattr(ai, "_reject_unreviewed_text", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(ai, "_reject_unreviewed_cards", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(ai, "_detect_contradiction_ir", lambda _payload: {})
+        monkeypatch.setattr(ai, "adjudicated_contradiction", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(ai, "resolve_model_for_task", lambda _task: "final-model")
+        monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: config)
+        monkeypatch.setattr(
+            ai,
+            "generate_with_fallback",
+            lambda _req: LLMResponse(raw_text="{}", metadata=_metadata()),
+        )
+        monkeypatch.setattr(ai, "_parse_narrative_check_response", lambda *_args: "parsed-check")
+        monkeypatch.setattr(ai, "_parse_detect_contradiction_response", lambda *_args: "parsed-detect")
+
+        assert ai.check_narrative(_linked_check(doc), request, db) == "parsed-check"
+        llm_events = [event for event in dispatcher.events if event.eventType == "llm"]
+        assert len(llm_events) == 1
+        assert llm_events[0].metadata["proposalId"] == "proposal-ext-r3"
+        assert llm_events[0].metadata["sourceBundleHash"] == HASH_A
+        assert llm_events[0].metadata["routingStage"] == "final_judgement"
+
+        dispatcher.events.clear()
+        cards = doc.cards[:2]
+        detect_payload = DetectContradictionRequest(
+            cardA={"id": cards[0].id, "text": cards[0].text, "textReviewed": True},
+            cardB={"id": cards[1].id, "text": cards[1].text, "textReviewed": True},
+            doc=doc,
+            externalProposalRef={
+                "proposalId": "proposal-ext-r3",
+                "sourceBundleHash": HASH_A,
+            },
+        )
+        assert ai.detect_contradiction(detect_payload, request, db) == "parsed-detect"
+        llm_events = [event for event in dispatcher.events if event.eventType == "llm"]
+        assert len(llm_events) == 1
+        assert llm_events[0].metadata["proposalId"] == "proposal-ext-r3"
+        assert llm_events[0].metadata["sourceBundleHash"] == HASH_A
+        assert llm_events[0].metadata["routingStage"] == "final_judgement"
+
+
 @pytest.mark.parametrize(
     ("governance_code", "status_code", "failure_code"),
     [
@@ -198,6 +262,8 @@ def test_linked_governance_failure_holds_before_provider_without_fake_trace(
         assert _state(db, doc.id).status == "held"
         assert len(dispatcher.events) == 1
         metadata = dispatcher.events[0].metadata
+        assert metadata["proposalId"] == "proposal-ext-r3"
+        assert metadata["sourceBundleHash"] == HASH_A
         assert metadata["routingStage"] == "final_judgement"
         assert metadata["failureCode"] == failure_code
         assert metadata["governanceCode"] == governance_code

@@ -110,12 +110,27 @@ from kj_atlas_api.tenant_session_precondition import (
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
+
+def _external_proposal_audit_fields(
+    ref: ExternalProposalReference | None,
+) -> dict[str, str]:
+    """Return content-free proposal linkage fields for MMR-05 audit events."""
+    if ref is None:
+        return {}
+    return {
+        "proposalId": ref.proposalId,
+        "sourceBundleHash": ref.sourceBundleHash,
+    }
+
+
 def _audit_llm_trace(
     request: Request,
     tenant: TenantContext,
     doc_id: str,
     task: str,
     llm_response,
+    *,
+    external_proposal_ref: ExternalProposalReference | None = None,
 ) -> None:
     """SEC-LLM-AUDIT-01: LLM calls are the most audit-worthy events but only
     reached the local logger. Emit them through the audit dispatcher so
@@ -127,6 +142,7 @@ def _audit_llm_trace(
         "task": task,
         "routingStage": routing_stage_for_task(task),
         **build_audit_fields(llm_response),
+        **_external_proposal_audit_fields(external_proposal_ref),
     }
 
     logger.info("llm_generate", extra=metadata)
@@ -281,6 +297,7 @@ def _hold_linked_external_proposal_after_final_judgement_failure(
     metadata.update(
         {
             "proposalId": ref.proposalId,
+            "sourceBundleHash": ref.sourceBundleHash,
             "previousStatus": "proposed",
             "newStatus": "held",
             "transitionSource": "final_judgement_unavailable",
@@ -398,7 +415,7 @@ def _hold_linked_external_proposal_after_final_judgement_governance_failure(
         return
 
     metadata = {
-        "proposalId": ref.proposalId,
+        **_external_proposal_audit_fields(ref),
         "previousStatus": "proposed",
         "newStatus": "held",
         "transitionSource": "final_judgement_governance_blocked",
@@ -2498,7 +2515,14 @@ def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Sessio
         )
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "check_narrative", llm_response)
+    _audit_llm_trace(
+        request,
+        _resolve_audit_tenant(request, db),
+        payload.doc.id,
+        "check_narrative",
+        llm_response,
+        external_proposal_ref=payload.externalProposalRef,
+    )
 
     return _parse_narrative_check_response(llm_response.raw_text, payload)
 
@@ -3081,6 +3105,7 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
         payload.doc.id if payload.doc is not None else "(no-doc)",
         "detect_contradiction",
         llm_response,
+        external_proposal_ref=payload.externalProposalRef,
     )
     return _parse_detect_contradiction_response(llm_response.raw_text)
 

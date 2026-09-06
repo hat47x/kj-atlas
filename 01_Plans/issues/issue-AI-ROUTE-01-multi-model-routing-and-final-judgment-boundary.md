@@ -35,10 +35,10 @@
 - [x] intermediate と final_judgement の責務分離が契約（api.md/schemas.md）で固定される。— `routing_stage_for_task()`（provider.py）で分類
 - [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
 - [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
-- [~] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` で `routingStage` / provider/model は記録済み。一方、linked final-judgementの通常LLM auditとsystem-hold auditで `sourceBundleHash` / `proposalId` を一貫して保持する契約は未完了のため、完全達成とはみなさない。
+- [x] 監査ログに MMR-05 の4項目が記録される。— **MMR-05 branch verified**: 通常LLM audit・runtime system-hold・governance system-holdが共通のtyped proposal-linkage fields (`proposalId` / `sourceBundleHash`) を保持する。standalone/intermediate auditにはlinkage fieldを捏造しない。main統合後に親Issueをcloseoutする。
 - [x] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— R1 proposal linkage、R2 runtime availability hold、R3 tenant model-governance boundaryをmainへ統合済み（R3: #2998）。state transitionはexplicitly linked external proposalに限定し、standalone callはstate-neutral、auto-publish fallbackは導入しない。
 - [x] `provider=none` で中核操作が成立する。
-- [~] integration test でルーティング・監査・安全停止が検証される。— routing audit既存e2eに加え、R2 system-holdとR3 model-governance安全停止をintegrationで固定。R3 GitHub Actions run `34018370431` はfocused/adjacent 51 passed。ただしMMR-05のlinked `sourceBundleHash` / `proposalId` telemetry completenessが残るため全体は部分達成。
+- [x] integration test でルーティング・監査・安全停止が検証される。— routing audit、R2 runtime system-hold、R3 model-governance安全停止に加え、MMR-05でlinked `check_narrative` / `detect_contradiction` 成功auditとR2/R3 failure auditの `proposalId` / `sourceBundleHash` 一貫性を固定。main統合後にfinal closeoutする。
 
 ## 進捗（2026-08-12）
 
@@ -74,3 +74,11 @@ MMR-01/02/03/04/05を実装（46ec01aa）。MMR-06（final_judgement利用不能
 - `AI-ROUTE-HELD-LINKAGE-01` R1/R2/R3をmainへ統合し、MMR-06を完了した。R3はPR #2998 / squash commit `56ad4cc1daa66b4a6631c34d038548c1c8f811eb`。
 - explicit proposal linkage、runtime unavailable/timeout、model-governance failure、race/idempotency、system audit、recovery（new proposal）の各契約とintegration evidenceが揃った。
 - MMR-05は別残差として未完了。特にlinked final-judgementの通常LLM audit/system-hold auditにおける `sourceBundleHash` / `proposalId` の一貫した保持を追加で固定する必要がある。
+
+
+## MMR-05 linked telemetry進捗（2026-09-06）
+
+- final-judgement proposal linkageの監査語彙を `ExternalProposalReference` から生成する共通helperへ集約し、`proposalId` / `sourceBundleHash` の組を通常LLM audit・runtime system-hold・governance system-holdで同一に保持する。
+- `check_narrative` / `detect_contradiction` の成功LLM auditだけがrequestのexplicit `externalProposalRef` を引き継ぎ、linkageのないstandalone/intermediate routeにはproposal fieldを追加しない。
+- R2/R3 system-holdは既存のstate transition / failure分類 / provider・trace semanticsを変更せず、欠けていた `sourceBundleHash` のみをtyped referenceから補完する。
+- 本項目はbranch検証green後にMMR-05 / integration ACを完了扱いとし、親Issue `Status: Done` への移動はmain統合後のcloseoutで行う。
