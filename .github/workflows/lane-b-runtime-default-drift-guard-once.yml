@@ -1,0 +1,41 @@
+name: Lane B runtime default drift guard once
+
+on:
+  push:
+    branches:
+      - fix/lane-b-runtime-default-drift-guard-use-this
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply one-shot patch
+        run: python .github/scripts/lane_b_runtime_default_drift_guard_once.py
+      - name: Run focused runtime-default regressions
+        run: python -m unittest 01_Plans/tests/test_runtime_parameter_default_contract.py 01_Plans/tests/test_docs_contract_checks.py
+      - name: Run docs contract
+        run: python 01_Plans/docs_check.py
+      - name: Run issue lifecycle regressions
+        run: python -m unittest 01_Plans/issues/tests/test_issue_lifecycle_contract.py
+      - name: Check diff whitespace
+        run: git diff --check
+      - name: Commit verified result and remove one-shot files
+        env:
+          BRANCH: fix/lane-b-runtime-default-drift-guard-use-this
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -f .github/scripts/lane_b_runtime_default_drift_guard_once.py .github/workflows/lane-b-runtime-default-drift-guard-once.yml
+          git add 01_Plans/docs_contract_checks.py 01_Plans/tests/test_runtime_parameter_default_contract.py
+          git commit -m "test(docs): runtime parameter default driftを検出する"
+          git push origin HEAD:${BRANCH}
