@@ -1,4 +1,5 @@
 name: Lane B2 configuration Compose delivery once
+# One-shot verifier; removed by the successful run.
 
 on:
   push:
