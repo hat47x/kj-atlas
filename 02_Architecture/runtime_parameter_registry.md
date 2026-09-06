@@ -166,7 +166,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | confidential-client OAuth の client ID（ADR-0074） | direct | 通常値 | 認可リクエストの client_id が設定値と一致することを確認する |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | confidential-client OAuth の client secret（ADR-0074） | direct | 秘密値 | 設定後、token 交換が成功することを確認する（値自体は出力しない） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | OAuth broker の HTTP タイムアウト秒（0 < x ≤ 30） | direct | 通常値 | タイムアウト超過時にエラーへ倒れることを確認する |
-| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | auth-session cookie 値の HMAC-SHA256 ハッシュ用キー（ADR-0074 decision 2、64桁16進=32バイト）。生値を平文保存しない。ローテーション時は新キー設定＋再起動で既存セッションを無効化する | direct | 秘密値 | キー変更で既存セッションが無効化され再ログインへ導かれることを確認する |
+| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | auth-session cookie 値の HMAC-SHA256 ハッシュ用キー（ADR-0074 decision 2、64文字 lowercase hex = 32 bytes）。生値を平文保存しない。ローテーション時は新キー設定＋再起動で既存セッションを無効化する | direct | 秘密値 | キー変更で既存セッションが無効化され再ログインへ導かれることを確認する |
 
 ## Compose and frontend build keys
 
