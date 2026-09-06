@@ -82,7 +82,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/scripts/lane_b_llm_usage_provenance_apply.py
+          git rm -f .github/scripts/lane_b_llm_usage_provenance_apply.py
           git rm .github/workflows/lane-b-llm-usage-provenance-once.yml
           git add 03_Implement/backend/src/kj_atlas_api/llm/provider.py \
                   03_Implement/backend/src/kj_atlas_api/models_ai.py \
