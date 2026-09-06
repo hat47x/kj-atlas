@@ -344,13 +344,15 @@ def test_settings_rejects_disabling_ce4_audit_require_all_events(monkeypatch) ->
         assert "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS" in str(exc)
 
 
-def test_settings_exposes_ce4_stub_unresolved_contracts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_settings_rejects_disabling_ce4_stub_unresolved_contracts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS", "false")
 
-    loaded = Settings()
-
-    assert loaded.ce4_stub_unresolved_contracts is False
+    try:
+        Settings()
+        assert False, "Expected unresolved CE4 stub isolation to remain fail-closed"
+    except ValueError as exc:
+        assert "KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS" in str(exc)
 
 
 def test_settings_rejects_legacy_ce4_stub_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]

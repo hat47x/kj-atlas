@@ -159,7 +159,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制する | fixed | 通常値 | `false` 設定時に起動が拒否されることを確認する |
 | `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | CE4 の query/bundle/proposal/apply audit 欠損を fail-closed にする | fixed | 通常値 | `false` 設定時に起動が拒否されることを確認する |
 | `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容する | direct（CE4系だが validator 未強制） | 通常値 | `false` 設定時に `mock:` prefix の sourceBundleHash が拒否されることを確認する |
-| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離し、成功扱いにしない | direct（validator 未強制） | 通常値 | `false` 設定時に未確定 CE4 契約が stub 応答ではなくエラーになることを確認する |
+| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離し、成功扱いにしない安全契約。未確定 stub trigger の runtime 契約が実装されるまで `true` 固定 | fixed | 通常値 | `false` 設定時に起動が拒否されることを確認する |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | BFF が authorization code 交換の前にリダイレクトする IdP の authorize endpoint（SAAS-TENANT-SESSION-BINDING-01 / ADR-0074）。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、必須性は TrustedSaasRuntimePolicy が担う | direct | 通常値（接続先URL。認証情報は別キー） | saas-multitenant で OAuth フローが開始されることを確認する |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | BFF が authorization code を token へ交換する IdP の token endpoint（ADR-0074）。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可 | direct | 通常値（接続先URL。認証情報は別キー） | token 交換リクエストが正しい endpoint へ送信されることを確認する |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | OAuth フローの redirect URI（ADR-0074）。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、path は `/session/callback` 固定 | direct | 通常値（接続先URL。認証情報は別キー） | フロー完了後のリダイレクト先が設定値と一致することを確認する |
