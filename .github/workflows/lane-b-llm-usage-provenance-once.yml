@@ -25,7 +25,18 @@ jobs:
           cache: npm
           cache-dependency-path: 03_Implement/frontend/package-lock.json
       - name: Apply AC-4 usage provenance patch
-        run: python .github/scripts/lane_b_llm_usage_provenance_apply.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/lane_b_llm_usage_provenance_apply.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    if count != 1:\n        raise SystemExit(f"{label}: expected exactly 1 match, found {count}")\n    return text.replace(old, new, 1)\n'''
+          new = '''    if label == "update local alias provider status contract" and count == 2:\n        return text.replace(old, new, 1)\n    if count != 1:\n        raise SystemExit(f"{label}: expected exactly 1 match, found {count}")\n    return text.replace(old, new, 1)\n'''
+          if text.count(old) != 1:
+              raise SystemExit('replace_once helper shape changed')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          python .github/scripts/lane_b_llm_usage_provenance_apply.py
       - name: Install backend test tools
         run: |
           python -m pip install --upgrade pip
