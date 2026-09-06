@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   verify:
-    if: "github.event.head_commit.message == 'chore: verify retired QA E2E one-shot cleanup'"
+    if: "github.event.head_commit.message == 'chore: verify stale historical exception cleanup'"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -20,10 +20,56 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Ratchet historical exception set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('01_Plans/tests/test_legacy_done_root_references.py')
+          body = path.read_text(encoding='utf-8')
+          old = '''EXTERNAL_HISTORICAL_EXCEPTIONS = {
+              (
+                  "01_Plans/dogfood/doc_kj_atlas_dogfood_r15.json",
+                  "issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md",
+              ),
+              (
+                  "01_Plans/dogfood/doc_kj_atlas_dogfood_r18.json",
+                  "issue-DOC-ISSUE-LIFECYCLE-01-done-memos-remain-at-active-root.md",
+              ),
+              (
+                  "01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json",
+                  "issue-DX-CI-MCP-01-mcp-tests-not-run-in-ci.md",
+              ),
+              (
+                  "01_Plans/research/phase-exit-evaluation-ENV-ARCH-01-2026-03-11.md",
+                  "issue-ENV-ARCH-01-global-env-prefix-migration.md",
+              ),
+              (
+                  "01_Plans/research/core-value-realization-priorities-2026-07-18.md",
+                  "issue-MVP-EXIT-01-productization-readiness.md",
+              ),
+              (
+                  "01_Plans/research/mvp-exit-01-human-acceptance-handoff.md",
+                  "issue-MVP-EXIT-01-productization-readiness.md",
+              ),
+          }'''
+          new = '''EXTERNAL_HISTORICAL_EXCEPTIONS = {
+              (
+                  "01_Plans/research/phase-exit-evaluation-ENV-ARCH-01-2026-03-11.md",
+                  "issue-ENV-ARCH-01-global-env-prefix-migration.md",
+              ),
+          }'''
+          if body.count(old) != 1:
+              raise SystemExit('expected exactly one historical exception block')
+          path.write_text(body.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Verify planning and docs contracts
         shell: bash
         run: |
           set -euo pipefail
+          python -m unittest 01_Plans.tests.test_legacy_done_root_references
           python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
           python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
           python 01_Plans/issues/validate_active_issue_memos.py
@@ -31,7 +77,7 @@ jobs:
           python 01_Plans/triage_actionable_plans.py --format json
           python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong
           git diff --check
-      - name: Remove one-shot verification workflow
+      - name: Commit verified cleanup and remove one-shot workflow
         if: success()
         shell: bash
         run: |
@@ -39,6 +85,6 @@ jobs:
           git config user.name 'hat47x'
           git config user.email 'hat47x@gmail.com'
           rm .github/workflows/lane-c-verify-retired-qa-e2e-cleanup-once.yml
-          git add -A
-          git commit -m 'chore: remove Lane C cleanup verification workflow'
+          git add 01_Plans/tests/test_legacy_done_root_references.py .github/workflows/lane-c-verify-retired-qa-e2e-cleanup-once.yml
+          git commit -m 'test(planning): prune stale historical Done-root exceptions'
           git push origin HEAD
