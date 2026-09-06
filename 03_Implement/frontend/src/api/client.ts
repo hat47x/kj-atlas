@@ -468,6 +468,13 @@ export type ProviderStatusSnapshot = {
   providerKind: ProviderKind;
   callCounts: Record<string, number>;
   tokenUsage: Record<string, { input: number; output: number }>;
+  tokenUsageCoverage: Record<string, {
+    completeCalls: number;
+    partialCalls: number;
+    missingCalls: number;
+  }>;
+  tokenUsageSource: "provider_reported_only";
+  tokenUsageAggregationScope: "current_process_by_provider_kind";
 };
 
 /**
@@ -489,6 +496,9 @@ export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
     providerKind: body.providerKind,
     callCounts: body.callCounts ?? {},
     tokenUsage: body.tokenUsage ?? {},
+    tokenUsageCoverage: body.tokenUsageCoverage,
+    tokenUsageSource: body.tokenUsageSource,
+    tokenUsageAggregationScope: body.tokenUsageAggregationScope,
   };
 }
 

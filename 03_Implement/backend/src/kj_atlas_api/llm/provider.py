@@ -32,9 +32,12 @@ _LLM_TASK = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 # /ai/provider-status.
 _LLM_CALL_COUNTS: dict[str, int] = {}
 # OPS-LLM-COST-01 (段階2): in-process input/output token totals, keyed by the
-# same provider kind + "total". Filled from provider-reported usage; providers
-# that do not report usage contribute 0 tokens.
+# same provider kind + "total". Filled only from provider-reported usage. A
+# missing/partial provider report still contributes 0 for the absent side to
+# preserve the historical numeric totals, while _LLM_TOKEN_USAGE_COVERAGE makes
+# that absence distinguishable from a genuine provider-reported zero.
 _LLM_TOKEN_USAGE: dict[str, dict[str, int]] = {}
+_LLM_TOKEN_USAGE_COVERAGE: dict[str, dict[str, int]] = {}
 
 
 def _record_llm_call(provider_kind: str) -> None:
@@ -48,14 +51,31 @@ def _record_llm_usage(
     input_tokens: int | None = None,
     output_tokens: int | None = None,
 ) -> None:
-    """Accumulate provider-reported token usage WITHOUT touching the call count
-    (the count is recorded once per attempt by _record_llm_call)."""
+    """Accumulate provider-reported usage and its reporting completeness.
+
+    Call counting remains separate because failed provider attempts have no
+    successful response to settle. Numeric totals remain backward-compatible:
+    an absent side contributes 0, but coverage records whether that 0 was a
+    complete provider report, a partial report, or no usage report at all.
+    """
     used_input = max(int(input_tokens or 0), 0)
     used_output = max(int(output_tokens or 0), 0)
+    if input_tokens is None and output_tokens is None:
+        coverage_key = "missingCalls"
+    elif input_tokens is None or output_tokens is None:
+        coverage_key = "partialCalls"
+    else:
+        coverage_key = "completeCalls"
+
     for key in (provider_kind, "total"):
         bucket = _LLM_TOKEN_USAGE.setdefault(key, {"input": 0, "output": 0})
         bucket["input"] += used_input
         bucket["output"] += used_output
+        coverage = _LLM_TOKEN_USAGE_COVERAGE.setdefault(
+            key,
+            {"completeCalls": 0, "partialCalls": 0, "missingCalls": 0},
+        )
+        coverage[coverage_key] += 1
 
 
 def llm_call_counts() -> dict[str, int]:
@@ -64,14 +84,25 @@ def llm_call_counts() -> dict[str, int]:
 
 
 def llm_token_usage() -> dict[str, dict[str, int]]:
-    """Snapshot of the in-process token usage totals (copied, never the live dict)."""
+    """Snapshot of provider-reported token totals for the current process."""
     return {key: dict(value) for key, value in _LLM_TOKEN_USAGE.items()}
 
 
+def llm_token_usage_coverage() -> dict[str, dict[str, int]]:
+    """Snapshot of complete/partial/missing provider usage reports.
+
+    This deliberately carries no prompt/response content, raw tokens, model,
+    task, tenant, or user identity. The aggregation key remains provider kind
+    plus total in the current process.
+    """
+    return {key: dict(value) for key, value in _LLM_TOKEN_USAGE_COVERAGE.items()}
+
+
 def reset_llm_call_counts() -> None:
-    """Clear the counters. Ops/tests only — a reset is not a runtime event."""
+    """Clear the process-local observability counters. Ops/tests only."""
     _LLM_CALL_COUNTS.clear()
     _LLM_TOKEN_USAGE.clear()
+    _LLM_TOKEN_USAGE_COVERAGE.clear()
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,9 +242,9 @@ class LLMCallMetadata:
 class LLMResponse:
     raw_text: str
     metadata: LLMCallMetadata
-    # OPS-LLM-COST-01 (段階2): provider-reported token usage, when available
-    # (OpenAI chat-completions `usage`). None means the provider did not report
-    # it; the call counter treats None as 0 tokens.
+    # OPS-LLM-COST-01: provider-reported token usage, when available.
+    # None means that side was not reported; numeric aggregation preserves the
+    # historical 0 contribution while tokenUsageCoverage records the absence.
     input_tokens: int | None = None
     output_tokens: int | None = None
 
@@ -1064,8 +1095,8 @@ def generate_with_fallback(
     # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
     # operator can see external (large-scale) call volume; counting the attempt
     # (before any provider error) is what cost control needs. Token usage is
-    # recorded after a successful generate (providers that do not report usage
-    # contribute 0 tokens).
+    # recorded after a successful generate; reporting coverage distinguishes a
+    # genuine provider-reported zero from partial/missing usage metadata.
     _record_llm_call(provider.provider_kind)
     try:
         response = provider.generate(req)
