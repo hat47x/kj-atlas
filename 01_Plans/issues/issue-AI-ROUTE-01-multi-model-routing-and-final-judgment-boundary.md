@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/kj_atlas_api/`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `02_Architecture/value_traceability.md` §2.1（V3）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
+- Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `02_Architecture/value_traceability.md` §2.1（V3）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `AI-ROUTE-HELD-LINKAGE-01`
 - Expected verification level: `integration`
 
 ## 課題
@@ -36,13 +36,19 @@
 - [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
 - [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
 - [x] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` に `routingStage` 追加
-- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— 未実装（外部エージェント連携と連動）
+- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— 未実装。現行 `check_narrative` / `detect_contradiction` はproposal識別子を持たず、対象proposalを安全に一意特定できないため、`AI-ROUTE-HELD-LINKAGE-01` でproposal identity / system hold / recovery契約を先に固定する。
 - [x] `provider=none` で中核操作が成立する。
 - [~] integration test でルーティング・監査・安全停止が検証される。— **部分**: `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai ルート実走行で `llm` 監査イベントが CE2-C5 項目（task/routingStage/provider/model/trace_id）で dispatcher へ出ることを固定（SEC-LLM-AUDIT-01 配線の e2e）。**安全停止（MMR-06）は未実装のため integration 未追加**。単体テスト44件＋本統合テストで pass。
 
 ## 進捗（2026-08-12）
 
 MMR-01/02/03/04/05を実装（46ec01aa）。MMR-06（final_judgement利用不能時のheld遷移）は外部エージェント連携（proposal/apply）と連動するため、別途対応。単体テスト2件追加（44 passed）。
+
+## MMR-06 linkage調査（2026-09-06）
+
+現行proposal lifecycleでは `ExternalAgentProposalRecord.status` に `held` が存在し、人間decisionの `hold` は `proposed -> held` へ遷移する。また `held` proposalはapply条件を満たさない。一方、final-judgement taskの `check_narrative` / `detect_contradiction` はproposal ID/referenceを受け取らず、provider/model failure時に「当該proposal」を一意に特定するserver contractが存在しない。
+
+この状態でdocumentや最新順からproposalを推測してholdする実装は行わない。また既存human `decision=hold` をsystem/provider failureの記録へ流用すると監査意味を混同し、現行repositoryでは `held` 後のrecoveryも未定義である。そこで `AI-ROUTE-HELD-LINKAGE-01` を切り出し、明示的proposal linkage、system hold event、atomic state/race、recoveryを固定してからMMR-06実装へ進む。MMR-06のACはintegration evidenceが揃うまで未完了のままとする。
 
 ## 検証計画
 
