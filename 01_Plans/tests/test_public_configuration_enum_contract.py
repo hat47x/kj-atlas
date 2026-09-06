@@ -55,25 +55,9 @@ def _code_tokens(text: str) -> set[str]:
     return set(re.findall(r"`([^`]+)`", text))
 
 
-def _registry_provider_values() -> set[str]:
-    purpose = _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LLM_PROVIDER")
-    match = re.search(r"LLM provider 種別。(?P<values>.*?)。起動時", purpose)
-    if match is None:
-        raise AssertionError("registry LLM provider enum clause is missing")
-    return _code_tokens(match.group("values"))
-
-
 def _configuration_provider_values() -> set[str]:
     # The user-facing provider purpose cell is deliberately only the accepted list.
     return _code_tokens(_purpose_cell(CONFIG_PATH, "KJ_ATLAS_LLM_PROVIDER"))
-
-
-def _registry_log_level_values() -> set[str]:
-    purpose = _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LOG_LEVEL")
-    match = re.search(r"出力レベル（(?P<values>.*?)）。不正値", purpose)
-    if match is None:
-        raise AssertionError("registry LOG_LEVEL enum clause is missing")
-    return _code_tokens(match.group("values"))
 
 
 def _configuration_log_level_values() -> set[str]:
@@ -84,6 +68,15 @@ def _configuration_log_level_values() -> set[str]:
     return _code_tokens(match.group("values"))
 
 
+def _assert_registry_mentions_all(test: unittest.TestCase, key: str, values: set[str]) -> None:
+    # The registry purpose also carries runtime semantics, aliases, probes, and
+    # fallback prose. Do not turn that prose into a second enum grammar: require
+    # only that every implementation-accepted value remains explicitly named.
+    purpose = _purpose_cell(REGISTRY_PATH, key)
+    for value in values:
+        test.assertIn(f"`{value}`", purpose, f"registry omits {key} value: {value}")
+
+
 class PublicConfigurationEnumContractTests(unittest.TestCase):
     def test_llm_provider_values_match_settings_and_registry(self) -> None:
         implementation = _literal_not_in_set(
@@ -91,8 +84,8 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             function_name="validate_llm_provider_guards",
             variable_name="provider",
         )
-        self.assertEqual(_registry_provider_values(), implementation)
         self.assertEqual(_configuration_provider_values(), implementation)
+        _assert_registry_mentions_all(self, "KJ_ATLAS_LLM_PROVIDER", implementation)
 
     def test_log_level_values_match_logging_implementation_and_registry(self) -> None:
         implementation = _literal_not_in_set(
@@ -100,8 +93,8 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             function_name="configure_logging",
             variable_name="normalized_level",
         )
-        self.assertEqual(_registry_log_level_values(), implementation)
         self.assertEqual(_configuration_log_level_values(), implementation)
+        _assert_registry_mentions_all(self, "KJ_ATLAS_LOG_LEVEL", implementation)
 
 
 if __name__ == "__main__":
