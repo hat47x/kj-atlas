@@ -19,7 +19,14 @@
 
 ## 起動面ごとの配送範囲（重要）
 
-このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
+このページの `export KJ_ATLAS_*` 例は、特記がない限り backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は、次の公開キーを明示的な配送面として持ちます。この2行は `01_Plans/tests/test_configuration_compose_delivery_contract.py` で Compose 定義と照合します。
+
+| Compose surface | 配送される公開キー | 挙動 |
+| --- | --- | --- |
+| `api.environment` | `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_APP_REVISION`, `KJ_ATLAS_API_KEY`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | profile・DB・provider は Compose 既定値を持つ。revision・API key・JIT は host で設定された場合だけ pass-through する。 |
+| `web.build.args` | `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_APP_REVISION` | API base は標準 Compose では `/api` に固定。profile と revision は frontend build 時に確定する。 |
+
+これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
 
 ## 公開設定と内部adapter境界
 
@@ -72,7 +79,6 @@ Docker Compose の既定値で起動する場合、通常は追加設定なし�
 export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
-export KJ_ATLAS_FRONTEND_API_BASE=/api
 export KJ_ATLAS_WEB_PORT=8080
 ```
 
@@ -165,7 +171,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 ## Compose / frontend build 環境変数
 
-次の表は Docker Compose と frontend build で利用者が設定できる全環境変数です。これらもすべて `KJ_ATLAS_` で始まります。
+次の表は、標準 Docker Compose が host から参照する公開キーと、frontend を直接 build するときに設定できる公開キーです。これらもすべて `KJ_ATLAS_` で始まります。標準 Compose で host から変更できない build 値は用途欄に明記します。
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
@@ -174,7 +180,8 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation`（Compose） | backendとfrontendへ同じ実行profileを渡す。`saas-multitenant`はPostgreSQL共有認証表と必須外部adapterが必要 |
-| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend が呼び出す API base path |
+| `KJ_ATLAS_APP_REVISION` | `unknown` | backend `/version`・全アプリケーションログと frontend 診断bundleを同じbuildへ結び付ける。標準 Compose は api へ pass-through し、web build へも渡す |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend direct build の API base path。標準 Compose は `/api` を固定注入するため host 側の値では変更できない |
 
 PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。
 
@@ -196,7 +203,6 @@ export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_WEB_PORT=8080
-export KJ_ATLAS_FRONTEND_API_BASE=/api
 ```
 
 ### API key 付き検証
