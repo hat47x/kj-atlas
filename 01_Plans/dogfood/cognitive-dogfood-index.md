@@ -173,6 +173,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R28。PR #3011で、Architecture索引が正本上Done済みのQA-E2E-SAAS-01をDraftと表示し続けた実docs driftを分析し、navigationが別正本の可変lifecycle/decision stateを複製して第二正本にならない境界へ戻した記録。
 - `doc_kj_atlas_dogfood_r28.json`
   - R28のKJキャンバス。索引はtopic・ID・関係・正本への導線を持てる一方、current state authorityは各正本へ戻し、一例だけで状態語一般を禁止するguardへ飛躍しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r29.md`
+  - R29。PR #3003で実装default 50,000に対して公開registry/configurationが10,000のまま残った実driftと、#3014でkey existenceからdefault値の意味一致へcontractを引き上げた経路を分析した記録。
+- `doc_kj_atlas_dogfood_r29.json`
+  - R29のKJキャンバス。契約項目の存在と意味値一致を分け、静的に安全に読めるdefaultだけを照合し、R28の「複製をやめる」境界とは別に「必要な複製は意味まで守る」構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
