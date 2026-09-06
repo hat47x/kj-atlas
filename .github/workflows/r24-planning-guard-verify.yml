@@ -1,0 +1,51 @@
+name: R24 planning guard verify
+
+on:
+  push:
+    branches:
+      - dogfood/r24-frozen-path-coordinate-guard-20260906
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Focused legacy Done-root guard
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_legacy_done_root_references.py' -v
+
+      - name: Repository-wide planning unittests
+        run: python -m unittest discover -s 01_Plans/tests
+
+      - name: Dogfood validator tests
+        run: python -m unittest 01_Plans/dogfood/test_validate_dogfood_docs.py
+
+      - name: Dogfood document validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+
+      - name: Active issue validation
+        run: python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          git diff --check origin/main...HEAD
