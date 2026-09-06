@@ -21,11 +21,11 @@
     {"path": "01_Plans/adr/ADR-0075-l2-autonomy-promotion.md", "blobSha": "578eeaf534302e80612820f68dd50d1ba36f16ba"},
     {"path": "01_Plans/adr/ADR-0077-island-summary-condensation-multiple-candidates.md", "blobSha": "c800a1989b6e96d089785fe6f2ccf802416e8343"},
     {"path": "01_Plans/issues/issue-AI-ROUTE-01-multi-model-routing-and-final-judgment-boundary.md", "blobSha": "944acc723f8c0707ea322af7b28f830e5c7a3eaa"},
-    {"path": "01_Plans/issues/done/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md", "blobSha": "ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1"},
-    {"path": "01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md", "blobSha": "50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829"},
-    {"path": "01_Plans/issues/done/issue-DOGFOOD-33-suggest-island-summary-multiple-candidates.md", "blobSha": "bec2411bf399bc04fb9ce8918527f5fa43905b39"},
-    {"path": "01_Plans/issues/done/issue-DOGFOOD-34-island-summary-critique-regeneration.md", "blobSha": "9300a14d2ef3fbb1d6525cdb8c564c62a226d2fe"},
-    {"path": "01_Plans/issues/done/issue-DOGFOOD-35-island-summary-critique-history-persistence.md", "blobSha": "0feb63aaa3824befac8ce09a7854bcf1e07eaa6a"}
+    {"path": "01_Plans/issues/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md", "blobSha": "ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1"},
+    {"path": "01_Plans/issues/issue-DOGFOOD-20-card-groups-not-theme-based.md", "blobSha": "50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829"},
+    {"path": "01_Plans/issues/issue-DOGFOOD-33-suggest-island-summary-multiple-candidates.md", "blobSha": "bec2411bf399bc04fb9ce8918527f5fa43905b39"},
+    {"path": "01_Plans/issues/issue-DOGFOOD-34-island-summary-critique-regeneration.md", "blobSha": "9300a14d2ef3fbb1d6525cdb8c564c62a226d2fe"},
+    {"path": "01_Plans/issues/issue-DOGFOOD-35-island-summary-critique-history-persistence.md", "blobSha": "0feb63aaa3824befac8ce09a7854bcf1e07eaa6a"}
   ],
   "round1ExcludedInputs": [
     "Case 001/002/003 evaluation notes, blind verdicts, arm outputs, and cross-case comparisons",

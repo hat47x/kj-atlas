@@ -25,7 +25,7 @@
     {"path": "01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md", "blobSha": "b677470d9e0a7feabb959ca46be229ed9a0eb092"},
     {"path": "01_Plans/adr/ADR-0076-collaboration-concurrency-model.md", "blobSha": "e9459550d0228a239a6e7fb6689e916a76175201"},
     {"path": "01_Plans/issues/issue-SOCIAL-DIFFUSION-01-multi-reviewer-reproducibility.md", "blobSha": "210f42f10710562ead13b5dee30ab6b92483bb29"},
-    {"path": "01_Plans/issues/done/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md", "blobSha": "68cccbb786bff6ad750fa19e601ec1bf7fa90f7d"}
+    {"path": "01_Plans/issues/issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md", "blobSha": "68cccbb786bff6ad750fa19e601ec1bf7fa90f7d"}
   ],
   "round1ExcludedInputs": [
     "Case 001/002/003 evaluation notes, blind verdicts, arm outputs, and cross-case comparisons",
