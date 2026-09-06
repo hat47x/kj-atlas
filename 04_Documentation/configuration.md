@@ -135,11 +135,11 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter で使う IdP issuer |
-| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` | `none` | 文書の非秘密binding IDを外部policy参照へ解決するresolver。`none`, `external_http`。現行releaseではSaaS runtime未配線 |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` | `none` | 文書の非秘密binding IDを外部policy参照へ解決するresolver。`none`, `external_http`。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、server-owned document resource解決へ配線 |
 | `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT` | 未設定 | binding resolverのHTTPS接続先。ローカル検証だけloopback HTTP可 |
 | `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY` | 未設定 | binding resolver専用bearer token。Git、DB、監査へ保存しない |
 | `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS` | `1.5` | binding resolverのtimeout秒数（0より大きく30以下） |
-| `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER` | `none` | tenantごとの有効権限を解決するresolver。`none`, `external_http`。現行releaseではauth edge未配線 |
+| `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER` | `none` | tenantごとの有効権限を解決するresolver。`none`, `external_http`。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、tenant-scoped capability resolverとして配線 |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT` | 未設定 | capability resolverのHTTPS接続先。ローカル検証だけloopback HTTP可 |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY` | 未設定 | capability resolver専用bearer token。Git、DB、監査へ保存しない |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS` | `1.5` | capability resolverのtimeout秒数（0より大きく30以下） |
