@@ -63,8 +63,8 @@
 
 - `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
 - `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
-- `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
-- `saas-multitenant`: PostgreSQL共有認証状態、外部PDP、外部document binding、外部tenant capability、JIT無効、deny fail-safeをすべて満たす場合だけ起動します。
+- `enterprise-production`: `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` を別値で必須とし、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
+- `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP＋endpoint、外部document binding＋endpoint、外部tenant capability＋endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash keyをすべて満たす場合だけ起動します。
 
 `KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
