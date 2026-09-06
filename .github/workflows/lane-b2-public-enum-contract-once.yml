@@ -1,0 +1,77 @@
+name: Lane B2 public enum contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-public-enum-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Align public enum documentation with implementation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("04_Documentation/configuration.md")
+          raw = path.read_bytes()
+          text = raw.decode("utf-8")
+          nl = "\r\n" if b"\r\n" in raw else "\n"
+
+          old_provider = "| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |" + nl
+          new_provider = "| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external`, `deepseek` |" + nl
+          if text.count(old_provider) != 1:
+              raise SystemExit("expected stale LLM provider row exactly once")
+          text = text.replace(old_provider, new_provider, 1)
+
+          old_level = "| `KJ_ATLAS_LOG_LEVEL` | `INFO` | 構造化（JSON）ログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET`、未知値は `INFO` へフォールバック |" + nl
+          new_level = "| `KJ_ATLAS_LOG_LEVEL` | `INFO` | 構造化（JSON）ログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`、未知値（`NOTSET` を含む）は `INFO` へフォールバック |" + nl
+          if text.count(old_level) != 1:
+              raise SystemExit("expected stale LOG_LEVEL row exactly once")
+          text = text.replace(old_level, new_level, 1)
+
+          path.write_bytes(text.encode("utf-8"))
+          PY
+
+      - name: Verify focused public enum contract
+        run: python 01_Plans/tests/test_public_configuration_enum_contract.py
+
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+
+      - name: Verify narrow diff
+        run: |
+          git -c core.whitespace=cr-at-eol diff --check
+          python - <<'PY'
+          import subprocess
+          out = subprocess.check_output([
+              "git", "diff", "--numstat", "HEAD", "--", "04_Documentation/configuration.md"
+          ], text=True).strip()
+          if out:
+              added, deleted, _ = out.split("\t", 2)
+              if int(added) > 4 or int(deleted) > 4:
+                  raise SystemExit(f"configuration enum diff is too broad: +{added}/-{deleted}")
+          PY
+
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/lane-b2-public-enum-contract-once.yml
+          git add 04_Documentation/configuration.md
+          git commit -m "docs(config): public enum値を実装へ同期する"
+          git push
