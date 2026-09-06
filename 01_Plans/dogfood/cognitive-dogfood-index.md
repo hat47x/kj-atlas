@@ -206,9 +206,9 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
 - `doc_kj_atlas_dogfood_r36.json`
   - R36のKJキャンバス。carrier integrityを前提に、finite setとrejection-relevant predicateを分け、利用者がvalid inputを構成するために必要な最小制約だけをfocused contractへ戻す構造を保持する。
 - `cognitive-dogfood-continuous-2026-09-07-r37.md`
-  - R37。PR #3048〜#3050で、acceptedだがconsumerのないdead toggle、実効consumerの作用範囲過大表現、allowed valueとEnterprise recommendationの混同という実陽性を分析し、acceptanceの先にeffect binding / scope / profile policyを分離した記録。
+  - R37。PR #3048〜#3050/#3052で、acceptedだがconsumerのないdead toggle、実効consumerの作用範囲過大表現、allowed valueとprofile上のrequired / recommended / conditionalの混同という実陽性を分析し、acceptanceの先にeffect binding / scope / operating conditionを分離した記録。
 - `doc_kj_atlas_dogfood_r37.json`
-  - R37のKJキャンバス。未定義behaviorを発明せずfail-fastへ縮める境界、consumer存在と作用範囲、設定可能性と推奨値を分け、公開keyが約束する制御可能性とruntime正本を一致させる構造を保持する。
+  - R37のKJキャンバス。未定義behaviorを発明せずfail-fastへ縮める境界、consumer存在と作用範囲、設定可能性とprofile運用条件を分け、公開keyが約束する制御可能性・必須性とruntime正本を一致させる構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
