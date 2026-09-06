@@ -113,18 +113,31 @@ jobs:
               '02_Architecture/runtime_parameter_registry.md',
           ], check=True)
 
-          config = Path('04_Documentation/configuration.md').read_bytes()
-          if b'\r\n' not in config:
-              raise SystemExit('configuration.md lost CRLF line endings')
-          if b'\n' in config.replace(b'\r\n', b''):
-              raise SystemExit('configuration.md contains bare LF after CRLF-preserving patch')
-          bad_lines = [
-              index
-              for index, line in enumerate(config.split(b'\r\n'), 1)
-              if line.endswith((b' ', b'\t'))
-          ]
-          if bad_lines:
-              raise SystemExit(f'configuration.md has real trailing space/tab on lines: {bad_lines[:20]}')
+          current = Path('04_Documentation/configuration.md').read_bytes()
+          baseline = subprocess.check_output([
+              'git', 'show', 'origin/main:04_Documentation/configuration.md'
+          ])
+
+          def eol_shape(data: bytes) -> tuple[int, int]:
+              crlf = data.count(b'\r\n')
+              bare_lf = data.count(b'\n') - crlf
+              return crlf, bare_lf
+
+          def trailing_ws_lines(data: bytes) -> set[int]:
+              bad = set()
+              for index, raw in enumerate(data.splitlines(keepends=True), 1):
+                  body = raw.rstrip(b'\r\n')
+                  if body.endswith((b' ', b'\t')):
+                      bad.add(index)
+              return bad
+
+          if eol_shape(current) != eol_shape(baseline):
+              raise SystemExit(
+                  f'configuration.md EOL shape changed: before={eol_shape(baseline)} after={eol_shape(current)}'
+              )
+          added_bad = trailing_ws_lines(current) - trailing_ws_lines(baseline)
+          if added_bad:
+              raise SystemExit(f'configuration.md added real trailing whitespace: {sorted(added_bad)[:20]}')
           PY
       - name: Commit patch and retire one-shot workflow
         run: |
