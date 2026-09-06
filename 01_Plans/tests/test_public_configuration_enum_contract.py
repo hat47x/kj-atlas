@@ -13,10 +13,21 @@ SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
 OBSERVABILITY_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/observability.py"
 
 
+def _rows_text(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    if path == REGISTRY_PATH:
+        try:
+            text = text.split("## Backend settings", 1)[1]
+            text = text.split("## Compose and frontend build keys", 1)[0]
+        except IndexError as exc:
+            raise AssertionError("runtime registry Backend settings section is missing") from exc
+    return text
+
+
 def _row(path: Path, key: str) -> str:
     prefix = f"| `{key}` |"
     row = next(
-        (line for line in path.read_text(encoding="utf-8").splitlines() if line.startswith(prefix)),
+        (line for line in _rows_text(path).splitlines() if line.startswith(prefix)),
         None,
     )
     if row is None:
@@ -69,9 +80,10 @@ def _configuration_log_level_values() -> set[str]:
 
 
 def _assert_registry_mentions_all(test: unittest.TestCase, key: str, values: set[str]) -> None:
-    # The registry purpose also carries runtime semantics, aliases, probes, and
-    # fallback prose. Do not turn that prose into a second enum grammar: require
-    # only that every implementation-accepted value remains explicitly named.
+    # The Backend settings purpose also carries runtime semantics, aliases,
+    # probes, and fallback prose. Do not turn that prose into a second enum
+    # grammar: require only that every implementation-accepted value remains
+    # explicitly named in the authoritative Backend settings row.
     purpose = _purpose_cell(REGISTRY_PATH, key)
     for value in values:
         test.assertIn(f"`{value}`", purpose, f"registry omits {key} value: {value}")
