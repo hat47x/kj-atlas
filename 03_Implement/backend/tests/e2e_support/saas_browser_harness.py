@@ -91,10 +91,14 @@ async def gateway(path: str, request: Request) -> Response:
     if request.url.query:
         target += f"?{request.url.query}"
 
+    # Preserve the original browser-visible Host through this deterministic
+    # gateway. The SaaS BFF CSRF contract intentionally compares Origin to Host;
+    # replacing Host with the selected worker address would make every unsafe
+    # cookie-authenticated request fail before it reaches the route under test.
     incoming_headers = {
         name: value
         for name, value in request.headers.items()
-        if name.lower() not in _HOP_BY_HOP | {"host", "content-length"}
+        if name.lower() not in _HOP_BY_HOP | {"content-length"}
     }
     body = await request.body()
     async with httpx.AsyncClient(follow_redirects=False, timeout=15.0) as client:
@@ -145,6 +149,13 @@ def seed_database() -> None:
                     created_at=TIMESTAMP,
                     updated_at=TIMESTAMP,
                 ),
+                TenantRow(
+                    id="tenant-b",
+                    display_name="Tenant B",
+                    lifecycle_state="active",
+                    created_at=TIMESTAMP,
+                    updated_at=TIMESTAMP,
+                ),
                 IdentityProviderRow(
                     id="idp-1",
                     issuer=f"{issuer}/mock-client",
@@ -168,6 +179,14 @@ def seed_database() -> None:
                     created_at=TIMESTAMP,
                     updated_at=TIMESTAMP,
                 ),
+                TenantIdentityProviderRow(
+                    tenant_id="tenant-b",
+                    identity_provider_id="idp-1",
+                    external_tenant_ref="org-456",
+                    lifecycle_state="active",
+                    created_at=TIMESTAMP,
+                    updated_at=TIMESTAMP,
+                ),
                 UserIdentityRow(
                     user_id="user-1",
                     provider="idp-1",
@@ -178,6 +197,13 @@ def seed_database() -> None:
                 ),
                 TenantMembershipRow(
                     tenant_id="tenant-a",
+                    user_id="user-1",
+                    lifecycle_state="active",
+                    created_at=TIMESTAMP,
+                    updated_at=TIMESTAMP,
+                ),
+                TenantMembershipRow(
+                    tenant_id="tenant-b",
                     user_id="user-1",
                     lifecycle_state="active",
                     created_at=TIMESTAMP,
