@@ -1,0 +1,121 @@
+name: Lane B2 SaaS current-state prose fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-saas-current-state-prose-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align current-state SaaS prose with runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              data = target.read_bytes()
+              matches = []
+              for newline in ('\r\n', '\n'):
+                  old_bytes = old.replace('\n', newline).encode('utf-8')
+                  count = data.count(old_bytes)
+                  if count:
+                      matches.append((newline, old_bytes, count))
+              if len(matches) != 1 or matches[0][2] != 1:
+                  raise SystemExit(f'unexpected match count for {path}: {[(m[0], m[2]) for m in matches]}')
+              newline, old_bytes, _ = matches[0]
+              new_bytes = new.replace('\n', newline).encode('utf-8')
+              target.write_bytes(data.replace(old_bytes, new_bytes, 1))
+
+          registry = '02_Architecture/runtime_parameter_registry.md'
+          configuration = '04_Documentation/configuration.md'
+
+          replace_once(
+              registry,
+              '''4. `saas-multitenant` は現行releaseで選択不可
+             - `enterprise-production`を共有SaaSとして読み替えない。
+             - TenantContext、tenant従属DB制約、DB側tenant guard、deny-only adapter、越境negative testが実装・検証されるまで予約名に留める。''',
+              '''4. `saas-multitenant` を選ぶ条件
+             - PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safeなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。
+             - 起動前preflightとprovider存在検査を通過できる。1つでも欠ける場合はfail-fastし、single-tenant profileへfallbackしない。''',
+          )
+          replace_once(
+              registry,
+              '現行の予約profile拒否を将来解除しても、この完全セットが欠ける構成は起動しない。',
+              'SaaS profileを受理する現行実装でも、この完全セットが欠ける構成は起動しない。',
+          )
+          replace_once(
+              registry,
+              '- 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。',
+              '- 現行実装はtenant解決、PDP、DB guardを含むcross-key validationとpreflightがすべて成立した場合だけSaaS起動を許可し、欠ける構成は起動拒否を維持する。',
+          )
+          replace_once(
+              registry,
+              '4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合し、予約中の`saas-multitenant`を利用可能と誤記していないこと。',
+              '4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合し、`saas-multitenant`は必須policy・componentが完備した場合だけ起動可能で、不足時はfail-fastすること。',
+          )
+
+          replace_once(
+              configuration,
+              '### 文書policy binding resolver（将来SaaS用）',
+              '### 文書policy binding resolver',
+          )
+          replace_once(
+              configuration,
+              '接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。現行releaseではadapterと検証境界までの実装で、予約中の`saas-multitenant` profileにはまだ配線されていません。この設定だけでSaaSや文書アクセス設定UIが有効になることはありません。',
+              '接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、`ServerOwnedDocumentResourceResolver` の policy binding resolver として配線されます。このresolverだけでSaaSが成立するわけではなく、trusted auth edge、external access control、tenant capability resolver等の必須条件も同時に満たす必要があります。',
+          )
+          replace_once(
+              configuration,
+              '### Tenant capability resolver（将来SaaS用）',
+              '### Tenant capability resolver',
+          )
+          replace_once(
+              configuration,
+              '接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。adapterと`GET /session/context`はapplication lifecycleへ配線済みですが、trusted SaaS identity resolverが未接続の既定状態ではsession routeも503で閉じます。この設定だけでSaaS profileは有効になりません。',
+              '接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、runtimeのtenant capability resolverとして配線されます。trusted SaaS identity / tenant / active-session adaptersも同profileでbundleとして導入されますが、required policyやactive IdPが欠ける構成は起動時にfail-fastします。',
+          )
+          PY
+      - name: Verify focused SaaS wiring documentation contract
+        run: python -m unittest 01_Plans.tests.test_saas_resolver_wiring_documentation_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check --ws-error-highlight=all
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              '01_Plans/tests/test_saas_resolver_wiring_documentation_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-saas-current-state-prose-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only', 'origin/main...HEAD']).decode().splitlines())
+          changed.update(subprocess.check_output(['git', 'diff', '--name-only']).decode().splitlines())
+          unexpected = changed - allowed
+          if unexpected:
+              raise SystemExit(f'unexpected changed files: {sorted(unexpected)}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git commit -m "docs(saas): current-state proseを現行runtimeへ同期する"
+          git rm .github/workflows/lane-b2-saas-current-state-prose-fix-once.yml
+          git commit -m "ci: retire Lane B2 SaaS current-state prose workflow"
+          git push
