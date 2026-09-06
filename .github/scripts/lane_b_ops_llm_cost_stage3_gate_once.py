@@ -17,5 +17,6 @@ addition = anchor + """
   4. budget deny／共有store不達時の遷移先。AC-6は外部providerを許可するfallbackを禁止するが、local再試行・`none`・`held` のどれを正本とするかは未決である。
 - よってAC-3/5/6は未完のまま維持する。上記4点を決めずに単一process counterや楽観的な外部call後settleだけを追加しても、複数workerで上限超過を防ぐAC-6を満たさない。長期的な運用契約を固定する判断になる場合は、実装前に補足ADRの要否を判断する。
 """
-path.write_text(text.replace(anchor, addition, 1), encoding="utf-8")
+updated = text.replace(anchor, addition, 1).rstrip() + "\n"
+path.write_text(updated, encoding="utf-8")
 print("OPS-LLM-COST-01 stage3 implementation gate documented")
