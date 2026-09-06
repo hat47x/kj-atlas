@@ -1,4 +1,4 @@
-import hashlib
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -20,19 +20,34 @@ FROZEN_ROUND1_MANIFEST_BLOBS = {
 }
 
 
-def git_blob_oid(content: bytes) -> str:
-    """Return Git's SHA-1 object id for file bytes without requiring Git history."""
-    header = f"blob {len(content)}\0".encode("ascii")
-    return hashlib.sha1(header + content).hexdigest()
+def git_filtered_blob_oid(content: bytes, path: Path) -> str:
+    """Return the Git blob id after repository clean filters, without reading history."""
+    relative_path = path.relative_to(ROOT).as_posix()
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "hash-object",
+            "--stdin",
+            f"--path={relative_path}",
+        ],
+        input=content,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return completed.stdout.decode("ascii").strip()
 
 
 class FrozenDogfoodManifestIdentityTest(unittest.TestCase):
     def test_round1_source_manifests_keep_preregistered_blob_identity(self):
         for filename, expected_oid in FROZEN_ROUND1_MANIFEST_BLOBS.items():
             with self.subTest(filename=filename):
-                content = (DOGFOOD_DIR / filename).read_bytes()
+                path = DOGFOOD_DIR / filename
+                content = path.read_bytes()
                 self.assertEqual(
-                    git_blob_oid(content),
+                    git_filtered_blob_oid(content, path),
                     expected_oid,
                     msg=(
                         f"{filename} is a frozen Round 1 input. Do not follow "
@@ -40,6 +55,16 @@ class FrozenDogfoodManifestIdentityTest(unittest.TestCase):
                         "manifest for a genuinely new experiment input."
                     ),
                 )
+
+    def test_worktree_crlf_representation_keeps_frozen_git_blob_identity(self):
+        path = DOGFOOD_DIR / "cognitive-dogfood-case-001-round1-source-manifest.json"
+        working_tree = path.read_bytes()
+        lf_content = working_tree.replace(b"\r\n", b"\n")
+        crlf_content = lf_content.replace(b"\n", b"\r\n")
+        expected_oid = FROZEN_ROUND1_MANIFEST_BLOBS[path.name]
+
+        self.assertEqual(git_filtered_blob_oid(lf_content, path), expected_oid)
+        self.assertEqual(git_filtered_blob_oid(crlf_content, path), expected_oid)
 
     def test_case002_current_done_path_rewrite_is_not_the_frozen_blob(self):
         path = DOGFOOD_DIR / "cognitive-dogfood-case-002-round1-source-manifest.json"
@@ -55,7 +80,7 @@ class FrozenDogfoodManifestIdentityTest(unittest.TestCase):
         self.assertIn(old, frozen)
         rewritten = frozen.replace(old, current, 1)
         self.assertNotEqual(
-            git_blob_oid(rewritten),
+            git_filtered_blob_oid(rewritten, path),
             FROZEN_ROUND1_MANIFEST_BLOBS[path.name],
         )
 
