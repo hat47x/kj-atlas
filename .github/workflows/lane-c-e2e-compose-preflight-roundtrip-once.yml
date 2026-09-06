@@ -57,8 +57,9 @@ jobs:
             mcr.microsoft.com/playwright:v1.58.2-jammy \
             bash -lc '
               set -euo pipefail
-              cp -a /repo/03_Implement/frontend /tmp/frontend
-              cd /tmp/frontend
+              mkdir -p /tmp/kj-atlas
+              cp -a /repo/. /tmp/kj-atlas/
+              cd /tmp/kj-atlas/03_Implement/frontend
               npm ci
               npm run typecheck
               npx vitest run
