@@ -177,7 +177,7 @@ def test_check_narrative_invalid_linkage_stops_before_provider(
     assert exc.value.status_code == 409
 
 
-def test_check_narrative_standalone_does_not_require_proposal_linkage(
+def test_check_narrative_standalone_does_not_validate_repository_linkage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     payload = CheckNarrativeRequest(doc=_doc(), narrativeText="draft")
@@ -185,9 +185,9 @@ def test_check_narrative_standalone_does_not_require_proposal_linkage(
     monkeypatch.setattr(ai, "_reject_unreviewed_text", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         ai,
-        "_validate_final_judgement_external_proposal",
+        "validate_external_proposal_reference",
         lambda *_args, **_kwargs: pytest.fail(
-            "standalone call must not validate proposal linkage"
+            "standalone call must not query proposal linkage"
         ),
     )
     monkeypatch.setattr(
