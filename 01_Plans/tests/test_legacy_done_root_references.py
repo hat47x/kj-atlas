@@ -10,11 +10,18 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ISSUES_ROOT = REPO_ROOT / "01_Plans" / "issues"
 DONE_ROOT = ISSUES_ROOT / "done"
 MANIFEST = ISSUES_ROOT / "legacy_done_at_root_r18.json"
+FROZEN_PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
+FROZEN_SOURCE_MANIFESTS = (
+    "01_Plans/dogfood/cognitive-dogfood-case-001-round1-source-manifest.json",
+    "01_Plans/dogfood/cognitive-dogfood-case-002-round1-source-manifest.json",
+    "01_Plans/dogfood/cognitive-dogfood-case-003-round1-source-manifest.json",
+)
 
-# These references are frozen or dated provenance. Rewriting them to the memo's
-# later done/ location would make historical evidence claim a path that was not
-# used when the evidence was recorded. Keep the allow-list explicit so any new
-# external retired-root reference still requires review.
+# These references are frozen or dated provenance outside the structured cognitive
+# source manifests. Rewriting them to the memo's later done/ location would make
+# historical evidence claim a path that was not used when the evidence was
+# recorded. Keep this allow-list explicit so any new unstructured exception still
+# requires review.
 EXTERNAL_HISTORICAL_EXCEPTIONS = {
     (
         "01_Plans/dogfood/doc_kj_atlas_dogfood_r15.json",
@@ -40,11 +47,58 @@ EXTERNAL_HISTORICAL_EXCEPTIONS = {
         "01_Plans/research/mvp-exit-01-human-acceptance-handoff.md",
         "issue-MVP-EXIT-01-productization-readiness.md",
     ),
-    (
-        "01_Plans/dogfood/cognitive-dogfood-case-003-round1-source-manifest.json",
-        "issue-OPS-SAAS-SCALE-01-in-process-state-blocks-horizontal-scaling.md",
-    ),
 }
+
+
+def _load_frozen_source_coordinate_exceptions() -> set[tuple[str, str]]:
+    """Return retired-root paths that are coordinates inside the frozen product snapshot.
+
+    A source-manifest path is not a live link into the current repository. It is
+    interpreted together with productCommit/blobSha, so rewriting it after the
+    memo moves to done/ would corrupt the frozen snapshot. Keep this exception
+    structural and narrow: only the three preregistered Round 1 manifests at the
+    frozen product commit can create it, and only when the current canonical memo
+    is under done/ while the old active-root file is absent.
+    """
+
+    exceptions: set[tuple[str, str]] = set()
+    for relative_path in FROZEN_SOURCE_MANIFESTS:
+        manifest_path = REPO_ROOT / relative_path
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if raw.get("schemaVersion") != 1:
+            raise AssertionError(f"unexpected frozen manifest schema: {relative_path}")
+        if raw.get("round") != 1:
+            raise AssertionError(f"unexpected frozen manifest round: {relative_path}")
+        if raw.get("productCommit") != FROZEN_PRODUCT_COMMIT:
+            raise AssertionError(f"unexpected frozen product commit: {relative_path}")
+
+        common_sources = raw.get("commonSources")
+        if not isinstance(common_sources, list):
+            raise AssertionError(f"missing commonSources: {relative_path}")
+
+        for source in common_sources:
+            if not isinstance(source, dict):
+                raise AssertionError(f"invalid commonSources entry: {relative_path}")
+            source_path = source.get("path")
+            blob_sha = source.get("blobSha")
+            if not isinstance(source_path, str) or not isinstance(blob_sha, str):
+                raise AssertionError(f"invalid frozen source identity: {relative_path}")
+            if len(blob_sha) != 40:
+                raise AssertionError(f"invalid frozen source blob SHA: {relative_path}:{source_path}")
+
+            prefix = "01_Plans/issues/"
+            if not source_path.startswith(prefix) or source_path.startswith(
+                "01_Plans/issues/done/"
+            ):
+                continue
+
+            name = source_path.removeprefix(prefix)
+            if "/" in name:
+                continue
+            if (DONE_ROOT / name).is_file() and not (ISSUES_ROOT / name).exists():
+                exceptions.add((relative_path, name))
+
+    return exceptions
 
 
 class LegacyDoneRootReferenceTests(unittest.TestCase):
@@ -53,6 +107,7 @@ class LegacyDoneRootReferenceTests(unittest.TestCase):
         raw = json.loads(MANIFEST.read_text(encoding="utf-8"))
         cls.legacy_names = tuple(raw["paths"])
         cls.manifest_count = raw["count"]
+        cls.frozen_source_coordinate_exceptions = _load_frozen_source_coordinate_exceptions()
 
     def _grep_retired_root_path(self, name: str) -> list[str]:
         retired = f"01_Plans/issues/{name}"
@@ -91,9 +146,26 @@ class LegacyDoneRootReferenceTests(unittest.TestCase):
 
     def test_no_tracked_file_references_retired_legacy_root_paths(self) -> None:
         stale: list[str] = []
+        observed_frozen_coordinates: set[tuple[str, str]] = set()
         for name in self.legacy_names:
-            stale.extend(self._grep_retired_root_path(name))
+            for line in self._grep_retired_root_path(name):
+                source_path, _line_number, _body = line.split(":", 2)
+                key = (source_path, name)
+                if key in self.frozen_source_coordinate_exceptions:
+                    observed_frozen_coordinates.add(key)
+                    continue
+                stale.append(line)
 
+        expected_frozen_coordinates = {
+            key
+            for key in self.frozen_source_coordinate_exceptions
+            if key[1] in self.legacy_names
+        }
+        self.assertEqual(
+            observed_frozen_coordinates,
+            expected_frozen_coordinates,
+            "frozen R18 coordinate exceptions changed; verify the frozen manifests explicitly",
+        )
         self.assertEqual(
             stale,
             [],
@@ -103,6 +175,7 @@ class LegacyDoneRootReferenceTests(unittest.TestCase):
     def test_no_unreviewed_external_file_references_any_done_memo_at_retired_root(self) -> None:
         unexpected: list[str] = []
         observed_exceptions: set[tuple[str, str]] = set()
+        observed_frozen_coordinates: set[tuple[str, str]] = set()
         done_names = sorted(path.name for path in DONE_ROOT.glob("issue-*.md"))
 
         for name in done_names:
@@ -112,16 +185,29 @@ class LegacyDoneRootReferenceTests(unittest.TestCase):
                     # Done memos retain dated commands/scope guards as historical evidence.
                     continue
                 key = (source_path, name)
+                if key in self.frozen_source_coordinate_exceptions:
+                    observed_frozen_coordinates.add(key)
+                    continue
                 if key in EXTERNAL_HISTORICAL_EXCEPTIONS:
                     observed_exceptions.add(key)
                     continue
                 unexpected.append(line)
 
+        expected_frozen_coordinates = {
+            key
+            for key in self.frozen_source_coordinate_exceptions
+            if key[1] in done_names
+        }
         self.assertEqual(
             unexpected,
             [],
             "unreviewed external files reference canonical Done memos at retired active-root paths:\n"
             + "\n".join(unexpected),
+        )
+        self.assertEqual(
+            observed_frozen_coordinates,
+            expected_frozen_coordinates,
+            "frozen source-coordinate exception set changed; review the snapshot identity explicitly",
         )
         self.assertEqual(
             observed_exceptions,
