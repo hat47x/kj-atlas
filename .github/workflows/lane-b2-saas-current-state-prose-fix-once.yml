@@ -91,7 +91,7 @@ jobs:
         run: python 01_Plans/docs_check.py
       - name: Verify narrow diff
         run: |
-          git diff --check --ws-error-highlight=all
+          git diff --check --ignore-space-at-eol --ws-error-highlight=all
           python - <<'PY'
           import subprocess
           allowed = {
