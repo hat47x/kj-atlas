@@ -161,6 +161,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R25。PR #3001でCase 002 frozen manifestのAI-ROUTE pathがcurrent done/へ実際に追随した再発を分析し、historical-coordinate例外の認識とfrozen manifest自身のimmutabilityを別契約として分離した記録。
 - `doc_kj_atlas_dogfood_r25.json`
   - R25のKJキャンバス。R24のlive-reference guard、履歴不要のmanifest blob identity guard、既存full-history path/blob validatorを三層に分け、current lifecycleとsnapshot identityを同時に守る構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r26.md`
+  - R26。R25のfull planning runが、success済みone-shot workflowの退役漏れをstale current referenceとして実際に検出した記録。run成功とexecution assetのretirementを別の完了条件として分離する。
+- `doc_kj_atlas_dogfood_r26.json`
+  - R26のKJキャンバス。実証済み退役対象だけをexact pathで閉じ、temporary one-shot一般を一括禁止せず、R22 stale-merge diagnosticのrequired化とも原因クラスを分ける。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
