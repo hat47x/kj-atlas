@@ -32,7 +32,7 @@ R34では `LLM_PROVIDER` や `LOG_LEVEL` のような有限集合を、implement
 
 #3044でも「OAuth callback redirect URI」という用途名だけでは、任意のcallback pathを設定できるように読める。しかし実装は `/session/callback` 以外を拒否する。
 
-公開configurationの責務は内部validatorを逐語的に複製することではないが、正常設定の可否を左右す **rejection-relevant constraint** は利用者から見える必要がある。
+公開configurationの責務は内部validatorを逐語的に複製することではないが、正常設定の可否を左右する **rejection-relevant constraint** は利用者から見える必要がある。
 
 ### C. predicate contractは狭い実装正本へ戻す
 
@@ -64,7 +64,7 @@ finite enumなら集合一致でよい。一方、文字列format、長さ、cas
 
 - R34: current contractのshapeに応じて適切な正本照合を選ぶ。
 - R35: shape-aware comparisonの前提として、contract carrierが一意にparseできることを守る。
-- R36: R34のshape分類へ **acceptance predicate / grammar** を追加し、設定成否を左右すreject条件をpublic contractへ含める。
+- R36: R34のshape分類へ **acceptance predicate / grammar** を追加し、設定成否を左右するreject条件をpublic contractへ含める。
 
 R36は「すべてのvalidatorを文書へ転写する」という主張ではない。内部実装詳細や導出可能な枝葉まで公開せず、利用者が正しい値を作るために必要な最小のrejection-relevant constraintsに限定する。
 
