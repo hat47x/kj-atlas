@@ -71,6 +71,14 @@ def _configuration_provider_values() -> set[str]:
     return _code_tokens(_purpose_cell(CONFIG_PATH, "KJ_ATLAS_LLM_PROVIDER"))
 
 
+def _configuration_deepseek_thinking_values() -> set[str]:
+    purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_THINKING_MODE")
+    match = re.search(r"thinking mode（(?P<values>.*?)）", purpose)
+    if match is None:
+        raise AssertionError("configuration DeepSeek thinking enum clause is missing")
+    return _code_tokens(match.group("values"))
+
+
 def _configuration_log_level_values() -> set[str]:
     purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_LOG_LEVEL")
     match = re.search(r"OPS-OBSERV-01）。(?P<values>.*?)、未知値", purpose)
@@ -98,6 +106,17 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
         )
         self.assertEqual(_configuration_provider_values(), implementation)
         _assert_registry_mentions_all(self, "KJ_ATLAS_LLM_PROVIDER", implementation)
+
+    def test_deepseek_thinking_values_match_settings_and_registry(self) -> None:
+        implementation = _literal_not_in_set(
+            SETTINGS_PATH,
+            function_name="validate_llm_provider_guards",
+            variable_name="normalized_deepseek_thinking_mode",
+        )
+        self.assertEqual(_configuration_deepseek_thinking_values(), implementation)
+        _assert_registry_mentions_all(
+            self, "KJ_ATLAS_DEEPSEEK_THINKING_MODE", implementation
+        )
 
     def test_log_level_values_match_logging_implementation_and_registry(self) -> None:
         implementation = _literal_not_in_set(
