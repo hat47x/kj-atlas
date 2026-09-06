@@ -1,7 +1,7 @@
 # Issue Draft: AI-ROUTE-01 Multi-Model Routing（MMR-01〜06）の実装要件
 
 - Type: Feature request / AI capability
-- Status: Draft
+- Status: In Progress
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
@@ -36,7 +36,7 @@
 - [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
 - [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
 - [~] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` で `routingStage` / provider/model は記録済み。一方、linked final-judgementの通常LLM auditとsystem-hold auditで `sourceBundleHash` / `proposalId` を一貫して保持する契約は未完了のため、完全達成とはみなさない。
-- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— R1/R2はmain統合済み、R3 model-governance boundaryはbranchでintegration verified。R3のmain統合とcloseout同期が完了するまで未完了扱いを維持する。
+- [x] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— R1 proposal linkage、R2 runtime availability hold、R3 tenant model-governance boundaryをmainへ統合済み（R3: #2998）。state transitionはexplicitly linked external proposalに限定し、standalone callはstate-neutral、auto-publish fallbackは導入しない。
 - [x] `provider=none` で中核操作が成立する。
 - [~] integration test でルーティング・監査・安全停止が検証される。— routing audit既存e2eに加え、R2 system-holdとR3 model-governance安全停止をintegrationで固定。R3 GitHub Actions run `34018370431` はfocused/adjacent 51 passed。ただしMMR-05のlinked `sourceBundleHash` / `proposalId` telemetry completenessが残るため全体は部分達成。
 
@@ -66,4 +66,11 @@ MMR-01/02/03/04/05を実装（46ec01aa）。MMR-06（final_judgement利用不能
 - branch `lane-b/final-judgement-model-governance-r3` で、actual final-judgement LLM callをtenant model registry / allowlistへ接続した。成功時はselected modelとregistered providerを同一 `LLMRequest` に固定する。
 - linked external proposalではgovernance/routing failureをprovider dispatch前にsystem `held` へ接続し、standalone callはproposal state-neutralを維持する。human adjudicationでLLM不要な `detect_contradiction` はgate前にreturnする。
 - Run `34018370431`: focused/adjacent regression 51 passed、compileall、docs contract、Issue lifecycle 35 tests、diff check success。
-- MMR-06はR3 main統合後にcloseout同期する。MMR-05については、従来の `[x]` が `routingStage` 追加だけを根拠に4項目全達成としていたため `[~]` へ補正した。`sourceBundleHash` / `proposalId` のlinked telemetry completenessは次残差として扱う。
+- MMR-06はR3 #2998のmain統合後にcloseout同期済み。MMR-05については、従来の `[x]` が `routingStage` 追加だけを根拠に4項目全達成としていたため `[~]` のまま維持する。`sourceBundleHash` / `proposalId` のlinked telemetry completenessは次残差として扱う。
+
+
+## MMR-06 closeout（2026-09-06）
+
+- `AI-ROUTE-HELD-LINKAGE-01` R1/R2/R3をmainへ統合し、MMR-06を完了した。R3はPR #2998 / squash commit `56ad4cc1daa66b4a6631c34d038548c1c8f811eb`。
+- explicit proposal linkage、runtime unavailable/timeout、model-governance failure、race/idempotency、system audit、recovery（new proposal）の各契約とintegration evidenceが揃った。
+- MMR-05は別残差として未完了。特にlinked final-judgementの通常LLM audit/system-hold auditにおける `sourceBundleHash` / `proposalId` の一貫した保持を追加で固定する必要がある。
