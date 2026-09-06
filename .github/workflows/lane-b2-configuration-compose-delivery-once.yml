@@ -23,20 +23,31 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           path = Path("04_Documentation/configuration.md")
           text = path.read_text(encoding="utf-8")
-          old = """このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
-"""
-          new = """このページの `export KJ_ATLAS_*` 例は、特記がない限り backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は、次の公開キーを明示的な配送面として持ちます。この2行は `01_Plans/tests/test_configuration_compose_delivery_contract.py` で Compose 定義と照合します。
+          old = (
+              "このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。"
+              "標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と "
+              "`KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。"
+              "他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、"
+              "Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose "
+              "経由では `api` へ届きません。キーごとの配送範囲は "
+              "[runtime_parameter_registry.md の Backend settings 表]"
+              "(https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)"
+              "（`Delivery surface` 列）で確認してください。\n"
+          )
+          new = dedent("""\
+          このページの `export KJ_ATLAS_*` 例は、特記がない限り backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は、次の公開キーを明示的な配送面として持ちます。この2行は `01_Plans/tests/test_configuration_compose_delivery_contract.py` で Compose 定義と照合します。
 
-| Compose surface | 配送される公開キー | 挙動 |
-| --- | --- | --- |
-| `api.environment` | `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_APP_REVISION`, `KJ_ATLAS_API_KEY`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | profile・DB・provider は Compose 既定値を持つ。revision・API key・JIT は host で設定された場合だけ pass-through する。 |
-| `web.build.args` | `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_APP_REVISION` | API base は標準 Compose では `/api` に固定。profile と revision は frontend build 時に確定する。 |
+          | Compose surface | 配送される公開キー | 挙動 |
+          | --- | --- | --- |
+          | `api.environment` | `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_APP_REVISION`, `KJ_ATLAS_API_KEY`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | profile・DB・provider は Compose 既定値を持つ。revision・API key・JIT は host で設定された場合だけ pass-through する。 |
+          | `web.build.args` | `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_APP_REVISION` | API base は標準 Compose では `/api` に固定。profile と revision は frontend build 時に確定する。 |
 
-これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
-"""
+          これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
+          """)
           if text.count(old) != 1:
               raise SystemExit("expected stale Compose delivery paragraph exactly once")
           text = text.replace(old, new, 1)
