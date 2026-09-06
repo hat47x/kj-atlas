@@ -45,9 +45,9 @@ external-agent proposal flowの一部としてfinal judgementを呼ぶ場合、�
 
 - provider/model unavailable — R2: `ProviderDisabledError` / `provider_unavailable` をsystem hold対象として実装済み。
 - timeout — R2: `provider_timeout` をsystem hold対象として実装済み。
-- model-governance / routing上、eligible final-judgement modelを解決できない状態 — **R3 pending**。現行 `check_narrative` / `detect_contradiction` はtenant model-registry gate (`_assert_model_allowed`) を通らないため、未到達のfailure classをR2で実装済みとはみなさない。
+- model-governance / routing上、eligible final-judgement modelを解決できない状態 — **R3 verified on branch**。`check_narrative` / `detect_contradiction` の実LLM callをtenant model-registry gate (`_assert_model_allowed`) へ接続し、明示link時のみsystem holdへ遷移する。
 
-`provider_validation`、parse failure、policy rejection等を同じ「利用不能」に含めるかは、実装前にAPI/error contractと合わせて明示する。曖昧なcatch-allで全失敗をholdしない。R2では `provider_validation` と入力/policy/parse failureをhold対象外とした。
+`provider_validation`、入力・parse/output failureは引き続きsystem hold対象外とし、曖昧なcatch-allは導入しない。R3ではtenant policyにより選択済みfinal-judgement modelを実行できない `model_not_allowed` だけを `policy_rejected` として明示分類し、`model_not_registered` / `model_provider_unavailable` は `provider_unavailable` として区別する。HTTP status/detailは既存governance contractを維持する。
 
 ### 3. system hold audit semantics
 
@@ -88,13 +88,13 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 - [x] external proposal flowとfinal judgementの対象proposalを、推測なしで一意に結ぶtyped linkageをAPI/schemaへ固定する。— R1: optional `externalProposalRef` + server-side `(tenant, doc, proposal, sourceBundleHash, origin)` validationを追加。
 - [x] linkageなしのstandalone `check_narrative` / `detect_contradiction` failureがproposal stateを変更しないことを固定する。— R2 integration testでrepository非参照を固定。
 - [x] 現行final-judgement routeが実際に返すruntime availability failureを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。— `provider_unavailable` / `provider_timeout` / `ProviderDisabledError` のみ。`provider_validation`・policy/input/parse failureは対象外。
-- [ ] model-governance / routing上、eligible final-judgement modelを解決できないfailureを、同じ明示link / system-held契約へ接続する。— R3。現行final-judgement routeは `_assert_model_allowed` を通らないため未実装。
+- [x] model-governance / routing上、eligible final-judgement modelを解決できないfailureを、同じ明示link / system-held契約へ接続する。— R3: 全actual final-judgement LLM callをtenant registry gateへ接続し、明示link時だけ `model_not_allowed` / `model_not_registered` / `model_provider_unavailable` をsystem `held` へ接続。成功時はselected modelと `RegisteredProviderConfig` を実requestへ固定する。
 - [x] system holdがhuman decisionと区別できるaudit/event contractを持つ。— human decision rowを作らず `eventType=proposal` / `transitionSource=final_judgement_unavailable` のcontent-free auditを実遷移時だけ発行。
 - [x] `accepted` / `rejected` を巻き戻さず、既存 `held` / concurrent decisionを安全に扱う。— terminal/current stateはno-op、初回state insert競合はrollback後に再読。
 - [x] `held` 後の明示的recovery contractを選択・実装し、成功してもauto-accept / auto-publishしない。— system-held proposalは自動reopenせず、final-judgement再試行は新しいproposal IDで登録する（選択肢3）。既存の認証済みhuman decisionによるheld→accepted/rejectedは、別の明示的人間判断として維持。
 - [x] R2 integration testで少なくとも provider unavailable、timeout、standalone call、already-decided race、recoveryを検証する。
-- [ ] R3のmodel-governance / routing failure integration evidenceを追加する。
-- [ ] `AI-ROUTE-01` MMR-06はR2 + R3のintegration evidenceとcloseout同期が揃うまで未完了のままとする。
+- [x] R3のmodel-governance / routing failure integration evidenceを追加する。— GitHub Actions run `34018370431`: R3 + R2 system-hold + proposal-linkage + model-governance + AI eval pipelineのfocused/adjacent regression 51 passed、`compileall`、docs contract、Issue lifecycle 35 tests、`git diff --check` がsuccess。
+- [ ] `AI-ROUTE-01` MMR-06の最終closeoutはR3のmain統合後に同期する。併せて、親MMR-05で不足しているlinked final-judgement telemetry（`sourceBundleHash` / `proposalId` の一貫した監査記録）を別残差として解消し、MMR-06安全停止とMMR-05追跡性を混同しない。
 
 ## 検証計画
 
@@ -126,3 +126,14 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 - recoveryは「system-held proposalを自動reopenしない。final-judgement再試行は新しいproposalを登録する」を採用する。既存human endpointがheldをaccepted/rejectedへ明示判断する能力は変更しない。
 - tenant model-governance / routing上のeligible-model不在はR2で実装済みとは扱わない。現行final-judgement routeのmodel-registry gate接続をR3として残す。
 - MMR-06親項目はR3とcloseout/evidence同期が完了するまで未完了のままとする。
+
+
+## R3 実装・検証履歴（2026-09-06）
+
+- `check_narrative` と `detect_contradiction` のactual LLM callは、standalone / linkedを問わず `resolve_model_for_task()` → `_assert_model_allowed()` を通る。proposal state transitionだけは従来どおり明示的 `externalProposalRef` がある場合に限定する。
+- governance成功時は、選択済み `model_id` と `_assert_model_allowed()` が返した `RegisteredProviderConfig` を同じ `LLMRequest` へ渡し、registry確認後にglobal provider/fallbackへ迂回する経路を作らない。
+- `detect_contradiction` はhuman adjudication済みcontradictionを先にreturnし、LLM call自体が不要な場合にはgovernance gateやsystem holdを発火させない。
+- pre-provider governance failureは `model_not_allowed -> policy_rejected`、`model_not_registered` / `model_provider_unavailable -> provider_unavailable` としてsystem auditへ正規化する。外向きHTTP detailは既存contractのまま維持する。
+- provider dispatch前なので存在しないprovider/traceは監査へ捏造せず、`requestedModelId` / `governanceCode` / `failureCode` / `routingStage=final_judgement` を記録する。
+- verification: GitHub Actions run `34018370431` でfocused/adjacent regression **51 passed**、`python -m compileall -q src/kj_atlas_api`、non-test docs contract（`active_memos=43`, `tracked_markdown=787`）、Issue lifecycle **35 tests OK**、`git diff --check` がsuccess。one-shot patch/helper/workflowは同run内で自己削除済み。
+- R3はmodel-governance safety boundaryを閉じるが、親MMR-05のlinked telemetry completenessは別残差として扱う。R3の実装成功を理由に、未記録の `sourceBundleHash` / `proposalId` まで完了扱いしない。
