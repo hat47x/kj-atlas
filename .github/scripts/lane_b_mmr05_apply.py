@@ -17,6 +17,7 @@ ai = replace_once(
     ai,
     '''router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
+
 def _audit_llm_trace(
 ''',
     '''router = APIRouter(prefix="/ai", tags=["ai"])
