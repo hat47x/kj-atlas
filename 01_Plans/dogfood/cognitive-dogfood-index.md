@@ -193,6 +193,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R33。PR #3026/#3027で、APP_REVISIONのcanonical意味driftと、canonical値がstructured logへ届かない観測surface欠落を分析し、意味一致と必要surfaceへの伝播を別coverageとして分離した記録。
 - `doc_kj_atlas_dogfood_r33.json`
   - R33のKJキャンバス。同じkeyの存在・default一致・canonical意味一致・必要観測surfaceへの伝播を段階的に分け、APP_REVISIONの明示済みbuild同定用途だけを閉じて全設定値のlog出力へ一般化しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r34.md`
+  - R34。PR #3030〜#3033で、Compose配送集合・public enum集合・resolver wiring状態・ADR実装前提という異なるshapeのcurrent contractがそれぞれ実装とずれた実陽性を分析し、文書契約のshapeごとに実行可能な正本照合を選ぶ構造へ統合した記録。
+- `doc_kj_atlas_dogfood_r34.json`
+  - R34のKJキャンバス。scalar/default、finite enum、delivery surface、wiring state、ADR factual premiseを一種類の文字列guardで扱わず、消せる第二正本は消し、残す必要があるcurrent factだけをshape-awareなconformanceへ戻す構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
