@@ -1,0 +1,74 @@
+name: Lane B2 DeepSeek enum table shape fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-deepseek-enum-table-shape-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore branch file and apply narrow DeepSeek enum fix
+        run: |
+          git checkout origin/main -- \
+            02_Architecture/runtime_parameter_registry.md \
+            01_Plans/tests/test_public_configuration_enum_contract.py
+          python - <<'PY'
+          from pathlib import Path
+
+          registry = Path("02_Architecture/runtime_parameter_registry.md")
+          text = registry.read_text(encoding="utf-8")
+          old = "DeepSeek V4 Chat Completionsのthinking mode。`disabled|enabled`。"
+          new = "DeepSeek V4 Chat Completionsのthinking mode。`disabled` / `enabled`。"
+          if text.count(old) != 1:
+              raise SystemExit("expected raw-pipe DeepSeek thinking enum exactly once")
+          registry.write_text(text.replace(old, new, 1), encoding="utf-8", newline="")
+
+          test_path = Path("01_Plans/tests/test_public_configuration_enum_contract.py")
+          test_text = test_path.read_text(encoding="utf-8")
+          anchor = '''def _configuration_log_level_values() -> set[str]:\n'''
+          helper = '''def _configuration_deepseek_thinking_values() -> set[str]:\n    purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_THINKING_MODE")\n    match = re.search(r"thinking mode（(?P<values>.*?)）", purpose)\n    if match is None:\n        raise AssertionError("configuration DeepSeek thinking enum clause is missing")\n    return _code_tokens(match.group("values"))\n\n\n'''
+          if helper not in test_text:
+              if test_text.count(anchor) != 1:
+                  raise SystemExit("DeepSeek helper insertion anchor is not unique")
+              test_text = test_text.replace(anchor, helper + anchor, 1)
+
+          test_anchor = '''    def test_log_level_values_match_logging_implementation_and_registry(self) -> None:\n'''
+          test_method = '''    def test_deepseek_thinking_values_match_settings_and_registry(self) -> None:\n        implementation = _literal_not_in_set(\n            SETTINGS_PATH,\n            function_name="validate_llm_provider_guards",\n            variable_name="normalized_deepseek_thinking_mode",\n        )\n        self.assertEqual(_configuration_deepseek_thinking_values(), implementation)\n        _assert_registry_mentions_all(\n            self, "KJ_ATLAS_DEEPSEEK_THINKING_MODE", implementation\n        )\n\n'''
+          if test_method not in test_text:
+              if test_text.count(test_anchor) != 1:
+                  raise SystemExit("DeepSeek test insertion anchor is not unique")
+              test_text = test_text.replace(test_anchor, test_method + test_anchor, 1)
+          test_path.write_text(test_text, encoding="utf-8", newline="")
+          PY
+      - name: Verify focused public enum contract
+        run: python 01_Plans/tests/test_public_configuration_enum_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check
+          changed=$(git diff --name-only origin/main...HEAD; git diff --name-only)
+          printf '%s\n' "$changed" | sed '/^$/d' | sort -u
+          unexpected=$(printf '%s\n' "$changed" | sed '/^$/d' | sort -u | grep -Ev '^(01_Plans/tests/test_public_configuration_enum_contract.py|02_Architecture/runtime_parameter_registry.md|\.github/workflows/lane-b2-deepseek-enum-table-shape-fix-once.yml)$' || true)
+          test -z "$unexpected"
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git rm .github/workflows/lane-b2-deepseek-enum-table-shape-fix-once.yml
+          git add 01_Plans/tests/test_public_configuration_enum_contract.py 02_Architecture/runtime_parameter_registry.md
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "docs(config): DeepSeek thinking enum表を修復する"
+          git push
