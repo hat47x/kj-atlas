@@ -69,21 +69,32 @@ R1は**外部IdP/OAuthからguest identityを検証してserver-owned sessionへ
 
 R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外部IdP/OAuth callbackからそのsessionを安全に発行する入口はまだ実装していない。内部`issue_guest_auth_session()`も、active principalとverified issuer/subjectの完全一致を要求するだけで、client supplied tenant/principalを信頼する公開login endpointではない。
 
-### R2bに残す境界
+### R2b: host-bound redeem state → verified guest identity → guest session（2026-09-07）
 
-- `ADR-0080` D1=A1/A2に従うguest identity verification（home organization IdP / general personal account）。
-- 既存memberの`UserIdentityRow` / `TenantIdentityProviderRow` / `VerifiedTenantClaim`をguestへ流用せず、署名/JWKS/issuer/audience検証結果だけをguest専用境界へ渡すこと。
-- 招待先tenant / `guest_principal_id`をclient query parameterの自己申告で決めず、hostが作った招待状態へ暗号学的またはserver-ownedにbindされたpending login handleから復元すること。
-- verified `(issuer, subject)`を招待済み`guest_principal_id`へbind/redeemし、その結果から`Kj-Atlas-Guest-Session`を発行するOAuth/BFF callback。
+`lane-c/guest-admission-redeem-r2b-20260906`で、R2aが残した「外部本人確認結果を、client自己申告のtenant/principalを信じずに招待へbindし、guest sessionへ交換する」入口を実装した。
+
+- `guest_redeem_states`をpre-tenant authentication stateとして追加した。raw stateは返却時にだけ存在し、DB正本はdomain-separated keyed hashのみとする。stateは15分または招待期限の短い方で失効し、一度consumeしたstateは再利用できない。
+- 公開`POST /session/guest/redeem`のrequest schemaは`state`と`identityCredential`だけを受け付け、`tenantId` / `guestPrincipalId` / `issuer` / `subject`等のclient自己申告を`extra=forbid`で拒否する。tenant・guest principal・verification methodはhost-created stateからのみ復元する。
+- 本人確認結果はguest専用`VerifiedGuestIdentity(issuer, subject)`へ閉じ、member用`VerifiedTenantClaim`、`TenantMembershipRow`、`TenantIdentityProviderRow`へのfallbackを設けない。production verifierはdeployment adapterから明示注入する契約とし、未構成時は503でfail closedする。
+- state rowを`FOR UPDATE`で一回性確認した後、pending principalのverified identity bind、`guest_auth_sessions` row発行、state consumeを**同一DB transaction**でcommitする。session persistence失敗を強制したintegration testではprincipal activation・state consume・session rowのすべてがrollbackされる。
+- redeem成功後はR2aの`Kj-Atlas-Guest-Session`をそのまま利用し、既存exact document grantだけがreadを許可する。guest principalの存在だけでtenant内文書へ広がる経路は追加していない。
+- SQLite HTTP integrationではstate非平文保存、redeem→cookie→exact grant GET、replay拒否、期限切れ拒否、identity verifier失敗、client tenant/principal/claim注入拒否、atomic rollback、membership/tenant-IdP行0件を固定した。
+- PostgreSQL 16 restricted runtime roleでは、`guest_redeem_states`が意図したpre-tenant非RLS、`guest_principals`がFORCE RLSのままであることを確認し、state解決後だけtenant scopeへ戻ってprincipalをactivateし、state consumeとsession rowを同時commitできることを固定した。
+- 最終verification run `34046511190`でRuff、focused HTTP/repository tests、PostgreSQL 16、migration lineage、persistence shapes、`docs_check`、`git diff --check`を確認する。
+
+### R2cに残す境界
+
+- `ADR-0080` D1=A1/A2の**実provider adapter**（home organization IdP / general personal account）をproduction deploymentへ接続し、署名/JWKS/issuer/audience等の検証を実際のprovider contractで固定すること。R2bはguest専用trusted verifier interfaceとfail-closed wiringを実装したが、member用OAuth adapterをguestへ流用してはいない。
+- provider redirect/callback方式を採る場合は、R2bのone-time stateをcallback correlationへ接続し、provider固有nonce/PKCE等を必要に応じて追加すること。`identityCredential`を受ける現在のHTTP境界はtrusted verifier adapterへの最小交換面であり、特定providerのOAuth UI完了を意味しない。
 - guest session logout / explicit revokeの公開境界が必要なら、そのCSRF・cookie属性・監査契約をmember cookieとは別に固定すること。
-- R2aではread-onlyで閉じたguest writeを将来開く場合は、document grantの「read/write」意味、CSRF、PDPとの責務分離を別途設計してから扱うこと。
+- R2aでread-onlyに閉じたguest writeを将来開く場合は、document grantのread/write意味、CSRF、PDPとの責務分離を別途設計してから扱うこと。
 
 ## 受入条件
 
 - [x] AC-1: 上記4要求への対応方針が三要素分析（`ADR-0067`）で決定され、着工前チェックリストを通過する。— 2026-08-25、`ADR-0080`とこのADRを反映した`post-mvp-business-scope-design-program.html` §19、`three-element-constraint-checklist.html`の適用記録を参照。D1（ゲスト本人確認）・D2（信頼レコードの形）・D3（既定拒否・既定ゼロ件の保証層）・D4（取り消しの独立性）の4論点を、基本チェック・クロスチェックを通した三要素分析として決定した。2026-08-26、保守者の指示によりD1（単一方式→多方式対応）・要求2の文言・D2（関数従属性再検査による`guest_principals`への精緻化）を補正した。
 - [x] AC-2: 決定内容が新規ADRとして起票され、Maintainerの承認（Accepted）を得る。— 2026-08-26、`ADR-0080`がAcceptedとなった（D1=多方式対応、D2=A、D3=A、D4=A）。
-- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— R1でstorage/repository/RLS、R2aでserver-owned guest session→実HTTP exact document readのdefault-zeroまで固定した。残りはD1の外部verified guest identityをhost-created invitationへ安全にbind/redeemし、guest sessionを発行するR2b入口。公開入口がない段階では「個人単位・IdP不問の受入journey」全体の完了とは扱わない。
-- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— R1のrepository predicateに加え、R2aではgrant revoke→同じlive cookieの次GETが404、principal revoke→同じcookieの次GETが401となる実HTTP挙動まで固定済み。ただし外部IdPからsessionを発行する公開journey自体がR2b未実装のため、親issue closeoutまでは未完了として維持する。
+- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— R1でstorage/repository/RLS、R2aでserver-owned guest session→実HTTP exact document read、R2bでhost-bound one-time redeem state→guest専用verified identity→session発行まで固定した。ただしproductionでhome-org IdP / general personal accountを実検証するprovider adapterはまだ未接続であり、「IdP不問の受入journey」全体の完了とはまだ扱わない。
+- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— R1のrepository predicate、R2aのlive-cookie HTTP revoke挙動に加え、R2bでhost-bound redeem→session入口まで到達した。revokeの技術挙動自体は固定済みだが、AC-3と同じproduction provider journeyを通したend-to-end受入・取消証跡がまだないため、親issue closeoutまでは未完了として維持する。
 
 ## 検証
 
@@ -93,3 +104,4 @@ R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外�
 - PostgreSQL 16 restricted runtime roleでguest principal/grantのFORCE RLSと、pre-tenant `guest_auth_sessions`→tenant scope設定→FORCE-RLS principal lookupの遷移を確認
 - R1 verification: GitHub Actions run `34036961877`, governance re-verification run `34037370856`, final docs run `34038175292`
 - R2a verification: GitHub Actions run `34039105022`（59 focused tests + docs/diff hygiene）
+- R2b verification: GitHub Actions run `34046511190`（HTTP/repository + PostgreSQL 16 restricted runtime role + docs/diff hygiene）
