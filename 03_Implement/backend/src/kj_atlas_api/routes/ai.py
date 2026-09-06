@@ -85,6 +85,7 @@ from kj_atlas_api.proposal_decision_repository import (
     register_ai_proposal,
     register_external_agent_proposal,
     register_external_agent_task,
+    hold_external_proposal_for_final_judgement_failure,
     record_proposal_decision as persist_proposal_decision,
     validate_external_proposal_reference,
 )
@@ -198,6 +199,114 @@ def _validate_final_judgement_external_proposal(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ProposalDecisionConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+_FINAL_JUDGEMENT_SYSTEM_HOLD_FAILURES = frozenset({
+    "provider_unavailable",
+    "provider_timeout",
+})
+
+
+def _final_judgement_system_hold_failure_code(
+    exc: ProviderDisabledError | ProviderRequestError,
+) -> str | None:
+    if isinstance(exc, ProviderDisabledError):
+        return "provider_unavailable"
+    if exc.code in _FINAL_JUDGEMENT_SYSTEM_HOLD_FAILURES:
+        return exc.code
+    return None
+
+
+def _hold_linked_external_proposal_after_final_judgement_failure(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+    exc: ProviderDisabledError | ProviderRequestError,
+) -> None:
+    """Persist proposed->held before returning an availability failure.
+
+    The route has already validated the explicit linkage before provider use.
+    This helper re-validates inside the state transition transaction, retries a
+    first-state insert race once, and emits a content-free system audit event
+    only when this call actually changed proposed -> held.
+    """
+    failure_code = _final_judgement_system_hold_failure_code(exc)
+    if ref is None or failure_code is None:
+        return
+
+    tenant = _resolve_audit_tenant(request, db)
+
+    def _persist():
+        return hold_external_proposal_for_final_judgement_failure(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+
+    try:
+        receipt = _persist()
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        try:
+            receipt = _persist()
+            db.commit()
+        except ProposalNotRegistered as retry_exc:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=str(retry_exc)) from retry_exc
+        except (IntegrityError, ProposalDecisionConflict) as retry_exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "proposal_system_hold_conflicted",
+                    "message": "Proposal state changed while recording final-judgement hold.",
+                },
+            ) from retry_exc
+    except ProposalNotRegistered as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(hold_exc)) from hold_exc
+    except ProposalDecisionConflict as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(hold_exc)) from hold_exc
+
+    if not receipt.transitioned:
+        return
+
+    metadata = build_audit_fields(exc)
+    metadata.update(
+        {
+            "proposalId": ref.proposalId,
+            "previousStatus": "proposed",
+            "newStatus": "held",
+            "transitionSource": "final_judgement_unavailable",
+            "routingStage": "final_judgement",
+            "failureCode": failure_code,
+        }
+    )
+    logger.warning(
+        "proposal_system_held",
+        extra={
+            "proposalId": ref.proposalId,
+            "failureCode": failure_code,
+            "traceId": metadata.get("trace_id"),
+        },
+    )
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="proposal",
+                tenant_id=tenant.tenant_id,
+                doc_id=doc_id,
+                safe_mode=False,
+                metadata=metadata,
+            )
+        )
 
 
 def _assert_model_allowed(
@@ -2236,8 +2345,22 @@ def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Sessio
             )
         )
     except ProviderDisabledError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
 
     _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "check_narrative", llm_response)
@@ -2782,8 +2905,22 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
             )
         )
     except ProviderDisabledError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     # Unchanged for the two-card request shape ("(no-doc)"); a supplied document
     # is now attributable in the audit trail.
