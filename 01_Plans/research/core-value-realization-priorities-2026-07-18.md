@@ -28,7 +28,7 @@
 | R2 | 評価環境のLAN暗黙公開の停止（loopback既定化） | [DEPLOY-NET-01](../issues/done/issue-DEPLOY-NET-01-loopback-default-and-network-exposure-boundary.md)（PR #2618） | レビュー判断 | 実装済みPRのセキュリティレビューとマージ判断 |
 | R3 | 初回実利用の獲得（段階B移行の唯一の残条件） | [ADR-0042](../adr/ADR-0042-value-realness-validation-and-notice-exit.md) | 検証実行 | 本番同等環境での5手順完走（§4.3の代行設計を参照） |
 | R4 | MVP-EXIT-01の受入確認4件 | [MVP-EXIT-01](../issues/done/issue-MVP-EXIT-01-productization-readiness.md)・[代行ハンドオフ](mvp-exit-01-human-acceptance-handoff.md) | 検証実行 | キーボード確認 / スクリーンリーダー確認 / リリース画像確認 / 出荷判断記録（§4.1〜4.2の代行設計を参照） |
-| R5 | QAゲート3件（P0）の軽微ブロッカー解除 | [QA-E2E-USE-01](../issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](../issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](../issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | 意思決定 | 承認は2026-07-16に完了済み。残りは実行経路の1本固定等の軽微決定のみ（[PRODUCT-QA-01](../issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md) ゲート証跡に直結） |
+| R5 | QAゲート3件（P0）の軽微ブロッカー解除 | [QA-E2E-USE-01](../issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](../issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](../issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | 意思決定 | 承認は2026-07-16に完了済み。残りは実行経路の1本固定等の軽微決定のみ（[PRODUCT-QA-01](../issues/done/issue-PRODUCT-QA-01-release-readiness-quality-gates.md) ゲート証跡に直結） |
 | R6 | 定性カード品質支援の完了（原則P-08: 定性情報への忠実性） | [DOMAIN-CARD-QUALITY-01](../issues/done/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md) | 完了 | 本文のみの一回保存、前後比較、原文復元をE2Eで確認済み。Phase Cは実利用の要望が得られるまで追加しない |
 | R7 | W型累積探究の本体実装（原則P-09: 累積的探究） | [DOMAIN-W-ITERATION-01](../issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md)・[ADR-0057](../adr/ADR-0057-w-type-cumulative-inquiry-model.md) | 実装（Codex主担当） | 現在文書からの開始、反復snapshot、ローカルファイル保存・再開まで完了。残りは容量計測、分岐・比較、再開ブリーフ、引継ぎUI、SafeMode派生共有 |
 
@@ -118,7 +118,7 @@ kj-atlasリポジトリのコアバリュー実現クリティカルパス（正
 | 要件 | 計画の所在 | 実行後のマージ規律 |
 | --- | --- | --- |
 | R1 配送実装・probe・契約テスト | [ENV-COMPOSE-01](../issues/done/issue-ENV-COMPOSE-01-runtime-setting-delivery-and-effective-verification.md) | デプロイ挙動変更のため**人間レビュー保留** |
-| R5 QAゲート解除＋初回バッチ | [QA-E2E-USE-01](../issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](../issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](../issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | テスト追加のみ、CI green後マージ可 |
+| R5 QAゲート解除＋初回バッチ | [QA-E2E-USE-01](../issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md) / [QA-PUB-01-I18N-03](../issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md) / [QA-UNIT-01](../issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md) | テスト追加のみ、CI green後マージ可 |
 | R6 AC-7（前後比較と原文復帰） | [DOMAIN-CARD-QUALITY-01](../issues/done/issue-DOMAIN-CARD-QUALITY-01-qualitative-card-quality-assistance.md) | 2026-07-18実装・E2E完了 |
 | （付随）文書コマンド照合の残り4区分 | [DX-DOC-04](../issues/done/issue-DX-DOC-04-executable-command-contract-checks.md) | docs+tooling-only、CI green後マージ可 |
 
