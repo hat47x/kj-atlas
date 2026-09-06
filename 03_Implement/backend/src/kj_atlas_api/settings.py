@@ -10,6 +10,7 @@ from kj_atlas_api.database_support import require_verified_database_url
 
 
 _LLM_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+_APP_REVISION_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
 
 def _validate_trusted_http_resolver(
@@ -718,6 +719,13 @@ class Settings(BaseSettings):
         # Startup validation is handled by TrustedSaasRuntimePolicy.validate() and
         # validate_trusted_saas_runtime_preflight() in main.py lifespan.
         self.runtime_profile = normalized_runtime_profile
+
+        # OPS-OBSERV-01: frontend diagnostic bundles already treat app revision
+        # as a canonical, non-secret identifier. Normalize at the public setting
+        # boundary so /version and every downstream observability surface see
+        # exactly the same value instead of disagreeing on malformed input.
+        if not _APP_REVISION_PATTERN.fullmatch(self.app_revision):
+            self.app_revision = "unknown"
 
         _validate_canonical_bearer(
             api_key=self.admin_api_key, api_key_key="KJ_ATLAS_ADMIN_API_KEY"

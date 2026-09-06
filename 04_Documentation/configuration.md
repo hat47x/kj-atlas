@@ -96,7 +96,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使うSQLAlchemy接続URL。正式対応DB、検証済みdriver、single-tenant／shared-schema SaaSの範囲は[DB対応表](../02_Architecture/database_portability.md)を正本とする。driver省略URLと対応済みasync URLは検証済み同期driverへ正規化され、未検証driverと未知DBはengine生成前に拒否される |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOG_LEVEL` | `INFO` | 構造化（JSON）ログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET`、未知値は `INFO` へフォールバック |
-| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。`/version` と構造化ログ、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |
+| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。1〜64文字のASCII英数字・`.`・`_`・`-`だけをcanonical値として受理し、それ以外は`unknown`へ丸める。`/version` と構造化ログ、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLMのHTTPSまたはloopback HTTP base URL |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLMで使う256文字以下のmodel ID |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLMのHTTPSまたはloopback HTTP base URL |
