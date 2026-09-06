@@ -1,7 +1,7 @@
 # Issue: SAAS-TENANT-01 TenantContext・保存境界・越境防止の実装
 
 - Type: Security / Feature
-- Status: In Progress
+- Status: Done
 - Source Issue: User request 2026-07-16 / `01_Plans/research/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - Priority: P1
 - Owner: Maintainer
@@ -689,3 +689,12 @@ Workflowによる多視点敵対的レビュー（backend契約・frontend契約
 - frontend: `03_Implement/frontend/src/ui/AppErrorBoundary.tsx`（本体）、同`.test.ts`（2 test追加）、`App.tsx`（3箇所の呼び出しへ`storageScope`/`appStorage.scope`を配線）を変更した。WSL側Node 20.20.2（`.nvmrc`指定バージョン、既定`/usr/bin/node` 18.19.1は`globalThis.crypto`欠如のため不可、`agent_failure_log.md`既知事項と同型）でリポジトリを直接（別checkoutへのrsyncなし）操作した。`npx tsc --noEmit -p .` pass、`npx vitest run`は239 file・1,435 tests 全passで既知の環境依存failureも今回は再現しなかった（別checkoutを使わず`02_Architecture/`・`04_Documentation/`が実在するpathで実行したため）、`npm run build` pass。
 - `python3 01_Plans/docs_check.py` pass（active_memos=59, tracked_markdown=569）、`python3 01_Plans/issues/validate_active_issue_memos.py` pass（59 memos）。
 - 環境制約: MCP・実trusted auth edge・実外部PDP/binding/capability serviceは今回変更していないため未実行。AC-7（`ADR-0072`）とAC-6/13の根本解決（`ADR-0074`・`issue-SAAS-TENANT-SESSION-BINDING-01`）は保守者判断待ちのまま。AC-4・AC-12は従来どおり未充足。`saas-multitenant`のsettings起動拒否は変更していない。
+
+## Final closeout（2026-09-06）
+
+- AC-1〜13は、現在公開・到達可能なsurfaceについてすべて完了した。最後の残差だったAC-13はPR #3004 / squash commit `1e3aafb2ea44919e2f1685da40a01a0366574e5c` でmainへ統合され、同一HttpOnly認証sessionを共有する2 tab、shared PostgreSQL、2 backend workerの実stackでstale `tenantSessionVersion`をresource lookup/commit前に拒否する証拠がmainlineになった。
+- PostgreSQL RLS、server-owned tenant/session version、membership/capability境界、現存API・worker・browser cacheの越境negative matrix、Round 8 real-browser acceptanceまでを親Issueの実装ゲートとして閉じる。過去の各Implementation checkpointに残る「当時未完了」の記述は、その時点の履歴として書き換えない。
+- closeoutは将来surfaceの実装を先取りしない。現存しないimport/share/webhook等のrouteを実装済みとは扱わず、MCPはtenant-bound credentialが存在しないため`saas-multitenant`を引き続きfail-fastする。client入力tenantIdで代替しない。
+- `saas-multitenant` backendを実運用する場合も、外部binding/PDP/capability等の必須componentとPostgreSQLをdeployment側で構成し、`TrustedSaasRuntimePolicy` / lifespan preflightを通過する必要がある。親IssueのDone化は「任意構成でSaaSが安全に起動する」「将来の全SaaS機能がGA」という意味ではない。
+- 以上により、`SAAS-TENANT-01`はcurrent exposed surfaceに対する実装・検証Issueとして完了し、正本を`01_Plans/issues/done/`へ移す。
+

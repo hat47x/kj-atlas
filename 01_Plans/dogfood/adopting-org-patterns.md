@@ -52,7 +52,7 @@ README の想定利用者を4つの具体的組織イメージへ分解する。
 |-----|--------|--------|---------------|----------------|
 | A 自治体政策 | Web（大量カード） | バッチ投入・島形成・Critique | 未着手（Web の大量カード操作は既存 e2e でも未カバー） | 50枚自由記述投入のドッグフードログ |
 | B プロダクトUX | Web（Hold/Critique） | 保留・違和感の長期保存 | **実走行済み（2026-08-12）**: APIでHold/Critique週跨ぎ保存→再読込を確認（held2/shelved1/critiqued2・テキスト無傷） | Hold/Critique を残したままの週跨ぎ利用。MCP面は作業状態非出力（DOGFOOD-08） |
-| C 研究共同 | API（非同時利用） | 文書共有・島形成合流 | **multi-org は ADR-0074/SAAS-TENANT-01 のゲート待ち** | single-tenant での共有導線の先行検証 |
+| C 研究共同 | API（非同時利用） | 文書共有・島形成合流 | **SaaS tenant基盤はAC-1〜13完了。multi-org実運用dogfoodは未実施** | `saas-multitenant`構成でOrg-C協働を別途実走 |
 | D 新規事業 | MCP（AI委譲） | DeepSeek カード化・ナラティブ | 部分（ai_eval_results.md で 2 操作実用可） | MCP 経路での AI 提案活用の実走行 |
 
 ### 利用経路の多様化との対応（DOGFOOD-02/03/04 の知見）
@@ -108,13 +108,9 @@ Org-Bの「保留・違和感を残したまま週跨ぎで開き直す」パタ
 
 ## 4. 複数組織の同時利用（multi-org）
 
-- 現状: `saas-multitenant` は settings.py では受理されるが、`ADR-0074`（server-owned SaaS session）が Proposed、
-  `SAAS-TENANT-01` が In Progress であり、**実装・検証のゲート未達**。runtime_parameter_registry の
-  「`saas-multitenant` は現行releaseで選択不可」が実態を表す。
-- ドッグフーディング上の意味: **Org-C（研究共同）は現在の single-tenant では実地検証できない**。
-  multi-org を検証する前提として、まず「同一インスタンスで複数文書を別アクセス境界で運用できること」を
-  single-tenant のアクセス制御（ADR-0059 等）で先行検証する段階が残っている。
-- 推奨: multi-org の設計検証は ADR-0074 採択後に再開し、その前に「文書単位の共有境界」の dogfood を進める。
+- 現状: `ADR-0074`のserver-owned SaaS sessionと`SAAS-TENANT-01` AC-1〜13はmainへ統合済みで、`saas-multitenant`は独立runtime profileとして必須policy/componentのpreflightを通過した構成だけ起動できる。親Issueの実装ゲート自体は完了した。
+- ドッグフーディング上の意味: **Org-C（研究共同）のmulti-org実運用は、技術ゲート待ちではなく未実走の利用検証になった**。実際のPostgreSQL・外部binding/PDP/capabilityを構成したSaaS環境で、組織間協働の価値・運用摩擦を別途観察する必要がある。
+- 推奨: 次のOrg-C検証では、親IssueのE2E成功を利用価値の証拠へ読み替えず、構成済み`saas-multitenant`環境で実際の共同作業をdogfoodする。
 
 ### 実地確認（2026-08-12）: saas-multitenant の起動ゲートは fail-fast で機能する
 
