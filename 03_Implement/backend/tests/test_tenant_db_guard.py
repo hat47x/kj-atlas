@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from kj_atlas_api.tenant_context import TenantContext
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
+from kj_atlas_api.tenant_db_guard import apply_database_tenant_context, apply_database_tenant_id
 
 
 def _tenant(tenant_id: str = "tenant-a") -> TenantContext:
@@ -34,10 +34,21 @@ def test_postgres_context_uses_bound_transaction_local_set_config() -> None:
     assert "tenant-a" not in str(statement)
 
 
+def test_membership_neutral_tenant_id_guard_uses_same_bound_postgres_setting() -> None:
+    session = _session_for_dialect("postgresql")
+
+    apply_database_tenant_id(db=session, tenant_id=" guest-tenant ")
+
+    statement, parameters = session.execute.call_args.args
+    assert "set_config('kj_atlas.tenant_id', :tenant_id, true)" in str(statement)
+    assert parameters == {"tenant_id": "guest-tenant"}
+
+
 def test_sqlite_context_is_noop() -> None:
     session = _session_for_dialect("sqlite")
 
     apply_database_tenant_context(db=session, tenant=_tenant())
+    apply_database_tenant_id(db=session, tenant_id="tenant-a")
 
     session.execute.assert_not_called()
 
@@ -47,5 +58,7 @@ def test_blank_tenant_context_is_rejected_before_database_access() -> None:
 
     with pytest.raises(ValueError, match="tenant_id must be non-empty"):
         apply_database_tenant_context(db=session, tenant=_tenant("   "))
+    with pytest.raises(ValueError, match="tenant_id must be non-empty"):
+        apply_database_tenant_id(db=session, tenant_id="   ")
 
     session.execute.assert_not_called()
