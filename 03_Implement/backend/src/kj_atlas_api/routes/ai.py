@@ -309,6 +309,125 @@ def _hold_linked_external_proposal_after_final_judgement_failure(
         )
 
 
+
+_FINAL_JUDGEMENT_GOVERNANCE_FAILURE_CODES = {
+    "model_not_allowed": "policy_rejected",
+    "model_not_registered": "provider_unavailable",
+    "model_provider_unavailable": "provider_unavailable",
+}
+
+
+def _final_judgement_governance_failure_code(
+    exc: HTTPException,
+) -> tuple[str, str] | None:
+    """Map only the narrow model-governance failures admitted by R3.
+
+    The HTTP response keeps its existing, specific governance code. Proposal
+    audit uses the stable externalization reason vocabulary so policy rejection
+    and execution unavailability remain distinguishable without treating an
+    arbitrary 4xx/5xx as a system hold.
+    """
+    detail = exc.detail
+    governance_code = detail.get("code") if isinstance(detail, dict) else None
+    if not isinstance(governance_code, str):
+        return None
+    failure_code = _FINAL_JUDGEMENT_GOVERNANCE_FAILURE_CODES.get(governance_code)
+    if failure_code is None:
+        return None
+    return failure_code, governance_code
+
+
+def _hold_linked_external_proposal_after_final_judgement_governance_failure(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+    exc: HTTPException,
+    model_id: str,
+) -> None:
+    """Record R3 pre-provider governance/routing failure as a system hold.
+
+    State transition remains explicit-link-only. Because provider dispatch has
+    not happened yet, audit records the selected model and governance code but
+    deliberately does not fabricate provider or trace metadata.
+    """
+    mapped = _final_judgement_governance_failure_code(exc)
+    if ref is None or mapped is None:
+        return
+    failure_code, governance_code = mapped
+    tenant = _resolve_audit_tenant(request, db)
+
+    def _persist():
+        return hold_external_proposal_for_final_judgement_failure(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+
+    try:
+        receipt = _persist()
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        try:
+            receipt = _persist()
+            db.commit()
+        except ProposalNotRegistered as retry_exc:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=str(retry_exc)) from retry_exc
+        except (IntegrityError, ProposalDecisionConflict) as retry_exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "proposal_system_hold_conflicted",
+                    "message": "Proposal state changed while recording final-judgement hold.",
+                },
+            ) from retry_exc
+    except ProposalNotRegistered as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(hold_exc)) from hold_exc
+    except ProposalDecisionConflict as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(hold_exc)) from hold_exc
+
+    if not receipt.transitioned:
+        return
+
+    metadata = {
+        "proposalId": ref.proposalId,
+        "previousStatus": "proposed",
+        "newStatus": "held",
+        "transitionSource": "final_judgement_governance_blocked",
+        "routingStage": "final_judgement",
+        "failureCode": failure_code,
+        "governanceCode": governance_code,
+        "requestedModelId": model_id,
+    }
+    logger.warning(
+        "proposal_system_held",
+        extra={
+            "proposalId": ref.proposalId,
+            "failureCode": failure_code,
+            "governanceCode": governance_code,
+        },
+    )
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="proposal",
+                tenant_id=tenant.tenant_id,
+                doc_id=doc_id,
+                safe_mode=False,
+                metadata=metadata,
+            )
+        )
+
+
 def _assert_model_allowed(
     request: Request,
     db: Session,
@@ -2337,11 +2456,27 @@ def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Sessio
         db=db,
     )
 
+    model_id = resolve_model_for_task("check_narrative")
+    try:
+        provider_config = _assert_model_allowed(request, db, model_id)
+    except HTTPException as exc:
+        _hold_linked_external_proposal_after_final_judgement_governance_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+            model_id=model_id,
+        )
+        raise
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="check_narrative",
                 prompt=_build_narrative_check_prompt(payload),
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
@@ -2896,12 +3031,28 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
             existingContradictionState=state,
         )
 
+    model_id = resolve_model_for_task("detect_contradiction")
+    try:
+        provider_config = _assert_model_allowed(request, db, model_id)
+    except HTTPException as exc:
+        _hold_linked_external_proposal_after_final_judgement_governance_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+            model_id=model_id,
+        )
+        raise
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="detect_contradiction",
                 prompt=_build_detect_contradiction_prompt(payload, ir),
                 inputs=ir,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:

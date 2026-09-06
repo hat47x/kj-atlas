@@ -35,10 +35,10 @@
 - [x] intermediate と final_judgement の責務分離が契約（api.md/schemas.md）で固定される。— `routing_stage_for_task()`（provider.py）で分類
 - [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
 - [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
-- [x] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` に `routingStage` 追加
-- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— 未実装。現行 `check_narrative` / `detect_contradiction` はproposal識別子を持たず、対象proposalを安全に一意特定できないため、`AI-ROUTE-HELD-LINKAGE-01` でproposal identity / system hold / recovery契約を先に固定する。
+- [~] 監査ログに MMR-05 の4項目が記録される。— `_audit_llm_trace` で `routingStage` / provider/model は記録済み。一方、linked final-judgementの通常LLM auditとsystem-hold auditで `sourceBundleHash` / `proposalId` を一貫して保持する契約は未完了のため、完全達成とはみなさない。
+- [ ] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— R1/R2はmain統合済み、R3 model-governance boundaryはbranchでintegration verified。R3のmain統合とcloseout同期が完了するまで未完了扱いを維持する。
 - [x] `provider=none` で中核操作が成立する。
-- [~] integration test でルーティング・監査・安全停止が検証される。— **部分**: `test_ai_eval_pipeline.py::test_ai_route_emits_routing_audit_event` を追加 — /ai ルート実走行で `llm` 監査イベントが CE2-C5 項目（task/routingStage/provider/model/trace_id）で dispatcher へ出ることを固定（SEC-LLM-AUDIT-01 配線の e2e）。**安全停止（MMR-06）は未実装のため integration 未追加**。単体テスト44件＋本統合テストで pass。
+- [~] integration test でルーティング・監査・安全停止が検証される。— routing audit既存e2eに加え、R2 system-holdとR3 model-governance安全停止をintegrationで固定。R3 GitHub Actions run `34018370431` はfocused/adjacent 51 passed。ただしMMR-05のlinked `sourceBundleHash` / `proposalId` telemetry completenessが残るため全体は部分達成。
 
 ## 進捗（2026-08-12）
 
@@ -59,3 +59,11 @@ MMR-01/02/03/04/05を実装（46ec01aa）。MMR-06（final_judgement利用不能
 
 - 本issueは要件・契約固定を目的とし、既存の ContextQuery/ContextBundle（CE1）と provider 契約（ADR-0050）を再利用する。
 - `final_judgement` の high-reasoning tier 選定は、利用可能なモデルとコスト制約に依存するため、実装時に設定として決める。
+
+
+## R3 model-governance進捗（2026-09-06）
+
+- branch `lane-b/final-judgement-model-governance-r3` で、actual final-judgement LLM callをtenant model registry / allowlistへ接続した。成功時はselected modelとregistered providerを同一 `LLMRequest` に固定する。
+- linked external proposalではgovernance/routing failureをprovider dispatch前にsystem `held` へ接続し、standalone callはproposal state-neutralを維持する。human adjudicationでLLM不要な `detect_contradiction` はgate前にreturnする。
+- Run `34018370431`: focused/adjacent regression 51 passed、compileall、docs contract、Issue lifecycle 35 tests、diff check success。
+- MMR-06はR3 main統合後にcloseout同期する。MMR-05については、従来の `[x]` が `routingStage` 追加だけを根拠に4項目全達成としていたため `[~]` へ補正した。`sourceBundleHash` / `proposalId` のlinked telemetry completenessは次残差として扱う。
