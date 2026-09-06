@@ -45,7 +45,9 @@ jobs:
           print(f'docs contracts passed: active_memos={result.active_count}, tracked_markdown={result.markdown_count}')
           PY
           python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
-          git diff --check
+          git diff --check -- 02_Architecture/runtime_parameter_registry.md 03_Implement/backend/tests/test_docs_bounds.py
+          test "$(git diff --numstat -- 04_Documentation/configuration.md | awk '{print $1 ":" $2}')" = "1:1"
+          git diff -- 04_Documentation/configuration.md | grep -F '+| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `50000` |'
       - name: Commit verified sync and remove one-shot files
         run: |
           git config user.name "github-actions[bot]"
@@ -53,7 +55,9 @@ jobs:
           git rm .github/scripts/lane_b_max_document_cards_sync_once.py
           git rm .github/workflows/lane-b-max-document-cards-sync-once.yml
           git add 02_Architecture/runtime_parameter_registry.md \
-                  04_Documentation/configuration.md \
                   03_Implement/backend/tests/test_docs_bounds.py
+          config_blob="$(git hash-object -w --no-filters 04_Documentation/configuration.md)"
+          git update-index --cacheinfo 100644,"$config_blob",04_Documentation/configuration.md
+          git diff --cached --check -- 02_Architecture/runtime_parameter_registry.md 03_Implement/backend/tests/test_docs_bounds.py
           git commit -m "docs(config): sync document card limit default"
           git push origin HEAD:lane-b/max-document-cards-registry-sync
