@@ -22,7 +22,7 @@
 ### 起票時の前提に対する訂正（本 ADR で確定させる事実）
 
 1. **`install_trusted_saas_runtime()` の呼び出し元はゼロだが、`initialize_trusted_saas_runtime()` は `main.py` から呼ばれている。** 欠けているのは「adapter bundle を install する側」だけである。`install_` も `_trusted_saas_runtime_preflight()` も `_kj_atlas_runtime_started` が立った後の実行を拒否するため、install は lifespan の中ではなく `app = FastAPI(...)` 直後の module scope で行う必要がある。issue AC-3 はこの粒度で読む。
-2. **`TRUSTED_PROXIES` は実装されていない。** `03_Implement/backend/src` に該当コードは無く、`ADR-0020` §3-1 は未達のままである。`resolve_identity_context()` は proxy allowlist なしで `X-Forwarded-User` 等を読む。したがって「trusted proxy 判定は既存」という前提で SaaS を設計できない。これは single-tenant profile 側にも残る別 gap であり、本 ADR では解決せず follow-up として明示する。
+2. **`TRUSTED_PROXIES` は実装されていない（2026-08-06時点）。** `03_Implement/backend/src` に該当コードは無く、`ADR-0020` §3-1 は未達のままである。`resolve_identity_context()` は proxy allowlist なしで `X-Forwarded-User` 等を読む。したがって「trusted proxy 判定は既存」という前提で SaaS を設計できない。これは single-tenant profile 側にも残る別 gap であり、本 ADR では解決せず follow-up として明示する。**2026-09-07訂正**: 本ADRと同一コミット（`161c2223`）で`_check_trusted_proxy()`（`auth_context.py`、`KJ_ATLAS_TRUSTED_PROXIES`設定によるCIDR allowlist）が実装され、`resolve_identity_context()`の先頭で呼ばれている。single-tenant側のgapは解消済みである（下記「Consequences」の訂正も参照）。ただしこの事実は本ADRのD2判断（SaaS向けにheader modeを拒否しJWT検証を必須にする）を変更しない——D2の理由はCIDR設定ミス1つで全tenant越境になる点と、暗号的証拠なしに`resolved_by="verified_claim"`を名乗れない点の2つであり、後者はTRUSTED_PROXIES実装の有無と無関係に成立する。
 3. **Level 2 の mock IdP は JWT を発行していない。** `tests/level2/mock_idp.py` の `/oidc/token` は claim の JSON dict を返すだけで、署名も JWKS endpoint も無く、`mock_sp.py` はそれを平文 header へ写している。`ADR-0020` §6 の harness は header mapping fixture であり、暗号的な IdP スタブではない。SaaS の e2e にはこの harness を骨格として **実署名と JWKS を足す** 必要がある。
 4. **`identity_providers` / `tenant_identity_providers` に trust material が無い。** 現在の列は `identity_providers(id, issuer, audience, lifecycle_state, created_at, updated_at)` と `tenant_identity_providers(tenant_id, identity_provider_id, lifecycle_state, created_at, updated_at)` だけである。protocol 判別列も JWKS URI も署名鍵も外部 org 参照も無い。「protocol 非依存で既に存在する」は「protocol が名指しされていない」という意味であって、どの選択肢を採っても migration は必要である。
 5. **`TenantContextResolver.resolve()` は `request` も claim も受け取らない**（`def resolve(self, *, db, user_id)`）。検証済み claim を identity 層から tenant 層へ渡す経路が型として存在しない。これは issue の AC に書かれていない未認識の blocker である。
@@ -46,7 +46,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 ### D2: `saas-multitenant` では JWT 検証を必須とし、平文 header mode を起動時に拒否する
 
 - `ADR-0020` §3-2 の 2 mode のうち、SaaS profile が受理するのは `jwt_header` だけとする。`header` mode は設定検証で拒否する。
-- 理由: single-tenant では header mode の信頼境界は「1 組織の proxy を正しく置いたか」であり組織内リスクに閉じるが、shared SaaS では trusted proxy 設定の 1 箇所のミス・header 除去漏れが即座に全 tenant 越境になる。かつ訂正 2 のとおり `TRUSTED_PROXIES` は未実装で、network 配置と `KJ_ATLAS_API_KEY` 以外の境界が無い。
+- 理由: single-tenant では header mode の信頼境界は「1 組織の proxy を正しく置いたか」であり組織内リスクに閉じるが、shared SaaS では trusted proxy 設定の 1 箇所のミス・header 除去漏れが即座に全 tenant 越境になる。起票時点（訂正2）では `TRUSTED_PROXIES` も未実装で、network 配置と `KJ_ATLAS_API_KEY` 以外の境界が無かった（**2026-09-07訂正**: 本ADR起票と同一コミットで実装済み。CIDR設定ミス1つが全tenant越境になる点自体は変わらず、この理由の結論には影響しない）。
 - `TenantContext.resolved_by = "verified_claim"` と `VerifiedTenantClaim` の docstring が要求する「署名・issuer・audience 検証済み」を満たすには暗号的証拠が要る。header mode ではこの契約を型どおりに満たせない。
 - `trusted_host_mapping`（tenant 別 subdomain 等）は `TenantResolutionMethod` に予約されているが、本 ADR では実装対象外とする。
 
@@ -124,7 +124,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 
 1. **tenant ごとに IAP/gateway インスタンスを立てる（issue 想定の A の素直な読み）**: アプリは最も単純になるが、tenant 追加が infra 作業になり、SaaS の単位経済が壊れる。solo OSS が運用手順として要求できる現実味が無い。broker モデルは同じ app 側単純性を、gateway を増やさずに得られる。
 2. **tenant が自分の IdP を登録し、アプリが request ごとに JWKS を取りに行く（B）**: 最終形としては妥当だが、v1 で採ると「アプリが信頼する鍵の出所」が tenant 編集可能データになり、tenant 供給 URL への outbound（SSRF 面）、per-tenant の可用性依存、cache poisoning が同時に載る。D1 は検証コードを multi-issuer で作るため、trust material の登録経路を差し替えるだけで後から B へ到達できる。**順序の問題であって排他ではない**と判断した。
-3. **`header` mode を SaaS でも許し、`TRUSTED_PROXIES` を実装して境界とする**: 暗号的証拠なしに `resolved_by="verified_claim"` を名乗ることになり `ADR-0059` D5 と整合しない。CIDR 設定 1 行のミスが全 tenant 越境になる点も shared SaaS では受け入れられない。ただし `TRUSTED_PROXIES` 自体は single-tenant profile の未達 gap として別途必要である。
+3. **`header` mode を SaaS でも許し、`TRUSTED_PROXIES` を実装して境界とする**: 暗号的証拠なしに `resolved_by="verified_claim"` を名乗ることになり `ADR-0059` D5 と整合しない。CIDR 設定 1 行のミスが全 tenant 越境になる点も shared SaaS では受け入れられない。**2026-09-07訂正**: `TRUSTED_PROXIES`（`_check_trusted_proxy()`）はその後single-tenant profile向けに実装済みだが、上記2点の却下理由（暗号的証拠の不在・CIDR誤設定の一発全tenant越境リスク）はいずれも実装の有無と独立に成立するため、本選択肢の却下判断は変わらない。
 4. **アプリ内に SAML SP を実装して OIDC と同時提供**: `xmlsec1` native 依存と XML 署名検証の攻撃面を、broker で代替できるのに抱え込むことになる。`ADR-0020` §2-A で一度否決した構図の再現。
 5. **identity 層にも `fail_safe_mode` 設定を置く**: 「誰か不明でも通す」設定は正しい運用が選ばない。存在すること自体が誤設定の入口になる（`ADR-0062` の教訓）。
 6. **`contextvars` で claim を運ぶ**: 型変更を避けられるが、安全境界のデータ経路が暗黙になり、async での取り違えを静的に検出できない。
@@ -146,7 +146,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 - `TenantContextResolver` protocol の署名が変わる。呼び出し元は 2 箇所で、single-tenant 挙動は既定値により無変更。
 - `resolve_verified_claim_tenant_context()` と既存の unit test は無変更のまま流用され、AC-4 の証明が resolver 単体から HTTP 経由へ拡張される。
 - IdP/JWKS 障害時、SaaS deployment は 1800 秒の猶予の後に全面停止する。可用性より機密性を優先する `ADR-0059` の帰結を identity 層へも適用したことになる。
-- `TRUSTED_PROXIES` 未実装は本 ADR では解消されない。single-tenant profile 向けの独立した gap として残る。
+- `TRUSTED_PROXIES` 未実装は本 ADR では解消されない。single-tenant profile 向けの独立した gap として残る。**2026-09-07訂正**: この gap は本ADR起票と同一コミット（`161c2223`）で既に`_check_trusted_proxy()`として実装されていたが、本節の記述が同期されていなかった。`KJ_ATLAS_TRUSTED_PROXIES`未設定時は起動時警告付きで全origin許可（後方互換）、設定時はCIDR外接続元を`403 untrusted_proxy`で拒否し、`resolve_identity_context()`の先頭（forwarded headerを読む前）で必ず評価される。2026-09-07時点では専用回帰テストが無かったため、`tests/test_auth_context_resolution.py`へ6件追加した（未設定時許可・CIDR内許可・CIDR外拒否・client IP不明時拒否・不正形式IP拒否・信頼できないproxyからの完全なidentity headerセットも先頭で拒否されること）。既存のguardを一時的に無効化してこれらのテストが期待どおり失敗することを確認した上で復元済み。
 
 ## Non-goals
 
