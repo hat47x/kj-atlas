@@ -136,7 +136,7 @@ CHK-X1〜X6（次元間クロスチェック）: 業務要求（個人単位受�
 
 ## Traceability
 
-- Implementation: `01_Plans/issues/issue-PGM-ITER-05-03-cross-tenant-guest-admission-primitive-requirements.md`
+- Implementation: `01_Plans/issues/done/issue-PGM-ITER-05-03-cross-tenant-guest-admission-primitive-requirements.md`
 - Related: `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`（外部比較調査。D1〜D4の各選択肢の先例根拠）
 - Related: `02_Architecture/post-mvp-business-scope-design-program.html` §15・§18（三要素分析の先行部分・確定要求の記録）
 - Related: `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
