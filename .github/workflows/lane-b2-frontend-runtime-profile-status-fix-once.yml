@@ -1,0 +1,54 @@
+name: Lane B2 frontend runtime profile status fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-frontend-runtime-profile-status-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align frontend runtime profile status with implementation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("02_Architecture/runtime_parameter_registry.md")
+          text = path.read_text(encoding="utf-8")
+          old = "frontend entry mode。既存3 profileはsingle-tenant、予約中の`saas-multitenant`だけtenant session必須。未知値は起動UIをblockedにする"
+          new = "frontend entry mode。`local-dev` / `evaluation` / `enterprise-production` はsingle-tenant、`saas-multitenant` はtenant session必須。未知値は起動UIをblockedにする"
+          if text.count(old) != 1:
+              raise SystemExit("expected stale frontend runtime profile status exactly once")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8", newline="")
+          PY
+      - name: Verify focused runtime profile contract
+        run: python 01_Plans/tests/test_runtime_profile_cross_surface_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check
+          changed=$(git diff --name-only origin/main...HEAD; git diff --name-only)
+          printf '%s\n' "$changed" | sed '/^$/d' | sort -u
+          unexpected=$(printf '%s\n' "$changed" | sed '/^$/d' | sort -u | grep -Ev '^(01_Plans/tests/test_runtime_profile_cross_surface_contract.py|02_Architecture/runtime_parameter_registry.md|\.github/workflows/lane-b2-frontend-runtime-profile-status-fix-once.yml)$' || true)
+          test -z "$unexpected"
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git rm .github/workflows/lane-b2-frontend-runtime-profile-status-fix-once.yml
+          git add 02_Architecture/runtime_parameter_registry.md
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "docs(config): frontend runtime profile状態を現行実装へ同期する"
+          git push
