@@ -1815,13 +1815,19 @@ def get_provider_status() -> ProviderStatusResponse:
     """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured provider
     kind for display in the View panel. No connectivity check is performed;
     "last known outcome" is tracked client-side from real AI-call results.
-    OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
-    from kj_atlas_api.llm.provider import llm_call_counts, llm_token_usage
+    OPS-LLM-COST-01: also reports process-local call/token observability,
+    including whether provider usage metadata was complete, partial, or missing."""
+    from kj_atlas_api.llm.provider import (
+        llm_call_counts,
+        llm_token_usage,
+        llm_token_usage_coverage,
+    )
 
     return ProviderStatusResponse(
         providerKind=get_provider().provider_kind,
         callCounts=llm_call_counts(),
         tokenUsage=llm_token_usage(),
+        tokenUsageCoverage=llm_token_usage_coverage(),
     )
 
 
