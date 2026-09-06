@@ -1,0 +1,79 @@
+name: lane-b-r51-provider-measurement-roundtrip-once
+
+on:
+  push:
+    branches:
+      - lane-b/provider-measurement-full-roundtrip-r51
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: lane-b/provider-measurement-full-roundtrip-r51
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend dependencies
+        shell: bash
+        working-directory: 03_Implement/backend
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest ruff
+      - name: Run R51 roundtrip regression
+        shell: bash
+        working-directory: 03_Implement/backend
+        run: |
+          set -euo pipefail
+          pytest -q \
+            tests/test_ai_route_provider_measurement_roundtrip.py \
+            tests/test_ai_route_provider_token_measurement.py \
+            tests/test_ai_route_provider_measurement_analysis.py \
+            tests/test_ai_route_provider_transport_input_provenance.py \
+            tests/test_ai_route_production_output_budget_contract.py \
+            tests/test_ai_route_projection_candidates.py \
+            tests/test_ai_route_a2_candidate.py \
+            tests/test_ai_layout_hierarchical_candidate.py \
+            tests/test_ai_layout_hierarchical_composition.py
+          ruff check tests/test_ai_route_provider_measurement_roundtrip.py
+          git diff --check
+      - name: Record R51 and commit
+        shell: bash
+        env:
+          R51_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path('01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md')
+          text = path.read_text()
+
+          old = '''  - `tests/test_ai_route_provider_transport_input_provenance.py`\n  - `tests/test_ai_ir_budget_pressure.py`'''
+          new = '''  - `tests/test_ai_route_provider_transport_input_provenance.py`\n  - `tests/test_ai_route_provider_measurement_roundtrip.py`\n  - `tests/test_ai_ir_budget_pressure.py`'''
+          assert text.count(old) == 1
+          text = text.replace(old, new, 1)
+
+          heading = '## R51 — A2 + layout C最大構成のmeasurement producer→analyzer往復を固定'
+          assert heading not in text
+          run_id = os.environ['R51_RUN_ID']
+          text = text.rstrip() + f'''\n\n\n{heading}\n\nR50で外部実測前scaffoldingの完了境界を置いた後、既存回帰を再点検したところ、core 6 routeのDeepSeek reportはproducer→analyzer往復済みだった一方、groups A2とlayout Cを同時に有効化した最大38 request構成は、producer側・analyzer側を別々に検証しており、同一reportのend-to-end互換性を直接固定していないことが分かった。これは新しいprovenance層ではなく、R50 runbookが必要時に許可するfull opt-in測定の具体的な統合回帰欠落なので、R51でこの1点だけを閉じた。\n\n- fake DeepSeek providerで `include_groups_a2=True` + `include_layout_c=True` の38 request reportを実際の `measure()` から生成する。\n- provider-input fingerprint、primary call provenance、DeepSeek V4 `thinking.type=disabled` provenanceを含むreportを加工せず `analyze()` へ渡し、core / groups A2 / layout Cがすべてreadyになることを確認する。\n- R44の保守的context参照 `1,000,000` tokenをoperator inputとして与え、同じreportでcore/A2/Cのhard-fit計算が成立し、layout Cがaggregateではなくmax-single requestを使うことも確認する。\n- fake usageはbytes/charsから導出しない任意のprovider-reported値であり、実token値を主張しない。\n\nGitHub Actions run `{run_id}` で新規roundtripを含む75 test、ruff（新規test）、`git diff --check`、active issue validator、35 issue tests、full docs checkを検証した。one-shot workflowは同run内で自己削除する。\n\n**非主張**: R51でも外部DeepSeek APIは呼ばず、実provider-reported token・cost・latency・品質を取得していない。A2/B/C採択、production cap/route、十分な余裕policy、coverage-loss metadata、SafeMode・防PII・structured-text-only・proposal-only境界も変更しない。R50の完了境界は維持し、これ以上は具体的な欠陥が見つからない限りscaffoldingを増やさない。次の本質的ゲートはnamed provider/model外部実測のままである。\n'''
+          path.write_text(text.rstrip() + '\n')
+          PY
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          python 01_Plans/docs_check.py
+          git diff --check
+          rm .github/workflows/lane-b-r51-provider-measurement-roundtrip-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'test(ai): roundtrip full provider measurement report'
+          git push origin HEAD:lane-b/provider-measurement-full-roundtrip-r51
