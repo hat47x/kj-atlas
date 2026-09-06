@@ -166,7 +166,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 同値性判定 mode |
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制 |
 | `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | CE4 audit 欠損を fail-closed にする |
-| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
+| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | docs CE4 の `POST /docs/{doc_id}/context-audit` で `sourceBundleHash=mock:<hash>` を許容する policy。proposal / CE4 resolve の受理契約は別で、この switch の対象外 |
 | `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離する fail-closed 契約。現在は `true` 固定で、`false` は起動時に拒否 |
 
 ## Compose / frontend build 環境変数
