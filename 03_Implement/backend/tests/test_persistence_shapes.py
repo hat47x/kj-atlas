@@ -2,6 +2,7 @@ from sqlalchemy import String, Text
 from sqlalchemy.dialects import mssql, mysql, oracle
 from sqlalchemy.schema import CreateTable
 
+from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
 from kj_atlas_api.models import Base
 from kj_atlas_api.persistence_shapes import (
     OIDC_AUDIENCE_MAX_CHARS,
@@ -128,3 +129,22 @@ def test_oracle_uses_clob_and_omits_only_explicit_no_action() -> None:
     assert "tenant_id VARCHAR2(128 CHAR)" in documents_ddl
     assert "NO ACTION" not in documents_ddl
     assert "ON DELETE CASCADE" in identities_ddl
+
+
+def test_guest_admission_shapes_are_centrally_governed() -> None:
+    assert GuestPrincipalRow.__table__.metadata is Base.metadata
+    assert GuestDocumentGrantRow.__table__.metadata is Base.metadata
+    expected = {
+        "guest_principals.tenant_id": 128,
+        "guest_principals.guest_principal_id": 128,
+        "guest_principals.invited_email": 320,
+        "guest_principals.verified_issuer": 512,
+        "guest_principals.verified_subject": 512,
+        "guest_document_grants.tenant_id": 128,
+        "guest_document_grants.guest_principal_id": 128,
+        "guest_document_grants.doc_id": 128,
+    }
+    for qualified_name, max_chars in expected.items():
+        assert PERSISTENT_TEXT_SPECS[qualified_name].proposed_max_chars == max_chars
+        table_name, column_name = qualified_name.split(".", 1)
+        assert Base.metadata.tables[table_name].columns[column_name].type.length == max_chars
