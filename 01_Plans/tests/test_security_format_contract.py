@@ -42,6 +42,23 @@ def _hex_key_pattern() -> str:
     return value
 
 
+def _settings_validator_source() -> str:
+    text = SETTINGS_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(text)
+    settings_class = next(
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "Settings"
+    )
+    validator = next(
+        node
+        for node in settings_class.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == "validate_llm_provider_guards"
+    )
+    if validator.end_lineno is None:
+        raise AssertionError("Settings validator source range is unavailable")
+    return "\n".join(text.splitlines()[validator.lineno - 1 : validator.end_lineno])
+
+
 class SecurityFormatContractTests(unittest.TestCase):
     def test_saas_session_hash_key_lowercase_hex_contract_matches_public_docs(self) -> None:
         self.assertEqual(_hex_key_pattern(), r"^[0-9a-f]{64}$")
@@ -53,6 +70,19 @@ class SecurityFormatContractTests(unittest.TestCase):
             self.assertIn("64", row)
             self.assertIn("lowercase", row)
             self.assertIn("32", row)
+
+    def test_oauth_redirect_uri_fixed_callback_path_matches_public_docs(self) -> None:
+        validator = _settings_validator_source()
+        self.assertIn(
+            'urlsplit(self.saas_oauth_broker_http_redirect_uri).path != "/session/callback"',
+            validator,
+        )
+
+        for row in (
+            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
+            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
+        ):
+            self.assertIn("`/session/callback`", row)
 
     def test_jwt_public_policy_keeps_default_and_hmac_none_rejection(self) -> None:
         tree = ast.parse(SETTINGS_PATH.read_text(encoding="utf-8"))
