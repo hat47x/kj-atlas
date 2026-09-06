@@ -65,7 +65,7 @@ old_s = OLD.as_posix()
 new_s = NEW.as_posix()
 updated_refs: list[str] = []
 for raw in tracked:
-    if not raw or raw in {OLD.as_posix(), NEW.as_posix()}:
+    if not raw or raw in {OLD.as_posix(), NEW.as_posix()} or raw.startswith('.github/'):
         continue
     path = Path(raw)
     if not path.is_file():
