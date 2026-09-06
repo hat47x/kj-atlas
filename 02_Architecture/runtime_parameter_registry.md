@@ -176,7 +176,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
-| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev`（Composeは`evaluation`を注入） | frontend entry mode。既存3 profileはsingle-tenant、予約中の`saas-multitenant`だけtenant session必須。未知値は起動UIをblockedにする |
+| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev`（Composeは`evaluation`を注入） | frontend entry mode。`local-dev` / `evaluation` / `enterprise-production` はsingle-tenant、`saas-multitenant` はtenant session必須。未知値は起動UIをblockedにする |
 | `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む same-origin API base path。標準 Compose は同梱 Nginx の固定 `location /api/` と一致させるため `/api` を固定注入し、host 側のこの値では変更しない。直接 frontend build / 独自 reverse proxy では `/` 自体または単一の `/` で始まる path を受理する。`//host`、backslash、query、fragment、相対 path は `/api` にフォールバック |
 
 
