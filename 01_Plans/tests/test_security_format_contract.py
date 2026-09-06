@@ -84,6 +84,39 @@ class SecurityFormatContractTests(unittest.TestCase):
         ):
             self.assertIn("`/session/callback`", row)
 
+    def test_oauth_endpoint_trusted_url_contract_matches_public_docs(self) -> None:
+        validator = _settings_validator_source()
+        endpoints = (
+            (
+                "self.saas_oauth_broker_http_authorize_endpoint",
+                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT",
+            ),
+            (
+                "self.saas_oauth_broker_http_token_endpoint",
+                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+            ),
+            (
+                "self.saas_oauth_broker_http_redirect_uri",
+                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+            ),
+        )
+
+        for field, key in endpoints:
+            self.assertIn(
+                f'endpoint={field}',
+                validator,
+            )
+            self.assertIn(
+                f'endpoint_key="{key}"',
+                validator,
+            )
+            for row in (
+                _public_row(REGISTRY_PATH, key),
+                _public_row(CONFIG_PATH, key),
+            ):
+                for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
+                    self.assertIn(term, row)
+
     def test_jwt_public_policy_keeps_default_and_hmac_none_rejection(self) -> None:
         tree = ast.parse(SETTINGS_PATH.read_text(encoding="utf-8"))
         settings_class = next(
