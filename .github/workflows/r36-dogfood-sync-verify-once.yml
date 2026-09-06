@@ -1,0 +1,72 @@
+name: R36 dogfood sync and verify once
+
+on:
+  push:
+    branches:
+      - dogfood/r36-public-input-predicate-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: R36を継続dogfood索引へ同期する
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('01_Plans/dogfood/cognitive-dogfood-index.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '- `ai-ir-required-semantic-coverage-map-2026-09-03.md`'
+          insertion = '''- `cognitive-dogfood-continuous-2026-09-07-r36.md`
+            - R36。PR #3043/#3044で、session hash keyのlowercase/length/charsetとOAuth redirect URIの固定callback pathという、実装の受理predicateがpublic contractから欠けた実陽性を分析し、finite enumとは別のacceptance predicate / grammar shapeとして分離した記録。
+          - `doc_kj_atlas_dogfood_r36.json`
+            - R36のKJキャンバス。carrier integrityを前提に、finite setとrejection-relevant predicateを分け、利用者がvalid inputを構成するために必要な最小制約だけをfocused contractへ戻す構造を保持する。
+          '''
+          if 'cognitive-dogfood-continuous-2026-09-07-r36.md' not in text:
+              if marker not in text:
+                  raise SystemExit('R36 index insertion marker not found')
+              text = text.replace(marker, insertion + marker, 1)
+              path.write_text(text, encoding='utf-8')
+          if text.count('cognitive-dogfood-continuous-2026-09-07-r36.md') != 1:
+              raise SystemExit('R36 markdown index entry must occur exactly once')
+          if text.count('doc_kj_atlas_dogfood_r36.json') != 1:
+              raise SystemExit('R36 canvas index entry must occur exactly once')
+          PY
+      - name: Dogfood validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+      - name: Repository-wide planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+      - name: Working-tree hygiene
+        shell: bash
+        run: |
+          git diff --check
+          python - <<'PY'
+          from pathlib import Path
+          index = Path('01_Plans/dogfood/cognitive-dogfood-index.md').read_text(encoding='utf-8')
+          assert index.index('cognitive-dogfood-continuous-2026-09-07-r35.md') < index.index('cognitive-dogfood-continuous-2026-09-07-r36.md')
+          assert index.index('cognitive-dogfood-continuous-2026-09-07-r36.md') < index.index('ai-ir-required-semantic-coverage-map-2026-09-03.md')
+          PY
+      - name: 検証済みR36をbranchへ記録しone-shotを退役する
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 01_Plans/dogfood/cognitive-dogfood-index.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'docs(dogfood): R36を索引へ同期する'
+          fi
+          git rm .github/workflows/r36-dogfood-sync-verify-once.yml
+          git commit -m 'ci: retire R36 one-shot workflow'
+          git push origin HEAD:${GITHUB_REF_NAME}
