@@ -963,6 +963,11 @@ class Settings(BaseSettings):
             raise ValueError(
                 "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS must remain true in CE4"
             )
+        if not self.ce4_stub_unresolved_contracts:
+            raise ValueError(
+                "KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS must remain true until "
+                "the CE4 unresolved-stub trigger contract is implemented"
+            )
 
         # ADR-0063 D4: validate JWT algorithm allowlist.
         _KNOWN_JWT_ALGORITHMS = frozenset(
