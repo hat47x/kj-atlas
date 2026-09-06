@@ -39,6 +39,7 @@ jobs:
           grep -F '34065343063' "$DONE"
           ! git grep -n -F "$OLD" -- ':!01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md'
           grep -F '01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md' 03_Implement/backend/tests/test_qa_e2e_doc_contract.py
+          test "$(grep -o -F '../issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md' 01_Plans/research/core-value-realization-priorities-2026-07-18.md | wc -l)" -eq 2
       - name: Planning docs and focused contract guards
         run: |
           python -m pip install pytest
