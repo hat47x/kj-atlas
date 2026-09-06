@@ -1,0 +1,74 @@
+name: R37 dogfood refresh and verify once
+
+on:
+  push:
+    branches:
+      - dogfood/r37-effective-control-scope-policy-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: R37索引をPR3052込みの運用条件へ更新する
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('01_Plans/dogfood/cognitive-dogfood-index.md')
+          text = path.read_text(encoding='utf-8')
+          old = '''- `cognitive-dogfood-continuous-2026-09-07-r37.md`
+            - R37。PR #3048〜#3050で、acceptedだがconsumerのないdead toggle、実効consumerの作用範囲過大表現、allowed valueとEnterprise recommendationの混同という実陽性を分析し、acceptanceの先にeffect binding / scope / profile policyを分離した記録。
+          - `doc_kj_atlas_dogfood_r37.json`
+            - R37のKJキャンバス。未定義behaviorを発明せずfail-fastへ縮める境界、consumer存在と作用範囲、設定可能性と推奨値を分け、公開keyが約束する制御可能性とruntime正本を一致させる構造を保持する。
+          '''
+          new = '''- `cognitive-dogfood-continuous-2026-09-07-r37.md`
+            - R37。PR #3048〜#3050/#3052で、acceptedだがconsumerのないdead toggle、実効consumerの作用範囲過大表現、allowed valueとprofile上のrequired / recommended / conditionalの混同という実陽性を分析し、acceptanceの先にeffect binding / scope / operating conditionを分離した記録。
+          - `doc_kj_atlas_dogfood_r37.json`
+            - R37のKJキャンバス。未定義behaviorを発明せずfail-fastへ縮める境界、consumer存在と作用範囲、設定可能性とprofile運用条件を分け、公開keyが約束する制御可能性・必須性とruntime正本を一致させる構造を保持する。
+          '''
+          if old not in text:
+              raise SystemExit('expected pre-3052 R37 index block not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Dogfood validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+
+      - name: Repository-wide planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+
+      - name: Working-tree hygiene
+        shell: bash
+        run: |
+          git diff --check
+          python - <<'PY'
+          import subprocess
+          lines = subprocess.check_output(['git', 'status', '--short'], text=True).splitlines()
+          allowed = {'01_Plans/dogfood/cognitive-dogfood-index.md'}
+          unexpected = [line for line in lines if line[3:] not in allowed]
+          if unexpected:
+              raise SystemExit('unexpected working-tree changes:\n' + '\n'.join(unexpected))
+          PY
+
+      - name: 検証済み索引を記録しrefresh one-shotを退役する
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm .github/workflows/r37-dogfood-refresh-verify-once.yml
+          git add 01_Plans/dogfood/cognitive-dogfood-index.md .github/workflows/r37-dogfood-refresh-verify-once.yml
+          git commit -m 'dogfood: refresh R37 index and retire verifier'
+          git push origin HEAD:dogfood/r37-effective-control-scope-policy-20260907
