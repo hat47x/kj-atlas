@@ -330,6 +330,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_route_provider_prompt_fingerprint.py`
   - `tests/test_ai_route_provider_call_provenance.py`
   - `tests/test_ai_route_provider_transport_input_provenance.py`
+  - `tests/test_ai_route_provider_measurement_roundtrip.py`
   - `tests/test_ai_ir_budget_pressure.py`
   - `tests/test_ai_route_projection_candidates.py`
   - `tests/test_ai_route_a2_candidate.py`
@@ -770,3 +771,17 @@ GitHub Actions run `33997380006` でDeepSeek transport metadata、measurement/an
 R48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode provenanceへ追加した一方、Issue前半の「実使用/外部依存確認」と「次の判断順序」はR37時点のprovider-input fingerprintまでしか記載しておらず、外部実測時に新必須引数を落とす余地が残っていた。R49ではproduction既定と比較するDeepSeek V4実測を `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` + `--deepseek-thinking-mode disabled` と明示し、保存report/analyzerのgeneration-mode検証まで前半手順へ同期した。
 
 併せて、checked済みroute-required regressionの証拠行をR43の81 testからR48 run `33997380006` の129 testへ更新した。未完了ACは変更せず、外部provider実測、provider-reported token取得、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
+
+
+## R50 — full opt-in provider measurement reportのproducer→analyzer往復を固定
+
+R48までにcore 6 routeのDeepSeek measurement reportはproducerからanalyzerへ往復できていた一方、A2とlayout Cを同時に有効化した最大構成（6 core + groups A2 1 + layout C 31 = 38 request）は、producer側・analyzer側を別々に検証しており、同一reportのend-to-end互換性を直接固定していなかった。外部実測後に初めてschema driftへ気付くことを避けるため、R50ではfake DeepSeek providerのprovider-reported usageを使うnetwork-free integration regressionを追加した。
+
+- `include_groups_a2=True` + `include_layout_c=True` で38 requestのmeasurement reportを実際の `measure()` から生成する。
+- provider-input fingerprint、primary call provenance、DeepSeek V4 `thinking.type=disabled` provenanceを含む生成reportを加工せず `analyze()` へ渡す。
+- core / groups A2 / layout Cがすべてreadyになり、R44の保守的context参照 `1,000,000` tokenをoperator inputとして与えたhard-fit計算も同じreport上で成立することを確認する。layout Cはaggregateではなくmax-single requestを使う。
+- fake usage値はbytes/charsから導出せず任意値とし、exact token観測の正本がprovider-reported usageだけである境界を維持する。
+
+GitHub Actions run `34001519595` でR50新規roundtripとR23〜R48近接回帰、ruff（新規test）、`git diff --check`、active issue validator、issue tests、full docs checkを検証した。one-shot workflowは同run内で自己削除する。
+
+**非主張**: R50は外部DeepSeek APIを呼ばず、実provider-reported token値・cost・latency・品質を取得していない。A2/B/C採択、production cap/route、十分な余裕policy、SafeMode・防PII・structured-text-only・proposal-only境界も変更しない。これで外部実測前のproducer→consumer schema互換性を最大opt-in構成まで固定したが、本Issueの次の本質的ゲートは引き続きnamed provider/model実測である。
