@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -21,6 +22,7 @@ API_RESPONSE_MODEL_RULE_ID = "DC-API-001"
 PUBLIC_BOUNDARY_RULE_ID = "DC-PUB-001"
 SAFETY_ROUTE_RULE_ID = "DC-SAF-001"
 NPM_SCRIPT_COMMAND_RULE_ID = "DC-CMD-001"
+RUNTIME_PARAMETER_DEFAULT_RULE_ID = "DC-CFG-001"
 ADR_ID_UNIQUENESS_RULE_ID = "DC-ADR-001"
 ADR_TRACEABILITY_PATH_RULE_ID = "DC-ADR-002"
 CI_JOB_TIMEOUT_RULE_ID = "DC-CI-001"
@@ -1581,6 +1583,117 @@ def _extract_registry_keys(registry_text: str) -> set[str]:
     return set(RUNTIME_PARAMETER_REGISTRY_ROW_RE.findall(registry_text))
 
 
+
+
+def _normalize_documented_runtime_default(raw: str) -> object:
+    value = raw.strip().strip("`").strip()
+    if "（" in value:
+        value = value.split("（", 1)[0].strip()
+    if value == "未設定":
+        return None
+    lowered = value.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    numeric = value.replace(",", "").replace("_", "")
+    if re.fullmatch(r"-?\d+", numeric):
+        return int(numeric)
+    if re.fullmatch(r"-?\d+\.\d+", numeric):
+        return float(numeric)
+    return value
+
+
+def _extract_profile_implementation_defaults(registry_text: str) -> dict[str, tuple[object, int]]:
+    marker = "### Profile default vs recommendation"
+    if marker not in registry_text:
+        return {}
+    prefix, remainder = registry_text.split(marker, 1)
+    section = remainder.split("\n## ", 1)[0]
+    first_line = prefix.count("\n") + 1
+    defaults: dict[str, tuple[object, int]] = {}
+    for offset, line in enumerate(section.splitlines(), start=1):
+        if not line.lstrip().startswith("| `KJ_ATLAS_"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        key = cells[0].strip("`")
+        defaults[key] = (_normalize_documented_runtime_default(cells[1]), first_line + offset)
+    return defaults
+
+
+def _extract_settings_literal_defaults(settings_text: str) -> dict[str, object]:
+    tree = ast.parse(settings_text)
+    settings_class = next(
+        (node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "Settings"),
+        None,
+    )
+    if settings_class is None:
+        return {}
+    defaults: dict[str, object] = {}
+    for statement in settings_class.body:
+        if not isinstance(statement, ast.AnnAssign) or not isinstance(statement.target, ast.Name):
+            continue
+        value = statement.value
+        default_node: ast.AST | None = None
+        if isinstance(value, ast.Call):
+            func_name = value.func.id if isinstance(value.func, ast.Name) else None
+            if func_name != "Field":
+                continue
+            default_keyword = next((keyword for keyword in value.keywords if keyword.arg == "default"), None)
+            if default_keyword is None:
+                continue
+            default_node = default_keyword.value
+        elif value is not None:
+            default_node = value
+        if default_node is None:
+            continue
+        try:
+            defaults[statement.target.id] = ast.literal_eval(default_node)
+        except (ValueError, TypeError):
+            # computed/default_factory values are intentionally outside this static gate
+            continue
+    return defaults
+
+
+def check_runtime_parameter_default_values(
+    root: Path,
+    registry_path: Path = RUNTIME_PARAMETER_REGISTRY_PATH,
+    settings_path: Path = Path("03_Implement/backend/src/kj_atlas_api/settings.py"),
+) -> list[DocsCheckFinding]:
+    """Reject static Settings defaults that drift from the registry's implementation-default table."""
+    repository_root = root.resolve()
+    registry_file = repository_root / registry_path
+    settings_file = repository_root / settings_path
+    if not registry_file.exists() or not settings_file.exists():
+        return []
+
+    documented = _extract_profile_implementation_defaults(registry_file.read_text(encoding="utf-8"))
+    implemented = _extract_settings_literal_defaults(settings_file.read_text(encoding="utf-8"))
+    findings: list[DocsCheckFinding] = []
+    for key, (documented_default, line) in sorted(documented.items()):
+        field_name = key.removeprefix("KJ_ATLAS_").lower()
+        if field_name not in implemented:
+            continue
+        implementation_default = implemented[field_name]
+        if implementation_default == documented_default:
+            continue
+        findings.append(
+            DocsCheckFinding(
+                rule_id=RUNTIME_PARAMETER_DEFAULT_RULE_ID,
+                path=registry_path.as_posix(),
+                line=line,
+                target=key,
+                message=(
+                    f"documented implementation default {documented_default!r} does not match "
+                    f"Settings.{field_name} default {implementation_default!r}"
+                ),
+                fix_hint="Update the registry Implementation default or the Settings literal default in the same change.",
+            )
+        )
+    return findings
+
 def check_runtime_parameter_key_commands(
     root: Path,
     markdown_paths: list[Path],
@@ -1634,6 +1747,7 @@ def check_runtime_parameter_key_commands(
                 )
             )
 
+    findings.extend(check_runtime_parameter_default_values(root, registry_path=registry_path))
     return findings
 
 
