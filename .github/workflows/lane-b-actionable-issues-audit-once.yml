@@ -1,0 +1,44 @@
+name: lane-b-actionable-issues-audit-once
+
+on:
+  push:
+    branches:
+      - audit/lane-b-actionable-issues-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/lane-b-actionable-issues-20260906
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inventory actionable work
+        run: |
+          set -euo pipefail
+          python 01_Plans/triage_actionable_plans.py --format text
+          echo '--- JSON READY ISSUES ---'
+          python 01_Plans/triage_actionable_plans.py --format json > /tmp/triage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/triage.json').read_text())
+          for item in report['actionable_issues']:
+              if item['ready']:
+                  print(json.dumps(item, ensure_ascii=False, sort_keys=True))
+          print('summary=' + json.dumps(report['summary'], ensure_ascii=False, sort_keys=True))
+          PY
+      - name: Remove one-shot workflow
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lane-b-actionable-issues-audit-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore(audit): remove actionable issue inventory workflow'
+          git push origin HEAD:audit/lane-b-actionable-issues-20260906
