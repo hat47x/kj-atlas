@@ -287,3 +287,5 @@ def test_ai_route_emits_routing_audit_event(
     assert meta.get("provider") == "deepseek"
     assert meta.get("model_id") == "deepseek-v4-flash"
     assert meta.get("trace_id") == "llm-eval-mock"
+    assert "proposalId" not in meta
+    assert "sourceBundleHash" not in meta

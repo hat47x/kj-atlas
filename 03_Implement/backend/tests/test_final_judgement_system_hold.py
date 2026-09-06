@@ -233,6 +233,7 @@ def test_linked_unavailable_holds_once_and_emits_system_audit(monkeypatch: pytes
         assert event.eventType == "proposal"
         assert event.actorRefHash is None
         assert event.metadata["proposalId"] == "proposal-ext-1"
+        assert event.metadata["sourceBundleHash"] == HASH_A
         assert event.metadata["previousStatus"] == "proposed"
         assert event.metadata["newStatus"] == "held"
         assert event.metadata["transitionSource"] == "final_judgement_unavailable"
