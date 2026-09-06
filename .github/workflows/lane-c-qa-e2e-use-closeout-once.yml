@@ -1,0 +1,61 @@
+name: Lane C QA E2E USE closeout once
+
+on:
+  push:
+    branches:
+      - docs/lane-c-qa-e2e-use-01-closeout-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: "github.event.head_commit.message == 'ci: verify QA-E2E-USE-01 closeout once'"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply closeout transformation
+        run: python .github/scripts/lane_c_qa_e2e_use_closeout.py
+      - name: Retire one-shot inputs before repository guards
+        run: |
+          rm .github/scripts/lane_c_qa_e2e_use_closeout.py
+          rm .github/workflows/lane-c-qa-e2e-use-closeout-diagnostic-once.yml
+          rm .github/workflows/lane-c-qa-e2e-use-closeout-once.yml
+      - name: Verify lifecycle and canonical reference boundary
+        run: |
+          set -euo pipefail
+          OLD='01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md'
+          DONE='01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md'
+          test ! -e "$OLD"
+          test -e "$DONE"
+          grep -F -- '- Status: Done' "$DONE"
+          grep -F '## Final closeout（2026-09-07）' "$DONE"
+          grep -F 'c84c1128a50da8e7d6bb7de0d6ba65095e69cd89' "$DONE"
+          grep -F '34065343063' "$DONE"
+          ! git grep -n -F "$OLD" -- ':!01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md'
+          grep -F '01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md' 03_Implement/backend/tests/test_qa_e2e_doc_contract.py
+      - name: Planning docs and focused contract guards
+        run: |
+          python -m pip install pytest
+          python -m pytest -q 01_Plans/tests
+          python -m pytest -q 03_Implement/backend/tests/test_qa_e2e_doc_contract.py
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          git diff --check
+      - name: Show final narrow diff
+        run: |
+          git status --short
+          git diff --stat HEAD
+          git diff --name-status HEAD
+      - name: Commit verified closeout
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(qa): QA-E2E-USE-01をCompose再検証後にcloseoutする'
+          git push origin HEAD:docs/lane-c-qa-e2e-use-01-closeout-20260907
