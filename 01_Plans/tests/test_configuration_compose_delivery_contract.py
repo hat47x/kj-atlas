@@ -47,6 +47,10 @@ def _documented_surface_keys(config_text: str, surface: str) -> list[str]:
     return re.findall(r"`(KJ_ATLAS_[A-Z0-9_]+)`", row)
 
 
+def _first_bash_block(section: str) -> str:
+    return section.split("```bash", 1)[1].split("```", 1)[0]
+
+
 class ConfigurationComposeDeliveryContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -80,8 +84,15 @@ class ConfigurationComposeDeliveryContractTests(unittest.TestCase):
 
     def test_standard_compose_minimal_example_does_not_claim_api_base_passthrough(self) -> None:
         section = self.config_text.split("## 最小設定", 1)[1].split("## Backend 環境変数", 1)[0]
-        first_code_block = section.split("```bash", 1)[1].split("```", 1)[0]
-        self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", first_code_block)
+        self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", _first_bash_block(section))
+
+    def test_standard_compose_evaluation_example_does_not_claim_api_base_passthrough(self) -> None:
+        section = self.config_text.split("### Docker Compose 評価", 1)[1].split("### API key 付き検証", 1)[0]
+        self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", _first_bash_block(section))
+
+    def test_direct_frontend_build_keeps_api_base_as_public_build_input(self) -> None:
+        section = self.config_text.split("直接frontend buildを実行する場合", 1)[1].split("## API キーを有効にする", 1)[0]
+        self.assertIn("export KJ_ATLAS_FRONTEND_API_BASE=/api", _first_bash_block(section))
 
 
 if __name__ == "__main__":
