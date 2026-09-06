@@ -103,8 +103,20 @@ replace_once(
     "from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow\n"
     "from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow\n",
 )
-append_marker = '''def test_guest_admission_shapes_are_centrally_governed() -> None:\n'''
 text = persistence_test.read_text()
 if "def test_guest_auth_session_shapes_are_centrally_governed()" not in text:
     text = text.rstrip() + '''\n\n\ndef test_guest_auth_session_shapes_are_centrally_governed() -> None:\n    assert GuestAuthSessionRow.__table__.metadata is Base.metadata\n    expected = {\n        "guest_auth_sessions.session_key_hash": 256,\n        "guest_auth_sessions.tenant_id": 128,\n        "guest_auth_sessions.guest_principal_id": 128,\n        "guest_auth_sessions.issuer": 512,\n        "guest_auth_sessions.subject": 512,\n    }\n    for qualified_name, max_chars in expected.items():\n        assert PERSISTENT_TEXT_SPECS[qualified_name].proposed_max_chars == max_chars\n        table_name, column_name = qualified_name.split(".", 1)\n        assert Base.metadata.tables[table_name].columns[column_name].type.length == max_chars\n''' + "\n"
     persistence_test.write_text(text)
+
+# The repository pins a single Alembic head to catch stream merge conflicts.
+lineage = ROOT / "03_Implement/backend/tests/test_alembic_lineage.py"
+replace_once(
+    lineage,
+    '    assert heads == ["20260906_0033"], (\n',
+    '    assert heads == ["20260906_0034"], (\n',
+)
+replace_once(
+    lineage,
+    '    assert "20260906_0033" in history_ids\n    assert (\n        history_ids.index("20260906_0033")\n',
+    '    assert "20260906_0033" in history_ids\n    assert "20260906_0034" in history_ids\n    assert (\n        history_ids.index("20260906_0034")\n        < history_ids.index("20260906_0033")\n',
+)
