@@ -269,6 +269,14 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     "guest_auth_sessions.last_used_at": TIMESTAMP,
     "guest_auth_sessions.absolute_expires_at": TIMESTAMP,
     "guest_auth_sessions.revoked_at": TIMESTAMP,
+    "guest_redeem_states.state_key_hash": _bounded(
+        256, "keyed hash of a one-time guest invitation redeem handle"
+    ),
+    "guest_redeem_states.tenant_id": INTERNAL_ID,
+    "guest_redeem_states.guest_principal_id": INTERNAL_ID,
+    "guest_redeem_states.created_at": TIMESTAMP,
+    "guest_redeem_states.expires_at": TIMESTAMP,
+    "guest_redeem_states.consumed_at": TIMESTAMP,
     "guest_principals.tenant_id": INTERNAL_ID,
     "guest_principals.guest_principal_id": INTERNAL_ID,
     "guest_principals.invited_email": _bounded(320, "email address acceptance bound"),

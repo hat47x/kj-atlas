@@ -152,3 +152,41 @@ class DatabaseGuestAuthSessionStore:
     def preflight(self) -> None:
         with self._session_factory() as db:
             db.execute(select(GuestAuthSessionRow.session_key_hash).limit(1))
+
+
+def create_guest_auth_session_in_transaction(
+    db: Session,
+    *,
+    session_key_hash: str,
+    tenant_id: str,
+    guest_principal_id: str,
+    issuer: str,
+    subject: str,
+    now: datetime | None = None,
+) -> None:
+    """Insert a guest auth session without committing the caller transaction."""
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None or current.utcoffset() is None:
+        raise GuestAuthSessionError("now must be timezone-aware")
+    current = current.astimezone(timezone.utc)
+    DatabaseGuestAuthSessionStore._require_verified_principal(
+        db,
+        tenant_id=tenant_id,
+        guest_principal_id=guest_principal_id,
+        issuer=issuer,
+        subject=subject,
+    )
+    db.add(
+        GuestAuthSessionRow(
+            session_key_hash=session_key_hash,
+            tenant_id=tenant_id,
+            guest_principal_id=guest_principal_id,
+            issuer=issuer,
+            subject=subject,
+            created_at=current.isoformat(),
+            last_used_at=current.isoformat(),
+            absolute_expires_at=(current + _ABSOLUTE_SESSION_LIFETIME).isoformat(),
+            revoked_at=None,
+        )
+    )
+    db.flush()
