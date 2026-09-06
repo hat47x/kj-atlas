@@ -3,6 +3,7 @@ from sqlalchemy.dialects import mssql, mysql, oracle
 from sqlalchemy.schema import CreateTable
 
 from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
 from kj_atlas_api.models import Base
 from kj_atlas_api.persistence_shapes import (
     OIDC_AUDIENCE_MAX_CHARS,
@@ -143,6 +144,21 @@ def test_guest_admission_shapes_are_centrally_governed() -> None:
         "guest_document_grants.tenant_id": 128,
         "guest_document_grants.guest_principal_id": 128,
         "guest_document_grants.doc_id": 128,
+    }
+    for qualified_name, max_chars in expected.items():
+        assert PERSISTENT_TEXT_SPECS[qualified_name].proposed_max_chars == max_chars
+        table_name, column_name = qualified_name.split(".", 1)
+        assert Base.metadata.tables[table_name].columns[column_name].type.length == max_chars
+
+
+def test_guest_auth_session_shapes_are_centrally_governed() -> None:
+    assert GuestAuthSessionRow.__table__.metadata is Base.metadata
+    expected = {
+        "guest_auth_sessions.session_key_hash": 256,
+        "guest_auth_sessions.tenant_id": 128,
+        "guest_auth_sessions.guest_principal_id": 128,
+        "guest_auth_sessions.issuer": 512,
+        "guest_auth_sessions.subject": 512,
     }
     for qualified_name, max_chars in expected.items():
         assert PERSISTENT_TEXT_SPECS[qualified_name].proposed_max_chars == max_chars
