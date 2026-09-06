@@ -16,7 +16,11 @@ from kj_atlas_api.llm.provider import (
     ProviderRequestError,
 )
 from kj_atlas_api.models import AIProposalDecisionStateRow, Base, DocumentV1
-from kj_atlas_api.models_ai import CheckNarrativeRequest, ExternalProposalReference
+from kj_atlas_api.models_ai import (
+    CheckNarrativeRequest,
+    DetectContradictionRequest,
+    ExternalProposalReference,
+)
 from kj_atlas_api.proposal_decision_repository import (
     ProposalSystemHoldReceipt,
     hold_external_proposal_for_final_judgement_failure,
@@ -341,3 +345,40 @@ def test_system_hold_retries_first_state_insert_race(monkeypatch: pytest.MonkeyP
     assert calls == 2
     assert db.rollbacks == 1
     assert db.commits == 1
+
+
+def test_detect_contradiction_linked_unavailable_holds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    with Session(engine) as db:
+        doc = _register_external(db)
+        cards = doc.cards[:2]
+        payload = DetectContradictionRequest(
+            cardA={"id": cards[0].id, "text": cards[0].text, "textReviewed": True},
+            cardB={"id": cards[1].id, "text": cards[1].text, "textReviewed": True},
+            doc=doc,
+            externalProposalRef={
+                "proposalId": "proposal-ext-1",
+                "sourceBundleHash": HASH_A,
+            },
+        )
+        monkeypatch.setattr(ai, "_resolve_audit_tenant", lambda *_args, **_kwargs: TENANT)
+        monkeypatch.setattr(ai, "_reject_unreviewed_cards", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(ai, "_detect_contradiction_ir", lambda _payload: {})
+        monkeypatch.setattr(ai, "adjudicated_contradiction", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(
+            ai,
+            "generate_with_fallback",
+            lambda _request: (_ for _ in ()).throw(
+                ProviderRequestError.unavailable(
+                    "final provider unavailable", _metadata("detect-unavailable")
+                )
+            ),
+        )
+
+        with pytest.raises(HTTPException) as exc:
+            ai.detect_contradiction(payload, _request(_CaptureDispatcher()), db)
+        assert exc.value.status_code == 503
+        assert _state(db, doc.id).status == "held"
