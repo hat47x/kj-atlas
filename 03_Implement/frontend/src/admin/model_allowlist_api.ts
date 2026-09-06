@@ -1,15 +1,9 @@
 import { csrfHeader } from "../session/csrf";
+import { resolveFrontendApiBase } from "../api/base_path";
 
-function resolveApiBase(): string {
-  const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
-  if (rawValue.length === 0) {
-    return "/api";
-  }
-  const normalized = rawValue.endsWith("/") ? rawValue.slice(0, -1) : rawValue;
-  return normalized.startsWith("/") ? normalized : "/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = resolveFrontendApiBase(
+  import.meta.env.KJ_ATLAS_FRONTEND_API_BASE,
+);
 const REVISION_PATTERN = /^[0-9a-f]{64}$/;
 
 export type ControlPlaneCredential = Readonly<{
