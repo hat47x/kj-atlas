@@ -32,6 +32,18 @@ class JitProfileRecommendationContractTests(unittest.TestCase):
         self.assertIn("`local-dev` / `evaluation`", row[3])
         self.assertIn("本番は `false` 固定推奨", row[3])
 
+    def test_local_dev_keeps_jit_conditional_not_required(self) -> None:
+        profiles = self.registry.split("## Runtime profiles", 1)[1].split(
+            "### Profile default vs recommendation", 1
+        )[0]
+        local_dev = next(
+            line for line in profiles.splitlines() if line.startswith("| `local-dev` |")
+        )
+        cells = [cell.strip() for cell in local_dev.strip().strip("|").split("|")]
+        self.assertNotIn(KEY, cells[2])
+        self.assertIn("`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`", cells[3])
+        self.assertIn("場合だけ", cells[3])
+
     def test_production_profiles_and_saas_runtime_require_jit_disabled(self) -> None:
         profiles = self.registry.split("## Runtime profiles", 1)[1].split(
             "### Profile default vs recommendation", 1

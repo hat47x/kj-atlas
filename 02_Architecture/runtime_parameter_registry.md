@@ -17,7 +17,7 @@
 
 | Profile | Purpose | Required settings | Notes |
 |---|---|---|---|
-| `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` | 外部サービスを使わずに動作確認する。共有・export の安全境界は緩めない。 |
+| `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none` | 外部サービスを使わずに動作確認する。ヘッダー由来の未登録ユーザーを JIT 自動作成する場合だけ `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を明示する。共有・export の安全境界は緩めない。 |
 | `evaluation` | Docker Compose で利用者評価や検証を行う | `KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://...`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_AUDIT_TRANSPORT=noop`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` | 組織内評価では PostgreSQL を推奨する。LLM、監査HTTP連携、外部PDP連携は明示的に必要な場合だけ有効化する。 |
 | `enterprise-production` | 企業・行政の本番相当で運用する | `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny` | 認証、認可、監査の接続先は組織基盤で管理する。HTTP連携を使う場合は接続先、timeout、fail-safe、秘密情報管理を同時に確認する。 |
 | `saas-multitenant` | 相互に信頼しない複数tenantを同じサービスへ収容する | PostgreSQL等のDB側tenant guard、検証済みTenantContext、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`, `KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`, `KJ_ATLAS_TENANT_CLAIM_NAME=tenant_ref` | `ADR-0063` D9により trusted auth edge が実装された。起動時の `TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定の完備を検証する。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。 |
