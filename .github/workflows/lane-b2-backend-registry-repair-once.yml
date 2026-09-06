@@ -1,0 +1,105 @@
+name: Lane B2 backend registry repair once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-backend-registry-default-integrity-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: fix/lane-b2-backend-registry-default-integrity-20260906
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Repair backend registry rows narrowly
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('02_Architecture/runtime_parameter_registry.md')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          output = []
+          in_backend = False
+          seen = set()
+          removed = []
+          changed = []
+
+          for line in lines:
+              if line == '## Backend settings':
+                  in_backend = True
+                  output.append(line)
+                  continue
+              if line == '## Compose and frontend build keys':
+                  in_backend = False
+                  output.append(line)
+                  continue
+
+              if in_backend and line.lstrip().startswith('| `KJ_ATLAS_'):
+                  cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+                  key = cells[0].strip('`')
+                  if key in seen:
+                      if key not in {'KJ_ATLAS_LOG_LEVEL', 'KJ_ATLAS_APP_REVISION'}:
+                          raise SystemExit(f'unexpected duplicate backend registry key: {key}')
+                      removed.append(key)
+                      continue
+                  seen.add(key)
+
+                  if key == 'KJ_ATLAS_APP_REVISION':
+                      if cells[1] != '未設定':
+                          raise SystemExit(f'unexpected first APP_REVISION default: {cells[1]}')
+                      cells[1] = '`unknown`'
+                      line = '| ' + ' | '.join(cells) + ' |'
+                      changed.append(key)
+                  elif key == 'KJ_ATLAS_MAX_DOCUMENT_CARDS':
+                      if cells[1] != '`10000`':
+                          raise SystemExit(f'unexpected MAX_DOCUMENT_CARDS default: {cells[1]}')
+                      cells[1] = '`50000`'
+                      line = '| ' + ' | '.join(cells) + ' |'
+                      changed.append(key)
+
+              output.append(line)
+
+          if sorted(removed) != ['KJ_ATLAS_APP_REVISION', 'KJ_ATLAS_LOG_LEVEL']:
+              raise SystemExit(f'unexpected duplicate removal set: {removed}')
+          if sorted(changed) != ['KJ_ATLAS_APP_REVISION', 'KJ_ATLAS_MAX_DOCUMENT_CARDS']:
+              raise SystemExit(f'unexpected changed set: {changed}')
+
+          path.write_text('\n'.join(output) + '\n', encoding='utf-8')
+          PY
+
+      - name: Verify focused backend registry contract
+        run: python 01_Plans/tests/test_runtime_parameter_backend_registry_contract.py
+
+      - name: Verify repository planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Verify docs contracts
+        run: python 01_Plans/docs_check.py
+
+      - name: Verify issue lifecycle tests
+        run: python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+
+      - name: Verify diff hygiene
+        run: git diff --check
+
+      - name: Commit repair and retire one-shot
+        env:
+          BRANCH: fix/lane-b2-backend-registry-default-integrity-20260906
+        run: |
+          rm .github/workflows/lane-b2-backend-registry-repair-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md .github/workflows/lane-b2-backend-registry-repair-once.yml
+          git commit -m 'docs(config): backend settings既定値の正本を整合する'
+          git push origin HEAD:"$BRANCH"
