@@ -1,0 +1,69 @@
+name: Lane B2 local-dev JIT conditional fix once
+
+on:
+  push:
+    branches:
+      - docs/lane-b2-local-dev-jit-conditional-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Clarify local-dev JIT as conditional
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          registry_path = Path('02_Architecture/runtime_parameter_registry.md')
+          registry = registry_path.read_text(encoding='utf-8')
+          old = '| `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` | 外部サービスを使わずに動作確認する。共有・export の安全境界は緩めない。 |'
+          new = '| `local-dev` | 開発者の手元で最小起動する | `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`, `KJ_ATLAS_LLM_PROVIDER=none` | 外部サービスを使わずに動作確認する。ヘッダー由来の未登録ユーザーを JIT 自動作成する場合だけ `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を明示する。共有・export の安全境界は緩めない。 |'
+          if registry.count(old) != 1:
+              raise SystemExit(f'expected exactly one local-dev profile row, got {registry.count(old)}')
+          registry_path.write_text(registry.replace(old, new), encoding='utf-8')
+
+          test_path = Path('01_Plans/tests/test_jit_profile_recommendation_contract.py')
+          test = test_path.read_text(encoding='utf-8')
+          marker = '    def test_production_profiles_and_saas_runtime_require_jit_disabled(self) -> None:\n'
+          addition = '''    def test_local_dev_keeps_jit_conditional_not_required(self) -> None:\n        profiles = self.registry.split("## Runtime profiles", 1)[1].split(\n            "### Profile default vs recommendation", 1\n        )[0]\n        local_dev = next(\n            line for line in profiles.splitlines() if line.startswith("| `local-dev` |")\n        )\n        cells = [cell.strip() for cell in local_dev.strip().strip("|").split("|")]\n        self.assertNotIn(KEY, cells[2])\n        self.assertIn("`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`", cells[3])\n        self.assertIn("場合だけ", cells[3])\n\n'''
+          if marker not in test:
+              raise SystemExit('test insertion marker not found')
+          if 'test_local_dev_keeps_jit_conditional_not_required' in test:
+              raise SystemExit('local-dev JIT contract test already exists')
+          test_path.write_text(test.replace(marker, addition + marker, 1), encoding='utf-8')
+          PY
+      - name: Verify focused JIT profile contract
+        run: python 01_Plans/tests/test_jit_profile_recommendation_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git -c core.whitespace=cr-at-eol diff --check
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '01_Plans/tests/test_jit_profile_recommendation_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          if changed != expected:
+              raise SystemExit(f'unexpected changed files: {sorted(changed)}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-local-dev-jit-conditional-fix-once.yml
+          git add 01_Plans/tests/test_jit_profile_recommendation_contract.py 02_Architecture/runtime_parameter_registry.md
+          git commit -m "docs(config): local-devのJITを条件付き設定として明示する"
+          git push
