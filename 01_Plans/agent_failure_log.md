@@ -850,3 +850,10 @@ Updated: 2026-08-03
 - 対応: 同一テストを間隔を空けて再実行すると成功することを複数回確認した。新規追加コードの妥当性は、mutation testing（production側のguardを一時的に壊して対応するテストが失敗することを確認）で別途検証済みのため、このflakinessをテストロジックの欠陥とは判断せず、そのまま残した。
 - 再発防止: `tests/test_oauth_broker_client.py`配下のテストが単発で`OauthBrokerUnavailableError`で失敗した場合、まずコード変更を疑う前に同じテストを再実行し、無関係な既存テストでも同じ失敗が再現するか確認する。再現するならこのworktree環境固有のHTTPServerタイミング問題であり、`timeout_seconds`を上げる対応はテストファイル全体に影響するため単独セッションの判断で変更しない。
 - 再発防止: WSLからのdocsチェックは`GIT_DIR`/`GIT_WORK_TREE`を設定したシェルで一括実行しない。
+
+## 2026-09-06: `docs_check.py`が`test_frozen_dogfood_manifest_identity.py`で3件失敗（実データ破損ではなくWindows working treeのCRLF）
+
+- 事象: Windowsネイティブpython(`03_Implement/backend/.venv/Scripts/python.exe`)で`01_Plans/docs_check.py`を実行すると、`cognitive-dogfood-case-001/002/003-round1-source-manifest.json`の3件で`git_blob_oid(content) != expected_oid`が失敗した。一見、frozenのはずのdogfood manifestが誰かに書き換えられたように見える。
+- 原因: **実データは破損していない。** `git hash-object <path>`（フィルタ適用）は3件とも`FROZEN_ROUND1_MANIFEST_BLOBS`のexpected値と完全一致し、`git status`/`git diff`も3ファイルとも無変更(clean)を示す。一方、このマシンは`core.autocrlf=true`＋`.gitattributes`の`* text=auto`により、working tree上のファイル実体はCRLFを含む（`git hash-object --no-filters`や生バイト読取では`0d0a`が現れる）。`test_frozen_dogfood_manifest_identity.py`の`git_blob_oid()`はPythonの`Path.read_bytes()`で生バイトを読み、gitのclean filterを経由せず`sha1(f"blob {len}\0" + content)`を計算するため、CRLFを含む生バイトに対するhashとLF正規化済みのgit blob hash（=期待値）が一致しない。CI（Linux想定）ではこの食い違いは起きない。
+- 対応: 3ファイルとも`git hash-object`（フィルタあり）で期待値と一致することを確認し、manifest自体・testの期待値ともに変更しなかった。ローカルのcore.autocrlf設定はユーザー全体のgit設定であり、単独セッションの判断で変更しない。
+- 再発防止: Windows上でこのtest（または同種の生バイトgit blob hash比較を行うtest）が失敗した場合、まず対象ファイルに対して`git hash-object <path>`（フィルタあり）と`git status`/`git diff`を確認する。両方とも無変更・期待値一致であれば、working treeのCRLF起因の見せかけの失敗であり、manifest・test双方とも修正不要。
