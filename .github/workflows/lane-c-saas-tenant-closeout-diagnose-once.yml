@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   closeout:
-    if: "github.event.head_commit.message == 'chore: apply SAAS-TENANT-01 final closeout'"
+    if: github.event.head_commit.message == 'chore: run SAAS-TENANT-01 final closeout'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -20,154 +20,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Apply lifecycle and current-authority sync
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import subprocess
-
-          old_path = '01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md'
-          done_path = '01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md'
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              p = Path(path)
-              body = p.read_text(encoding='utf-8')
-              count = body.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected 1 match, got {count}: {old[:100]!r}')
-              p.write_text(body.replace(old, new, 1), encoding='utf-8')
-
-          # Canonical issue: all ACs must be complete before lifecycle retirement.
-          issue = Path(old_path)
-          body = issue.read_text(encoding='utf-8')
-          if body.count('- Status: In Progress') != 1:
-              raise SystemExit('SAAS-TENANT-01 status is not uniquely In Progress')
-          missing = [n for n in range(1, 14) if f'- [x] AC-{n}:' not in body]
-          if missing:
-              raise SystemExit(f'SAAS-TENANT-01 incomplete ACs: {missing}')
-          body = body.replace('- Status: In Progress', '- Status: Done', 1)
-          closeout = '''
-
-## Final closeout（2026-09-06）
-
-- AC-1〜13は、現在公開・到達可能なsurfaceについてすべて完了した。最後の残差だったAC-13はPR #3004 / squash commit `1e3aafb2ea44919e2f1685da40a01a0366574e5c` でmainへ統合され、同一HttpOnly認証sessionを共有する2 tab、shared PostgreSQL、2 backend workerの実stackでstale `tenantSessionVersion`をresource lookup/commit前に拒否する証拠がmainlineになった。
-- PostgreSQL RLS、server-owned tenant/session version、membership/capability境界、現存API・worker・browser cacheの越境negative matrix、Round 8 real-browser acceptanceまでを親Issueの実装ゲートとして閉じる。過去の各Implementation checkpointに残る「当時未完了」の記述は、その時点の履歴として書き換えない。
-- closeoutは将来surfaceの実装を先取りしない。現存しないimport/share/webhook等のrouteを実装済みとは扱わず、MCPはtenant-bound credentialが存在しないため`saas-multitenant`を引き続きfail-fastする。client入力tenantIdで代替しない。
-- `saas-multitenant` backendを実運用する場合も、外部binding/PDP/capability等の必須componentとPostgreSQLをdeployment側で構成し、`TrustedSaasRuntimePolicy` / lifespan preflightを通過する必要がある。親IssueのDone化は「任意構成でSaaSが安全に起動する」「将来の全SaaS機能がGA」という意味ではない。
-- 以上により、`SAAS-TENANT-01`はcurrent exposed surfaceに対する実装・検証Issueとして完了し、正本を`01_Plans/issues/done/`へ移す。
-'''
-          if '## Final closeout（2026-09-06）' in body:
-              raise SystemExit('final closeout already exists')
-          issue.write_text(body.rstrip() + closeout + '\n', encoding='utf-8')
-
-          # Every exact old active-root link found by the diagnostic is a live repository
-          # citation, not a frozen product coordinate. Point it at the canonical done path.
-          grep = subprocess.run(
-              ['git', 'grep', '-l', '-F', old_path, '--', '.'],
-              check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-          )
-          if grep.returncode not in (0, 1):
-              raise SystemExit(grep.stderr)
-          refs = [line for line in grep.stdout.splitlines() if line and not line.startswith('.github/workflows/')]
-          if len(refs) != 15:
-              raise SystemExit(f'expected 15 non-workflow old-path reference files, got {len(refs)}: {refs}')
-          for name in refs:
-              p = Path(name)
-              text = p.read_text(encoding='utf-8')
-              p.write_text(text.replace(old_path, done_path), encoding='utf-8')
-
-          # Current dogfood operating guidance: the implementation gate is closed, but
-          # that does not manufacture a real Org-C adoption/value run.
-          replace_once(
-              '01_Plans/dogfood/adopting-org-patterns.md',
-              '| C 研究共同 | API（非同時利用） | 文書共有・島形成合流 | **multi-org は ADR-0074/SAAS-TENANT-01 のゲート待ち** | single-tenant での共有導線の先行検証 |',
-              '| C 研究共同 | API（非同時利用） | 文書共有・島形成合流 | **SaaS tenant基盤はAC-1〜13完了。multi-org実運用dogfoodは未実施** | `saas-multitenant`構成でOrg-C協働を別途実走 |',
-          )
-          replace_once(
-              '01_Plans/dogfood/adopting-org-patterns.md',
-              '''- 現状: `saas-multitenant` は settings.py では受理されるが、`ADR-0074`（server-owned SaaS session）が Proposed、
-  `SAAS-TENANT-01` が In Progress であり、**実装・検証のゲート未達**。runtime_parameter_registry の
-  「`saas-multitenant` は現行releaseで選択不可」が実態を表す。
-- ドッグフーディング上の意味: **Org-C（研究共同）は現在の single-tenant では実地検証できない**。
-  multi-org を検証する前提として、まず「同一インスタンスで複数文書を別アクセス境界で運用できること」を
-  single-tenant のアクセス制御（ADR-0059 等）で先行検証する段階が残っている。
-- 推奨: multi-org の設計検証は ADR-0074 採択後に再開し、その前に「文書単位の共有境界」の dogfood を進める。''',
-              '''- 現状: `ADR-0074`のserver-owned SaaS sessionと`SAAS-TENANT-01` AC-1〜13はmainへ統合済みで、`saas-multitenant`は独立runtime profileとして必須policy/componentのpreflightを通過した構成だけ起動できる。親Issueの実装ゲート自体は完了した。
-- ドッグフーディング上の意味: **Org-C（研究共同）のmulti-org実運用は、技術ゲート待ちではなく未実走の利用検証になった**。実際のPostgreSQL・外部binding/PDP/capabilityを構成したSaaS環境で、組織間協働の価値・運用摩擦を別途観察する必要がある。
-- 推奨: 次のOrg-C検証では、親IssueのE2E成功を利用価値の証拠へ読み替えず、構成済み`saas-multitenant`環境で実際の共同作業をdogfoodする。''',
-          )
-
-          # Current API authority: distinguish completed current surfaces from future/non-public ones.
-          replace_once(
-              '02_Architecture/api.md',
-              '## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）',
-              '## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、現存surface実装済み）',
-          )
-          replace_once(
-              '02_Architecture/api.md',
-              '本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。',
-              '本節はAccepted済みのtarget契約であり、現在公開・到達可能なsurfaceについては`SAAS-TENANT-01` AC-1〜13をmainへ統合済みである。`local-dev` / `evaluation` / `enterprise-production`はsingle-tenant相当を維持し、SaaSは独立した`saas-multitenant` profileで、必須policy/componentのpreflightを通過した構成だけを有効化する。',
-          )
-          replace_once(
-              '02_Architecture/api.md',
-              '実auth edge adapter（`JwtSaasIdentityContextResolver`。BFFのcookie経路を含む）は実装済みである。anti-forgery付きsession形式、実binding/PDP service、import／share／MCP／webhook／非同期job開始点への横断適用は未実装・非公開である。',
-              '実auth edge adapter（`JwtSaasIdentityContextResolver`。BFFのcookie経路を含む）とanti-forgery付きserver-owned session形式は実装済みである。現在公開されているDocument／Tenant Admin／session／文書内容を扱うAI・worker/browser経路は親Issueのversion/tenant境界で検証済みとする。一方、現存しないimport／share／webhook／非同期jobの新規開始点は実装済みと主張せず、MCPはtenant-bound credentialが存在しない間`saas-multitenant`を起動時fail-fastする。実SaaS deploymentは外部binding/PDP/capability等の必須componentを構成し、preflightを通過しなければならない。',
-          )
-          replace_once(
-              '02_Architecture/api.md',
-              '- `local-dev`、`evaluation`、`enterprise-production`は`single-tenant`へ写像する。予約中の`saas-multitenant`は純粋なclosed-world resolver上では`tenant-session-required`へ写像するが、現行releaseのsettings validationはそれ以前に起動を拒否する。',
-              '- `local-dev`、`evaluation`、`enterprise-production`は`single-tenant`へ写像する。`saas-multitenant`は`tenant-session-required`へ写像し、`TrustedSaasRuntimePolicy`と起動前bundleの必須component検証を通過した場合だけ起動する。不完全な構成はDB初期化・adapter有効化前にfail-fastする。',
-          )
-
-          # Current threat model: close current-surface tenant gate without claiming future surfaces.
-          replace_once(
-              'THREAT_MODEL.md',
-              '- 2つのtenantへ同じdocIdを用意したnegative matrixで、全API・export・MCP・webhook・auditの越境拒否を統合検証',
-              '- 現在公開されているSaaS surfaceは、APIのtenant A/B同一docId、export監査、worker/browser cache・複数tabのstale-session拒否を各実攻撃面で検証する。MCPはtenant-bound credentialが無い間`saas-multitenant`をfail-fastし、現存しないwebhook等の将来surfaceは追加時に別途tenant境界を要求する',
-          )
-          replace_once(
-              'THREAT_MODEL.md',
-              'ただし PostgreSQL 実地検証、現存しない将来の import／share endpoint と MCP 等への `tenantSessionVersion` precondition、clipboard API 呼出し後の OS 側 commit 取消、cache/browser/storage を含む完全な越境 matrix は未完了である。`saas-multitenant` profile は `TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定を検証した上で起動可能であるが、本番運用には残りの `SAAS-TENANT-01` 条件の検証を要する。',
-              'PostgreSQLの非superuser／非BYPASSRLS runtime roleによるRLS実地検証、現在公開されているAPI・export監査・worker/browser/cacheの越境matrix、同一認証sessionを共有する2 tabから実backendへのstale request拒否までを`SAAS-TENANT-01` AC-1〜13として完了した。現存しない将来のimport／share／webhook等と、tenant-bound credentialをまだ持たないMCPのSaaS昇格は別の将来surfaceであり、親Issueの完了から実装済みとは推論しない。MCPは該当credentialが無い間fail-fastを維持する。clipboard API呼出し後のOS側commit取消はbrowser外部副作用の限界として残るが、現在のtenant分離acceptance gateではない。`saas-multitenant` profileは`TrustedSaasRuntimePolicy.validate()`とlifespan preflightが必須設定・componentを検証した場合だけ起動し、実運用deploymentはその外部依存を明示構成する。',
-          )
-
-          # Current architecture summaries: implementation is no longer future/unimplemented.
-          replace_once(
-              '02_Architecture/architecture.html',
-              '7.4 SAAS-TENANT-01 境界 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">ADR-0059・現行未実装</span>',
-              '7.4 SAAS-TENANT-01 境界 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">ADR-0059・現存surface実装済み</span>',
-          )
-          replace_once(
-              '02_Architecture/architecture.html',
-              '<li>将来の <code>saas-multitenant</code> では、AuthContext に加えて検証済み TenantContext と active TenantMembership を request ごとに必須解決する。</li>',
-              '<li>独立profileの <code>saas-multitenant</code> では、AuthContext に加えて検証済み TenantContext と active TenantMembership を request ごとに必須解決し、不完全なdeployment構成は起動前にfail-fastする。</li>',
-          )
-          replace_once(
-              '02_Architecture/architecture.html',
-              '<li>tenant従属データはDB複合制約とDB側tenant guardで分離し、cache・job・MCP・audit・agent credential にも同じ context を伝播する。</li>',
-              '<li>tenant従属データはDB複合制約とDB側tenant guardで分離し、cache・job・audit等の現存consumerもtenant/session世代で分離する。MCPはtenant-bound credentialが無い間 <code>saas-multitenant</code> をfail-fastし、client入力tenantIdで代替しない。</li>',
-          )
-          replace_once(
-              '02_Architecture/architecture.html',
-              '<li>型と永続制約は <a href="schemas.md">schemas.md</a>、endpoint/status/error は <a href="api.md">api.md</a>、profile gate は <a href="runtime_parameter_registry.md">runtime_parameter_registry.md</a>、実装進捗は <code>issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md</code> を正本とする。</li>',
-              '<li>型と永続制約は <a href="schemas.md">schemas.md</a>、endpoint/status/error は <a href="api.md">api.md</a>、profile gate は <a href="runtime_parameter_registry.md">runtime_parameter_registry.md</a>、実装・検証の履歴は <code>01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md</code> を正本とする。</li>',
-          )
-          replace_once(
-              '02_Architecture/enterprise_architecture.html',
-              '<li>現行 <code>enterprise-production</code> でのSaaSマルチテナント運用（将来境界は <code>ADR-0059</code>、実装は <code>SAAS-TENANT-01</code> で扱う）</li>',
-              '<li>現行 <code>enterprise-production</code> profileをSaaSマルチテナントとして流用すること（SaaSは独立した <code>saas-multitenant</code> profileとし、境界は <code>ADR-0059</code>、実装履歴はDoneの <code>SAAS-TENANT-01</code> を正本とする）</li>',
-          )
-
-          # Move the now-Done canonical memo after all edits.
-          dest = Path(done_path)
-          if dest.exists():
-              raise SystemExit(f'done path already exists: {done_path}')
-          dest.parent.mkdir(parents=True, exist_ok=True)
-          issue.rename(dest)
-          PY
-      - name: Verify closeout contracts
+      - name: Apply closeout
+        run: python .github/scripts/lane_c_saas_tenant_closeout.py
+      - name: Verify lifecycle and repository contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -177,8 +32,8 @@ jobs:
           test -f "$done"
           grep -F -- '- Status: Done' "$done"
           for n in $(seq 1 13); do grep -F -- "- [x] AC-$n:" "$done" >/dev/null; done
-          if git grep -n -F "$old" -- . ':!.github/workflows/lane-c-saas-tenant-closeout-diagnose-once.yml'; then
-            echo 'old active-root reference remains' >&2
+          if git grep -n -F "$old" -- . | grep -v '^.github/'; then
+            echo 'old active-root reference remains outside temporary helpers' >&2
             exit 1
           fi
           python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
@@ -188,7 +43,7 @@ jobs:
           python 01_Plans/triage_actionable_plans.py --format json
           python 01_Plans/check_stale_merge_reintroduction.py --base-ref origin/main --head-ref HEAD --json --fail-on-strong
           git diff --check
-      - name: Commit verified closeout and retire one-shot
+      - name: Commit verified closeout and retire helpers
         if: success()
         shell: bash
         run: |
@@ -196,6 +51,7 @@ jobs:
           git config user.name 'hat47x'
           git config user.email 'hat47x@gmail.com'
           rm .github/workflows/lane-c-saas-tenant-closeout-diagnose-once.yml
+          rm .github/scripts/lane_c_saas_tenant_closeout.py
           git add -A
           git commit -m 'docs(saas): close SAAS-TENANT-01 after AC-13 merge'
           git push origin HEAD
