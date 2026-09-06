@@ -1,13 +1,13 @@
 # Issue Plan: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: 本ファイルのみ（docs-only）
+- Scope: 本ファイル, `03_Implement/frontend/e2e/`（テスト資産のみ。製品実装は対象外）
 - Expected verification level: `e2e`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Related: `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`（境界判定を参照）
@@ -15,11 +15,11 @@
 
 ## Phase 1: Read Gate（Draft/Hold理由と依存抽出）
 
-### Draft理由（現状）
+### Draft理由（当時。2026-07-18までに解消済み）
 - S1〜S3（Must）/S4（Should）の判定軸は定義済みだが、Open化の最終判断に必要な「依存充足の証跡欄」が未固定。
 - unit/integration/e2e 段階ゲートは定義済みだが、どの依存がどのゲートを解放するかの対応が曖昧。
 
-### Execution Hold理由（現状）
+### Execution Hold理由（当時。2026-07-18までに解消済み）
 - `ADR-0019` が要求する実行経路（Compose優先、代替経路、例外記録）のどれで進めるか未確定。
 - 実環境実行承認（Pending-1）と I18N境界最終承認（Pending-2）が未了。
 
@@ -39,7 +39,7 @@ P0だが、実行前提（承認・環境・境界証跡）が不足し、Execut
 Open化ゲートを次の3カテゴリで固定する。
 1. **Prerequisite Gate**: 承認ID、実行経路（Compose/SQLite/例外）の明示。
 2. **Environment Gate**: `ADR-0019` のヘルス確認経路をどれで実施するかを事前固定。
-3. **Scope Gate**: 本Issueは docs-only であり、実装変更要求を含めない。
+3. **Scope Gate**: Draft→Open同期は docs-only で行い、Open後の実行は `03_Implement/frontend/e2e/` のテスト資産に限る。製品実装変更は含めない。
 
 ### Consequences
 - 実行可能性が上がり、Open/Hold判断を第三者が再現可能。
@@ -122,7 +122,7 @@ Open化ゲートを次の3カテゴリで固定する。
 - AC-O4: 失敗時の triage は `test defect / product defect / environment limitation` で固定される。
 
 #### DoD（Open公開品質）
-- DoD-O1: 実装非実施（docs-only）が明示され、対象外変更を含まない。
+- DoD-O1: Draft→Open同期は docs-only とし、Open後の実行でも変更対象はE2Eテスト資産に限定して製品実装を含めない。
 - DoD-O2: Validation手順が再現可能で、判定語彙（pass/fail/blocked）が追跡可能。
 - DoD-O3: 依存未確定・承認未了は `Pending` として保持し、推測確定しない。
 
@@ -327,7 +327,7 @@ S4（import後にsanitize結果を確認し、共有前確認へ進む）は、�
 | G2 主要操作 | `ux_operability_regression.test.ts` が regression guards に含まれる | pointer/keyboard双方で主要導線へ到達し、閉じる/戻るが確認できる | pass / blocked / fail |
 | G3 日本語UI | i18n guard と UI hardcode guard | 主要ラベルに未翻訳・内部語が残らない | pass / blocked / fail |
 
-### Hold条件の扱い
+### Hold条件の扱い（当時。2026-07-18までに解消済み）
 - Pending-1 / Pending-2 が未解消のため、本Issueの状態は **Draft / Execution: Hold 維持**。
 - Path-USE-A は Open解除ではなく、PRODUCT-QA-01 が G2 の不足を分類するための一次証跡として扱う。
 - Playwright または実運用E2Eで失敗した場合は、`test defect / product defect / environment limitation` のいずれかに分類し、戻し先を `QA-E2E-USE-01` または該当 `PRODUCT-UX-*` issue へ固定する。
@@ -423,3 +423,13 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-USE-03とO-USE-02は
 2. 最もカバーの薄いシナリオ1件へ、既存spec慣例（日本語ロケール既定・バイリンガル正規表現）に従うspecを1本追加する。
 3. 実行: `npm run e2e -- <対象spec>`（flaky時は`--workers=1`で再実行し、その旨を証跡へ記す）。証跡を上記G1/G2/G3表へ記入する。
 4. ガードレール: 製品挙動・SafeMode・公開文書を変更しない（テスト追加のみ）。同一論点でVerify 3連続失敗時は停止し、Pending欄へ理由と再開条件を記録する（本issueの修復上限と同じ）。
+
+## 2026-09-07 Open化同期 — 承認済みゲートを現在状態へ反映
+
+2026-07-16〜18に成立していた解除条件を、triageが読む現在状態へ同期する。前節までのうち、各rerun時点で「Draft / Execution: Hold」と記録した箇所は**その時点の歴史証拠**として保持し、現在状態の主張には使わない。
+
+- Pending-1（実運用E2E環境での実行承認）とPending-2（I18N境界最終レビュー）は、2026-07-16にMaintainer承認済み。
+- B-USE-03（G1/G2/G3のentry/exit証跡欄）とO-USE-02（ADR-0019準拠の実行経路）は、2026-07-18に解消済み。標準経路はDocker Compose、SQLite/mockは差分リスクを記録する例外経路とする。
+- したがって `Open Readiness: Prepared` / `Execution: Ready` と整合させ、`Status` を `Open` とする。Draft gateだけを理由にtriageから除外し続けない。
+- 本同期は**S1〜S4の完了、release承認、実環境での全E2E合格を主張しない**。Openは「実行して証拠を作れる状態」を意味する。
+- Draft→Open同期自体はdocs-only。Open後の最初の実行バッチは、既存E2E資産をS1〜S4へ棚卸しし、実際に不足するjourneyがある場合だけ `03_Implement/frontend/e2e/` にテストを追加する。製品実装、SafeMode契約、公開挙動は変更しない。既存specで十分な場合は重複テストを作らず、実行証跡の同期を優先する。
