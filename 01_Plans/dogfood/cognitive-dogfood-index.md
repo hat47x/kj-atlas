@@ -189,6 +189,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R32。PR #3022でWindows CRLF working treeがfrozen manifest破損に見えたfalse positiveを分析し、immutabilityの観測点をraw bytesからGit clean filter後のcanonical blob identityへ戻した記録。
 - `doc_kj_atlas_dogfood_r32.json`
   - R32のKJキャンバス。LF/CRLFというplatform表現差は同一Git objectへ正規化しつつ、historical pathのsemantic rewriteは別identityとして拒否し、R25のfrozen-input責務を維持する構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r33.md`
+  - R33。PR #3026/#3027で、APP_REVISIONのcanonical意味driftと、canonical値がstructured logへ届かない観測surface欠落を分析し、意味一致と必要surfaceへの伝播を別coverageとして分離した記録。
+- `doc_kj_atlas_dogfood_r33.json`
+  - R33のKJキャンバス。同じkeyの存在・default一致・canonical意味一致・必要観測surfaceへの伝播を段階的に分け、APP_REVISIONの明示済みbuild同定用途だけを閉じて全設定値のlog出力へ一般化しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
