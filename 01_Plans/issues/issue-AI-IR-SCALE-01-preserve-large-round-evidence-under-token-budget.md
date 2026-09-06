@@ -845,3 +845,14 @@ R50で外部実測前scaffoldingの完了境界を置いた後、既存回帰を
 GitHub Actions run `34001667114` で新規roundtripを含む75 test、ruff（新規test）、`git diff --check`、active issue validator、35 issue tests、full docs checkを検証した。one-shot workflowは同run内で自己削除する。
 
 **非主張**: R51でも外部DeepSeek APIは呼ばず、実provider-reported token・cost・latency・品質を取得していない。A2/B/C採択、production cap/route、十分な余裕policy、coverage-loss metadata、SafeMode・防PII・structured-text-only・proposal-only境界も変更しない。R50の完了境界は維持し、これ以上は具体的な欠陥が見つからない限りscaffoldingを増やさない。次の本質的ゲートはnamed provider/model外部実測のままである。
+
+
+## R52 — DeepSeek V4公式usage shapeをtransport回帰へ固定
+
+R50/R51の事前整備完了境界後、外部実測直前のtransport契約を現行DeepSeek V4公式Chat Completions APIと再照合した。公式APIは引き続き `usage.prompt_tokens` / `usage.completion_tokens` を返し、Token Usage資料も実際のtoken数はAPIが返すusageを正本とする。production parserはこのshapeを既に読んでいたが、既存DeepSeek成功テストはpayload/model/thinking/contentまででusage mappingを直接固定しておらず、R20系fake providerはtransport parserを通らないため、parser driftが外部実測時まで潜伏する具体的な回帰穴があった。
+
+R52ではproduction実装やmeasurement schemaを変更せず、DeepSeek V4相当responseに `prompt_tokens` / `completion_tokens` とcache splitを含め、`LLMResponse.input_tokens` / `output_tokens` がprovider-reported totalをそのまま保持するdirect transport regressionを追加した。cache splitやbytes/charsからtokenを再計算しない。
+
+GitHub Actions run `34003192144` でDeepSeek provider近接回帰、R20/R48/R51 measurement系回帰、ruff、`git diff --check`、active issue validator、issue tests、full docs checkを検証した。one-shot workflowは同run内で自己削除する。
+
+**非主張**: R52でも外部DeepSeek APIは呼んでおらず、実provider-reported token値は未取得である。新しいprovenance層や方式候補は追加せず、A2/B/C採択、production cap/route、十分な余裕policy、未完了ACは変更しない。R50の停止境界を維持し、次の本質的ゲートは明示的に許可されたnamed provider/model外部実測のままである。
