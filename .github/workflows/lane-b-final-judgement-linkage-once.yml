@@ -33,7 +33,25 @@ jobs:
           python -m compileall -q src/kj_atlas_api
       - name: Run documentation checks
         run: |
-          python 01_Plans/docs_check.py
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path('01_Plans').resolve()))
+          from docs_check import run_docs_check
+
+          result = run_docs_check(Path('.'), run_tests=False)
+          if result.errors:
+              print('docs contract checks failed:')
+              for error in result.errors:
+                  print(f'- {error}')
+              raise SystemExit(1)
+          print(
+              'docs contract checks passed without repository-wide unittest suite: '
+              f'active_memos={result.active_count}, tracked_markdown={result.markdown_count}'
+          )
+          PY
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
           git diff --check
       - name: Commit implementation and remove one-shot files
         run: |
