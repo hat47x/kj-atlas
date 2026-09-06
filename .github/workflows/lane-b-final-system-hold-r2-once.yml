@@ -1,0 +1,70 @@
+name: lane-b-final-system-hold-r2-once
+
+on:
+  push:
+    branches:
+      - lane-b/final-judgement-system-hold-r2
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: lane-b/final-judgement-system-hold-r2
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply R2 system-hold implementation
+        run: python .github/lane-b-final-system-hold-r2-patch.py
+      - name: Install backend and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./03_Implement/backend pytest
+      - name: Run focused backend tests
+        working-directory: 03_Implement/backend
+        run: |
+          python -m pytest -q \
+            tests/test_final_judgement_proposal_linkage.py \
+            tests/test_final_judgement_system_hold.py \
+            tests/test_ai_eval_pipeline.py
+          python -m compileall -q src/kj_atlas_api
+      - name: Run scoped documentation contracts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path('01_Plans').resolve()))
+          from docs_check import run_docs_check
+
+          result = run_docs_check(Path('.'), run_tests=False)
+          if result.errors:
+              print('non-test docs contract failures:')
+              for error in result.errors:
+                  print(f'- {error}')
+              raise SystemExit(1)
+          print(
+              'non-test docs contracts passed: '
+              f'active_memos={result.active_count}, tracked_markdown={result.markdown_count}'
+          )
+          PY
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          git diff --check
+      - name: Commit implementation and remove one-shot files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/lane-b-final-system-hold-r2-once.yml .github/lane-b-final-system-hold-r2-patch.py
+          git add \
+            01_Plans/issues/issue-AI-ROUTE-HELD-LINKAGE-01-link-final-judgement-failure-to-proposal-state.md \
+            02_Architecture/api.md \
+            03_Implement/backend/src/kj_atlas_api/proposal_decision_repository.py \
+            03_Implement/backend/src/kj_atlas_api/routes/ai.py \
+            03_Implement/backend/tests/test_final_judgement_system_hold.py
+          git commit -m "feat(ai): hold linked proposal when final judgement is unavailable"
+          git push origin HEAD:lane-b/final-judgement-system-hold-r2
