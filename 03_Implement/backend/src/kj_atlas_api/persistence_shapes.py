@@ -254,6 +254,28 @@ PERSISTENT_TEXT_SPECS: dict[str, PersistentTextSpec] = {
     # SEC-INQUIRY-BOUND-01: same shape as documents.created_by -- an
     # immutable external id, nullable for bundles that predate this column.
     "inquiry_bundles.created_by": EXTERNAL_ID,
+    # ADR-0080: guest identity is tenant-scoped but deliberately not a TenantMembership.
+    # Keep every persisted guest string under the same portable shape catalog as existing SaaS state.
+    "guest_principals.tenant_id": INTERNAL_ID,
+    "guest_principals.guest_principal_id": INTERNAL_ID,
+    "guest_principals.invited_email": _bounded(320, "email address acceptance bound"),
+    "guest_principals.status": STATE,
+    "guest_principals.verification_method": STATE,
+    "guest_principals.verified_issuer": _bounded(
+        OIDC_ISSUER_MAX_CHARS, "verified guest identity issuer acceptance bound"
+    ),
+    "guest_principals.verified_subject": EXTERNAL_ID,
+    "guest_principals.created_by": EXTERNAL_ID,
+    "guest_principals.created_at": TIMESTAMP,
+    "guest_principals.expires_at": TIMESTAMP,
+    "guest_principals.redeemed_at": TIMESTAMP,
+    "guest_principals.revoked_at": TIMESTAMP,
+    "guest_document_grants.tenant_id": INTERNAL_ID,
+    "guest_document_grants.guest_principal_id": INTERNAL_ID,
+    "guest_document_grants.doc_id": INTERNAL_ID,
+    "guest_document_grants.granted_by": EXTERNAL_ID,
+    "guest_document_grants.granted_at": TIMESTAMP,
+    "guest_document_grants.revoked_at": TIMESTAMP,
     "tenant_identity_providers.tenant_id": INTERNAL_ID,
     "tenant_identity_providers.identity_provider_id": INTERNAL_ID,
     "tenant_identity_providers.external_tenant_ref": EXTERNAL_ID,

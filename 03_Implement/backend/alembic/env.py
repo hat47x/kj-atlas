@@ -13,6 +13,7 @@ from kj_atlas_api.database_support import (
     create_verified_database_engine,
 )
 from kj_atlas_api.models import Base
+from kj_atlas_api import guest_admission_models as _guest_admission_models  # noqa: E402,F401
 from kj_atlas_api.persistence_shapes import install_portable_text_ddl_hook
 from kj_atlas_api.settings import settings
 
