@@ -1,0 +1,63 @@
+name: Lane B2 session hash lowercase contract fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-session-hash-lowercase-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align session hash key format wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('02_Architecture/runtime_parameter_registry.md')
+          data = path.read_text(encoding='utf-8')
+          old = 'auth-session cookie 値の HMAC-SHA256 ハッシュ用キー（ADR-0074 decision 2、64桁16進=32バイト）。'
+          new = 'auth-session cookie 値の HMAC-SHA256 ハッシュ用キー（ADR-0074 decision 2、64文字 lowercase hex = 32 bytes）。'
+          if data.count(old) != 1:
+              raise SystemExit(f'unexpected registry match count: {data.count(old)}')
+          path.write_text(data.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Verify focused security format contract
+        run: python -m unittest 01_Plans.tests.test_security_format_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check --ws-error-highlight=all
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              '01_Plans/tests/test_security_format_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '.github/workflows/lane-b2-session-hash-lowercase-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only', 'origin/main...HEAD']).decode().splitlines())
+          changed.update(subprocess.check_output(['git', 'diff', '--name-only']).decode().splitlines())
+          unexpected = changed - allowed
+          if unexpected:
+              raise SystemExit(f'unexpected changed files: {sorted(unexpected)}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md
+          git commit -m "docs(config): session hash keyのlowercase制約を明示する"
+          git rm .github/workflows/lane-b2-session-hash-lowercase-fix-once.yml
+          git commit -m "ci: retire Lane B2 session hash lowercase workflow"
+          git push
