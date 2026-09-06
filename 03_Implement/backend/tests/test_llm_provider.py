@@ -654,6 +654,52 @@ def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.Monk
         settings.deepseek_model = original_model
 
 
+
+
+def test_deepseek_provider_maps_official_v4_usage_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_key = settings.deepseek_api_key
+    original_url = settings.deepseek_base_url
+    original_model = settings.deepseek_model
+    settings.deepseek_api_key = "sk-test-key"
+    settings.deepseek_base_url = "https://api.deepseek.com"
+    settings.deepseek_model = "deepseek-v4-flash"
+
+    def _fake_urlopen(req, timeout_seconds=120):
+        response = {
+            "choices": [{"message": {"content": "ok"}}],
+            "usage": {
+                "prompt_tokens": 321,
+                "completion_tokens": 1,
+                "prompt_cache_hit_tokens": 100,
+                "prompt_cache_miss_tokens": 221,
+                "total_tokens": 322,
+            },
+        }
+        return _StubHTTPResponse(json.dumps(response))
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+
+    try:
+        response = DeepSeekProvider().generate(
+            LLMRequest(
+                task="suggest_document_title",
+                prompt="test prompt",
+                max_tokens=1,
+            )
+        )
+        # DeepSeek V4 Chat Completions reports input/output usage using the
+        # OpenAI-compatible prompt_tokens/completion_tokens fields. Cache split
+        # fields are diagnostics; the provider-reported prompt total is the
+        # measurement source of truth.
+        assert response.input_tokens == 321
+        assert response.output_tokens == 1
+    finally:
+        settings.deepseek_api_key = original_key
+        settings.deepseek_base_url = original_url
+        settings.deepseek_model = original_model
+
 def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> None:
     original_key = settings.deepseek_api_key
     original_url = settings.deepseek_base_url
