@@ -1,9 +1,9 @@
 name: Lane B runtime default drift guard once
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/lane-b-runtime-default-drift-guard-use-this
+      - main
 
 permissions:
   contents: write
@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: fix/lane-b-runtime-default-drift-guard-use-this
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
