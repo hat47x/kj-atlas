@@ -33,7 +33,11 @@ class GuestRedeemError(ValueError):
 
 
 class GuestIdentityVerificationError(ValueError):
-    """Trusted guest identity verification failed."""
+    """Trusted guest identity verification rejected the presented credential."""
+
+
+class GuestIdentityVerificationUnavailableError(RuntimeError):
+    """Trusted guest identity verification infrastructure is unavailable."""
 
 
 @dataclass(frozen=True, slots=True)
