@@ -146,7 +146,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可（既定は fail-closed。SEC-RATE-LIMIT-01・2026-08-13 変更） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | ADR-0074 BFF: OAuth authorization-code フロー開始 URL。`saas-multitenant` では必須（`TrustedSaasRuntimePolicy` が起動前検査） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI。path は `/session/callback` 固定 |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | ADR-0074 BFF: broker HTTP timeout 秒数（0 より大きく 30 以下） |
