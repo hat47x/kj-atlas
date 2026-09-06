@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/e2e/tenant_session_multitab.spec.ts`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/session/tenant_session_generation.ts`
-- Related ADR/Spec: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- Related ADR/Spec: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `e2e`
 
 ## 課題

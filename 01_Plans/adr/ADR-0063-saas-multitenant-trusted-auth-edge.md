@@ -170,7 +170,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 ## Traceability
 
 - Implementation: `01_Plans/issues/done/issue-SAAS-TENANT-AUTHEDGE-01-no-concrete-trusted-auth-edge-implementation.md`
-- Implementation gate 親: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- Implementation gate 親: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Derived-from: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`
 - Related: `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`（認証責務境界・Mock SP/IdP profile）
 - Related: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`（tenant session と切替の再認可）
