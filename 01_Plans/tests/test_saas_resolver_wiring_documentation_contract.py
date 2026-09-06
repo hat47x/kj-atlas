@@ -36,6 +36,14 @@ def _configuration_row(key: str) -> str:
     return row
 
 
+def _section(path: Path, start: str, end: str) -> str:
+    text = path.read_text(encoding="utf-8")
+    try:
+        return text.split(start, 1)[1].split(end, 1)[0]
+    except IndexError as exc:
+        raise AssertionError(f"documentation section is missing: {start} -> {end} in {path}") from exc
+
+
 def _function_source(path: Path, function_name: str) -> str:
     text = path.read_text(encoding="utf-8")
     tree = ast.parse(text)
@@ -96,6 +104,37 @@ class SaasResolverWiringDocumentationContractTests(unittest.TestCase):
             self.assertNotIn("auth edge未配線", row)
             self.assertIn("saas-multitenant", row)
             self.assertIn("external_http", row)
+
+    def test_current_state_prose_does_not_reintroduce_reserved_or_unwired_saas_status(self) -> None:
+        main_source = MAIN_PATH.read_text(encoding="utf-8")
+        self.assertIn("JwtSaasIdentityContextResolver", main_source)
+        self.assertIn("install_trusted_saas_runtime(", main_source)
+
+        current_state_sections = (
+            _section(
+                REGISTRY_PATH,
+                "## Profile selection criteria（運用判断基準）",
+                "### Drift check gates（設定ドリフト防止ゲート）",
+            ),
+            _section(
+                CONFIG_PATH,
+                "### 文書policy binding resolver",
+                "## 設定後の確認",
+            ),
+        )
+        stale_phrases = (
+            "現行releaseで選択不可",
+            "予約名に留める",
+            "予約profile拒否",
+            "起動拒否を解除する",
+            "将来SaaS用",
+            "まだ配線されていません",
+            "trusted SaaS identity resolverが未接続",
+        )
+        for section in current_state_sections:
+            for phrase in stale_phrases:
+                self.assertNotIn(phrase, section)
+            self.assertIn("saas-multitenant", section)
 
 
 if __name__ == "__main__":
