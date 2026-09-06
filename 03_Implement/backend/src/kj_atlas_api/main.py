@@ -22,6 +22,7 @@ from kj_atlas_api.database_content_store import DocumentRevisionDivergence
 from kj_atlas_api.database_support import database_support_for_url
 from kj_atlas_api.document_policy_binding import build_document_policy_binding_resolver
 from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
+from kj_atlas_api.guest_redeem import DatabaseGuestRedeemStateStore
 from kj_atlas_api.generation_repository import (
     GenerationBlobConflict,
     GenerationBlobUnavailable,
@@ -36,6 +37,7 @@ from kj_atlas_api.routes.document_access_admin import (
     router as document_access_admin_router,
 )
 from kj_atlas_api.routes.inquiry_bundles import router as inquiry_bundles_router
+from kj_atlas_api.routes.guest_session import router as guest_session_router
 from kj_atlas_api.routes.model_registry import router as model_registry_router
 from kj_atlas_api.routes.session import router as session_router
 from kj_atlas_api.observability import (
@@ -161,6 +163,7 @@ async def lifespan(app: FastAPI):
         _saas_auth_state_store.preflight()
         _saas_auth_session_store.preflight()
         _guest_auth_session_store.preflight()
+        _guest_redeem_state_store.preflight()
     # ADR-0063 D9-6: post-DB-init check for active identity providers.
     if settings.runtime_profile == "saas-multitenant":
         validate_saas_providers_exist()
@@ -200,6 +203,7 @@ app = FastAPI(
 _saas_auth_state_store = DatabaseSaasAuthStateStore(SessionLocal)
 _saas_auth_session_store = DatabaseSaasAuthSessionStore(SessionLocal)
 _guest_auth_session_store = DatabaseGuestAuthSessionStore(SessionLocal)
+_guest_redeem_state_store = DatabaseGuestRedeemStateStore(SessionLocal)
 
 # ADR-0063 D9-6: install the trusted SaaS runtime adapter bundle at module
 # scope so that initialize_trusted_saas_runtime() can find it during lifespan.
@@ -227,6 +231,11 @@ if settings.runtime_profile == "saas-multitenant":
     app.state.saas_auth_session_hash_key = _saas_auth_session_hash_key
     app.state.guest_auth_session_store = _guest_auth_session_store
     app.state.guest_auth_session_hash_key = _saas_auth_session_hash_key
+    app.state.guest_redeem_state_store = _guest_redeem_state_store
+    # Domain separation in guest_redeem.py makes key reuse cryptographically distinct.
+    app.state.guest_redeem_state_hash_key = _saas_auth_session_hash_key
+    # guest_identity_verifier is deliberately supplied by a deployment adapter;
+    # member VerifiedTenantClaim / tenant_identity_providers are not a guest fallback.
 
     install_trusted_saas_runtime(
         app,
@@ -531,3 +540,4 @@ app.include_router(document_access_admin_router)
 app.include_router(inquiry_bundles_router)
 app.include_router(model_registry_router)
 app.include_router(session_router)
+app.include_router(guest_session_router)
