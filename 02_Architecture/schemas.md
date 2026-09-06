@@ -1542,3 +1542,14 @@ export type RepresentativeVisualCue = {
 - 保存決定（T6）: `02_Architecture/design/representative_visual_cue/storage_candidate_comparison.md`
 - 絵文字比較（T5）: `02_Architecture/design/unicode_emoji_os_comparison.md`
 - Frontend: `03_Implement/frontend/src/domain/types.ts`（RepresentativeVisualCue, Island.representativeCue）
+
+## ExternalProposalReference（AI-ROUTE-HELD-LINKAGE-01 R1）
+
+```text
+ExternalProposalReference {
+  proposalId: string(1..128)
+  sourceBundleHash: sha256-hex(64)
+}
+```
+
+`CheckNarrativeRequest.externalProposalRef` と `DetectContradictionRequest.externalProposalRef` は optional。参照自体に `docId` を持たせず、route payload の `doc.id` と server-side proposal row を照合する。これにより proposal ID を document lookup key として扱わない。

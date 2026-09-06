@@ -148,6 +148,30 @@ def register_external_agent_proposal(
     db.flush()
 
 
+def validate_external_proposal_reference(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    doc_id: str,
+    proposal_id: str,
+    source_bundle_hash: str,
+) -> AIProposalRow:
+    """Resolve an external proposal only by its explicit document-local identity.
+
+    This is intentionally read-only. MMR-06 state transitions are a later
+    contract; R1 only proves which proposal a final-judgement call refers to.
+    """
+    apply_database_tenant_context(db=db, tenant=tenant)
+    proposal = db.get(AIProposalRow, (tenant.tenant_id, doc_id, proposal_id))
+    if proposal is None:
+        raise ProposalNotRegistered("external proposal is not registered for this document")
+    if proposal.origin != "external_agent":
+        raise ProposalDecisionConflict("proposal is not an external-agent proposal")
+    if proposal.source_bundle_hash != source_bundle_hash:
+        raise ProposalDecisionConflict("external proposal source bundle does not match")
+    return proposal
+
+
 def record_proposal_decision(
     db: Session,
     *,
