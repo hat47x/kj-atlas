@@ -1,7 +1,7 @@
 # 認知dogfood ナビゲーション索引
 
 - Status: Maintainer/operator navigation only
-- Date: 2026-09-04
+- Date: 2026-09-06
 - Scope: cognitive dogfood / product-value validation workstream
 - Arm input: **No** — この文書をCase 001〜003のA/B/C/Dへ渡さない。
 
@@ -145,6 +145,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R22。古いbranch一般を禁止せず、merge-baseからcurrent mainとbranchの状態反転候補をmerge前に絞る診断へ変換した記録。既知path guard、path-level診断、typecheck/test・人間reviewの役割を分離する。
 - `doc_kj_atlas_dogfood_r22.json`
   - R22のKJキャンバス。workflow・Issue lifecycle・frontend sourceで再現したstale state再流入を束ね、commit距離ではなく状態の向きが逆転する場所を見る構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r23.md`
+  - R23。R22のpre-merge stale-state診断が#2902/#2961/#2971の異種PRで再利用されたことを確認し、運用上の生存と実事故の検出実績を分離した記録。後続runはすべてstrong=0のため、required check化を先回りしない。
+- `doc_kj_atlas_dogfood_r23.json`
+  - R23のKJキャンバス。作成→再利用→検出の三段階を分け、positive hitまたはfalse positiveの実例が得られるまでoptional診断として使い続ける境界を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
