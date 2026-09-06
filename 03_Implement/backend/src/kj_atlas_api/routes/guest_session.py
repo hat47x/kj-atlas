@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from kj_atlas_api.active_tenant_session import tenant_session_cookie_is_secure
 from kj_atlas_api.guest_redeem import (
     GuestIdentityVerificationError,
+    GuestIdentityVerificationUnavailableError,
     GuestRedeemError,
 )
 from kj_atlas_api.guest_request_auth import GUEST_AUTH_SESSION_COOKIE
@@ -62,6 +63,14 @@ def redeem_guest_session(payload: GuestRedeemRequest, request: Request) -> JSONR
         raise HTTPException(
             status_code=401,
             detail={"code": "guest_redeem_invalid", "message": "Guest sign-in failed."},
+        ) from None
+    except GuestIdentityVerificationUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "guest_identity_verification_unavailable",
+                "message": "Guest identity verification is unavailable.",
+            },
         ) from None
     except Exception:
         raise HTTPException(

@@ -90,6 +90,20 @@ class JwtIdentityError(Exception):
     code: str
 
 
+@dataclass(frozen=True, slots=True)
+class VerifiedOidcToken:
+    """Cryptographically verified provider token, before any tenant mapping.
+
+    This is intentionally narrower than ``VerifiedTenantClaim``.  Guest
+    admission may consume issuer/subject evidence without inheriting a receiving
+    tenant's IdP trust, membership, or provisioning semantics.
+    """
+
+    provider: IdentityProviderRow
+    claims: dict[str, object]
+    subject: str
+
+
 def _resolve_identity_provider(db: Session, issuer: str, audience: str) -> IdentityProviderRow | None:
     """Look up an active identity provider by issuer + audience."""
     return (
@@ -279,6 +293,88 @@ def _verify_jwt(
             raise JwtIdentityError(status_code=401, code="invalid_token") from None
 
     raise JwtIdentityError(status_code=401, code="invalid_audience") from last_error
+
+
+def _jwks_keys_for_provider(
+    *,
+    jwks_store: JwksStore,
+    provider: IdentityProviderRow,
+) -> list[dict[str, object]]:
+    """Return cached or freshly fetched keys for a globally configured IdP."""
+    if not jwks_store.needs_refresh(provider.id):
+        cached = jwks_store.get(provider.id)
+        if cached is not None:
+            return cached
+
+    if not jwks_store.can_force_refresh(provider.id):
+        stale = jwks_store.get(provider.id)
+        if stale is not None:
+            return stale
+        raise JwtIdentityError(status_code=503, code="jwks_unavailable")
+
+    try:
+        keys = _fetch_jwks(provider.jwks_uri)
+        jwks_store.set(provider.id, keys)
+        return keys
+    except OSError:
+        jwks_store.set_fresh_failure(provider.id)
+        stale = jwks_store.get(provider.id)
+        if stale is not None:
+            return stale
+        raise JwtIdentityError(status_code=503, code="jwks_unavailable") from None
+
+
+def verify_configured_oidc_token(
+    *,
+    db: Session,
+    token: str,
+    jwks_store: JwksStore,
+) -> VerifiedOidcToken:
+    """Verify a configured OIDC token without resolving user or tenant trust.
+
+    ``IdentityProviderRow`` is the global cryptographic provider registry.  This
+    function deliberately stops before ``UserIdentityRow``,
+    ``TenantIdentityProviderRow``, ``TenantMembershipRow`` and
+    ``VerifiedTenantClaim`` so guest admission can reuse the hardened JWT/JWKS
+    verifier without becoming a tenant member.
+    """
+    try:
+        claims_unverified: dict[str, object] = jwt.decode(
+            token,
+            options={"verify_signature": False},
+            algorithms=list(_jwt_algorithms()),
+        )
+    except jwt.PyJWTError:
+        raise JwtIdentityError(status_code=401, code="invalid_token") from None
+
+    issuer = claims_unverified.get("iss")
+    if not isinstance(issuer, str):
+        raise JwtIdentityError(status_code=401, code="invalid_token")
+    aud_values = _normalize_audience(claims_unverified.get("aud"))
+    if not aud_values:
+        raise JwtIdentityError(status_code=401, code="invalid_token")
+
+    provider = None
+    matched_audience = ""
+    for audience in aud_values:
+        provider = _resolve_identity_provider(db, issuer, audience)
+        if provider is not None:
+            matched_audience = audience
+            break
+    if provider is None:
+        logger.info("auth edge: unknown provider issuer=%s", issuer)
+        raise JwtIdentityError(status_code=401, code="unknown_provider")
+
+    verified = _verify_jwt(
+        token,
+        _jwks_keys_for_provider(jwks_store=jwks_store, provider=provider),
+        issuer,
+        matched_audience,
+    )
+    subject = verified.get("sub")
+    if not isinstance(subject, str) or not subject:
+        raise JwtIdentityError(status_code=401, code="invalid_token")
+    return VerifiedOidcToken(provider=provider, claims=verified, subject=subject)
 
 
 def _resolve_subject_to_user_id(db: Session, provider_id: str, subject: str) -> str | None:

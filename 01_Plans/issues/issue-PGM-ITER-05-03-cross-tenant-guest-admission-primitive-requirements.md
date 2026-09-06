@@ -82,19 +82,30 @@ R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外�
 - PostgreSQL 16 restricted runtime roleでは、`guest_redeem_states`が意図したpre-tenant非RLS、`guest_principals`がFORCE RLSのままであることを確認し、state解決後だけtenant scopeへ戻ってprincipalをactivateし、state consumeとsession rowを同時commitできることを固定した。
 - 最終verification run `34046511190`でRuff、focused HTTP/repository tests、PostgreSQL 16、migration lineage、persistence shapes、`docs_check`、`git diff --check`を確認する。
 
-### R2cに残す境界
+### R2c: configured OIDC/JWKS provider → guest-only verified identity（2026-09-07）
 
-- `ADR-0080` D1=A1/A2の**実provider adapter**（home organization IdP / general personal account）をproduction deploymentへ接続し、署名/JWKS/issuer/audience等の検証を実際のprovider contractで固定すること。R2bはguest専用trusted verifier interfaceとfail-closed wiringを実装したが、member用OAuth adapterをguestへ流用してはいない。
-- provider redirect/callback方式を採る場合は、R2bのone-time stateをcallback correlationへ接続し、provider固有nonce/PKCE等を必要に応じて追加すること。`identityCredential`を受ける現在のHTTP境界はtrusted verifier adapterへの最小交換面であり、特定providerのOAuth UI完了を意味しない。
-- guest session logout / explicit revokeの公開境界が必要なら、そのCSRF・cookie属性・監査契約をmember cookieとは別に固定すること。
-- R2aでread-onlyに閉じたguest writeを将来開く場合は、document grantのread/write意味、CSRF、PDPとの責務分離を別途設計してから扱うこと。
+`lane-c/guest-idp-verifier-r2c-20260907`で、R2bのdeployment-adapter空所へproduction用の署名検証境界を接続する。
+
+- member authで既に固定されているRS256/ES256 allowlist、JWKS取得・cache、issuer/audience/exp/iat/nbf/signature検証を共通の`verify_configured_oidc_token()`として利用する。暗号検証規則をguest専用に作り直さない。
+- guest verifierが参照するのはglobalな`IdentityProviderRow`のprovider設定だけであり、受入先tenantの`TenantIdentityProviderRow`、`UserIdentityRow`、`TenantMembershipRow`、member `VerifiedTenantClaim`は解決しない。したがって「受入先tenant自身のIdPに属すること」をguest認証条件へ戻さない。
+- host-created stateに固定された`home_org_idp` / `personal_account`の両verification methodを同じguest-only crypto boundaryで受け、検証済みissuer/subjectだけをR2bへ返す。未知methodはfail closedする。
+- provider/JWKS障害はcredential不正と区別して503、署名・issuer・audience・provider不一致は401へ閉じる。
+- 実署名RS256 tokenを使うHTTP integrationで、tenant IdP trust/member rowsが0件のままredeem→guest cookie→exact-grant readへ到達し、その同一sessionに対するhost側grant revokeは次GETで404、principal revokeは次GETで401となることを固定する。
+
+R2cが固定するのは**configured OIDCまたはbroker-issued JWTの検証境界**である。provider固有のredirect UI、authorization-code exchange、nonce/PKCEをkj-atlas自身が直接担うことや、opaque OAuth tokenしか提供しない全providerを同一adapterで直接処理することまでは主張しない。それらはdeployment broker/provider adapterの責務であり、guest admissionのtenant-independent trust primitiveとは分離する。
+
+### 親issue外に残す将来境界
+
+- provider redirect/callbackをkj-atlas自身が直接実装する場合のprovider固有nonce/PKCE/UI。
+- guest session logout / explicit revokeの公開境界と、そのCSRF・監査契約。
+- guest writeを将来開く場合のgrant read/write意味、CSRF、PDPとの責務分離。
 
 ## 受入条件
 
 - [x] AC-1: 上記4要求への対応方針が三要素分析（`ADR-0067`）で決定され、着工前チェックリストを通過する。— 2026-08-25、`ADR-0080`とこのADRを反映した`post-mvp-business-scope-design-program.html` §19、`three-element-constraint-checklist.html`の適用記録を参照。D1（ゲスト本人確認）・D2（信頼レコードの形）・D3（既定拒否・既定ゼロ件の保証層）・D4（取り消しの独立性）の4論点を、基本チェック・クロスチェックを通した三要素分析として決定した。2026-08-26、保守者の指示によりD1（単一方式→多方式対応）・要求2の文言・D2（関数従属性再検査による`guest_principals`への精緻化）を補正した。
 - [x] AC-2: 決定内容が新規ADRとして起票され、Maintainerの承認（Accepted）を得る。— 2026-08-26、`ADR-0080`がAcceptedとなった（D1=多方式対応、D2=A、D3=A、D4=A）。
-- [ ] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— R1でstorage/repository/RLS、R2aでserver-owned guest session→実HTTP exact document read、R2bでhost-bound one-time redeem state→guest専用verified identity→session発行まで固定した。ただしproductionでhome-org IdP / general personal accountを実検証するprovider adapterはまだ未接続であり、「IdP不問の受入journey」全体の完了とはまだ扱わない。
-- [ ] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— R1のrepository predicate、R2aのlive-cookie HTTP revoke挙動に加え、R2bでhost-bound redeem→session入口まで到達した。revokeの技術挙動自体は固定済みだが、AC-3と同じproduction provider journeyを通したend-to-end受入・取消証跡がまだないため、親issue closeoutまでは未完了として維持する。
+- [x] AC-3: ADR承認後、個人単位・IdP不問の招待・許可プリミティブが実装され、既定拒否・既定ゼロ件がintegration testで固定される。— R1のstorage/repository/RLS、R2aのserver-owned guest session→exact document read、R2bのhost-bound one-time redeem、R2cのconfigured OIDC/JWKS実署名検証を縦に接続した。受入先tenantの`TenantIdentityProviderRow`・membership・member identityを作らず、実署名token→guest cookie→exact grantだけが200となるintegration testで固定する。
+- [x] AC-4: 招待の取り消し・失効が、相手側（招待された個人の状態）と無関係にテナント側から単独で実行できることがtestで固定される。— R1/R2aのpredicate/live-cookie証跡に加え、R2cの実署名provider journeyでredeem済み同一sessionに対するhost側grant revoke→次GET 404、principal revoke→次GET 401を固定する。
 
 ## 検証
 
@@ -105,3 +116,4 @@ R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外�
 - R1 verification: GitHub Actions run `34036961877`, governance re-verification run `34037370856`, final docs run `34038175292`
 - R2a verification: GitHub Actions run `34039105022`（59 focused tests + docs/diff hygiene）
 - R2b verification: GitHub Actions run `34046511190`（HTTP/repository + PostgreSQL 16 restricted runtime role + docs/diff hygiene）
+- R2c verification: branch CIの実署名JWT + guest redeem/read/revoke + trusted-auth regressions + docs/diff hygieneを参照
