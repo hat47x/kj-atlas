@@ -195,6 +195,7 @@ def test_check_narrative_standalone_does_not_validate_repository_linkage(
         "generate_with_fallback",
         lambda _request: LLMResponse(raw_text='{"issues": []}', metadata=_metadata()),
     )
+    monkeypatch.setattr(ai, "_resolve_audit_tenant", lambda *_args, **_kwargs: TENANT)
     monkeypatch.setattr(ai, "_audit_llm_trace", lambda *_args, **_kwargs: None)
 
     response = ai.check_narrative(payload, None, None)  # type: ignore[arg-type]
