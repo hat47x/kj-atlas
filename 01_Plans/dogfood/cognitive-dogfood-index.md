@@ -201,6 +201,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R35。PR #3036で、DeepSeek thinking enumの意味集合は正しいままraw pipeがMarkdown table delimiterと衝突し、enum監査でcellが切断された実陽性を分析し、carrier integrityをsemantic conformanceの前段として分離した記録。
 - `doc_kj_atlas_dogfood_r35.json`
   - R35のKJキャンバス。machine-checkedなcurrent-contract surfaceだけを対象に、表現を一意にparseできること→shape-awareな意味照合の順で守り、全Markdownをgeneric grammar化しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r36.md`
+  - R36。PR #3043/#3044で、session hash keyのlowercase/length/charsetとOAuth redirect URIの固定callback pathという、実装の受理predicateがpublic contractから欠けた実陽性を分析し、finite enumとは別のacceptance predicate / grammar shapeとして分離した記録。
+- `doc_kj_atlas_dogfood_r36.json`
+  - R36のKJキャンバス。carrier integrityを前提に、finite setとrejection-relevant predicateを分け、利用者がvalid inputを構成するために必要な最小制約だけをfocused contractへ戻す構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
