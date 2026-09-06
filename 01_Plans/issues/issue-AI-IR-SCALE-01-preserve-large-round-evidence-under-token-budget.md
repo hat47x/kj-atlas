@@ -330,6 +330,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_route_provider_prompt_fingerprint.py`
   - `tests/test_ai_route_provider_call_provenance.py`
   - `tests/test_ai_route_provider_transport_input_provenance.py`
+  - `tests/test_ai_route_provider_measurement_roundtrip.py`
   - `tests/test_ai_ir_budget_pressure.py`
   - `tests/test_ai_route_projection_candidates.py`
   - `tests/test_ai_route_a2_candidate.py`
@@ -830,3 +831,17 @@ R48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode proven
 R20〜R49の実測契約を、`dry-run -> core 6外部実測 -> analyzer -> 必要時だけA2/C追加` のrunbookへまとめた。GitHub Actions run `34001497304` では実際のCLIを用いてDeepSeek V4 production既定相当のdry-runが6 route・network-freeで成立することと、`--execute` だけでは `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` 不在によりprovider解決前にexit 2で停止することを確認した。
 
 本runで外部providerは呼んでいない。R50を外部実測前scaffoldingの完了境界とし、具体的な欠陥が新たに見つからない限りprovenanceや候補実装を追加しない。未完了AC、provider-reported token、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
+
+
+## R51 — A2 + layout C最大構成のmeasurement producer→analyzer往復を固定
+
+R50で外部実測前scaffoldingの完了境界を置いた後、既存回帰を再点検したところ、core 6 routeのDeepSeek reportはproducer→analyzer往復済みだった一方、groups A2とlayout Cを同時に有効化した最大38 request構成は、producer側・analyzer側を別々に検証しており、同一reportのend-to-end互換性を直接固定していないことが分かった。これは新しいprovenance層ではなく、R50 runbookが必要時に許可するfull opt-in測定の具体的な統合回帰欠落なので、R51でこの1点だけを閉じた。
+
+- fake DeepSeek providerで `include_groups_a2=True` + `include_layout_c=True` の38 request reportを実際の `measure()` から生成する。
+- provider-input fingerprint、primary call provenance、DeepSeek V4 `thinking.type=disabled` provenanceを含むreportを加工せず `analyze()` へ渡し、core / groups A2 / layout Cがすべてreadyになることを確認する。
+- R44の保守的context参照 `1,000,000` tokenをoperator inputとして与え、同じreportでcore/A2/Cのhard-fit計算が成立し、layout Cがaggregateではなくmax-single requestを使うことも確認する。
+- fake usageはbytes/charsから導出しない任意のprovider-reported値であり、実token値を主張しない。
+
+GitHub Actions run `34001667114` で新規roundtripを含む75 test、ruff（新規test）、`git diff --check`、active issue validator、35 issue tests、full docs checkを検証した。one-shot workflowは同run内で自己削除する。
+
+**非主張**: R51でも外部DeepSeek APIは呼ばず、実provider-reported token・cost・latency・品質を取得していない。A2/B/C採択、production cap/route、十分な余裕policy、coverage-loss metadata、SafeMode・防PII・structured-text-only・proposal-only境界も変更しない。R50の完了境界は維持し、これ以上は具体的な欠陥が見つからない限りscaffoldingを増やさない。次の本質的ゲートはnamed provider/model外部実測のままである。
