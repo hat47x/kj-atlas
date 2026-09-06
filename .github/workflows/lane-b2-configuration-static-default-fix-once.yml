@@ -41,6 +41,7 @@ jobs:
         run: python 01_Plans/docs_check.py
       - name: Verify narrow diff
         run: |
+          git config core.whitespace cr-at-eol
           git diff --check
           git diff --stat origin/main...HEAD
           git diff --stat
