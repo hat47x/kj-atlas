@@ -30,7 +30,7 @@ text = text.rstrip() + """
 - したがって `Open Readiness: Prepared` / `Execution: Ready` と整合させ、`Status` を `Open` とする。古いDraft gateだけを理由にtriageから除外し続けない。
 - この同期は**3軸のcurrent-main再検証完了、release承認、翻訳品質の人間レビュー完了を主張しない**。Openは「標準経路で実行して証拠を現在化できる状態」を意味する。
 - Draft→Open同期自体はdocs-only。Open後の追加変更はE2Eテスト資産に限定し、製品実装の新規変更が必要な欠落を見つけた場合は、本Issueへ抱え込まず別Issueとして切り出す。既存specで3軸を十分に覆える場合は重複テストを作らず、Compose-backed再実行と証跡同期を優先する。
-""" + "\n"
+"""
 
 ISSUE.write_text(text, encoding="utf-8")
 print("QA-PUB-01-I18N-03 current state synchronized: Draft -> Open")
