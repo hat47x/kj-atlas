@@ -1,0 +1,198 @@
+name: Lane B2 production profile hard gates fix once
+
+on:
+  push:
+    branches:
+      - docs/lane-b2-production-profile-hard-gates-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align production profile hard gates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          registry_path = Path('02_Architecture/runtime_parameter_registry.md')
+          registry = registry_path.read_text(encoding='utf-8')
+          old_enterprise = '| `enterprise-production` | 企業・行政の本番相当で運用する | `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny` | 認証、認可、監査の接続先は組織基盤で管理する。HTTP連携を使う場合は接続先、timeout、fail-safe、秘密情報管理を同時に確認する。 |'
+          new_enterprise = '| `enterprise-production` | 企業・行政の本番相当で運用する | `KJ_ATLAS_ADMIN_API_KEY=<secret>`, `KJ_ATLAS_API_KEY=<secret>`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_LLM_PROVIDER=none`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny` | `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` は別値で必須。未設定なら `Settings()` 構築時に起動拒否する。認証、認可、監査の接続先は組織基盤で管理する。HTTP連携を使う場合は接続先、timeout、fail-safe、秘密情報管理を同時に確認する。 |'
+          old_saas = '| `saas-multitenant` | 相互に信頼しない複数tenantを同じサービスへ収容する | PostgreSQL等のDB側tenant guard、検証済みTenantContext、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`, `KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`, `KJ_ATLAS_TENANT_CLAIM_NAME=tenant_ref` | `ADR-0063` D9により trusted auth edge が実装された。起動時の `TrustedSaasRuntimePolicy.validate()` と lifespan preflight が必須設定の完備を検証する。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。 |'
+          new_saas = '| `saas-multitenant` | 相互に信頼しない複数tenantを同じサービスへ収容する | `KJ_ATLAS_ADMIN_API_KEY=<secret>`, `KJ_ATLAS_DATABASE_URL=<PostgreSQL URL>`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`, `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`, `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT=<HTTPS URL>`, `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`, `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http`, `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=<HTTPS URL>`, `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER=external_http`, `KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=<HTTPS URL>`, `KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`, `KJ_ATLAS_TENANT_CLAIM_NAME=tenant_ref`, `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT=<HTTPS URL>`, `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY=<64 lowercase hex>` | `ADR-0063` D9 / `ADR-0072` / `ADR-0074` の起動hard gate。`TrustedSaasRuntimePolicy.validate()` と lifespan preflight が完備を検証し、active IdP の存在もDB初期化後に検査する。SQLite、noop、mock、read_only、endpoint欠損時fallbackを許可しない。OAuth callback を利用するには token endpoint / redirect URI / client ID / client secret も必要で、欠損時はcallbackを503でfail-closedする。 |'
+          for old, new, label in ((old_enterprise, new_enterprise, 'enterprise'), (old_saas, new_saas, 'saas')):
+              if registry.count(old) != 1:
+                  raise SystemExit(f'expected one {label} profile row, got {registry.count(old)}')
+              registry = registry.replace(old, new, 1)
+          registry_path.write_text(registry, encoding='utf-8')
+
+          config_path = Path('04_Documentation/configuration.md')
+          raw = config_path.read_bytes()
+          old_enterprise_bullet = '- `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。'.encode('utf-8')
+          new_enterprise_bullet = '- `enterprise-production`: `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` を別値で必須とし、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。'.encode('utf-8')
+          old_saas_bullet = '- `saas-multitenant`: PostgreSQL共有認証状態、外部PDP、外部document binding、外部tenant capability、JIT無効、deny fail-safeをすべて満たす場合だけ起動します。'.encode('utf-8')
+          new_saas_bullet = '- `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP＋endpoint、外部document binding＋endpoint、外部tenant capability＋endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash keyをすべて満たす場合だけ起動します。'.encode('utf-8')
+          for old, new, label in ((old_enterprise_bullet, new_enterprise_bullet, 'enterprise config'), (old_saas_bullet, new_saas_bullet, 'saas config')):
+              if raw.count(old) != 1:
+                  raise SystemExit(f'expected one {label} bullet, got {raw.count(old)}')
+              raw = raw.replace(old, new, 1)
+          config_path.write_bytes(raw)
+
+          test_path = Path('01_Plans/tests/test_production_profile_required_settings_contract.py')
+          test_path.write_text(r'''from __future__ import annotations
+
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
+CONFIGURATION = ROOT / "04_Documentation/configuration.md"
+SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
+MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
+
+
+def _profile_row(registry: str, profile: str) -> list[str]:
+    section = registry.split("## Runtime profiles", 1)[1].split(
+        "### Profile default vs recommendation", 1
+    )[0]
+    prefix = f"| `{profile}` |"
+    rows = [line for line in section.splitlines() if line.startswith(prefix)]
+    if len(rows) != 1:
+        raise AssertionError(f"expected one row for {profile}, got {len(rows)}")
+    return [cell.strip() for cell in rows[0].strip().strip("|").split("|")]
+
+
+class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.registry = REGISTRY.read_text(encoding="utf-8")
+        self.configuration = CONFIGURATION.read_text(encoding="utf-8")
+        self.settings = SETTINGS.read_text(encoding="utf-8")
+        self.saas_policy = SAAS_POLICY.read_text(encoding="utf-8")
+        self.main = MAIN.read_text(encoding="utf-8")
+
+    def test_enterprise_profile_exposes_settings_fail_fast_credentials(self) -> None:
+        required = _profile_row(self.registry, "enterprise-production")[2]
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY=<secret>`", required)
+        self.assertIn("`KJ_ATLAS_API_KEY=<secret>`", required)
+        self.assertIn('if self.admin_api_key is None:', self.settings)
+        self.assertIn(
+            'if profile == "enterprise-production" and self.api_key is None:',
+            self.settings,
+        )
+        summary = next(
+            line
+            for line in self.configuration.splitlines()
+            if line.startswith("- `enterprise-production`:")
+        )
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", summary)
+        self.assertIn("`KJ_ATLAS_API_KEY`", summary)
+
+    def test_saas_profile_exposes_startup_hard_gate_without_promoting_callback_only_fields(self) -> None:
+        row = _profile_row(self.registry, "saas-multitenant")
+        required, notes = row[2], row[3]
+        required_tokens = (
+            "`KJ_ATLAS_ADMIN_API_KEY=<secret>`",
+            "`KJ_ATLAS_DATABASE_URL=<PostgreSQL URL>`",
+            "`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`",
+            "`KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`",
+            "`KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`",
+            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http`",
+            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`KJ_ATLAS_TENANT_CAPABILITY_RESOLVER=external_http`",
+            "`KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT=<HTTPS URL>`",
+            "`KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY=<64 lowercase hex>`",
+        )
+        for token in required_tokens:
+            with self.subTest(token=token):
+                self.assertIn(token, required)
+
+        hard_gate_fragments = (
+            'self.database_backend == "postgresql"',
+            'not self.allow_jit_provisioning',
+            'self.access_control_adapter == "external_http"',
+            'self.access_control_fail_safe_mode == "deny"',
+            'self.document_policy_binding_resolver == "external_http"',
+            'self.tenant_capability_resolver == "external_http"',
+            'self.saas_oauth_broker_http_authorize_endpoint is not None',
+            'self.saas_auth_session_hash_key is not None',
+        )
+        for fragment in hard_gate_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.saas_policy)
+
+        for endpoint_key in (
+            'KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT',
+            'KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT',
+            'KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT',
+        ):
+            self.assertIn(endpoint_key, self.settings)
+
+        self.assertIn("token endpoint / redirect URI / client ID / client secret", notes)
+        self.assertIn("503", notes)
+        callback_guard = (
+            "if token_endpoint is None or redirect_uri is None or client_id is None "
+            "or client_secret is None:"
+        )
+        self.assertIn(callback_guard, self.main)
+        self.assertIn("return None", self.main.split(callback_guard, 1)[1].split("return ExternalOauthBrokerConfig", 1)[0])
+
+        summary = next(
+            line
+            for line in self.configuration.splitlines()
+            if line.startswith("- `saas-multitenant`:")
+        )
+        for fragment in (
+            "`KJ_ATLAS_ADMIN_API_KEY`",
+            "PostgreSQL",
+            "OAuth authorize endpoint",
+            "auth-session hash key",
+        ):
+            self.assertIn(fragment, summary)
+
+
+if __name__ == "__main__":
+    unittest.main()
+''', encoding='utf-8')
+          PY
+      - name: Verify focused production profile contract
+        run: python 01_Plans/tests/test_production_profile_required_settings_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git -c core.whitespace=cr-at-eol diff --check
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '01_Plans/tests/test_production_profile_required_settings_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+          }
+          tracked = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          untracked = set(subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines())
+          changed = tracked | untracked
+          if changed != expected:
+              raise SystemExit(f'unexpected changed files: {sorted(changed)}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-production-profile-hard-gates-fix-once.yml
+          git add 01_Plans/tests/test_production_profile_required_settings_contract.py 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git commit -m "docs(config): production profileの起動hard gateを同期する"
+          git push
