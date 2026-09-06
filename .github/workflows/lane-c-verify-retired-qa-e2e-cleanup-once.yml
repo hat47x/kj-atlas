@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   verify:
-    if: "github.event.head_commit.message == 'chore: verify stale historical exception cleanup'"
+    if: "github.event.head_commit.message == 'chore: verify final Lane C cleanup baseline'"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -20,15 +20,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Ratchet historical exception set
+      - name: Ratchet historical exception set and fix R25 prose citation
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('01_Plans/tests/test_legacy_done_root_references.py')
-          body = path.read_text(encoding='utf-8')
+          test_path = Path('01_Plans/tests/test_legacy_done_root_references.py')
+          body = test_path.read_text(encoding='utf-8')
           old = '''EXTERNAL_HISTORICAL_EXCEPTIONS = {
               (
                   "01_Plans/dogfood/doc_kj_atlas_dogfood_r15.json",
@@ -63,7 +63,15 @@ jobs:
           }'''
           if body.count(old) != 1:
               raise SystemExit('expected exactly one historical exception block')
-          path.write_text(body.replace(old, new, 1), encoding='utf-8')
+          test_path.write_text(body.replace(old, new, 1), encoding='utf-8')
+
+          r25_path = Path('01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-06-r25.md')
+          r25 = r25_path.read_text(encoding='utf-8')
+          old_sentence = 'frozen commit上でこのblobが存在した座標は`01_Plans/issues/issue-AI-ROUTE-01-...md`であり、current `done/` pathではない。したがって#3001の変更はcurrent lifecycle参照としては自然でも、frozen snapshot coordinateとしては不正だった。'
+          new_sentence = 'frozen commit上でこのblobが存在した座標は、当時のactive-rootに置かれていた同Issueファイルであり、current `done/` pathではない。したがって#3001の変更はcurrent lifecycle参照としては自然でも、frozen snapshot coordinateとしては不正だった。'
+          if r25.count(old_sentence) != 1:
+              raise SystemExit('expected exactly one R25 historical-coordinate sentence')
+          r25_path.write_text(r25.replace(old_sentence, new_sentence, 1), encoding='utf-8')
           PY
       - name: Verify planning and docs contracts
         shell: bash
@@ -85,6 +93,6 @@ jobs:
           git config user.name 'hat47x'
           git config user.email 'hat47x@gmail.com'
           rm .github/workflows/lane-c-verify-retired-qa-e2e-cleanup-once.yml
-          git add 01_Plans/tests/test_legacy_done_root_references.py .github/workflows/lane-c-verify-retired-qa-e2e-cleanup-once.yml
-          git commit -m 'test(planning): prune stale historical Done-root exceptions'
+          git add 01_Plans/tests/test_legacy_done_root_references.py 01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-06-r25.md .github/workflows/lane-c-verify-retired-qa-e2e-cleanup-once.yml
+          git commit -m 'test(planning): close Lane C retired-path baseline gaps'
           git push origin HEAD
