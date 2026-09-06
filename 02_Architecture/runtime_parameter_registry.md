@@ -52,17 +52,17 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 3. `enterprise-production` を選ぶ条件
    - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
    - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
-4. `saas-multitenant` は現行releaseで選択不可
-   - `enterprise-production`を共有SaaSとして読み替えない。
-   - TenantContext、tenant従属DB制約、DB側tenant guard、deny-only adapter、越境negative testが実装・検証されるまで予約名に留める。
+4. `saas-multitenant` を選ぶ条件
+   - PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safeなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。
+   - 起動前preflightとprovider存在検査を通過できる。1つでも欠ける場合はfail-fastし、single-tenant profileへfallbackしない。
 
 ### SaaS profile implementation gate（ADR-0059）
 
 - `KJ_ATLAS_RUNTIME_PROFILE`でprofileを明示選択する。`local-dev`、`evaluation`、`enterprise-production`は正規化して受理する。
 - `saas-multitenant`は必須policy、実adapter、PostgreSQL共有認証表をすべて起動前検査し、不足時はfail-fastする。無視して`local-dev`やin-memory状態へfallbackしない。
-- backendのtrusted SaaS adapter bundleは`saas-multitenant`と相互必須である。profile、非秘密runtime safety policy、bundleの型・欠損・相互必須、started-stateに加え、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定はexternalでも実componentがnoop／unavailableとなる構成はDB接続前に起動拒否する。runtime safety policyはPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityを必須とし、実componentも`ExternalPolicyAccessControlAdapter`、`ExternalHttpTenantCapabilityResolver`、`ExternalHttpDocumentPolicyBindingResolver`の完全セットを必須とする。現行の予約profile拒否を将来解除しても、この完全セットが欠ける構成は起動しない。
+- backendのtrusted SaaS adapter bundleは`saas-multitenant`と相互必須である。profile、非秘密runtime safety policy、bundleの型・欠損・相互必須、started-stateに加え、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定はexternalでも実componentがnoop／unavailableとなる構成はDB接続前に起動拒否する。runtime safety policyはPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityを必須とし、実componentも`ExternalPolicyAccessControlAdapter`、`ExternalHttpTenantCapabilityResolver`、`ExternalHttpDocumentPolicyBindingResolver`の完全セットを必須とする。SaaS profileを受理する現行実装でも、この完全セットが欠ける構成は起動しない。
 - backendはvalidation済みprofileを起動時にsnapshotし、`GET /session/bootstrap-policy`でprofile名を公開せず`single-tenant`または`tenant-session-required`へclosed-worldに写像する。frontend buildも同じprofileを受け取り、既存3 profileはpolicy通信なしでlocal-first起動、`saas-multitenant`だけはserver policy一致とsession bootstrap成功までAppをmountしない。未知・空・非canonical build値、policy不一致・取得失敗はsingle-tenantへfallbackせずblocked stateへ閉じる。
-- 実装issueの後続段階で、tenant解決、PDP、DB guardのcross-key validationがすべて成立した場合だけ起動拒否を解除する。
+- 現行実装はtenant解決、PDP、DB guardを含むcross-key validationとpreflightがすべて成立した場合だけSaaS起動を許可し、欠ける構成は起動拒否を維持する。
 - `ADR-0062`により、profileを問わず `external_http` / `http` を明示選択した場合は対応endpointを必須とする。endpoint欠損をnoopへfallbackせず、DB初期化やrequest受付より前に起動を拒否する。
 
 ### Drift check gates（設定ドリフト防止ゲート）
@@ -257,7 +257,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 1. **Naming**: 追加・変更する公開キーが `KJ_ATLAS_*` で始まること。
 2. **Defaults**: `Default` 列と実装既定値（settings/frontend build）が一致していること。
 3. **Boundary**: vendor 名（例: `POSTGRES_*`）を public key として公開文書に露出していないこと。
-4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合し、予約中の`saas-multitenant`を利用可能と誤記していないこと。
+4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合し、`saas-multitenant`は必須policy・componentが完備した場合だけ起動可能で、不足時はfail-fastすること。
 5. **Cross-doc sync**: `deployment.md` と `04_Documentation/configuration.md` に同じ公開キー集合が反映されていること。
 6. **Compatibility gate**: 非互換が必要な場合は即実装せず、ADR/Issue に Go/No-Go とロールバックを先に記録すること。
 

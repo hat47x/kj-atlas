@@ -288,7 +288,7 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 
 監査HTTPも同じendpoint・bearer・timeout制約を適用します。`KJ_ATLAS_AUDIT_TRANSPORT=http`ではendpointが必須で、欠損時はnoopへ縮退せず起動を拒否します。`noop`のまま監査endpoint/API keyを残す設定や、`http`でendpointなしのままAPI keyだけを設定する構成も拒否されます。送信先を完全設定した後の一時的な監査送信失敗は、従来どおり本体機能を止めないfail-open方針です。
 
-### 文書policy binding resolver（将来SaaS用）
+### 文書policy binding resolver
 
 `document_access_metadata`に保存する値は非秘密のbinding IDとversionだけです。`external_http` resolverはこれらをactive tenant IDとともに信頼済みサービスへPOSTし、応答の`policyRef`をそのrequest内だけで利用します。raw policyRefやAPI keyをDB、監査、export、diagnosticsへ保存しません。
 
@@ -299,9 +299,9 @@ export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。現行releaseではadapterと検証境界までの実装で、予約中の`saas-multitenant` profileにはまだ配線されていません。この設定だけでSaaSや文書アクセス設定UIが有効になることはありません。
+接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、`ServerOwnedDocumentResourceResolver` の policy binding resolver として配線されます。このresolverだけでSaaSが成立するわけではなく、trusted auth edge、external access control、tenant capability resolver等の必須条件も同時に満たす必要があります。
 
-### Tenant capability resolver（将来SaaS用）
+### Tenant capability resolver
 
 `external_http` resolverは、server-resolved `principalId`、`tenantId`、`membershipId`だけを信頼済みpolicy serviceへPOSTし、既知の`effectiveCapabilities`と`capabilityVersion`を取得します。role/group名やclient指定tenantを送信・保存しません。
 
@@ -312,7 +312,7 @@ export KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。adapterと`GET /session/context`はapplication lifecycleへ配線済みですが、trusted SaaS identity resolverが未接続の既定状態ではsession routeも503で閉じます。この設定だけでSaaS profileは有効になりません。
+接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、runtimeのtenant capability resolverとして配線されます。trusted SaaS identity / tenant / active-session adaptersも同profileでbundleとして導入されますが、required policyやactive IdPが欠ける構成は起動時にfail-fastします。
 
 ## 設定後の確認
 
