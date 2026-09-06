@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import unittest
 from pathlib import Path
@@ -10,12 +11,22 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ISSUES_ROOT = REPO_ROOT / "01_Plans" / "issues"
 DONE_ROOT = ISSUES_ROOT / "done"
 MANIFEST = ISSUES_ROOT / "legacy_done_at_root_r18.json"
+FROZEN_PRODUCT_REPOSITORY = "hat47x/kj-atlas"
 FROZEN_PRODUCT_COMMIT = "2232b3bb26647e5c4a083f55bdbf83c161698649"
-FROZEN_SOURCE_MANIFESTS = (
-    "01_Plans/dogfood/cognitive-dogfood-case-001-round1-source-manifest.json",
-    "01_Plans/dogfood/cognitive-dogfood-case-002-round1-source-manifest.json",
-    "01_Plans/dogfood/cognitive-dogfood-case-003-round1-source-manifest.json",
-)
+FROZEN_SOURCE_MANIFESTS = {
+    "01_Plans/dogfood/cognitive-dogfood-case-001-round1-source-manifest.json": (
+        "case-001",
+        f"case-001-r1-product@{FROZEN_PRODUCT_COMMIT}",
+    ),
+    "01_Plans/dogfood/cognitive-dogfood-case-002-round1-source-manifest.json": (
+        "case-002",
+        f"case-002-r1-product@{FROZEN_PRODUCT_COMMIT}",
+    ),
+    "01_Plans/dogfood/cognitive-dogfood-case-003-round1-source-manifest.json": (
+        "case-003",
+        f"case-003-r1-product@{FROZEN_PRODUCT_COMMIT}",
+    ),
+}
 
 # These references are frozen or dated provenance outside the structured cognitive
 # source manifests. Rewriting them to the memo's later done/ location would make
@@ -57,18 +68,28 @@ def _load_frozen_source_coordinate_exceptions() -> set[tuple[str, str]]:
     interpreted together with productCommit/blobSha, so rewriting it after the
     memo moves to done/ would corrupt the frozen snapshot. Keep this exception
     structural and narrow: only the three preregistered Round 1 manifests at the
-    frozen product commit can create it, and only when the current canonical memo
-    is under done/ while the old active-root file is absent.
+    exact frozen product identity can create it, and only when the current
+    canonical memo is under done/ while the old active-root file is absent.
+
+    The dogfood validator separately verifies each path/blob against the frozen
+    Git commit. This guard deliberately does not duplicate that full-history
+    dependency; it only recognizes the already-frozen coordinate shape.
     """
 
     exceptions: set[tuple[str, str]] = set()
-    for relative_path in FROZEN_SOURCE_MANIFESTS:
+    for relative_path, (expected_case_id, expected_manifest_id) in FROZEN_SOURCE_MANIFESTS.items():
         manifest_path = REPO_ROOT / relative_path
         raw = json.loads(manifest_path.read_text(encoding="utf-8"))
         if raw.get("schemaVersion") != 1:
             raise AssertionError(f"unexpected frozen manifest schema: {relative_path}")
+        if raw.get("caseId") != expected_case_id:
+            raise AssertionError(f"unexpected frozen manifest caseId: {relative_path}")
+        if raw.get("manifestId") != expected_manifest_id:
+            raise AssertionError(f"unexpected frozen manifest identity: {relative_path}")
         if raw.get("round") != 1:
             raise AssertionError(f"unexpected frozen manifest round: {relative_path}")
+        if raw.get("productRepository") != FROZEN_PRODUCT_REPOSITORY:
+            raise AssertionError(f"unexpected frozen product repository: {relative_path}")
         if raw.get("productCommit") != FROZEN_PRODUCT_COMMIT:
             raise AssertionError(f"unexpected frozen product commit: {relative_path}")
 
@@ -83,7 +104,7 @@ def _load_frozen_source_coordinate_exceptions() -> set[tuple[str, str]]:
             blob_sha = source.get("blobSha")
             if not isinstance(source_path, str) or not isinstance(blob_sha, str):
                 raise AssertionError(f"invalid frozen source identity: {relative_path}")
-            if len(blob_sha) != 40:
+            if re.fullmatch(r"[0-9a-f]{40}", blob_sha) is None:
                 raise AssertionError(f"invalid frozen source blob SHA: {relative_path}:{source_path}")
 
             prefix = "01_Plans/issues/"
