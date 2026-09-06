@@ -51,19 +51,37 @@ def _literal_not_in_set(path: Path, *, function_name: str, variable_name: str) -
     )
 
 
-def _provider_values_from_purpose(purpose: str) -> set[str]:
-    # The public configuration row is only the accepted-value list. The SSOT row
-    # prefixes that list with "LLM provider 種別。" and then continues with runtime
-    # semantics, so only the first sentence after that prefix is the enum clause.
-    if "LLM provider 種別。" in purpose:
-        purpose = purpose.split("LLM provider 種別。", 1)[1].split("。", 1)[0]
-    return set(re.findall(r"`([a-z][a-z0-9_-]*)`", purpose))
+def _code_tokens(text: str) -> set[str]:
+    return set(re.findall(r"`([^`]+)`", text))
 
 
-def _log_level_values_from_purpose(purpose: str) -> set[str]:
-    # INFO is repeated as the fallback value; set semantics intentionally collapse
-    # that repetition while still detecting an extra accepted token such as NOTSET.
-    return set(re.findall(r"`([A-Z][A-Z0-9_-]*)`", purpose))
+def _registry_provider_values() -> set[str]:
+    purpose = _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LLM_PROVIDER")
+    match = re.search(r"LLM provider 種別。(?P<values>.*?)。起動時", purpose)
+    if match is None:
+        raise AssertionError("registry LLM provider enum clause is missing")
+    return _code_tokens(match.group("values"))
+
+
+def _configuration_provider_values() -> set[str]:
+    # The user-facing provider purpose cell is deliberately only the accepted list.
+    return _code_tokens(_purpose_cell(CONFIG_PATH, "KJ_ATLAS_LLM_PROVIDER"))
+
+
+def _registry_log_level_values() -> set[str]:
+    purpose = _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LOG_LEVEL")
+    match = re.search(r"出力レベル（(?P<values>.*?)）。不正値", purpose)
+    if match is None:
+        raise AssertionError("registry LOG_LEVEL enum clause is missing")
+    return _code_tokens(match.group("values"))
+
+
+def _configuration_log_level_values() -> set[str]:
+    purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_LOG_LEVEL")
+    match = re.search(r"OPS-OBSERV-01）。(?P<values>.*?)、未知値", purpose)
+    if match is None:
+        raise AssertionError("configuration LOG_LEVEL enum clause is missing")
+    return _code_tokens(match.group("values"))
 
 
 class PublicConfigurationEnumContractTests(unittest.TestCase):
@@ -73,14 +91,8 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             function_name="validate_llm_provider_guards",
             variable_name="provider",
         )
-        registry = _provider_values_from_purpose(
-            _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LLM_PROVIDER")
-        )
-        documentation = _provider_values_from_purpose(
-            _purpose_cell(CONFIG_PATH, "KJ_ATLAS_LLM_PROVIDER")
-        )
-        self.assertEqual(registry, implementation)
-        self.assertEqual(documentation, implementation)
+        self.assertEqual(_registry_provider_values(), implementation)
+        self.assertEqual(_configuration_provider_values(), implementation)
 
     def test_log_level_values_match_logging_implementation_and_registry(self) -> None:
         implementation = _literal_not_in_set(
@@ -88,14 +100,8 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             function_name="configure_logging",
             variable_name="normalized_level",
         )
-        registry = _log_level_values_from_purpose(
-            _purpose_cell(REGISTRY_PATH, "KJ_ATLAS_LOG_LEVEL")
-        )
-        documentation = _log_level_values_from_purpose(
-            _purpose_cell(CONFIG_PATH, "KJ_ATLAS_LOG_LEVEL")
-        )
-        self.assertEqual(registry, implementation)
-        self.assertEqual(documentation, implementation)
+        self.assertEqual(_registry_log_level_values(), implementation)
+        self.assertEqual(_configuration_log_level_values(), implementation)
 
 
 if __name__ == "__main__":
