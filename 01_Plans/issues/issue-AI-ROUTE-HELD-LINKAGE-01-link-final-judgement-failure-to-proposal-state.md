@@ -43,11 +43,11 @@ external-agent proposal flowの一部としてfinal judgementを呼ぶ場合、�
 
 最低限、実装時に以下のfailure classを列挙して固定する。
 
-- provider/model unavailable
-- timeout
-- model-governance / routing上、eligible final-judgement modelを解決できない状態
+- provider/model unavailable — R2: `ProviderDisabledError` / `provider_unavailable` をsystem hold対象として実装済み。
+- timeout — R2: `provider_timeout` をsystem hold対象として実装済み。
+- model-governance / routing上、eligible final-judgement modelを解決できない状態 — **R3 pending**。現行 `check_narrative` / `detect_contradiction` はtenant model-registry gate (`_assert_model_allowed`) を通らないため、未到達のfailure classをR2で実装済みとはみなさない。
 
-`provider_validation`、parse failure、policy rejection等を同じ「利用不能」に含めるかは、実装前にAPI/error contractと合わせて明示する。曖昧なcatch-allで全失敗をholdしない。
+`provider_validation`、parse failure、policy rejection等を同じ「利用不能」に含めるかは、実装前にAPI/error contractと合わせて明示する。曖昧なcatch-allで全失敗をholdしない。R2では `provider_validation` と入力/policy/parse failureをhold対象外とした。
 
 ### 3. system hold audit semantics
 
@@ -79,7 +79,7 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 
 - 明示的retryでfinal judgementを再実行し、成功時に `held -> proposed` へ戻して人間decisionを待つ。
 - 人間が明示的にrelease/reopenし `held -> proposed` とした後に再試行する。
-- `held` を終端として新proposalを作り直す。
+- `held` をfinal-judgement再試行上の終端として、新proposalを作り直す。
 
 どの方式でも、再利用可能になっただけで `accepted` / publishへ自動遷移させない。
 
@@ -87,12 +87,14 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 
 - [x] external proposal flowとfinal judgementの対象proposalを、推測なしで一意に結ぶtyped linkageをAPI/schemaへ固定する。— R1: optional `externalProposalRef` + server-side `(tenant, doc, proposal, sourceBundleHash, origin)` validationを追加。
 - [x] linkageなしのstandalone `check_narrative` / `detect_contradiction` failureがproposal stateを変更しないことを固定する。— R2 integration testでrepository非参照を固定。
-- [x] MMR-06対象failure classを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。— `provider_unavailable` / `provider_timeout` / `ProviderDisabledError` のみ。`provider_validation`・policy/input/parse failureは対象外。
+- [x] 現行final-judgement routeが実際に返すruntime availability failureを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。— `provider_unavailable` / `provider_timeout` / `ProviderDisabledError` のみ。`provider_validation`・policy/input/parse failureは対象外。
+- [ ] model-governance / routing上、eligible final-judgement modelを解決できないfailureを、同じ明示link / system-held契約へ接続する。— R3。現行final-judgement routeは `_assert_model_allowed` を通らないため未実装。
 - [x] system holdがhuman decisionと区別できるaudit/event contractを持つ。— human decision rowを作らず `eventType=proposal` / `transitionSource=final_judgement_unavailable` のcontent-free auditを実遷移時だけ発行。
 - [x] `accepted` / `rejected` を巻き戻さず、既存 `held` / concurrent decisionを安全に扱う。— terminal/current stateはno-op、初回state insert競合はrollback後に再読。
-- [x] `held` 後の明示的recovery contractを選択・実装し、成功してもauto-accept / auto-publishしない。— 自動reopenは行わず、再試行は新しいproposal IDで登録する（選択肢3）。既存の認証済みhuman decisionによるheld→accepted/rejectedは維持。
-- [x] integration testで少なくとも provider unavailable、timeout、standalone call、already-decided race、recoveryを検証する。— R2 focused suiteで固定。
-- [ ] `AI-ROUTE-01` MMR-06は上記integration evidenceが揃うまで未完了のままとする。
+- [x] `held` 後の明示的recovery contractを選択・実装し、成功してもauto-accept / auto-publishしない。— system-held proposalは自動reopenせず、final-judgement再試行は新しいproposal IDで登録する（選択肢3）。既存の認証済みhuman decisionによるheld→accepted/rejectedは、別の明示的人間判断として維持。
+- [x] R2 integration testで少なくとも provider unavailable、timeout、standalone call、already-decided race、recoveryを検証する。
+- [ ] R3のmodel-governance / routing failure integration evidenceを追加する。
+- [ ] `AI-ROUTE-01` MMR-06はR2 + R3のintegration evidenceとcloseout同期が揃うまで未完了のままとする。
 
 ## 検証計画
 
@@ -100,6 +102,7 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 - final judgement orchestration integration test
 - `held` proposalのapply拒否回帰
 - routing/audit eventのsource/reason/trace検証
+- R3: model-governance / routing上のeligible-model不在をsystem holdへ接続するintegration test
 - `python 01_Plans/docs_check.py`
 
 ## 補足
@@ -116,9 +119,10 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 
 ## R2 実装履歴（2026-09-06）
 
-- system hold対象を availability failure に限定: `ProviderDisabledError`, `provider_unavailable`, `provider_timeout`。`provider_validation` と入力/policy/parse failureはholdしない。
+- system hold対象を、現行final-judgement routeから実際に発生するruntime availability failureへ限定: `ProviderDisabledError`, `provider_unavailable`, `provider_timeout`。`provider_validation` と入力/policy/parse failureはholdしない。
 - 明示link済みexternal proposalのstate rowが存在しない（=`proposed`）場合だけ `held` rowを作成する。accepted/rejected/heldはno-opで巻き戻さない。
 - proposedからの初回state insertがhuman decisionと競合した場合はIntegrityError後にtransactionをrollbackして再読し、勝ったstateを尊重する。
 - system holdはhuman `AIProposalDecisionEventRow` を作らず、`proposal` audit eventに `previousStatus`, `newStatus`, `transitionSource`, `routingStage`, provider/model/trace, failure codeをcontent-freeで記録する。既存heldへの反復failureでは重複system transition eventを出さない。
-- recoveryは「heldを自動reopenしない。再試行は新しいproposalを登録する」を採用する。既存human endpointがheldをaccepted/rejectedへ明示判断する能力は変更しない。
-- MMR-06親項目はcloseout/evidence同期が完了するまで未完了のままとする。
+- recoveryは「system-held proposalを自動reopenしない。final-judgement再試行は新しいproposalを登録する」を採用する。既存human endpointがheldをaccepted/rejectedへ明示判断する能力は変更しない。
+- tenant model-governance / routing上のeligible-model不在はR2で実装済みとは扱わない。現行final-judgement routeのmodel-registry gate接続をR3として残す。
+- MMR-06親項目はR3とcloseout/evidence同期が完了するまで未完了のままとする。
