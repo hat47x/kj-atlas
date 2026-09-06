@@ -153,6 +153,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R23。R22のpre-merge stale-state診断が#2902/#2961/#2971の異種PRで再利用されたことを確認し、運用上の生存と実事故の検出実績を分離した記録。後続runはすべてstrong=0のため、required check化を先回りしない。
 - `doc_kj_atlas_dogfood_r23.json`
   - R23のKJキャンバス。作成→再利用→検出の三段階を分け、positive hitまたはfalse positiveの実例が得られるまでoptional診断として使い続ける境界を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r24.md`
+  - R24。PR #2994で露呈したplanning unittest baseline failureを追い、同じ旧Issue root pathでもcurrent参照とfrozen product commit上のhistorical coordinateでは意味が異なることを分離した記録。manifestを書き換えず、構造化された凍結座標だけをguardで狭く認識する。
+- `doc_kj_atlas_dogfood_r24.json`
+  - R24のKJキャンバス。文字列一致だけのguardとsnapshot identityの衝突を整理し、blanket exemptionではなく固定manifest・commit・path+blobShaから意味を判別する構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
