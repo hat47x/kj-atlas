@@ -1,12 +1,10 @@
 # Issue Plan: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Source Issue: N/A
-- Open Readiness: Prepared
-- Execution: Ready
 - Priority: P0
-- Owner: Stream H（QA P0 Hold解除準備）
+- Owner: Stream H（QA E2E）
 - Scope: 本ファイル, `03_Implement/frontend/e2e/`（テスト資産のみ。製品実装は対象外）
 - Expected verification level: `e2e`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -433,3 +431,25 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-USE-03とO-USE-02は
 - したがって `Open Readiness: Prepared` / `Execution: Ready` と整合させ、`Status` を `Open` とする。Draft gateだけを理由にtriageから除外し続けない。
 - 本同期は**S1〜S4の完了、release承認、実環境での全E2E合格を主張しない**。Openは「実行して証拠を作れる状態」を意味する。
 - Draft→Open同期自体はdocs-only。Open後の最初の実行バッチは、既存E2E資産をS1〜S4へ棚卸しし、実際に不足するjourneyがある場合だけ `03_Implement/frontend/e2e/` にテストを追加する。製品実装、SafeMode契約、公開挙動は変更しない。既存specで十分な場合は重複テストを作らず、実行証跡の同期を優先する。
+
+## Final closeout（2026-09-07）
+
+`QA-E2E-USE-01` の親スコープは、既存の実利用journey資産を現在の標準Compose経路で再検証し、再現可能な証跡をmainlineへ固定したため完了とする。前節までのDraft / Hold / Pending記述は各時点の判断履歴であり、closeoutに合わせて遡及的に書き換えない。
+
+### 最終証跡
+
+- mainline実装・runbook証跡: PR #3054 / commit `c84c1128a50da8e7d6bb7de0d6ba65095e69cd89`。
+- GitHub Actions run `34065343063` で、標準Docker Compose（PostgreSQL + API + web）をclean stateから起動し、`/api/healthz` を確認した。
+- ADR-0019の保存経路preflightは、固定seed文書の存在に依存せず、一意な合成DocumentV1を frontend proxy 経由で `PUT -> GET` し、payloadとETagの一致を確認した。
+- frontend `typecheck` はgreen、full Vitestは **256/256 files・1634/1634 tests pass**。
+- `realistic_user_journey_expansion.spec.ts` は同一Compose stackに対して **2/2 pass**。既存2 testで S1〜S3 と S4 を覆っているため、重複するjourney specは追加しなかった。
+- planning/docs guardも同一検証treeでgreen。PR #3054では製品挙動・SafeMode契約・S1〜S4 spec自体を変更していない。
+
+### 失敗履歴の扱い
+
+直前run `34060045607` ではstorage roundtrip自体は成功した一方、検証用containerへfrontend subtreeだけをコピーしたため、repository-relativeなbackend / architecture / documentation fixtureがENOENTとなりfull Vitestが停止した。これはproduct defectやflakyとして再実行で握り潰さず、検証ハーネスのrepository layout欠陥として切り分けた。run `34065343063` ではrepository tree全体を保持して同じsuiteを再実行し、上記全件greenを確認した。
+
+### Doneの境界
+
+このDoneは **QA-E2E-USE-01が担当する実利用journeyのテスト資産・標準Compose実行証跡・traceability** の完了を表す。`PRODUCT-QA-01` 等のrelease decision、実利用者によるUX受入、release screenshot bundle、全製品面の品質保証、将来追加されるjourneyまでの網羅を意味しない。これらを本issueの完了条件へ後付けせず、別の品質・release gateの責務として維持する。
+
