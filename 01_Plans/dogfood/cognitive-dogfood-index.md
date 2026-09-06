@@ -181,6 +181,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R30。PR #3016/#3017で、Backend settings表とCompose配送面に同じpublic keyの重複宣言が実在したことを分析し、必要な層間複製と同一authority/delivery surface内の宣言一意性を分離した記録。
 - `doc_kj_atlas_dogfood_r30.json`
   - R30のKJキャンバス。R28の不要な複製を持たない、R29の必要な複製は意味一致を守る、R30の各層内部では宣言点を一意にする、という三段の境界を保持する。
+- `cognitive-dogfood-continuous-2026-09-06-r31.md`
+  - R31。PR #3019/#3021で、same-origin pathというcomponent意味境界と、標準Compose/Nginx topologyで実現できる値集合が別契約だったことを分析した記録。
+- `doc_kj_atlas_dogfood_r31.json`
+  - R31のKJキャンバス。component-level semantic validityとdeployment-profile realizabilityを二段に分け、packaged profileの制約をcomponent一般能力へ逆輸入しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
