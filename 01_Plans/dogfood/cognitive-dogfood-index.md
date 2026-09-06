@@ -22,17 +22,21 @@
 - P0: **完了**。
   - Case 001〜003の問い、製品スナップショット、スキルスナップショット、A〜Dそれぞれに適用する条件、必須出力を凍結済み。
   - 起動条件の同等性、製品資料manifestとblob、製品資料一式の再生成、スキル正本のblob一致を検証済み。
-  - Case 001〜003のA〜Dについて、それぞれを単独の新規セッションへ渡せるGitHub Actions成果物を計12件生成できる状態。
+  - freeze Run #29でCase 001〜003のA〜D、計12件の独立したActions artifactを生成済み。2026-09-06の再確認時点では12件とも`expired=false`で、2026-09-13 06:17Z前後まで保持される。
+  - 2026-09-02のcommit `066544c62d6639d3d46c28fefe5ce20f57373a21` で常設GitHub Actions workflow群はmainから意図的に削除済みであり、現在mainから同じartifactを常設workflowで再生成できる、という意味ではない。
   - 成果物の境界は、全条件に同一ケースの製品証拠、B/Dだけにスキル、C/Dだけに空の開始文書、各成果物には自条件の `launch.md` だけを含める。
 - P1: **Case 001 Arm C 実行可能 / 生の実行記録は未取得**。
   - 実行順は C → D → B → A。
+  - Run #29の`cognitive-dogfood-case-001-arm-c`（artifact id `9727586537`、digest `sha256:c5964b6d1654c8e19b7961aca893f4a1fb98d5db896573c6819f57dc805a23f5`）を2026-09-06に実ZIPで再確認した。
+  - Arm C artifactには専用`launch.md`、frozen product bundle 20資料、空の`starter.json`だけが入り、skill subtreeはない。`launch.md`もfrozen product commit、外部Web検索禁止、cultural-substrate-weaving不使用を維持するため、既存artifactからfresh-context実走を開始できる。
   - 現在の設計者チャットは既知仮説を含むため、比較条件として使わない。
   - R10で、現在不足している主なものは比較設計・ハーネス・製品スキーマではなく、比較設計の既知情報から隔離された新規コンテキストと、C/Dでの実際のUI操作だと再確認した。
   - 生の実行記録を得る前に、新しい事前検証、KPI、実験スキーマを増やして実行の代替にしない。
 - P2以降: 未開始。
 - 第三者価値実証: **手順一式は準備済み / 検証セッションは未実施**。
   - `VALUE-REALNESS-01` はP0かつOpenのまま。
-  - 実行計画、参加者向け説明、開始前チェックリスト、セッション記録、公開境界、事前分析計画、検証スクリプト、専用workflowは準備済み。
+  - 実行計画、参加者向け説明、開始前チェックリスト、セッション記録、公開境界、事前分析計画、検証スクリプトは準備済み。
+  - 準備時には専用workflowも存在したが、認知dogfoodと同様に2026-09-02のActions停止で現行mainから削除されている。手順一式の準備済み状態と、現在の常設workflow有無を混同しない。
   - 現在残る主要な外部入力は、第三者協力者または同等の外部評価機会と、その文脈で扱える資料である。
   - 手順一式が準備済みであることを、価値実証の完了とはみなさない。
 
@@ -45,7 +49,7 @@
 - `cognitive-dogfood-case-portfolio-preregistration.md`
   - Case 001〜003を結果を見る前に選んだ理由と横断評価。
 - `cognitive-dogfood-case-portfolio-freeze.md`
-  - 実行入力の凍結状態、実行前補正、CIによる検証記録。
+  - 実行入力の凍結状態、実行前補正、凍結時のCI検証記録、現在のartifact実行導線。
 
 ### 評価方法
 
@@ -188,7 +192,7 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
 - `cognitive-dogfood-case-002-round1-source-manifest.json`
 - `doc_cognitive_case_002_starter.json`
 - `cognitive-dogfood-case-002-launch-*.md`
-- GitHub Actions成果物: `cognitive-dogfood-case-002-arm-a` 〜 `arm-d`
+- 生成済みActions artifact: `cognitive-dogfood-case-002-arm-a` 〜 `arm-d`
 
 ### Case 003: ローカル実行・自己ホストと共同作業の境界
 
@@ -196,7 +200,7 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
 - `cognitive-dogfood-case-003-round1-source-manifest.json`
 - `doc_cognitive_case_003_starter.json`
 - `cognitive-dogfood-case-003-launch-*.md`
-- GitHub Actions成果物: `cognitive-dogfood-case-003-arm-a` 〜 `arm-d`
+- 生成済みActions artifact: `cognitive-dogfood-case-003-arm-a` 〜 `arm-d`
 
 Case 002/003の成果物を先に生成していても、実行順はCase 001→002→003を維持する。成果物が準備済みであることは、前倒しで実行することを意味しない。
 
@@ -216,8 +220,8 @@ Case 002/003の成果物を先に生成していても、実行順はCase 001→
   - 生の実行記録に必須情報が揃っているかを検査する。
 - `build_cognitive_blind_package.py`
   - 条件名や方法情報を外したブラインドレビュー用資料を生成する。
-- `.github/workflows/cognitive-dogfood-freeze.yml`
-  - 凍結入力の事前検証と、Case 001〜003のA〜D、計12件の新規セッション用成果物を生成する。
+- （凍結時）`.github/workflows/cognitive-dogfood-freeze.yml`
+  - 凍結入力の事前検証と、Case 001〜003のA〜D、計12件の新規セッション用artifact生成に使用した。2026-09-02のActions停止で現行mainから削除済み。
 
 実験用ツールの不足を、そのままKJ Atlas製品の機能不足へ読み替えない。
 
@@ -251,7 +255,7 @@ Case 002/003の成果物を先に生成していても、実行順はCase 001→
 - `third-party-value-publication-boundary.md`
 - `third-party-value-analysis-plan.md`
 - `validate_third_party_value_protocol.py`
-- `.github/workflows/third-party-value-protocol.yml`
+- （準備時workflow。現行mainではActions停止）`.github/workflows/third-party-value-protocol.yml`
 
 Case 001〜003で得た価値、切替理由、認知増分は、第三者が自分の実資料を持ち込んだときに、支持・修正・縮小・棄却される**仮説**として渡す。
 
