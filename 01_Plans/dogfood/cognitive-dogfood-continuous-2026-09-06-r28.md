@@ -3,6 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 文書・ADR・Issueへの索引が、リンクだけでなく可変な状態値まで複製したとき、どこで陳腐化を止めるべきか。
+- Canvas: `doc_kj_atlas_dogfood_r28.json`
 - Observation baseline: `main@49f99a0c0793b53dcdf9e4a547bd780610248b92`
 - Trigger: PR #3011 / merge commit `a5f41294868a3e48302a88d7825cb857866d5b28`
 - Result class: current repositoryの実docs driftを修正した運用上の陽性。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
