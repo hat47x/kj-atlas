@@ -31,7 +31,6 @@ services:
       # exist to provide, the opposite of "unset stays unset".
       - KJ_ATLAS_API_KEY
       - KJ_ATLAS_ALLOW_JIT_PROVISIONING
-      - KJ_ATLAS_APP_REVISION
     command: sh -c "alembic upgrade head && uvicorn kj_atlas_api.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       # python:slim has no curl; use the stdlib over the exec form to avoid shell quoting.
