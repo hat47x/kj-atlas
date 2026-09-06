@@ -37,18 +37,18 @@ def _enable_rls(table_name: str, policy_name: str) -> None:
 def upgrade() -> None:
     op.create_table(
         "guest_principals",
-        sa.Column("tenant_id", sa.Text(), nullable=False),
-        sa.Column("guest_principal_id", sa.Text(), nullable=False),
-        sa.Column("invited_email", sa.Text(), nullable=False),
-        sa.Column("status", sa.Text(), nullable=False),
-        sa.Column("verification_method", sa.Text(), nullable=False),
-        sa.Column("verified_issuer", sa.Text(), nullable=True),
-        sa.Column("verified_subject", sa.Text(), nullable=True),
-        sa.Column("created_by", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.Text(), nullable=False),
-        sa.Column("expires_at", sa.Text(), nullable=False),
-        sa.Column("redeemed_at", sa.Text(), nullable=True),
-        sa.Column("revoked_at", sa.Text(), nullable=True),
+        sa.Column("tenant_id", sa.String(128), nullable=False),
+        sa.Column("guest_principal_id", sa.String(128), nullable=False),
+        sa.Column("invited_email", sa.String(320), nullable=False),
+        sa.Column("status", sa.String(32), nullable=False),
+        sa.Column("verification_method", sa.String(32), nullable=False),
+        sa.Column("verified_issuer", sa.String(512), nullable=True),
+        sa.Column("verified_subject", sa.String(512), nullable=True),
+        sa.Column("created_by", sa.String(512), nullable=False),
+        sa.Column("created_at", sa.String(40), nullable=False),
+        sa.Column("expires_at", sa.String(40), nullable=False),
+        sa.Column("redeemed_at", sa.String(40), nullable=True),
+        sa.Column("revoked_at", sa.String(40), nullable=True),
         sa.PrimaryKeyConstraint("tenant_id", "guest_principal_id", name="pk_guest_principals"),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
@@ -81,12 +81,12 @@ def upgrade() -> None:
 
     op.create_table(
         "guest_document_grants",
-        sa.Column("tenant_id", sa.Text(), nullable=False),
-        sa.Column("guest_principal_id", sa.Text(), nullable=False),
-        sa.Column("doc_id", sa.Text(), nullable=False),
-        sa.Column("granted_by", sa.Text(), nullable=False),
-        sa.Column("granted_at", sa.Text(), nullable=False),
-        sa.Column("revoked_at", sa.Text(), nullable=True),
+        sa.Column("tenant_id", sa.String(128), nullable=False),
+        sa.Column("guest_principal_id", sa.String(128), nullable=False),
+        sa.Column("doc_id", sa.String(128), nullable=False),
+        sa.Column("granted_by", sa.String(512), nullable=False),
+        sa.Column("granted_at", sa.String(40), nullable=False),
+        sa.Column("revoked_at", sa.String(40), nullable=True),
         sa.PrimaryKeyConstraint(
             "tenant_id",
             "guest_principal_id",
@@ -126,8 +126,17 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if op.get_bind().dialect.name == "postgresql":
-        op.execute(sa.text("DROP POLICY IF EXISTS guest_document_grants_tenant_isolation ON guest_document_grants"))
-        op.execute(sa.text("DROP POLICY IF EXISTS guest_principals_tenant_isolation ON guest_principals"))
+        op.execute(
+            sa.text(
+                "DROP POLICY IF EXISTS guest_document_grants_tenant_isolation "
+                "ON guest_document_grants"
+            )
+        )
+        op.execute(
+            sa.text(
+                "DROP POLICY IF EXISTS guest_principals_tenant_isolation ON guest_principals"
+            )
+        )
         op.execute(sa.text("DROP INDEX IF EXISTS uq_guest_principals_verified_identity"))
     op.drop_table("guest_document_grants")
     op.drop_table("guest_principals")
