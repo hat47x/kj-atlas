@@ -88,7 +88,7 @@ kj-atlasリポジトリのコアバリュー実現クリティカルパス（正
 参照文書（必読・この順で）:
 - 01_Plans/core-value-realization-priorities-2026-07-18.md（本文書。R1〜R7と代行設計§4）
 - 01_Plans/mvp-exit-01-human-acceptance-handoff.md（タスク1〜4の実施手順・合格基準・記録先）
-- 01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md（親issue）
+- 01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md（親issue）
 
 依頼範囲（§4の代行設計に従う）:
 1. §4.1: キーボード操作確認（ブラウザ操作で完走・記録）と、a11yツリーによるスクリーンリーダー相当確認。

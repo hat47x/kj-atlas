@@ -43,7 +43,7 @@
     {"id":"ev01","cardId":"c01","type":"supports","url":"01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md"},
     {"id":"ev02","cardId":"c08","type":"supports","url":"03_Implement/backend/tests/test_ai_route_prompt_coverage.py"},
     {"id":"ev03","cardId":"c11","type":"supports","url":"03_Implement/backend/src/kj_atlas_api/routes/ai.py"},
-    {"id":"ev04","cardId":"c12","type":"supports","url":"01_Plans/issues/issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md"}
+    {"id":"ev04","cardId":"c12","type":"supports","url":"01_Plans/issues/done/issue-AI-IR-PROMPT-EVIDENCE-01-render-ir-evidence-in-provider-prompts.md"}
   ],
   "readingOrder": ["i1","i2","i3","i4"],
   "narratives": [
