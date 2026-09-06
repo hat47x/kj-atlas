@@ -436,6 +436,9 @@ export function MergeSuggestionsPanel({
               ? t("merge_suggestions.source_count_suffix", { count: suggestion.representativeSourceCount })
               : ""}
           </div>
+          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+            {mergeMethodFieldLabel(mergeMethodLocale)}: {mergeMethodLabel(suggestion.mergeMethod, mergeMethodLocale)}
+          </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>{t("merge_suggestions.rationale")}: {suggestion.rationale}</div>
           ) : null}
