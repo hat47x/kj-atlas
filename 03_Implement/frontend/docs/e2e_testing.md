@@ -13,17 +13,24 @@
 ```bash
 cd 03_Implement/deploy
 docker compose up --build -d
-curl -fsS http://localhost:8080/api/healthz
-curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
+curl -fsS http://127.0.0.1:8080/api/healthz
+node ../frontend/scripts/e2e_storage_preflight.mjs \
+  --write-base-url http://127.0.0.1:8080/api
 ```
+
+`e2e_storage_preflight.mjs` は、毎回一意なIDの合成 `DocumentV1` を作成し、frontend proxy 経由で `PUT -> GET` した応答payloadと `ETag` が一致することを確認します。clean PostgreSQLでも成立し、事前seed済みの固定documentには依存しません。これは `ADR-0019` の標準Compose最小受入（health + 実PostgreSQL保存経路のroundtrip）を実行可能な形にしたものです。
 
 ローカル開発サーバーで確認する場合は [導入手順](../../../04_Documentation/installation.md) の「Docker を使わない最小起動」を使います。Vite の `/api` proxy は backend が起動していないと 500 を返すため、E2E 前に次の両方を確認します。frontend の port を変更した場合は `4173` を実際の port に置き換えてください。
 
 ```bash
 curl -fsS http://127.0.0.1:8000/healthz
-curl -fsS http://127.0.0.1:8000/docs/doc_phase1_canvas
-curl -fsS http://127.0.0.1:4173/api/docs/doc_phase1_canvas
+cd 03_Implement/frontend
+node scripts/e2e_storage_preflight.mjs \
+  --write-base-url http://127.0.0.1:8000 \
+  --read-base-url http://127.0.0.1:4173/api
 ```
+
+ローカル経路では backend へ `PUT` し、同じdocumentを frontend proxyから `GET` することで、backend保存とproxy接続を同時に確認します。
 
 ## 手動確認と自動テストの違い
 
@@ -118,7 +125,7 @@ python -m pytest
 | 観点 | 期待 |
 | --- | --- |
 | 起動 | `/api/healthz` が成功する |
-| 標準サンプル | `doc_phase1_canvas` が backend 直アクセスと frontend proxy の両方で成功する |
+| 保存経路 | 一意な合成documentの `PUT -> GET` でpayloadと `ETag` が一致し、固定seedデータに依存しない |
 | 保存 | 作成・編集した内容が再読み込み後も残る |
 | SafeMode | 未レビュー情報を AI が自動確定しない |
 | LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
