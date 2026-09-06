@@ -34,6 +34,14 @@ class ProposalDecisionReceipt:
     recorded_at: str
 
 
+@dataclass(frozen=True, slots=True)
+class ProposalSystemHoldReceipt:
+    proposal_id: str
+    status: str
+    transitioned: bool
+    recorded_at: str
+
+
 _DECISION_STATUS = {"adopt": "accepted", "reject": "rejected", "hold": "held"}
 
 
@@ -170,6 +178,71 @@ def validate_external_proposal_reference(
     if proposal.source_bundle_hash != source_bundle_hash:
         raise ProposalDecisionConflict("external proposal source bundle does not match")
     return proposal
+
+
+def hold_external_proposal_for_final_judgement_failure(
+    db: Session,
+    *,
+    tenant: TenantContext,
+    doc_id: str,
+    proposal_id: str,
+    source_bundle_hash: str,
+) -> ProposalSystemHoldReceipt:
+    """Atomically hold one explicitly linked external proposal.
+
+    Absence of a decision-state row is the canonical `proposed` state.  System
+    failure may create only `held`; it never rewrites an accepted/rejected row
+    and never fabricates a human decision event.  A concurrent first decision
+    can surface as IntegrityError on insert; the route retries after rollback so
+    the winning state is observed rather than overwritten.
+    """
+    proposal = validate_external_proposal_reference(
+        db,
+        tenant=tenant,
+        doc_id=doc_id,
+        proposal_id=proposal_id,
+        source_bundle_hash=source_bundle_hash,
+    )
+    state = db.scalar(
+        select(AIProposalDecisionStateRow)
+        .where(
+            AIProposalDecisionStateRow.tenant_id == tenant.tenant_id,
+            AIProposalDecisionStateRow.doc_id == doc_id,
+            AIProposalDecisionStateRow.proposal_id == proposal_id,
+        )
+        .with_for_update()
+    )
+    if state is not None:
+        if state.source_bundle_hash != source_bundle_hash:
+            raise ProposalDecisionConflict("proposal source bundle does not match")
+        if state.status not in {"accepted", "rejected", "held"}:
+            raise ProposalDecisionConflict("proposal has an unsupported decision state")
+        return ProposalSystemHoldReceipt(
+            proposal_id=proposal.proposal_id,
+            status=state.status,
+            transitioned=False,
+            recorded_at=state.updated_at,
+        )
+
+    recorded_at = datetime.now(timezone.utc).isoformat()
+    db.add(
+        AIProposalDecisionStateRow(
+            tenant_id=tenant.tenant_id,
+            doc_id=doc_id,
+            proposal_id=proposal_id,
+            source_bundle_hash=source_bundle_hash,
+            status="held",
+            version=1,
+            updated_at=recorded_at,
+        )
+    )
+    db.flush()
+    return ProposalSystemHoldReceipt(
+        proposal_id=proposal_id,
+        status="held",
+        transitioned=True,
+        recorded_at=recorded_at,
+    )
 
 
 def record_proposal_decision(

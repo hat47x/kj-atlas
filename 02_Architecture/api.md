@@ -1430,3 +1430,13 @@ Responseは `SuggestMergesResponse` / `MergeSuggestion` とし、各候補に `g
 ```
 
 The field is optional so standalone final-judgement calls remain backward-compatible. When supplied, the server MUST bind it to the request document ID and validate `(tenantId, docId, proposalId)`, `origin=external_agent`, and `sourceBundleHash` before any provider request. The server MUST NOT infer a proposal or document from latest-created order, document similarity, or proposal content. `detect-contradiction` therefore requires `doc` whenever `externalProposalRef` is present. Missing registration returns 404; identity/source conflict returns 409; linkage without a document returns 422. R1 is read-only and does not itself transition proposal state.
+
+## Final-judgement system hold (AI-ROUTE-HELD-LINKAGE-01 R2)
+
+An explicitly linked external proposal is changed from implicit `proposed` (no decision-state row) to `held` only when final judgement fails with `ProviderDisabledError`, `provider_unavailable`, or `provider_timeout`. `provider_validation`, request/policy rejection, and response parse/schema failure do not trigger system hold. A standalone final-judgement call without `externalProposalRef` never changes proposal state.
+
+The state transition re-validates `(tenantId, docId, proposalId, sourceBundleHash, origin=external_agent)` inside the transaction. Existing `accepted`, `rejected`, or `held` state wins and is never overwritten. A concurrent first human decision is resolved by the decision-state primary key plus rollback/re-read; system failure cannot roll an accepted/rejected proposal back to held.
+
+System hold does not create a human proposal-decision event. On an actual `proposed -> held` transition, the audit dispatcher receives a content-free `eventType=proposal` event with `previousStatus=proposed`, `newStatus=held`, `transitionSource=final_judgement_unavailable`, `routingStage=final_judgement`, failure code, and available provider/model/transport/trace metadata. Repeated failure against an already-held proposal is idempotent and emits no second transition event.
+
+Recovery does not automatically reopen `held`. A retry that needs a fresh proposed lifecycle registers a new proposal ID; existing authenticated human decision behavior for a held proposal remains unchanged. Availability recovery alone never accepts or publishes a proposal.

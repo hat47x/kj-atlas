@@ -1,7 +1,7 @@
 # Issue Draft: AI-ROUTE-HELD-LINKAGE-01 Final Judgement失敗とproposal held遷移の明示的linkage
 
 - Type: Architecture / Safety contract
-- Status: Draft
+- Status: In Progress
 - Source Issue: `AI-ROUTE-01` MMR-06
 - Priority: P2
 - Owner: Maintainer
@@ -86,12 +86,12 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 ## 受入条件
 
 - [x] external proposal flowとfinal judgementの対象proposalを、推測なしで一意に結ぶtyped linkageをAPI/schemaへ固定する。— R1: optional `externalProposalRef` + server-side `(tenant, doc, proposal, sourceBundleHash, origin)` validationを追加。
-- [ ] linkageなしのstandalone `check_narrative` / `detect_contradiction` failureがproposal stateを変更しないことを固定する。
-- [ ] MMR-06対象failure classを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。
-- [ ] system holdがhuman decisionと区別できるaudit/event contractを持つ。
-- [ ] `accepted` / `rejected` を巻き戻さず、既存 `held` / concurrent decisionを安全に扱う。
-- [ ] `held` 後の明示的recovery contractを選択・実装し、成功してもauto-accept / auto-publishしない。
-- [ ] integration testで少なくとも provider unavailable、timeout、standalone call、already-decided race、recoveryを検証する。
+- [x] linkageなしのstandalone `check_narrative` / `detect_contradiction` failureがproposal stateを変更しないことを固定する。— R2 integration testでrepository非参照を固定。
+- [x] MMR-06対象failure classを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。— `provider_unavailable` / `provider_timeout` / `ProviderDisabledError` のみ。`provider_validation`・policy/input/parse failureは対象外。
+- [x] system holdがhuman decisionと区別できるaudit/event contractを持つ。— human decision rowを作らず `eventType=proposal` / `transitionSource=final_judgement_unavailable` のcontent-free auditを実遷移時だけ発行。
+- [x] `accepted` / `rejected` を巻き戻さず、既存 `held` / concurrent decisionを安全に扱う。— terminal/current stateはno-op、初回state insert競合はrollback後に再読。
+- [x] `held` 後の明示的recovery contractを選択・実装し、成功してもauto-accept / auto-publishしない。— 自動reopenは行わず、再試行は新しいproposal IDで登録する（選択肢3）。既存の認証済みhuman decisionによるheld→accepted/rejectedは維持。
+- [x] integration testで少なくとも provider unavailable、timeout、standalone call、already-decided race、recoveryを検証する。— R2 focused suiteで固定。
 - [ ] `AI-ROUTE-01` MMR-06は上記integration evidenceが揃うまで未完了のままとする。
 
 ## 検証計画
@@ -113,3 +113,12 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 - `detect-contradiction` でlinkageだけを渡してdocumentを省略することは禁止（422）。proposal IDからdocumentを逆引きしない。
 - standalone呼出しのrequest shape/処理は維持。
 - 本R1はread-only identity gateのみ。system `held` 遷移、failure class、system audit、recoveryは未実装であり、MMR-06は未完了のまま。
+
+## R2 実装履歴（2026-09-06）
+
+- system hold対象を availability failure に限定: `ProviderDisabledError`, `provider_unavailable`, `provider_timeout`。`provider_validation` と入力/policy/parse failureはholdしない。
+- 明示link済みexternal proposalのstate rowが存在しない（=`proposed`）場合だけ `held` rowを作成する。accepted/rejected/heldはno-opで巻き戻さない。
+- proposedからの初回state insertがhuman decisionと競合した場合はIntegrityError後にtransactionをrollbackして再読し、勝ったstateを尊重する。
+- system holdはhuman `AIProposalDecisionEventRow` を作らず、`proposal` audit eventに `previousStatus`, `newStatus`, `transitionSource`, `routingStage`, provider/model/trace, failure codeをcontent-freeで記録する。既存heldへの反復failureでは重複system transition eventを出さない。
+- recoveryは「heldを自動reopenしない。再試行は新しいproposalを登録する」を採用する。既存human endpointがheldをaccepted/rejectedへ明示判断する能力は変更しない。
+- MMR-06親項目はcloseout/evidence同期が完了するまで未完了のままとする。
