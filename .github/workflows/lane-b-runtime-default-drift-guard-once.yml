@@ -22,6 +22,16 @@ jobs:
           python-version: '3.12'
       - name: Apply one-shot patch
         run: python .github/scripts/lane_b_runtime_default_drift_guard_once.py
+      - name: Fix dynamic module fixture for Python 3.12
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('01_Plans/tests/test_runtime_parameter_default_contract.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('import importlib.util\nimport tempfile', 'import importlib.util\nimport sys\nimport tempfile', 1)
+          text = text.replace('MODULE = importlib.util.module_from_spec(SPEC)\nSPEC.loader.exec_module(MODULE)', 'MODULE = importlib.util.module_from_spec(SPEC)\nsys.modules[SPEC.name] = MODULE\nSPEC.loader.exec_module(MODULE)', 1)
+          path.write_text(text, encoding='utf-8')
+          PY
       - name: Run focused runtime-default regressions
         run: python -m unittest 01_Plans/tests/test_runtime_parameter_default_contract.py 01_Plans/tests/test_docs_contract_checks.py
       - name: Run docs contract
