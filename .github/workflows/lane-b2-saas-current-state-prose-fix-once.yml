@@ -91,9 +91,10 @@ jobs:
         run: python 01_Plans/docs_check.py
       - name: Verify narrow diff
         run: |
-          git diff --check --ignore-space-at-eol --ws-error-highlight=all
           python - <<'PY'
+          from pathlib import Path
           import subprocess
+
           allowed = {
               '01_Plans/tests/test_saas_resolver_wiring_documentation_contract.py',
               '02_Architecture/runtime_parameter_registry.md',
@@ -105,6 +106,25 @@ jobs:
           unexpected = changed - allowed
           if unexpected:
               raise SystemExit(f'unexpected changed files: {sorted(unexpected)}')
+
+          subprocess.run([
+              'git', 'diff', '--check', '--ws-error-highlight=all', '--',
+              '01_Plans/tests/test_saas_resolver_wiring_documentation_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+          ], check=True)
+
+          config = Path('04_Documentation/configuration.md').read_bytes()
+          if b'\r\n' not in config:
+              raise SystemExit('configuration.md lost CRLF line endings')
+          if b'\n' in config.replace(b'\r\n', b''):
+              raise SystemExit('configuration.md contains bare LF after CRLF-preserving patch')
+          bad_lines = [
+              index
+              for index, line in enumerate(config.split(b'\r\n'), 1)
+              if line.endswith((b' ', b'\t'))
+          ]
+          if bad_lines:
+              raise SystemExit(f'configuration.md has real trailing space/tab on lines: {bad_lines[:20]}')
           PY
       - name: Commit patch and retire one-shot workflow
         run: |
