@@ -85,7 +85,7 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 
 ## 受入条件
 
-- [ ] external proposal flowとfinal judgementの対象proposalを、推測なしで一意に結ぶtyped linkageをAPI/schemaへ固定する。
+- [x] external proposal flowとfinal judgementの対象proposalを、推測なしで一意に結ぶtyped linkageをAPI/schemaへ固定する。— R1: optional `externalProposalRef` + server-side `(tenant, doc, proposal, sourceBundleHash, origin)` validationを追加。
 - [ ] linkageなしのstandalone `check_narrative` / `detect_contradiction` failureがproposal stateを変更しないことを固定する。
 - [ ] MMR-06対象failure classを列挙し、明示的にlinkされた `proposed` proposalだけをsystem `held` へatomic遷移させる。
 - [ ] system holdがhuman decisionと区別できるaudit/event contractを持つ。
@@ -105,3 +105,11 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 ## 補足
 
 このissueはMMR-06を遅らせるための抽象化ではなく、現行routeがproposal IDを持たない状態で誤proposalをholdすることを防ぐための安全境界である。実装時は、この契約を満たす最小のorchestration/linkageを選び、一般AI routeへ不要なproposal stateを持ち込まない。
+
+## R1 実装履歴（2026-09-06）
+
+- `ExternalProposalReference` (`proposalId` + `sourceBundleHash`) を追加し、`check-narrative` / `detect-contradiction` に optional linkage として接続。
+- serverはrequestの `doc.id` と登録済みproposal rowを照合し、external-agent origin / source hashまで一致した場合だけprovider処理へ進む。
+- `detect-contradiction` でlinkageだけを渡してdocumentを省略することは禁止（422）。proposal IDからdocumentを逆引きしない。
+- standalone呼出しのrequest shape/処理は維持。
+- 本R1はread-only identity gateのみ。system `held` 遷移、failure class、system audit、recoveryは未実装であり、MMR-06は未完了のまま。

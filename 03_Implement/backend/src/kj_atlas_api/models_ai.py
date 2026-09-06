@@ -56,12 +56,28 @@ class NarrativeIssue(BaseModel):
     direction: Literal["b_missing_in_a", "a_missing_in_b"] | None = None
 
 
+class ExternalProposalReference(BaseModel):
+    """Explicit identity for a registered external-agent proposal.
+
+    Document identity is deliberately not carried here. Final-judgement routes
+    bind this reference to the request document and validate the tuple
+    server-side, so proposalId never becomes an implicit document lookup key.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1, max_length=128)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+
+
 class CheckNarrativeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     doc: DocumentV1
     narrativeText: str = Field(min_length=1)
     basedOnReadingOrder: list[str] | None = None
+    # AI-ROUTE-HELD-LINKAGE-01 R1: optional explicit external proposal identity.
+    externalProposalRef: ExternalProposalReference | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
 
@@ -449,6 +465,9 @@ class DetectContradictionRequest(BaseModel):
     # `contradictionState` instead of two bare texts. Optional on purpose: the
     # two-card request shape that shipped before stays valid (AC-11).
     doc: DocumentV1 | None = None
+    # AI-ROUTE-HELD-LINKAGE-01 R1: linkage requires doc so the server never
+    # infers document identity from proposalId.
+    externalProposalRef: ExternalProposalReference | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
 

@@ -43,6 +43,7 @@ from kj_atlas_api.models_ai import (
     DetectContradictionRequest,
     DetectContradictionResponse,
     ExternalAgentProposalDecisionRequest,
+    ExternalProposalReference,
     ExternalAgentProposalRegistrationRequest,
     ExternalAgentProposalRegistrationResponse,
     ExternalAgentTaskRegistrationRequest,
@@ -85,6 +86,7 @@ from kj_atlas_api.proposal_decision_repository import (
     register_external_agent_proposal,
     register_external_agent_task,
     record_proposal_decision as persist_proposal_decision,
+    validate_external_proposal_reference,
 )
 from kj_atlas_api.island_summary_ir import (
     build_island_summary_ir_context,
@@ -171,6 +173,31 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
         user_id=identity.user_id,
         claim=identity.verified_tenant_claim,
     )
+
+
+def _validate_final_judgement_external_proposal(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+) -> None:
+    """Reject an invalid explicit proposal link before provider execution."""
+    if ref is None:
+        return
+    tenant = _resolve_audit_tenant(request, db)
+    try:
+        validate_external_proposal_reference(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+    except ProposalNotRegistered as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProposalDecisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 def _assert_model_allowed(
@@ -2194,6 +2221,12 @@ def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: 
 def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _validate_final_judgement_external_proposal(
+        payload.externalProposalRef,
+        doc_id=payload.doc.id,
+        request=request,
+        db=db,
+    )
 
     try:
         llm_response = generate_with_fallback(
@@ -2703,6 +2736,22 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     # builder below runs its own review-state check as an ADDITIONAL layer
     # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_cards([payload.cardA, payload.cardB], payload.allowUnreviewedText)
+
+    if payload.externalProposalRef is not None:
+        if payload.doc is None:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "external_proposal_document_required",
+                    "message": "doc is required when externalProposalRef is supplied.",
+                },
+            )
+        _validate_final_judgement_external_proposal(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+        )
 
     # AI-IR-PROJECTION-01 (stage 1 of the ADR-0069 rollout): this route now goes
     # through the LLM input IR instead of stringifying two card texts.
