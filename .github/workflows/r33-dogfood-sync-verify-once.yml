@@ -1,0 +1,52 @@
+name: R33 dogfood sync and verify once
+
+on:
+  push:
+    branches:
+      - dogfood/r33-canonical-value-observation-surface-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dogfood/r33-canonical-value-observation-surface-20260907
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: R33を継続dogfood索引へ同期する
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('01_Plans/dogfood/cognitive-dogfood-index.md')
+          text = path.read_text(encoding='utf-8')
+          anchor = "- `doc_kj_atlas_dogfood_r32.json`\n  - R32のKJキャンバス。LF/CRLFというplatform表現差は同一Git objectへ正規化しつつ、historical pathのsemantic rewriteは別identityとして拒否し、R25のfrozen-input責務を維持する構造を保持する。\n"
+          addition = anchor + "- `cognitive-dogfood-continuous-2026-09-07-r33.md`\n  - R33。PR #3026/#3027で、APP_REVISIONのcanonical意味driftと、canonical値がstructured logへ届かない観測surface欠落を分析し、意味一致と必要surfaceへの伝播を別coverageとして分離した記録。\n- `doc_kj_atlas_dogfood_r33.json`\n  - R33のKJキャンバス。同じkeyの存在・default一致・canonical意味一致・必要観測surfaceへの伝播を段階的に分け、APP_REVISIONの明示済みbuild同定用途だけを閉じて全設定値のlog出力へ一般化しない構造を保持する。\n"
+          if 'doc_kj_atlas_dogfood_r33.json' not in text:
+              if anchor not in text:
+                  raise SystemExit('R32 index anchor not found')
+              text = text.replace(anchor, addition, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+      - name: Dogfood validation
+        run: python 01_Plans/dogfood/validate_dogfood_docs.py
+      - name: Repository-wide planning tests
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py' -v
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+      - name: Working-tree hygiene
+        run: git diff --check
+      - name: 検証済みR33をbranchへ記録しone-shotを退役する
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/dogfood/cognitive-dogfood-index.md
+          git rm .github/workflows/r33-dogfood-sync-verify-once.yml
+          git commit -m "dogfood: sync R33 index and retire verifier"
+          git push origin HEAD:dogfood/r33-canonical-value-observation-surface-20260907
