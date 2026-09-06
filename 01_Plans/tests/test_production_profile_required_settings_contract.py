@@ -31,10 +31,30 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         self.saas_policy = SAAS_POLICY.read_text(encoding="utf-8")
         self.main = MAIN.read_text(encoding="utf-8")
 
+    def test_nonproduction_profiles_keep_recommendations_out_of_startup_required(self) -> None:
+        self.assertIn("Startup-required conditions", self.registry)
+        self.assertIn("Recommended / conditional settings", self.registry)
+        local = _profile_row(self.registry, "local-dev")
+        evaluation = _profile_row(self.registry, "evaluation")
+        self.assertEqual(local[2], "なし（追加のprofile固有hard gateなし）")
+        self.assertEqual(evaluation[2], "なし（追加のprofile固有hard gateなし）")
+        for token in ("KJ_ATLAS_DATABASE_URL", "KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_ALLOW_JIT_PROVISIONING"):
+            self.assertIn(token, local[3])
+        for token in ("KJ_ATLAS_DATABASE_URL", "KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_AUDIT_TRANSPORT", "KJ_ATLAS_ACCESS_CONTROL_ADAPTER"):
+            self.assertIn(token, evaluation[3])
+
     def test_enterprise_profile_exposes_settings_fail_fast_credentials(self) -> None:
-        required = _profile_row(self.registry, "enterprise-production")[2]
+        row = _profile_row(self.registry, "enterprise-production")
+        required, operating = row[2], row[3]
         self.assertIn("`KJ_ATLAS_ADMIN_API_KEY=<secret>`", required)
         self.assertIn("`KJ_ATLAS_API_KEY=<secret>`", required)
+        for token in (
+            "KJ_ATLAS_ALLOW_JIT_PROVISIONING",
+            "KJ_ATLAS_LLM_PROVIDER",
+            "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE",
+        ):
+            self.assertNotIn(token, required)
+            self.assertIn(token, operating)
         self.assertIn('if self.admin_api_key is None:', self.settings)
         self.assertIn(
             'if profile == "enterprise-production" and self.api_key is None:',
@@ -50,7 +70,7 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
 
     def test_saas_profile_exposes_startup_hard_gate_without_promoting_callback_only_fields(self) -> None:
         row = _profile_row(self.registry, "saas-multitenant")
-        required, notes = row[2], row[3]
+        required, conditional, notes = row[2], row[3], row[4]
         required_tokens = (
             "`KJ_ATLAS_ADMIN_API_KEY=<secret>`",
             "`KJ_ATLAS_DATABASE_URL=<PostgreSQL URL>`",
@@ -90,7 +110,15 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         ):
             self.assertIn(endpoint_key, self.settings)
 
-        self.assertIn("token endpoint / redirect URI / client ID / client secret", notes)
+        callback_only = (
+            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID",
+            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET",
+        )
+        for key in callback_only:
+            self.assertNotIn(key, required)
+            self.assertIn(key, conditional)
         self.assertIn("503", notes)
         callback_guard = (
             "if token_endpoint is None or redirect_uri is None or client_id is None "

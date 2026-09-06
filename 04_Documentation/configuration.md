@@ -61,10 +61,10 @@
 実装既定値（未設定時に使われる値）と、運用で推奨する値は異なる場合があります。
 迷った場合は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
 
-- `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
-- `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
-- `enterprise-production`: `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` を別値で必須とし、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
-- `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP＋endpoint、外部document binding＋endpoint、外部tenant capability＋endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash keyをすべて満たす場合だけ起動します。
+- `local-dev`: **起動hard gateは追加なし**。SQLite + `KJ_ATLAS_LLM_PROVIDER=none` を推奨し、未登録header userを自動作成する場合だけJITを明示 `true`。
+- `evaluation`: **profile単体の起動hard gateは追加なし**。標準ComposeではPostgreSQL + LLM `none` + audit/access-control `noop` を推奨。
+- `enterprise-production`: **起動hard gate**は別値の `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY`。JIT `false`、LLM `none`、fail-safe `read_only` または `deny` は運用推奨。
+- `saas-multitenant`: **起動hard gate**は `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP/document binding/tenant capabilityと各endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash key。OAuth callbackを使う場合はtoken endpoint / redirect URI / client ID / client secretも必要で、欠損時はcallbackを503で拒否。
 
 `KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
