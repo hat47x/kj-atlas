@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   implement-and-verify:
-    if: "github.event.head_commit.message == 'chore: guest redeem R2b実装workflowを起動する'"
+    if: "github.event.head_commit.message == 'chore: guest redeem R2bテスト送信を補正する'"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -23,6 +23,9 @@ jobs:
           python-version: '3.12'
       - name: Apply R2b transformation
         run: python .github/scripts/lane_c_guest_redeem_r2b.py
+      - name: Align Secure-cookie TestClient handoff with R2a tests
+        run: >-
+          python -c 'from pathlib import Path; p=Path("03_Implement/backend/tests/test_guest_redeem_http.py"); s=p.read_text(); old="            read = client.get(\"/docs/doc-granted\")"; new="            read = client.get(\n                \"/docs/doc-granted\",\n                cookies={\"Kj-Atlas-Guest-Session\": response.cookies[\"Kj-Atlas-Guest-Session\"]},\n            )"; assert old in s; p.write_text(s.replace(old, new))'
       - name: Retire one-shot implementation inputs from final tree
         run: rm .github/scripts/lane_c_guest_redeem_r2b.py .github/workflows/lane-c-guest-redeem-r2b-once.yml
       - name: Install backend test dependencies
