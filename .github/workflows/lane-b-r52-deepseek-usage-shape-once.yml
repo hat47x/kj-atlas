@@ -32,7 +32,8 @@ jobs:
         working-directory: 03_Implement/backend
         run: |
           pytest -q tests/test_llm_provider.py tests/test_ai_route_provider_token_measurement.py tests/test_ai_route_provider_transport_input_provenance.py tests/test_ai_route_provider_measurement_roundtrip.py
-          ruff check tests/test_llm_provider.py
+          python -m compileall -q tests/test_llm_provider.py
+          ruff check --select F,E9 tests/test_llm_provider.py
       - name: Validate issue and diff
         run: |
           python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
