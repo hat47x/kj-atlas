@@ -3,6 +3,7 @@ from pathlib import Path
 OLD = Path("01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md")
 DONE = Path("01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md")
 CONTRACT = Path("03_Implement/backend/tests/test_qa_e2e_doc_contract.py")
+RESEARCH = Path("01_Plans/research/core-value-realization-priorities-2026-07-18.md")
 
 text = OLD.read_text(encoding="utf-8")
 if "- Status: Open\n" not in text:
@@ -48,5 +49,14 @@ if old_ref not in contract:
     raise SystemExit("expected QA_ISSUE active-root reference")
 CONTRACT.write_text(contract.replace(old_ref, new_ref, 1), encoding="utf-8")
 
+research = RESEARCH.read_text(encoding="utf-8")
+old_relative = "../issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md"
+new_relative = "../issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md"
+count = research.count(old_relative)
+if count != 2:
+    raise SystemExit(f"expected exactly 2 canonical research links, found {count}")
+RESEARCH.write_text(research.replace(old_relative, new_relative), encoding="utf-8")
+
 print(f"moved {OLD} -> {DONE}")
 print(f"updated canonical contract reference in {CONTRACT}")
+print(f"updated {count} canonical navigation links in {RESEARCH}")
