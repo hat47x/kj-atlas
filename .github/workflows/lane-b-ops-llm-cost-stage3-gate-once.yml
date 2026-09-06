@@ -1,0 +1,42 @@
+name: lane-b OPS LLM cost stage3 gate once
+
+on:
+  push:
+    branches:
+      - docs/lane-b-ops-llm-cost-stage3-gate-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  apply-verify-cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/lane-b-ops-llm-cost-stage3-gate-20260906
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply stage3 gate note
+        run: python .github/scripts/lane_b_ops_llm_cost_stage3_gate_once.py
+      - name: Verify issue contract
+        run: |
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+          git diff --check -- 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+          grep -F 'Status: Open' 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+          grep -F -- '- [ ] AC-3' 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+          grep -F -- '- [ ] AC-5' 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+          grep -F -- '- [ ] AC-6' 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+      - name: Commit verified note and remove one-shot files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/scripts/lane_b_ops_llm_cost_stage3_gate_once.py
+          git rm .github/workflows/lane-b-ops-llm-cost-stage3-gate-once.yml
+          git add 01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md
+          git commit -m "docs(ops): pin LLM budget stage3 decision gate"
+          git push origin HEAD:docs/lane-b-ops-llm-cost-stage3-gate-20260906
