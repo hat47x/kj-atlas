@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
+CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
 
 
@@ -32,12 +33,16 @@ def _normalize_documented_default(raw: str) -> object:
     return value
 
 
-def _backend_registry_defaults(registry_text: str) -> tuple[dict[str, object], list[str]]:
-    marker = "## Backend settings"
-    end_marker = "## Compose and frontend build keys"
-    if marker not in registry_text or end_marker not in registry_text:
-        raise AssertionError("runtime parameter registry backend settings table is missing")
-    section = registry_text.split(marker, 1)[1].split(end_marker, 1)[0]
+def _table_defaults(
+    text: str,
+    *,
+    marker: str,
+    end_marker: str,
+    label: str,
+) -> tuple[dict[str, object], list[str]]:
+    if marker not in text or end_marker not in text:
+        raise AssertionError(f"{label} backend settings table is missing")
+    section = text.split(marker, 1)[1].split(end_marker, 1)[0]
     defaults: dict[str, object] = {}
     duplicates: list[str] = []
     for line in section.splitlines():
@@ -52,6 +57,24 @@ def _backend_registry_defaults(registry_text: str) -> tuple[dict[str, object], l
             continue
         defaults[key] = _normalize_documented_default(cells[1])
     return defaults, duplicates
+
+
+def _backend_registry_defaults(registry_text: str) -> tuple[dict[str, object], list[str]]:
+    return _table_defaults(
+        registry_text,
+        marker="## Backend settings",
+        end_marker="## Compose and frontend build keys",
+        label="runtime parameter registry",
+    )
+
+
+def _backend_configuration_defaults(configuration_text: str) -> tuple[dict[str, object], list[str]]:
+    return _table_defaults(
+        configuration_text,
+        marker="## Backend 環境変数",
+        end_marker="## Compose / frontend build 環境変数",
+        label="public configuration",
+    )
 
 
 def _settings_static_defaults(settings_text: str) -> dict[str, object]:
@@ -92,16 +115,27 @@ def _settings_static_defaults(settings_text: str) -> dict[str, object]:
 class RuntimeParameterBackendRegistryContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.registry_defaults, cls.duplicates = _backend_registry_defaults(
+        cls.registry_defaults, cls.registry_duplicates = _backend_registry_defaults(
             REGISTRY_PATH.read_text(encoding="utf-8")
+        )
+        cls.configuration_defaults, cls.configuration_duplicates = _backend_configuration_defaults(
+            CONFIG_PATH.read_text(encoding="utf-8")
         )
         cls.settings_defaults = _settings_static_defaults(SETTINGS_PATH.read_text(encoding="utf-8"))
 
     def test_backend_settings_keys_are_unique_inside_the_ssot_table(self) -> None:
         self.assertEqual(
-            self.duplicates,
+            self.registry_duplicates,
             [],
-            f"duplicate backend runtime keys in registry: {sorted(set(self.duplicates))}",
+            f"duplicate backend runtime keys in registry: {sorted(set(self.registry_duplicates))}",
+        )
+
+    def test_public_configuration_backend_keys_are_unique(self) -> None:
+        self.assertEqual(
+            self.configuration_duplicates,
+            [],
+            "duplicate backend runtime keys in public configuration: "
+            f"{sorted(set(self.configuration_duplicates))}",
         )
 
     def test_static_settings_defaults_match_backend_settings_default_column(self) -> None:
@@ -112,8 +146,17 @@ class RuntimeParameterBackendRegistryContractTests(unittest.TestCase):
         }
         self.assertEqual(mismatches, {}, f"backend registry default drift: {mismatches}")
 
-    def test_regression_keys_are_covered_by_the_backend_table(self) -> None:
-        # These keys exposed the gap after the narrower Profile-default guard landed.
+    def test_static_settings_defaults_match_public_configuration_default_column(self) -> None:
+        mismatches = {
+            key: (self.configuration_defaults[key], implementation_default)
+            for key, implementation_default in self.settings_defaults.items()
+            if key in self.configuration_defaults
+            and self.configuration_defaults[key] != implementation_default
+        }
+        self.assertEqual(mismatches, {}, f"public configuration default drift: {mismatches}")
+
+    def test_regression_keys_are_covered_by_both_public_tables(self) -> None:
+        # These keys exposed gaps after narrower default guards landed.
         for key in {
             "KJ_ATLAS_APP_REVISION",
             "KJ_ATLAS_MAX_DOCUMENT_CARDS",
@@ -121,6 +164,7 @@ class RuntimeParameterBackendRegistryContractTests(unittest.TestCase):
             "KJ_ATLAS_TRUSTED_PROXIES",
         }:
             self.assertIn(key, self.registry_defaults)
+            self.assertIn(key, self.configuration_defaults)
             self.assertIn(key, self.settings_defaults)
 
 
