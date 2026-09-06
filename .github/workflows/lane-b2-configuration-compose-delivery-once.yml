@@ -1,0 +1,73 @@
+name: Lane B2 configuration Compose delivery once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-configuration-compose-delivery-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Align public configuration with standard Compose delivery
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("04_Documentation/configuration.md")
+          text = path.read_text(encoding="utf-8")
+          old = """このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
+"""
+          new = """このページの `export KJ_ATLAS_*` 例は、特記がない限り backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は、次の公開キーを明示的な配送面として持ちます。この2行は `01_Plans/tests/test_configuration_compose_delivery_contract.py` で Compose 定義と照合します。
+
+| Compose surface | 配送される公開キー | 挙動 |
+| --- | --- | --- |
+| `api.environment` | `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_APP_REVISION`, `KJ_ATLAS_API_KEY`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | profile・DB・provider は Compose 既定値を持つ。revision・API key・JIT は host で設定された場合だけ pass-through する。 |
+| `web.build.args` | `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_APP_REVISION` | API base は標準 Compose では `/api` に固定。profile と revision は frontend build 時に確定する。 |
+
+これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
+"""
+          if text.count(old) != 1:
+              raise SystemExit("expected stale Compose delivery paragraph exactly once")
+          text = text.replace(old, new, 1)
+
+          stale_example = "export KJ_ATLAS_FRONTEND_API_BASE=/api\n"
+          if text.count(stale_example) != 1:
+              raise SystemExit("expected standard Compose API-base example exactly once")
+          text = text.replace(stale_example, "", 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Verify focused configuration delivery contract
+        run: python 01_Plans/tests/test_configuration_compose_delivery_contract.py
+
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+
+      - name: Verify Compose syntax
+        run: docker compose -f 03_Implement/deploy/docker-compose.yml config >/dev/null
+
+      - name: Verify diff hygiene
+        run: git -c core.whitespace=cr-at-eol diff --check
+
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/lane-b2-configuration-compose-delivery-once.yml
+          git add 04_Documentation/configuration.md
+          git commit -m "docs(config): standard Compose配送面を実装へ同期する"
+          git push
