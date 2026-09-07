@@ -1,0 +1,86 @@
+name: Lane B2 access-control fail-safe scope fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-access-control-failsafe-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align access-control fail-safe scope wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('02_Architecture/runtime_parameter_registry.md'): (
+                  b'| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control \xe9\x9a\x9c\xe5\xae\xb3\xe6\x99\x82\xe3\x81\xae\xe5\x8b\x95\xe4\xbd\x9c\xe3\x80\x82`read_only` \xe3\x81\xbe\xe3\x81\x9f\xe3\x81\xaf `deny` | direct | \xe9\x80\x9a\xe5\xb8\xb8\xe5\x80\xa4 | \xe5\xa4\x96\xe9\x83\xa8PDP\xe9\x9a\x9c\xe5\xae\xb3\xe3\x82\x92\xe6\xa8\xa1\xe6\x93\xac\xe3\x81\x97\xe3\x80\x81`read_only`/`deny` \xe3\x81\x84\xe3\x81\x9a\xe3\x82\x8c\xe3\x81\xae\xe6\x8c\x99\xe5\x8b\x95\xe3\x81\xab\xe3\x81\xaa\xe3\x82\x8b\xe3\x81\x8b\xe7\xa2\xba\xe8\xaa\x8d\xe3\x81\x99\xe3\x82\x8b |',
+                  b'| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control fail-safe mode\xe3\x80\x82Org/Restricted \xe6\x96\x87\xe6\x9b\xb8\xe3\x81\xa7 `policyRef` \xe3\x81\x8c\xe6\xac\xa0\xe3\x81\x91\xe3\x82\x8b\xe5\xa0\xb4\xe5\x90\x88\xe3\x81\xa8\xe3\x80\x81adapter \xe3\x81\x8c unreachable / invalid response / invalid request / unexpected error \xe3\x81\xab\xe5\x80\x92\xe3\x82\x8c\xe3\x81\x9f\xe5\xa0\xb4\xe5\x90\x88\xe3\x81\xab\xe9\x81\xa9\xe7\x94\xa8\xe3\x81\x99\xe3\x82\x8b\xe3\x80\x82`read_only` \xe3\x81\xaf read \xe3\x81\xa0\xe3\x81\x91\xe3\x82\x92 allow + read-only \xe3\x81\xa8\xe3\x81\x97\xe3\x80\x81write / export / share \xe3\x81\xaf deny\xe3\x80\x82`deny` \xe3\x81\xaf\xe5\x85\xa8 action \xe3\x82\x92 deny \xe3\x81\x99\xe3\x82\x8b | direct | \xe9\x80\x9a\xe5\xb8\xb8\xe5\x80\xa4 | Org/Restricted + `policyRef` \xe6\xac\xa0\xe6\x90\x8d\xe3\x81\xa8 adapter \xe9\x9a\x9c\xe5\xae\xb3\xe3\x82\x92\xe5\x88\x86\xe3\x81\x91\xe3\x81\xa6\xe6\xa8\xa1\xe6\x93\xac\xe3\x81\x97\xe3\x80\x81`read_only` \xe3\x81\xa7 read \xe3\x81\xae\xe3\x81\xbf allow\xe3\x80\x81write/export/share \xe3\x81\xaf deny\xe3\x80\x81`deny` \xe3\x81\xa7\xe3\x81\xaf read \xe3\x82\x92\xe5\x90\xab\xe3\x82\x80\xe5\x85\xa8 action \xe3\x81\x8c deny \xe3\x81\xab\xe3\x81\xaa\xe3\x82\x8b\xe3\x81\x93\xe3\x81\xa8\xe3\x82\x92\xe7\xa2\xba\xe8\xaa\x8d\xe3\x81\x99\xe3\x82\x8b |',
+              ),
+              Path('04_Documentation/configuration.md'): (
+                  b'| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` \xe3\x81\xbe\xe3\x81\x9f\xe3\x81\xaf `deny` |',
+                  b'| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | Org/Restricted \xe6\x96\x87\xe6\x9b\xb8\xe3\x81\xae `policyRef` \xe6\xac\xa0\xe6\x90\x8d\xe3\x81\xbe\xe3\x81\x9f\xe3\x81\xaf access-control adapter \xe9\x9a\x9c\xe5\xae\xb3\xe6\x99\x82\xe3\x81\xae fail-safe\xe3\x80\x82`read_only` \xe3\x81\xaf read \xe3\x81\xa0\xe3\x81\x91 allow + read-only\xe3\x80\x81write / export / share \xe3\x81\xaf deny\xe3\x80\x82`deny` \xe3\x81\xaf read \xe3\x82\x92\xe5\x90\xab\xe3\x82\x80\xe5\x85\xa8 action \xe3\x82\x92 deny |',
+              ),
+          }
+
+          for path, (old, new) in replacements.items():
+              raw = path.read_bytes()
+              if raw.count(old) != 1:
+                  raise SystemExit(f'expected exactly one fail-safe row in {path}, got {raw.count(old)}')
+              path.write_bytes(raw.replace(old, new, 1))
+          PY
+      - name: Verify focused access-control fail-safe contract
+        run: python 01_Plans/tests/test_access_control_failsafe_effect_scope_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          allowed = {
+              '01_Plans/tests/test_access_control_failsafe_effect_scope_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-access-control-failsafe-scope-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          changed.update(subprocess.check_output(
+              ['git', 'diff', '--name-only'], text=True
+          ).splitlines())
+          extra = changed - allowed
+          if extra:
+              raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+
+          for path_name in (
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+          ):
+              for line_number, line in enumerate(Path(path_name).read_bytes().splitlines(), 1):
+                  if line.endswith((b' ', b'\t')):
+                      raise SystemExit(f'trailing whitespace: {path_name}:{line_number}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git rm .github/workflows/lane-b2-access-control-failsafe-scope-fix-once.yml
+          git commit -m "docs(access): fail-safe modeの作用範囲を明示する"
+          git push
