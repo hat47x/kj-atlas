@@ -1,22 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "04_Documentation/configuration.md"
-TEST = ROOT / "01_Plans/tests/test_high_reasoning_task_scope_contract.py"
-
-old = "| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction / assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |"
-new = "| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |"
-
-raw = CONFIG.read_bytes()
-old_b = old.encode("utf-8")
-new_b = new.encode("utf-8")
-count = raw.count(old_b)
-if count != 1:
-    raise SystemExit(f"expected exactly one high-reasoning config row, got {count}")
-CONFIG.write_bytes(raw.replace(old_b, new_b, 1))
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import ast
 import re
@@ -107,6 +89,3 @@ class HighReasoningTaskScopeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
