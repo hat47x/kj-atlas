@@ -154,11 +154,11 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） |
 | `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `50000` | DocumentV1 のカード件数（SEC-DOC-BOUND-01。meta-dogfoodingの数万枚規模と20,000-card targetに対する余白を確保） |
 | `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | AI リクエストの `allowUnreviewedText` 緩和を許可するか（SEC-AI-SAFEMODE-01・ADR-0068） |
-| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で auth provider を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |
-| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で user id を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |
-| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path で email を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |
-| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path で display name を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |
-| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で subject を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で external identity provider を受け取る header 名。値はtrim・lowercase正規化され、欠損/空値は `header`。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で `AUTH_SUBJECT_FIELD` 欠損時の external UID/subject fallback を受け取る legacy header 名。内部 `users.id` を直接指定しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.email` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.display_name` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で external UID/subject の第一候補を受け取る header 名。欠損時だけ `AUTH_USER_FIELD` へfallbackする。`saas-multitenant` の trusted JWT/cookie path では使用しない |
 | `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | JWT 署名検証の algorithm allowlist（カンマ区切り）。HMAC 系および `none` は常に拒否。 |
 | `KJ_ATLAS_TENANT_CLAIM_NAME` | `tenant_ref` | JWT 内の tenant 外部識別子を運ぶ claim 名。`tenant_identity_providers.external_tenant_ref` と照合。 |
 | `KJ_ATLAS_TRUSTED_PROXIES` | （空） | header 認証の信頼できるプロキシ CIDR（カンマ区切り）。未設定時は全オリジン許可（開発用、警告ログ）。本番では設定を推奨。 |

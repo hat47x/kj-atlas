@@ -1022,6 +1022,10 @@ fail-safe マトリクス:
   - `KJ_ATLAS_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
   - `KJ_ATLAS_AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
   - `KJ_ATLAS_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
+- header意味:
+  - external UID は `AUTH_SUBJECT_FIELD` を第一候補とし、欠損時だけ legacy `AUTH_USER_FIELD` へfallbackする。`AUTH_USER_FIELD` は内部 `users.id` の指定ではない。
+  - provider はtrim・lowercase正規化し、欠損/空値は `header` とする。
+  - email/name はJIT provisioningで新規 `UserRow` を作る時の初期値にだけ使い、既存user属性をheaderで上書きしない。
 - 正規化後:
   - `AuthContext.userId`: `users.id`
   - `AuthContext.actorRef`: `user:<users.id>`
