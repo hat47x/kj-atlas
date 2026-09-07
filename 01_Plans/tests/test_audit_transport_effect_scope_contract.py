@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import unittest
 from pathlib import Path
 
@@ -8,6 +9,8 @@ ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 AUDIT = ROOT / "03_Implement/backend/src/kj_atlas_api/audit.py"
+DOCS_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/docs.py"
+AI_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/ai.py"
 
 
 def _row(text: str, key: str) -> str:
@@ -20,6 +23,19 @@ def _row(text: str, key: str) -> str:
 
 def _backend_registry_row(text: str, key: str) -> str:
     return _row(text.split("## Backend settings", 1)[1], key)
+
+
+def _dispatcher_emit_dedup_calls(path: Path) -> list[ast.Call]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    calls: list[ast.Call] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        if node.func.attr != "emit":
+            continue
+        if any(keyword.arg == "dedup_key" for keyword in node.keywords):
+            calls.append(node)
+    return calls
 
 
 class AuditTransportEffectScopeContractTests(unittest.TestCase):
@@ -56,6 +72,25 @@ class AuditTransportEffectScopeContractTests(unittest.TestCase):
         self.assertLess(disabled, disabled_noop)
         self.assertLess(disabled_noop, http_selection)
         self.assertLess(http_selection, http_transport)
+
+    def test_dedup_window_is_limited_to_context_and_export_audit_callsites(self) -> None:
+        docs_dedup_calls = _dispatcher_emit_dedup_calls(DOCS_ROUTE)
+        ai_dedup_calls = _dispatcher_emit_dedup_calls(AI_ROUTE)
+        self.assertEqual(len(docs_dedup_calls), 2)
+        self.assertEqual(len(ai_dedup_calls), 0)
+
+        docs_source = DOCS_ROUTE.read_text(encoding="utf-8")
+        dedup_sources = [ast.get_source_segment(docs_source, call) or "" for call in docs_dedup_calls]
+        self.assertTrue(any('"context-audit"' in source for source in dedup_sources))
+        self.assertTrue(any('"export-audit"' in source for source in dedup_sources))
+
+        for row in self._rows("KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS"):
+            self.assertIn("context-audit", row)
+            self.assertIn("export-audit", row)
+            self.assertIn("view", row)
+            self.assertIn("LLM", row)
+            self.assertIn("proposal", row)
+            self.assertIn("適用しない", row)
 
 
 if __name__ == "__main__":
