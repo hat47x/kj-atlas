@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Diagnose strong stale-state reintroduction candidates before branch integration.
+"""Diagnose stale-state and already-applied merge candidates before integration.
 
 This tool is intentionally narrower than a merge policy:
 - commit distance is reported but never treated as a defect by itself;
 - paths changed on both sides are review signals, not automatic failures;
-- only strong path-level state reversals are eligible for --fail-on-strong.
+- only strong path-level state reversals are eligible for --fail-on-strong;
+- a prospective tree no-op is reported as a review signal, not an automatic failure.
 
 It complements, rather than replaces, typecheck/tests and exact-path regression guards.
 """
@@ -39,6 +40,9 @@ class Report:
     baseCommit: str
     headCommit: str
     mergeBase: str
+    baseTree: str
+    prospectiveMergeTree: str | None
+    prospectiveTreeNoop: bool | None
     baseCommitsSinceMergeBase: int
     headCommitsSinceMergeBase: int
     baseChangedPathCount: int
@@ -60,6 +64,30 @@ def _git(repo_root: Path, args: Iterable[str], *, check: bool = True) -> subproc
 
 def _resolve(repo_root: Path, ref: str) -> str:
     return _git(repo_root, ["rev-parse", "--verify", f"{ref}^{{commit}}"]).stdout.strip()
+
+
+def _tree_id(repo_root: Path, commit: str) -> str:
+    return _git(repo_root, ["rev-parse", f"{commit}^{{tree}}"]).stdout.strip()
+
+
+def _prospective_merge_tree(repo_root: Path, base_commit: str, head_commit: str) -> str | None:
+    """Return the clean prospective merge tree, or None when merge-tree reports conflict/error."""
+    completed = _git(
+        repo_root,
+        ["merge-tree", "--write-tree", base_commit, head_commit],
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+    lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    if not lines:
+        return None
+    candidate = lines[0]
+    # `git merge-tree --write-tree` writes the result tree object id first.
+    verified = _git(repo_root, ["cat-file", "-t", candidate], check=False)
+    if verified.returncode != 0 or verified.stdout.strip() != "tree":
+        return None
+    return candidate
 
 
 def _parse_name_status(text: str) -> dict[str, str]:
@@ -103,6 +131,12 @@ def analyze_repository(repo_root: Path, base_ref: str, head_ref: str) -> Report:
     if not merge_base:
         raise RuntimeError("git merge-base returned no commit")
 
+    base_tree = _tree_id(repo_root, base_commit)
+    prospective_merge_tree = _prospective_merge_tree(repo_root, base_commit, head_commit)
+    prospective_tree_noop = (
+        prospective_merge_tree == base_tree if prospective_merge_tree is not None else None
+    )
+
     base_changes = _changed_paths(repo_root, merge_base, base_commit)
     head_changes = _changed_paths(repo_root, merge_base, head_commit)
 
@@ -140,12 +174,15 @@ def analyze_repository(repo_root: Path, base_ref: str, head_ref: str) -> Report:
 
     strong_count = sum(1 for finding in findings if finding.severity == "strong")
     return Report(
-        schemaVersion=1,
+        schemaVersion=2,
         baseRef=base_ref,
         headRef=head_ref,
         baseCommit=base_commit,
         headCommit=head_commit,
         mergeBase=merge_base,
+        baseTree=base_tree,
+        prospectiveMergeTree=prospective_merge_tree,
+        prospectiveTreeNoop=prospective_tree_noop,
         baseCommitsSinceMergeBase=_commit_count(repo_root, merge_base, base_commit),
         headCommitsSinceMergeBase=_commit_count(repo_root, merge_base, head_commit),
         baseChangedPathCount=len(base_changes),
@@ -167,6 +204,14 @@ def _print_text(report: Report) -> None:
     print(f"base: {report.baseRef} ({report.baseCommit})")
     print(f"head: {report.headRef} ({report.headCommit})")
     print(f"merge-base: {report.mergeBase}")
+    if report.prospectiveMergeTree is None:
+        print("prospective merge tree: unavailable (conflict or merge-tree error)")
+    else:
+        suffix = " [tree-noop review]" if report.prospectiveTreeNoop else ""
+        print(
+            f"prospective merge tree: {report.prospectiveMergeTree} "
+            f"(base tree={report.baseTree}){suffix}"
+        )
     print(
         "commits since merge-base: "
         f"base={report.baseCommitsSinceMergeBase}, head={report.headCommitsSinceMergeBase}"
@@ -186,7 +231,7 @@ def _print_text(report: Report) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Diagnose stale-state reintroduction candidates before merge."
+        description="Diagnose stale-state reintroduction and already-applied merge candidates."
     )
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--base-ref", default="origin/main")
