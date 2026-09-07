@@ -1,0 +1,132 @@
+name: Lane B2 trusted proxy source gate once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-trusted-proxy-source-gate-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch public source-gate semantics and add focused contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test ! -f 01_Plans/tests/test_trusted_proxy_source_gate_contract.py; then
+            python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              raw = path.read_bytes()
+              old_b = old.encode('utf-8')
+              count = raw.count(old_b)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}')
+              path.write_bytes(raw.replace(old_b, new.encode('utf-8')))
+
+          replace_once(
+              Path('02_Architecture/runtime_parameter_registry.md'),
+              '| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | header 認証の信頼できるプロキシ CIDR のカンマ区切りリスト。未設定時は全オリジン許可（開発用・警告ログ出力）。本番では `10.0.0.0/8` 等でプロキシを限定すること。`saas-multitenant` では JWT 認証必須のため不要。 | direct | 通常値 | 非信頼 IP からの forwarded auth header が 403 で拒否されることを確認する |',
+              '| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | single-tenant forwarded-header identity path の信頼できるsource proxy CIDRのカンマ区切りリスト。設定時はidentity resolution冒頭で `request.client.host` をheader読取より先に検査し、非信頼IPはauth headerの有無にかかわらず403 `untrusted_proxy`。未設定時はsource gateを行わず警告ログを1回出す。本番では `10.0.0.0/8` 等で限定すること。`saas-multitenant` のtrusted JWT/cookie pathでは使用しない。 | direct | 通常値 | CIDR設定時に非信頼IPがheader読取前に403、信頼IPがidentity解決へ進むこと、未設定時はsource gateを行わず警告することを確認する |',
+          )
+          replace_once(
+              Path('04_Documentation/configuration.md'),
+              '| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | header 認証の信頼できるプロキシ CIDR（カンマ区切り）。未設定時は全オリジン許可（開発用、警告ログ）。本番では設定を推奨。 |',
+              '| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | single-tenant forwarded-header identity path の信頼できるsource proxy CIDR（カンマ区切り）。設定時は `request.client.host` をauth header読取より先に検査するため、非信頼IPはheaderの有無にかかわらず403 `untrusted_proxy`。未設定時はsource gateを行わず警告ログを1回出す。本番では設定を推奨。`saas-multitenant` のtrusted JWT/cookie pathでは使用しない。 |',
+          )
+          PY
+
+            cat > 01_Plans/tests/test_trusted_proxy_source_gate_contract.py <<'PY'
+          from __future__ import annotations
+
+          import ast
+          from pathlib import Path
+          import unittest
+
+          ROOT = Path(__file__).resolve().parents[2]
+          AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
+          CONFIG = ROOT / '04_Documentation/configuration.md'
+          REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
+
+
+          def _function_source(path: Path, name: str) -> str:
+              source = path.read_text(encoding='utf-8')
+              tree = ast.parse(source)
+              fn = next(
+                  node for node in tree.body
+                  if isinstance(node, ast.FunctionDef) and node.name == name
+              )
+              return ast.get_source_segment(source, fn) or ''
+
+
+          class TrustedProxySourceGateContractTest(unittest.TestCase):
+              def test_source_gate_runs_before_any_forwarded_header_read(self) -> None:
+                  source = _function_source(AUTH_CONTEXT, 'resolve_identity_context')
+                  gate = source.index('_check_trusted_proxy(request)')
+                  first_header_read = source.index('_header(request, settings.auth_provider_field)')
+                  self.assertLess(gate, first_header_read)
+
+              def test_configured_gate_uses_request_client_and_rejects_untrusted_source(self) -> None:
+                  source = _function_source(AUTH_CONTEXT, '_check_trusted_proxy')
+                  self.assertIn('request.client.host', source)
+                  self.assertIn('if not raw_cidrs:', source)
+                  self.assertIn('return  # Not configured', source)
+                  self.assertIn('"code": "untrusted_proxy"', source)
+                  self.assertIn('Request did not originate from a trusted proxy.', source)
+
+              def test_public_rows_name_pre_header_source_gate_scope(self) -> None:
+                  for path in (CONFIG, REGISTRY):
+                      text = path.read_text(encoding='utf-8')
+                      row = next(
+                          line for line in text.splitlines()
+                          if line.startswith('| `KJ_ATLAS_TRUSTED_PROXIES` |')
+                      )
+                      self.assertIn('single-tenant', row)
+                      self.assertIn('request.client.host', row)
+                      self.assertIn('header', row)
+                      self.assertIn('403', row)
+                      self.assertIn('untrusted_proxy', row)
+                      self.assertIn('saas-multitenant', row)
+
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+          fi
+      - name: Verify contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest 01_Plans.tests.test_trusted_proxy_source_gate_contract -v
+          python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+          python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c core.whitespace=cr-at-eol diff --check
+          changed="$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )"
+          printf '%s\n' "$changed"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          printf '%s\n' "$changed" | grep -Fx '01_Plans/tests/test_trusted_proxy_source_gate_contract.py'
+          printf '%s\n' "$changed" | grep -Fx '02_Architecture/runtime_parameter_registry.md'
+          printf '%s\n' "$changed" | grep -Fx '04_Documentation/configuration.md'
+          test "$(git diff --numstat -- 04_Documentation/configuration.md | awk '{print $1+$2}')" -le 2
+      - name: Commit verified payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet || test -n "$(git ls-files --others --exclude-standard)"; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add 01_Plans/tests/test_trusted_proxy_source_gate_contract.py 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+            git commit -m 'docs(auth): trusted proxy source gateをruntimeへ同期する'
+            git push origin HEAD:fix/lane-b2-trusted-proxy-source-gate-20260907
+          fi
