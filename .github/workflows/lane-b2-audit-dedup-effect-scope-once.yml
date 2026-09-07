@@ -1,0 +1,73 @@
+name: Lane B2 audit dedup effect scope once
+
+on:
+  push:
+    branches:
+      - audit/lane-b2-audit-dedup-effect-scope-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit explicit dedup effect scope
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          root = Path('03_Implement/backend/src/kj_atlas_api')
+          callsites = []
+          for path in root.rglob('*.py'):
+              text = path.read_text(encoding='utf-8')
+              tree = ast.parse(text)
+              lines = text.splitlines()
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call):
+                      continue
+                  if not any(kw.arg == 'dedup_key' for kw in node.keywords):
+                      continue
+                  end = node.end_lineno or node.lineno
+                  source = '\n'.join(lines[node.lineno - 1:end])
+                  callsites.append((path.as_posix(), source))
+
+          if len(callsites) != 2:
+              raise SystemExit(f'expected exactly 2 audit dedup call sites, got {len(callsites)}: {[p for p, _ in callsites]}')
+          if {path for path, _ in callsites} != {'03_Implement/backend/src/kj_atlas_api/routes/docs.py'}:
+              raise SystemExit(f'dedup effect escaped docs routes: {[p for p, _ in callsites]}')
+          joined = '\n'.join(source for _, source in callsites)
+          for marker in ('"context-audit"', '"export-audit"'):
+              if marker not in joined:
+                  raise SystemExit(f'missing expected dedup logical key marker: {marker}')
+
+          def public_row(path: str, key: str) -> str:
+              text = Path(path).read_text(encoding='utf-8')
+              prefix = f'| `{key}` |'
+              rows = [line for line in text.splitlines() if line.startswith(prefix)]
+              if len(rows) != 1:
+                  raise SystemExit(f'expected one row for {key} in {path}, got {len(rows)}')
+              return rows[0]
+
+          key = 'KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS'
+          for path in ('02_Architecture/runtime_parameter_registry.md', '04_Documentation/configuration.md'):
+              row = public_row(path, key)
+              for term in ('context-audit', 'export-audit', 'view', 'LLM', 'proposal', '`0`'):
+                  if term not in row:
+                      raise SystemExit(f'{path} dedup effect scope drifted; missing {term}: {row}')
+
+          print('audit dedup effect scope is aligned: exactly context-audit/export-audit use dedup_key')
+          PY
+      - name: Retire one-shot workflow
+        if: success()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-audit-dedup-effect-scope-once.yml
+          git commit -m "ci: retire Lane B2 audit dedup scope audit"
+          git push
