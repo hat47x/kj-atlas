@@ -120,8 +120,8 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
 | `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | control-plane の Stage A bootstrap 資格情報。`X-Admin-Api-Key` で提示する。Stage B では trusted SaaS session の `tenant.provision` capability でも `/admin/provision/**` を認可でき、request に admin bearer は不要。業務面 `KJ_ATLAS_API_KEY` は管理面で受理しない。`enterprise-production` / `saas-multitenant` では設定自体が**必須**（未設定なら起動しない）。`local-dev` / `evaluation` は admin key 未設定時だけ development 用に管理面を開く |
 | `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
-| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のmaster gate。`false` では transport 設定に関係なく外部送信せず `NoopAuditTransport` を使う。`true` のときだけ `KJ_ATLAS_AUDIT_TRANSPORT` が実送信transportを選ぶ |
+| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http`。`http` が実送信に使われるのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけ。export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う |
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
 | `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログの HTTP 連携用 API key |
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | 監査ログの HTTP 連携の timeout 秒数 |
