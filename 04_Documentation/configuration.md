@@ -161,7 +161,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で external UID/subject の第一候補を受け取る header 名。欠損時だけ `AUTH_USER_FIELD` へfallbackする。`saas-multitenant` の trusted JWT/cookie path では使用しない |
 | `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | trusted OIDC/JWT 署名検証の algorithm allowlist（カンマ区切り）。受理値は `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`。空list、HMAC 系、`none` を含む未知値は Settings validation で起動時に拒否し、未指定時は既定 `RS256,ES256` を使う。 |
 | `KJ_ATLAS_TENANT_CLAIM_NAME` | `tenant_ref` | trusted JWT 内の tenant 外部識別子を運ぶclaim名。`tenant_ref` は既定値で固定名ではない。非空・256文字以下・前後空白なし・空白文字なし・printableなカスタム名を指定でき、値は `tenant_identity_providers.external_tenant_ref` と照合する。 |
-| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | header 認証の信頼できるプロキシ CIDR（カンマ区切り）。未設定時は全オリジン許可（開発用、警告ログ）。本番では設定を推奨。 |
+| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | single-tenant forwarded-header identity path の信頼できるsource proxy CIDR（カンマ区切り）。設定時は `request.client.host` をauth header読取より先に検査するため、非信頼IPはheaderの有無にかかわらず403 `untrusted_proxy`。未設定時はsource gateを行わず警告ログを1回出す。本番では設定を推奨。`saas-multitenant` のtrusted JWT/cookie pathでは使用しない。 |
 | `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決 adapter。`user_id` または `sso_subject` |
 | `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 同値性判定 mode |
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制 |
