@@ -23,6 +23,18 @@ def _public_row(path: Path, key: str) -> str:
     return rows[0]
 
 
+def _configuration_backend_row(key: str) -> str:
+    text = CONFIGURATION.read_text(encoding="utf-8")
+    section = text.split("## Backend 環境変数", 1)[1].split(
+        "## Compose / frontend build 環境変数", 1
+    )[0]
+    prefix = f"| `{key}` |"
+    rows = [line for line in section.splitlines() if line.startswith(prefix)]
+    if len(rows) != 1:
+        raise AssertionError(f"expected one Backend row for {key}, got {len(rows)}")
+    return rows[0]
+
+
 class AppRevisionObservabilityContractTests(unittest.TestCase):
     def test_backend_and_frontend_share_the_same_canonical_revision_pattern(self) -> None:
         backend = BACKEND_SETTINGS.read_text(encoding="utf-8")
@@ -63,8 +75,10 @@ class AppRevisionObservabilityContractTests(unittest.TestCase):
         )
         self.assertIn("[rev=%(appRevision)s]", observability)
 
-        for path in (REGISTRY, CONFIGURATION):
-            row = _public_row(path, "KJ_ATLAS_APP_REVISION")
+        for row in (
+            _public_row(REGISTRY, "KJ_ATLAS_APP_REVISION"),
+            _configuration_backend_row("KJ_ATLAS_APP_REVISION"),
+        ):
             self.assertIn("全アプリケーションログ", row)
             self.assertNotIn("構造化ログ", row)
 
