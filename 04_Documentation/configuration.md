@@ -118,7 +118,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
 | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction / assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
 | `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
-| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | 管理面（`/admin/provision/**`）を `X-Admin-Api-Key` で保護。業務面キーでは到達不可。`KJ_ATLAS_API_KEY`と同じ値は起動時に拒否。`enterprise-production` / `saas-multitenant` では**必須**（未設定なら起動しない） |
+| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | control-plane の Stage A bootstrap 資格情報。`X-Admin-Api-Key` で提示する。Stage B では trusted SaaS session の `tenant.provision` capability でも `/admin/provision/**` を認可でき、request に admin bearer は不要。業務面 `KJ_ATLAS_API_KEY` は管理面で受理しない。`enterprise-production` / `saas-multitenant` では設定自体が**必須**（未設定なら起動しない）。`local-dev` / `evaluation` は admin key 未設定時だけ development 用に管理面を開く |
 | `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
