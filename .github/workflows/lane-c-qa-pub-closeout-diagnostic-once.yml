@@ -1,0 +1,38 @@
+name: Lane C QA PUB closeout diagnostic once
+
+on:
+  push:
+    branches:
+      - docs/lane-c-qa-pub-closeout-20260907
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Enumerate canonical active-path references
+        run: |
+          set -euo pipefail
+          OLD='01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          echo '--- exact references before closeout ---'
+          git grep -nF "$OLD" -- . ':(exclude).github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml' || true
+          echo '--- filename references ---'
+          git grep -nF 'issue-QA-PUB-01-I18N-03-e2e-boundary.md' -- . ':(exclude).github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml' || true
+
+      - name: Remove diagnostic input before repository guards
+        run: rm .github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml
+
+      - name: Baseline planning and docs guards
+        run: |
+          python -m pip install pytest
+          python -m pytest -q 01_Plans/tests
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          git diff --check
