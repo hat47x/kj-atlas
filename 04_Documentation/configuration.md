@@ -110,7 +110,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するhostのカンマ区切り。URLやwildcardは不可 |
-| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
+| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | `provider_unavailable` / `provider_timeout` を成功応答へ切り替えず、`none` metadata（`fallback_to_none=true`, `execution_path=<provider>->none`）付き `ProviderDisabledError` としてfail-closedする。`provider_validation` はfallback対象外。`false` では元の `ProviderRequestError` を維持する |
 | `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 |
 | `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL |
 | `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek API に渡すmodel ID |
