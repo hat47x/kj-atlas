@@ -8,7 +8,7 @@
 - Scope: 本ファイル, `03_Implement/frontend/e2e/`（テスト資産のみ。製品実装は対象外）
 - Expected verification level: `e2e`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
-- Related: `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`（境界判定を参照）
+- Related: `01_Plans/issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md`（境界判定を参照）
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ## Phase 1: Read Gate（Draft/Hold理由と依存抽出）

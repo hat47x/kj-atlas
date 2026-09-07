@@ -1,10 +1,8 @@
 # Issue Memo: QA boundary E2E for PUB-01 + I18N-03
 
 - Type: QA/E2E verification boundary plan
-- Status: Open
+- Status: Done
 - Source Issue: N/A
-- Open Readiness: Prepared
-- Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA E2E）
 - Scope: 本ファイル, `03_Implement/frontend/e2e/`（Open後の追加検証はテスト資産のみ。製品実装変更は別Issue）
@@ -373,3 +371,19 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 - fixture-backed browser testと実PostgreSQL roundtripは役割を分けている。fixtureで公開/I18N/readOnlyのUI状態遷移を固定し、storage preflightで実保存経路を別に確認する。fixtureを実DB証拠へ読み替えない。
 - この再実走は翻訳文の自然さ・説明品質などの**人間によるtranslation quality review**、PRODUCT-QA release decision、release screenshot bundleを完了扱いにしない。
 - one-shot workflow/helperと一時Playwright configは証拠採取後に削除し、恒久CI面積を増やさない。
+
+## Final closeout（2026-09-07）
+
+PR #3063 / commit `c07bfbd1eff03657607eef5bb420cfe8c91658f2` をmainlineへ統合し、本Issueが定義した3軸の機械判定可能なDone境界を、ADR-0019の標準Docker Compose経路でcurrent-main再検証したためcloseoutする。
+
+- **公開互換**: visibility変更の保存・再読込、legacy public pack互換、明示的なmissing/malformed pack errorを既存E2Eで確認した。
+- **I18N等価**: `ja/en` の同一journeyについてlocale query、document置換、visibility操作、SafeMode文脈のflow parityを確認した。
+- **安全境界**: readOnly + SafeModeで禁止操作が遮断され、カード本文commitとカードdrag位置変更を含むmutationが成立しないことを確認した。
+- clean Compose healthと、一意な合成DocumentV1による実PostgreSQL `PUT -> GET` / payload / ETag roundtripも同じrunでpassした。
+- final Actions run `34068886877` はtypecheckと対象4 spec **14/14 pass**。初回product-path run `34068672554` で露見した2件は、期待error自体は正しく表示されている一方、複数の正当な`role="status"`へ非限定locatorが一致するtest defectだった。製品挙動を変えず、専用`status-message` locatorへ限定して再実走した。
+
+### Doneの境界
+
+本IssueのDoneは、上記3軸のE2E境界と再実行可能な標準経路が成立したことを意味する。翻訳文の自然さ・説明品質などの**translation qualityは人間レビューという別責務**であり、本closeoutはその完了を主張しない。PRODUCT-QAのrelease decision、release screenshot bundle、外部公開基盤そのものの受入も本Issueへ取り込まない。
+
+fixture-backed browser testと実PostgreSQL roundtripは証拠の役割を分けたまま保持する。前者を実DB接続の証拠へ読み替えず、後者を公開/I18N/readOnly UI意味論の証拠へ読み替えない。本文中のDraft/Hold時点の判定や旧active-rootを用いたvalidation commandは、当時の履歴座標として書き換えない。
