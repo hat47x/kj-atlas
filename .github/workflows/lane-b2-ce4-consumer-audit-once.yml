@@ -1,0 +1,51 @@
+name: Lane B2 CE4 consumer semantics audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-b2-ce4-consumer-semantics-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate CE4 config consumers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          needles = (
+              'ce4_source_bundle_hash_allow_mock',
+              'ce4_stub_unresolved_contracts',
+              'KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK',
+              'KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS',
+          )
+          skip_roots = {'.git'}
+          for needle in needles:
+              print(f'=== {needle} ===')
+              hits = []
+              for path in Path('.').rglob('*'):
+                  if not path.is_file() or any(part in skip_roots for part in path.parts):
+                      continue
+                  try:
+                      text = path.read_text(encoding='utf-8')
+                  except (UnicodeDecodeError, OSError):
+                      continue
+                  for lineno, line in enumerate(text.splitlines(), 1):
+                      if needle in line:
+                          hits.append((str(path), lineno, line.strip()))
+              for hit in hits:
+                  print(f'{hit[0]}:{hit[1]}: {hit[2]}')
+              print(f'count={len(hits)}')
+          PY
+      - name: Retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-ce4-consumer-audit-once.yml
+          git commit -m "ci(b2): retire CE4 consumer audit"
+          git push
