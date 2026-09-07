@@ -1,0 +1,188 @@
+name: Lane B2 JWT algorithm public contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-jwt-algorithm-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch JWT algorithm contract and add focused test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              raw = path.read_bytes()
+              old_b = old.encode('utf-8')
+              count = raw.count(old_b)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}: {old}')
+              path.write_bytes(raw.replace(old_b, new.encode('utf-8')))
+
+          replace_once(
+              Path('04_Documentation/configuration.md'),
+              '| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | JWT 署名検証の algorithm allowlist（カンマ区切り）。HMAC 系および `none` は常に拒否。 |',
+              '| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | trusted OIDC/JWT 署名検証の algorithm allowlist（カンマ区切り）。受理値は `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`。空list、HMAC 系、`none` を含む未知値は Settings validation で起動時に拒否し、未指定時は既定 `RS256,ES256` を使う。 |',
+          )
+
+          registry = Path('02_Architecture/runtime_parameter_registry.md')
+          replace_once(
+              registry,
+              '`KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`',
+              '`KJ_ATLAS_JWT_ALGORITHMS` の非空allowlist（未指定は既定 `RS256,ES256`、設定時は既知の非HMAC asymmetric algorithmのみ）',
+          )
+          replace_once(
+              registry,
+              '| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | JWT 署名検証の algorithm allowlist（カンマ区切り）。HMAC 系および `none` は常に拒否。 | direct | 通常値 | 許容外 algorithm の JWT が 401 で拒否されることを確認する |',
+              '| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | trusted OIDC/JWT 署名検証の algorithm allowlist（カンマ区切り）。受理値は `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`。空list、HMAC 系、`none` を含む未知値は Settings validation で起動時に拒否する | direct | 通常値 | 非defaultの既知algorithmを設定でき、設定allowlist外のalgorithmで署名されたJWTが401、HMAC/未知値は起動時に拒否されることを確認する |',
+          )
+
+          replace_once(
+              Path('02_Architecture/api.md'),
+              'SaaS向けtrusted auth edgeはRS256/ES256 JWTの署名、issuer、audience、期限を検証し、PKCE対応mock IdPによるE2E基盤を持つ。',
+              'SaaS向けtrusted auth edgeは `KJ_ATLAS_JWT_ALGORITHMS` の検証済みallowlist（既定 `RS256,ES256`。RS/ES/PS系の既知asymmetric algorithmを受理）でJWTの署名、issuer、audience、期限を検証し、HMAC/`none`/未知algorithmは受理しない。PKCE対応mock IdPによるE2E基盤を持つ。',
+          )
+
+          replace_once(
+              Path('03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'),
+              "- Algorithm allowlist: RS256, ES256 only. HMAC and 'none' are always rejected.",
+              "- Algorithm allowlist comes from KJ_ATLAS_JWT_ALGORITHMS (default RS256,ES256); Settings accepts known RS/ES/PS asymmetric algorithms and rejects HMAC, 'none', and unknown values.",
+          )
+          PY
+
+          cat > 01_Plans/tests/test_jwt_algorithm_public_contract.py <<'PY'
+          from __future__ import annotations
+
+          import ast
+          from pathlib import Path
+          import re
+          import unittest
+
+
+          ROOT = Path(__file__).resolve().parents[2]
+          SETTINGS = ROOT / '03_Implement/backend/src/kj_atlas_api/settings.py'
+          AUTH_EDGE = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
+          CONFIG = ROOT / '04_Documentation/configuration.md'
+          REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
+          API_DOC = ROOT / '02_Architecture/api.md'
+
+
+          def _known_algorithms() -> set[str]:
+              tree = ast.parse(SETTINGS.read_text(encoding='utf-8'))
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Assign):
+                      continue
+                  if not any(isinstance(target, ast.Name) and target.id == '_KNOWN_JWT_ALGORITHMS' for target in node.targets):
+                      continue
+                  value = node.value
+                  if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id == 'frozenset':
+                      value = value.args[0]
+                  if isinstance(value, (ast.Set, ast.List, ast.Tuple)):
+                      return {
+                          element.value
+                          for element in value.elts
+                          if isinstance(element, ast.Constant) and isinstance(element.value, str)
+                      }
+              raise AssertionError('_KNOWN_JWT_ALGORITHMS not found')
+
+
+          def _row(text: str, key: str) -> str:
+              prefix = f'| `{key}` |'
+              matches = [line for line in text.splitlines() if line.startswith(prefix)]
+              if len(matches) != 1:
+                  raise AssertionError(f'{key}: expected one row, got {len(matches)}')
+              return matches[0]
+
+
+          def _documented_algorithms(row: str) -> set[str]:
+              return set(re.findall(r'`((?:RS|ES|PS)\d{3})`', row))
+
+
+          class JwtAlgorithmPublicContractTest(unittest.TestCase):
+              def test_public_rows_name_exact_settings_allowlist(self) -> None:
+                  expected = _known_algorithms()
+                  self.assertEqual(
+                      expected,
+                      _documented_algorithms(_row(CONFIG.read_text(encoding='utf-8'), 'KJ_ATLAS_JWT_ALGORITHMS')),
+                  )
+                  self.assertEqual(
+                      expected,
+                      _documented_algorithms(_row(REGISTRY.read_text(encoding='utf-8'), 'KJ_ATLAS_JWT_ALGORITHMS')),
+                  )
+
+              def test_settings_rejects_empty_hmac_and_unknown_values(self) -> None:
+                  source = SETTINGS.read_text(encoding='utf-8')
+                  self.assertIn('must contain at least one algorithm', source)
+                  self.assertIn('must not contain HMAC algorithms', source)
+                  self.assertIn('contains unknown algorithms', source)
+                  self.assertNotIn('HS256', _known_algorithms())
+                  self.assertNotIn('none', _known_algorithms())
+
+              def test_auth_edge_consumes_configured_allowlist(self) -> None:
+                  source = AUTH_EDGE.read_text(encoding='utf-8')
+                  self.assertIn('settings.jwt_algorithms.split(",")', source)
+                  self.assertNotIn('Algorithm allowlist: RS256, ES256 only', source)
+
+              def test_saas_profile_does_not_claim_exact_default_is_required(self) -> None:
+                  registry = REGISTRY.read_text(encoding='utf-8')
+                  self.assertNotIn('`KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`', registry)
+                  self.assertIn('未指定は既定 `RS256,ES256`', registry)
+                  self.assertIn('既知の非HMAC asymmetric algorithm', registry)
+
+              def test_api_contract_describes_configured_allowlist(self) -> None:
+                  api_doc = API_DOC.read_text(encoding='utf-8')
+                  self.assertIn('`KJ_ATLAS_JWT_ALGORITHMS` の検証済みallowlist', api_doc)
+                  self.assertIn('HMAC/`none`/未知algorithmは受理しない', api_doc)
+
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+      - name: Focused contract
+        run: python -m unittest 01_Plans.tests.test_jwt_algorithm_public_contract -v
+      - name: Planning test suite
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c core.whitespace=cr-at-eol diff --check
+          changed="$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )"
+          printf '%s\n' "$changed"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 5
+          printf '%s\n' "$changed" | grep -Fx '01_Plans/tests/test_jwt_algorithm_public_contract.py'
+          printf '%s\n' "$changed" | grep -Fx '02_Architecture/api.md'
+          printf '%s\n' "$changed" | grep -Fx '02_Architecture/runtime_parameter_registry.md'
+          printf '%s\n' "$changed" | grep -Fx '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
+          printf '%s\n' "$changed" | grep -Fx '04_Documentation/configuration.md'
+          python - <<'PY'
+          from pathlib import Path
+          raw = Path('04_Documentation/configuration.md').read_bytes()
+          if b'\r\n' not in raw:
+              raise SystemExit('configuration.md CRLF contract not preserved')
+          if raw.replace(b'\r\n', b'').find(b'\n') != -1:
+              raise SystemExit('configuration.md contains bare LF')
+          PY
+      - name: Commit verified payload and retire helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 01_Plans/tests/test_jwt_algorithm_public_contract.py 02_Architecture/api.md 02_Architecture/runtime_parameter_registry.md 03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py 04_Documentation/configuration.md
+          git rm .github/workflows/lane-b2-jwt-algorithm-contract-once.yml
+          git commit -m 'docs(auth): JWT algorithm allowlistをruntimeへ同期する'
+          git push origin HEAD:fix/lane-b2-jwt-algorithm-contract-20260907
