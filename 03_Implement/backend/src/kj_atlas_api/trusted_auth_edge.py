@@ -6,7 +6,7 @@ ResolvedIdentity carrying the VerifiedTenantClaim for downstream tenant
 resolution.
 
 JWT requirements (ADR-0063 D2/D4):
-- Algorithm allowlist: RS256, ES256 only. HMAC and 'none' are always rejected.
+- Algorithm allowlist comes from KJ_ATLAS_JWT_ALGORITHMS (default RS256,ES256); Settings accepts known RS/ES/PS asymmetric algorithms and rejects HMAC, 'none', and unknown values.
 - Token header jku/x5u/embedded key references are never followed.
 - kid is resolved from the fetched JWK set only.
 - Clock skew tolerance: 60 seconds (fixed, not configurable).
