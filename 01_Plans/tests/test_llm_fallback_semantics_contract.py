@@ -1,32 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "04_Documentation/configuration.md"
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TEST = ROOT / "01_Plans/tests/test_llm_fallback_semantics_contract.py"
-
-config_old = "| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |"
-config_new = "| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | `provider_unavailable` / `provider_timeout` を成功応答へ切り替えず、`none` metadata（`fallback_to_none=true`, `execution_path=<provider>->none`）付き `ProviderDisabledError` としてfail-closedする。`provider_validation` はfallback対象外。`false` では元の `ProviderRequestError` を維持する |"
-
-registry_old = "| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する | direct | 通常値 | LLM 呼び出し失敗時に `none` provider へフォールバックすることを確認する |"
-registry_new = "| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | `provider_unavailable` / `provider_timeout` を成功応答へ切り替えず、`none` metadata（`fallback_to_none=true`, `execution_path=<provider>->none`）付き `ProviderDisabledError` としてfail-closedする。`provider_validation` はfallback対象外。`false` では元の `ProviderRequestError` を維持する | direct | 通常値 | unavailable/timeoutを模擬し、`true` では `provider_kind=none`・`fallback_to_none=true`・`<provider>->none` を持つ `ProviderDisabledError`、`false` またはvalidationでは元エラーになることを確認する |"
-
-
-def replace_once(path: Path, old: str, new: str) -> None:
-    raw = path.read_bytes()
-    old_b = old.encode("utf-8")
-    new_b = new.encode("utf-8")
-    count = raw.count(old_b)
-    if count != 1:
-        raise SystemExit(f"expected one match in {path}, got {count}")
-    path.write_bytes(raw.replace(old_b, new_b, 1))
-
-
-replace_once(CONFIG, config_old, config_new)
-replace_once(REGISTRY, registry_old, registry_new)
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import ast
 import unittest
@@ -104,6 +76,3 @@ class LlmFallbackSemanticsContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
