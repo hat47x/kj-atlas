@@ -281,3 +281,25 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 この変更は、2026-07-19に明記した**特定のtest-harness blockerを解消し、第2バッチの欠陥検知能力を増やすもの**である。QA-UNIT-01全体をDoneとはしない。今後も欠陥クラス基準で追加候補を選び、DOM環境を全testへ拡張することや、coverage率そのものを目的化することはしない。
 
 依存追加はNode 20（repository `.nvmrc`）でengine-strict installが成立する版に固定し、対象test、frontend全suite、typecheck、planning/docs guardsが同一runでgreenになった場合だけmainline候補とする。
+
+## 2026-09-07 第3バッチ — TenantSessionBootstrapGateの実状態遷移
+
+第2バッチでfile-local `happy-dom` + React `createRoot` / `act` のcomponent harnessを導入した結果、同じpre-App fail-closed chainにある `TenantSessionBootstrapGate` も、SSR断片テストだけでは検出できなかった実状態遷移をunitで固定できるようになった。
+
+### 選定理由
+
+既存`TenantSessionBootstrapGate.test.ts`はloading view、blocked viewの静的markup、login redirect helper、英語表示を検証していたが、component自身が実行する `bootstrapTenantSession` の結果を受けた state commit は一度も通していなかった。そのため、次の回帰はunit層で見逃し得た。
+
+- session取得/validation failureでもAppをmountしてしまう。
+- valid sessionからtenant-scoped storage scopeを作った後のready hand-offが壊れる。
+- transient `session_unavailable` 後のRetryが再bootstrapしない。
+- unmount時にAbortController cleanupが失われ、破棄済みgateへ遅延結果がcommitされる。
+
+### 第3バッチ境界
+
+- 既に導入済みの`happy-dom`を当該test fileだけで利用し、新しいdependencyは追加しない。
+- `TenantSessionBootstrapGate.tsx`本体は変更しない。
+- pending -> blocked、pending -> ready、blocked -> retry -> ready、unmount -> AbortSignal aborted を実componentのeffect/stateとして検証する。
+- 既存の全failure reason静的表示、same-origin login endpoint、ja/en pre-App表示のguardも保持する。
+
+このバッチもQA-UNIT-01全体のDoneを意味しない。次候補は同じharnessを機械的に横展開せず、実際にstate/effect欠落があり、かつfail-closed/意味保存上の欠陥検知価値が高い箇所から選ぶ。
