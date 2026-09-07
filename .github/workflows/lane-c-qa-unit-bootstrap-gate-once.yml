@@ -1,0 +1,77 @@
+name: Lane C QA UNIT bootstrap gate once
+
+on:
+  push:
+    branches:
+      - qa/lane-c-qa-unit-bootstrap-gate-r2-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Stage bootstrap-gate state-transition tests
+        run: python .github/scripts/lane_c_qa_unit_bootstrap_gate.py
+
+      - name: Install frontend dependencies under repository Node contract
+        working-directory: 03_Implement/frontend
+        env:
+          npm_config_engine_strict: 'true'
+        run: npm ci
+
+      - name: Verify targeted bootstrap gate and full frontend unit profile
+        working-directory: 03_Implement/frontend
+        run: |
+          set -euo pipefail
+          npm run typecheck
+          npx vitest run src/ui/TenantSessionBootstrapGate.test.ts src/ui/TenantSessionRuntimeGate.test.ts
+          npm run test
+
+      - name: Retire one-shot inputs before repository guards
+        run: |
+          rm .github/scripts/lane_c_qa_unit_bootstrap_gate.py
+          rm .github/workflows/lane-c-qa-unit-bootstrap-gate-once.yml
+
+      - name: Verify lifecycle and planning/docs guards
+        run: |
+          set -euo pipefail
+          grep -F -- '- Status: In Progress' 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md
+          grep -F '## 2026-09-07 第3バッチ — TenantSessionBootstrapGateの実状態遷移' 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md
+          grep -F '// @vitest-environment happy-dom' 03_Implement/frontend/src/ui/TenantSessionBootstrapGate.test.ts
+          python -m pip install pytest
+          python -m pytest -q 01_Plans/tests
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          git diff --check
+
+      - name: Show final narrow diff
+        run: |
+          git status --short
+          git diff --stat origin/main
+          git diff -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md 03_Implement/frontend/src/ui/TenantSessionBootstrapGate.test.ts
+
+      - name: Commit verified third batch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'test(qa): TenantSessionBootstrapGateの状態遷移をunit固定する'
+          git push origin HEAD:${GITHUB_REF_NAME}
