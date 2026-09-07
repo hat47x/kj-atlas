@@ -1,0 +1,91 @@
+name: Lane B2 APP_REVISION log scope fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-app-revision-log-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Align APP_REVISION public log scope
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('04_Documentation/configuration.md')
+          raw = path.read_bytes()
+          old = ('| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。1〜64文字のASCII英数字・`.`・`_`・`-`だけをcanonical値として受理し、それ以外は`unknown`へ丸める。'
+                 '`/version` と構造化ログ、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |').encode('utf-8')
+          new = ('| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。1〜64文字のASCII英数字・`.`・`_`・`-`だけをcanonical値として受理し、それ以外は`unknown`へ丸める。'
+                 '`/version` と全アプリケーションログ（JSON／人間可読）、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |').encode('utf-8')
+          count = raw.count(old)
+          if count != 1:
+              raise SystemExit(f'expected one APP_REVISION row to patch, got {count}')
+          path.write_bytes(raw.replace(old, new, 1))
+          PY
+
+      - name: Verify focused APP_REVISION contract
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_app_revision_observability_contract.py' -v
+
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+
+      - name: Verify narrow diff and EOL preservation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          allowed = {
+              '01_Plans/tests/test_app_revision_observability_contract.py',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-app-revision-log-scope-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD']
+          ).decode().splitlines())
+          changed |= set(subprocess.check_output(
+              ['git', 'diff', '--name-only']
+          ).decode().splitlines())
+          extra = changed - allowed
+          if extra:
+              raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+
+          current = Path('04_Documentation/configuration.md').read_bytes()
+          base = subprocess.check_output(
+              ['git', 'show', 'origin/main:04_Documentation/configuration.md']
+          )
+          def eol_shape(data: bytes) -> tuple[int, int]:
+              return data.count(b'\r\n'), data.count(b'\n') - data.count(b'\r\n')
+          if eol_shape(current) != eol_shape(base):
+              raise SystemExit(
+                  f'configuration EOL shape changed: base={eol_shape(base)} current={eol_shape(current)}'
+              )
+          PY
+          git diff --check -- 01_Plans/tests/test_app_revision_observability_contract.py
+          git -c core.whitespace=cr-at-eol diff --check -- 04_Documentation/configuration.md
+
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 04_Documentation/configuration.md
+          git commit -m "docs(config): APP_REVISION log scopeを全形式へ同期する"
+          git rm .github/workflows/lane-b2-app-revision-log-scope-fix-once.yml
+          git commit -m "ci(b2): retire APP_REVISION log scope helper"
+          git push
