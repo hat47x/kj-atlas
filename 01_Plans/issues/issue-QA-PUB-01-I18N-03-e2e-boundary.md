@@ -1,13 +1,13 @@
 # Issue Memo: QA boundary E2E for PUB-01 + I18N-03
 
 - Type: QA/E2E verification boundary plan
-- Status: Draft
+- Status: Open
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready
 - Priority: P0
-- Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/`（docs-only）
+- Owner: Stream H（QA E2E）
+- Scope: 本ファイル, `03_Implement/frontend/e2e/`（Open後の追加検証はテスト資産のみ。製品実装変更は別Issue）
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Expected verification level: `e2e`
 - Related backlog: `PUB-01`, `I18N-03`, `QA-E2E-USE-01`
@@ -17,11 +17,11 @@
 
 ## Phase 1: Read Gate（Draft/Hold理由と依存抽出）
 
-### Draft理由
+### Draft理由（当時。2026-07-18までに解消済み）
 - 境界3軸（公開互換/I18N等価/安全境界）はあるが、Open判定時に必要な承認証跡欄が不足。
 - どの境界逸脱が即Holdか（重大度閾値）が記述されていない。
 
-### Execution Hold理由
+### Execution Hold理由（当時。2026-07-18までに解消済み）
 - PUB-01 と I18N-03 の最終承認IDが未確定。
 - `ADR-0019` に基づく実行経路の事前選択が未完了。
 
@@ -338,3 +338,14 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 **変更**: `handleUndo`/`handleRedo`の先頭に`if (isReadOnly) return;`を追加し、`useCallback`依存配列へ`isReadOnly`を追加した。
 
 **検証**: E2Eでの新規追加は行っていない（上記のとおり、現状の到達可能性では「before/afterの差」を実測できないテストは意味のある回帰検知にならないと判断した）。既存のCtrl+Z関連E2E（`island_tidy.spec.ts`、`retention_keyboard_shortcuts.spec.ts`、`shortcut_cheatsheet.spec.ts`、`menu_bar.spec.ts`、計16件）と`npx tsc --noEmit`・`npx vitest run`（239 file/1,435 tests）・`npm run build`を実行し、通常（非readOnly）のundo/redoに回帰がないことを確認した。
+
+## 2026-09-07 Open化同期 — 承認済みゲートを現在状態へ反映
+
+2026-07-16〜18に成立していた解除条件と、その後に積み上がったE2E証跡を、triageが読む現在状態へ同期する。前節までの各時点で「Draft / Execution: Hold」と記録した箇所は**その時点の歴史証拠**として保持し、現在状態の主張には使わない。
+
+- Pending-1（PUB-01公開境界）とPending-2（I18N-03外部公開判定）は、2026-07-16にMaintainer承認済み。
+- B-ENV-01（ADR-0019準拠の実行経路）は、2026-07-18にDocker Compose標準経路として固定済み。SQLite/mockはDockerを実行できない場合の例外経路であり、標準経路と混同しない。
+- その後、公開互換 / I18N等価 / readOnly + SafeMode の3軸に対するE2E資産と回帰証跡が追加され、readOnlyのカードdrag欠落など実際に見つかった境界逸脱も隠さず是正・回帰固定されている。
+- したがって `Open Readiness: Prepared` / `Execution: Ready` と整合させ、`Status` を `Open` とする。古いDraft gateだけを理由にtriageから除外し続けない。
+- この同期は**3軸のcurrent-main再検証完了、release承認、翻訳品質の人間レビュー完了を主張しない**。Openは「標準経路で実行して証拠を現在化できる状態」を意味する。
+- Draft→Open同期自体はdocs-only。Open後の追加変更はE2Eテスト資産に限定し、製品実装の新規変更が必要な欠落を見つけた場合は、本Issueへ抱え込まず別Issueとして切り出す。既存specで3軸を十分に覆える場合は重複テストを作らず、Compose-backed再実行と証跡同期を優先する。
