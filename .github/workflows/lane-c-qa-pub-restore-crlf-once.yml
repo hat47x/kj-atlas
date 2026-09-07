@@ -37,6 +37,7 @@ jobs:
               raise SystemExit('locator replacement count mismatch')
           PY
           rm .github/workflows/lane-c-qa-pub-restore-crlf-once.yml
+          git config core.whitespace cr-at-eol
           git diff --check
           echo '--- net diff against current main ---'
           git diff --numstat origin/main -- "$FILE" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
@@ -47,6 +48,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config core.whitespace cr-at-eol
           git add -A
           git diff --cached --check
           git commit -m 'test(qa): preserve public-pack spec line endings'
