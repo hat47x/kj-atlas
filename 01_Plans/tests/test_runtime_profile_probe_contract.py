@@ -1,17 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TEST = ROOT / "01_Plans/tests/test_runtime_profile_probe_contract.py"
-
-old = "| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant`を受理する。SaaS backendはPostgreSQL共有認証表と必須policyを検査し、不足時は起動拒否。 | direct / base Compose | 通常値 | 起動ログまたは `/healthz` で profile 名（値のみ）を確認する |"
-new = "| `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | Backend/MCPの実行profile。`local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant`を受理する。SaaS backendはPostgreSQL共有認証表と必須policyを検査し、不足時は起動拒否。 | direct / base Compose | 通常値 | `GET /version` の `runtimeProfile` が設定後のvalidated profileと一致することを確認する。`/healthz` はliveness-onlyでprofileを返さない |"
-raw = REGISTRY.read_bytes()
-if raw.count(old.encode()) != 1:
-    raise SystemExit("expected exactly one runtime-profile backend row")
-REGISTRY.write_bytes(raw.replace(old.encode(), new.encode(), 1))
-
-TEST.write_text('''from __future__ import annotations
+from __future__ import annotations
 
 import unittest
 from pathlib import Path
@@ -64,4 +51,3 @@ class RuntimeProfileProbeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''', encoding="utf-8")
