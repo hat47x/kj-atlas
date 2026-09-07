@@ -124,7 +124,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログHTTP連携の接続先。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 | direct | 通常値（接続先URL。認証情報は別キー） | test double への到達確認（実サービスへは送らない） |
 | `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログHTTP連携用 API key | direct | 秘密値 | 送信ヘッダにキーが付与されることを確認する（値はマスクして確認） |
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout 秒数 | direct | 通常値 | timeout 超過時に監査送出が失敗として扱われることを確認する |
-| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 | direct | 通常値 | 上限到達時の drop 挙動をログで確認する |
+| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 外部監査送信失敗時のfail-open retry buffer上限。正常送信時やexport無効時はqueueへ積まない | direct | 通常値 | failing transportで上限超過を起こし、最古eventのdrop warningを確認する |
 | `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS` | `5.0` | `context-audit` / `export-audit` が渡す同一論理操作のdedup keyに対する重複排除ウィンドウ（SEC-AUDIT-DUP-01）。`view` / `LLM` / `proposal` 監査には適用しない。`0` で無効化 | direct | 通常値 | `context-audit` / `export-audit` の同一論理操作を二重POSTして外部シンクへ1件のみ送出されることを確認する。`view` / `LLM` / `proposal` はdedup対象として扱わない |
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の監査ログHTTP連携を許可する | direct | 通常値 | SafeMode 中に `false` のとき監査HTTP送出が抑止されることを確認する |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter。`noop`, `mock`, `external_http` | direct | 通常値 | adapter名のstartup self-reportはない。`saas-multitenant` では起動前preflightが `ExternalPolicyAccessControlAdapter` の実型を要求し、`external_http` の個別配送はPDP test doubleへの到達で確認する |
