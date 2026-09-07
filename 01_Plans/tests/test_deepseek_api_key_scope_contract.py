@@ -1,32 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "04_Documentation/configuration.md"
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TEST = ROOT / "01_Plans/tests/test_deepseek_api_key_scope_contract.py"
-
-config_old = "| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 |"
-config_new = "| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。primary `KJ_ATLAS_LLM_PROVIDER=deepseek` では起動readinessの必須値。model registryのregistered DeepSeek providerも `api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY` の場合に同じ値をrequest-timeで解決し、未設定・非canonicalなら provider unavailable としてfail-closedする |"
-
-registry_old = "| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 | direct | 秘密値 | 未設定時に `KJ_ATLAS_LLM_PROVIDER=deepseek` で起動拒否されることを確認する |"
-registry_new = "| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。primary `KJ_ATLAS_LLM_PROVIDER=deepseek` では起動readinessの必須値。registered DeepSeek providerでは `api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY` のrequest-time credential sourceとして使い、解決不能なら provider unavailable へfail-closedする | direct | 秘密値 | 未設定時、primary deepseekは起動拒否されること。registered DeepSeek + `api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY` は credential unavailable となり、設定時だけ構築可能になることを確認する（秘密値は出力しない） |"
-
-
-def replace_once(path: Path, old: str, new: str) -> None:
-    raw = path.read_bytes()
-    old_b = old.encode("utf-8")
-    new_b = new.encode("utf-8")
-    count = raw.count(old_b)
-    if count != 1:
-        raise SystemExit(f"expected one match in {path}, got {count}")
-    path.write_bytes(raw.replace(old_b, new_b, 1))
-
-
-replace_once(CONFIG, config_old, config_new)
-replace_once(REGISTRY, registry_old, registry_new)
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import ast
 import unittest
@@ -113,6 +85,3 @@ class DeepseekApiKeyScopeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
