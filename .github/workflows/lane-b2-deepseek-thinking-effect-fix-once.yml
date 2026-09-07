@@ -40,8 +40,8 @@ jobs:
         run: python 01_Plans/docs_check.py
       - name: Verify narrow diff and EOL preservation
         run: |
-          git diff --stat origin/main...
-          changed="$(git diff --name-only origin/main...)"
+          git diff --stat origin/main
+          changed="$(git diff --name-only origin/main)"
           printf '%s\n' "$changed"
           printf '%s\n' "$changed" | grep -Fx '01_Plans/tests/test_deepseek_thinking_effect_scope_contract.py'
           printf '%s\n' "$changed" | grep -Fx '04_Documentation/configuration.md'
