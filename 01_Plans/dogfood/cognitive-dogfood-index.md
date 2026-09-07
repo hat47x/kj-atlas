@@ -213,6 +213,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R38。PR #3054で、clean DBの固定seed依存による受入false negativeと、frontend subtreeだけをtemporary copyしてrepository-relative fixtureを失ったharness偽失敗を分析し、acceptance invariantとfixture / setup / harness前提を分離した記録。
 - `doc_kj_atlas_dogfood_r38.json`
   - R38のKJキャンバス。testが必要な最小状態を自ら構成してcontract上の不変条件を観測し、harnessは意味上必要なdependency closure / repository topologyを保持する一方、shared fixtureやtemporary directory自体は一律禁止しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r39.md`
+  - R39。PR #3063で、期待内容が正しく存在するのに非限定status locatorが別の正当なstatus surfaceまで拾って失敗したtest defectを分析し、DOM上の偶発的一意性とassertionが所有するsemantic surfaceを分離した記録。
+- `doc_kj_atlas_dogfood_r39.json`
+  - R39のKJキャンバス。role/testidの一般優先を決めず、locator scopeをassertionの意味境界へ合わせ、.first()やproduct surface削除でambiguityを隠さない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
