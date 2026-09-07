@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 from pathlib import Path
 import unittest
 
@@ -10,6 +9,7 @@ AUTH_EDGE = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
 RUNTIME = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
+
 
 class TenantClaimNamePublicContractTest(unittest.TestCase):
     def test_settings_default_is_not_runtime_fixed_requirement(self) -> None:
@@ -21,12 +21,6 @@ class TenantClaimNamePublicContractTest(unittest.TestCase):
         self.assertIn('KJ_ATLAS_TENANT_CLAIM_NAME must not contain spaces', settings)
 
         runtime_source = RUNTIME.read_text(encoding='utf-8')
-        tree = ast.parse(runtime_source)
-        validate = next(
-            node for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef) and node.name == 'validate'
-            and isinstance(getattr(node, 'parent', None), type(None))
-        ) if False else None
         self.assertIn('(bool(self.tenant_claim_name.strip()), "tenant claim name set")', runtime_source)
         self.assertNotIn('self.tenant_claim_name == "tenant_ref"', runtime_source)
 
@@ -43,6 +37,7 @@ class TenantClaimNamePublicContractTest(unittest.TestCase):
         self.assertIn('固定名ではなく', registry)
         self.assertIn('`tenant_ref` は既定値で固定名ではない', config)
         self.assertIn('カスタム名を指定でき', config)
+
 
 if __name__ == '__main__':
     unittest.main()
