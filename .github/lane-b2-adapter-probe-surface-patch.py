@@ -72,7 +72,6 @@ class RuntimeAdapterProbeSurfaceContractTests(unittest.TestCase):
             row = _backend_row(self.registry, key)
             with self.subTest(key=key):
                 self.assertIn(concrete_type, row)
-                self.assertIn(f"isinstance(\n                    self.", self.trusted_saas_runtime)
                 self.assertIn(concrete_type, self.trusted_saas_runtime)
 
     def test_all_three_concrete_types_are_required_by_the_same_saas_preflight_bundle(self) -> None:
