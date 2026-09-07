@@ -1,7 +1,7 @@
 # Issue Plan: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
 
 - Type: Process
-- Status: Open
+- Status: In Progress
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready
@@ -264,9 +264,9 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 
 **再開条件**: プロジェクトのfrontend単体テストに、DOM/effectを伴うcomponent状態遷移を検証する手段（jsdom等の追加、または別のtest harness）を導入する方針が決定された場合に再開する。決定は`01_Plans/issues/`への新規Issueまたは本issueへの追記で記録する。
 
-## 2026-09-07 Open化同期 / 第2バッチ再開
+## 2026-09-07 current-state同期 / 第2バッチ再開
 
-2026-07-16〜18にPending-1/2とB-UNIT-03は解消済みで、初回バッチも2026-07-18に実装・検証済みである一方、headerだけが`Status: Draft`に残っていたため、歴史節のDraft/Hold判定を改変せず現在状態を`Open`へ同期する。
+2026-07-16〜18にPending-1/2とB-UNIT-03は解消済みで、初回バッチも2026-07-18に実装・検証済みである一方、headerだけが`Status: Draft`に残っていたため、歴史節のDraft/Hold判定を改変せず、初回バッチ実行済みの現在状態を`In Progress`へ同期する。
 
 2026-07-19の第2バッチで停止した理由は、`TenantSessionRuntimeGate`の中心的な状態遷移がReactのcommit/effectを必要とするのに、既存unit suiteがglobal `environment: "node"`＋SSR中心で、実componentを再レンダリングする局所harnessを持たなかったことだった。今回、この停止条件を次の最小境界で解除する。
 
