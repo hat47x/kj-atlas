@@ -1,0 +1,129 @@
+name: Lane B2 reviewer-ref invalid config contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-reviewer-ref-invalid-config-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch architecture contract and add focused test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('02_Architecture/api.md')
+          raw = path.read_bytes()
+          old = '  - adapter未設定/不正値時は `user_id` フォールバック（既存 local運用維持）。'.encode('utf-8')
+          new = ('  - adapter未設定時は Settings の既定値 `user_id` を使う。不正値は Settings validation で起動時に拒否し、'
+                 '公開設定経路ではフォールバックしない（factory 内部の未知 adapter 名への `user_id` フォールバックは防御的実装）。').encode('utf-8')
+          if raw.count(old) != 1:
+              raise SystemExit(f'expected exactly one stale reviewer-ref fallback sentence, got {raw.count(old)}')
+          path.write_bytes(raw.replace(old, new))
+          PY
+          cat > 01_Plans/tests/test_reviewer_ref_public_config_contract.py <<'PY'
+          from __future__ import annotations
+
+          import ast
+          from pathlib import Path
+          import unittest
+
+
+          ROOT = Path(__file__).resolve().parents[2]
+          SETTINGS = ROOT / '03_Implement/backend/src/kj_atlas_api/settings.py'
+          REVIEWER_REF = ROOT / '03_Implement/backend/src/kj_atlas_api/reviewer_ref.py'
+          API_DOC = ROOT / '02_Architecture/api.md'
+
+
+          def _settings_allowed_values() -> set[str]:
+              tree = ast.parse(SETTINGS.read_text(encoding='utf-8'))
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.If) or not isinstance(node.test, ast.Compare):
+                      continue
+                  test = node.test
+                  if not (
+                      isinstance(test.left, ast.Name)
+                      and test.left.id == 'normalized_reviewer_ref_adapter'
+                      and len(test.ops) == 1
+                      and isinstance(test.ops[0], ast.NotIn)
+                      and len(test.comparators) == 1
+                      and isinstance(test.comparators[0], ast.Set)
+                  ):
+                      continue
+                  values = {
+                      element.value
+                      for element in test.comparators[0].elts
+                      if isinstance(element, ast.Constant) and isinstance(element.value, str)
+                  }
+                  return values
+              raise AssertionError('reviewer-ref Settings allowlist was not found')
+
+
+          class ReviewerRefPublicConfigContractTest(unittest.TestCase):
+              def test_public_config_rejects_unknown_adapter_instead_of_falling_back(self) -> None:
+                  self.assertEqual({'user_id', 'sso_subject'}, _settings_allowed_values())
+                  settings_text = SETTINGS.read_text(encoding='utf-8')
+                  self.assertIn(
+                      'KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject',
+                      settings_text,
+                  )
+
+                  api_doc = API_DOC.read_text(encoding='utf-8')
+                  self.assertIn('不正値は Settings validation で起動時に拒否', api_doc)
+                  self.assertIn('公開設定経路ではフォールバックしない', api_doc)
+                  self.assertNotIn(
+                      'adapter未設定/不正値時は `user_id` フォールバック',
+                      api_doc,
+                  )
+
+              def test_factory_unknown_name_fallback_remains_internal_defence(self) -> None:
+                  source = REVIEWER_REF.read_text(encoding='utf-8')
+                  self.assertIn(
+                      'def build_reviewer_ref_resolver_adapter(*, adapter_name: str)',
+                      source,
+                  )
+                  self.assertIn('factory 内部の未知 adapter 名への `user_id` フォールバックは防御的実装', API_DOC.read_text(encoding='utf-8'))
+
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+      - name: Focused contract
+        run: python -m unittest 01_Plans.tests.test_reviewer_ref_public_config_contract -v
+      - name: Planning test suite
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          mapfile -t files < <(git status --short | awk '{print $2}' | grep -v '^.github/workflows/lane-b2-reviewer-ref-invalid-config-once.yml$' | sort)
+          printf 'changed payload files:\n%s\n' "${files[*]}"
+          expected=('01_Plans/tests/test_reviewer_ref_public_config_contract.py' '02_Architecture/api.md')
+          if [[ "${files[*]}" != "${expected[*]}" ]]; then
+            echo 'unexpected payload diff' >&2
+            exit 1
+          fi
+      - name: Commit verified payload and retire helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/lane-b2-reviewer-ref-invalid-config-once.yml
+          git add 01_Plans/tests/test_reviewer_ref_public_config_contract.py 02_Architecture/api.md
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'docs(auth): reviewer-ref不正設定をfail-fastへ同期する'
+          git push origin HEAD:fix/lane-b2-reviewer-ref-invalid-config-20260907
