@@ -1,0 +1,126 @@
+name: Lane C QA PUB Compose rerun once
+
+on:
+  push:
+    branches:
+      - qa/lane-c-qa-pub-compose-rerun-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 03_Implement/frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frontend dependencies and Chromium
+        working-directory: 03_Implement/frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start clean standard Compose stack and verify storage roundtrip
+        run: |
+          set -euo pipefail
+          cd 03_Implement/deploy
+          docker compose down -v --remove-orphans || true
+          docker compose up --build -d
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/api/healthz >/tmp/qa-pub-healthz.txt; then
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              docker compose ps
+              docker compose logs api --tail=200
+              docker compose logs web --tail=200
+              exit 1
+            fi
+            sleep 2
+          done
+          cat /tmp/qa-pub-healthz.txt
+          node ../frontend/scripts/e2e_storage_preflight.mjs \
+            --write-base-url http://127.0.0.1:8080/api | tee /tmp/qa-pub-storage-preflight.log
+
+      - name: Run typecheck and three-axis browser acceptance against Compose frontend
+        working-directory: 03_Implement/frontend
+        run: |
+          set -euo pipefail
+          cat > playwright.compose.qa-pub.once.config.ts <<'EOF'
+          import { defineConfig } from "@playwright/test";
+
+          export default defineConfig({
+            testDir: "./e2e",
+            timeout: 30_000,
+            retries: 0,
+            use: {
+              baseURL: "http://127.0.0.1:8080",
+              trace: "retain-on-failure",
+            },
+          });
+          EOF
+          npm run typecheck
+          npx playwright test \
+            --config=playwright.compose.qa-pub.once.config.ts \
+            e2e/pub_visibility_i18n_readonly_flow.spec.ts \
+            e2e/public_pack_visibility_compat.spec.ts \
+            e2e/i18n_locale_query_equivalence.spec.ts \
+            e2e/i18n_locale_functional_equivalence.spec.ts \
+            --reporter=line 2>&1 | tee /tmp/qa-pub-e2e.log
+          result=$(grep -Eo '[0-9]+ passed' /tmp/qa-pub-e2e.log | tail -1)
+          test -n "$result"
+          printf '%s\n' "$result" > /tmp/qa-pub-e2e-result.txt
+          rm playwright.compose.qa-pub.once.config.ts
+
+      - name: Stop Compose stack
+        if: always()
+        run: |
+          cd 03_Implement/deploy
+          docker compose down -v --remove-orphans || true
+
+      - name: Record verified evidence and retire one-shot inputs
+        run: |
+          set -euo pipefail
+          export TESTED_SHA=$(git merge-base origin/main HEAD)
+          export E2E_RESULT=$(cat /tmp/qa-pub-e2e-result.txt)
+          python .github/scripts/lane_c_qa_pub_compose_evidence.py
+          rm .github/scripts/lane_c_qa_pub_compose_evidence.py
+          rm .github/workflows/lane-c-qa-pub-compose-rerun-once.yml
+          test ! -e 03_Implement/frontend/playwright.compose.qa-pub.once.config.ts
+
+      - name: Planning and docs guards
+        run: |
+          python -m pip install pytest
+          python -m pytest -q 01_Plans/tests
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          git diff --check
+
+      - name: Show final narrow diff
+        run: |
+          git status --short
+          git diff --stat origin/main...HEAD || true
+          git diff -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
+
+      - name: Commit verified evidence
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'docs(qa): current-main Compose 3軸再検証を記録する'
+          git push origin HEAD:${GITHUB_REF_NAME}
