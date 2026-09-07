@@ -1,0 +1,71 @@
+name: Lane B2 DeepSeek thinking effect fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-deepseek-thinking-effect-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align public DeepSeek thinking effect wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('04_Documentation/configuration.md')
+          raw = path.read_bytes()
+          text = raw.decode('utf-8')
+          old = '| `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。旧既定のnon-thinking挙動を維持するため既定はdisabled |'
+          new = '| `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。primary DeepSeek とmodel registry経由のregistered DeepSeekの送信payload `thinking.type` に反映し、local / large-scaleのgeneric HTTP payloadには作用しない。旧既定のnon-thinking挙動を維持するため既定はdisabled |'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one DeepSeek thinking row, got {text.count(old)}')
+          path.write_bytes(text.replace(old, new, 1).encode('utf-8'))
+          PY
+      - name: Verify focused contract
+        run: python -m unittest 01_Plans.tests.test_deepseek_thinking_effect_scope_contract -v
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff and EOL preservation
+        run: |
+          git diff --stat origin/main...
+          changed="$(git diff --name-only origin/main...)"
+          printf '%s\n' "$changed"
+          printf '%s\n' "$changed" | grep -Fx '01_Plans/tests/test_deepseek_thinking_effect_scope_contract.py'
+          printf '%s\n' "$changed" | grep -Fx '04_Documentation/configuration.md'
+          count="$(printf '%s\n' "$changed" | grep -Ev '^\.github/workflows/lane-b2-deepseek-thinking-effect-fix-once\.yml$' | sed '/^$/d' | wc -l)"
+          test "$count" -eq 2
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          path = Path('04_Documentation/configuration.md')
+          current = path.read_bytes()
+          base = subprocess.check_output(['git', 'show', 'origin/main:04_Documentation/configuration.md'])
+          def eol_shape(data: bytes):
+              return (data.count(b'\r\n'), data.count(b'\n') - data.count(b'\r\n'))
+          if eol_shape(current) != eol_shape(base):
+              raise SystemExit(f'EOL shape changed: base={eol_shape(base)} current={eol_shape(current)}')
+          PY
+          git diff --check --ignore-space-at-eol
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 04_Documentation/configuration.md
+          git commit -m "docs(config): DeepSeek thinking effect scopeを明示する"
+          git rm .github/workflows/lane-b2-deepseek-thinking-effect-fix-once.yml
+          git commit -m "ci: retire Lane B2 DeepSeek thinking workflow"
+          git push
