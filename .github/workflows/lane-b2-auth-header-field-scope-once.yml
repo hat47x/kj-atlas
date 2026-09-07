@@ -1,0 +1,164 @@
+name: Lane B2 auth header field scope contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-auth-header-field-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch public scope and add focused contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              raw = path.read_bytes()
+              old_b = old.encode('utf-8')
+              new_b = new.encode('utf-8')
+              count = raw.count(old_b)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}: {old}')
+              path.write_bytes(raw.replace(old_b, new_b))
+
+          config = Path('04_Documentation/configuration.md')
+          replacements = {
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |':
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で auth provider を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |':
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で user id を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 |':
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path で email を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name を受け取る header 名 |':
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path で display name を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject を受け取る header 名 |':
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で subject を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+          }
+          for old, new in replacements.items():
+              replace_once(config, old, new)
+
+          registry = Path('02_Architecture/runtime_parameter_registry.md')
+          registry_rows = {
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 | direct | 通常値 | 指定 header から provider 値が読み取られることを確認する |':
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で auth provider を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から provider 値が読み取られることを確認する |',
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 | direct | 通常値 | 指定 header から user id が読み取られ、identity へ反映されることを確認する |':
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で user id を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から user id が読み取られ、identity へ反映されることを確認する |',
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 | direct | 通常値 | 指定 header から email が読み取られ、identity へ反映されることを確認する |':
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path で email を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から email が読み取られ、identity へ反映されることを確認する |',
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name を受け取る header 名 | direct | 通常値 | 指定 header から display name が読み取られ、identity へ反映されることを確認する |':
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path で display name を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から display name が読み取られ、identity へ反映されることを確認する |',
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject を受け取る header 名 | direct | 通常値 | 指定 header から subject が読み取られ、identity へ反映されることを確認する |':
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で subject を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から subject が読み取られ、identity へ反映されることを確認する |',
+          }
+          for old, new in registry_rows.items():
+              replace_once(registry, old, new)
+
+          api = Path('02_Architecture/api.md')
+          replace_once(
+              api,
+              '- 入力ヘッダ（設定差し替え可）:',
+              '- single-tenant の forwarded-header identity path の入力ヘッダ（設定差し替え可。`saas-multitenant` の trusted JWT/cookie path では使用しない）:',
+          )
+          PY
+
+          cat > 01_Plans/tests/test_auth_header_field_scope_contract.py <<'PY'
+          from __future__ import annotations
+
+          from pathlib import Path
+          import unittest
+
+
+          ROOT = Path(__file__).resolve().parents[2]
+          AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
+          TRUSTED_AUTH_EDGE = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
+          SAAS_REQUEST_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/saas_request_context.py'
+          CONFIG = ROOT / '04_Documentation/configuration.md'
+          REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
+          API_DOC = ROOT / '02_Architecture/api.md'
+
+          FIELDS = {
+              'KJ_ATLAS_AUTH_PROVIDER_FIELD': 'auth_provider_field',
+              'KJ_ATLAS_AUTH_USER_FIELD': 'auth_user_field',
+              'KJ_ATLAS_AUTH_EMAIL_FIELD': 'auth_email_field',
+              'KJ_ATLAS_AUTH_NAME_FIELD': 'auth_name_field',
+              'KJ_ATLAS_AUTH_SUBJECT_FIELD': 'auth_subject_field',
+          }
+
+
+          class AuthHeaderFieldScopeContractTest(unittest.TestCase):
+              def test_settings_fields_are_consumed_by_forwarded_header_resolver(self) -> None:
+                  source = AUTH_CONTEXT.read_text(encoding='utf-8')
+                  self.assertIn('Only applies to single-tenant header-based auth.', source)
+                  self.assertIn('def resolve_identity_context(*, db: Session, request: Request)', source)
+                  for attr in FIELDS.values():
+                      self.assertIn(f'settings.{attr}', source)
+
+              def test_saas_jwt_cookie_resolver_does_not_consume_header_name_settings(self) -> None:
+                  saas_sources = (
+                      TRUSTED_AUTH_EDGE.read_text(encoding='utf-8')
+                      + SAAS_REQUEST_CONTEXT.read_text(encoding='utf-8')
+                  )
+                  self.assertIn('class JwtSaasIdentityContextResolver', saas_sources)
+                  for attr in FIELDS.values():
+                      self.assertNotIn(f'settings.{attr}', saas_sources)
+
+              def test_public_surfaces_state_single_tenant_only_scope(self) -> None:
+                  config = CONFIG.read_text(encoding='utf-8')
+                  registry = REGISTRY.read_text(encoding='utf-8')
+                  api_doc = API_DOC.read_text(encoding='utf-8')
+                  scope = 'single-tenant の forwarded-header identity path'
+                  exclusion = '`saas-multitenant` の trusted JWT/cookie path では使用しない'
+                  for key in FIELDS:
+                      config_row = next(line for line in config.splitlines() if line.startswith(f'| `{key}` |'))
+                      registry_row = next(line for line in registry.splitlines() if line.startswith(f'| `{key}` |'))
+                      self.assertIn(scope, config_row)
+                      self.assertIn(exclusion, config_row)
+                      self.assertIn(scope, registry_row)
+                      self.assertIn(exclusion, registry_row)
+                  self.assertIn(scope + ' の入力ヘッダ', api_doc)
+                  self.assertIn(exclusion, api_doc)
+
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+      - name: Focused contract
+        run: python -m unittest 01_Plans.tests.test_auth_header_field_scope_contract -v
+      - name: Planning test suite
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c core.whitespace=cr-at-eol diff --check
+          mapfile -t files < <(git status --short | awk '{print $2}' | grep -v '^.github/workflows/lane-b2-auth-header-field-scope-once.yml$' | sort)
+          printf 'changed payload files:\n%s\n' "${files[*]}"
+          expected=('01_Plans/tests/test_auth_header_field_scope_contract.py' '02_Architecture/api.md' '02_Architecture/runtime_parameter_registry.md' '04_Documentation/configuration.md')
+          if [[ "${files[*]}" != "${expected[*]}" ]]; then
+            echo 'unexpected payload diff' >&2
+            exit 1
+          fi
+          git diff --numstat -- 04_Documentation/configuration.md
+      - name: Commit verified payload and retire helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/lane-b2-auth-header-field-scope-once.yml
+          git add 01_Plans/tests/test_auth_header_field_scope_contract.py 02_Architecture/api.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'docs(auth): header field設定のsingle-tenant scopeを明示する'
+          git push origin HEAD:fix/lane-b2-auth-header-field-scope-20260907
