@@ -1,0 +1,154 @@
+name: Lane B2 auth header meaning contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-auth-header-meaning-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch public meaning and add focused contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              raw = path.read_bytes()
+              old_b = old.encode('utf-8')
+              count = raw.count(old_b)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}: {old}')
+              path.write_bytes(raw.replace(old_b, new.encode('utf-8')))
+
+          config = Path('04_Documentation/configuration.md')
+          rows = {
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で auth provider を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |': '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で external identity provider を受け取る header 名。値はtrim・lowercase正規化され、欠損/空値は `header`。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で user id を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |': '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で `AUTH_SUBJECT_FIELD` 欠損時の external UID/subject fallback を受け取る legacy header 名。内部 `users.id` を直接指定しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path で email を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |': '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.email` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path で display name を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |': '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.display_name` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で subject を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない |': '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で external UID/subject の第一候補を受け取る header 名。欠損時だけ `AUTH_USER_FIELD` へfallbackする。`saas-multitenant` の trusted JWT/cookie path では使用しない |',
+          }
+          for old, new in rows.items():
+              replace_once(config, old, new)
+
+          registry = Path('02_Architecture/runtime_parameter_registry.md')
+          rows = {
+              '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で auth provider を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から provider 値が読み取られることを確認する |': '| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で external identity provider を受け取る header 名。trim・lowercase正規化し、欠損/空値は `header`。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定値が正規化され `AuthContext.provider` へ反映され、欠損時は `header` になることを確認する |',
+              '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で user id を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から user id が読み取られ、identity へ反映されることを確認する |': '| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で `AUTH_SUBJECT_FIELD` 欠損時の external UID/subject fallback を受け取る legacy header 名。内部 `users.id` を直接指定しない。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | subject header欠損時だけ指定 header が `AuthContext.external_uid` へ反映され、内部 `users.id` はidentity mappingから解決されることを確認する |',
+              '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path で email を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から email が読み取られ、identity へ反映されることを確認する |': '| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.email` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | JITで新規userを作る時だけ指定値が `UserRow.email` に入り、既存user requestでは属性が上書きされないことを確認する |',
+              '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path で display name を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から display name が読み取られ、identity へ反映されることを確認する |': '| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.display_name` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | JITで新規userを作る時だけ指定値が `UserRow.display_name` に入り、既存user requestでは属性が上書きされないことを確認する |',
+              '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で subject を受け取る header 名。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | single-tenant header pathで指定 header から subject が読み取られ、identity へ反映されることを確認する |': '| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で external UID/subject の第一候補を受け取る header 名。欠損時だけ `AUTH_USER_FIELD` へfallbackする。`saas-multitenant` の trusted JWT/cookie path では使用しない | direct | 通常値 | subject headerがあれば `AUTH_USER_FIELD` より優先して `AuthContext.external_uid` へ反映されることを確認する |',
+          }
+          for old, new in rows.items():
+              replace_once(registry, old, new)
+
+          api = Path('02_Architecture/api.md')
+          old = '  - `KJ_ATLAS_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）'
+          new = old + '\n- header意味:\n  - external UID は `AUTH_SUBJECT_FIELD` を第一候補とし、欠損時だけ legacy `AUTH_USER_FIELD` へfallbackする。`AUTH_USER_FIELD` は内部 `users.id` の指定ではない。\n  - provider はtrim・lowercase正規化し、欠損/空値は `header` とする。\n  - email/name はJIT provisioningで新規 `UserRow` を作る時の初期値にだけ使い、既存user属性をheaderで上書きしない。'
+          replace_once(api, old, new)
+          PY
+
+          cat > 01_Plans/tests/test_auth_header_meaning_contract.py <<'PY'
+          from __future__ import annotations
+          import ast
+          from pathlib import Path
+          import unittest
+
+          ROOT = Path(__file__).resolve().parents[2]
+          AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
+          CONFIG = ROOT / '04_Documentation/configuration.md'
+          REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
+          API_DOC = ROOT / '02_Architecture/api.md'
+
+          def _resolve_function() -> ast.FunctionDef:
+              tree = ast.parse(AUTH_CONTEXT.read_text(encoding='utf-8'))
+              return next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'resolve_identity_context')
+
+          class AuthHeaderMeaningContractTest(unittest.TestCase):
+              def test_subject_precedes_legacy_user_header_for_external_uid(self) -> None:
+                  fn = _resolve_function()
+                  assignment = next(node for node in fn.body if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == 'external_uid' for target in node.targets))
+                  self.assertIsInstance(assignment.value, ast.BoolOp)
+                  self.assertIsInstance(assignment.value.op, ast.Or)
+                  attrs = []
+                  for value in assignment.value.values:
+                      self.assertIsInstance(value, ast.Call)
+                      header_arg = value.args[1]
+                      self.assertIsInstance(header_arg, ast.Attribute)
+                      attrs.append(header_arg.attr)
+                  self.assertEqual(['auth_subject_field', 'auth_user_field'], attrs)
+
+              def test_provider_is_normalized_and_user_id_comes_from_identity_mapping(self) -> None:
+                  source = AUTH_CONTEXT.read_text(encoding='utf-8')
+                  self.assertIn('provider = _normalize_provider(_header(request, settings.auth_provider_field))', source)
+                  self.assertIn('return raw_provider.strip().lower() or "header"', source)
+                  self.assertIn('identity = _resolve_identity_row(db=db, provider=provider, external_uid=external_uid)', source)
+                  self.assertIn('user_id = identity.user_id', source)
+
+              def test_email_and_name_are_only_loaded_into_new_user_row(self) -> None:
+                  fn = _resolve_function()
+                  jit_if = next(node for node in fn.body if isinstance(node, ast.If) and isinstance(node.test, ast.Compare) and isinstance(node.test.left, ast.Name) and node.test.left.id == 'identity' and any(isinstance(op, ast.Is) for op in node.test.ops))
+                  user_row_call = next(node for node in ast.walk(ast.Module(body=jit_if.body, type_ignores=[])) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'UserRow')
+                  keywords = {kw.arg: kw.value for kw in user_row_call.keywords}
+                  self.assertIsInstance(keywords['display_name'], ast.Name)
+                  self.assertEqual('display_name', keywords['display_name'].id)
+                  self.assertIsInstance(keywords['email'], ast.Name)
+                  self.assertEqual('email', keywords['email'].id)
+                  loads = [node.id for node in ast.walk(fn) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id in {'display_name', 'email'}]
+                  self.assertEqual(1, loads.count('display_name'))
+                  self.assertEqual(1, loads.count('email'))
+
+              def test_public_surfaces_describe_runtime_meaning(self) -> None:
+                  config = CONFIG.read_text(encoding='utf-8')
+                  registry = REGISTRY.read_text(encoding='utf-8')
+                  api_doc = API_DOC.read_text(encoding='utf-8')
+                  self.assertIn('内部 `users.id` を直接指定しない', config)
+                  self.assertIn('JIT provisioning時に新規 `UserRow.email` を初期化', config)
+                  self.assertIn('JIT provisioning時に新規 `UserRow.display_name` を初期化', config)
+                  self.assertIn('内部 `users.id` はidentity mappingから解決', registry)
+                  self.assertIn('`AUTH_USER_FIELD` は内部 `users.id` の指定ではない', api_doc)
+                  self.assertIn('既存user属性をheaderで上書きしない', api_doc)
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+      - name: Focused contract
+        run: python -m unittest 01_Plans.tests.test_auth_header_meaning_contract -v
+      - name: Planning test suite
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c core.whitespace=cr-at-eol diff --check
+          mapfile -t files < <(git status --short | awk '{print $2}' | grep -v '^.github/workflows/lane-b2-auth-header-meaning-once.yml$' | sort)
+          expected=('01_Plans/tests/test_auth_header_meaning_contract.py' '02_Architecture/api.md' '02_Architecture/runtime_parameter_registry.md' '04_Documentation/configuration.md')
+          printf 'changed payload files:\n%s\n' "${files[*]}"
+          if [[ "${files[*]}" != "${expected[*]}" ]]; then
+            echo 'unexpected payload diff' >&2
+            exit 1
+          fi
+          git diff --numstat -- 04_Documentation/configuration.md
+      - name: Commit verified payload and retire helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/lane-b2-auth-header-meaning-once.yml
+          git add 01_Plans/tests/test_auth_header_meaning_contract.py 02_Architecture/api.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git commit -m 'docs(auth): forwarded headerのidentity意味をruntimeへ同期する'
+          git push origin HEAD:fix/lane-b2-auth-header-meaning-20260907
