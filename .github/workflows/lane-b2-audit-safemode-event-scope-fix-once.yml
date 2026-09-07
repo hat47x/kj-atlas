@@ -1,0 +1,82 @@
+name: Lane B2 audit SafeMode event scope fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-audit-safemode-event-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align audit SafeMode event scope wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('02_Architecture/runtime_parameter_registry.md'): (
+                  '| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の監査ログHTTP連携を許可する | direct | 通常値 | SafeMode 中に `false` のとき監査HTTP送出が抑止されることを確認する |',
+                  '| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | `AuditEvent.safeMode=true` の外部監査送出を許可するevent-level gate。`false` では常にsafeMode=trueの `view` と、payloadのsafeModeを引き継ぐcontext/export系のtrueイベントを抑止する。LLM / proposal監査はproducerが `safeMode=false` を明示するためこのgateの対象外 | direct | 通常値 | `false` でsafeMode=trueのview/context/exportイベントが `safe_mode_blocked`、safeMode=falseのLLM/proposalイベントは対象外で送出可能なことを確認する |',
+              ),
+              Path('04_Documentation/configuration.md'): (
+                  '| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中に監査ログの HTTP 連携を許可 |',
+                  '| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | `AuditEvent.safeMode=true` の外部監査送出を許可するevent-level gate。`false` ではviewおよびsafeMode=trueのcontext/export系を抑止する。LLM / proposal監査はproducerがsafeMode=falseを明示するため対象外 |',
+              ),
+          }
+
+          for path, (old_text, new_text) in replacements.items():
+              raw = path.read_bytes()
+              old = old_text.encode('utf-8')
+              new = new_text.encode('utf-8')
+              if raw.count(old) != 1:
+                  raise SystemExit(f'expected exactly one SafeMode audit row in {path}, got {raw.count(old)}')
+              path.write_bytes(raw.replace(old, new, 1))
+          PY
+      - name: Verify focused audit SafeMode event scope contract
+        run: python 01_Plans/tests/test_audit_safemode_event_scope_contract.py
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          allowed = {
+              '01_Plans/tests/test_audit_safemode_event_scope_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-audit-safemode-event-scope-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          changed.update(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          extra = changed - allowed
+          if extra:
+              raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+          for path_name in ('02_Architecture/runtime_parameter_registry.md', '04_Documentation/configuration.md'):
+              for lineno, line in enumerate(Path(path_name).read_bytes().splitlines(), 1):
+                  if line.endswith((b' ', b'\t')):
+                      raise SystemExit(f'trailing whitespace: {path_name}:{lineno}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git rm .github/workflows/lane-b2-audit-safemode-event-scope-fix-once.yml
+          git commit -m "docs(audit): SafeMode gateをevent flag範囲へ限定する"
+          git push
