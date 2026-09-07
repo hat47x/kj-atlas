@@ -1,0 +1,54 @@
+name: Lane B2 LLM fallback semantics once
+
+on:
+  push:
+    branches:
+      - docs/lane-b2-llm-fallback-semantics-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply LLM fallback semantics patch
+        run: python .github/lane-b2-llm-fallback-semantics-patch.py
+      - name: Verify focused LLM fallback semantics contract
+        run: python -m unittest 01_Plans.tests.test_llm_fallback_semantics_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        shell: bash
+        run: |
+          git -c core.whitespace=cr-at-eol diff --check
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '01_Plans/tests/test_llm_fallback_semantics_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+          }
+          tracked = set(filter(None, subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()))
+          untracked = set(filter(None, subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()))
+          actual = tracked | untracked
+          if actual != expected:
+              raise SystemExit(f'narrow diff mismatch: expected={sorted(expected)} actual={sorted(actual)}')
+          PY
+      - name: Commit patch and retire one-shot helpers
+        shell: bash
+        run: |
+          rm .github/lane-b2-llm-fallback-semantics-patch.py
+          rm .github/workflows/lane-b2-llm-fallback-semantics-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs(config): LLM fallback semanticsをfail-closed実装へ同期する'
+          git push
