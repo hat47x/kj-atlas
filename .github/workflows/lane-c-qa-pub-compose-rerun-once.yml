@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 03_Implement/frontend/.nvmrc
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: 03_Implement/frontend/package-lock.json
 
