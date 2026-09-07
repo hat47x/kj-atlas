@@ -1,0 +1,98 @@
+name: Lane B2 audit export validation contract fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-audit-export-validation-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align audit export validation wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('02_Architecture/runtime_parameter_registry.md'): [
+                  (
+                      '| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のmaster gate。`false` では configured transport に関係なく dispatcher は無効化され `NoopAuditTransport` を使い、外部送信しない。`true` のときだけ `KJ_ATLAS_AUDIT_TRANSPORT` が実送信transportを選ぶ | direct | 通常値 | `false` ではtest doubleへ1件も到達しないこと、`true` + `http` では監査イベントがtest doubleへ到達することを確認する |',
+                      '| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のdispatch master gate。`false` では、validationを通過したtransport設定に関係なく dispatcher は無効化され `NoopAuditTransport` を使い、外部送信しない。ただし `KJ_ATLAS_AUDIT_TRANSPORT=http` の完全設定validationは独立して適用され、export無効でもendpoint欠損は起動時に拒否する。`true` のときだけtransport設定が実送信に使われる | direct | 通常値 | `false` + 完全な`http`設定ではtest doubleへ1件も到達しないこと、`false`でも`http` + endpoint欠損は起動拒否、`true` + `http`では監査イベントがtest doubleへ到達することを確認する |',
+                  ),
+                  (
+                      '| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http`。実送信transportとして作用するのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけで、export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う | direct | 通常値 | transport名の正常時startup self-reportはない。`AUDIT_EXPORT_ENABLED=true` + `http` + test doubleでPOST到達を確認し、export無効時は到達しないことを確認する |',
+                      '| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http`。`http` はexport flagと独立してendpoint必須の完全設定validationを受ける。validation通過後、実送信transportとして作用するのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけで、export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う | direct | 通常値 | transport名の正常時startup self-reportはない。export無効でも`http` + endpoint欠損が起動拒否されること、完全な`http`設定ではexport無効時にPOSTせず、有効時だけtest doubleへ到達することを確認する |',
+                  ),
+              ],
+              Path('04_Documentation/configuration.md'): [
+                  (
+                      '| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のmaster gate。`false` では transport 設定に関係なく外部送信せず `NoopAuditTransport` を使う。`true` のときだけ `KJ_ATLAS_AUDIT_TRANSPORT` が実送信transportを選ぶ |',
+                      '| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のdispatch master gate。`false` ではvalidation済みtransport設定に関係なく外部送信せず `NoopAuditTransport` を使う。ただし `KJ_ATLAS_AUDIT_TRANSPORT=http` の完全設定validationは独立して適用され、export無効でもendpoint欠損は起動時に拒否する。`true` のときだけtransport設定が実送信に使われる |',
+                  ),
+                  (
+                      '| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http`。`http` が実送信に使われるのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけ。export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う |',
+                      '| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http`。`http` はexport flagと独立してendpoint必須の完全設定validationを受ける。validation通過後、実送信に使われるのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけで、export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う |',
+                  ),
+              ],
+          }
+
+          for path, pairs in replacements.items():
+              raw = path.read_bytes()
+              before_crlf = raw.count(b'\r\n')
+              before_lf = raw.count(b'\n')
+              for old, new in pairs:
+                  old_b = old.encode('utf-8')
+                  new_b = new.encode('utf-8')
+                  if raw.count(old_b) != 1:
+                      raise SystemExit(f'{path}: expected exactly one old row, got {raw.count(old_b)}')
+                  raw = raw.replace(old_b, new_b, 1)
+              path.write_bytes(raw)
+              after = path.read_bytes()
+              if (after.count(b'\r\n'), after.count(b'\n')) != (before_crlf, before_lf):
+                  raise SystemExit(f'{path}: EOL shape changed')
+          PY
+      - name: Verify focused audit export contract
+        run: python -m unittest 01_Plans.tests.test_audit_export_validation_contract -v
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify relevant backend audit behavior
+        run: |
+          python -m pip install -q -e '03_Implement/backend[dev]'
+          pytest -q 03_Implement/backend/tests/test_audit.py 03_Implement/backend/tests/test_trusted_http_settings.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check -- 01_Plans/tests/test_audit_export_validation_contract.py 02_Architecture/runtime_parameter_registry.md
+          python - <<'PY'
+          import subprocess
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only', 'origin/main...HEAD']).decode().splitlines())
+          allowed = {
+              '01_Plans/tests/test_audit_export_validation_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-audit-export-validation-fix-once.yml',
+          }
+          extra = changed - allowed
+          if extra:
+              raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git commit -m 'docs(audit): export gateとtransport validationを分離する'
+          git rm .github/workflows/lane-b2-audit-export-validation-fix-once.yml
+          git commit -m 'ci(b2): retire audit export validation helper'
+          git push
