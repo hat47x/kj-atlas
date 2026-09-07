@@ -166,7 +166,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | confidential-client OAuth の client ID（ADR-0074）。process startup hard gateではないが、`/session/login` 開始時は redirect URI とともに必要で、callbackの code 交換では token endpoint / redirect URI / client secret と4項目完全セットで必要。欠損時は該当requestを503でfail-closed | direct | 通常値 | 認可リクエストの client_id が設定値と一致し、欠損時に該当requestが503になることを確認する |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | confidential-client OAuth の client secret（ADR-0074）。process startup hard gateではないが、`/session/callback` の code 交換では token endpoint / redirect URI / client ID と4項目完全セットで必要で、欠損時は503でfail-closed | direct | 秘密値 | 設定後にtoken交換が成功し、欠損時にcallbackが503になることを確認する（値自体は出力しない） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | OAuth broker の HTTP タイムアウト秒（0 < x ≤ 30） | direct | 通常値 | タイムアウト超過時にエラーへ倒れることを確認する |
-| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | auth-session cookie 値の HMAC-SHA256 ハッシュ用キー（ADR-0074 decision 2、64文字 lowercase hex = 32 bytes）。生値を平文保存しない。ローテーション時は新キー設定＋再起動で既存セッションを無効化する | direct | 秘密値 | キー変更で既存セッションが無効化され再ログインへ導かれることを確認する |
+| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | member SaaS auth session、guest auth session、guest redeem state のHMAC-SHA256導出に共有するキー（ADR-0074 decision 2 / ADR-0080、64文字 lowercase hex = 32 bytes）。guest redeem state は `guest-redeem-v1` domain separation を通す。生cookie/state値は平文保存せず、ローテーション時は新キー設定＋再起動で既存member/guest sessionと未使用redeem stateを無効化する | direct | 秘密値 | キー変更で既存member/guest sessionと未使用redeem stateが無効化され、sessionは再ログイン／guest sign-inへ導かれることを確認する |
 
 ## Compose and frontend build keys
 
