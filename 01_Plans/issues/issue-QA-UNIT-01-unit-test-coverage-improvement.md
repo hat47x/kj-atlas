@@ -7,8 +7,8 @@
 - Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`、初回実行バッチの`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`、および2026-09-07第2バッチの`03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`・`03_Implement/frontend/package.json`・`package-lock.json`。
-- Out of Scope: CI設定変更、Vitest全体の`node`環境変更、テスト都合の製品挙動変更。第2バッチでは対象test fileだけにDOM環境を与え、`TenantSessionRuntimeGate.tsx`本体は変更しない。
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`、初回実行バッチの`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`、2026-09-07第2バッチの`03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`・`03_Implement/frontend/package.json`・`package-lock.json`、第3バッチの`03_Implement/frontend/src/ui/TenantSessionBootstrapGate.test.ts`、および第4バッチの`03_Implement/frontend/src/ui/TenantSessionControl.test.ts`。
+- Out of Scope: CI設定変更、Vitest全体の`node`環境変更、テスト都合の製品挙動変更。第2〜4バッチは必要なtest fileだけをfile-local `happy-dom`で実行し、対象component本体の挙動は変更しない。
 - Expected verification level: `unit`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -303,3 +303,36 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 - 既存の全failure reason静的表示、same-origin login endpoint、ja/en pre-App表示のguardも保持する。
 
 このバッチもQA-UNIT-01全体のDoneを意味しない。次候補は同じharnessを機械的に横展開せず、実際にstate/effect欠落があり、かつfail-closed/意味保存上の欠陥検知価値が高い箇所から選ぶ。
+
+## 2026-09-07 第4バッチ — TenantSessionControlの実change境界
+
+第2・第3バッチで導入したfile-local `happy-dom` の実component harnessを、同じtenant-session UIだからという理由だけで横展開せず、欠陥検知価値を再棚卸しした。次候補には `TenantSessionControl` を選定した。
+
+### 選定理由
+
+`TenantSessionControl.test.ts` は、serverが返した `availableTenants` だけをoptionとして表示することと、純粋関数 `resolveAllowedTenantSelection` がactive tenant・未知tenant・invalid sessionを拒否することは検証していた。一方、実componentの `<select onChange>` がそのresolverを必ず経由して `onRequestTenantChange` を呼ぶという**イベント配線そのもの**はSSRでは一度も実行されていなかった。
+
+この境界が崩れると、helper単体はfail-closedのままでも、component側の将来refactorでhelperを迂回し、DOM valueをそのままtenant切替要求へ渡す回帰をunit層で見逃し得る。tenant切替はactive storage/auth scopeの変更へつながるため、単なる表示テストより欠陥検知優先度が高い。
+
+### 追加した検証
+
+`TenantSessionControl.test.ts`だけをfile-local `happy-dom`へ切り替え、React `createRoot` + `act` で実componentをmountするテストを1件追加した。製品componentは変更していない。
+
+- server-returned `tenant-b` を実select changeで選ぶと、`onRequestTenantChange("tenant-b")` が1回だけ通知される。
+- DOMへ `attacker-tenant` optionを後付けしてchange eventを発火しても、server-returned `availableTenants` に存在しないためcallbackは呼ばれない。
+- active tenant `tenant-a` を選んでもcallbackは呼ばれない。
+
+これにより、optionの見た目だけでなく `UI event -> resolveAllowedTenantSelection -> callback` の実配線をfail-closed境界として固定する。helperの単体テストは残し、DOM testをhelperテストの代用品にはしない。
+
+### 検証結果
+
+- tested branch head: `754a167e03fb76e522f0d8c9a54308c0348c40f6`。
+- GitHub Actions run: `34120643379`。
+- `npm run typecheck`: pass。
+- `TenantSessionControl` + `TenantSessionRuntimeGate` + `TenantSessionBootstrapGate` focused unit chain: pass。
+- frontend full `npm run test`: pass。
+- planning tests / active issue validator / docs_check / `git diff --check`: pass。
+
+### 判定境界
+
+本バッチはtenant-session controlの実イベント配線という1欠陥クラスを追加固定するものであり、DOM component coverage率の最大化を目的にしない。`happy-dom`を他UIへ一律展開せず、次候補も実バグ影響と既存検知能力の差から選ぶ。`QA-UNIT-01`自体は引き続き `In Progress` とする。
