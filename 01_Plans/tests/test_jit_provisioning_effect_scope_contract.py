@@ -1,35 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-CONFIG = ROOT / "04_Documentation/configuration.md"
-TEST = ROOT / "01_Plans/tests/test_jit_provisioning_effect_scope_contract.py"
-
-
-def replace_once(path: Path, old: str, new: str) -> None:
-    raw = path.read_bytes()
-    old_b = old.encode("utf-8")
-    new_b = new.encode("utf-8")
-    count = raw.count(old_b)
-    if count != 1:
-        raise SystemExit(f"expected one match in {path}, got {count}")
-    path.write_bytes(raw.replace(old_b, new_b, 1))
-
-
-replace_once(
-    REGISTRY,
-    "| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可する（SEC-RATE-LIMIT-01: 既定 fail-closed） | direct / base Compose | 通常値 | `false` 時、未登録 identity でのアクセスが拒否され新規作成されないことを確認する |",
-    "| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | single-tenant の forwarded-header identity path にだけ作用するJIT provisioning gate。未登録 provider/subject で `true` の場合は user・identity binding・local-default membership を作成し、`false` では 403 `identity_not_provisioned`。`saas-multitenant` は起動policyで `false` を必須とし、trusted JWT/cookie identity resolver はこの設定を参照せず未登録subjectを常に403で拒否する（SEC-RATE-LIMIT-01） | direct / base Compose | 通常値 | single-tenant header pathで `false` 時は未登録identityが403かつ新規作成されず、`true` 時だけ作成されること。SaaSでは `true` が起動拒否され、未登録subjectが設定値に関係なく403になることを確認する |",
-)
-
-replace_once(
-    CONFIG,
-    "| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可（既定は fail-closed。SEC-RATE-LIMIT-01・2026-08-13 変更） |",
-    "| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | single-tenant の forwarded-header identity path でだけ未登録identityのJIT provisioningを許可する。`true` なら user・identity binding・local-default membershipを作成し、`false` なら403 `identity_not_provisioned`。`saas-multitenant` は起動時に `false` が必須で、trusted JWT/cookie pathはこの設定に関係なく未登録subjectを403で拒否する（SEC-RATE-LIMIT-01・2026-08-13変更） |",
-)
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import unittest
 from pathlib import Path
@@ -100,6 +69,3 @@ class JitProvisioningEffectScopeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
