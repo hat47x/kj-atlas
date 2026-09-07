@@ -1,12 +1,15 @@
-name: Lane C QA PUB closeout diagnostic once
+name: Lane C QA PUB closeout once
 
 on:
   push:
     branches:
       - docs/lane-c-qa-pub-closeout-20260907
 
+permissions:
+  contents: write
+
 jobs:
-  diagnose:
+  closeout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,22 +20,110 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Enumerate canonical active-path references
+      - name: Apply lifecycle closeout and canonical-link synchronization
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          old = Path('01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md')
+          new = Path('01_Plans/issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md')
+          if not old.exists() or new.exists():
+              raise SystemExit('unexpected QA-PUB canonical memo state')
+
+          text = old.read_text(encoding='utf-8')
+          if text.count('- Status: Open\n') != 1:
+              raise SystemExit('expected exactly one Open status')
+          text = text.replace('- Status: Open\n', '- Status: Done\n', 1)
+          text = text.replace('- Open Readiness: Prepared\n', '', 1)
+          text = text.replace('- Execution: Ready\n', '', 1)
+
+          marker = '## Final closeout（2026-09-07）'
+          if marker in text:
+              raise SystemExit('final closeout already present')
+          closeout = '''
+          ## Final closeout（2026-09-07）
+
+          PR #3063 / commit `c07bfbd1eff03657607eef5bb420cfe8c91658f2` をmainlineへ統合し、本Issueが定義した3軸の機械判定可能なDone境界を、ADR-0019の標準Docker Compose経路でcurrent-main再検証したためcloseoutする。
+
+          - **公開互換**: visibility変更の保存・再読込、legacy public pack互換、明示的なmissing/malformed pack errorを既存E2Eで確認した。
+          - **I18N等価**: `ja/en` の同一journeyについてlocale query、document置換、visibility操作、SafeMode文脈のflow parityを確認した。
+          - **安全境界**: readOnly + SafeModeで禁止操作が遮断され、カード本文commitとカードdrag位置変更を含むmutationが成立しないことを確認した。
+          - clean Compose healthと、一意な合成DocumentV1による実PostgreSQL `PUT -> GET` / payload / ETag roundtripも同じrunでpassした。
+          - final Actions run `34068886877` はtypecheckと対象4 spec **14/14 pass**。初回product-path run `34068672554` で露見した2件は、期待error自体は正しく表示されている一方、複数の正当な`role="status"`へ非限定locatorが一致するtest defectだった。製品挙動を変えず、専用`status-message` locatorへ限定して再実走した。
+
+          ### Doneの境界
+
+          本IssueのDoneは、上記3軸のE2E境界と再実行可能な標準経路が成立したことを意味する。翻訳文の自然さ・説明品質などの**translation qualityは人間レビューという別責務**であり、本closeoutはその完了を主張しない。PRODUCT-QAのrelease decision、release screenshot bundle、外部公開基盤そのものの受入も本Issueへ取り込まない。
+
+          fixture-backed browser testと実PostgreSQL roundtripは証拠の役割を分けたまま保持する。前者を実DB接続の証拠へ読み替えず、後者を公開/I18N/readOnly UI意味論の証拠へ読み替えない。本文中のDraft/Hold時点の判定や旧active-rootを用いたvalidation commandは、当時の履歴座標として書き換えない。
+          '''
+          import textwrap
+          text = text.rstrip() + '\n\n' + textwrap.dedent(closeout).strip() + '\n'
+          new.write_text(text, encoding='utf-8')
+          old.unlink()
+
+          old_path = '01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          new_path = '01_Plans/issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          qa_e2e = Path('01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md')
+          q = qa_e2e.read_text(encoding='utf-8')
+          if q.count(old_path) != 1:
+              raise SystemExit(f'unexpected QA-E2E canonical ref count: {q.count(old_path)}')
+          qa_e2e.write_text(q.replace(old_path, new_path), encoding='utf-8')
+
+          research = Path('01_Plans/research/core-value-realization-priorities-2026-07-18.md')
+          r = research.read_text(encoding='utf-8')
+          old_rel = '../issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          new_rel = '../issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          if r.count(old_rel) != 2:
+              raise SystemExit(f'unexpected research canonical ref count: {r.count(old_rel)}')
+          research.write_text(r.replace(old_rel, new_rel), encoding='utf-8')
+          PY
+
+      - name: Retire one-shot workflow before repository guards
+        run: rm .github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml
+
+      - name: Verify lifecycle and canonical-reference boundary
         run: |
           set -euo pipefail
           OLD='01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
-          echo '--- exact references before closeout ---'
-          git grep -nF "$OLD" -- . ':(exclude).github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml' || true
-          echo '--- filename references ---'
-          git grep -nF 'issue-QA-PUB-01-I18N-03-e2e-boundary.md' -- . ':(exclude).github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml' || true
+          DONE='01_Plans/issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md'
+          test ! -e "$OLD"
+          test -e "$DONE"
+          grep -F -- '- Status: Done' "$DONE"
+          grep -F '## Final closeout（2026-09-07）' "$DONE"
+          grep -F 'c07bfbd1eff03657607eef5bb420cfe8c91658f2' "$DONE"
+          grep -F '34068886877' "$DONE"
+          # Old active-root coordinates may remain only inside the done memo as dated historical commands.
+          if git grep -nF "$OLD" -- . ":(exclude)$DONE"; then
+            echo 'unexpected live reference to retired QA-PUB active path' >&2
+            exit 1
+          fi
 
-      - name: Remove diagnostic input before repository guards
-        run: rm .github/workflows/lane-c-qa-pub-closeout-diagnostic-once.yml
-
-      - name: Baseline planning and docs guards
+      - name: Planning and docs guards
         run: |
           python -m pip install pytest
           python -m pytest -q 01_Plans/tests
           python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
           python 01_Plans/docs_check.py
           git diff --check
+
+      - name: Show final closeout diff
+        run: |
+          git status --short
+          git diff --stat origin/main
+          git diff --find-renames origin/main -- \
+            01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md \
+            01_Plans/issues/done/issue-QA-PUB-01-I18N-03-e2e-boundary.md \
+            01_Plans/issues/done/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md \
+            01_Plans/research/core-value-realization-priorities-2026-07-18.md
+
+      - name: Commit verified closeout
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'docs(qa): QA-PUB-01-I18N-03を3軸再検証後にcloseoutする'
+          git push origin HEAD:${GITHUB_REF_NAME}
