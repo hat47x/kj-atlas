@@ -1,0 +1,49 @@
+name: Lane B2 unreviewed AI effect scope audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-b2-unreviewed-ai-effect-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate unreviewed-text gate callsites
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          path = Path('03_Implement/backend/src/kj_atlas_api/routes/ai.py')
+          text = path.read_text(encoding='utf-8')
+          tree = ast.parse(text)
+          lines = text.splitlines()
+          for node in ast.walk(tree):
+              if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                  continue
+              calls = []
+              for item in ast.walk(node):
+                  if isinstance(item, ast.Call):
+                      fn = item.func
+                      if isinstance(fn, ast.Name) and fn.id in {'_reject_unreviewed_text', '_reject_unreviewed_cards'}:
+                          calls.append(fn.id)
+              if not calls:
+                  continue
+              decorators = [ast.get_source_segment(text, d) for d in node.decorator_list]
+              print(f'{node.name}: calls={sorted(set(calls))}')
+              for dec in decorators:
+                  if dec and ('router.' in dec):
+                      print(f'  decorator={dec}')
+          PY
+      - name: Retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-unreviewed-ai-scope-audit-once.yml
+          git commit -m "ci(b2): retire unreviewed AI scope audit"
+          git push
