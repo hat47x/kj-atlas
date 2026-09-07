@@ -3,7 +3,7 @@
   "id": "doc_kj_atlas_dogfood_r40",
   "title": "kj-atlas 継続dogfood — branch差分とcurrent mainへのnet tree effectを分ける",
   "createdAt": "2026-09-07T09:58:00.000+09:00",
-  "updatedAt": "2026-09-07T09:58:00.000+09:00",
+  "updatedAt": "2026-09-07T10:02:00.000+09:00",
   "transform": {"panX": 0, "panY": 0, "zoom": 0.78},
   "cards": [
     {"id":"c01","x":60,"y":80,"text":"PR #3072は、すでにPR #3064でmainへ取り込まれたQA-PUB closeout branchと同じheadを再度PR化した。","claimType":"fact","textReviewed":false,"meta":{"source":"PR #3072 / #3064"}},
@@ -20,18 +20,18 @@
     {"id":"c12","x":660,"y":1010,"text":"R40はtree-noopをrequired checkへ昇格せずreview signalとして蓄積し、意図的no-opやstrategy差の運用データを待つ。","claimType":"claim","textReviewed":false,"meta":{"source":"R40 policy boundary"}}
   ],
   "edges": [
-    {"id":"e01","from":"c01","to":"c02","relation":"observed-as"},
-    {"id":"e02","from":"c02","to":"c03","relation":"supports"},
-    {"id":"e03","from":"c04","to":"c05","relation":"contrasts-with"},
-    {"id":"e04","from":"c05","to":"c06","relation":"bounds"},
-    {"id":"e05","from":"c03","to":"c08","relation":"requires-observation-of"},
-    {"id":"e06","from":"c07","to":"c08","relation":"enables"},
-    {"id":"e07","from":"c08","to":"c09","relation":"bounded-by"},
-    {"id":"e08","from":"c08","to":"c10","relation":"implemented-as"},
-    {"id":"e09","from":"c10","to":"c11","relation":"verified-by"},
-    {"id":"e10","from":"c06","to":"c12","relation":"supports"},
-    {"id":"e11","from":"c09","to":"c12","relation":"supports"},
-    {"id":"e12","from":"c11","to":"c12","relation":"permits"}
+    {"id":"e01","fromId":"c01","toId":"c02","relation":"observed-as"},
+    {"id":"e02","fromId":"c02","toId":"c03","relation":"supports"},
+    {"id":"e03","fromId":"c04","toId":"c05","relation":"contrasts-with"},
+    {"id":"e04","fromId":"c05","toId":"c06","relation":"bounds"},
+    {"id":"e05","fromId":"c03","toId":"c08","relation":"requires-observation-of"},
+    {"id":"e06","fromId":"c07","toId":"c08","relation":"enables"},
+    {"id":"e07","fromId":"c08","toId":"c09","relation":"bounded-by"},
+    {"id":"e08","fromId":"c08","toId":"c10","relation":"implemented-as"},
+    {"id":"e09","fromId":"c10","toId":"c11","relation":"verified-by"},
+    {"id":"e10","fromId":"c06","toId":"c12","relation":"supports"},
+    {"id":"e11","fromId":"c09","toId":"c12","relation":"supports"},
+    {"id":"e12","fromId":"c11","toId":"c12","relation":"permits"}
   ],
   "islands": [
     {"id":"i01","title":"PR diffとnet effect","cardIds":["c01","c02","c03"]},
