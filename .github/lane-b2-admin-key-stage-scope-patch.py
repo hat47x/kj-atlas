@@ -50,15 +50,25 @@ def _row(text: str, key: str) -> str:
     return rows[0]
 
 
+def _backend_registry_row(text: str, key: str) -> str:
+    backend = text.split("## Backend settings", 1)[1]
+    return _row(backend, key)
+
+
 class AdminApiKeyStageScopeContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.registry = REGISTRY.read_text(encoding="utf-8")
         self.configuration = CONFIGURATION.read_text(encoding="utf-8")
         self.auth = CONTROL_PLANE_AUTH.read_text(encoding="utf-8")
 
+    def _public_rows(self) -> tuple[str, str]:
+        return (
+            _backend_registry_row(self.registry, KEY),
+            _row(self.configuration, KEY),
+        )
+
     def test_public_rows_describe_both_control_plane_authorization_stages(self) -> None:
-        for surface in (self.registry, self.configuration):
-            row = _row(surface, KEY)
+        for row in self._public_rows():
             self.assertIn("Stage A", row)
             self.assertIn("X-Admin-Api-Key", row)
             self.assertIn("Stage B", row)
@@ -87,8 +97,7 @@ class AdminApiKeyStageScopeContractTests(unittest.TestCase):
             "if settings.admin_api_key is None and profile in _OPEN_WHEN_UNCONFIGURED_PROFILES:",
             self.auth,
         )
-        for surface in (self.registry, self.configuration):
-            row = _row(surface, KEY)
+        for row in self._public_rows():
             self.assertIn("未設定時", row)
             self.assertIn("development", row)
 
