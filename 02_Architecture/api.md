@@ -1016,7 +1016,7 @@ fail-safe マトリクス:
 
 ### 9.1 AuthContext 正規化
 
-- 入力ヘッダ（設定差し替え可）:
+- single-tenant の forwarded-header identity path の入力ヘッダ（設定差し替え可。`saas-multitenant` の trusted JWT/cookie path では使用しない）:
   - `KJ_ATLAS_AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
   - `KJ_ATLAS_AUTH_USER_FIELD`（既定 `x-forwarded-user`）
   - `KJ_ATLAS_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
