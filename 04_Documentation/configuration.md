@@ -129,7 +129,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS` | `5.0` | `context-audit` / `export-audit` が渡す同一論理操作のdedup keyに対する重複排除ウィンドウ（SEC-AUDIT-DUP-01）。`view` / `LLM` / `proposal` 監査には適用しない。`0` で無効化 |
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中に監査ログの HTTP 連携を許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
-| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | Org/Restricted 文書の `policyRef` 欠損または access-control adapter 障害時の fail-safe。`read_only` は read だけ allow + read-only、write / export / share は deny。`deny` は read を含む全 action を deny |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | PDPへ渡す `x-acl-auth-mode` metadata。`none`, `oidc`, `saml`。この値自体は `Authorization` headerを生成・変更せず、固定bearerは `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` で別設定する |
