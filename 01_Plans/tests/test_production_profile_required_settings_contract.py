@@ -10,6 +10,7 @@ CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
 SAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
 MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
+OAUTH_BFF = ROOT / "03_Implement/backend/src/kj_atlas_api/oauth_bff.py"
 
 
 def _profile_row(registry: str, profile: str) -> list[str]:
@@ -30,6 +31,7 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         self.settings = SETTINGS.read_text(encoding="utf-8")
         self.saas_policy = SAAS_POLICY.read_text(encoding="utf-8")
         self.main = MAIN.read_text(encoding="utf-8")
+        self.oauth_bff = OAUTH_BFF.read_text(encoding="utf-8")
 
     def test_nonproduction_profiles_keep_recommendations_out_of_startup_required(self) -> None:
         self.assertIn("Startup-required conditions", self.registry)
@@ -68,7 +70,39 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", summary)
         self.assertIn("`KJ_ATLAS_API_KEY`", summary)
 
-    def test_saas_profile_exposes_startup_hard_gate_without_promoting_callback_only_fields(self) -> None:
+    def test_oauth_bff_conditional_rows_expose_request_phase_requiredness(self) -> None:
+        backend = self.registry.split("## Backend settings", 1)[1].split(
+            "## Compose and frontend build keys", 1
+        )[0]
+        token_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT"
+        redirect_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"
+        client_id_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"
+        secret_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"
+        keys = (token_key, redirect_key, client_id_key, secret_key)
+        registry_rows = {
+            key: next(line for line in backend.splitlines() if line.startswith(f"| `{key}` |"))
+            for key in keys
+        }
+        config_rows = {
+            key: next(line for line in self.configuration.splitlines() if line.startswith(f"| `{key}` |"))
+            for key in keys
+        }
+        for key in (redirect_key, client_id_key):
+            self.assertIn("login", registry_rows[key])
+            self.assertIn("login", config_rows[key])
+        for key in keys:
+            self.assertIn("callback", registry_rows[key])
+            self.assertIn("503", registry_rows[key])
+            self.assertIn("callback", config_rows[key])
+            self.assertIn("503", config_rows[key])
+        self.assertIn(
+            "if not authorize_endpoint or not client_id or not redirect_uri:",
+            self.oauth_bff,
+        )
+        self.assertIn('503, "oauth_login_unavailable"', self.oauth_bff)
+        self.assertIn('503, "oauth_broker_unavailable"', self.oauth_bff)
+
+    def test_saas_profile_separates_startup_hard_gate_from_bff_request_conditions(self) -> None:
         row = _profile_row(self.registry, "saas-multitenant")
         required, conditional, notes = row[2], row[3], row[4]
         required_tokens = (

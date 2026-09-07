@@ -64,7 +64,7 @@
 - `local-dev`: **起動hard gateは追加なし**。SQLite + `KJ_ATLAS_LLM_PROVIDER=none` を推奨し、未登録header userを自動作成する場合だけJITを明示 `true`。
 - `evaluation`: **profile単体の起動hard gateは追加なし**。標準ComposeではPostgreSQL + LLM `none` + audit/access-control `noop` を推奨。
 - `enterprise-production`: **起動hard gate**は別値の `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY`。JIT `false`、LLM `none`、fail-safe `read_only` または `deny` は運用推奨。
-- `saas-multitenant`: **起動hard gate**は `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP/document binding/tenant capabilityと各endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash key。OAuth callbackを使う場合はtoken endpoint / redirect URI / client ID / client secretも必要で、欠損時はcallbackを503で拒否。
+- `saas-multitenant`: **起動hard gate**は `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP/document binding/tenant capabilityと各endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash key。OAuth BFFのlogin開始にはredirect URI + client ID、callback code交換にはtoken endpoint + redirect URI + client ID + client secretの完全セットが必要。これらは起動hard gateではなく、欠損時は該当requestを503で拒否。
 
 `KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
@@ -145,10 +145,10 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS` | `1.5` | capability resolverのtimeout秒数（0より大きく30以下） |
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可（既定は fail-closed。SEC-RATE-LIMIT-01・2026-08-13 変更） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | ADR-0074 BFF: OAuth authorization-code フロー開始 URL。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。`saas-multitenant` では必須（`TrustedSaasRuntimePolicy` が起動前検査） |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可 |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、path は `/session/callback` 固定 |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない） |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。起動必須ではないが、callbackでは redirect URI / client ID / client secret と4項目完全セットで必要。欠損時503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、path は `/session/callback` 固定。起動必須ではないが、login開始では client ID とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID。起動必須ではないが、login開始では redirect URI とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない）。起動必須ではないがcallbackの4項目完全セットで必要。欠損時503 |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | ADR-0074 BFF: broker HTTP timeout 秒数（0 より大きく 30 以下） |
 | `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | ADR-0074 decision 2: 認証 session cookie の HMAC-SHA256 キー（64 文字 lowercase hex = 32 bytes）。`saas-multitenant` では必須。生cookie値はDBへ保存せず、このキーでハッシュする |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） |
