@@ -62,7 +62,7 @@ class AuditExportValidationContractTests(unittest.TestCase):
 
             self.assertIn("http", transport_row)
             self.assertIn("endpoint", transport_row)
-            self.assertIn("false", transport_row)
+            self.assertIn("export無効", transport_row)
             self.assertIn("NoopAuditTransport", transport_row)
             self.assertTrue("validation" in transport_row or "検証" in transport_row)
 
