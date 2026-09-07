@@ -1,0 +1,65 @@
+name: Lane B2 audit dedup scope audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-b2-audit-dedup-scope-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit production audit emit dedup scope
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          root = Path('03_Implement/backend/src/kj_atlas_api')
+          found = []
+          without = []
+          for path in sorted(root.rglob('*.py')):
+              text = path.read_text(encoding='utf-8')
+              tree = ast.parse(text)
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                      continue
+                  if node.func.attr != 'emit':
+                      continue
+                  receiver = ast.get_source_segment(text, node.func.value) or ''
+                  if 'audit' not in receiver.lower():
+                      continue
+                  has_dedup = any(kw.arg == 'dedup_key' for kw in node.keywords)
+                  call = ast.get_source_segment(text, node) or '<unavailable>'
+                  record = f'{path}:{node.lineno}: receiver={receiver!r} dedup_key={has_dedup} call={call}'
+                  found.append(record)
+                  if not has_dedup:
+                      without.append(record)
+
+          print(f'production audit emit calls: {len(found)}')
+          for item in found:
+              print(item)
+          print(f'without dedup_key: {len(without)}')
+          for item in without:
+              print('NO_DEDUP', item)
+
+          if without:
+              print('POSITIVE-CANDIDATE: public dedup wording may overstate scope; inspect call semantics')
+              raise SystemExit(42)
+          print('all production audit emit calls carry dedup_key')
+          PY
+      - name: Retire one-shot workflow when clean
+        if: success()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/lane-b2-audit-dedup-scope-audit-once.yml
+          git commit -m 'ci(b2): retire audit dedup scope audit'
+          git push
