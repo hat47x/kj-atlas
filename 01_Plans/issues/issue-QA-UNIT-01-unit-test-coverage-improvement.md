@@ -1,14 +1,14 @@
 # Issue Plan: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Source Issue: N/A
 - Open Readiness: Prepared
 - Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（Phase 1〜6の計画文書更新）。2026-07-18の実行計画節以降は、初回実行バッチとして`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`（QA-MONKEY-13再発検知テストの追加とその可読化リファクタ）も対象に含む。
-- Out of Scope: CI設定変更。実装コード変更・テストコード追加は、2026-07-18の実行計画節が承認した初回実行バッチの範囲でのみ許可する（それ以外の無制限な実装変更は引き続き対象外）。
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`、初回実行バッチの`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`、および2026-09-07第2バッチの`03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`・`03_Implement/frontend/package.json`・`package-lock.json`。
+- Out of Scope: CI設定変更、Vitest全体の`node`環境変更、テスト都合の製品挙動変更。第2バッチでは対象test fileだけにDOM環境を与え、`TenantSessionRuntimeGate.tsx`本体は変更しない。
 - Expected verification level: `unit`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -263,3 +263,21 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 **Stopper分類**: `test defect`寄りだが、修復手段の選択自体が「テスト実行基盤（依存追加）の方針決定」という製品外の判断を要するため、本issueの自己修復ルール（最大3回）の対象にはせず、ここで停止する。
 
 **再開条件**: プロジェクトのfrontend単体テストに、DOM/effectを伴うcomponent状態遷移を検証する手段（jsdom等の追加、または別のtest harness）を導入する方針が決定された場合に再開する。決定は`01_Plans/issues/`への新規Issueまたは本issueへの追記で記録する。
+
+## 2026-09-07 Open化同期 / 第2バッチ再開
+
+2026-07-16〜18にPending-1/2とB-UNIT-03は解消済みで、初回バッチも2026-07-18に実装・検証済みである一方、headerだけが`Status: Draft`に残っていたため、歴史節のDraft/Hold判定を改変せず現在状態を`Open`へ同期する。
+
+2026-07-19の第2バッチで停止した理由は、`TenantSessionRuntimeGate`の中心的な状態遷移がReactのcommit/effectを必要とするのに、既存unit suiteがglobal `environment: "node"`＋SSR中心で、実componentを再レンダリングする局所harnessを持たなかったことだった。今回、この停止条件を次の最小境界で解除する。
+
+- globalのVitest `environment: "node"` は変更しない。
+- `TenantSessionRuntimeGate.test.ts`だけをVitestのfile-local environmentで`happy-dom`へ切り替える。
+- Testing Library等の追加抽象層は導入せず、React 18の`createRoot`＋`act`で実componentをmountする。
+- 製品側`TenantSessionRuntimeGate.tsx`をテスト都合で純関数化・分岐抽出しない。
+- `policyVerified=false`のblocked表示、`true`の`TenantSessionBootstrapGate` hand-off、Retryによるpolicy再検証を実effect/state遷移として固定する。
+
+### 判定境界
+
+この変更は、2026-07-19に明記した**特定のtest-harness blockerを解消し、第2バッチの欠陥検知能力を増やすもの**である。QA-UNIT-01全体をDoneとはしない。今後も欠陥クラス基準で追加候補を選び、DOM環境を全testへ拡張することや、coverage率そのものを目的化することはしない。
+
+依存追加はNode 20（repository `.nvmrc`）でengine-strict installが成立する版に固定し、対象test、frontend全suite、typecheck、planning/docs guardsが同一runでgreenになった場合だけmainline候補とする。
