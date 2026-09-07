@@ -114,7 +114,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。primary `KJ_ATLAS_LLM_PROVIDER=deepseek` では起動readinessの必須値。model registryのregistered DeepSeek providerも `api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY` の場合に同じ値をrequest-timeで解決し、未設定・非canonicalなら provider unavailable としてfail-closedする |
 | `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL |
 | `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek API に渡すmodel ID |
-| `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。旧既定のnon-thinking挙動を維持するため既定はdisabled |
+| `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。primary DeepSeek とmodel registry経由のregistered DeepSeekの送信payload `thinking.type` に反映し、local / large-scaleのgeneric HTTP payloadには作用しない。旧既定のnon-thinking挙動を維持するため既定はdisabled |
 | `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
 | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
 | `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
