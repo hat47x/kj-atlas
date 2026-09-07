@@ -23,7 +23,8 @@ KEY = "KJ_ATLAS_RUNTIME_PROFILE"
 
 
 def _backend_row(text: str, key: str) -> str:
-    backend = text.split("## Backend settings", 1)[1]
+    backend_tail = text.split("## Backend settings", 1)[1]
+    backend = backend_tail.split("\n## ", 1)[0]
     prefix = f"| `{key}` |"
     rows = [line for line in backend.splitlines() if line.startswith(prefix)]
     if len(rows) != 1:
