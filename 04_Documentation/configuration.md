@@ -119,7 +119,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction / assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
 | `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | 管理面（`/admin/provision/**`）を `X-Admin-Api-Key` で保護。業務面キーでは到達不可。`KJ_ATLAS_API_KEY`と同じ値は起動時に拒否。`enterprise-production` / `saas-multitenant` では**必須**（未設定なら起動しない） |
-| `KJ_ATLAS_LOG_JSON` | `true` | ログを1行1JSONで出力。`tenantId` / `docId` / `requestId` はこの経路で出力される（OPS-OBSERV-01） |
+| `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
