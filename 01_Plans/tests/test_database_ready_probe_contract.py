@@ -1,22 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TEST = ROOT / "01_Plans/tests/test_database_ready_probe_contract.py"
-
-old = "| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先。Verifiedの検証対象versionと利用範囲は`database_portability.md`を正本とする。candidate/未知DBはengine生成・migration前に拒否する | direct / base Compose | 資格情報を含み得る（URL に password を埋め込む場合がある） | `/healthz` が 200 を返し、起動ログに接続エラーがないことを確認する（URL 値は出力しない） |"
-new = "| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先。Verifiedの検証対象versionと利用範囲は`database_portability.md`を正本とする。candidate/未知DBはengine生成・migration前に拒否する | direct / base Compose | 資格情報を含み得る（URL に password を埋め込む場合がある） | `GET /readyz` が 200 `status=ready` かつ `checks.database=ok` / `checks.schema=ok` を返すことを確認する。`/healthz` はliveness-onlyでDBを検査しない。URL値は出力しない |"
-
-raw = REGISTRY.read_bytes()
-old_b = old.encode("utf-8")
-new_b = new.encode("utf-8")
-count = raw.count(old_b)
-if count != 1:
-    raise SystemExit(f"expected exactly one database backend row, got {count}")
-REGISTRY.write_bytes(raw.replace(old_b, new_b, 1))
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import unittest
 from pathlib import Path
@@ -78,6 +60,3 @@ class DatabaseReadyProbeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
