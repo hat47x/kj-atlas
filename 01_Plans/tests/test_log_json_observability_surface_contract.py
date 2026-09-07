@@ -10,6 +10,7 @@ CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 OBSERVABILITY_DOC = ROOT / "04_Documentation/observability.md"
 OBSERVABILITY_SOURCE = ROOT / "03_Implement/backend/src/kj_atlas_api/observability.py"
 KEY = "KJ_ATLAS_LOG_JSON"
+LOG_LEVEL_KEY = "KJ_ATLAS_LOG_LEVEL"
 
 
 def _row(text: str, key: str) -> str:
@@ -56,6 +57,23 @@ class LogJsonObservabilitySurfaceContractTests(unittest.TestCase):
             "caller-supplied `extra={...}` のfieldは人間可読formatterでは出力しません",
         ):
             self.assertIn(phrase, self.observability_doc)
+
+    def test_log_level_applies_to_json_human_and_uvicorn_logs(self) -> None:
+        dict_config = self.source.split("logging.config.dictConfig(", 1)[1]
+        self.assertIn(
+            '"root": {"handlers": ["default"], "level": normalized_level}',
+            dict_config,
+        )
+        for logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+            with self.subTest(logger_name=logger_name):
+                self.assertIn(f'"{logger_name}":', dict_config)
+        self.assertGreaterEqual(dict_config.count('"level": normalized_level'), 4)
+
+        for surface in (self.registry, self.configuration):
+            row = _row(surface, LOG_LEVEL_KEY)
+            self.assertIn("アプリケーションログ", row)
+            self.assertIn("uvicorn", row)
+            self.assertNotIn("構造化（JSON）ログの出力レベル", row)
 
 
 if __name__ == "__main__":
