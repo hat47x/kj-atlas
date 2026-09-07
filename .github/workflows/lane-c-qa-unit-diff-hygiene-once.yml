@@ -1,0 +1,96 @@
+name: Lane C QA UNIT diff hygiene once
+
+on:
+  push:
+    branches:
+      - qa/lane-c-qa-unit-runtime-gate-r1-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Align lifecycle wording and preserve baseline lock metadata
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          issue = Path('01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md')
+          text = issue.read_text(encoding='utf-8')
+          replacements = {
+              '- Status: Open\n': '- Status: In Progress\n',
+              '## 2026-09-07 Open化同期 / 第2バッチ再開': '## 2026-09-07 current-state同期 / 第2バッチ再開',
+              'headerだけが`Status: Draft`に残っていたため、歴史節のDraft/Hold判定を改変せず現在状態を`Open`へ同期する。': 'headerだけが`Status: Draft`に残っていたため、歴史節のDraft/Hold判定を改変せず、初回バッチ実行済みの現在状態を`In Progress`へ同期する。',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected exactly one lifecycle phrase: {old!r}')
+              text = text.replace(old, new, 1)
+          issue.write_text(text, encoding='utf-8')
+
+          lock = Path('03_Implement/frontend/package-lock.json')
+          data = lock.read_text(encoding='utf-8')
+          old = '        "@playwright/test": "1.58.2",\n'
+          new = '        "@playwright/test": "^1.58.2",\n'
+          if data.count(old) != 1:
+              raise SystemExit(f'expected one npm-normalized Playwright root lock entry, got {data.count(old)}')
+          lock.write_text(data.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Revalidate lock and runtime-gate unit profile
+        working-directory: 03_Implement/frontend
+        env:
+          npm_config_engine_strict: 'true'
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npx vitest run src/ui/TenantSessionRuntimeGate.test.ts
+          npm run test
+
+      - name: Retire one-shot workflow before repository guards
+        run: rm .github/workflows/lane-c-qa-unit-diff-hygiene-once.yml
+
+      - name: Planning and docs guards
+        run: |
+          set -euo pipefail
+          grep -F -- '- Status: In Progress' 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md
+          grep -F '## 2026-09-07 current-state同期 / 第2バッチ再開' 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md
+          grep -F '"@playwright/test": "^1.58.2"' 03_Implement/frontend/package-lock.json
+          python -m pip install pytest
+          python -m pytest -q 01_Plans/tests
+          python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+          python 01_Plans/docs_check.py
+          git diff --check
+
+      - name: Show final diff against branch base
+        run: |
+          git status --short
+          git diff --stat 5711499e1af822db3d8b63a8ba7201bc4e60dba1
+          git diff -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md 03_Implement/frontend/package.json 03_Implement/frontend/package-lock.json 03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts
+
+      - name: Commit normalized verified diff
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'docs(qa): QA-UNITのcurrent stateと依存lock差分を整える'
+          git push origin HEAD:${GITHUB_REF_NAME}
