@@ -92,6 +92,23 @@ class AuditTransportEffectScopeContractTests(unittest.TestCase):
             self.assertIn("proposal", row)
             self.assertIn("適用しない", row)
 
+    def test_queue_size_only_bounds_fail_open_retry_buffer(self) -> None:
+        emit_body = self.audit.split("def emit(", 1)[1].split("def _flush_queue", 1)[0]
+        send_call = emit_body.index("self._transport.send(event)")
+        except_block = emit_body.index("except Exception as exc", send_call)
+        enqueue = emit_body.index("self._enqueue(event, dedup_key)", except_block)
+        success_return = emit_body.index("return AuditDispatchResult(sent=True)", enqueue)
+        self.assertLess(send_call, except_block)
+        self.assertLess(except_block, enqueue)
+        self.assertLess(enqueue, success_return)
+
+        for row in self._rows("KJ_ATLAS_AUDIT_QUEUE_SIZE"):
+            self.assertIn("送信失敗", row)
+            self.assertIn("fail-open", row)
+            self.assertIn("retry", row)
+            self.assertIn("正常送信", row)
+            self.assertIn("export無効", row)
+
 
 if __name__ == "__main__":
     unittest.main()
