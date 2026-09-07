@@ -107,7 +107,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLMで使う256文字以下のmodel ID |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLMのHTTPSまたはloopback HTTP base URL |
 | `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLMで使う256文字以下のmodel ID |
-| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
+| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | 互換名は escalation だが、現行実装では large-scale provider kind の実行gate。`false` では primary `large-scale`/`external` の起動readinessを満たさず、model registry経由のregistered large-scale providerも利用不可。`LargeScaleProvider.generate()` 自体も拒否する。利用には別途 `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` も必須 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するhostのカンマ区切り。URLやwildcardは不可 |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | `provider_unavailable` / `provider_timeout` を成功応答へ切り替えず、`none` metadata（`fallback_to_none=true`, `execution_path=<provider>->none`）付き `ProviderDisabledError` としてfail-closedする。`provider_validation` はfallback対象外。`false` では元の `ProviderRequestError` を維持する |

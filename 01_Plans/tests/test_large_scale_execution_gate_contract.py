@@ -1,32 +1,4 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "04_Documentation/configuration.md"
-REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TEST = ROOT / "01_Plans/tests/test_large_scale_execution_gate_contract.py"
-
-config_old = "| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |"
-config_new = "| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | 互換名は escalation だが、現行実装では large-scale provider kind の実行gate。`false` では primary `large-scale`/`external` の起動readinessを満たさず、model registry経由のregistered large-scale providerも利用不可。`LargeScaleProvider.generate()` 自体も拒否する。利用には別途 `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` も必須 |"
-
-registry_old = "| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale LLM への昇格許可 | direct | 通常値 | `false` のとき large-scale provider への昇格が拒否されることを確認する |"
-registry_new = "| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | 互換名は escalation だが、現行実装では large-scale provider kind の実行gate。primary `large-scale`/`external` の起動readiness、registered large-scale providerの構築、`LargeScaleProvider.generate()` の全経路で `true` が必要。別途 `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` も必須 | direct | 通常値 | `false` で primary large-scale設定がreadiness失敗し、registered large-scale providerがunavailable、直接large-scale実行も `provider_unavailable` になることを確認する |"
-
-
-def replace_once(path: Path, old: str, new: str) -> None:
-    raw = path.read_bytes()
-    old_b = old.encode("utf-8")
-    new_b = new.encode("utf-8")
-    count = raw.count(old_b)
-    if count != 1:
-        raise SystemExit(f"expected one match in {path}, got {count}")
-    path.write_bytes(raw.replace(old_b, new_b, 1))
-
-
-replace_once(CONFIG, config_old, config_new)
-replace_once(REGISTRY, registry_old, registry_new)
-
-TEST.write_text(
-    '''from __future__ import annotations
+from __future__ import annotations
 
 import ast
 import unittest
@@ -119,6 +91,3 @@ class LargeScaleExecutionGateContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-''',
-    encoding="utf-8",
-)
