@@ -1,0 +1,39 @@
+name: Lane B2 tenant claim name reverify once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-tenant-claim-name-contract-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify tenant claim name contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest 01_Plans.tests.test_tenant_claim_name_public_contract -v
+          python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+          python 01_Plans/docs_check.py
+          git -c core.whitespace=cr-at-eol diff origin/main...HEAD --check
+          changed="$(git diff --name-only origin/main...HEAD | sort -u)"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          printf '%s\n' "$changed" | grep -Fx '01_Plans/tests/test_tenant_claim_name_public_contract.py'
+          printf '%s\n' "$changed" | grep -Fx '02_Architecture/runtime_parameter_registry.md'
+          printf '%s\n' "$changed" | grep -Fx '04_Documentation/configuration.md'
+      - name: Retire helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/lane-b2-tenant-claim-name-reverify-once.yml
+          git commit -m 'ci(b2): retire tenant claim name reverify helper'
+          git push origin HEAD:fix/lane-b2-tenant-claim-name-contract-20260907
