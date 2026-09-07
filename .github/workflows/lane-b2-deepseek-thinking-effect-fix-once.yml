@@ -58,8 +58,11 @@ jobs:
               return (data.count(b'\r\n'), data.count(b'\n') - data.count(b'\r\n'))
           if eol_shape(current) != eol_shape(base):
               raise SystemExit(f'EOL shape changed: base={eol_shape(base)} current={eol_shape(current)}')
+          for lineno, line in enumerate(current.decode('utf-8').splitlines(), 1):
+              if line.endswith((' ', '\t')):
+                  raise SystemExit(f'configuration.md has actual trailing space/tab at line {lineno}')
           PY
-          git diff --check --ignore-space-at-eol
+          git diff --check origin/main -- 01_Plans/tests/test_deepseek_thinking_effect_scope_contract.py
       - name: Commit patch and retire one-shot workflow
         run: |
           git config user.name github-actions[bot]
