@@ -217,6 +217,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R39。PR #3063で、期待内容が正しく存在するのに非限定status locatorが別の正当なstatus surfaceまで拾って失敗したtest defectを分析し、DOM上の偶発的一意性とassertionが所有するsemantic surfaceを分離した記録。
 - `doc_kj_atlas_dogfood_r39.json`
   - R39のKJキャンバス。role/testidの一般優先を決めず、locator scopeをassertionの意味境界へ合わせ、.first()やproduct surface削除でambiguityを隠さない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r40.md`
+  - R40。PR #3072で、すでにmainへ適用済みのcloseout branchを再mergeし、PR diffは残るのに直前main→merge commitのchanged filesが0だった実陽性を分析し、merge-base差分とcurrent mainへのnet tree effectを分離した記録。
+- `doc_kj_atlas_dogfood_r40.json`
+  - R40のKJキャンバス。R22 strong inversionを維持したまま、prospective merge treeがbase treeと同一になるalready-applied deltaをreview signalとして分け、required checkへはまだ昇格しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
