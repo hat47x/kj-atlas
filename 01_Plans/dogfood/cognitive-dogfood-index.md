@@ -225,6 +225,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R41。PR #3068/#3071/#3073/#3074で、実在する近傍health/status surfaceまたは存在しない想定ログを確認手順に使い、対象propertyを証明できていなかった複数実陽性を分析し、operator probeをclaim-specific Evidence surfaceへ結ぶ境界を分離した記録。
 - `doc_kj_atlas_dogfood_r41.json`
   - R41のKJキャンバス。surfaceの実在とclaimに対する証明能力を分け、R33/R34/R39との責務差を保ちつつ、各shapeはfocused contractで閉じてgeneric probe registryへ一般化しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-07-r42.md`
+  - R42。PR #3087で、active IdP存在確認をhard startup gateのように公開していた一方、runtimeはpost-DB-init warningとして扱いbootstrap pathを残していた実陽性を分析し、check predicateとenforcement policyを分離した記録。
+- `doc_kj_atlas_dogfood_r42.json`
+  - R42のKJキャンバス。validationの存在からhard gateを推論せず、phase・failure consequence・remaining capability・recovery/bootstrap pathを必要な範囲で分け、generic validation registryへ一般化しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
