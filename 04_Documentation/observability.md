@@ -69,7 +69,7 @@ docker compose logs api | grep '"requestId":"9f2c1d'
 
 `tenantId` / `docId` / `queueLength` のようなフィールドは、コード側が `extra={...}` で渡しているものです。**`OPS-OBSERV-01` 以前はログ設定が存在せず、これらは出力されていませんでした** — 監査送信の失敗すら「どのテナントの何が失われたか」が分からない状態でした。
 
-出力レベルは `KJ_ATLAS_LOG_LEVEL` で変更します。`KJ_ATLAS_LOG_JSON=false` にすると人間可読の1行書式になり、`requestId` は角括弧内に出ます。
+出力レベルは `KJ_ATLAS_LOG_LEVEL` で変更します。`KJ_ATLAS_LOG_JSON=false` にすると人間可読の1行書式になり、correlation metadata の `requestId` / `actorRefHash` / `appRevision` は残ります。一方、`tenantId` / `docId` / `queueLength` / LLM `trace_id` など caller-supplied `extra={...}` のfieldは人間可読formatterでは出力しません。これらの構造化fieldが必要な運用ではJSON出力を維持してください。
 
 ### ログに出ないもの
 
