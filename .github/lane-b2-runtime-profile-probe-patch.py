@@ -24,9 +24,13 @@ KEY = "KJ_ATLAS_RUNTIME_PROFILE"
 
 def _backend_row(text: str, key: str) -> str:
     backend_tail = text.split("## Backend settings", 1)[1]
-    backend = backend_tail.split("\n## ", 1)[0]
+    section_lines: list[str] = []
+    for line in backend_tail.splitlines():
+        if line.startswith("## "):
+            break
+        section_lines.append(line)
     prefix = f"| `{key}` |"
-    rows = [line for line in backend.splitlines() if line.startswith(prefix)]
+    rows = [line for line in section_lines if line.startswith(prefix)]
     if len(rows) != 1:
         raise AssertionError(f"expected one backend row for {key}, got {len(rows)}")
     return rows[0]
