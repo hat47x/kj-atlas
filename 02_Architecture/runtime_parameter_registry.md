@@ -50,6 +50,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
    - Docker Compose 上で利用者評価を行い、PostgreSQL や Nginx 経由の導線を含めて検証したい。
    - 外部監査/外部PDPは原則無効（`noop`）で、必要時のみ限定有効化する。
 3. `enterprise-production` を選ぶ条件
+   - `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` を別値で設定できる。両方とも Settings の起動hard gateであり、欠損時はfail-fastする。
    - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
    - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
 4. `saas-multitenant` を選ぶ条件
