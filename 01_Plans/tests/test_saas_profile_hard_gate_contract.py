@@ -58,6 +58,7 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
         )[1].split("### Drift check gates", 1)[0]
         self.assertIn("SaaS OAuth broker authorize endpoint", implementation_gate)
         self.assertIn("auth-session hash key", implementation_gate)
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", implementation_gate)
 
     def test_saas_profile_requires_admin_api_key_across_public_profile_docs(self) -> None:
         settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
