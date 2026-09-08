@@ -9,7 +9,7 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Expected verification level: `integration`
 
-> **進捗（2026-09-04）: Stage 1〜4は完了し、Stage 5は `check-narrative` のscale方式だけが未確定。** `suggest-island-summary` / `propose-opposing-viewpoint` / `suggest-merges` はDocument-backed structured inputへ移行済みで、`summarize-island-relation` / `refine-card-text` / `suggest-document-title` はADR-0069 D5=Aによりtask-local structured inputを正式契約とする境界が確定した。「11/11をgeneric Document IRへ揃える」ことは完了条件ではない。残る実装判断は `check-narrative` だけであり、`AI-IR-SCALE-01` のscale方式とnamed provider/modelの実token予算確認を待つ。AC-7 はStage 4で完了し、AC-10は `AI-IR-SCALE-01` へ切り出して継続している。詳細は `AI-IR-STAGE5-SCOPE-01` と末尾の各Stage結果を参照する。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
+> **進捗（2026-09-05）: `ADR-0069` 実装順序が具体名で挙げた4エンドポイント（`detect-contradiction` / `suggest-card-groups` / `generate-narrative` / `suggest-layout`）は全て移行済みで、AC-1〜AC-11 は全て充足した。** AC-7 はStage 4で完了。**AC-10（代表規模のトークン計測）は 2026-09-05 に実施し、本issue内で完結させた**（末尾「結果（AC-10: 代表規模トークン計測）」）。AC-10 が要求していた「上限値が現行規模に合わない場合の別issue切り出し」は、既に `AI-IR-SCALE-01`（In Progress / P1）が正本として存在するため、新規起票ではなく同issueへ計測結果を供する形で満たしている。実装順序の5番目「残りのエンドポイント」は**開かれた末尾であり、本issueの現在のスコープ外**である ── 分類と順序は `AI-IR-STAGE5-SCOPE-01` を正本とし、そこで残るのは `check-narrative` 1経路のみ（`AI-IR-SCALE-01` のscale方式とnamed provider/modelの実token予算確認待ち）。`suggest-island-summary` / `propose-opposing-viewpoint` / `suggest-merges` はDocument-backed structured inputへ移行済みで、`summarize-island-relation` / `refine-card-text` / `suggest-document-title` はADR-0069 D5=Aによりtask-local structured inputを正式契約とする境界が確定した。「11/11をgeneric Document IRへ揃える」ことは完了条件ではない。`Status` メタデータの語彙は `Draft` / `Open` / `In Progress` / `Done` に固定されている（`01_Plans/issues/issue_memo_status.py`）ため、段階情報はここに書く。
 
 > **本issueは `ADR-0069` の採択を前提とする。** ADR が Proposed の間は着手しないこと。D1〜D4 が未決のまま実装すると、凍結仕様（`llm_input_ir_spec.md`）への非互換な改変が入る。**（2026-08-29 に Accepted・仮承認となり、この前提は解消済み。）**
 
@@ -132,7 +132,7 @@ Stage 5では、残る経路を一括してIR化せず、`AI-IR-STAGE5-SCOPE-01`
     - **比較が覆っていない範囲**（fixture を両実装の重なりへ意図的に限定している。いずれも IR の投影規則であってドリフトではない）: 島端点を持つ辺は IR に入らない（§2.3 規則6）ため TS 側の「永続化された島→カード辺の昇格」分岐に Python の対応が無い／`unknown` 型は IR が落とす（D2=A）が TS は集約する／`(from, to, type)` の重複は IR が先に1件へ畳む（§2.3 規則3）が TS は `aggregateCount` で二重に数える／複数島に属するカードは IR が先勝ちで1島へ寄せる（§2.2A）が TS の `getIslandsForCard()` は全件返す。この一覧は `derived_island_relations()` の docstring と Python テストの docstring にも同文で置いた（issue だけに書くと、コードを読む人に届かないため）。**2026-09-05 追記（5件目）**: 上記4件が「入力に対する前提条件」であるのに対し、5件目は**意図的な振る舞いの相違**である ── `causal` の方向保存（`02_Architecture/schemas.md` §3.3.1）について Python は契約に準拠し、TS の `getDerivedIslandEdges()` は種別例外なしにペアを正規化するため準拠していない。TS 側の違反は本ロールアウト以前から存在する既存バグで、`issue-DOMAIN-KJ-CAUSAL-DIRECTION-01` として起票済み。共有 fixture は契約正の配列と TS の現行出力の2配列を持ち、両側のテストが「乖離は `causal` 行に限られる」ことを検査する。経緯と手当ては Stage 4 の「事後検証で見つかった不備と是正（2026-09-05）」を参照。
 - [x] AC-8（D1/D3のスキーマ変更範囲のみ）: `ir_version` が繰り上がり、`llm_input_ir_spec.md` が採択された D1〜D3 と一致している。— `1.0` → `1.1`（Stage 1）→ `1.2`（Stage 2 で `cards[*].hold_state` を加算）。版数判断の根拠は仕様 §7.4。§6 の FixtureProvider 生成手順は `scripts/generate_llm_input_ir_fixture.py` で end-to-end に再現でき、`--check` によるドリフト検出をテストに含めた。Stage 3 と Stage 4 は仕様改訂を要さず、`ir_version` は 1.2 のまま据え置いた（Stage 4 が必要とした `coordinates` / `islands` / `relations` は 1.1〜1.2 で揃っており、座標の要否表 §2.2.1 は既に `suggest-layout` を「要求」と定めていた）。「全エンドポイントが IR 経由」の確認は Stage 5 まで持ち越し。
 - [x] AC-9（detect-contradiction / suggest-card-groups / generate-narrative / suggest-layout / suggest-island-summary / propose-opposing-viewpoint）: `02_Architecture/api.md` のリクエスト契約が実装と同期している。— Stage 1 で `/ai/detect-contradiction`、Stage 2 で `/ai/suggest-card-groups`、Stage 3 で `/ai/generate-narrative`、Stage 4 で `/ai/suggest-layout` の項を更新。Stage 3・4 はリクエスト／レスポンスの**形が変わっていない**ため、追記したのは IR 経由化・二層 SafeMode・IR 由来の 422 コード（`empty_cards` の挙動変更を含む）である。Stage 4 ではこれに加えて、**座標を渡す唯一のエンドポイントであること**（正規化座標のみがIRに入り、生の絶対座標は入らないこと）と、**島が矩形だけでなく関係の集合としても渡ること**（`bounds` / `anchor` は削っていないこと）を明記した。Stage 5第1経路として `/ai/suggest-island-summary` も同期した。request / responseの形は変えず、IR経由化、二層SafeMode、対象島の必要意味、文脈専用カードと `groundingIds` の境界、IR上限で必要relation/evidenceを保持できない場合の422を追記した。残る未移行6経路は、入力契約を確認するまで変更しない。
-- [ ] AC-10: 代表規模（カード300・島30程度）で入力トークン量を計測し、変化を記録する。上限値（`MAX_CARDS=200` 等、§5.1）が現行規模に合わない場合は別issueへ切り出す。— **意図的に延期（Stage 4 でも実施していない）**。1エンドポイントだけの計測は代表性を持たない（IRの `graph_summary` / `islands` は文書単位のコストであり、複数エンドポイントで償却される前提で設計されている）。**Stage 4 完了時点の推奨**: `ADR-0069` 実装順序が具体名で挙げた4エンドポイントはこれで全て移行済みであり、残るのは開かれた末尾（「5. 残りのエンドポイント」）だけである。償却の分母は既に4エンドポイントあり、`suggest-layout` は座標・島・関係をすべて載せる**最も重い**投影なので、上限（`MAX_CARDS=200` / `MAX_RELATIONS=400` / `MAX_TEXT_CHARS=12000`）の妥当性を判断する材料としては現時点の4件が代表的である。**Stage 5 の着手前に AC-10 を先に済ませるのが自然な順序**と考える（Stage 5 でさらにエンドポイントを足してから測ると、上限見直しの影響範囲がその分広がる）。これは推奨の記録であって、Stage 4 では計測そのものを行っていない。
+- [x] AC-10: 代表規模（カード300・島30程度）で入力トークン量を計測し、変化を記録する。上限値（`MAX_CARDS=200` 等、§5.1）が現行規模に合わない場合は別issueへ切り出す。— **実施（2026-09-05）**。300カード・30島・899関係・30証拠リンク・12 hold の代表文書を、移行済み4エンドポイントの実プロンプト構築関数へ通し、**IR移行コミットの親**（`dd690559^` / `677fe0de^` / `dcd54d50^` / `eaaf21f0^`）から取り出した当時のプロンプトと同一トークナイザで比較した。参照トークナイザは **tiktoken 0.14.0 / `o200k_base`**（providerの課金値ではない。実測は `AI-IR-SCALE-01` R20 の担当）。現行上限（200/400/12,000）での結果は `detect-contradiction` **111 → 405**（+294、3.65倍）、`suggest-card-groups` **12,832 → 14,094**（+1,262、1.10倍）、`generate-narrative` **41,790 → 49,321**（+7,531、1.18倍）、`suggest-layout` **48,024 → 69,496**（+21,472、1.45倍）。4エンドポイントとも `MAX_CARDS` と `MAX_RELATIONS` の両方で切り詰まる。**上限の切り出しは新規起票ではなく既存の `AI-IR-SCALE-01`（In Progress / P1）が正本**であり、本計測はその判断材料として供する（重複起票はしない）。計測方法・全数値・上限引上げの実コスト・`MAX_CARDS` に対する推奨は下の「結果（AC-10: 代表規模トークン計測）」節にある。
 - [x] AC-11（detect-contradiction / suggest-card-groups / generate-narrative / suggest-layout）: 既存フロントエンドが動作する（後方互換）。または必要な改修を同一 PR に含める。`03_Implement/deploy/tools/kj_canvas_demo.py` も追随させる。— **改修不要を確認**。`/ai/detect-contradiction` を呼ぶフロントエンドコードは存在しない（`grep -rn "detect-contradiction\|detectContradiction" 03_Implement/frontend/src` は0件）。`kj_canvas_demo.py` はAPIではなくモックLLMアダプタ（`http://localhost:8001/generate`）を直接叩いており、本エンドポイントの契約に依存しない。追加した `doc` はリクエストの任意フィールド、`alreadyRecorded` / `existingContradictionState` はレスポンスの追加フィールドであり、いずれも破壊的ではない。`verify_business_flow_e2e.sh` の呼び出し**143箇所**（`grep -c 'X POST "$BASE_URL/ai/detect-contradiction"'`、2026-08-30 時点）はすべて `doc` を渡さない従来形であり、そのまま通る（当初「2箇所」と記載していたのは誤り。Stage 3 の事後検証で是正）。**Stage 2 追記**: `/ai/suggest-card-groups` にもフロントエンドの呼び出し元は存在しない（`grep -rn "suggest-card-groups\|suggestCardGroups" 03_Implement/frontend` は0件。`03_Implement/deploy/tools/` の2件はいずれもモックLLMアダプタ側で、APIの契約に依存しない）。追加した `doc` はリクエストの任意フィールド、`excludedCardIds` / `truncated` はレスポンスの追加フィールドである。`verify_business_flow_e2e.sh` の呼び出し（**149箇所**。`grep -c 'X POST "$BASE_URL/ai/suggest-card-groups"'`、2026-08-30 時点。当初「27箇所」と記載していたのは誤りで、Stage 3 の事後検証で是正）はすべて `doc` を渡さない従来形であり、候補カード行の書式 `  - id="...", text="..."` を IR 経路でも維持したため `mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）もそのまま一致する。**Stage 3 追記**: `/ai/generate-narrative` は**移行済みエンドポイントで初めて実フロントエンド呼出元を持つ**（`frontend/src/api/client.ts` の `generateNarrative`、`App.tsx` から使用）。このためリクエスト／レスポンスの形を一切変えない方針を採り、フロントエンドは無改修（`03_Implement/frontend` の変更ゼロ）。読み順行の書式 `- <n>. island id="..."` / `- <n>. card id="..."` も維持したため `mock_local_llm.py` の `_READING_ORDER_LINE`（`^- \d+\. \w+ id="([^"]+)"`）はそのまま一致する。新たに加えた行（`- reading-order 1 -> reading-order 2: ...` 等の背骨行、切り詰め注記）はいずれもこの正規表現に一致しない（`- ` の直後が数字＋`.` ではない）ことをテストで固定した。`verify_business_flow_e2e.sh` からの呼び出しは**144箇所**あり（当初「2箇所」と記載していたのは誤り。`grep -c 'X POST "$BASE_URL/ai/generate-narrative"'` で確認）、IR経路化で新設された 422（`pii_detected` §7.2 / `structured_text_only_violation` §7.3）に触れる fixture が無いことを静的に確認した（同スクリプト中の `text` / `title` / `summary` / `note` 値 1463件に対し §7.2 の3パターンと §7.3 の禁止キーを走査、ヒット0件）。**Stage 4 追記**: `/ai/suggest-layout` にも実フロントエンド呼出元がある（`frontend/src/api/client.ts` の `suggestLayout`、`App.tsx` から使用）。Stage 3 と同じくリクエスト／レスポンスの形を一切変えない方針を採り、**フロントエンドの製品コードは無改修**（追加したのは AC-7 の TS 側テスト1ファイルのみ。`03_Implement/frontend/src` 配下の `.test.ts` 以外の変更はゼロ）。`mock_local_llm.py` の `re_layout` は `_CARD_LINE`（`^\s*- id="([^"]+)", text=`）でプロンプトからカードIDを拾い、`_parse_suggestion()` は**文書の全カードちょうど**を要求するため、この2つが噛み合わないと即座に 422 になる。したがって `Cards:` セクションは従来どおり**文書側**から全カードを描画し（IRは §5 で切り詰まりうるためIR側から描くと大規模文書で破綻する）、Stage 4 が追加した行はいずれも `_CARD_LINE` に一致しないことをテストで固定した（追加行の先頭は `- card "` / `- island "` であり `- id="` ではない）。`verify_business_flow_e2e.sh` の呼び出しは**5箇所**（`grep -c 'X POST "$BASE_URL/ai/suggest-layout"'`、2026-08-31 時点。文字列 `suggest-layout` 自体の出現は14箇所だが、うち9箇所はコメント・見出し・チェック名）。静的確認として、同スクリプト中の文書リテラル184件（うちJSONとして解釈できた178件。残り6件はシェル変数補間を含み解釈不能）を実際に `build_llm_input_ir(include_coordinates=True)` に通し、拒否されたのは `empty_cards` の2件（`biz-hier`・`doc-wtype-r1`）のみで、**この2件はいずれも `/ai/suggest-layout` へは渡されない**ことを確認した（前者は `PUT`/`GET /docs` のみ、後者は inquiry-bundle スナップショット内の埋め込み文書）。残り176件は正常に投影できる。
 
 ## 依存関係
@@ -507,3 +507,140 @@ Stage 4 の変更に独立レビューを3観点（correctness / scope / 記録�
 **ベースラインの読み替え（重要）。** Stage 4 完了時に記録した `1417 passed, 39 skipped, 8 deselected` は**現在の `main` に対する妥当なベースラインではない**。本是正の着手直前に無改修の作業ツリーで全体回帰を実測したところ **1526 passed, 41 skipped, 8 deselected**（`0:18:30`）であり、差分 +109 passed / +2 skipped は Stage 4 以降に他の作業が追加したテストである（本リポジトリは複数セッションが同一ワークツリーを共有する運用）。したがって本是正の判定基準は「1417 と一致すること」ではなく「**実測ベースライン 1526 に対して +5**」である。
 
 是正で変更したのは backend の実装1関数・docstring1件・テスト2ファイル・fixture2件と、frontend の AC-7 テスト1ファイル（`.test.ts`）のみで、**frontend の製品コードは引き続き1行も変更していない**（設計判断1を維持）。
+
+## 結果（AC-10: 代表規模トークン計測、2026-09-05）
+
+Stage 1〜4 を通じて意図的に延期していた AC-10 を実施した。**production の定数・エンドポイントの挙動は1行も変更していない**（計測と記録だけの回である）。
+
+### 計測方法
+
+| 項目 | 内容 |
+|---|---|
+| スクリプト | `03_Implement/backend/scripts/measure_llm_input_ir_token_budget.py`（既存。2026-09-02 に骨格が入っていたが未実行・未記録だったため、AC-10 が求める性質を満たすよう代表入力を拡張して実行した） |
+| 入力側の回帰 | `03_Implement/backend/tests/test_llm_input_ir_token_budget_fixture.py`（新規6件。tiktoken を要さない） |
+| トークナイザ | **tiktoken 0.14.0 / `o200k_base`**。回帰比較用の参照値であり、**providerの課金トークン数ではない**。named provider/model の実測は `AI-IR-SCALE-01` R20（`measure_ai_route_provider_tokens.py`）の担当であり、本節はそれを代替しない |
+| 「IR導入前」の取り方 | 各エンドポイントの**IR移行コミットの親**から当時の `_build_..._prompt` を取り出し（`dd690559^` / `677fe0de^` / `dcd54d50^` / `eaaf21f0^`）、同じ代表文書で描画した |
+
+**`ir=None` を旧値の代用にしていない。** 現行関数を `ir=None` で呼んだ描画は、`suggest-card-groups` と `generate-narrative` では当時の関数と byte 単位で一致するが、`detect-contradiction` と `suggest-layout` では**IR移行コミット自身が共有ヘッダへ1行ずつ加えている**ため一致しない（`A mere difference of opinion is not a contradiction.` と、`Place cards and islands that stand in a logical relation nearer, ...` の2行。いずれも `git log -S` で当該移行コミットが初出であることを確認）。スクリプトはこの2行を差し引いて旧値を再現し、4エンドポイントとも当時の関数の出力と byte 単位で一致することを確認した。差し引く行が実在することはテストで固定した（文言が変われば落ちる）。
+
+### 代表入力
+
+`build_representative_document()` は次を決定論的に生成する。PIIを含まず、全カード `textReviewed: true`。
+
+| 次元 | 値 | 意図 |
+|---|---|---|
+| カード | **300**（正規化後 1枚38.5文字 / 合計 11,550文字） | `MAX_CARDS=200` を超える |
+| 島 | **30**（各10枚。`i10`〜`i29` は `parentIslandId` を持ち、全島に `placardCardId`） | 階層と表札を投影に載せる |
+| 関係 | **899**（リング299＋弦600。5語彙。リングの型配分は島境界の辺にも `causal` / `negate` が回るようにしてある） | `MAX_RELATIONS=400` を超える／島をまたぐ因果・対立を含む |
+| 証拠リンク | **30**（`supports` / `contradicts` 交互） | evidence の切り詰めを観測する |
+| hold | **12**（`held` / `pending` / `shelved`） | AC-2 の人間判断保護と切り詰めの相互作用を観測する |
+| 叙述の必須骨格 | **117カード** | `MAX_CARDS=200` に収まる（収まらない場合は下記のとおり 422 になる） |
+
+弦の関係型を無方向3種（`related` / `mutual` / `equivalence`）に限ったのは意図的である。`generate-narrative` は `causal` / `negate` の両端を `required_card_ids` として予約するため（`AI-IR-NARRATIVE-SPINE-01`）、弦にも骨格型を混ぜると必須集合が `MAX_CARDS` を超えて 422 になり、4エンドポイントを同一入力で比較できなくなる。その境界自体は別に測った（後述）。
+
+### 計測1: 現行上限（`MAX_CARDS=200` / `MAX_RELATIONS=400` / `MAX_TEXT_CHARS=12,000`）
+
+**プロンプト（providerへ実際に送られるもの）。** 単位は参照トークン。
+
+| エンドポイント | IR導入前（履歴） | 現在のIR経路 | 差分 | 倍率 |
+|---|---:|---:|---:|---:|
+| `detect-contradiction` | 111 | **405** | +294 | 3.65倍 |
+| `suggest-card-groups` | 12,832 | **14,094** | +1,262 | 1.10倍 |
+| `generate-narrative` | 41,790 | **49,321** | +7,531 | 1.18倍 |
+| `suggest-layout` | 48,024 | **69,496** | +21,472 | 1.45倍 |
+
+**IR本体（`LLMRequest.inputs`）。** transport は `prompt` だけを送るため、この列は**課金対象ではない**。
+
+| エンドポイント | 参照トークン | cards | relations | islands（空島） | evidence | coordinates | truncation |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `detect-contradiction` | 35,835 | 200/300 | 400/899 | 30（0） | 16/30 | — | `MAX_CARDS,MAX_RELATIONS` |
+| `suggest-card-groups` | 35,813 | 200/300 | 400/899 | 30（0） | 15/30 | — | `MAX_CARDS,MAX_RELATIONS` |
+| `generate-narrative` | 35,991 | 200/300 | 400/899 | 30（0） | 14/30 | — | `MAX_CARDS,MAX_RELATIONS` |
+| `suggest-layout` | 42,609 | 200/300 | 400/899 | 30（0） | 16/30 | 200/300 | `MAX_CARDS,MAX_RELATIONS` |
+
+**倍率の読み方。** `detect-contradiction` の 3.65倍 は分母が111トークンしかないことによるもので、絶対値は +294 トークンにすぎない。IR本体が35,835トークンあるのにプロンプトが405トークンで収まるのは、このエンドポイントが**対象ペア近傍だけを描画する**ためである（IRの大きさとprovider入力コストは比例しない）。実コストが重いのは `suggest-layout`（+21,472）と `generate-narrative`（+7,531）である。
+
+**切り詰めで実際に何が落ちるか。**
+
+- 4エンドポイントすべてで `MAX_CARDS` と `MAX_RELATIONS` の両方が発火する。カードは 300→200、関係は 899→400。
+- **空島は0だった。** `AI-IR-SCALE-01` の課題節が記録した計測（`measure_llm_input_ir_scale.py` の純リング入力）では後半10島が空になったが、本入力は島をまたぐ弦を持つため中心性が全島へ分散し、残る200枚が30島すべてに散る。「どの200枚が残るか」は関係の張り方に強く依存する、というのが両計測の差から読める。
+- `suggest-card-groups`: 要求300枚 → 候補**188**枚（hold除外12 ＋ **切り詰めで消失100**）。消失分は `truncated` としてレスポンスに出る。
+- `suggest-layout`: `Cards:` 節は文書側から全300枚を描くため（Stage 4 設計判断2）、**出力対象としてのカードは1枚も失われない**。失われるのは Stage 4 が足したもの、すなわち正規化相対座標 100/300 と関係 499/899 である。つまり300枚規模では、落ちた3分の1について**Stage 4 以前の入力品質へ戻る**。プロンプトには `Note: the projection hit its size limit (...)` が入るのでモデルには伝わるが、**APIの呼び出し側からは観測できない**（`truncated` 相当のレスポンスフィールドが無い。Stage 4 設計判断1）。`generate-narrative` も同じ（Stage 3 設計判断7）。
+- `detect-contradiction`: 対象ペアは #2827 で `required_card_ids` により保護済みのため、切り詰めがペアの意味を落とすことはない。
+
+### 計測2: 上限を引き上げた場合の実コスト
+
+`--max-cards` / `--max-relations` / `--max-text-chars` は**計測時だけの上書き**であり、`llm_input_ir.py` の定数は変更していない。
+
+| シナリオ | `detect-contradiction` | `suggest-card-groups` | `generate-narrative` | `suggest-layout` |
+|---|---:|---:|---:|---:|
+| A: 現行 200 / 400 / 12,000 | 405 | 14,094 | 49,321 | 69,496 |
+| B: 300 / 400 / 12,000 | 339 | 18,745 | 49,081 | 72,376 |
+| C: 300 / 900 / 20,000（全量保持） | 405 | 24,234 | 57,362 | 86,418 |
+| **B − A** | −66（−16.3%） | **+4,651（+33.0%）** | −240（−0.5%） | +2,880（**+4.1%**） |
+| **C − A** | ±0 | **+10,140（+71.9%）** | +8,041（+16.3%） | +16,922（+24.4%） |
+
+**入力トークンは倍にならない。** `MAX_CARDS` を200→300へ上げるだけなら最悪でも +33%（`suggest-card-groups`）で、最も重い `suggest-layout` は **+4.1%** にすぎない（関係側が `MAX_RELATIONS=400` で頭打ちのままだから）。3上限を揃えて300カード・899関係を全量保持しても、現行比で最大 **+72%**、最重量エンドポイントで +24% である。**上限引上げを止めているのは費用ではない。**
+
+**`MAX_TEXT_CHARS` は本入力では効かない（が、余白は薄い）。** 正規化後の合計は 11,550文字で、上限12,000に対する余白は **450文字（3.75%）** しかない。`AI-IR-SCALE-01` R21 の代表入力は1枚46文字で同じ300枚が13,800文字となり、そちらでは文字数側が先に効く。**300枚での拘束上限は平均カード長で入れ替わり、境目は 12,000/300 = 40文字**である。本入力は38.5文字、R21 は46文字で、境目の両側にある。R21 の「`MAX_CARDS` だけを上げても足りない」という結論は本計測でも支持されるが、その理由は入力によって `MAX_TEXT_CHARS`（R21）にも `MAX_RELATIONS`（本計測）にもなりうる。
+
+### 計測3: `generate-narrative` の fail-closed 境界
+
+300枚リング（299関係）で `causal` / `negate` の比率だけを振り、`_narrative_required_card_ids()` が返す必須集合と実挙動を観測した。
+
+| 骨格辺 / 299 | 必須カード | 挙動 |
+|---:|---:|---|
+| 30 | 60 | IR生成成功 |
+| 60 | 93 | IR生成成功 |
+| 90 | 123 | IR生成成功 |
+| 120 | 153 | IR生成成功 |
+| 150 | 183 | IR生成成功 |
+| 180 | 213 | **422 `required_card_budget_exceeded`** |
+| 210 | 243 | **422** |
+| 240 | 273 | **422** |
+| 269 | 300 | **422** |
+
+**300カードの文書では、`causal` / `negate` が300枚のうち200枚超に触れた時点で `POST /ai/generate-narrative` は叙述を返さず 422 になる。** 300枚リングでいえば関係の約60%が骨格型になった時点である。これは graceful degradation ではなく硬い失敗だが、**意味を欠いた骨格を送るより fail-closed を選ぶ**という `AI-IR-NARRATIVE-SPINE-01` の設計どおりの挙動であり、`AI-IR-SCALE-01` R19 が既に「required cardだけで上限を超える場合はfail-closedする」と開示している。本節はその境界に**具体的な数値**を与えたものである。
+
+### `MAX_CARDS=200` と受理上限の乖離 — 4エンドポイント全部にある
+
+Stage 2 設計判断6 が `suggest-card-groups` について指摘した乖離は、**そのエンドポイント固有ではない**。
+
+| エンドポイント | リクエストが受けるカード数 | IRが運ぶ上限 | 乖離 |
+|---|---|---:|---|
+| `suggest-card-groups` | `cards`: 2〜**1000**（`DOGFOOD-31` が100から緩和） | 200 | 5倍 |
+| `detect-contradiction` | `cardA` / `cardB` ＋ 任意の `doc` | 200 | `doc` 側は下記と同じ |
+| `generate-narrative` | `doc`（必須） | 200 | 下記 |
+| `suggest-layout` | `doc`（必須） | 200 | 下記 |
+
+`DocumentV1.cards` に `max_length` は無い。`max_document_cards`（既定 **50,000**、`SEC-DOC-BOUND-01`）と `max_document_bytes`（20 MiB）は **`routes/docs.py` の保存経路にしか無く、`/ai/*` は通らない**。したがって `doc` を取る3エンドポイントでは、リクエストモデル上の乖離は5倍どころか**無制限**であり、実運用上の天井（保存できる文書＝50,000枚）に対しては250倍である。乖離は `suggest-card-groups` に限った話ではない。
+
+### 推奨
+
+**1. `MAX_CARDS` の単独引上げは採らない。** `AI-IR-SCALE-01` R21 が方式A1を候補から外した判断を支持する。本計測はその理由をもう1つ足す ── 200→300 にすると次に効くのは `MAX_RELATIONS` であり（計測2シナリオB: 899関係のうち400しか運べないまま）、`suggest-layout` のプロンプトは +4.1% しか増えない。**払ったコストに対して構造がほとんど戻ってこない。**
+
+**2. 方針としては A2（3上限を揃えて広げる）を支持する。費用はそれを妨げない。** 全量保持でも現行比 +72%（最重量エンドポイントで +24%）であり、「300枚にすると入力が倍増する」という懸念は本計測では否定された。ただし**具体的な数値は本計測では決めない** ── 参照トークナイザの値からモデルの context 窓を逆算しないという `AI-IR-SCALE-01` R20 の境界を維持する。`suggest-layout` の現行プロンプトが既に 69,496 参照トークンあることは、A2 の余裕を named provider で確かめる必要性の側の材料である。
+
+**3. 「`truncated` に頼る」だけでは足りない。** 現状 `truncated` をレスポンスへ出しているのは `suggest-card-groups` だけで、`generate-narrative` と `suggest-layout` は**プロンプト内注記のみ**（モデルには伝わるが呼び出し側には見えない）。上限を据え置く選択を採るなら、少なくとも切り詰めの可観測性をこの2経路へ揃えることが前提になる。これは `AI-IR-SCALE-01` の未達AC「切り詰め時に…必要意味のcoverage欠落を後から検証できる情報を残す」の範囲であり、**本issueでは実装しない**。
+
+### 別issueを起票していない理由
+
+AC-10 は「上限値が現行規模に合わないなら別issueへ切り出す」と定めている。**合っていない**（本節の計測がそれを示している）が、**切り出し先は既に存在する** ── `01_Plans/issues/issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md`（Type: Architecture / Feature / Verification、Priority: **P1**、Status: **In Progress**、Source Issue に本issueの AC-10 を明記）が、`MAX_CARDS` / `MAX_RELATIONS` / `MAX_TEXT_CHARS` の3上限と方式A2/B/Cの比較を正本として抱えている。同じ問題で2枚目を立てることは台帳の二重化にあたる（`AGENTS.md` §1-5）。したがって**新規起票はせず**、本節を計測結果として残す。`AI-IR-SCALE-01` 側の未達ACのうち先頭2件（named provider の実 input token）は依然として未達であり、本節の参照トークン数はそれを埋めるものではない（同issue R20 の「別tokenizerによる推定で埋めない」境界を守る）。
+
+### 検証
+
+| 対象 | 結果 |
+|---|---|
+| `pytest tests/test_llm_input_ir_token_budget_fixture.py -q` | 6 passed |
+| `pytest tests/ -q`（backend 全体回帰） | **1548 passed, 41 skipped, 8 deselected**（本変更前の実測ベースライン 1542 passed, 41 skipped, 8 deselected に対して +6。差分は本節が追加した fixture テストのみで、既存テストの failed / skipped / deselected は1件も増減していない） |
+| 旧プロンプト再現の突合（`git show <移行コミット>^` から当時の関数を取り出して実行） | 4エンドポイントとも byte 単位で一致 |
+| `ruff check`（変更した scripts / tests） | All checks passed |
+| `python3 01_Plans/docs_check.py` | passed |
+
+計測時のみ `tiktoken==0.14.0` を backend venv へ導入した（`llm_input_ir.py` にも routes にも依存を足していない。スクリプトは遅延 import で、未導入なら案内を出して終了する）。
+
+### 本節で意図的に触れなかったもの
+
+- `MAX_CARDS` / `MAX_RELATIONS` / `MAX_TEXT_CHARS` の値。AC-10 は計測と切り出し判断までであり、上限変更は `AI-IR-SCALE-01` の成果物である。
+- `/ai/*` の production ロジック、`_reject_unreviewed_cards` / `_reject_unreviewed_text`、`ADR-0068` / `SEC-AI-SAFEMODE-01`。
+- `AI-IR-SCALE-01` 本文。同issueの進捗をこちらから書き換えることはしない（`AGENTS.md` §1-5）。

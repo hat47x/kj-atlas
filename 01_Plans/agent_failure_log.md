@@ -850,3 +850,10 @@ Updated: 2026-08-03
 - 対応: 同一テストを間隔を空けて再実行すると成功することを複数回確認した。新規追加コードの妥当性は、mutation testing（production側のguardを一時的に壊して対応するテストが失敗することを確認）で別途検証済みのため、このflakinessをテストロジックの欠陥とは判断せず、そのまま残した。
 - 再発防止: `tests/test_oauth_broker_client.py`配下のテストが単発で`OauthBrokerUnavailableError`で失敗した場合、まずコード変更を疑う前に同じテストを再実行し、無関係な既存テストでも同じ失敗が再現するか確認する。再現するならこのworktree環境固有のHTTPServerタイミング問題であり、`timeout_seconds`を上げる対応はテストファイル全体に影響するため単独セッションの判断で変更しない。
 - 再発防止: WSLからのdocsチェックは`GIT_DIR`/`GIT_WORK_TREE`を設定したシェルで一括実行しない。
+
+## 2026-09-05: WSL2サービスが `Wsl/Service/E_UNEXPECTED` で全起動不能になり、`wsl --terminate` で復旧
+
+- 事象: `AI-IR-PROJECTION-01` AC-10 の計測中、`wsl -e bash -lc ...` が例外なく `致命的なエラーです。エラーコード: Wsl/Service/E_UNEXPECTED` を返して起動しなくなった。`wsl --version` と `wsl --list --verbose` は正常に応答し、対象distro（Ubuntu-22.04）も `Running` のままだったため、distro自体ではなくセッション起動側の障害だった。5分以上待っても自然復旧しなかった。このリポジトリのbackend検証はWSL経由でしか実行できないため、検証が完全に止まった。
+- 原因: 未特定。直前に foreground の `wsl` 呼び出しと `run_in_background` の `wsl` 呼び出しを**ほぼ同時に発行**しており、同時起動が引き金になった可能性がある（未確証）。復旧待ちのポーリングループ（5秒ごとに `wsl.exe` を起動）も状況を悪化させた可能性がある。
+- 対応: `wsl --terminate Ubuntu-22.04`（`--shutdown` ではなく単一distroへ限定）を実行し、直後の `wsl -e bash -lc 'echo alive'` が正常応答することを確認して作業を再開した。中断されたbackend全体回帰は取り直した。
+- 再発防止: `Wsl/Service/E_UNEXPECTED` が出たらリトライで粘らず、`wsl --list --verbose` でdistroの状態を確認し、`Running` のままなら `wsl --terminate <distro>` で当該distroだけ落として再起動する（`--shutdown` は他セッションへの影響が大きいので先に試さない）。あわせて **`wsl` 呼び出しを同時に複数走らせない** — 長時間の回帰を `run_in_background` へ回した直後に別の `wsl` コマンドを foreground で叩かず、終了通知を待つ。
