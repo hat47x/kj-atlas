@@ -122,7 +122,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のdispatch master gate。`false` ではvalidation済みtransport設定に関係なく外部送信せず `NoopAuditTransport` を使う。ただし `KJ_ATLAS_AUDIT_TRANSPORT=http` の完全設定validationは独立して適用され、export無効でもendpoint欠損は起動時に拒否する。`true` のときだけtransport設定が実送信に使われる |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http`。`http` はexport flagと独立してendpoint必須の完全設定validationを受ける。validation通過後、実送信に使われるのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけで、export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う |
-| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可し、`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
 | `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログの HTTP 連携用 API key |
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | 監査ログの HTTP 連携の timeout 秒数 |
 | `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 外部監査送信失敗時のfail-open retry buffer上限。正常送信時やexport無効時はqueueへ積まない |
@@ -130,7 +130,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | `AuditEvent.safeMode=true` の外部監査送出を許可するevent-level gate。`false` ではviewおよびsafeMode=trueのcontext/export系を抑止する。LLM / proposal監査はproducerがsafeMode=falseを明示するため対象外 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | Org/Restricted 文書の `policyRef` 欠損または access-control adapter 障害時の fail-safe。`read_only` は read だけ allow + read-only、write / export / share は deny。`deny` は read を含む全 action を deny |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | PDPへ渡す `x-acl-auth-mode` metadata。`none`, `oidc`, `saml`。この値自体は `Authorization` headerを生成・変更せず、固定bearerは `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` で別設定する |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
