@@ -284,7 +284,7 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-アクセス制御で`external_http`を指定する場合、接続先（endpoint）は必須です。空の場合は`noop`へ縮退せず、設定エラーとして起動を拒否します。外部PDPを使わない場合は、adapterを明示的に`noop`へ戻してください。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutも起動時に拒否されます。
+アクセス制御で`external_http`を指定する場合、接続先（endpoint）は必須です。空の場合は`noop`へ縮退せず、設定エラーとして起動を拒否します。外部PDPを使わない場合は、adapterを明示的に`noop`へ戻し、endpointと固定bearerも同時に未設定へ戻してください。`noop`のままendpointまたは固定bearerだけを残す構成は起動時に拒否されます。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。IdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutも起動時に拒否されます。
 
 監査HTTPも同じendpoint・bearer・timeout制約を適用します。`KJ_ATLAS_AUDIT_TRANSPORT=http`ではendpointが必須で、欠損時はnoopへ縮退せず起動を拒否します。`noop`のまま監査endpoint/API keyを残す設定や、`http`でendpointなしのままAPI keyだけを設定する構成も拒否されます。送信先を完全設定した後の一時的な監査送信失敗は、従来どおり本体機能を止めないfail-open方針です。
 
