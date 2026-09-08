@@ -147,8 +147,8 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | ADR-0074 BFF: OAuth authorization-code フロー開始 URL。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。`saas-multitenant` では必須（`TrustedSaasRuntimePolicy` が起動前検査） |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。起動必須ではないが、callbackでは redirect URI / client ID / client secret と4項目完全セットで必要。欠損時503 |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、path は `/session/callback` 固定。起動必須ではないが、login開始では client ID とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID。起動必須ではないが、login開始では redirect URI とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない）。起動必須ではないがcallbackの4項目完全セットで必要。欠損時503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID。2,048文字以下のcanonical値（空白・制御文字不可）。起動必須ではないが、login開始では redirect URI とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない）。非空のcanonical bearer値（空白・制御文字不可）。起動必須ではないがcallbackの4項目完全セットで必要。欠損時503 |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | ADR-0074 BFF: broker HTTP timeout 秒数（0 より大きく 30 以下） |
 | `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | ADR-0074 / ADR-0080: member SaaS auth session、guest auth session、guest redeem state のHMAC-SHA256導出に共有するキー（64文字 lowercase hex = 32 bytes）。`saas-multitenant` では必須。guest redeem state はdomain separationを通し、生cookie/state値はDBへ平文保存しない。キーをローテーションすると既存member/guest sessionと未使用redeem stateは無効化される |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） |
