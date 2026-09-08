@@ -1,0 +1,74 @@
+name: Lane B2 Compose profile realizability fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-compose-profile-realizability-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Document standard Compose profile realizability boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          config_path = Path('04_Documentation/configuration.md')
+          raw = config_path.read_bytes()
+          old = ('これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。').encode('utf-8')
+          new = ('これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。\n\n標準 Compose は同梱の `evaluation` 用スタックです。`KJ_ATLAS_RUNTIME_PROFILE` 自体は `enterprise-production` / `saas-multitenant` も backend と frontend へ配送できますが、標準 `api.environment` は両profileで起動必須の `KJ_ATLAS_ADMIN_API_KEY` を配送せず、SaaSで必要な外部adapter・OAuth・session系の `direct` キーも配送しません。そのためprofile名だけを変更しても起動はfail-fastします。これらのprofileをComposeで使う場合は、組織側overlayで各profileの必須キー一式を明示配送してください。').encode('utf-8')
+          if raw.count(old) != 1:
+              raise SystemExit(f'expected one delivery-boundary paragraph, got {raw.count(old)}')
+          config_path.write_bytes(raw.replace(old, new))
+
+          test_path = Path('01_Plans/tests/test_configuration_compose_delivery_contract.py')
+          test = test_path.read_text(encoding='utf-8')
+          anchor = '    def test_standard_compose_minimal_example_does_not_claim_api_base_passthrough(self) -> None:\n'
+          if test.count(anchor) != 1:
+              raise SystemExit(f'expected one test anchor, got {test.count(anchor)}')
+          addition = '''    def test_standard_compose_does_not_claim_production_profiles_are_realizable_by_profile_name_alone(self) -> None:\n        actual = _api_environment_keys(self.compose_text)\n        self.assertIn("KJ_ATLAS_RUNTIME_PROFILE", actual)\n        self.assertNotIn("KJ_ATLAS_ADMIN_API_KEY", actual)\n\n        delivery_section = self.config_text.split("## 起動面ごとの配送範囲（重要）", 1)[1].split(\n            "## 公開設定と内部adapter境界", 1\n        )[0]\n        self.assertIn("標準 Compose は同梱の `evaluation` 用スタック", delivery_section)\n        self.assertIn("`enterprise-production` / `saas-multitenant`", delivery_section)\n        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY` を配送せず", delivery_section)\n        self.assertIn("profile名だけを変更しても起動はfail-fast", delivery_section)\n        self.assertIn("組織側overlay", delivery_section)\n\n'''
+          test_path.write_text(test.replace(anchor, addition + anchor), encoding='utf-8')
+          PY
+      - name: Verify focused Compose delivery contract
+        run: python -m unittest 01_Plans.tests.test_configuration_compose_delivery_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify Compose config
+        run: docker compose -f 03_Implement/deploy/docker-compose.yml config >/dev/null
+      - name: Verify narrow diff and preserve configuration EOL shape
+        run: |
+          git diff --check -- 01_Plans/tests/test_configuration_compose_delivery_contract.py 02_Architecture/runtime_parameter_registry.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          current = Path('04_Documentation/configuration.md').read_bytes()
+          base = subprocess.check_output(['git','show','origin/main:04_Documentation/configuration.md'])
+          def counts(data: bytes):
+              return data.count(b'\r\n'), data.count(b'\n') - data.count(b'\r\n')
+          before = counts(base)
+          after = counts(current)
+          if after[0] != before[0] or after[1] < before[1]:
+              raise SystemExit(f'unexpected EOL rewrite: before={before} after={after}')
+          PY
+          test "$(git diff --name-only | sort | tr '\n' ' ')" = "01_Plans/tests/test_configuration_compose_delivery_contract.py 04_Documentation/configuration.md "
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_configuration_compose_delivery_contract.py 04_Documentation/configuration.md
+          git commit -m "docs(config): Compose profile実現境界を明示する"
+          git rm .github/workflows/lane-b2-compose-profile-realizability-fix-once.yml
+          git commit -m "ci: retire Lane B2 Compose profile realizability workflow"
+          git push
