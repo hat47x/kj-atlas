@@ -82,6 +82,20 @@ class ConfigurationComposeDeliveryContractTests(unittest.TestCase):
             self.config_text,
         )
 
+    def test_standard_compose_does_not_claim_production_profiles_are_realizable_by_profile_name_alone(self) -> None:
+        actual = _api_environment_keys(self.compose_text)
+        self.assertIn("KJ_ATLAS_RUNTIME_PROFILE", actual)
+        self.assertNotIn("KJ_ATLAS_ADMIN_API_KEY", actual)
+
+        delivery_section = self.config_text.split("## 起動面ごとの配送範囲（重要）", 1)[1].split(
+            "## 公開設定と内部adapter境界", 1
+        )[0]
+        self.assertIn("標準 Compose は同梱の `evaluation` 用スタック", delivery_section)
+        self.assertIn("`enterprise-production` / `saas-multitenant`", delivery_section)
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY` を配送せず", delivery_section)
+        self.assertIn("profile名だけを変更しても起動はfail-fast", delivery_section)
+        self.assertIn("組織側overlay", delivery_section)
+
     def test_standard_compose_minimal_example_does_not_claim_api_base_passthrough(self) -> None:
         section = self.config_text.split("## 最小設定", 1)[1].split("## Backend 環境変数", 1)[0]
         self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", _first_bash_block(section))

@@ -28,6 +28,8 @@
 
 これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
 
+標準 Compose は同梱の `evaluation` 用スタックです。`KJ_ATLAS_RUNTIME_PROFILE` 自体は `enterprise-production` / `saas-multitenant` も backend と frontend へ配送できますが、標準 `api.environment` は両profileで起動必須の `KJ_ATLAS_ADMIN_API_KEY` を配送せず、SaaSで必要な外部adapter・OAuth・session系の `direct` キーも配送しません。そのためprofile名だけを変更しても起動はfail-fastします。これらのprofileをComposeで使う場合は、組織側overlayで各profileの必須キー一式を明示配送してください。
+
 ## 公開設定と内部adapter境界
 
 | 区分 | 利用者が設定するか | 例 | 取り扱いルール |
