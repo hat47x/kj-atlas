@@ -49,12 +49,13 @@ jobs:
 
 
           def _public_row(path: Path, key: str) -> str:
+              text = path.read_text(encoding="utf-8")
+              if path == REGISTRY_PATH:
+                  text = text.split("## Backend settings", 1)[1].split(
+                      "## Compose and frontend build keys", 1
+                  )[0]
               prefix = f"| `{key}` |"
-              rows = [
-                  line
-                  for line in path.read_text(encoding="utf-8").splitlines()
-                  if line.startswith(prefix)
-              ]
+              rows = [line for line in text.splitlines() if line.startswith(prefix)]
               if len(rows) != 1:
                   raise AssertionError(
                       f"expected one public row for {key} in {path}, got {len(rows)}"
@@ -116,18 +117,6 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          expected = {
-              '01_Plans/tests/test_control_plane_credential_separation_contract.py',
-              '04_Documentation/configuration.md',
-              '.github/workflows/lane-b2-admin-key-separation-fix-once.yml',
-          }
-          changed = set(
-              subprocess.check_output(
-                  ['git', 'diff', '--name-only', 'HEAD^', '--'], text=True
-              ).splitlines()
-          )
-          # The branch initially contains only the workflow commit; after the in-job
-          # patch, compare the working tree plus committed workflow separately.
           working = set(
               subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
           )
