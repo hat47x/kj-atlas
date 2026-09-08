@@ -299,7 +299,7 @@ export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、`ServerOwnedDocumentResourceResolver` の policy binding resolver として配線されます。このresolverだけでSaaSが成立するわけではなく、trusted auth edge、external access control、tenant capability resolver等の必須条件も同時に満たす必要があります。
+接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻し、`none`のままHTTP設定だけを残す構成は起動時に拒否されます。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、`ServerOwnedDocumentResourceResolver` の policy binding resolver として配線されます。このresolverだけでSaaSが成立するわけではなく、trusted auth edge、external access control、tenant capability resolver等の必須条件も同時に満たす必要があります。
 
 ### Tenant capability resolver
 
@@ -312,7 +312,7 @@ export KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、runtimeのtenant capability resolverとして配線されます。trusted SaaS identity / tenant / active-session adaptersも同profileでbundleとして導入されますが、required policyやactive IdPが欠ける構成は起動時にfail-fastします。
+接続先とAPI keyにはbinding resolverと同じ制約を適用し、resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻します。`none`のままHTTP設定だけを残す構成は起動時に拒否されます。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、runtimeのtenant capability resolverとして配線されます。trusted SaaS identity / tenant / active-session adaptersも同profileでbundleとして導入されますが、required policyやactive IdPが欠ける構成は起動時にfail-fastします。
 
 ## 設定後の確認
 
