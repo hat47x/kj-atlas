@@ -48,6 +48,21 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
         self.assertIn("OAuth authorize endpoint", config_profile)
         self.assertIn("auth-session hash key", config_profile)
 
+    def test_saas_profile_requires_admin_api_key_across_public_profile_docs(self) -> None:
+        settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
+        self.assertIn("if self.admin_api_key is None:", settings)
+        self.assertIn('missing.append("KJ_ATLAS_ADMIN_API_KEY")', settings)
+        self.assertIn('_AUTH_REQUIRED_PROFILES = ("enterprise-production", "saas-multitenant")', settings)
+
+        registry_profile = REGISTRY_PATH.read_text(encoding="utf-8").split(
+            "## Profile selection criteria", 1
+        )[1].split("### SaaS profile implementation gate", 1)[0]
+        config_profile = CONFIG_PATH.read_text(encoding="utf-8").split(
+            "## Runtime profiles（推奨プロファイル）", 1
+        )[1].split("## 最小設定", 1)[0]
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", registry_profile)
+        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", config_profile)
+
     def test_request_time_oauth_completeness_is_not_promoted_to_startup_gate(self) -> None:
         source = _policy_validate_source()
         for field in (
