@@ -1,0 +1,66 @@
+name: Lane B2 access-control disable cleanup fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-access-control-disable-cleanup-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align access-control disable cleanup wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('04_Documentation/configuration.md')
+          raw = path.read_bytes()
+          text = raw.decode('utf-8')
+          old = '外部PDPを使わない場合は、adapterを明示的に`noop`へ戻してください。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutも起動時に拒否されます。'
+          new = '外部PDPを使わない場合は、adapterを明示的に`noop`へ戻し、endpointと固定bearerも同時に未設定へ戻してください。`noop`のままendpointまたは固定bearerだけを残す構成は起動時に拒否されます。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。IdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutも起動時に拒否されます。'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one configuration paragraph, got {text.count(old)}')
+          path.write_bytes(text.replace(old, new, 1).encode('utf-8'))
+
+          test = Path('01_Plans/tests/test_http_integration_disable_cleanup_contract.py')
+          test.write_text('''from __future__ import annotations\n\nimport ast\nimport unittest\nfrom pathlib import Path\n\n\nROOT = Path(__file__).resolve().parents[2]\nSETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"\nREGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"\nCONFIG_PATH = ROOT / "04_Documentation/configuration.md"\n\n\ndef _function_source(name: str) -> str:\n    text = SETTINGS_PATH.read_text(encoding="utf-8")\n    tree = ast.parse(text)\n    node = next(\n        item\n        for item in ast.walk(tree)\n        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == name\n    )\n    return ast.get_source_segment(text, node) or ""\n\n\nclass HttpIntegrationDisableCleanupContractTests(unittest.TestCase):\n    def test_disabled_http_integration_rejects_leftover_endpoint_or_api_key(self) -> None:\n        helper = _function_source("_validate_optional_http_integration")\n        self.assertIn("if not enabled:", helper)\n        self.assertIn("endpoint is not None or api_key is not None", helper)\n        self.assertIn("require the HTTP integration", helper)\n\n        validator = _function_source("validate_llm_provider_guards")\n        self.assertIn("enabled=normalized_access_control_adapter == \\"external_http\\"", validator)\n        self.assertIn('endpoint_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT"', validator)\n        self.assertIn('api_key_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN"', validator)\n\n        registry_validation = REGISTRY_PATH.read_text(encoding="utf-8").split(\n            "## Validation rules", 1\n        )[1].split("## Operating rule", 1)[0]\n        self.assertIn("HTTP連携を無効にしたままendpoint/API keyを残すこと", registry_validation)\n\n        config = CONFIG_PATH.read_text(encoding="utf-8")\n        section = config.split("## アクセス制御を使う", 1)[1].split(\n            "### 文書policy binding resolver", 1\n        )[0]\n        self.assertIn("adapterを明示的に`noop`へ戻し", section)\n        self.assertIn("endpointと固定bearerも同時に未設定へ戻して", section)\n        self.assertIn("`noop`のままendpointまたは固定bearerだけを残す構成は起動時に拒否", section)\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+      - name: Verify focused cleanup contract
+        run: python -m unittest 01_Plans.tests.test_http_integration_disable_cleanup_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              '01_Plans/tests/test_http_integration_disable_cleanup_contract.py',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-access-control-disable-cleanup-fix-once.yml',
+          }
+          lines = subprocess.check_output(['git', 'status', '--short'], text=True).splitlines()
+          paths = {line[3:] for line in lines if len(line) >= 4}
+          unexpected = paths - allowed
+          if unexpected:
+              raise SystemExit(f'unexpected changed paths: {sorted(unexpected)}')
+          print(subprocess.check_output(['git', 'diff', '--numstat'], text=True))
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_http_integration_disable_cleanup_contract.py 04_Documentation/configuration.md
+          git commit -m "docs(config): access-control無効化時の設定整理を明示する"
+          git rm .github/workflows/lane-b2-access-control-disable-cleanup-fix-once.yml
+          git commit -m "ci: retire Lane B2 access-control cleanup workflow"
+          git push
