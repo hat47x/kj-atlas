@@ -65,9 +65,10 @@ jobs:
         run: python 01_Plans/docs_check.py
       - name: Verify narrow diff
         run: |
-          git diff --check --ignore-space-at-eol
           python - <<'PY'
           import subprocess
+          from pathlib import Path
+
           allowed = {
               '01_Plans/tests/test_http_integration_disable_cleanup_contract.py',
               '02_Architecture/runtime_parameter_registry.md',
@@ -78,6 +79,37 @@ jobs:
           extra = changed - allowed
           if extra:
               raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+
+          config_path = '04_Documentation/configuration.md'
+          before = subprocess.check_output(['git', 'show', f'HEAD:{config_path}'])
+          after = Path(config_path).read_bytes()
+
+          def eol_shape(raw: bytes) -> tuple[int, int]:
+              crlf = raw.count(b'\r\n')
+              bare_lf = raw.count(b'\n') - crlf
+              return crlf, bare_lf
+
+          if eol_shape(before) != eol_shape(after):
+              raise SystemExit(
+                  f'configuration EOL shape changed: before={eol_shape(before)} after={eol_shape(after)}'
+              )
+
+          diff = subprocess.check_output(
+              ['git', 'diff', '--unified=0', '--',
+               '01_Plans/tests/test_http_integration_disable_cleanup_contract.py',
+               '02_Architecture/runtime_parameter_registry.md',
+               '04_Documentation/configuration.md'],
+              text=True,
+          )
+          bad = []
+          for line in diff.splitlines():
+              if not line.startswith('+') or line.startswith('+++'):
+                  continue
+              content = line[1:].rstrip('\r')
+              if content.endswith((' ', '\t')):
+                  bad.append(line)
+          if bad:
+              raise SystemExit(f'new trailing whitespace: {bad}')
           PY
       - name: Commit patch and retire one-shot workflow
         run: |
