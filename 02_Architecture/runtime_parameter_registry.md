@@ -53,7 +53,7 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
    - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
    - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
 4. `saas-multitenant` を選ぶ条件
-   - PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safe、SaaS OAuth broker authorize endpoint、auth-session hash keyなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。
+   - `KJ_ATLAS_ADMIN_API_KEY` を設定し、PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safe、SaaS OAuth broker authorize endpoint、auth-session hash keyなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。
    - 起動前preflightのhard gateを通過できる。hard gateが1つでも欠ける場合はfail-fastし、single-tenant profileへfallbackしない。active IdP存在検査はpost-DB-initのwarning診断であり、provider 0件自体はstartup拒否条件ではない。
 
 ### SaaS profile implementation gate（ADR-0059）
