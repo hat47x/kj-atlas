@@ -117,7 +117,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。primary DeepSeek とmodel registry経由のregistered DeepSeekの送信payload `thinking.type` に反映し、local / large-scaleのgeneric HTTP payloadには作用しない。旧既定のnon-thinking挙動を維持するため既定はdisabled |
 | `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
 | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
-| `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
+| `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`enterprise-production` では起動必須。`saas-multitenant` はtrusted JWT/cookie identityを使うためbusiness key自体は起動必須ではない。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
 | `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | control-plane の Stage A bootstrap 資格情報。`X-Admin-Api-Key` で提示する。Stage B では trusted SaaS session の `tenant.provision` capability でも `/admin/provision/**` を認可でき、request に admin bearer は不要。業務面 `KJ_ATLAS_API_KEY` は管理面で受理せず、同じ秘密値を `KJ_ATLAS_API_KEY` と `KJ_ATLAS_ADMIN_API_KEY` の両方へ設定する構成も起動時に拒否する。`enterprise-production` / `saas-multitenant` では設定自体が**必須**（未設定なら起動しない）。`local-dev` / `evaluation` は admin key 未設定時だけ development 用に管理面を開く |
 | `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のdispatch master gate。`false` ではvalidation済みtransport設定に関係なく外部送信せず `NoopAuditTransport` を使う。ただし `KJ_ATLAS_AUDIT_TRANSPORT=http` の完全設定validationは独立して適用され、export無効でもendpoint欠損は起動時に拒否する。`true` のときだけtransport設定が実送信に使われる |
@@ -241,7 +241,7 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると画面からの読み込み・保存は 401 になります。API キーは `curl` などプログラムからのアクセス保護を想定したものです。ブラウザでの動作検証では未設定（既定）のまま使い、ブラウザ配信自体を保護する場合は前段に認証 proxy を置いてください（[security.md](security.md) 参照）。
 
-> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します。`local-dev` / `evaluation` では未設定ならbusiness API keyは無効のままです。`enterprise-production` はこのキーを起動必須とするため未設定では起動しません。`saas-multitenant` はtrusted JWT/cookie identityを使うためbusiness key自体は起動必須ではありません（control plane用 `KJ_ATLAS_ADMIN_API_KEY` は別途必須です）。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照。
 
 ## local LLM を使う
 
