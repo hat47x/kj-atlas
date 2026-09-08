@@ -1,0 +1,151 @@
+name: Lane B2 resolver disable cleanup contract fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-resolver-disable-cleanup-contract-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align resolver disable cleanup wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('04_Documentation/configuration.md')
+          raw = path.read_bytes()
+          replacements = (
+              (
+                  '接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。`saas-multitenant` では `external_http` が必須で、',
+                  '接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻し、`none`のままHTTP設定だけを残す構成は起動時に拒否されます。`saas-multitenant` では `external_http` が必須で、',
+              ),
+              (
+                  '接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、',
+                  '接続先とAPI keyにはbinding resolverと同じ制約を適用し、resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻します。`none`のままHTTP設定だけを残す構成は起動時に拒否されます。未知capability、',
+              ),
+          )
+          for old, new in replacements:
+              old_b = old.encode('utf-8')
+              if raw.count(old_b) != 1:
+                  raise SystemExit(f'expected one resolver wording target, got {raw.count(old_b)}: {old}')
+              raw = raw.replace(old_b, new.encode('utf-8'), 1)
+          path.write_bytes(raw)
+          PY
+
+          cat > 01_Plans/tests/test_resolver_disable_cleanup_contract.py <<'PY'
+          from __future__ import annotations
+
+          import ast
+          import unittest
+          from pathlib import Path
+
+
+          ROOT = Path(__file__).resolve().parents[2]
+          SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+          REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
+          CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
+
+
+          def _function_source(name: str) -> str:
+              text = SETTINGS_PATH.read_text(encoding="utf-8")
+              tree = ast.parse(text)
+              node = next(
+                  item
+                  for item in ast.walk(tree)
+                  if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                  and item.name == name
+              )
+              if node.end_lineno is None:
+                  raise AssertionError(f"source range unavailable for {name}")
+              return "\n".join(text.splitlines()[node.lineno - 1 : node.end_lineno])
+
+
+          class ResolverDisableCleanupContractTests(unittest.TestCase):
+              def test_none_rejects_leftover_http_settings_and_is_publicly_documented(self) -> None:
+                  helper = _function_source("_validate_trusted_http_resolver")
+                  self.assertIn('normalized_resolver == "none"', helper)
+                  self.assertIn('endpoint is not None or api_key is not None', helper)
+                  self.assertIn('require {resolver_key}=external_http', helper)
+
+                  validator = _function_source("validate_llm_provider_guards")
+                  for resolver_key in (
+                      "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER",
+                      "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER",
+                  ):
+                      self.assertIn(f'resolver_key="{resolver_key}"', validator)
+
+                  registry_validation = REGISTRY_PATH.read_text(encoding="utf-8").split(
+                      "## Validation rules", 1
+                  )[1].split("## Operating rule", 1)[0]
+                  self.assertIn('`none`でHTTP設定だけを残すことも拒否', registry_validation)
+                  self.assertIn(
+                      '`KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`も同じtrusted HTTP接続制約',
+                      registry_validation,
+                  )
+
+                  config = CONFIG_PATH.read_text(encoding="utf-8")
+                  binding = config.split("### 文書policy binding resolver", 1)[1].split(
+                      "### Tenant capability resolver", 1
+                  )[0]
+                  tenant = config.split("### Tenant capability resolver", 1)[1].split(
+                      "## 設定後の確認", 1
+                  )[0]
+                  for section in (binding, tenant):
+                      self.assertIn('resolverを`none`へ戻す場合', section)
+                      self.assertIn('endpoint/API key', section)
+                      self.assertIn('起動時に拒否', section)
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          PY
+      - name: Verify focused relational contract
+        run: python -m unittest 01_Plans.tests.test_resolver_disable_cleanup_contract -v
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff and EOL preservation
+        run: |
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          modified = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          untracked = set(subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines())
+          working = modified | untracked
+          expected = {
+              '01_Plans/tests/test_resolver_disable_cleanup_contract.py',
+              '04_Documentation/configuration.md',
+          }
+          if working != expected:
+              raise SystemExit(f'unexpected working-tree diff: {sorted(working)}')
+
+          cfg = Path('04_Documentation/configuration.md').read_bytes()
+          base = subprocess.check_output(['git', 'show', 'HEAD:04_Documentation/configuration.md'])
+          for marker in (b'\r\n', b'\n'):
+              if cfg.count(marker) != base.count(marker):
+                  raise SystemExit('configuration.md EOL shape changed')
+          for path in working:
+              for lineno, line in enumerate(Path(path).read_bytes().splitlines(), 1):
+                  if line.endswith((b' ', b'\t')):
+                      raise SystemExit(f'{path}:{lineno}: trailing whitespace')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_resolver_disable_cleanup_contract.py 04_Documentation/configuration.md
+          git commit -m "docs(config): resolver無効化時の設定整理制約を明示する"
+          git rm .github/workflows/lane-b2-resolver-disable-cleanup-fix-once.yml
+          git commit -m "ci: retire Lane B2 resolver disable cleanup workflow"
+          git push
