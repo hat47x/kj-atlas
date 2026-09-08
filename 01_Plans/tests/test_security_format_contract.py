@@ -135,6 +135,24 @@ class SecurityFormatContractTests(unittest.TestCase):
             for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
                 self.assertIn(term, row)
 
+    def test_deepseek_model_uses_canonical_model_id_contract_in_public_docs(self) -> None:
+        validator = _settings_validator_source()
+        self.assertIn(
+            'value=self.deepseek_model',
+            validator,
+        )
+        self.assertIn(
+            'value_key="KJ_ATLAS_DEEPSEEK_MODEL"',
+            validator,
+        )
+
+        for row in (
+            _public_row(REGISTRY_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),
+            _public_row(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),
+        ):
+            self.assertIn("256", row)
+            self.assertIn("canonical", row)
+
     def test_jwt_public_policy_keeps_default_and_hmac_none_rejection(self) -> None:
         tree = ast.parse(SETTINGS_PATH.read_text(encoding="utf-8"))
         settings_class = next(
