@@ -229,6 +229,10 @@ Case 001〜003の統制比較とは別に、既知の設計判断を含む日常
   - R42。PR #3087で、active IdP存在確認をhard startup gateのように公開していた一方、runtimeはpost-DB-init warningとして扱いbootstrap pathを残していた実陽性を分析し、check predicateとenforcement policyを分離した記録。
 - `doc_kj_atlas_dogfood_r42.json`
   - R42のKJキャンバス。validationの存在からhard gateを推論せず、phase・failure consequence・remaining capability・recovery/bootstrap pathを必要な範囲で分け、generic validation registryへ一般化しない構造を保持する。
+- `cognitive-dogfood-continuous-2026-09-08-r43.md`
+  - R43。PR #3104/#3105/#3107で、各key単体は有効でも同値credentialやselectorとleftover dependent settingsの組合せが起動時拒否される実陽性を分析し、per-key acceptanceとconfiguration-state validityを分離した記録。
+- `doc_kj_atlas_dogfood_r43.json`
+  - R43のKJキャンバス。credential separation、selector dependency、presence/absence relationをcross-key relational invariantとして統合し、R36/R37/R42との責務差を保ちつつgeneric dependency graphへ一般化しない構造を保持する。
 - `ai-ir-required-semantic-coverage-map-2026-09-03.md`
   - R17で作成した、移行済み4 routeの必要意味・scale測定状況・未測定軸の対応表。
 
