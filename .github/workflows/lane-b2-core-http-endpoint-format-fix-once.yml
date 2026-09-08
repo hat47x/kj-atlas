@@ -1,0 +1,106 @@
+name: Lane B2 core HTTP endpoint format fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-core-http-endpoint-format-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align core HTTP endpoint public wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('02_Architecture/runtime_parameter_registry.md'): {
+                  '| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログHTTP連携の接続先。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |':
+                  '| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログHTTP連携の接続先。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可し、`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |',
+                  '| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter が利用する必須のPDP接続先 |':
+                  '| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter が利用する必須のPDP接続先。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |',
+              },
+              Path('04_Documentation/configuration.md'): {
+                  '| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |':
+                  '| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可し、`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |',
+                  '| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL |':
+                  '| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |',
+              },
+          }
+
+          for path, mapping in replacements.items():
+              raw = path.read_bytes()
+              text = raw.decode('utf-8')
+              for old, new in mapping.items():
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f'{path}: expected one match, got {count}: {old}')
+                  text = text.replace(old, new, 1)
+              path.write_bytes(text.encode('utf-8'))
+
+          test_path = Path('01_Plans/tests/test_security_format_contract.py')
+          text = test_path.read_text(encoding='utf-8')
+          marker = '    def test_deepseek_base_url_uses_trusted_url_contract_in_public_docs(self) -> None:\n'
+          block = '''    def test_core_http_endpoint_trusted_url_contract_matches_public_docs(self) -> None:\n        validator = _settings_validator_source()\n        endpoints = (\n            (\n                "self.audit_http_endpoint",\n                "KJ_ATLAS_AUDIT_HTTP_ENDPOINT",\n            ),\n            (\n                "self.access_control_external_http_endpoint",\n                "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",\n            ),\n        )\n\n        for field, key in endpoints:\n            self.assertIn(f"endpoint={field}", validator)\n            self.assertIn(f'endpoint_key="{key}"', validator)\n            for row in (\n                _public_row(REGISTRY_PATH, key),\n                _public_row(CONFIG_PATH, key),\n            ):\n                for term in ("HTTPS", "loopback", "credential", "query", "fragment"):\n                    self.assertIn(term, row)\n\n'''
+          if block not in text:
+              if marker not in text:
+                  raise SystemExit('security format insertion marker missing')
+              text = text.replace(marker, block + marker, 1)
+              test_path.write_text(text, encoding='utf-8')
+          PY
+      - name: Verify focused security format contract
+        run: python -m unittest 01_Plans.tests.test_security_format_contract
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          allowed = {
+              '01_Plans/tests/test_security_format_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+              '04_Documentation/configuration.md',
+              '.github/workflows/lane-b2-core-http-endpoint-format-fix-once.yml',
+          }
+          changed = set(subprocess.check_output(['git', 'status', '--short'], text=True).splitlines())
+          paths = {line[3:] for line in changed if len(line) >= 4}
+          unexpected = paths - allowed
+          if unexpected:
+              raise SystemExit(f'unexpected changed paths: {sorted(unexpected)}')
+
+          diff = subprocess.check_output(['git', 'diff', '--numstat'], text=True)
+          print(diff)
+          for line in diff.splitlines():
+              add, delete, path = line.split('\t')
+              if path == '04_Documentation/configuration.md' and (int(add) > 3 or int(delete) > 3):
+                  raise SystemExit('configuration diff is broader than expected')
+
+          for path in allowed - {'.github/workflows/lane-b2-core-http-endpoint-format-fix-once.yml'}:
+              p = Path(path)
+              if not p.exists():
+                  continue
+              for lineno, line in enumerate(p.read_text(encoding='utf-8').splitlines(), 1):
+                  if line.endswith(' ') or line.endswith('\t'):
+                      raise SystemExit(f'trailing whitespace: {path}:{lineno}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_security_format_contract.py 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git commit -m "docs(config): core HTTP endpoint制約を実装へ同期する"
+          git rm .github/workflows/lane-b2-core-http-endpoint-format-fix-once.yml
+          git commit -m "ci: retire Lane B2 core HTTP endpoint workflow"
+          git push
