@@ -48,5 +48,31 @@ class HttpIntegrationDisableCleanupContractTests(unittest.TestCase):
         self.assertIn("`noop`のままendpointまたは固定bearerだけを残す構成は起動時に拒否", section)
 
 
+    def test_idp_issuer_requires_external_http_adapter_and_endpoint(self) -> None:
+        validator = _function_source("validate_llm_provider_guards")
+        self.assertIn("self.access_control_external_http_idp_issuer is not None", validator)
+        self.assertIn('normalized_access_control_adapter != "external_http"', validator)
+        self.assertIn("self.access_control_external_http_endpoint is None", validator)
+        self.assertIn("KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER requires", validator)
+        self.assertIn("KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http and its endpoint", validator)
+
+        for path in (REGISTRY_PATH, CONFIG_PATH):
+            prefix = "| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` |"
+            rows = [
+                line
+                for line in path.read_text(encoding="utf-8").splitlines()
+                if line.startswith(prefix)
+            ]
+            self.assertEqual(len(rows), 1)
+            self.assertIn("KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http", rows[0])
+            self.assertIn("endpoint", rows[0])
+
+        section = CONFIG_PATH.read_text(encoding="utf-8").split(
+            "## アクセス制御を使う", 1
+        )[1].split("### 文書policy binding resolver", 1)[0]
+        self.assertIn("IdP issuerを設定する場合も`external_http` adapterとendpointが必要", section)
+        self.assertIn("どちらかを欠く構成は起動時に拒否", section)
+
+
 if __name__ == "__main__":
     unittest.main()
