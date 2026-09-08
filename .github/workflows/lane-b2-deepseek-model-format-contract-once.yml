@@ -1,0 +1,69 @@
+name: Lane B2 DeepSeek model format contract once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-deepseek-model-format-contract-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align DeepSeek model format wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          config = Path('04_Documentation/configuration.md')
+          c = config.read_bytes().decode('utf-8')
+          old = '| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek API に渡すmodel ID |'
+          new = '| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek API に渡す256文字以下のcanonical model ID（空白・制御文字・backslash不可） |'
+          if c.count(old) != 1:
+              raise SystemExit(f'configuration target count={c.count(old)}')
+          config.write_bytes(c.replace(old, new, 1).encode('utf-8'))
+
+          test = Path('01_Plans/tests/test_security_format_contract.py')
+          t = test.read_text(encoding='utf-8')
+          anchor = '    def test_jwt_public_policy_keeps_default_and_hmac_none_rejection(self) -> None:\n'
+          method = '''    def test_deepseek_model_uses_canonical_model_id_contract_in_public_docs(self) -> None:\n        validator = _settings_validator_source()\n        self.assertIn(\n            'value=self.deepseek_model',\n            validator,\n        )\n        self.assertIn(\n            'value_key="KJ_ATLAS_DEEPSEEK_MODEL"',\n            validator,\n        )\n\n        for row in (\n            _public_row(REGISTRY_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),\n            _public_row(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),\n        ):\n            self.assertIn("256", row)\n            self.assertIn("canonical", row)\n\n'''
+          if anchor not in t:
+              raise SystemExit('test insertion anchor missing')
+          test.write_text(t.replace(anchor, method + anchor, 1), encoding='utf-8')
+          PY
+      - name: Verify focused contract
+        run: python -m unittest 01_Plans.tests.test_security_format_contract -v
+      - name: Verify planning contracts
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify docs
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --stat HEAD
+          test "$(git diff --name-only HEAD | wc -l)" -eq 2
+          git diff --name-only HEAD | grep -Fx '01_Plans/tests/test_security_format_contract.py'
+          git diff --name-only HEAD | grep -Fx '04_Documentation/configuration.md'
+          python - <<'PY'
+          from pathlib import Path
+          for path in ('01_Plans/tests/test_security_format_contract.py','04_Documentation/configuration.md'):
+              for i, line in enumerate(Path(path).read_bytes().splitlines(), 1):
+                  if line.endswith((b' ', b'\t')):
+                      raise SystemExit(f'{path}:{i}: trailing whitespace')
+          PY
+      - name: Commit patch and retire workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_security_format_contract.py 04_Documentation/configuration.md
+          git commit -m "docs(config): DeepSeek model ID制約を実装へ同期する"
+          git rm .github/workflows/lane-b2-deepseek-model-format-contract-once.yml
+          git commit -m "ci: retire Lane B2 DeepSeek model format workflow"
+          git push
