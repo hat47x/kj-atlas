@@ -26,6 +26,7 @@ def _stub_generate(req):
 def _stub_llm(monkeypatch: pytest.MonkeyPatch):
     _CAPTURED.clear()
     monkeypatch.setattr(ai, "generate_with_fallback", _stub_generate)
+    monkeypatch.setattr(ai, "_assert_model_allowed", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(settings, "allow_unreviewed_ai_text", False)
     yield
     _CAPTURED.clear()
