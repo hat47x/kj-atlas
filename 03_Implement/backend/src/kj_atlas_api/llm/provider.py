@@ -32,9 +32,12 @@ _LLM_TASK = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 # /ai/provider-status.
 _LLM_CALL_COUNTS: dict[str, int] = {}
 # OPS-LLM-COST-01 (段階2): in-process input/output token totals, keyed by the
-# same provider kind + "total". Filled from provider-reported usage; providers
-# that do not report usage contribute 0 tokens.
+# same provider kind + "total". Filled only from provider-reported usage. A
+# missing/partial provider report still contributes 0 for the absent side to
+# preserve the historical numeric totals, while _LLM_TOKEN_USAGE_COVERAGE makes
+# that absence distinguishable from a genuine provider-reported zero.
 _LLM_TOKEN_USAGE: dict[str, dict[str, int]] = {}
+_LLM_TOKEN_USAGE_COVERAGE: dict[str, dict[str, int]] = {}
 
 
 def _record_llm_call(provider_kind: str) -> None:
@@ -48,14 +51,31 @@ def _record_llm_usage(
     input_tokens: int | None = None,
     output_tokens: int | None = None,
 ) -> None:
-    """Accumulate provider-reported token usage WITHOUT touching the call count
-    (the count is recorded once per attempt by _record_llm_call)."""
+    """Accumulate provider-reported usage and its reporting completeness.
+
+    Call counting remains separate because failed provider attempts have no
+    successful response to settle. Numeric totals remain backward-compatible:
+    an absent side contributes 0, but coverage records whether that 0 was a
+    complete provider report, a partial report, or no usage report at all.
+    """
     used_input = max(int(input_tokens or 0), 0)
     used_output = max(int(output_tokens or 0), 0)
+    if input_tokens is None and output_tokens is None:
+        coverage_key = "missingCalls"
+    elif input_tokens is None or output_tokens is None:
+        coverage_key = "partialCalls"
+    else:
+        coverage_key = "completeCalls"
+
     for key in (provider_kind, "total"):
         bucket = _LLM_TOKEN_USAGE.setdefault(key, {"input": 0, "output": 0})
         bucket["input"] += used_input
         bucket["output"] += used_output
+        coverage = _LLM_TOKEN_USAGE_COVERAGE.setdefault(
+            key,
+            {"completeCalls": 0, "partialCalls": 0, "missingCalls": 0},
+        )
+        coverage[coverage_key] += 1
 
 
 def llm_call_counts() -> dict[str, int]:
@@ -64,14 +84,25 @@ def llm_call_counts() -> dict[str, int]:
 
 
 def llm_token_usage() -> dict[str, dict[str, int]]:
-    """Snapshot of the in-process token usage totals (copied, never the live dict)."""
+    """Snapshot of provider-reported token totals for the current process."""
     return {key: dict(value) for key, value in _LLM_TOKEN_USAGE.items()}
 
 
+def llm_token_usage_coverage() -> dict[str, dict[str, int]]:
+    """Snapshot of complete/partial/missing provider usage reports.
+
+    This deliberately carries no prompt/response content, raw tokens, model,
+    task, tenant, or user identity. The aggregation key remains provider kind
+    plus total in the current process.
+    """
+    return {key: dict(value) for key, value in _LLM_TOKEN_USAGE_COVERAGE.items()}
+
+
 def reset_llm_call_counts() -> None:
-    """Clear the counters. Ops/tests only — a reset is not a runtime event."""
+    """Clear the process-local observability counters. Ops/tests only."""
     _LLM_CALL_COUNTS.clear()
     _LLM_TOKEN_USAGE.clear()
+    _LLM_TOKEN_USAGE_COVERAGE.clear()
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,7 +190,7 @@ def resolve_model_for_task(task: str, request: LLMRequest | None = None) -> str:
 
     # 4. Provider default. Resolve this before model-governance checks run in
     # the route layer. DeepSeekProvider used to translate "default" only after
-    # that gate, so an otherwise valid deepseek-chat registration was rejected
+    # that gate, so an otherwise valid DeepSeek default-model registration was rejected
     # as model_not_registered whenever the caller omitted `model`.
     if settings.llm_provider.strip().lower() == "deepseek":
         return settings.deepseek_model
@@ -190,6 +221,9 @@ class LLMCallMetadata:
     trace_id: str
     fallback_to_none: bool = False
     execution_path: str = "primary"
+    # DeepSeek V4 request mode. Kept separate from generic audit fields because
+    # it is a provider-specific generation setting, not prompt/token content.
+    thinking_mode: str | None = None
 
     def as_audit_fields(self) -> dict[str, object]:
         return {
@@ -208,9 +242,9 @@ class LLMCallMetadata:
 class LLMResponse:
     raw_text: str
     metadata: LLMCallMetadata
-    # OPS-LLM-COST-01 (段階2): provider-reported token usage, when available
-    # (OpenAI chat-completions `usage`). None means the provider did not report
-    # it; the call counter treats None as 0 tokens.
+    # OPS-LLM-COST-01: provider-reported token usage, when available.
+    # None means that side was not reported; numeric aggregation preserves the
+    # historical 0 contribution while tokenUsageCoverage records the absence.
     input_tokens: int | None = None
     output_tokens: int | None = None
 
@@ -304,7 +338,7 @@ def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, transport: str, fallback_to_none: bool = False) -> LLMCallMetadata:
+def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, transport: str, fallback_to_none: bool = False, thinking_mode: str | None = None) -> LLMCallMetadata:
     return LLMCallMetadata(
         provider_kind=provider_kind,
         provider_name=provider_name,
@@ -313,6 +347,7 @@ def _new_metadata(*, provider_kind: str, provider_name: str, model_id: str, tran
         requested_at=_now_utc_iso(),
         trace_id=f"llm-{uuid4()}",
         fallback_to_none=fallback_to_none,
+        thinking_mode=thinking_mode,
     )
 
 
@@ -604,6 +639,7 @@ class DeepSeekProvider:
             api_key=settings.deepseek_api_key,
             provider_name=self.provider_name,
             provider_kind=self.provider_kind,
+            thinking_mode=settings.deepseek_thinking_mode,
         )
 
 
@@ -658,6 +694,7 @@ class RegisteredDeepSeekProvider:
             api_key=self._api_key,
             provider_name=self.provider_name,
             provider_kind=self.provider_kind,
+            thinking_mode=settings.deepseek_thinking_mode,
         )
 
 
@@ -785,6 +822,18 @@ def registered_provider_available(config: RegisteredProviderConfig) -> bool:
     return True
 
 
+def _openai_chat_messages(req: LLMRequest) -> list[dict[str, str]]:
+    """Build the exact system+user message content sent by chat transports."""
+    system_prompt = (
+        f"You are performing the task: {req.task}. "
+        "Respond with only the requested output, no preamble."
+    )
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": req.prompt},
+    ]
+
+
 def _generate_via_openai_chat(
     req: LLMRequest,
     *,
@@ -793,12 +842,14 @@ def _generate_via_openai_chat(
     api_key: str,
     provider_name: str,
     provider_kind: str,
+    thinking_mode: str,
 ) -> LLMResponse:
     metadata = _new_metadata(
         provider_kind=provider_kind,
         provider_name=provider_name,
         model_id=model_id,
         transport="http",
+        thinking_mode=thinking_mode,
     )
 
     if (
@@ -835,16 +886,13 @@ def _generate_via_openai_chat(
             metadata,
         )
 
-    system_prompt = f"You are performing the task: {req.task}. Respond with only the requested output, no preamble."
     payload = {
         "model": model_id,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": req.prompt},
-        ],
+        "messages": _openai_chat_messages(req),
         "temperature": req.temperature,
         "max_tokens": req.max_tokens,
         "stream": False,
+        "thinking": {"type": thinking_mode},
     }
     serialized = json.dumps(payload, allow_nan=False, ensure_ascii=False).encode("utf-8")
     if len(serialized) > MAX_LLM_PROVIDER_REQUEST_BYTES:
@@ -1047,8 +1095,8 @@ def generate_with_fallback(
     # OPS-LLM-COST-01 (段階2): count every request that reaches a provider so an
     # operator can see external (large-scale) call volume; counting the attempt
     # (before any provider error) is what cost control needs. Token usage is
-    # recorded after a successful generate (providers that do not report usage
-    # contribute 0 tokens).
+    # recorded after a successful generate; reporting coverage distinguishes a
+    # genuine provider-reported zero from partial/missing usage metadata.
     _record_llm_call(provider.provider_kind)
     try:
         response = provider.generate(req)

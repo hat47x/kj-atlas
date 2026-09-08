@@ -39,6 +39,8 @@ A1（export event lookup）を実装するには、まず **export監査イベ�
 2. **本件（A1）**: 保存されたイベントの read-only allowlist一覧/検索API。段階1の保存先が決まってから実装可能。
 
 段階1の設計判断は `GENAI-GOV-01` の監査境界方針（`02_Architecture/value_traceability.md` §2.9）に従い、実装PRより先にADRまたは内部issueで扱う。→ `issue-DATA-MAINT-06-export-audit-event-persistence.md` として起票済み（2026-08-07）。本issueは段階1の判断待ちのままDraftで維持する。
+
+**2026-09-07**: `DATA-MAINT-06`で三要素分析を実施し、`01_Plans/adr/ADR-0081-export-audit-event-persistence.md`として起票した（`Status: Proposed`）。新規テーブル`document_export_audit_events`（既存`document_access_admin_audit_events`と同型のtenant複合FK + FORCE RLSパターン）を保存先の採用候補とし、保持ポリシーは`ADR-0035`の既存決定（自動削除・標準保持期間を採用しない）をそのまま適用する案とした。Maintainerの承認を得るまで本issueはDraftのまま維持し、着工しない。
 - Support / Platform operator が本文を標準導線で閲覧できるようにしない。
 
 ## 受入条件

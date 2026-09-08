@@ -10,6 +10,7 @@ from kj_atlas_api.database_support import require_verified_database_url
 
 
 _LLM_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+_APP_REVISION_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
 
 def _validate_trusted_http_resolver(
@@ -248,6 +249,7 @@ LEGACY_ENV_KEYS = {
     "DEEPSEEK_API_KEY",
     "DEEPSEEK_BASE_URL",
     "DEEPSEEK_MODEL",
+    "DEEPSEEK_THINKING_MODE",
     "API_KEY",
     "AUDIT_EXPORT_ENABLED",
     "AUDIT_TRANSPORT",
@@ -340,9 +342,16 @@ class Settings(BaseSettings):
         default="https://api.deepseek.com",
         validation_alias="KJ_ATLAS_DEEPSEEK_BASE_URL",
     )
+    # DeepSeek retired the legacy deepseek-chat/deepseek-reasoner aliases on 2026-07-24.
+    # V4 enables thinking by default, but the historical KJ Atlas deepseek-chat default
+    # was non-thinking. Preserve that behavior explicitly unless the operator opts in.
     deepseek_model: str = Field(
-        default="deepseek-chat",
+        default="deepseek-v4-flash",
         validation_alias="KJ_ATLAS_DEEPSEEK_MODEL",
+    )
+    deepseek_thinking_mode: str = Field(
+        default="disabled",
+        validation_alias="KJ_ATLAS_DEEPSEEK_THINKING_MODE",
     )
     # AI-ROUTE-01 MMR-04: high-reasoning model for final_judgement tasks
     # (check_narrative, detect_contradiction).
@@ -582,7 +591,7 @@ class Settings(BaseSettings):
         validation_alias="KJ_ATLAS_AUTH_SUBJECT_FIELD",
     )
     # ADR-0065: per-task model override (comma-separated task=model pairs).
-    # Example: "re_layout=deepseek-chat,generate_narrative=deepseek-reasoner"
+    # Example: "re_layout=deepseek-v4-flash,generate_narrative=deepseek-v4-pro"
     # Unlisted tasks use the default model (local_llm_model).
     llm_task_model_map: str = Field(
         default="",
@@ -711,6 +720,13 @@ class Settings(BaseSettings):
         # validate_trusted_saas_runtime_preflight() in main.py lifespan.
         self.runtime_profile = normalized_runtime_profile
 
+        # OPS-OBSERV-01: frontend diagnostic bundles already treat app revision
+        # as a canonical, non-secret identifier. Normalize at the public setting
+        # boundary so /version and every downstream observability surface see
+        # exactly the same value instead of disagreeing on malformed input.
+        if not _APP_REVISION_PATTERN.fullmatch(self.app_revision):
+            self.app_revision = "unknown"
+
         _validate_canonical_bearer(
             api_key=self.admin_api_key, api_key_key="KJ_ATLAS_ADMIN_API_KEY"
         )
@@ -765,6 +781,16 @@ class Settings(BaseSettings):
             value=self.large_scale_llm_model,
             value_key="KJ_ATLAS_LARGE_SCALE_LLM_MODEL",
         )
+        _validate_optional_llm_model_id(
+            value=self.deepseek_model,
+            value_key="KJ_ATLAS_DEEPSEEK_MODEL",
+        )
+        normalized_deepseek_thinking_mode = self.deepseek_thinking_mode.strip().lower()
+        if normalized_deepseek_thinking_mode not in {"disabled", "enabled"}:
+            raise ValueError(
+                "KJ_ATLAS_DEEPSEEK_THINKING_MODE must be one of disabled|enabled"
+            )
+        self.deepseek_thinking_mode = normalized_deepseek_thinking_mode
         self.large_scale_llm_allowlist = _normalize_llm_allowlist(
             self.large_scale_llm_allowlist
         )
@@ -936,6 +962,11 @@ class Settings(BaseSettings):
         if not self.ce4_audit_require_all_events:
             raise ValueError(
                 "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS must remain true in CE4"
+            )
+        if not self.ce4_stub_unresolved_contracts:
+            raise ValueError(
+                "KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS must remain true until "
+                "the CE4 unresolved-stub trigger contract is implemented"
             )
 
         # ADR-0063 D4: validate JWT algorithm allowlist.

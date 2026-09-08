@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`, `03_Implement/backend/tests/test_trusted_auth_edge.py`, `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）, `01_Plans/issues/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Proposed）, `01_Plans/issues/done/issue-AUTH-ONE-TIME-JWT-01-request-token-supply-contract.md`
 - Expected verification level: `unit`
 
 ## 課題

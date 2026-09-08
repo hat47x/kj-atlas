@@ -227,6 +227,6 @@ active tenantは認証セッション単位で1つとする。同じセッショ
 - `01_Plans/research/research-2026-07-16-saas-tenant-authorization-boundary.md`
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
 - `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`（Accepted）
-- `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - `02_Architecture/enterprise_architecture.html`（SaaS multi-tenantは現行非目標）
 - `THREAT_MODEL.md`

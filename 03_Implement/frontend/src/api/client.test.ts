@@ -303,6 +303,7 @@ describe("SafeMode AI request certification", () => {
 const FRONTEND_SRC_ROOT = resolve(__dirname, "..");
 const CLIENT_MODULE_PATH = "api/client.ts";
 const APP_MODULE_PATH = "App.tsx";
+const ADMIN_MODEL_ALLOWLIST_MODULE_PATH = "admin/model_allowlist_api.ts";
 const OAUTH_CALLBACK_MODULE_PATH = "session/oauth_callback.ts";
 const TENANT_SCOPED_WRAPPERS = [
   "runTenantScopedApiRequest(() => ",
@@ -480,13 +481,14 @@ function isCommentedOccurrence(source: string, index: number): boolean {
 }
 
 describe("tenant session version client coverage contract", () => {
-  it("keeps every backend request inside the shared api client module", () => {
+  it("classifies every frontend fetch surface by its trust boundary", () => {
     const modulesWithFetch = productionSourceModules(FRONTEND_SRC_ROOT).filter(
       (modulePath) => fetchCallSites(readFrontendModule(modulePath)).length > 0,
     );
 
     expect([...modulesWithFetch].sort()).toEqual([
       APP_MODULE_PATH,
+      ADMIN_MODEL_ALLOWLIST_MODULE_PATH,
       CLIENT_MODULE_PATH,
       OAUTH_CALLBACK_MODULE_PATH,
     ]);
@@ -499,6 +501,20 @@ describe("tenant session version client coverage contract", () => {
       const { url } = splitRequestArguments(site.args);
       expect(url).toMatch(/^["`]\.\/packs\//);
       expect(url).not.toContain("API_BASE");
+    }
+
+    // The model allowlist console is a separate control-plane surface. It does
+    // not carry the business-plane tenant-session version: tenant identity is
+    // explicit in the admin route and mutations use the control-plane CSRF/auth
+    // headers. Keep this exception narrow and mechanically bound to that route.
+    for (const site of fetchCallSites(readFrontendModule(ADMIN_MODEL_ALLOWLIST_MODULE_PATH))) {
+      const { url, init } = splitRequestArguments(site.args);
+      expect(url).toContain("API_BASE");
+      expect(url).toContain("/admin/provision/models/tenants/");
+      expect(url).toContain("/allowlist");
+      expect(init).toContain("controlPlaneHeaders");
+      expect(init).toContain('credentials: "same-origin"');
+      expect(init).not.toContain("tenantSessionPreconditionHeaders");
     }
 
     // OAuth code exchange targets the separately configured identity broker,

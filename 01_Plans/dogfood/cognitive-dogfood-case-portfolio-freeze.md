@@ -1,7 +1,7 @@
 # 認知dogfood Case Portfolio — 実行条件凍結記録
 
-- 状態: P0凍結・CI検証済み / Case 001〜003のArmパッケージ生成可能
-- 日付: 2026-08-30
+- 状態: P0凍結・CI検証済み / Run #29の12 Arm artifact生成済み / 現行mainでは常設Actions停止中
+- 日付: 2026-08-30（実行導線の現況追記: 2026-09-06）
 - 事前登録: `cognitive-dogfood-case-portfolio-preregistration.md`
 - Case 001〜003共通の製品snapshot: `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - Case 001〜003のB/Dで使用するskill snapshot: `hat47x/cultural-substrate-weaving@3988e12e5f7f316f377d3391e9486c8467a111d5`
@@ -70,14 +70,18 @@ fixed questionに応じてCaseごとの境界を評価する。Case 001のprimar
 - 同一Caseの4Armでfixed question / required output / product snapshot / evidence bundleが一致することを確認する。
 - cultural-substrate-weavingはB/Dだけ、KJ Atlas starterはC/Dだけに含まれることを検査する。
 
-### 専用workflow
+### 凍結時に使用した専用workflow（現在mainでは停止）
 
-`.github/workflows/cognitive-dogfood-freeze.yml`を使用する。
+凍結時は`.github/workflows/cognitive-dogfood-freeze.yml`を使用した。
 
-- launch packet、product source manifest、skill manifest、starter、bundle builder、freeze validatorを変更したときにfail-closedでpreflightする。
-- run intake / blind-packageのcontract testも実行し、記録契約が緩んでいないかを確認する。
-- treatmentの同値性だけでなく、Case 001〜003のfrozen product evidence bundleと共通frozen skill bundleを、固定commitから実際に再生成する。
-- Case 001〜003のA〜Dを個別artifactへ組み立て、新規コンテキストへ他Arm・他treatmentを混ぜずに渡せるようにする。
+- launch packet、product source manifest、skill manifest、starter、bundle builder、freeze validatorを変更したときにfail-closedでpreflightした。
+- run intake / blind-packageのcontract testも実行し、記録契約が緩んでいないかを確認した。
+- treatmentの同値性だけでなく、Case 001〜003のfrozen product evidence bundleと共通frozen skill bundleを、固定commitから実際に再生成した。
+- Case 001〜003のA〜Dを個別artifactへ組み立て、新規コンテキストへ他Arm・他treatmentを混ぜずに渡せることを確認した。
+
+2026-09-02のcommit `066544c62d6639d3d46c28fefe5ce20f57373a21` でGitHub Actions workflow群は意図的にmainから削除され、現行mainには`.github/workflows/cognitive-dogfood-freeze.yml`が存在しない。この運用変更は、すでに凍結した問い・資料・treatment・required outputを変更せず、Run #29で生成済みのartifactを無効化するものでもない。
+
+Run #29のartifactが保持期間内に存在する間、最初のraw runにはその既存artifactを使う。保持期間後に再生成が必要になった場合は、current mainをRound 1へ黙って代用せず、凍結commit・凍結manifest・当時のworkflow契約から同じpackage境界を再現し、別の運用上の再生成として検証記録を残す。再生成そのものを新しい実験条件とは扱わない。
 
 ## 4. 実行パッケージの境界
 
@@ -165,7 +169,7 @@ Arm側bundleへ含めない情報:
 
 B/Dへ渡すskill sourceもrepository全体ではなく、共通の操作者専用skill manifestで固定したcanonical `src/ja-JP`だけを使用する。生成後のArm側`_experiment/skill-bundle-manifest.json`はCase非依存とし、operator manifest ID / caseId / excluded-inputの説明をコピーしない。
 
-## 9. CIによる凍結条件の検査
+## 9. 凍結条件の検査
 
 `validate_dogfood_docs.py`では、少なくとも次をfail-closedで検査する。
 
@@ -176,7 +180,7 @@ B/Dへ渡すskill sourceもrepository全体ではなく、共通の操作者専�
 - Case 001〜003 starterのcards / islands / evidenceLinks / readingOrder / narrativesが空であること。
 - cognitive experiment helperのPython構文。
 
-`validate_cognitive_launch_packets.py`と`Cognitive dogfood freeze` workflowでは、12個のlaunch packetと12個のArm packageについて次をfail-closedで検査する。
+`validate_cognitive_launch_packets.py`と、凍結時の`Cognitive dogfood freeze` workflowでは、12個のlaunch packetと12個のArm packageについて次をfail-closedで検査した。
 
 - 同一Caseの4Armでfixed questionが完全一致する。
 - 同一Caseの4Armでrequired outputが完全一致する。
@@ -203,6 +207,7 @@ P0終了前後に、次を実際に確認した。
 6. package境界の代表確認として、Case 002 Arm Aはskill / starterなし、Case 003 Arm Cはstarterあり・skillなし、Case 002 Arm Dはstarterとcanonical skill 12件ありであることを、実ZIP展開で確認した。
 7. Case非依存のskill metadataへ補正した後、workflow run #29 / head `2548b7ba09568c8a4f39a55ff6b96b13cbaeeec9`で12 packageを再生成し、全件成功した。Case 002 Arm Bの実ZIPを展開し、skill subtreeに`case-001` / `Case 001`がなく、Arm側`manifestId`が`cognitive-dogfood-skill-ja@3988e12e5f7f316f377d3391e9486c8467a111d5`であることを確認した。
 8. 最初のraw run前にrun-intake / blind-package contract testを追加した。Required outputの連続した全項目と実質記録、各訂正・時点差チェックの解釈、M1〜M9の実質記録、artifact identity / contamination、P2 builderによるstatic-intake強制をsynthetic fixtureで検証した。workflow run #47 / head `fdf1bb68af1bbccdd4a97197aa557a1dcc2a02d8`でcontract testと12 package再生成がすべて成功した。
+9. 2026-09-06の運用再確認では、workflow run #29（Actions run id `33296562167`）の12 artifactがすべて`expired=false`で、2026-09-13 06:17Z前後まで保持されることを確認した。Case 001 Arm Cはartifact id `9727586537`、digest `sha256:c5964b6d1654c8e19b7961aca893f4a1fb98d5db896573c6819f57dc805a23f5`。実ZIPを展開すると、Arm C専用`launch.md`、frozen product bundle 20資料、空の`starter.json`だけが入り、skill subtreeは存在しなかった。`launch.md`もfrozen product commit、外部Web検索禁止、cultural-substrate-weaving不使用を維持していた。したがって、常設workflow停止後も既存のRun #29 Arm C artifactからP1を開始できる。
 
 ここまででP0は完了とする。以後、最初の有効なraw runを実行するために必要な欠陥が見つからない限り、preflight機能を増やし続けない。次の正規工程はP1 / Case 001 / Arm Cである。
 

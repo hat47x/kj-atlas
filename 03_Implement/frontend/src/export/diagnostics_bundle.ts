@@ -88,9 +88,17 @@ export type DiagBundleInput = {
 };
 
 const APP_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
+const APP_REVISION_LINE_TERMINATOR_PATTERN = /[\r\n\u2028\u2029]/;
 
 function normalizeAppRevision(value: string | undefined): string {
-  if (value && APP_REVISION_PATTERN.test(value)) {
+  // JavaScript `$` may match immediately before a final line terminator.
+  // Reject those explicitly so this has the same whole-string semantics as
+  // Python re.fullmatch() at the backend settings boundary.
+  if (
+    value
+    && !APP_REVISION_LINE_TERMINATOR_PATTERN.test(value)
+    && APP_REVISION_PATTERN.test(value)
+  ) {
     return value;
   }
   return "unknown";

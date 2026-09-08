@@ -16,6 +16,16 @@ from kj_atlas_api.models import DocumentV1, NarrativeCheckCounts
 SOURCE_BUNDLE_HASH_PATTERN = r"^[0-9a-f]{64}$"
 
 
+class TokenUsageCoverage(BaseModel):
+    """Content-free completeness counters for provider token usage reports."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    completeCalls: int = Field(default=0, ge=0)
+    partialCalls: int = Field(default=0, ge=0)
+    missingCalls: int = Field(default=0, ge=0)
+
+
 class ProviderStatusResponse(BaseModel):
     """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured LLM
     provider kind. This is NOT a live connectivity check — it reports the
@@ -30,11 +40,16 @@ class ProviderStatusResponse(BaseModel):
     # (plus "total"). Referenceable so an operator can see external
     # (large-scale) call volume. Empty until the first LLM call.
     callCounts: dict[str, int] = Field(default_factory=dict)
-    # OPS-LLM-COST-01 (段階2): in-process input/output token totals per provider
-    # kind (plus "total"). Populated from provider-reported usage (DeepSeek /
-    # OpenAI chat completions `usage`); providers that do not report usage
-    # contribute 0 tokens. Empty until the first LLM call.
+    # OPS-LLM-COST-01: process-local input/output totals per provider kind
+    # (plus "total"). Values come only from provider-reported usage. Missing
+    # sides retain the historical numeric 0 contribution; tokenUsageCoverage
+    # distinguishes that from a genuine reported zero.
     tokenUsage: dict[str, dict[str, int]] = Field(default_factory=dict)
+    tokenUsageCoverage: dict[str, TokenUsageCoverage] = Field(default_factory=dict)
+    tokenUsageSource: Literal["provider_reported_only"] = "provider_reported_only"
+    tokenUsageAggregationScope: Literal["current_process_by_provider_kind"] = (
+        "current_process_by_provider_kind"
+    )
 
 
 class NarrativeIssueReference(BaseModel):
@@ -56,12 +71,28 @@ class NarrativeIssue(BaseModel):
     direction: Literal["b_missing_in_a", "a_missing_in_b"] | None = None
 
 
+class ExternalProposalReference(BaseModel):
+    """Explicit identity for a registered external-agent proposal.
+
+    Document identity is deliberately not carried here. Final-judgement routes
+    bind this reference to the request document and validate the tuple
+    server-side, so proposalId never becomes an implicit document lookup key.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1, max_length=128)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
+
+
 class CheckNarrativeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     doc: DocumentV1
     narrativeText: str = Field(min_length=1)
     basedOnReadingOrder: list[str] | None = None
+    # AI-ROUTE-HELD-LINKAGE-01 R1: optional explicit external proposal identity.
+    externalProposalRef: ExternalProposalReference | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
 
@@ -449,6 +480,9 @@ class DetectContradictionRequest(BaseModel):
     # `contradictionState` instead of two bare texts. Optional on purpose: the
     # two-card request shape that shipped before stays valid (AC-11).
     doc: DocumentV1 | None = None
+    # AI-ROUTE-HELD-LINKAGE-01 R1: linkage requires doc so the server never
+    # infers document identity from proposalId.
+    externalProposalRef: ExternalProposalReference | None = None
     # SEC-AI-SAFEMODE-01 (ADR-0068 D1=C/D3=A): optional, fail-closed relaxation.
     allowUnreviewedText: bool | None = None
 

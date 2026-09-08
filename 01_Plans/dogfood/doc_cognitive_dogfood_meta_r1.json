@@ -223,8 +223,8 @@
   ],
   "evidenceLinks": [
     {"id": "ev01", "cardId": "c02", "type": "supports", "url": "01_Plans/issues/TEMPLATE.md"},
-    {"id": "ev02", "cardId": "c08", "type": "supports", "url": "01_Plans/issues/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md"},
-    {"id": "ev03", "cardId": "c09", "type": "supports", "url": "01_Plans/issues/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md"},
+    {"id": "ev02", "cardId": "c08", "type": "supports", "url": "01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md"},
+    {"id": "ev03", "cardId": "c09", "type": "supports", "url": "01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md"},
     {"id": "ev04", "cardId": "c13", "type": "supports", "url": "00_Prompt/kj_technique.md"},
     {"id": "ev05", "cardId": "c11", "type": "supports", "url": "01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md"}
   ],

@@ -242,5 +242,5 @@ SaaS先行画面では`tenant-acme-research` / `地域調査チーム`と`tenant
 - 未定義のAPI、ユーザーライフサイクル、Audit閲覧、デプロイ設定編集が提案に含まれた場合、その部分は採用しない。
 - 採用後も、Workspace文書一覧は`api.md` / `schemas.md`の契約先行、エージェント登録は`EXT-CONN-02`の段階ゲートを満たすまで実装しない。
 - R8-E/F/G/Hは`ADR-0059`と`ADR-0061`のImplementation gate、TenantContext、tenant従属DB制約、DB側tenant guard、capability API、`tenantSessionVersion` precondition、deny-only profile、複数タブ・bfcacheを含む越境negative testが揃うまで有効化しない。R8-Gはさらにmetadata管理API、runtime binding resolver/PDP、監査契約を解禁条件とする。
-- 実装進捗は`01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`だけで追跡し、Claude Design成果物を実装完了の証拠にしない。
+- 実装進捗は`01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`だけで追跡し、Claude Design成果物を実装完了の証拠にしない。
 - 実装ラウンドでは同一fixture・ja/en・1440/768/390pxでスクリーンショットを再生成し、`design-qa-checklist.md`で照合する。

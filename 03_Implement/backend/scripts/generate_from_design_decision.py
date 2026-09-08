@@ -592,7 +592,7 @@ from kj_atlas_api.routes import ai
 
 def _stub_metadata() -> LLMCallMetadata:
     return LLMCallMetadata(
-        provider_kind="deepseek", provider_name="deepseek", model_id="deepseek-chat",
+        provider_kind="deepseek", provider_name="deepseek", model_id="deepseek-v4-flash",
         transport="http", requested_at="2026-08-12T00:00:00Z", trace_id="llm-codegen-test",
     )
 

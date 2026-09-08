@@ -59,7 +59,14 @@ def test_provider_status_echoes_none_by_default() -> None:
         with TestClient(app) as client:
             response = client.get("/ai/provider-status")
         assert response.status_code == 200
-        assert response.json() == {"providerKind": "none", "callCounts": {}, "tokenUsage": {}}
+        assert response.json() == {
+            "providerKind": "none",
+            "callCounts": {},
+            "tokenUsage": {},
+            "tokenUsageCoverage": {},
+            "tokenUsageSource": "provider_reported_only",
+            "tokenUsageAggregationScope": "current_process_by_provider_kind",
+        }
     finally:
         settings.api_key = original_api_key
         settings.llm_provider = original_provider
@@ -78,7 +85,14 @@ def test_provider_status_echoes_local_and_resolves_alias() -> None:
             response = client.get("/ai/provider-status")
         assert response.status_code == 200
         # PROV-VIS-01: the resolved provider_kind is returned, not the raw alias.
-        assert response.json() == {"providerKind": "local", "callCounts": {}, "tokenUsage": {}}
+        assert response.json() == {
+            "providerKind": "local",
+            "callCounts": {},
+            "tokenUsage": {},
+            "tokenUsageCoverage": {},
+            "tokenUsageSource": "provider_reported_only",
+            "tokenUsageAggregationScope": "current_process_by_provider_kind",
+        }
     finally:
         settings.api_key = original_api_key
         settings.llm_provider = original_provider
@@ -98,7 +112,14 @@ def test_provider_status_echoes_deepseek() -> None:
         with TestClient(app) as client:
             response = client.get("/ai/provider-status")
         assert response.status_code == 200
-        assert response.json() == {"providerKind": "deepseek", "callCounts": {}, "tokenUsage": {}}
+        assert response.json() == {
+            "providerKind": "deepseek",
+            "callCounts": {},
+            "tokenUsage": {},
+            "tokenUsageCoverage": {},
+            "tokenUsageSource": "provider_reported_only",
+            "tokenUsageAggregationScope": "current_process_by_provider_kind",
+        }
     finally:
         settings.api_key = original_api_key
         settings.llm_provider = original_provider
@@ -122,7 +143,14 @@ def test_provider_status_is_a_static_config_echo_not_a_connectivity_check() -> N
         with TestClient(app) as client:
             response = client.get("/ai/provider-status")
         assert response.status_code == 200
-        assert response.json() == {"providerKind": "local", "callCounts": {}, "tokenUsage": {}}
+        assert response.json() == {
+            "providerKind": "local",
+            "callCounts": {},
+            "tokenUsage": {},
+            "tokenUsageCoverage": {},
+            "tokenUsageSource": "provider_reported_only",
+            "tokenUsageAggregationScope": "current_process_by_provider_kind",
+        }
     finally:
         settings.api_key = original_api_key
         settings.llm_provider = original_provider
@@ -164,11 +192,18 @@ def test_provider_status_reports_llm_call_counts_after_a_call(monkeypatch) -> No
     assert body["providerKind"] == "large-scale"
     assert body["callCounts"].get("large-scale") == 1
     assert body["callCounts"].get("total") == 1
-    # No provider-reported usage -> 0 tokens recorded for the call.
+    # Numeric totals remain backward-compatible, but missing usage is no
+    # longer observationally identical to a provider-reported zero.
     assert body["tokenUsage"] == {
         "large-scale": {"input": 0, "output": 0},
         "total": {"input": 0, "output": 0},
     }
+    assert body["tokenUsageCoverage"] == {
+        "large-scale": {"completeCalls": 0, "partialCalls": 0, "missingCalls": 1},
+        "total": {"completeCalls": 0, "partialCalls": 0, "missingCalls": 1},
+    }
+    assert body["tokenUsageSource"] == "provider_reported_only"
+    assert body["tokenUsageAggregationScope"] == "current_process_by_provider_kind"
 
 
 def test_provider_status_reports_token_usage_from_provider_response(monkeypatch) -> None:
@@ -205,3 +240,50 @@ def test_provider_status_reports_token_usage_from_provider_response(monkeypatch)
     assert body["callCounts"].get("large-scale") == 2
     assert body["tokenUsage"]["large-scale"] == {"input": 240, "output": 74}
     assert body["tokenUsage"]["total"] == {"input": 240, "output": 74}
+    assert body["tokenUsageCoverage"]["large-scale"] == {
+        "completeCalls": 2,
+        "partialCalls": 0,
+        "missingCalls": 0,
+    }
+    assert body["tokenUsageCoverage"]["total"] == {
+        "completeCalls": 2,
+        "partialCalls": 0,
+        "missingCalls": 0,
+    }
+
+
+def test_provider_status_distinguishes_partial_provider_usage(monkeypatch) -> None:
+    from kj_atlas_api.llm import provider as llm_provider
+    from kj_atlas_api.routes import ai as ai_routes
+
+    class _StubResponse:
+        raw_text = '{"refinedText": "（モック）改善案", "reasoning": "r"}'
+        input_tokens = 11
+        output_tokens = None
+
+    class _StubProvider:
+        provider_kind = "large-scale"
+        provider_name = "stub"
+
+        def generate(self, _req):
+            return _StubResponse()
+
+    monkeypatch.setattr(llm_provider, "get_provider", lambda: _StubProvider())
+    monkeypatch.setattr(ai_routes, "get_provider", lambda: _StubProvider())
+    monkeypatch.setattr(ai_routes, "_assert_model_allowed", lambda *a, **k: None)
+    reset_llm_call_counts()
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/ai/refine-card-text",
+            json={"cardText": "partial", "textReviewed": True},
+        )
+        assert response.status_code == 200, response.text
+        body = client.get("/ai/provider-status").json()
+
+    assert body["tokenUsage"]["large-scale"] == {"input": 11, "output": 0}
+    assert body["tokenUsageCoverage"]["large-scale"] == {
+        "completeCalls": 0,
+        "partialCalls": 1,
+        "missingCalls": 0,
+    }

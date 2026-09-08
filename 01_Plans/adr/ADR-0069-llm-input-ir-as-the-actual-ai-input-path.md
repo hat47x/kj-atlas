@@ -253,6 +253,6 @@ Stage 5で残存経路を棚卸しした結果、本ADRの「IRをAI入力の実
 - Related: `01_Plans/issues/done/issue-AI-REL-VOCAB-DRIFT-01-ir-canvas-relation-type-mismatch.md`（D2 で解決される事実の記録）
 - Related: `01_Plans/issues/done/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`（非目標として分離した課題）
 - Related: `02_Architecture/functional-dependency-integrity-2026-08-06.html`（F-5 = 実装前提条件）
-- Related: `01_Plans/issues/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（F-5前提条件の実装課題、Draft）
+- Related: `01_Plans/issues/done/issue-DOMAIN-ISLAND-MEMBERSHIP-01-cross-island-cardid-duplicate-detection.md`（F-5前提条件の実装課題、Draft）
 
 ---

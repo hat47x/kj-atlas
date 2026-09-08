@@ -86,7 +86,7 @@ def test_put_accepts_document_under_limits(client, monkeypatch) -> None:
 
 
 def test_settings_defaults_are_bounded() -> None:
-    # The defaults must be sane: byte ceiling matches the inquiry bundle (20 MiB)
-    # and the card ceiling is generous but finite.
+    # The defaults are public runtime contract: bytes match the inquiry bundle
+    # and cards retain the meta-dogfooding headroom documented in the registry.
     assert settings.max_document_bytes == 20 * 1024 * 1024
-    assert settings.max_document_cards > 0
+    assert settings.max_document_cards == 50_000

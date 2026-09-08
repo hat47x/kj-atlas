@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/20260720_0012_add_admin_audit_document_fk.py`, `03_Implement/backend/tests/test_document_access_admin_audit_migration.py`, `03_Implement/backend/tests/test_alembic_lineage.py`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `integration`
 
 ## 課題

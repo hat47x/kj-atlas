@@ -1,22 +1,30 @@
 from __future__ import annotations
 
+import pytest
 from fastapi import HTTPException
 from starlette.requests import Request
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.auth_context import _header, _normalize_provider, resolve_identity_context
+from kj_atlas_api.auth_context import (
+    _check_trusted_proxy,
+    _header,
+    _normalize_provider,
+    resolve_identity_context,
+)
 from kj_atlas_api.models import Base, UserIdentityRow, UserRow
 from kj_atlas_api.settings import settings
 
 
-def _request(headers: dict[str, str]) -> Request:
+def _request(headers: dict[str, str], *, client_host: str | None = None) -> Request:
     scope = {
         "type": "http",
         "method": "GET",
         "path": "/",
         "headers": [(k.lower().encode("latin-1"), v.encode("latin-1")) for k, v in headers.items()],
     }
+    if client_host is not None:
+        scope["client"] = (client_host, 0)
     return Request(scope)
 
 
@@ -117,3 +125,76 @@ def test_resolve_identity_context_raises_conflict_for_duplicate_provider_subject
             assert exc.detail["code"] == "identity_mapping_conflict"
         else:  # pragma: no cover
             raise AssertionError("Expected HTTPException")
+
+
+@pytest.fixture
+def _restore_trusted_proxies():
+    original = settings.trusted_proxies
+    yield
+    settings.trusted_proxies = original
+
+
+def test_check_trusted_proxy_allows_any_origin_when_unconfigured(_restore_trusted_proxies) -> None:
+    settings.trusted_proxies = ""
+
+    _check_trusted_proxy(_request({}, client_host="203.0.113.7"))
+    _check_trusted_proxy(_request({}))  # no client info at all
+
+
+def test_check_trusted_proxy_allows_ip_inside_configured_cidr(_restore_trusted_proxies) -> None:
+    settings.trusted_proxies = "10.0.0.0/8,172.16.0.0/12"
+
+    _check_trusted_proxy(_request({}, client_host="10.1.2.3"))
+    _check_trusted_proxy(_request({}, client_host="172.16.5.5"))
+
+
+def test_check_trusted_proxy_rejects_ip_outside_configured_cidr(_restore_trusted_proxies) -> None:
+    settings.trusted_proxies = "10.0.0.0/8"
+
+    with pytest.raises(HTTPException) as exc_info:
+        _check_trusted_proxy(_request({}, client_host="203.0.113.7"))
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["code"] == "untrusted_proxy"
+
+
+def test_check_trusted_proxy_rejects_when_client_ip_unknown(_restore_trusted_proxies) -> None:
+    settings.trusted_proxies = "10.0.0.0/8"
+
+    with pytest.raises(HTTPException) as exc_info:
+        _check_trusted_proxy(_request({}))  # no client info
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["code"] == "untrusted_proxy"
+
+
+def test_check_trusted_proxy_rejects_malformed_client_ip(_restore_trusted_proxies) -> None:
+    settings.trusted_proxies = "10.0.0.0/8"
+
+    with pytest.raises(HTTPException) as exc_info:
+        _check_trusted_proxy(_request({}, client_host="not-an-ip"))
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["code"] == "untrusted_proxy"
+
+
+def test_resolve_identity_context_rejects_untrusted_proxy_before_reading_headers(
+    _restore_trusted_proxies,
+) -> None:
+    """The trusted-proxy check must run before forwarded headers are trusted;
+    an untrusted origin is rejected even if it supplies a fully-formed
+    identity header set."""
+    settings.trusted_proxies = "10.0.0.0/8"
+
+    with _db_session() as db:
+        with pytest.raises(HTTPException) as exc_info:
+            resolve_identity_context(
+                db=db,
+                request=_request(
+                    {"x-auth-subject": "sub-1", "x-auth-provider": "oidc"},
+                    client_host="203.0.113.7",
+                ),
+            )
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["code"] == "untrusted_proxy"

@@ -857,3 +857,10 @@ Updated: 2026-08-03
 - 原因: 未特定。直前に foreground の `wsl` 呼び出しと `run_in_background` の `wsl` 呼び出しを**ほぼ同時に発行**しており、同時起動が引き金になった可能性がある（未確証）。復旧待ちのポーリングループ（5秒ごとに `wsl.exe` を起動）も状況を悪化させた可能性がある。
 - 対応: `wsl --terminate Ubuntu-22.04`（`--shutdown` ではなく単一distroへ限定）を実行し、直後の `wsl -e bash -lc 'echo alive'` が正常応答することを確認して作業を再開した。中断されたbackend全体回帰は取り直した。
 - 再発防止: `Wsl/Service/E_UNEXPECTED` が出たらリトライで粘らず、`wsl --list --verbose` でdistroの状態を確認し、`Running` のままなら `wsl --terminate <distro>` で当該distroだけ落として再起動する（`--shutdown` は他セッションへの影響が大きいので先に試さない）。あわせて **`wsl` 呼び出しを同時に複数走らせない** — 長時間の回帰を `run_in_background` へ回した直後に別の `wsl` コマンドを foreground で叩かず、終了通知を待つ。
+
+## 2026-09-06: `docs_check.py`が`test_frozen_dogfood_manifest_identity.py`で3件失敗（実データ破損ではなくWindows working treeのCRLF）
+
+- 事象: Windowsネイティブpython(`03_Implement/backend/.venv/Scripts/python.exe`)で`01_Plans/docs_check.py`を実行すると、`cognitive-dogfood-case-001/002/003-round1-source-manifest.json`の3件で`git_blob_oid(content) != expected_oid`が失敗した。一見、frozenのはずのdogfood manifestが誰かに書き換えられたように見える。
+- 原因: **実データは破損していない。** `git hash-object <path>`（フィルタ適用）は3件とも`FROZEN_ROUND1_MANIFEST_BLOBS`のexpected値と完全一致し、`git status`/`git diff`も3ファイルとも無変更(clean)を示す。一方、このマシンは`core.autocrlf=true`＋`.gitattributes`の`* text=auto`により、working tree上のファイル実体はCRLFを含む（`git hash-object --no-filters`や生バイト読取では`0d0a`が現れる）。`test_frozen_dogfood_manifest_identity.py`の`git_blob_oid()`はPythonの`Path.read_bytes()`で生バイトを読み、gitのclean filterを経由せず`sha1(f"blob {len}\0" + content)`を計算するため、CRLFを含む生バイトに対するhashとLF正規化済みのgit blob hash（=期待値）が一致しない。CI（Linux想定）ではこの食い違いは起きない。
+- 対応: 3ファイルとも`git hash-object`（フィルタあり）で期待値と一致することを確認し、manifest自体・testの期待値ともに変更しなかった。ローカルのcore.autocrlf設定はユーザー全体のgit設定であり、単独セッションの判断で変更しない。
+- 再発防止: Windows上でこのtest（または同種の生バイトgit blob hash比較を行うtest）が失敗した場合、まず対象ファイルに対して`git hash-object <path>`（フィルタあり）と`git status`/`git diff`を確認する。両方とも無変更・期待値一致であれば、working treeのCRLF起因の見せかけの失敗であり、manifest・test双方とも修正不要。

@@ -119,7 +119,7 @@ kj-atlasリポジトリ（C:/GIT/kj-atlas）のMVP-EXIT-01（製品化準備）�
 
 参照文書:
 - 01_Plans/mvp-exit-01-human-acceptance-handoff.md（この文書。各タスクの手順・合格基準・記録先が書かれています）
-- 01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md（親issue、完了条件）
+- 01_Plans/issues/done/issue-MVP-EXIT-01-productization-readiness.md（親issue、完了条件）
 - 04_Documentation/acceptance_check.md（既存の手動smoke test手順、キーボード確認の土台）
 
 進め方:

@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/backend/src/kj_atlas_api/`（models / llm / routes / admin）, `03_Implement/frontend/src/`（api/client, ui）, `02_Architecture/`（api.md, llm_provider_spec.md, runtime_parameter_registry.md）, migration
-- Related ADR/Spec: `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`（D2優先度2=テナント層は Phase 2 と明記）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `02_Architecture/llm_provider_spec.md`（provider抽象の正本）, `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `01_Plans/issues/issue-AI-ROUTE-01-multi-model-routing-and-final-judgment-boundary.md`, `01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`（D2優先度2=テナント層は Phase 2 と明記）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `02_Architecture/llm_provider_spec.md`（provider抽象の正本）, `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `01_Plans/issues/done/issue-AI-ROUTE-01-multi-model-routing-and-final-judgment-boundary.md`, `01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md`
 - Expected verification level: `integration`
 
 ## 課題

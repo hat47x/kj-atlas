@@ -281,16 +281,19 @@ def build_llm_input_ir(
     safe_mode: bool = True,
     allow_unreviewed_text: bool = False,
     required_card_ids: Sequence[str] = (),
+    required_relation_ids: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Build `LLMRequest.inputs` per `llm_input_ir_spec.md` §2-§7.
 
     `include_coordinates` implements ADR-0069 D1=B: the caller declares whether
     this endpoint needs relative placement (§2.2.1). Only `suggest-layout` does.
 
-    `required_card_ids` is an input-only route contract. A caller may name cards
-    whose meaning is indispensable for that operation; those cards are reserved
-    before deterministic size truncation. The ids are not serialized into the
-    IR, and an empty sequence preserves the historical projection byte-for-byte.
+    `required_card_ids` and `required_relation_ids` are input-only route contracts.
+    A caller may name cards or normalized relations whose meaning is indispensable for
+    that operation; they are reserved before deterministic size truncation. A required
+    relation also reserves both endpoint cards so the retained edge stays referentially
+    closed. These ids are not serialized into the IR, and empty sequences preserve the
+    historical projection byte-for-byte.
     """
     # spec §7.1 -- checked first so a relaxed-SafeMode caller never even reaches
     # normalization. `constraints.safe_mode` is `const true`; there is no IR
@@ -310,19 +313,42 @@ def build_llm_input_ir(
     _enforce_pii_minimization(cards, meta)
 
     card_ids = {card.id for card in cards}
-    required = frozenset(required_card_ids)
-    if not required <= card_ids:
+    explicit_required_cards = frozenset(required_card_ids)
+    if not explicit_required_cards <= card_ids:
         raise IRGenerationError(
             "required_card_missing",
             "A route-required card is not present in the normalized IR source.",
         )
+
+    relations = _normalize_relations(source.relations, card_ids)
+    relation_by_id = {relation["id"]: relation for relation in relations}
+    required_relations = frozenset(required_relation_ids)
+    if not required_relations <= set(relation_by_id):
+        raise IRGenerationError(
+            "required_relation_missing",
+            "A route-required relation is not present in the normalized IR source.",
+        )
+    if len(required_relations) > MAX_RELATIONS:
+        raise IRGenerationError(
+            "required_relation_budget_exceeded",
+            "The route-required relation set exceeds the IR relation budget.",
+        )
+
+    relation_endpoint_card_ids = {
+        endpoint
+        for required_relation_id in required_relations
+        for endpoint in (
+            relation_by_id[required_relation_id]["from"],
+            relation_by_id[required_relation_id]["to"],
+        )
+    }
+    required = frozenset(set(explicit_required_cards) | relation_endpoint_card_ids)
     if len(required) > MAX_CARDS:
         raise IRGenerationError(
             "required_card_budget_exceeded",
             "The route-required card set exceeds the IR card budget.",
         )
 
-    relations = _normalize_relations(source.relations, card_ids)
     islands = _normalize_islands(source.islands, card_ids)
     evidence_links = _normalize_evidence_links(source.evidence_links, card_ids)
 
@@ -336,6 +362,7 @@ def build_llm_input_ir(
         evidence_links,
         rank_by_card,
         required_card_ids=required,
+        required_relation_ids=required_relations,
     )
 
     ir: dict[str, Any] = {"ir_version": IR_VERSION}
@@ -999,6 +1026,7 @@ def _apply_truncation(
     rank_by_card: dict[str, int],
     *,
     required_card_ids: frozenset[str] = frozenset(),
+    required_relation_ids: frozenset[str] = frozenset(),
 ) -> tuple[
     list[_NormalizedCard],
     list[dict[str, str]],
@@ -1033,7 +1061,21 @@ def _apply_truncation(
         truncation.reasons.add("MAX_CARDS")
 
     if len(relations) > MAX_RELATIONS:  # step 3b
-        relations = relations[:MAX_RELATIONS]
+        required_relations = [
+            relation for relation in relations if relation["id"] in required_relation_ids
+        ]
+        if len(required_relations) != len(required_relation_ids):
+            raise IRGenerationError(
+                "required_relation_missing",
+                "A route-required relation was lost before relation-budget selection.",
+            )
+        optional_relations = [
+            relation for relation in relations if relation["id"] not in required_relation_ids
+        ]
+        relations = required_relations + optional_relations[
+            : MAX_RELATIONS - len(required_relations)
+        ]
+        relations.sort(key=lambda item: (item["type"], item["from"], item["to"]))
         truncation.reasons.add("MAX_RELATIONS")
 
     if sum(card.char_len for card in cards) > MAX_TEXT_CHARS:  # step 4

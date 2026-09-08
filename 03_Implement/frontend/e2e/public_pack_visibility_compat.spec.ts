@@ -84,7 +84,7 @@ test("keeps an explicit missing-pack error visible without falling back to the A
 
   await page.goto("/?locale=ja&pack=missing-pack");
 
-  await expect(page.getByRole("status")).toContainText("公開パックが見つかりません: missing-pack");
+  await expect(page.getByTestId("status-message")).toContainText("公開パックが見つかりません: missing-pack");
   await expect.poll(() => apiDocumentRequested).toBe(false);
 });
 
@@ -95,7 +95,7 @@ test("localizes a malformed public-pack index response", async ({ page }) => {
 
   await page.goto("/?locale=ja&pack=missing-pack");
 
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.getByTestId("status-message")).toContainText(
     "公開パックの一覧情報をJSONとして読み込めませんでした。packs/index.json を確認してください。"
   );
 });

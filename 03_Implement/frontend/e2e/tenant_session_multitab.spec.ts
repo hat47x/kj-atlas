@@ -149,6 +149,17 @@ async function installSaasServer(context: BrowserContext, state: ServerState) {
       await fulfillJson(route, 200, { providerKind: "none" });
       return;
     }
+    if (url.pathname === "/api/docs" && request.method() === "GET") {
+      const doc = state.documents[state.activeTenantId];
+      await fulfillJson(route, 200, [{
+        id: doc.id,
+        title: doc.title,
+        created_by: "principal-1",
+        lifecycle_state: "active",
+        updated_at: doc.updatedAt,
+      }]);
+      return;
+    }
     if (url.pathname === "/api/docs/doc_phase1_canvas") {
       const expectedVersion = request.headers()[TENANT_SESSION_HEADER];
       if (expectedVersion !== state.tenantSessionVersion) {
@@ -591,6 +602,104 @@ test("stale session version after tenant switch surfaces 409 and blocks retry", 
   const blockedHeading = page.getByRole("heading", { name: "We couldn’t verify access" });
   await expect(blockedHeading).toBeVisible();
   await expect(page.getByText("stale mutation after version change", { exact: true })).toHaveCount(0);
+
+  await context.close();
+});
+
+test("tenant switch reloads recent documents and query presets from the new tenant scope", async ({ browser }) => {
+  const state = createServerState();
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    const seedMarker = "kj-atlas-e2e-tenant-storage-ui-seeded";
+    if (window.sessionStorage.getItem(seedMarker) === "1") {
+      return;
+    }
+
+    const principalId = "principal-1";
+    const prefixFor = (tenantId: "tenant-a" | "tenant-b") => (
+      `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
+    );
+    const scopedKey = (tenantId: "tenant-a" | "tenant-b", baseKey: string) => (
+      `${prefixFor(tenantId)}${encodeURIComponent(baseKey)}`
+    );
+
+    window.localStorage.setItem(
+      scopedKey("tenant-a", "kj-atlas/recent-doc-ids"),
+      JSON.stringify(["doc_tenant_a_recent"]),
+    );
+    window.localStorage.setItem(
+      scopedKey("tenant-b", "kj-atlas/recent-doc-ids"),
+      JSON.stringify(["doc_tenant_b_recent"]),
+    );
+    window.localStorage.setItem(
+      scopedKey("tenant-a", "kj-atlas:ce3:patch-workspace-presets:v1"),
+      JSON.stringify([{ id: "preset-tenant-a", name: "Tenant A preset", scope: "all", depth: 1, filters: ["alpha"] }]),
+    );
+    window.localStorage.setItem(
+      scopedKey("tenant-b", "kj-atlas:ce3:patch-workspace-presets:v1"),
+      JSON.stringify([{ id: "preset-tenant-b", name: "Tenant B preset", scope: "all", depth: 1, filters: ["beta"] }]),
+    );
+    window.sessionStorage.setItem(seedMarker, "1");
+  });
+  await installSaasServer(context, state);
+  const page = await context.newPage();
+
+  const openRecentDialog = async () => {
+    await page.getByRole("menuitem", { name: "File", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Open recent document…" }).click();
+    const dialog = page.locator('[data-ui-region="recent-documents-dialog"]');
+    await expect(dialog).toBeVisible();
+    return dialog;
+  };
+
+  const closeWorkMode = async () => {
+    const workMode = page.locator('[data-ui-region="work-mode"]');
+    if (!await workMode.isVisible().catch(() => false)) {
+      return;
+    }
+    await page.keyboard.press("Escape");
+    if (await workMode.isVisible().catch(() => false)) {
+      await page.keyboard.press("Escape");
+    }
+    await expect(workMode).toBeHidden();
+  };
+
+  await openWorkspace(page);
+
+  let dialog = await openRecentDialog();
+  await expect(dialog.locator('option[value="doc_tenant_a_recent"]')).toHaveCount(1);
+  await expect(dialog.locator('option[value="doc_tenant_b_recent"]')).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Close" }).click();
+
+  await openAdvancedWorkMode(page);
+  await selectWorkModeTab(page, "merge");
+  const workspace = page.getByTestId("ce3-workspace-panel");
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole("button", { name: "Run Tenant A preset" })).toBeVisible();
+  await expect(workspace.getByRole("button", { name: "Run Tenant B preset" })).toHaveCount(0);
+  await closeWorkMode();
+
+  await page.getByLabel("Current workspace: Tenant A").selectOption("tenant-b");
+  await expect(page.getByLabel("Current workspace: Tenant B")).toBeVisible();
+  await expect(page.getByRole("button", { name: "tenant-b confidential card" })).toBeVisible();
+
+  dialog = await openRecentDialog();
+  await expect(dialog.locator('option[value="doc_tenant_b_recent"]')).toHaveCount(1);
+  await expect(dialog.locator('option[value="doc_tenant_a_recent"]')).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Close" }).click();
+
+  await openAdvancedWorkMode(page);
+  await selectWorkModeTab(page, "merge");
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole("button", { name: "Run Tenant B preset" })).toBeVisible();
+  await expect(workspace.getByRole("button", { name: "Run Tenant A preset" })).toHaveCount(0);
+
+  const tenantAStorageKeys = await page.evaluate(() => {
+    const tenantPrefix = `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent("tenant-a")}/${encodeURIComponent("principal-1")}/`;
+    return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
+      .filter((key): key is string => typeof key === "string" && key.startsWith(tenantPrefix));
+  });
+  expect(tenantAStorageKeys).toEqual([]);
 
   await context.close();
 });

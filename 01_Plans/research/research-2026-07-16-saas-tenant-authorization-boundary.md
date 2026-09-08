@@ -222,7 +222,7 @@ SaaSでは「管理者」を1種類にしない。
 
 - `02_Architecture/enterprise_architecture.html`（現行はintegration readiness、SaaS multi-tenant非目標）
 - `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）
-- `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - `02_Architecture/api.md` §8、§9
 - `02_Architecture/data_model_operations_overview.html` §2、§4、§5.2
 - `02_Architecture/runtime_parameter_registry.md`（現行profilesとaccess-control設定）

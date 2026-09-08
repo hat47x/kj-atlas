@@ -122,32 +122,41 @@ AI 支援機能（レイアウト提案、マージ候補、ナラティブ生�
 
 ## 全 ADR 一覧（認証関連のみ）
 
-| ADR | 状態 | 概要 |
-|---|---|---|
-| ADR-0020 | Accepted | OIDC/SAML 認証アーキテクチャ |
-| ADR-0059 | Accepted | SaaS テナント認可境界 |
-| ADR-0061 | Accepted | アクティブテナントセッション |
-| ADR-0063 | Accepted | trusted auth edge（JWT 検証） |
-| ADR-0064 | Accepted | SAML/OIDC/Broker/JWT 協調フロー |
+この表は関連ADRへの入口です。採択・置換などの状態は各ADR本文を正とし、この索引では複製しません。
+
+| ADR | 概要 |
+|---|---|
+| ADR-0020 | OIDC/SAML 認証アーキテクチャ |
+| ADR-0059 | SaaS テナント認可境界 |
+| ADR-0061 | アクティブテナントセッション |
+| ADR-0063 | trusted auth edge（JWT 検証） |
+| ADR-0064 | SAML/OIDC/Broker/JWT 協調フロー |
 
 全 ADR 一覧は [`01_Plans/adr/`](../01_Plans/adr/) を参照。
 
 ---
 
-## 全 Issue 一覧（テナント関連のみ）
+## テナント関連 Issue の入口
 
-| Issue | 状態 | 概要 |
-|---|---|---|
-| SAAS-TENANT-01 | In Progress | テナント基盤・ストレージ |
-| SAAS-TENANT-AUTHEDGE-01 | Draft (解決済) | trusted auth edge 実装 |
-| SAAS-TENANT-FK-01 | Done | 監査テーブル複合 FK |
-| SAAS-TENANT-FK-02 | Done | 大文字小文字非依存 index |
-| SAAS-TENANT-FK-03 | Done | レガシー identity lookup index |
-| SAAS-TENANT-MIGRATION-01 | Done | downgrade データ安全 |
-| SAAS-TENANT-CAP-01 | Done | null membership と capability |
-| SEC-HTTP-02 | Done | 403/404 非対称性 |
-| SAAS-TENANT-SURFACE-01 | Done | フロントエンド呼出し元分類 |
-| SAAS-TENANT-UX-01 | Done | provider-status 生成ガード外 |
-| SAAS-TENANT-BUDGET-01 | Done | CB/PB 宣言 |
-| SAAS-TENANT-E2E-01 | Draft | AI mutation E2E instrumentation |
-| QA-E2E-SAAS-01 | Draft | TenantSession UI E2E coverage |
+この表は、Architectureを追うときに関連しやすいIssue IDを見つけるための**トピック索引**です。Issueのライフサイクル状態はここでは管理しません。
+
+- activeなIssueの正本: [`01_Plans/issues/`](../01_Plans/issues/)
+- 完了したIssueの正本: [`01_Plans/issues/done/`](../01_Plans/issues/done/)
+
+Issueがactiveからdoneへ移動しても、このArchitecture索引へ状態を複製して追随させません。現在の状態・完了根拠・残条件はIssue正本で確認してください。
+
+| Issue | 概要 |
+|---|---|
+| SAAS-TENANT-01 | テナント基盤・ストレージ |
+| SAAS-TENANT-AUTHEDGE-01 | trusted auth edge 実装 |
+| SAAS-TENANT-FK-01 | 監査テーブル複合 FK |
+| SAAS-TENANT-FK-02 | 大文字小文字非依存 index |
+| SAAS-TENANT-FK-03 | レガシー identity lookup index |
+| SAAS-TENANT-MIGRATION-01 | downgrade データ安全 |
+| SAAS-TENANT-CAP-01 | null membership と capability |
+| SEC-HTTP-02 | 403/404 非対称性 |
+| SAAS-TENANT-SURFACE-01 | フロントエンド呼出し元分類 |
+| SAAS-TENANT-UX-01 | provider-status 生成ガード外 |
+| SAAS-TENANT-BUDGET-01 | CB/PB 宣言 |
+| SAAS-TENANT-E2E-01 | AI mutation E2E instrumentation |
+| QA-E2E-SAAS-01 | TenantSession UI E2E coverage |

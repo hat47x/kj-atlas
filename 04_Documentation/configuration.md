@@ -19,7 +19,16 @@
 
 ## 起動面ごとの配送範囲（重要）
 
-このページの `export KJ_ATLAS_*` 例は、backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は `KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけを `api` コンテナへ配送します。他のキー（`KJ_ATLAS_API_KEY` や `KJ_ATLAS_ALLOW_JIT_PROVISIONING` を含む）は、Compose の `api.environment` に明示的に追加しない限り、`export` しても標準 Compose 経由では `api` へ届きません。キーごとの配送範囲は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）で確認してください。
+このページの `export KJ_ATLAS_*` 例は、特記がない限り backend を直接起動する場合の設定例です。標準 Docker Compose (`docker-compose.yml`) は、次の公開キーを明示的な配送面として持ちます。この2行は `01_Plans/tests/test_configuration_compose_delivery_contract.py` で Compose 定義と照合します。
+
+| Compose surface | 配送される公開キー | 挙動 |
+| --- | --- | --- |
+| `api.environment` | `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_APP_REVISION`, `KJ_ATLAS_API_KEY`, `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | profile・DB・provider は Compose 既定値を持つ。revision・API key・JIT は host で設定された場合だけ pass-through する。 |
+| `web.build.args` | `KJ_ATLAS_FRONTEND_API_BASE`, `KJ_ATLAS_RUNTIME_PROFILE`, `KJ_ATLAS_APP_REVISION` | API base は標準 Compose では `/api` に固定。profile と revision は frontend build 時に確定する。 |
+
+これとは別に、`KJ_ATLAS_WEB_PORT` は loopback 公開ポートを、`KJ_ATLAS_POSTGRES_DB` / `KJ_ATLAS_POSTGRES_USER` / `KJ_ATLAS_POSTGRES_PASSWORD` は db コンテナの vendor 設定と既定 DB URL の組み立てを制御します。上表にない backend 設定は、`Delivery surface` が `direct` の場合、標準 Compose へは届きません。必要な接続系設定は組織側 overlay で関連キーを一組として配送してください。キーごとの正本は [runtime_parameter_registry.md の Backend settings 表](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)です。
+
+標準 Compose は同梱の `evaluation` 用スタックです。`KJ_ATLAS_RUNTIME_PROFILE` 自体は `enterprise-production` / `saas-multitenant` も backend と frontend へ配送できますが、標準 `api.environment` は両profileで起動必須の `KJ_ATLAS_ADMIN_API_KEY` を配送せず、SaaSで必要な外部adapter・OAuth・session系の `direct` キーも配送しません。そのためprofile名だけを変更しても起動はfail-fastします。これらのprofileをComposeで使う場合は、組織側overlayで各profileの必須キー一式を明示配送してください。
 
 ## 公開設定と内部adapter境界
 
@@ -54,10 +63,10 @@
 実装既定値（未設定時に使われる値）と、運用で推奨する値は異なる場合があります。
 迷った場合は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
 
-- `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
-- `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
-- `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
-- `saas-multitenant`: PostgreSQL共有認証状態、外部PDP、外部document binding、外部tenant capability、JIT無効、deny fail-safeをすべて満たす場合だけ起動します。
+- `local-dev`: **起動hard gateは追加なし**。SQLite + `KJ_ATLAS_LLM_PROVIDER=none` を推奨し、未登録header userを自動作成する場合だけJITを明示 `true`。
+- `evaluation`: **profile単体の起動hard gateは追加なし**。標準ComposeではPostgreSQL + LLM `none` + audit/access-control `noop` を推奨。
+- `enterprise-production`: **起動hard gate**は別値の `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY`。JIT `false`、LLM `none`、fail-safe `read_only` または `deny` は運用推奨。
+- `saas-multitenant`: **起動hard gate**は `KJ_ATLAS_ADMIN_API_KEY`、PostgreSQL、外部PDP/document binding/tenant capabilityと各endpoint、JIT無効、deny fail-safe、OAuth authorize endpoint、auth-session hash key。OAuth BFFのlogin開始にはredirect URI + client ID、callback code交換にはtoken endpoint + redirect URI + client ID + client secretの完全セットが必要。これらは起動hard gateではなく、欠損時は該当requestを503で拒否。
 
 `KJ_ATLAS_RUNTIME_PROFILE`でprofile名を指定します。Docker Composeの既定は`evaluation`、backendを直接起動したときの未指定既定は`local-dev`です。
 
@@ -72,7 +81,6 @@ Docker Compose の既定値で起動する場合、通常は追加設定なし�
 export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
-export KJ_ATLAS_FRONTEND_API_BASE=/api
 export KJ_ATLAS_WEB_PORT=8080
 ```
 
@@ -94,77 +102,78 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | --- | --- | --- |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `local-dev` | `local-dev`, `evaluation`, `enterprise-production`, `saas-multitenant`。SaaSは共有認証表を含む最新migrationと必須policyを起動前検査。 |
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使うSQLAlchemy接続URL。正式対応DB、検証済みdriver、single-tenant／shared-schema SaaSの範囲は[DB対応表](../02_Architecture/database_portability.md)を正本とする。driver省略URLと対応済みasync URLは検証済み同期driverへ正規化され、未検証driverと未知DBはengine生成前に拒否される |
-| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
-| `KJ_ATLAS_LOG_LEVEL` | `INFO` | 構造化（JSON）ログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`/`NOTSET`、未知値は `INFO` へフォールバック |
-| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。`/version` と構造化ログ、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |
+| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external`, `deepseek` |
+| `KJ_ATLAS_LOG_LEVEL` | `INFO` | アプリケーションログ（JSON／人間可読）とuvicornログの出力レベル（OPS-OBSERV-01）。`CRITICAL`/`ERROR`/`WARNING`/`INFO`/`DEBUG`、未知値（`NOTSET` を含む）は `INFO` へフォールバック |
+| `KJ_ATLAS_APP_REVISION` | `unknown` | ビルドリビジョン（OPS-OBSERV-01）。1〜64文字のASCII英数字・`.`・`_`・`-`だけをcanonical値として受理し、それ以外は`unknown`へ丸める。`/version` と全アプリケーションログ（JSON／人間可読）、frontend 診断バンドルの `app.revision` に反映。Compose では build-arg + `api.environment` から配線 |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLMのHTTPSまたはloopback HTTP base URL |
 | `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLMで使う256文字以下のmodel ID |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLMのHTTPSまたはloopback HTTP base URL |
 | `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLMで使う256文字以下のmodel ID |
-| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
+| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | 互換名は escalation だが、現行実装では large-scale provider kind の実行gate。`false` では primary `large-scale`/`external` の起動readinessを満たさず、model registry経由のregistered large-scale providerも利用不可。`LargeScaleProvider.generate()` 自体も拒否する。利用には別途 `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` も必須 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale接続を許可するhostのカンマ区切り。URLやwildcardは不可 |
-| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
-| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。`KJ_ATLAS_LLM_PROVIDER=deepseek` 時は必須 |
-| `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL |
-| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-chat` | DeepSeek API に渡すmodel ID |
-| `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定 | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
-| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction / assess_card_importance）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
-| `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
-| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | 管理面（`/admin/provision/**`）を `X-Admin-Api-Key` で保護。業務面キーでは到達不可。`KJ_ATLAS_API_KEY`と同じ値は起動時に拒否。`enterprise-production` / `saas-multitenant` では**必須**（未設定なら起動しない） |
-| `KJ_ATLAS_LOG_JSON` | `true` | ログを1行1JSONで出力。`tenantId` / `docId` / `requestId` はこの経路で出力される（OPS-OBSERV-01） |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
-| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
-| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
-| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログの HTTP 連携用 API key |
+| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | `provider_unavailable` / `provider_timeout` を成功応答へ切り替えず、`none` metadata（`fallback_to_none=true`, `execution_path=<provider>->none`）付き `ProviderDisabledError` としてfail-closedする。`provider_validation` はfallback対象外。`false` では元の `ProviderRequestError` を維持する |
+| `KJ_ATLAS_DEEPSEEK_API_KEY` | 未設定 | DeepSeek API 認証キー。primary `KJ_ATLAS_LLM_PROVIDER=deepseek` では起動readinessの必須値。model registryのregistered DeepSeek providerも `api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY` の場合に同じ値をrequest-timeで解決し、未設定・非canonicalなら provider unavailable としてfail-closedする |
+| `KJ_ATLAS_DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API のbase URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |
+| `KJ_ATLAS_DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek API に渡す256文字以下のcanonical model ID（空白・制御文字・backslash不可） |
+| `KJ_ATLAS_DEEPSEEK_THINKING_MODE` | `disabled` | DeepSeek V4 thinking mode（`disabled` / `enabled`）。primary DeepSeek とmodel registry経由のregistered DeepSeekの送信payload `thinking.type` に反映し、local / large-scaleのgeneric HTTP payloadには作用しない。旧既定のnon-thinking挙動を維持するため既定はdisabled |
+| `KJ_ATLAS_LLM_TASK_MODEL_MAP` | 未設定（空文字） | タスク別モデル割当（`task=model,...`）。未設定タスクは既定モデル |
+| `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` | 未設定 | final_judgement系タスク（check_narrative / detect_contradiction）の既定モデル。未設定時は既定モデルへフォールバック（AI-ROUTE-01 MMR-04） |
+| `KJ_ATLAS_API_KEY` | 未設定 | business-plane APIを `X-API-Key` で保護。`enterprise-production` では起動必須。`saas-multitenant` はtrusted JWT/cookie identityを使うためbusiness key自体は起動必須ではない。`/healthz` / `/readyz` / `/version` は運用probeとして対象外。`/admin/*` もbusiness key対象外で、別のcontrol-plane認可（`X-Admin-Api-Key` / provision capability）を使う |
+| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | control-plane の Stage A bootstrap 資格情報。`X-Admin-Api-Key` で提示する。Stage B では trusted SaaS session の `tenant.provision` capability でも `/admin/provision/**` を認可でき、request に admin bearer は不要。業務面 `KJ_ATLAS_API_KEY` は管理面で受理せず、同じ秘密値を `KJ_ATLAS_API_KEY` と `KJ_ATLAS_ADMIN_API_KEY` の両方へ設定する構成も起動時に拒否する。`enterprise-production` / `saas-multitenant` では設定自体が**必須**（未設定なら起動しない）。`local-dev` / `evaluation` は admin key 未設定時だけ development 用に管理面を開く |
+| `KJ_ATLAS_LOG_JSON` | `true` | 既定は1行1JSON。`true` では `extra={...}` の `tenantId` / `docId` / `queueLength` / LLM `trace_id` などを構造化fieldとして出力する。`false` ではこれらextra fieldは出力せず、人間可読書式に `requestId` / `actorRefHash` / `appRevision` を残す（OPS-OBSERV-01） |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit export のdispatch master gate。`false` ではvalidation済みtransport設定に関係なく外部送信せず `NoopAuditTransport` を使う。ただし `KJ_ATLAS_AUDIT_TRANSPORT=http` の完全設定validationは独立して適用され、export無効でもendpoint欠損は起動時に拒否する。`true` のときだけtransport設定が実送信に使われる |
+| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http`。`http` はexport flagと独立してendpoint必須の完全設定validationを受ける。validation通過後、実送信に使われるのは `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合だけで、export無効時は `http` 指定でも dispatcher は `NoopAuditTransport` を使う |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可し、`KJ_ATLAS_AUDIT_TRANSPORT=http` 時は必須 |
+| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログの HTTP 連携用 API key。非空のcanonical bearer値（空白・制御文字不可） |
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | 監査ログの HTTP 連携の timeout 秒数 |
-| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 監査ログキューの上限 |
-| `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS` | `5.0` | 同一論理操作の監査イベント重複排除ウィンドウ（SEC-AUDIT-DUP-01）。`0` で無効化 |
-| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中に監査ログの HTTP 連携を許可 |
+| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 外部監査送信失敗時のfail-open retry buffer上限。正常送信時やexport無効時はqueueへ積まない |
+| `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS` | `5.0` | `context-audit` / `export-audit` が渡す同一論理操作のdedup keyに対する重複排除ウィンドウ（SEC-AUDIT-DUP-01）。`view` / `LLM` / `proposal` 監査には適用しない。`0` で無効化 |
+| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | `AuditEvent.safeMode=true` の外部監査送出を許可するevent-level gate。`false` ではviewおよびsafeMode=trueのcontext/export系を抑止する。LLM / proposal監査はproducerがsafeMode=falseを明示するため対象外 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
-| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | Org/Restricted 文書の `policyRef` 欠損または access-control adapter 障害時の fail-safe。`read_only` は read だけ allow + read-only、write / export / share は deny。`deny` は read を含む全 action を deny |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う必須のPDP接続先 URL。credential/query/fragmentなしのHTTPS、またはloopback HTTPだけを許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter で使う IdP issuer |
-| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` | `none` | 文書の非秘密binding IDを外部policy参照へ解決するresolver。`none`, `external_http`。現行releaseではSaaS runtime未配線 |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | PDPへ渡す `x-acl-auth-mode` metadata。`none`, `oidc`, `saml`。この値自体は `Authorization` headerを生成・変更せず、固定bearerは `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` で別設定する |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token。非空のcanonical bearer値（空白・制御文字不可） |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | PDPへ `x-idp-issuer` として渡すIdP issuer metadata。設定する場合は `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` と endpoint が必須。canonical header valueとして検査するが、この設定自体はJWT/SAML issuerをローカル検証しない |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER` | `none` | 文書の非秘密binding IDを外部policy参照へ解決するresolver。`none`, `external_http`。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、server-owned document resource解決へ配線 |
 | `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT` | 未設定 | binding resolverのHTTPS接続先。ローカル検証だけloopback HTTP可 |
-| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY` | 未設定 | binding resolver専用bearer token。Git、DB、監査へ保存しない |
+| `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY` | 未設定 | binding resolver専用bearer token。非空のcanonical bearer値（空白・制御文字不可）。Git、DB、監査へ保存しない |
 | `KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS` | `1.5` | binding resolverのtimeout秒数（0より大きく30以下） |
-| `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER` | `none` | tenantごとの有効権限を解決するresolver。`none`, `external_http`。現行releaseではauth edge未配線 |
+| `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER` | `none` | tenantごとの有効権限を解決するresolver。`none`, `external_http`。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、tenant-scoped capability resolverとして配線 |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT` | 未設定 | capability resolverのHTTPS接続先。ローカル検証だけloopback HTTP可 |
-| `KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY` | 未設定 | capability resolver専用bearer token。Git、DB、監査へ保存しない |
+| `KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY` | 未設定 | capability resolver専用bearer token。非空のcanonical bearer値（空白・制御文字不可）。Git、DB、監査へ保存しない |
 | `KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS` | `1.5` | capability resolverのtimeout秒数（0より大きく30以下） |
-| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | 未登録 identity の JIT provisioning を許可（既定は fail-closed。SEC-RATE-LIMIT-01・2026-08-13 変更） |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | ADR-0074 BFF: OAuth authorization-code フロー開始 URL。`saas-multitenant` では必須（`TrustedSaasRuntimePolicy` が起動前検査） |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID |
-| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない） |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `false` | single-tenant の forwarded-header identity path でだけ未登録identityのJIT provisioningを許可する。`true` なら user・identity binding・local-default membershipを作成し、`false` なら403 `identity_not_provisioned`。`saas-multitenant` は起動時に `false` が必須で、trusted JWT/cookie pathはこの設定に関係なく未登録subjectを403で拒否する（SEC-RATE-LIMIT-01・2026-08-13変更） |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT` | 未設定 | ADR-0074 BFF: OAuth authorization-code フロー開始 URL。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。`saas-multitenant` では必須（`TrustedSaasRuntimePolicy` が起動前検査） |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT` | 未設定 | ADR-0074 BFF: code 交換用 token endpoint。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可。起動必須ではないが、callbackでは redirect URI / client ID / client secret と4項目完全セットで必要。欠損時503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` | 未設定 | ADR-0074 BFF: OAuth callback の redirect URI。credential/query/fragment なしの HTTPS、または loopback HTTP だけを許可し、path は `/session/callback` 固定。起動必須ではないが、login開始では client ID とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID` | 未設定 | ADR-0074 BFF: OAuth client ID。2,048文字以下のcanonical値（空白・制御文字不可）。起動必須ではないが、login開始では redirect URI とともに必要、callbackでは4項目完全セットの一部。欠損時は該当requestを503 |
+| `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET` | 未設定 | ADR-0074 BFF: OAuth client secret（秘密。ログ・監査・DBへ保存しない）。非空のcanonical bearer値（空白・制御文字不可）。起動必須ではないがcallbackの4項目完全セットで必要。欠損時503 |
 | `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TIMEOUT_SECONDS` | `5.0` | ADR-0074 BFF: broker HTTP timeout 秒数（0 より大きく 30 以下） |
-| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | ADR-0074 decision 2: 認証 session cookie の HMAC-SHA256 キー（64 文字 lowercase hex = 32 bytes）。`saas-multitenant` では必須。生cookie値はDBへ保存せず、このキーでハッシュする |
+| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` | 未設定 | ADR-0074 / ADR-0080: member SaaS auth session、guest auth session、guest redeem state のHMAC-SHA256導出に共有するキー（64文字 lowercase hex = 32 bytes）。`saas-multitenant` では必須。guest redeem state はdomain separationを通し、生cookie/state値はDBへ平文保存しない。キーをローテーションすると既存member/guest sessionと未使用redeem stateは無効化される |
 | `KJ_ATLAS_MAX_DOCUMENT_BYTES` | `20971520` | DocumentV1 保存ペイロードの UTF-8 バイト上限（20 MiB・SEC-DOC-BOUND-01） |
-| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `10000` | DocumentV1 のカード件数上限（SEC-DOC-BOUND-01） |
+| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `50000` | DocumentV1 のカード件数（SEC-DOC-BOUND-01。meta-dogfoodingの数万枚規模と20,000-card targetに対する余白を確保） |
 | `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` | `false` | AI リクエストの `allowUnreviewedText` 緩和を許可するか（SEC-AI-SAFEMODE-01・ADR-0068） |
-| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
-| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
-| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 |
-| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name を受け取る header 名 |
-| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject を受け取る header 名 |
-| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | JWT 署名検証の algorithm allowlist（カンマ区切り）。HMAC 系および `none` は常に拒否。 |
-| `KJ_ATLAS_TENANT_CLAIM_NAME` | `tenant_ref` | JWT 内の tenant 外部識別子を運ぶ claim 名。`tenant_identity_providers.external_tenant_ref` と照合。 |
-| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | header 認証の信頼できるプロキシ CIDR（カンマ区切り）。未設定時は全オリジン許可（開発用、警告ログ）。本番では設定を推奨。 |
+| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | single-tenant の forwarded-header identity path で external identity provider を受け取る header 名。値はtrim・lowercase正規化され、欠損/空値は `header`。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | single-tenant の forwarded-header identity path で `AUTH_SUBJECT_FIELD` 欠損時の external UID/subject fallback を受け取る legacy header 名。内部 `users.id` を直接指定しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.email` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | single-tenant の forwarded-header identity path でJIT provisioning時に新規 `UserRow.display_name` を初期化する header 名。既存user属性は更新しない。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | single-tenant の forwarded-header identity path で external UID/subject の第一候補を受け取る header 名。欠損時だけ `AUTH_USER_FIELD` へfallbackする。`saas-multitenant` の trusted JWT/cookie path では使用しない |
+| `KJ_ATLAS_JWT_ALGORITHMS` | `RS256,ES256` | trusted OIDC/JWT 署名検証の algorithm allowlist（カンマ区切り）。受理値は `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`。空list、HMAC 系、`none` を含む未知値は Settings validation で起動時に拒否し、未指定時は既定 `RS256,ES256` を使う。 |
+| `KJ_ATLAS_TENANT_CLAIM_NAME` | `tenant_ref` | trusted JWT 内の tenant 外部識別子を運ぶclaim名。`tenant_ref` は既定値で固定名ではない。非空・256文字以下・前後空白なし・空白文字なし・printableなカスタム名を指定でき、値は `tenant_identity_providers.external_tenant_ref` と照合する。 |
+| `KJ_ATLAS_TRUSTED_PROXIES` | （空） | single-tenant forwarded-header identity path の信頼できるsource proxy CIDR（カンマ区切り）。設定時は `request.client.host` をauth header読取より先に検査するため、非信頼IPはheaderの有無にかかわらず403 `untrusted_proxy`。未設定時はsource gateを行わず警告ログを1回出す。本番では設定を推奨。`saas-multitenant` のtrusted JWT/cookie pathでは使用しない。 |
 | `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決 adapter。`user_id` または `sso_subject` |
 | `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 同値性判定 mode |
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制 |
 | `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | CE4 audit 欠損を fail-closed にする |
-| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
-| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離 |
+| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | docs CE4 の `POST /docs/{doc_id}/context-audit` で `sourceBundleHash=mock:<hash>` を許容する policy。proposal / CE4 resolve の受理契約は別で、この switch の対象外 |
+| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離する fail-closed 契約。現在は `true` 固定で、`false` は起動時に拒否 |
 
 ## Compose / frontend build 環境変数
 
-次の表は Docker Compose と frontend build で利用者が設定できる全環境変数です。これらもすべて `KJ_ATLAS_` で始まります。
+次の表は、標準 Docker Compose が host から参照する公開キーと、frontend を直接 build するときに設定できる公開キーです。これらもすべて `KJ_ATLAS_` で始まります。標準 Compose で host から変更できない build 値は用途欄に明記します。
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
@@ -173,7 +182,8 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
 | `KJ_ATLAS_RUNTIME_PROFILE` | `evaluation`（Compose） | backendとfrontendへ同じ実行profileを渡す。`saas-multitenant`はPostgreSQL共有認証表と必須外部adapterが必要 |
-| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend が呼び出す API base path |
+| `KJ_ATLAS_APP_REVISION` | `unknown` | backend `/version`・全アプリケーションログと frontend 診断bundleを同じbuildへ結び付ける。標準 Compose は api へ pass-through し、web build へも渡す |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend direct build の API base path。標準 Compose は `/api` を固定注入するため host 側の値では変更できない |
 
 PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。
 
@@ -195,7 +205,6 @@ export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_RUNTIME_PROFILE=evaluation
 export KJ_ATLAS_WEB_PORT=8080
-export KJ_ATLAS_FRONTEND_API_BASE=/api
 ```
 
 ### API key 付き検証
@@ -208,9 +217,9 @@ export KJ_ATLAS_API_KEY='change-me'
 
 ## Frontend の API 接続先
 
-frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。値は `/` で始まる path のみ受理し、それ以外を指定した場合は frontend 側で `/api` にフォールバックします。
+frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。値は same-origin の絶対 path として扱い、`/` 自体または単一の `/` で始まる path だけを受理します。`//host` のような network-path reference、backslash、query (`?`)、fragment (`#`) を含む値や相対 path は受理せず、frontend 側で `/api` にフォールバックします。`/` は root API base として扱います。
 
-ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
+ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されます。標準 Compose は同梱 Nginx の `location /api/` と一致させるため frontend build に `/api` を固定注入し、host 側で `KJ_ATLAS_FRONTEND_API_BASE` を変更しても標準 Compose の API base は変更しません。別 path を使う場合は frontend を直接 build し、その path を backend へ配送する reverse proxy も同時に構成してください。
 
 直接frontend buildを実行する場合は、build前に`KJ_ATLAS_RUNTIME_PROFILE`と`KJ_ATLAS_FRONTEND_API_BASE`を設定します。profile未指定時はlocal-firstの`local-dev`相当です。空文字、未知値、前後空白を含む値はsingle-tenantへfallbackせずblocked画面になります。
 
@@ -226,7 +235,7 @@ npm run build
 export KJ_ATLAS_API_KEY='change-me'
 ```
 
-`/healthz` は API キーなしで確認できます。それ以外の API には次のヘッダーを付けます。
+`/healthz` / `/readyz` / `/version` は運用probeとして API キーなしで確認できます。`/admin/*` はbusiness API keyでは保護せず、`X-Admin-Api-Key` またはprovision capabilityによるcontrol-plane認可を使います。それ以外のbusiness-plane APIへアクセスする場合は次のヘッダーを付けます。
 
 ```bash
 curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
@@ -234,7 +243,7 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると画面からの読み込み・保存は 401 になります。API キーは `curl` などプログラムからのアクセス保護を想定したものです。ブラウザでの動作検証では未設定（既定）のまま使い、ブラウザ配信自体を保護する場合は前段に認証 proxy を置いてください（[security.md](security.md) 参照）。
 
-> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します。`local-dev` / `evaluation` では未設定ならbusiness API keyは無効のままです。`enterprise-production` はこのキーを起動必須とするため未設定では起動しません。`saas-multitenant` はtrusted JWT/cookie identityを使うためbusiness key自体は起動必須ではありません（control plane用 `KJ_ATLAS_ADMIN_API_KEY` は別途必須です）。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照。
 
 ## local LLM を使う
 
@@ -277,11 +286,11 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-アクセス制御で`external_http`を指定する場合、接続先（endpoint）は必須です。空の場合は`noop`へ縮退せず、設定エラーとして起動を拒否します。外部PDPを使わない場合は、adapterを明示的に`noop`へ戻してください。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutも起動時に拒否されます。
+アクセス制御で`external_http`を指定する場合、接続先（endpoint）は必須です。空の場合は`noop`へ縮退せず、設定エラーとして起動を拒否します。外部PDPを使わない場合は、adapterを明示的に`noop`へ戻し、endpointと固定bearerも同時に未設定へ戻してください。`noop`のままendpointまたは固定bearerだけを残す構成は起動時に拒否されます。endpointはcredential、query、fragment、空白、制御文字、backslashを含まないHTTPS URLにし、HTTPはloopbackだけで利用できます。IdP issuerを設定する場合も`external_http` adapterとendpointが必要で、どちらかを欠く構成は起動時に拒否されます。0以下または30秒超のtimeoutも起動時に拒否されます。
 
 監査HTTPも同じendpoint・bearer・timeout制約を適用します。`KJ_ATLAS_AUDIT_TRANSPORT=http`ではendpointが必須で、欠損時はnoopへ縮退せず起動を拒否します。`noop`のまま監査endpoint/API keyを残す設定や、`http`でendpointなしのままAPI keyだけを設定する構成も拒否されます。送信先を完全設定した後の一時的な監査送信失敗は、従来どおり本体機能を止めないfail-open方針です。
 
-### 文書policy binding resolver（将来SaaS用）
+### 文書policy binding resolver
 
 `document_access_metadata`に保存する値は非秘密のbinding IDとversionだけです。`external_http` resolverはこれらをactive tenant IDとともに信頼済みサービスへPOSTし、応答の`policyRef`をそのrequest内だけで利用します。raw policyRefやAPI keyをDB、監査、export、diagnosticsへ保存しません。
 
@@ -292,9 +301,9 @@ export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。現行releaseではadapterと検証境界までの実装で、予約中の`saas-multitenant` profileにはまだ配線されていません。この設定だけでSaaSや文書アクセス設定UIが有効になることはありません。
+接続先はcredential、query、fragmentを含まないHTTPS URLにします。HTTPは`localhost`、`127.0.0.1`、`::1`だけで利用できます。resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻し、`none`のままHTTP設定だけを残す構成は起動時に拒否されます。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、`ServerOwnedDocumentResourceResolver` の policy binding resolver として配線されます。このresolverだけでSaaSが成立するわけではなく、trusted auth edge、external access control、tenant capability resolver等の必須条件も同時に満たす必要があります。
 
-### Tenant capability resolver（将来SaaS用）
+### Tenant capability resolver
 
 `external_http` resolverは、server-resolved `principalId`、`tenantId`、`membershipId`だけを信頼済みpolicy serviceへPOSTし、既知の`effectiveCapabilities`と`capabilityVersion`を取得します。role/group名やclient指定tenantを送信・保存しません。
 
@@ -305,7 +314,7 @@ export KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY='set-in-secret-store'
 export KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS=1.5
 ```
 
-接続先とAPI keyにはbinding resolverと同じ制約を適用します。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。adapterと`GET /session/context`はapplication lifecycleへ配線済みですが、trusted SaaS identity resolverが未接続の既定状態ではsession routeも503で閉じます。この設定だけでSaaS profileは有効になりません。
+接続先とAPI keyにはbinding resolverと同じ制約を適用し、resolverを`none`へ戻す場合はendpoint/API keyも同時に未設定へ戻します。`none`のままHTTP設定だけを残す構成は起動時に拒否されます。未知capability、重複、余分なroles/groups field、不正version、timeoutは成功扱いにせず、APIでは`503 capability_resolution_unavailable`へ倒します。`saas-multitenant` では `external_http` が必須で、起動前にexternal componentを検査し、runtimeのtenant capability resolverとして配線されます。trusted SaaS identity / tenant / active-session adaptersも同profileでbundleとして導入されますが、required policyやactive IdPが欠ける構成は起動時にfail-fastします。
 
 ## 設定後の確認
 

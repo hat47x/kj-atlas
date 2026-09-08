@@ -91,7 +91,7 @@ BroadcastChannel、storage event、focus時再読込は利用者体験を改善�
 ## Traceability
 
 - Parent boundary: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`
-- Implementation: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- Implementation: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - API target: `02_Architecture/api.md` §10
 - UI input: `02_Architecture/design/master-data-settings-ui-ux-concept.md`, `02_Architecture/design/design-request-2026-07-round8.md`
 - Threat model: `THREAT_MODEL.md`

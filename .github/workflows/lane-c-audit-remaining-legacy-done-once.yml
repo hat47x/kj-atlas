@@ -1,0 +1,35 @@
+name: Lane C remaining legacy Done audit once
+
+on:
+  push:
+    branches:
+      - audit/lane-c-remaining-legacy-done-r3-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: List remaining Done-at-root memos
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, '01_Plans/issues')
+          import validate_active_issue_memos as v
+          root = Path('01_Plans/issues')
+          paths = v.discover_done_memos_at_root(root)
+          print(f'count={len(paths)}')
+          for p in paths:
+              print(p.name)
+          PY
+      - name: Validate lifecycle baseline
+        run: python 01_Plans/issues/validate_active_issue_memos.py

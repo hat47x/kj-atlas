@@ -157,6 +157,6 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 - Related: `THREAT_MODEL.md`
 - Related UI: `02_Architecture/design/master-data-settings-ui-ux-concept.md`
 - Related design request: `02_Architecture/design/design-request-2026-07-round8.md`
-- Implementation: `01_Plans/issues/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
+- Implementation: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Related governance: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`
 - Follow-up boundary: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`

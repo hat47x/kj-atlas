@@ -53,7 +53,7 @@ def _stub_generate(req: LLMRequest) -> LLMResponse:
     metadata = LLMCallMetadata(
         provider_kind="deepseek",
         provider_name="deepseek",
-        model_id="deepseek-chat",
+        model_id="deepseek-v4-flash",
         transport="http",
         requested_at="2026-08-12T00:00:00Z",
         trace_id="llm-eval-dryrun",

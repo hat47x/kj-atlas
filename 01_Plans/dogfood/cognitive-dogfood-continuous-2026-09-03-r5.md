@@ -66,7 +66,7 @@ R10では、`COGNITIVE-EVAL-01` の次の前進条件が追加の実験ハーネ
 
 今回の不整合は、公開ROADMAPと実装状態の正本を照合すれば再現でき、修正方法も明確である。既存 `VR-ROADMAP-01` の責務には収まらないため、F2として次を起票した。
 
-- `01_Plans/issues/issue-DOC-ROADMAP-01-public-roadmap-current-focus-drift.md`
+- `01_Plans/issues/done/issue-DOC-ROADMAP-01-public-roadmap-current-focus-drift.md`
 
 新しいADRは作らない。長期的な設計原則を新設する話ではなく、既存正本に公開文書を合わせる修正だからである。
 

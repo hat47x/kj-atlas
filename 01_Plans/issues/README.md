@@ -23,18 +23,18 @@
 
 ### Done配置のlegacy境界
 
-継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っている。これらを一括移動して大量の参照差分を作ることはしない。
+継続dogfood R18時点では、過去の運用差により `01_Plans/issues/` 直下に `Status: Done` のメモが58件残っていた。この58件はその後、正規の `01_Plans/issues/done/` へ段階的に移行され、2026-09-05に `LEGACY_DONE_AT_ROOT_BASELINE = 0` へ到達した。**現在、active rootに残るDone memoは0件であり、Done-at-rootを許容する移行期間は終了している。**
 
-一方、今後の完了メモまで同じ場所へ増やさない。`validate_active_issue_memos.py` は次の二つを独立に検査する。
+`validate_active_issue_memos.py` は、移行完了後も次の二つを独立に検査する。
 
-1. **件数ratchet**: 58件を一時的なlegacy baselineとして実件数との一致を要求する。既存legacyを58件から57件へ減らした場合は、同じ変更でvalidatorのbaselineも57へ下げる。こうして、一度減ったlegacy件数が古い上限まで増え直すことを防ぐ。最終的なbaselineは0である。
-2. **path identity guard**: R18 commit `88aebae242d5d1a24278b3247d3544aeaa1ad386` から一度だけ機械生成した `legacy_done_at_root_r18.json` を不変の歴史境界として扱う。現在active直下に残るDone memoのbasenameは、このR18集合の部分集合でなければならない。legacyを1件移動するのと同じ変更で別の新規Done-at-rootを1件増やし、件数を相殺することも拒否する。
+1. **件数境界**: `LEGACY_DONE_AT_ROOT_BASELINE = 0` と実件数の一致を要求する。今後、`Status: Done` のmemoがactive rootへ1件でも現れた場合はfailする。baselineを再び増やして例外を作る運用はしない。
+2. **path identity guard**: R18 commit `88aebae242d5d1a24278b3247d3544aeaa1ad386` から一度だけ機械生成した `legacy_done_at_root_r18.json` は、不変の歴史証拠として保持する。現在のDone-at-root集合は空集合なので、このmanifestは移行許可リストではなく「R18に何が存在していたか」を示す監査境界である。
 
-新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで `done/` へ移す。既存legacyを `done/` へ移して現在集合が縮むことは正しいため、identity manifestは更新しない。`legacy_done_at_root_r18.json` へ新規pathを追記して検査を通す運用は禁止し、固定R18 commitから得た歴史証拠として保持する。
+さらに `01_Plans/tests/test_legacy_done_root_references.py` は、R18 legacy Done 58件について、旧 `01_Plans/issues/<name>` が存在しないこと、現在の `01_Plans/issues/done/<name>` が存在すること、tracked filesに旧rootパス参照が再出現しないことを固定する。
 
-この件数とR18 path集合はDoneメモの正規配置を意味せず、「段階整理の現在地」と「これ以上legacyへ新規参入させない境界」を別々に保持するための一時的な契約である。
+新たにDoneへ遷移するメモは、参照先を必要に応じて同時更新したうえで、同じ変更で `done/` へ移す。`legacy_done_at_root_r18.json` へ新規pathを追記したり、`LEGACY_DONE_AT_ROOT_BASELINE` を0より大きく戻したりして検査を回避する運用は禁止する。
 
-このlegacy境界は「同じmemoを複数箇所へ置いてよい」という例外ではない。58件はactive直下に単独で残る過去のDone memoだけを指し、basename重複や `done/` 内active statusはlegacyとして許容しない。
+このlegacy境界は現在のDone配置に対する例外ではない。R18の58件という数とmanifestは移行履歴・監査証拠として残し、現行契約は **Done-at-root 0件** と **旧root参照0件** を維持することである。
 
 ## 必須メタデータ
 

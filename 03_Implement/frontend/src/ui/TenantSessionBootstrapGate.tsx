@@ -6,7 +6,6 @@ import {
 } from "react";
 
 import { t } from "../i18n/translate";
-import { redirectToBrokerLogin } from "../session/oauth_login";
 import {
   bootstrapTenantSession,
   type TenantSessionBlockReason,
@@ -44,6 +43,12 @@ const panelStyle = {
   background: "#ffffff",
   boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
 } as const;
+
+export function redirectToTenantSessionLogin(
+  location: Pick<Location, "assign"> = window.location,
+): void {
+  location.assign("/session/login");
+}
 
 export function TenantSessionLoadingView() {
   return (
@@ -85,7 +90,7 @@ export function TenantSessionBlockedView({
         {reason === "authentication_required" ? (
           <button
             type="button"
-            onClick={() => { void redirectToBrokerLogin(); }}
+            onClick={() => redirectToTenantSessionLogin()}
             style={{
               justifySelf: "start",
               border: "1px solid #2563eb",

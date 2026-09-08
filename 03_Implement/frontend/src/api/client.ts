@@ -12,19 +12,11 @@ import {
 } from "./session_bootstrap_policy";
 import { authorizationHeader } from "../session/token_store";
 import { csrfHeader } from "../session/csrf";
+import { resolveFrontendApiBase } from "./base_path";
 
-function resolveApiBase(): string {
-  const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
-
-  if (rawValue.length === 0) {
-    return "/api";
-  }
-
-  const normalized = rawValue.endsWith("/") ? rawValue.slice(0, -1) : rawValue;
-  return normalized.startsWith("/") ? normalized : "/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = resolveFrontendApiBase(
+  import.meta.env.KJ_ATLAS_FRONTEND_API_BASE,
+);
 
 export class ApiError extends Error {
   readonly status: number;
@@ -468,6 +460,13 @@ export type ProviderStatusSnapshot = {
   providerKind: ProviderKind;
   callCounts: Record<string, number>;
   tokenUsage: Record<string, { input: number; output: number }>;
+  tokenUsageCoverage: Record<string, {
+    completeCalls: number;
+    partialCalls: number;
+    missingCalls: number;
+  }>;
+  tokenUsageSource: "provider_reported_only";
+  tokenUsageAggregationScope: "current_process_by_provider_kind";
 };
 
 /**
@@ -489,6 +488,9 @@ export async function getProviderStatus(): Promise<ProviderStatusSnapshot> {
     providerKind: body.providerKind,
     callCounts: body.callCounts ?? {},
     tokenUsage: body.tokenUsage ?? {},
+    tokenUsageCoverage: body.tokenUsageCoverage,
+    tokenUsageSource: body.tokenUsageSource,
+    tokenUsageAggregationScope: body.tokenUsageAggregationScope,
   };
 }
 

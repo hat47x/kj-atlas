@@ -51,16 +51,21 @@ class DoneAtRootLegacyTest(unittest.TestCase):
         ))
 
     def test_moving_legacy_done_requires_baseline_update(self) -> None:
+        # Keep this contract testable after the repository's historical
+        # Done-at-root debt reaches zero. A synthetic positive baseline
+        # exercises the "debt shrank but baseline was not lowered" branch
+        # without deriving an impossible negative file count from live state.
+        synthetic_baseline = 2
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self._write_done(root, LEGACY_DONE_AT_ROOT_BASELINE - 1)
+            self._write_done(root, synthetic_baseline - 1)
 
             errors = validate_done_memo_location(
-                root, legacy_baseline=LEGACY_DONE_AT_ROOT_BASELINE
+                root, legacy_baseline=synthetic_baseline
             )
 
         self.assertTrue(any(
-            f"< {LEGACY_DONE_AT_ROOT_BASELINE}" in error for error in errors
+            f"< {synthetic_baseline}" in error for error in errors
         ))
 
     def test_done_directory_is_canonical_and_does_not_count_against_legacy_ceiling(self) -> None:

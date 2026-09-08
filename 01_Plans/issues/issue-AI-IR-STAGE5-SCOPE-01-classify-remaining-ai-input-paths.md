@@ -78,6 +78,9 @@ AIの仕事に必要な意味からrequired setを逆算する。IRに存在す�
 
 したがって本Issueの未完境界は変わらない。`check-narrative` を形式的にgeneric IRへ移すのではなく、`AI-IR-SCALE-01` でnamed provider/modelの実token予算を確認し、A/B双方向の全体照合を失わない方式を選んだ後に実装する。
 
+## 2026-09-05: `check-narrative` のA型relation欠落を別Issueで解消
+
+`check-narrative` のprompt自体にA型図解の明示的relation（`causal`/`negate`/`mutual`/`equivalence`/`related`）が渡っていない欠落を、scale問題とは分離して `AI-IR-CHECK-NARRATIVE-RELATIONS-01` で解消した。全Card・全Island coverageは変更せず、`Relations:` 節を追加しただけであり、本Issueが指すscale投影方式（IR移行・分割・実token予算）の未完はそのまま残る。
 
 ## Dependencies
 

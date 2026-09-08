@@ -633,6 +633,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
     - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
 - 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
+- **`AI-IR-CHECK-NARRATIVE-RELATIONS-01`**: promptは `doc.edges` の全件を `id` / `type` / `fromKind` / `fromId` / `toKind` / `toId` 付きで列挙する。ナラティブが図に無い因果・対立・同値等の論理接続を作っていないか（`kj_technique.md` §6 `KJT-SIGN-09`）をA/B双方向照合の判断材料にするためで、`fromKind`/`toKind` 未指定のlegacy edgeはcard端点として解釈する。IRへは移行していない（現行の全Card・全Island coverageを維持したままの追加であり、`AI-IR-SCALE-01` のscale方式決定を待つ）。
 
 **POST** `/ai/refine-card-text`
 
@@ -1015,12 +1016,16 @@ fail-safe マトリクス:
 
 ### 9.1 AuthContext 正規化
 
-- 入力ヘッダ（設定差し替え可）:
+- single-tenant の forwarded-header identity path の入力ヘッダ（設定差し替え可。`saas-multitenant` の trusted JWT/cookie path では使用しない）:
   - `KJ_ATLAS_AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
   - `KJ_ATLAS_AUTH_USER_FIELD`（既定 `x-forwarded-user`）
   - `KJ_ATLAS_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
   - `KJ_ATLAS_AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
   - `KJ_ATLAS_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
+- header意味:
+  - external UID は `AUTH_SUBJECT_FIELD` を第一候補とし、欠損時だけ legacy `AUTH_USER_FIELD` へfallbackする。`AUTH_USER_FIELD` は内部 `users.id` の指定ではない。
+  - provider はtrim・lowercase正規化し、欠損/空値は `header` とする。
+  - email/name はJIT provisioningで新規 `UserRow` を作る時の初期値にだけ使い、既存user属性をheaderで上書きしない。
 - 正規化後:
   - `AuthContext.userId`: `users.id`
   - `AuthContext.actorRef`: `user:<users.id>`
@@ -1032,7 +1037,7 @@ fail-safe マトリクス:
     - `user_id`: `user:<users.id>`（未認証は `actorRef` → `null`）
     - `sso_subject`: `user:sso:<provider>:<externalUid>`（不足時は `user_id` フォールバック）
   - 責務境界: resolverは reviewerRef/ownerRef生成のみを行い、reviewEvents/export/import schemaを変更しない（opaque string互換維持）。
-  - adapter未設定/不正値時は `user_id` フォールバック（既存 local運用維持）。
+  - adapter未設定時は Settings の既定値 `user_id` を使う。不正値は Settings validation で起動時に拒否し、公開設定経路ではフォールバックしない（factory 内部の未知 adapter 名への `user_id` フォールバックは防御的実装）。
 - 属性境界:
   - persist: `provider`, `external_uid`, `display_name`, `email`
   - transient only: `roles`, `groups`, `policyRef`, `amr`, `acr`, `aal`, `auth_time`, `trace_id`
@@ -1169,15 +1174,15 @@ export type AdminAgentRegistrationSummary = {
 
 - 非目標：本契約ではページング・検索・token roll（再発行による旧token継続失効付き差し替え）・複数document一括登録は定義しない。
 
-## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、L0 Planned）
+## 10. SaaS TenantContext / capability契約（ADR-0059 / ADR-0061、現存surface実装済み）
 
-本節はAccepted済みのtarget契約である。現行APIはsingle-tenant相当であり、`SAAS-TENANT-01`のstorage・認可・runtime gate・全tenant-scoped APIへの`tenantSessionVersion` guard・越境テストが完了するまでSaaS profileを有効化しない。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。profile、型付き非秘密policy、bundleの型・欠損・相互必須、started-state、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定と実componentの不一致をDB接続前に起動拒否する。SaaS profileではPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityに加え、対応する3つのexternal component実体を必須とする。preflight済みの同一instanceだけをApp stateとDocument resource resolverへ渡す。bundle非注入のsingle-tenant profileではidentity/session adapterをunavailable、tenant resolverとDocument resource resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。SaaS bundle有効化時はDocument resource resolverもserver-owned metadata＋trusted binding resolverへ同じlifespan内で切り替え、公開visibility／policy headerを認可根拠にしない。Document、Tenant Admin、文書内容を扱うAI mutation、context mutationには共通version preconditionを実装済みであり、Document context auditは世代確認と認可が成功するまで監査進行stateを更新せず、event completeness trackerを検証済み`tenantId + docId`単位に分離する。登録済みの全Document／Document access admin routeが各共通認可境界を呼ぶことはcontract testで固定する。同contractは登録route全件を既定fail-closedで列挙し、共通のtenant-scoped境界を持たないrouteは機械的に再検査される理由付きexemptionとして明示分類されなければ失敗するため、未分類の新規routeとmountされたASGI sub-appを検出する。実auth edge adapter（`JwtSaasIdentityContextResolver`。BFFのcookie経路を含む）は実装済みである。anti-forgery付きsession形式、実binding/PDP service、import／share／MCP／webhook／非同期job開始点への横断適用は未実装・非公開である。
+本節はAccepted済みのtarget契約であり、現在公開・到達可能なsurfaceについては`SAAS-TENANT-01` AC-1〜13をmainへ統合済みである。`local-dev` / `evaluation` / `enterprise-production`はsingle-tenant相当を維持し、SaaSは独立した`saas-multitenant` profileで、必須policy/componentのpreflightを通過した構成だけを有効化する。bootstrap policy、session context、conditional active tenant変更のfail-closed routeとfrontend entry gateに加え、信頼済みauth edgeのidentity resolver・tenant resolver・active tenant session adapterを3点同時にだけ受け付ける起動前bundle境界を実装済みである。profile、型付き非秘密policy、bundleの型・欠損・相互必須、started-state、構築済みPDP／capability／binding componentの実型を状態変更なしでpreflightし、DB初期化前とadapter有効化前に同じ判定を再実行する。single-tenant profileへのbundle注入、SaaS profileでのbundle欠損、未知profile、設定と実componentの不一致をDB接続前に起動拒否する。SaaS profileではPostgreSQL、JIT無効、external access-control、`deny` fail-safe、external document binding、external tenant capabilityに加え、対応する3つのexternal component実体を必須とする。preflight済みの同一instanceだけをApp stateとDocument resource resolverへ渡す。bundle非注入のsingle-tenant profileではidentity/session adapterをunavailable、tenant resolverとDocument resource resolverをsingle-tenant互換へ戻してsession context系を503として閉じる。SaaS bundle有効化時はDocument resource resolverもserver-owned metadata＋trusted binding resolverへ同じlifespan内で切り替え、公開visibility／policy headerを認可根拠にしない。Document、Tenant Admin、文書内容を扱うAI mutation、context mutationには共通version preconditionを実装済みであり、Document context auditは世代確認と認可が成功するまで監査進行stateを更新せず、event completeness trackerを検証済み`tenantId + docId`単位に分離する。登録済みの全Document／Document access admin routeが各共通認可境界を呼ぶことはcontract testで固定する。同contractは登録route全件を既定fail-closedで列挙し、共通のtenant-scoped境界を持たないrouteは機械的に再検査される理由付きexemptionとして明示分類されなければ失敗するため、未分類の新規routeとmountされたASGI sub-appを検出する。実auth edge adapter（`JwtSaasIdentityContextResolver`。BFFのcookie経路を含む）とanti-forgery付きserver-owned session形式は実装済みである。現在公開されているDocument／Tenant Admin／session／文書内容を扱うAI・worker/browser経路は親Issueのversion/tenant境界で検証済みとする。一方、現存しないimport／share／webhook／非同期jobの新規開始点は実装済みと主張せず、MCPはtenant-bound credentialが存在しない間`saas-multitenant`を起動時fail-fastする。実SaaS deploymentは外部binding/PDP/capability等の必須componentを構成し、preflightを通過しなければならない。
 
 ### 10.1 session context（GET/POST version guard実装済み・SaaS runtime gated）
 
 - `GET /session/bootstrap-policy`
   - settings validation済みのserver runtime profileを起動時にsnapshotし、profile名やtenant情報を公開せず、`tenantSessionMode: "single-tenant" | "tenant-session-required"`だけを返す。header、query、Document payloadを判定根拠にしない。
-  - `local-dev`、`evaluation`、`enterprise-production`は`single-tenant`へ写像する。予約中の`saas-multitenant`は純粋なclosed-world resolver上では`tenant-session-required`へ写像するが、現行releaseのsettings validationはそれ以前に起動を拒否する。
+  - `local-dev`、`evaluation`、`enterprise-production`は`single-tenant`へ写像する。`saas-multitenant`は`tenant-session-required`へ写像し、`TrustedSaasRuntimePolicy`と起動前bundleの必須component検証を通過した場合だけ起動する。不完全な構成はDB初期化・adapter有効化前にfail-fastする。
   - 未知・欠損profileは`503 runtime_policy_unavailable`として値を反射せず閉じる。成功・失敗とも`Cache-Control: no-store`と`Pragma: no-cache`を付ける。
 - `GET /session/context`
   - 現在の検証済みTenantContext、利用者がactive membershipを持つtenant候補、tenant-scoped capabilityを返す。
@@ -1227,7 +1232,7 @@ Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させずruntime profileとも原子的に照合する起動前bundle境界は実装済みである。SaaS frontend entryはpolicy／session bootstrap成功後の検証済みcontextとbrowser scopeをApp hostへ同時注入し、single-tenant entryは従来どおり未注入で起動する。HTTP headerやqueryを直接verified evidenceへ変換する処理は単一テナント向けのlegacy経路である。SaaS向けtrusted auth edgeはRS256/ES256 JWTの署名、issuer、audience、期限を検証し、PKCE対応mock IdPによるE2E基盤を持つ。Bearer tokenの`jti`は任意であり、通常のrequest単位replay検出には使用しない。共有persisterは現時点でprincipal単位versionのみを保持するため、認証session IDとactive tenantの原子的正本化は`SAAS-TENANT-SESSION-BINDING-01`で未完了である。`saas-multitenant` profileは設定上起動できるが、本番利用gateを満たさない。**2026-08-22時点の是正**: `SAAS-TENANT-SESSION-BINDING-01`のAC-1〜6は、BFF cookie経路（`Kj-Atlas-Auth-Session`、trusted auth edgeが`auth_session_key_hash`を解決する経路）に限り完了した——共有store（`SaasAuthSessionRow`）は認証session識別子・active tenant・versionを同一行でCAS原子的に保持・更新する。**この本文が記述する現行SPAのBearer token経路は対象外のまま**であり、依然principal単位versionのみの旧storeを使う。BFF cookie経路への切替（AC-9・cutover）が完了するまで、本文の記述と本番利用gate未充足の結論は変わらない。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させずruntime profileとも原子的に照合する起動前bundle境界は実装済みである。SaaS frontend entryはpolicy／session bootstrap成功後の検証済みcontextとbrowser scopeをApp hostへ同時注入し、single-tenant entryは従来どおり未注入で起動する。HTTP headerやqueryを直接verified evidenceへ変換する処理は単一テナント向けのlegacy経路である。SaaS向けtrusted auth edgeは `KJ_ATLAS_JWT_ALGORITHMS` の検証済みallowlist（既定 `RS256,ES256`。RS/ES/PS系の既知asymmetric algorithmを受理）でJWTの署名、issuer、audience、期限を検証し、HMAC/`none`/未知algorithmは受理しない。PKCE対応mock IdPによるE2E基盤を持つ。Bearer tokenの`jti`は任意であり、通常のrequest単位replay検出には使用しない。共有persisterは現時点でprincipal単位versionのみを保持するため、認証session IDとactive tenantの原子的正本化は`SAAS-TENANT-SESSION-BINDING-01`で未完了である。`saas-multitenant` profileは設定上起動できるが、本番利用gateを満たさない。**2026-08-22時点の是正**: `SAAS-TENANT-SESSION-BINDING-01`のAC-1〜6は、BFF cookie経路（`Kj-Atlas-Auth-Session`、trusted auth edgeが`auth_session_key_hash`を解決する経路）に限り完了した——共有store（`SaasAuthSessionRow`）は認証session識別子・active tenant・versionを同一行でCAS原子的に保持・更新する。**この本文が記述する現行SPAのBearer token経路は対象外のまま**であり、依然principal単位versionのみの旧storeを使う。BFF cookie経路への切替（AC-9・cutover）が完了するまで、本文の記述と本番利用gate未充足の結論は変わらない。
 
 frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、server-owned BFF cookie sessionによるsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。active tenantは認証session keyへ束縛してserver側で正本化し、frontendはBearer tokenのtenant claimをactive tenant正本として使わない。
 
@@ -1419,3 +1424,23 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 LLM応答は信頼境界の外側として扱う。新しい提案では `mergeMethod` を必須とし、`near_duplicate`（04ステップ型の近接整理）または `kernel_fusion`（核融合法型の意味核統合）のどちらかを明示する。欠落値・未知値は拒否する。決定論的fallbackは意味核を新規生成しないため `near_duplicate` を付与する。未知ID・重複ID・2件未満・件数上限に加え、hold、既merge、明示的な `negate`、`type=contradicts` のevidence、異なる既知 `claimType`、同じカードを複数候補へ含める競合提案も決定論的に拒否する。人間が判断を記録する際は `mergeMethod` をDocumentのdecision snapshotへ保存するが、旧Documentのdecisionでは欠落を許容し、方式を推測補完しない。
 
 Responseは `SuggestMergesResponse` / `MergeSuggestion` とし、各候補に `groupId`、`cardIds`、`mergedTextDraft`、`mergeMethod`、任意の `rationale` を持つ。`mergeMethod` は `near_duplicate`（類似カードの整理・04ステップ型）または `kernel_fusion`（意味核の統合・核融合法型）の2値で、promptが選んだ方法を人間レビューと後続decisionへ渡す意味属性である。決定論ローカルfallbackは実装上の性質から `near_duplicate` を付与する。保存済みの旧decisionに方式が無い場合は推測補完しない。元カードとlineageを保持しているため、独立した `residuals` フィールドは現契約の必須要素にしない。
+
+## Final-judgement external proposal linkage (AI-ROUTE-HELD-LINKAGE-01 R1)
+
+`POST /ai/check-narrative` and `POST /ai/detect-contradiction` MAY carry `externalProposalRef`:
+
+```json
+{"proposalId":"<registered external proposal id>","sourceBundleHash":"<64-char sha256>"}
+```
+
+The field is optional so standalone final-judgement calls remain backward-compatible. When supplied, the server MUST bind it to the request document ID and validate `(tenantId, docId, proposalId)`, `origin=external_agent`, and `sourceBundleHash` before any provider request. The server MUST NOT infer a proposal or document from latest-created order, document similarity, or proposal content. `detect-contradiction` therefore requires `doc` whenever `externalProposalRef` is present. Missing registration returns 404; identity/source conflict returns 409; linkage without a document returns 422. R1 is read-only and does not itself transition proposal state.
+
+## Final-judgement system hold (AI-ROUTE-HELD-LINKAGE-01 R2)
+
+An explicitly linked external proposal is changed from implicit `proposed` (no decision-state row) to `held` only when final judgement fails with `ProviderDisabledError`, `provider_unavailable`, or `provider_timeout`. `provider_validation`, request/policy rejection, and response parse/schema failure do not trigger system hold. A standalone final-judgement call without `externalProposalRef` never changes proposal state.
+
+The state transition re-validates `(tenantId, docId, proposalId, sourceBundleHash, origin=external_agent)` inside the transaction. Existing `accepted`, `rejected`, or `held` state wins and is never overwritten. A concurrent first human decision is resolved by the decision-state primary key plus rollback/re-read; system failure cannot roll an accepted/rejected proposal back to held.
+
+System hold does not create a human proposal-decision event. On an actual `proposed -> held` transition, the audit dispatcher receives a content-free `eventType=proposal` event with `previousStatus=proposed`, `newStatus=held`, `transitionSource=final_judgement_unavailable`, `routingStage=final_judgement`, failure code, and available provider/model/transport/trace metadata. Repeated failure against an already-held proposal is idempotent and emits no second transition event.
+
+Recovery does not automatically reopen `held`. A retry that needs a fresh proposed lifecycle registers a new proposal ID; existing authenticated human decision behavior for a held proposal remains unchanged. Availability recovery alone never accepts or publishes a proposal.

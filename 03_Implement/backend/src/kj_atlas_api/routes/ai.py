@@ -20,6 +20,7 @@ from kj_atlas_api.llm_input_ir import (
     build_llm_input_ir,
     derived_island_relations,
     held_card_ids,
+    relation_id,
     source_from_document,
 )
 from kj_atlas_api.settings import settings
@@ -42,6 +43,7 @@ from kj_atlas_api.models_ai import (
     DetectContradictionRequest,
     DetectContradictionResponse,
     ExternalAgentProposalDecisionRequest,
+    ExternalProposalReference,
     ExternalAgentProposalRegistrationRequest,
     ExternalAgentProposalRegistrationResponse,
     ExternalAgentTaskRegistrationRequest,
@@ -83,7 +85,9 @@ from kj_atlas_api.proposal_decision_repository import (
     register_ai_proposal,
     register_external_agent_proposal,
     register_external_agent_task,
+    hold_external_proposal_for_final_judgement_failure,
     record_proposal_decision as persist_proposal_decision,
+    validate_external_proposal_reference,
 )
 from kj_atlas_api.island_summary_ir import (
     build_island_summary_ir_context,
@@ -106,12 +110,27 @@ from kj_atlas_api.tenant_session_precondition import (
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
+
+def _external_proposal_audit_fields(
+    ref: ExternalProposalReference | None,
+) -> dict[str, str]:
+    """Return content-free proposal linkage fields for MMR-05 audit events."""
+    if ref is None:
+        return {}
+    return {
+        "proposalId": ref.proposalId,
+        "sourceBundleHash": ref.sourceBundleHash,
+    }
+
+
 def _audit_llm_trace(
     request: Request,
     tenant: TenantContext,
     doc_id: str,
     task: str,
     llm_response,
+    *,
+    external_proposal_ref: ExternalProposalReference | None = None,
 ) -> None:
     """SEC-LLM-AUDIT-01: LLM calls are the most audit-worthy events but only
     reached the local logger. Emit them through the audit dispatcher so
@@ -123,6 +142,7 @@ def _audit_llm_trace(
         "task": task,
         "routingStage": routing_stage_for_task(task),
         **build_audit_fields(llm_response),
+        **_external_proposal_audit_fields(external_proposal_ref),
     }
 
     logger.info("llm_generate", extra=metadata)
@@ -170,6 +190,259 @@ def _resolve_audit_tenant(request: Request, db: Session) -> TenantContext:
         user_id=identity.user_id,
         claim=identity.verified_tenant_claim,
     )
+
+
+def _validate_final_judgement_external_proposal(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+) -> None:
+    """Reject an invalid explicit proposal link before provider execution."""
+    if ref is None:
+        return
+    tenant = _resolve_audit_tenant(request, db)
+    try:
+        validate_external_proposal_reference(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+    except ProposalNotRegistered as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProposalDecisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+_FINAL_JUDGEMENT_SYSTEM_HOLD_FAILURES = frozenset({
+    "provider_unavailable",
+    "provider_timeout",
+})
+
+
+def _final_judgement_system_hold_failure_code(
+    exc: ProviderDisabledError | ProviderRequestError,
+) -> str | None:
+    if isinstance(exc, ProviderDisabledError):
+        return "provider_unavailable"
+    if exc.code in _FINAL_JUDGEMENT_SYSTEM_HOLD_FAILURES:
+        return exc.code
+    return None
+
+
+def _hold_linked_external_proposal_after_final_judgement_failure(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+    exc: ProviderDisabledError | ProviderRequestError,
+) -> None:
+    """Persist proposed->held before returning an availability failure.
+
+    The route has already validated the explicit linkage before provider use.
+    This helper re-validates inside the state transition transaction, retries a
+    first-state insert race once, and emits a content-free system audit event
+    only when this call actually changed proposed -> held.
+    """
+    failure_code = _final_judgement_system_hold_failure_code(exc)
+    if ref is None or failure_code is None:
+        return
+
+    tenant = _resolve_audit_tenant(request, db)
+
+    def _persist():
+        return hold_external_proposal_for_final_judgement_failure(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+
+    try:
+        receipt = _persist()
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        try:
+            receipt = _persist()
+            db.commit()
+        except ProposalNotRegistered as retry_exc:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=str(retry_exc)) from retry_exc
+        except (IntegrityError, ProposalDecisionConflict) as retry_exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "proposal_system_hold_conflicted",
+                    "message": "Proposal state changed while recording final-judgement hold.",
+                },
+            ) from retry_exc
+    except ProposalNotRegistered as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(hold_exc)) from hold_exc
+    except ProposalDecisionConflict as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(hold_exc)) from hold_exc
+
+    if not receipt.transitioned:
+        return
+
+    metadata = build_audit_fields(exc)
+    metadata.update(
+        {
+            "proposalId": ref.proposalId,
+            "sourceBundleHash": ref.sourceBundleHash,
+            "previousStatus": "proposed",
+            "newStatus": "held",
+            "transitionSource": "final_judgement_unavailable",
+            "routingStage": "final_judgement",
+            "failureCode": failure_code,
+        }
+    )
+    logger.warning(
+        "proposal_system_held",
+        extra={
+            "proposalId": ref.proposalId,
+            "failureCode": failure_code,
+            "traceId": metadata.get("trace_id"),
+        },
+    )
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="proposal",
+                tenant_id=tenant.tenant_id,
+                doc_id=doc_id,
+                safe_mode=False,
+                metadata=metadata,
+            )
+        )
+
+
+
+_FINAL_JUDGEMENT_GOVERNANCE_FAILURE_CODES = {
+    "model_not_allowed": "policy_rejected",
+    "model_not_registered": "provider_unavailable",
+    "model_provider_unavailable": "provider_unavailable",
+}
+
+
+def _final_judgement_governance_failure_code(
+    exc: HTTPException,
+) -> tuple[str, str] | None:
+    """Map only the narrow model-governance failures admitted by R3.
+
+    The HTTP response keeps its existing, specific governance code. Proposal
+    audit uses the stable externalization reason vocabulary so policy rejection
+    and execution unavailability remain distinguishable without treating an
+    arbitrary 4xx/5xx as a system hold.
+    """
+    detail = exc.detail
+    governance_code = detail.get("code") if isinstance(detail, dict) else None
+    if not isinstance(governance_code, str):
+        return None
+    failure_code = _FINAL_JUDGEMENT_GOVERNANCE_FAILURE_CODES.get(governance_code)
+    if failure_code is None:
+        return None
+    return failure_code, governance_code
+
+
+def _hold_linked_external_proposal_after_final_judgement_governance_failure(
+    ref: ExternalProposalReference | None,
+    *,
+    doc_id: str,
+    request: Request,
+    db: Session,
+    exc: HTTPException,
+    model_id: str,
+) -> None:
+    """Record R3 pre-provider governance/routing failure as a system hold.
+
+    State transition remains explicit-link-only. Because provider dispatch has
+    not happened yet, audit records the selected model and governance code but
+    deliberately does not fabricate provider or trace metadata.
+    """
+    mapped = _final_judgement_governance_failure_code(exc)
+    if ref is None or mapped is None:
+        return
+    failure_code, governance_code = mapped
+    tenant = _resolve_audit_tenant(request, db)
+
+    def _persist():
+        return hold_external_proposal_for_final_judgement_failure(
+            db,
+            tenant=tenant,
+            doc_id=doc_id,
+            proposal_id=ref.proposalId,
+            source_bundle_hash=ref.sourceBundleHash,
+        )
+
+    try:
+        receipt = _persist()
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        try:
+            receipt = _persist()
+            db.commit()
+        except ProposalNotRegistered as retry_exc:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=str(retry_exc)) from retry_exc
+        except (IntegrityError, ProposalDecisionConflict) as retry_exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "proposal_system_hold_conflicted",
+                    "message": "Proposal state changed while recording final-judgement hold.",
+                },
+            ) from retry_exc
+    except ProposalNotRegistered as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(hold_exc)) from hold_exc
+    except ProposalDecisionConflict as hold_exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(hold_exc)) from hold_exc
+
+    if not receipt.transitioned:
+        return
+
+    metadata = {
+        **_external_proposal_audit_fields(ref),
+        "previousStatus": "proposed",
+        "newStatus": "held",
+        "transitionSource": "final_judgement_governance_blocked",
+        "routingStage": "final_judgement",
+        "failureCode": failure_code,
+        "governanceCode": governance_code,
+        "requestedModelId": model_id,
+    }
+    logger.warning(
+        "proposal_system_held",
+        extra={
+            "proposalId": ref.proposalId,
+            "failureCode": failure_code,
+            "governanceCode": governance_code,
+        },
+    )
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="proposal",
+                tenant_id=tenant.tenant_id,
+                doc_id=doc_id,
+                safe_mode=False,
+                metadata=metadata,
+            )
+        )
 
 
 def _assert_model_allowed(
@@ -381,6 +654,23 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
 
     card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards]
 
+    # AI-IR-CHECK-NARRATIVE-RELATIONS-01: the A-side diagram's explicit
+    # causal/negate/mutual/equivalence/related edges are route-required
+    # meaning for the A/B cross-check -- without them the model cannot tell
+    # whether the narrative invents a logical connection (causal, negate, ...)
+    # that the diagram never drew (kj_technique.md §6 KJT-SIGN-09). Legacy
+    # documents may omit fromKind/toKind; the existing domain contract treats
+    # an unspecified endpoint kind as a card, so the prompt resolves that
+    # ambiguity here rather than passing it through to the model.
+    relation_lines = [
+        (
+            f'- id="{edge.id}", type="{edge.type}", '
+            f'fromKind="{edge.fromKind or "card"}", fromId="{edge.fromId}", '
+            f'toKind="{edge.toKind or "card"}", toId="{edge.toId}"'
+        )
+        for edge in payload.doc.edges
+    ]
+
     return "\n".join(
         [
             "You are performing a best-effort narrative consistency check against a diagram.",
@@ -394,6 +684,9 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             "Perform the A/B cross-check in both directions (kj_technique.md §5):",
             '  - direction "b_missing_in_a": narrative claims that have no counterpart in the diagram (either remove the claim or add it to the diagram).',
             '  - direction "a_missing_in_b": diagram islands that the narrative never mentions (ask why they cannot be told).',
+            "Use the Relations section as the diagram's relation graph: flag any explicit logical connection "
+            "(causal, negate, mutual, equivalence, etc.) the narrative asserts between two elements but the "
+            "relation graph never draws, as a b_missing_in_a issue.",
             'Every A/B mismatch issue must set its "direction" to one of the two values.',
             'Report "counts" with the number of issues per direction (0 is a valid value; a 0/0 means the cross-check did not actually run).',
             'If there are no issues at all, return {"issues":[],"counts":{"bMissingInA":0,"aMissingInB":0}}.',
@@ -408,6 +701,8 @@ def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
             *island_lines,
             "Cards:",
             *card_lines,
+            "Relations:",
+            *relation_lines,
         ]
     )
 
@@ -626,6 +921,21 @@ def _narrative_required_card_ids(source: IRSource) -> tuple[str, ...]:
     return tuple(sorted(required))
 
 
+def _narrative_required_relation_ids(source: IRSource) -> tuple[str, ...]:
+    """Normalized causal/oppositional relations required by narrative generation."""
+    card_ids = {card.id for card in source.cards}
+    required: set[str] = set()
+    for relation in source.relations:
+        if relation.type not in ("causal", "negate"):
+            continue
+        if relation.from_kind == "island" or relation.to_kind == "island":
+            continue
+        if relation.from_id not in card_ids or relation.to_id not in card_ids:
+            continue
+        required.add(relation_id(relation.type, relation.from_id, relation.to_id))
+    return tuple(sorted(required))
+
+
 def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     """Build the LLM input IR for `/ai/generate-narrative` (ADR-0069 D4=A).
 
@@ -637,12 +947,12 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     `negate` edge between two cards, which is the skeleton a B型 narrative is
     supposed to follow.
 
-    At representative scale, the card endpoints of normalized `causal` /
-    `negate` relations are route-required meaning. Reserve those endpoints
-    before `MAX_CARDS` selection so the reading order cannot survive while its
-    logical joints silently disappear. If that required endpoint set itself
-    exceeds the card budget, the shared IR contract fails closed rather than
-    sending an incomplete spine to the model.
+    At representative scale, normalized `causal` / `negate` relations and their
+    card endpoints are route-required meaning. Reserve the relations before
+    `MAX_RELATIONS` selection and their endpoints before `MAX_CARDS` selection so the
+    reading order cannot survive while its logical joints silently disappear. If either
+    required set itself exceeds its shared IR budget, fail closed rather than sending an
+    incomplete spine to the model.
 
     SafeMode: the caller has ALREADY run `_reject_unreviewed_text`. The
     `allow_unreviewed_text` argument reproduces that helper's own predicate so
@@ -654,6 +964,7 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
     )
     source = source_from_document(payload.doc)
     required_spine_ids = _narrative_required_card_ids(source)
+    required_spine_relation_ids = _narrative_required_relation_ids(source)
     try:
         # spec §2.2.1: generate-narrative does not request coordinates
         # (ADR-0069 D1=B) -- the narrative's spine is causal/negate, not layout.
@@ -663,6 +974,7 @@ def _generate_narrative_ir(payload: GenerateNarrativeRequest) -> dict:
             safe_mode=True,
             allow_unreviewed_text=allow_unreviewed,
             required_card_ids=required_spine_ids,
+            required_relation_ids=required_spine_relation_ids,
         )
     except IRGenerationError as exc:
         raise HTTPException(status_code=422, detail=exc.to_contract()) from exc
@@ -1506,13 +1818,19 @@ def get_provider_status() -> ProviderStatusResponse:
     """PROV-VIS-01 (ADR-0050 D1): read-only echo of the configured provider
     kind for display in the View panel. No connectivity check is performed;
     "last known outcome" is tracked client-side from real AI-call results.
-    OPS-LLM-COST-01 (段階2): also reports the in-process LLM call counts."""
-    from kj_atlas_api.llm.provider import llm_call_counts, llm_token_usage
+    OPS-LLM-COST-01: also reports process-local call/token observability,
+    including whether provider usage metadata was complete, partial, or missing."""
+    from kj_atlas_api.llm.provider import (
+        llm_call_counts,
+        llm_token_usage,
+        llm_token_usage_coverage,
+    )
 
     return ProviderStatusResponse(
         providerKind=get_provider().provider_kind,
         callCounts=llm_call_counts(),
         tokenUsage=llm_token_usage(),
+        tokenUsageCoverage=llm_token_usage_coverage(),
     )
 
 
@@ -2157,20 +2475,63 @@ def generate_narrative(payload: GenerateNarrativeRequest, request: Request, db: 
 def check_narrative(payload: CheckNarrativeRequest, request: Request, db: Session = Depends(get_db)) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
     _reject_unreviewed_text(payload.doc, payload.allowUnreviewedText)
+    _validate_final_judgement_external_proposal(
+        payload.externalProposalRef,
+        doc_id=payload.doc.id,
+        request=request,
+        db=db,
+    )
+
+    model_id = resolve_model_for_task("check_narrative")
+    try:
+        provider_config = _assert_model_allowed(request, db, model_id)
+    except HTTPException as exc:
+        _hold_linked_external_proposal_after_final_judgement_governance_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+            model_id=model_id,
+        )
+        raise
 
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="check_narrative",
                 prompt=_build_narrative_check_prompt(payload),
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
 
-    _audit_llm_trace(request, _resolve_audit_tenant(request, db), payload.doc.id, "check_narrative", llm_response)
+    _audit_llm_trace(
+        request,
+        _resolve_audit_tenant(request, db),
+        payload.doc.id,
+        "check_narrative",
+        llm_response,
+        external_proposal_ref=payload.externalProposalRef,
+    )
 
     return _parse_narrative_check_response(llm_response.raw_text, payload)
 
@@ -2667,6 +3028,22 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
     # (ADR-0069 "ADR-0068 との関係", AGENTS.md §7); it does not replace this one.
     _reject_unreviewed_cards([payload.cardA, payload.cardB], payload.allowUnreviewedText)
 
+    if payload.externalProposalRef is not None:
+        if payload.doc is None:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "external_proposal_document_required",
+                    "message": "doc is required when externalProposalRef is supplied.",
+                },
+            )
+        _validate_final_judgement_external_proposal(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id,
+            request=request,
+            db=db,
+        )
+
     # AI-IR-PROJECTION-01 (stage 1 of the ADR-0069 rollout): this route now goes
     # through the LLM input IR instead of stringifying two card texts.
     ir = _detect_contradiction_ir(payload)
@@ -2687,17 +3064,47 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
             existingContradictionState=state,
         )
 
+    model_id = resolve_model_for_task("detect_contradiction")
+    try:
+        provider_config = _assert_model_allowed(request, db, model_id)
+    except HTTPException as exc:
+        _hold_linked_external_proposal_after_final_judgement_governance_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+            model_id=model_id,
+        )
+        raise
+
     try:
         llm_response = generate_with_fallback(
             LLMRequest(
                 task="detect_contradiction",
                 prompt=_build_detect_contradiction_prompt(payload, ir),
                 inputs=ir,
+                model=model_id,
+                registered_provider=provider_config,
             )
         )
     except ProviderDisabledError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
+        _hold_linked_external_proposal_after_final_judgement_failure(
+            payload.externalProposalRef,
+            doc_id=payload.doc.id if payload.doc is not None else "(no-doc)",
+            request=request,
+            db=db,
+            exc=exc,
+        )
         _raise_llm_http_error(exc)
     # Unchanged for the two-card request shape ("(no-doc)"); a supplied document
     # is now attributable in the audit trail.
@@ -2707,6 +3114,7 @@ def detect_contradiction(payload: DetectContradictionRequest, request: Request, 
         payload.doc.id if payload.doc is not None else "(no-doc)",
         "detect_contradiction",
         llm_response,
+        external_proposal_ref=payload.externalProposalRef,
     )
     return _parse_detect_contradiction_response(llm_response.raw_text)
 
