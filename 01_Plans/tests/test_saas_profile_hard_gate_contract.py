@@ -48,6 +48,17 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
         self.assertIn("OAuth authorize endpoint", config_profile)
         self.assertIn("auth-session hash key", config_profile)
 
+    def test_registry_implementation_gate_matches_trusted_saas_runtime_policy(self) -> None:
+        source = _policy_validate_source()
+        self.assertIn("self.saas_oauth_broker_http_authorize_endpoint is not None", source)
+        self.assertIn("self.saas_auth_session_hash_key is not None", source)
+
+        implementation_gate = REGISTRY_PATH.read_text(encoding="utf-8").split(
+            "### SaaS profile implementation gate", 1
+        )[1].split("### Drift check gates", 1)[0]
+        self.assertIn("SaaS OAuth broker authorize endpoint", implementation_gate)
+        self.assertIn("auth-session hash key", implementation_gate)
+
     def test_saas_profile_requires_admin_api_key_across_public_profile_docs(self) -> None:
         settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
         self.assertIn("if self.admin_api_key is None:", settings)
