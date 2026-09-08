@@ -117,6 +117,29 @@ class SecurityFormatContractTests(unittest.TestCase):
                 for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
                     self.assertIn(term, row)
 
+    def test_core_http_endpoint_trusted_url_contract_matches_public_docs(self) -> None:
+        validator = _settings_validator_source()
+        endpoints = (
+            (
+                "self.audit_http_endpoint",
+                "KJ_ATLAS_AUDIT_HTTP_ENDPOINT",
+            ),
+            (
+                "self.access_control_external_http_endpoint",
+                "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+            ),
+        )
+
+        for field, key in endpoints:
+            self.assertIn(f"endpoint={field}", validator)
+            self.assertIn(f'endpoint_key="{key}"', validator)
+            for row in (
+                _public_row(REGISTRY_PATH, key),
+                _public_row(CONFIG_PATH, key),
+            ):
+                for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
+                    self.assertIn(term, row)
+
     def test_deepseek_base_url_uses_trusted_url_contract_in_public_docs(self) -> None:
         validator = _settings_validator_source()
         self.assertIn(
