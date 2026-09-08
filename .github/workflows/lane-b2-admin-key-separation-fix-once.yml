@@ -117,9 +117,15 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          working = set(
+          modified = set(
               subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
           )
+          untracked = set(
+              subprocess.check_output(
+                  ['git', 'ls-files', '--others', '--exclude-standard'], text=True
+              ).splitlines()
+          )
+          working = modified | untracked
           if working != {
               '01_Plans/tests/test_control_plane_credential_separation_contract.py',
               '04_Documentation/configuration.md',
