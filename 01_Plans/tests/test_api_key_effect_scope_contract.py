@@ -56,5 +56,26 @@ class ApiKeyEffectScopeContractTests(unittest.TestCase):
         self.assertNotIn("`/healthz` は API キーなしで確認できます。それ以外の API", section)
 
 
+    def test_business_api_key_profile_requirement_matches_settings(self) -> None:
+        settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
+        self.assertIn('profile == "enterprise-production" and self.api_key is None', settings)
+        self.assertIn('missing.append("KJ_ATLAS_API_KEY")', settings)
+
+        for surface in (self.registry, self.configuration):
+            row = _row(surface, KEY)
+            self.assertIn("enterprise-production", row)
+            self.assertIn("起動必須", row)
+            self.assertIn("saas-multitenant", row)
+            self.assertIn("起動必須ではない", row)
+
+        section = self.configuration.split("## API キーを有効にする", 1)[1].split(
+            "## local LLM を使う", 1
+        )[0]
+        self.assertIn("`enterprise-production` はこのキーを起動必須", section)
+        self.assertIn("未設定では起動しません", section)
+        self.assertIn("`saas-multitenant`", section)
+        self.assertIn("business key自体は起動必須ではありません", section)
+
+
 if __name__ == "__main__":
     unittest.main()
