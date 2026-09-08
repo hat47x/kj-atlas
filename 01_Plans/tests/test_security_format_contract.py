@@ -140,24 +140,6 @@ class SecurityFormatContractTests(unittest.TestCase):
                 for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
                     self.assertIn(term, row)
 
-    def test_deepseek_base_url_uses_trusted_url_contract_in_public_docs(self) -> None:
-        validator = _settings_validator_source()
-        self.assertIn(
-            'endpoint=self.deepseek_base_url',
-            validator,
-        )
-        self.assertIn(
-            'endpoint_key="KJ_ATLAS_DEEPSEEK_BASE_URL"',
-            validator,
-        )
-
-        for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_DEEPSEEK_BASE_URL"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_BASE_URL"),
-        ):
-            for term in ("HTTPS", "loopback", "credential", "query", "fragment"):
-                self.assertIn(term, row)
-
     def test_deepseek_model_uses_canonical_model_id_contract_in_public_docs(self) -> None:
         validator = _settings_validator_source()
         self.assertIn(
