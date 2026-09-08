@@ -7,8 +7,8 @@
 - Execution: Ready
 - Priority: P0
 - Owner: Stream H（QA P0 Hold解除準備）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`、初回実行バッチの`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`、2026-09-07第2バッチの`03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`・`03_Implement/frontend/package.json`・`package-lock.json`、第3バッチの`03_Implement/frontend/src/ui/TenantSessionBootstrapGate.test.ts`、および第4バッチの`03_Implement/frontend/src/ui/TenantSessionControl.test.ts`。
-- Out of Scope: CI設定変更、Vitest全体の`node`環境変更、テスト都合の製品挙動変更。第2〜4バッチは必要なtest fileだけをfile-local `happy-dom`で実行し、対象component本体の挙動は変更しない。
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`、初回実行バッチの`03_Implement/frontend/src/domain/view/hierarchy_level.ts`・同`.test.ts`・`App.tsx`、2026-09-07第2バッチの`03_Implement/frontend/src/ui/TenantSessionRuntimeGate.test.ts`・`03_Implement/frontend/package.json`・`package-lock.json`、第3バッチの`03_Implement/frontend/src/ui/TenantSessionBootstrapGate.test.ts`、および第4バッチの`03_Implement/frontend/src/ui/TenantSessionControl.test.ts`、および第5バッチの`03_Implement/frontend/src/ui/TenantChangeConfirmationDialog.test.ts`。
+- Out of Scope: CI設定変更、Vitest全体の`node`環境変更、テスト都合の製品挙動変更。第2〜5バッチは必要なtest fileだけをfile-local `happy-dom`で実行し、対象component本体の挙動は変更しない。
 - Expected verification level: `unit`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Policy reference: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -336,3 +336,37 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 ### 判定境界
 
 本バッチはtenant-session controlの実イベント配線という1欠陥クラスを追加固定するものであり、DOM component coverage率の最大化を目的にしない。`happy-dom`を他UIへ一律展開せず、次候補も実バグ影響と既存検知能力の差から選ぶ。`QA-UNIT-01`自体は引き続き `In Progress` とする。
+
+## 2026-09-07 第5バッチ — TenantChangeConfirmationDialogの実keyboard/decision境界
+
+第4バッチ後に次候補を再棚卸ししたところ、`TenantChangeConfirmationDialog.test.ts` は初期focus・Escape cancel・Tab focus trapという重要なdialog挙動を**component source文字列の存在確認だけ**で検証していた。実イベントを一度も発火しておらず、handlerの配線・ref対象・processing遷移が壊れてもsource上の文字列が残ればpassし得るため、第5バッチとして実DOM境界へ置き換えた。
+
+### 選定理由
+
+このdialogはtenant切替前の未保存変更について `save / discard / cancel` を確定する境界である。誤ったkeyboard decisionやprocessing中の再decisionは、単なる見た目の回帰ではなく、保存・破棄の意味を取り違える可能性がある。したがってDOM component coverage率ではなく、**不可逆性を含むユーザー意思決定の欠陥検知能力**を理由に選定した。
+
+### 追加した実検証
+
+`TenantChangeConfirmationDialog.test.ts`だけをfile-local `happy-dom`へ移し、React `createRoot` + `act` で実componentをmountして次を固定した。製品componentは変更していない。
+
+- 初期focusは安全側の `cancel` buttonへ置かれる。
+- 非processing時の `Escape` はdefaultをpreventし、`onDecision("cancel")` を1回通知する。
+- 最終buttonからの `Tab` はcancelへ、cancelからの `Shift+Tab` は最終buttonへwrapし、dialog外へfocusを逃がさない。
+- `isProcessing=true` へ遷移すると3 decision buttonは全てdisabledになり、processing statusへfocusが移る。
+- processing中の `Escape` はcancel decisionを発火しない。
+- cancel / discard / save buttonの実clickは、それぞれ対応するdecisionを通知する。
+
+従来のSSRによる文言・ARIA契約テストは保持し、source文字列inspectionだけを実挙動テストへ置き換えた。
+
+### 検証結果
+
+- tested branch head: `980bb0aa6ba1ee87d998fb159faf4467a4829614`。
+- GitHub Actions run: `34121313722`。
+- `npm run typecheck`: pass。
+- tenant decision/session focused unit chain: pass。
+- frontend full `npm run test`: pass。
+- planning tests / active issue validator / docs_check / `git diff --check`: pass。
+
+### 判定境界
+
+本バッチはtenant切替dialogのkeyboard/focus/decisionという1欠陥クラスを固定する。`happy-dom`の一律展開やUI coverage率の最大化は引き続き行わず、`QA-UNIT-01` は `In Progress` を維持する。
