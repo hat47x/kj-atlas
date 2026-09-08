@@ -9,19 +9,17 @@ permissions:
   contents: write
 
 jobs:
-  patch-verify:
-    if: github.event.head_commit.message == 'ci(b2): repair OAuth client format verifier'
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Patch public OAuth client format contract
+      - name: Patch public docs
         run: |
           python - <<'PY'
           from pathlib import Path
-
           replacements = {
               Path('02_Architecture/runtime_parameter_registry.md'): [
                   ('confidential-client OAuth の client ID（ADR-0074）。process startup hard gate', 'confidential-client OAuth の client ID（ADR-0074）。2,048文字以下のcanonical値（空白・制御文字不可）。process startup hard gate'),
@@ -36,44 +34,24 @@ jobs:
               data = path.read_bytes()
               for old, new in pairs:
                   old_b = old.encode('utf-8')
-                  new_b = new.encode('utf-8')
                   if data.count(old_b) != 1:
                       raise SystemExit(f'expected one patch target in {path}: {old}')
-                  data = data.replace(old_b, new_b, 1)
+                  data = data.replace(old_b, new.encode('utf-8'), 1)
               path.write_bytes(data)
-
-          test = Path('01_Plans/tests/test_security_format_contract.py')
-          text = test.read_text(encoding='utf-8')
-          marker = '    def test_jwt_public_policy_keeps_default_and_hmac_none_rejection(self) -> None:\n'
-          method = '''    def test_oauth_client_credentials_use_canonical_public_format_contract(self) -> None:\n        settings_text = SETTINGS_PATH.read_text(encoding="utf-8")\n        tree = ast.parse(settings_text)\n\n        def function_source(name: str) -> str:\n            node = next(\n                item for item in ast.walk(tree)\n                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == name\n            )\n            if node.end_lineno is None:\n                raise AssertionError(f"source range unavailable for {name}")\n            return "\\n".join(settings_text.splitlines()[node.lineno - 1 : node.end_lineno])\n\n        validator = _settings_validator_source()\n        header_helper = function_source("_validate_optional_header_value")\n        bearer_helper = function_source("_validate_canonical_bearer")\n        self.assertIn("len(value) > 2048", header_helper)\n        self.assertIn("any(character.isspace() for character in value)", header_helper)\n        self.assertIn("any(not character.isprintable() for character in value)", header_helper)\n        self.assertIn("not api_key", bearer_helper)\n        self.assertIn("any(character.isspace() for character in api_key)", bearer_helper)\n        self.assertIn("any(not character.isprintable() for character in api_key)", bearer_helper)\n        self.assertIn("value=self.saas_oauth_broker_http_client_id", validator)\n        self.assertIn('value_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"', validator)\n        self.assertIn("api_key=self.saas_oauth_broker_http_client_secret", validator)\n        self.assertIn('api_key_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"', validator)\n\n        for row in (\n            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),\n            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),\n        ):\n            for term in ("2,048", "canonical", "空白", "制御文字"):\n                self.assertIn(term, row)\n\n        for row in (\n            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),\n            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),\n        ):\n            for term in ("非空", "canonical bearer", "空白", "制御文字"):\n                self.assertIn(term, row)\n\n'''
-          if text.count(marker) != 1:
-              raise SystemExit('JWT test insertion marker drifted')
-          test.write_text(text.replace(marker, method + marker, 1), encoding='utf-8')
           PY
       - name: Verify focused contract
-        run: python -m unittest 01_Plans.tests.test_security_format_contract -v
+        run: python -m unittest 01_Plans.tests.test_oauth_client_format_contract -v
       - name: Verify planning contracts
         run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
       - name: Verify docs
         run: python 01_Plans/docs_check.py
       - name: Verify diff scope
         run: |
-          python - <<'PY'
-          import subprocess
-          expected = {
-              '01_Plans/tests/test_security_format_contract.py',
-              '02_Architecture/runtime_parameter_registry.md',
-              '04_Documentation/configuration.md',
-          }
-          actual = set(subprocess.check_output(['git', 'diff', '--name-only', 'HEAD']).decode().splitlines())
-          if actual != expected:
-              raise SystemExit(f'unexpected diff scope: {sorted(actual)}')
-          print(subprocess.check_output(['git', 'diff', '--numstat', 'HEAD']).decode())
-          PY
-      - name: Commit verified patch
+          test "$(git diff --name-only HEAD | sort)" = "$(printf '%s\n' '02_Architecture/runtime_parameter_registry.md' '04_Documentation/configuration.md' | sort)"
+      - name: Commit verified docs
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add 01_Plans/tests/test_security_format_contract.py 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
+          git add 02_Architecture/runtime_parameter_registry.md 04_Documentation/configuration.md
           git commit -m "docs(config): OAuth client credential format制約を明示する"
           git push
