@@ -1,0 +1,66 @@
+name: Lane B2 SaaS profile hard gates fix once
+
+on:
+  push:
+    branches:
+      - fix/lane-b2-saas-profile-hard-gates-20260908
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Align SaaS profile hard-gate wording and focused contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          registry_path = Path('02_Architecture/runtime_parameter_registry.md')
+          text = registry_path.read_text(encoding='utf-8')
+          old = '- PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safeなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。'
+          new = '- PostgreSQL共有認証状態、trusted SaaS auth edge、external access control、external document binding、external tenant capability、JIT無効、`deny` fail-safe、SaaS OAuth broker authorize endpoint、auth-session hash keyなど、`TrustedSaasRuntimePolicy` の必須条件を満たす。'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stale SaaS profile criteria line, got {text.count(old)}')
+          registry_path.write_text(text.replace(old, new), encoding='utf-8', newline='')
+
+          test_path = Path('01_Plans/tests/test_saas_profile_hard_gate_contract.py')
+          test_path.write_text('''from __future__ import annotations\n\nimport ast\nimport unittest\nfrom pathlib import Path\n\n\nROOT = Path(__file__).resolve().parents[2]\nRUNTIME_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"\nREGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"\nCONFIG_PATH = ROOT / "04_Documentation/configuration.md"\n\n\ndef _policy_validate_source() -> str:\n    text = RUNTIME_PATH.read_text(encoding="utf-8")\n    tree = ast.parse(text)\n    policy = next(\n        node\n        for node in tree.body\n        if isinstance(node, ast.ClassDef) and node.name == "TrustedSaasRuntimePolicy"\n    )\n    validate = next(\n        node\n        for node in policy.body\n        if isinstance(node, ast.FunctionDef) and node.name == "validate"\n    )\n    return ast.get_source_segment(text, validate) or ""\n\n\nclass SaasProfileHardGateContractTests(unittest.TestCase):\n    def test_oauth_authorize_and_session_hash_are_startup_hard_gates(self) -> None:\n        source = _policy_validate_source()\n        self.assertIn(\n            "self.saas_oauth_broker_http_authorize_endpoint is not None",\n            source,\n        )\n        self.assertIn("self.saas_auth_session_hash_key is not None", source)\n\n        registry_profile = REGISTRY_PATH.read_text(encoding="utf-8").split(\n            "## Profile selection criteria", 1\n        )[1].split("### SaaS profile implementation gate", 1)[0]\n        self.assertIn("SaaS OAuth broker authorize endpoint", registry_profile)\n        self.assertIn("auth-session hash key", registry_profile)\n\n        config_profile = CONFIG_PATH.read_text(encoding="utf-8").split(\n            "## Runtime profiles（推奨プロファイル）", 1\n        )[1].split("## 最小設定", 1)[0]\n        self.assertIn("OAuth authorize endpoint", config_profile)\n        self.assertIn("auth-session hash key", config_profile)\n\n    def test_request_time_oauth_completeness_is_not_promoted_to_startup_gate(self) -> None:\n        source = _policy_validate_source()\n        for field in (\n            "self.saas_oauth_broker_http_token_endpoint is not None",\n            "self.saas_oauth_broker_http_redirect_uri is not None",\n            "self.saas_oauth_broker_http_client_id is not None",\n            "self.saas_oauth_broker_http_client_secret is not None",\n        ):\n            self.assertNotIn(field, source)\n\n        config_profile = CONFIG_PATH.read_text(encoding="utf-8").split(\n            "## Runtime profiles（推奨プロファイル）", 1\n        )[1].split("## 最小設定", 1)[0]\n        self.assertIn("起動hard gateではなく", config_profile)\n        self.assertIn("redirect URI + client ID", config_profile)\n        self.assertIn(\n            "token endpoint + redirect URI + client ID + client secret",\n            config_profile,\n        )\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+      - name: Verify focused contract
+        run: python -m unittest 01_Plans.tests.test_saas_profile_hard_gate_contract
+      - name: Verify planning suite
+        run: python -m unittest discover -s 01_Plans/tests -p 'test_*.py'
+      - name: Verify documentation contracts
+        run: python 01_Plans/docs_check.py
+      - name: Verify narrow diff
+        run: |
+          git diff --check
+          python - <<'PY'
+          import subprocess
+          files = subprocess.check_output(['git','diff','--name-only','HEAD^'], text=True).splitlines()
+          allowed = {
+              '.github/workflows/lane-b2-saas-profile-hard-gates-fix-once.yml',
+              '01_Plans/tests/test_saas_profile_hard_gate_contract.py',
+              '02_Architecture/runtime_parameter_registry.md',
+          }
+          unexpected = [path for path in files if path not in allowed]
+          if unexpected:
+              raise SystemExit(f'unexpected diff: {unexpected}')
+          PY
+      - name: Commit patch and retire one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 01_Plans/tests/test_saas_profile_hard_gate_contract.py 02_Architecture/runtime_parameter_registry.md
+          git commit -m "docs(config): SaaS profile hard gateを完全化する"
+          git rm .github/workflows/lane-b2-saas-profile-hard-gates-fix-once.yml
+          git commit -m "ci: retire Lane B2 SaaS profile hard gate workflow"
+          git push
