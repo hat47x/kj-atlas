@@ -1,0 +1,313 @@
+name: Recent documents server-list open verify once
+
+on:
+  push:
+    branches:
+      - fix/recent-documents-server-list-open-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Patch server-list open affordance and add regression tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('03_Implement/frontend/src/ui/RecentDocumentsDialog.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = '  const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;\n'
+          new = (
+              '  const hasDocumentChoices = recentDocumentIds.length > 0 || Boolean(documents?.length);\n'
+              '  const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;\n'
+          )
+          if old not in text:
+              raise SystemExit('canOpen insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '''          <button type="button" onClick={handleOpenClick} disabled={!canOpen} style={{ ...buttonStyle, opacity: canOpen ? 1 : 0.5, justifySelf: "start" }}>
+            {t("app.toolbar.open")}
+          </button>
+        </>
+      ) : null}
+      {selectedRecentDocumentId && !isArchiving ? (
+'''
+          new = '''        </>
+      ) : null}
+      {hasDocumentChoices ? (
+        <button type="button" onClick={handleOpenClick} disabled={!canOpen} style={{ ...buttonStyle, opacity: canOpen ? 1 : 0.5, justifySelf: "start" }}>
+          {t("app.toolbar.open")}
+        </button>
+      ) : null}
+      {selectedRecentDocumentId && !isArchiving ? (
+'''
+          if old not in text:
+              raise SystemExit('open button relocation point not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+          cat > 03_Implement/frontend/src/ui/RecentDocumentsDialog.test.ts <<'EOF'
+          // @vitest-environment happy-dom
+
+          import React, { act } from "react";
+          import { createRoot, type Root } from "react-dom/client";
+          import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+
+          import { setActiveLocale, t } from "../i18n/translate";
+          import { RecentDocumentsDialog } from "./RecentDocumentsDialog";
+
+          const roots: Root[] = [];
+          const actGlobal = globalThis as typeof globalThis & {
+            IS_REACT_ACT_ENVIRONMENT?: boolean;
+          };
+          actGlobal.IS_REACT_ACT_ENVIRONMENT = true;
+
+          type Props = Parameters<typeof RecentDocumentsDialog>[0];
+
+          function props(overrides: Partial<Props> = {}): Props {
+            return {
+              isOpen: true,
+              onClose: vi.fn(),
+              triggerRef: { current: null },
+              recentDocumentIds: [],
+              selectedRecentDocumentId: "",
+              onSelectedRecentDocumentChange: vi.fn(),
+              onOpenRecent: vi.fn(),
+              isLoading: false,
+              activeDocumentId: "active-doc",
+              documents: null,
+              isCanvasListLoading: false,
+              myDocumentsOnly: false,
+              onMyDocumentsOnlyChange: vi.fn(),
+              onArchiveDocument: vi.fn(),
+              onUnarchiveDocument: vi.fn(),
+              isArchiving: false,
+              ...overrides,
+            };
+          }
+
+          function serverDocuments(): NonNullable<Props["documents"]> {
+            return [{
+              id: "server-doc",
+              title: "Server document",
+              lifecycle_state: "active",
+            }] as unknown as NonNullable<Props["documents"]>;
+          }
+
+          async function mount(dialogProps: Props): Promise<HTMLElement> {
+            const container = document.createElement("div");
+            document.body.append(container);
+            const root = createRoot(container);
+            roots.push(root);
+            await act(async () => {
+              root.render(React.createElement(RecentDocumentsDialog, dialogProps));
+            });
+            return container;
+          }
+
+          function buttonByText(container: HTMLElement, label: string): HTMLButtonElement {
+            const button = [...container.querySelectorAll<HTMLButtonElement>("button")]
+              .find((candidate) => candidate.textContent === label);
+            if (!button) throw new Error(`button not found: ${label}`);
+            return button;
+          }
+
+          function dispatchKey(target: Element, key: string, shiftKey = false): KeyboardEvent {
+            const event = new KeyboardEvent("keydown", {
+              key,
+              shiftKey,
+              bubbles: true,
+              cancelable: true,
+            });
+            target.dispatchEvent(event);
+            return event;
+          }
+
+          afterEach(async () => {
+            while (roots.length > 0) {
+              const root = roots.pop();
+              if (root) await act(async () => root.unmount());
+            }
+            document.body.replaceChildren();
+            setActiveLocale("ja");
+            vi.restoreAllMocks();
+          });
+
+          afterAll(() => {
+            delete actGlobal.IS_REACT_ACT_ENVIRONMENT;
+          });
+
+          describe("recent documents dialog", () => {
+            it("opens a server-listed document even when local recent ids are empty", async () => {
+              const trigger = document.createElement("button");
+              document.body.append(trigger);
+              const onOpenRecent = vi.fn();
+              const onClose = vi.fn();
+              const container = await mount(props({
+                triggerRef: { current: trigger },
+                documents: serverDocuments(),
+                selectedRecentDocumentId: "server-doc",
+                onOpenRecent,
+                onClose,
+              }));
+
+              expect(container.querySelectorAll("select")).toHaveLength(1);
+              expect(container.textContent).toContain("Server document (server-doc)");
+              const open = buttonByText(container, t("app.toolbar.open"));
+              expect(open.disabled).toBe(false);
+
+              await act(async () => {
+                open.click();
+                await new Promise((resolve) => setTimeout(resolve, 0));
+              });
+              expect(onOpenRecent).toHaveBeenCalledTimes(1);
+              expect(onClose).toHaveBeenCalledTimes(1);
+              expect(document.activeElement).toBe(trigger);
+            });
+
+            it("keeps open disabled for the active document and while document loading is active", async () => {
+              const container = await mount(props({
+                documents: serverDocuments(),
+                selectedRecentDocumentId: "active-doc",
+              }));
+              expect(buttonByText(container, t("app.toolbar.open")).disabled).toBe(true);
+
+              const root = roots[roots.length - 1];
+              await act(async () => {
+                root?.render(React.createElement(RecentDocumentsDialog, props({
+                  documents: serverDocuments(),
+                  selectedRecentDocumentId: "server-doc",
+                  isLoading: true,
+                })));
+              });
+              expect(buttonByText(container, t("app.toolbar.open")).disabled).toBe(true);
+            });
+
+            it("traps focus and restores the trigger when Escape closes the dialog", async () => {
+              const trigger = document.createElement("button");
+              document.body.append(trigger);
+              const onClose = vi.fn();
+              const container = await mount(props({
+                triggerRef: { current: trigger },
+                onClose,
+              }));
+              const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
+              const close = buttonByText(container, t("recent_documents_dialog.close"));
+              const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+              if (!dialog || !checkbox) throw new Error("dialog controls were not rendered");
+
+              expect(document.activeElement).toBe(close);
+              await act(async () => {
+                const reverseTab = dispatchKey(close, "Tab", true);
+                expect(reverseTab.defaultPrevented).toBe(true);
+              });
+              expect(document.activeElement).toBe(checkbox);
+
+              await act(async () => {
+                const tab = dispatchKey(checkbox, "Tab");
+                expect(tab.defaultPrevented).toBe(true);
+              });
+              expect(document.activeElement).toBe(close);
+
+              await act(async () => {
+                const escape = dispatchKey(dialog, "Escape");
+                expect(escape.defaultPrevented).toBe(true);
+                await new Promise((resolve) => setTimeout(resolve, 0));
+              });
+              expect(onClose).toHaveBeenCalledTimes(1);
+              expect(document.activeElement).toBe(trigger);
+            });
+
+            it("forwards filter, selection, archive, and unarchive actions", async () => {
+              const onMyDocumentsOnlyChange = vi.fn();
+              const onSelectedRecentDocumentChange = vi.fn();
+              const onArchiveDocument = vi.fn();
+              const onUnarchiveDocument = vi.fn();
+              const container = await mount(props({
+                documents: serverDocuments(),
+                selectedRecentDocumentId: "server-doc",
+                onMyDocumentsOnlyChange,
+                onSelectedRecentDocumentChange,
+                onArchiveDocument,
+                onUnarchiveDocument,
+              }));
+
+              const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+              const select = container.querySelector<HTMLSelectElement>("select");
+              if (!checkbox || !select) throw new Error("filter/select controls were not rendered");
+
+              await act(async () => {
+                checkbox.click();
+                select.value = "server-doc";
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+                buttonByText(container, t("recent_documents_dialog.archive")).click();
+                buttonByText(container, t("recent_documents_dialog.unarchive")).click();
+              });
+
+              expect(onMyDocumentsOnlyChange).toHaveBeenCalledWith(true);
+              expect(onSelectedRecentDocumentChange).toHaveBeenCalledWith("server-doc");
+              expect(onArchiveDocument).toHaveBeenCalledWith("server-doc");
+              expect(onUnarchiveDocument).toHaveBeenCalledWith("server-doc");
+            });
+          });
+          EOF
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 03_Implement/frontend/src/ui/RecentDocumentsDialog.tsx 03_Implement/frontend/src/ui/RecentDocumentsDialog.test.ts
+          git diff --cached --check
+          git commit -m 'fix(ui): allow opening server-listed documents without recent history'
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Targeted regression tests
+        working-directory: 03_Implement/frontend
+        run: npx vitest run src/ui/RecentDocumentsDialog.test.ts
+
+      - name: Full frontend tests
+        working-directory: 03_Implement/frontend
+        run: npm run test
+
+      - name: Typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: Verify diff scope
+        run: |
+          git diff --check origin/main...HEAD
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '.github/workflows/qa-recent-documents-open-once.yml',
+              '03_Implement/frontend/src/ui/RecentDocumentsDialog.tsx',
+              '03_Implement/frontend/src/ui/RecentDocumentsDialog.test.ts',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected diff scope: {sorted(actual)}')
+          PY
+
+      - name: Retire one-shot and publish verified commit
+        run: |
+          git rm .github/workflows/qa-recent-documents-open-once.yml
+          git diff --cached --check
+          git commit -m 'ci: retire recent documents verification one-shot'
+          git push origin HEAD:${GITHUB_REF_NAME}
