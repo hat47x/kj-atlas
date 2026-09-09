@@ -29,6 +29,12 @@ jobs:
           path = Path('03_Implement/backend/tests/test_document_access_rls_postgres.py')
           text = path.read_text(encoding='utf-8')
 
+          old = '''from kj_atlas_api.db import _normalize_database_url\nfrom kj_atlas_api.models import (\n'''
+          new = '''from kj_atlas_api.db import _normalize_database_url\n# These late-defined ORM modules must be imported explicitly so Base.metadata\n# is complete even when this contract test is run in isolation.\nfrom kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow  # noqa: F401\nfrom kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401\nfrom kj_atlas_api.guest_redeem_state_models import GuestRedeemStateRow  # noqa: F401\nfrom kj_atlas_api.models import (\n'''
+          if old not in text:
+              raise SystemExit('guest model import insertion point not found')
+          text = text.replace(old, new, 1)
+
           old = '''    "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",\n}\n'''
           new = '''    "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",\n    # ADR-0080: these rows are looked up by opaque keyed hashes before the\n    # tenant is known. They establish authentication context only; after\n    # resolution, principal/grant/document access returns to FORCE-RLS tables.\n    "guest_auth_sessions": "pre-tenant guest authentication session lookup",\n    "guest_redeem_states": "pre-tenant one-time guest invitation state lookup",\n}\n'''
           if old not in text:
