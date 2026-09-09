@@ -58,9 +58,20 @@ async function changeValue(
   value: string,
 ): Promise<void> {
   await act(async () => {
+    if (element instanceof HTMLInputElement) {
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      if (!nativeSetter) {
+        throw new Error("native input value setter is unavailable");
+      }
+      nativeSetter.call(element, value);
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
     element.value = value;
-    const eventName = element instanceof HTMLInputElement ? "input" : "change";
-    element.dispatchEvent(new Event(eventName, { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
   });
 }
 
