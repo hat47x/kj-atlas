@@ -1,4 +1,5 @@
 import type { DocumentV1, Edge, EdgeType, Island } from "./types";
+import { resolveKnownEdgeType } from "./types";
 
 export type DerivedIslandEdge = {
   id: string;
@@ -140,9 +141,18 @@ export function getDerivedIslandEdges(document: DocumentV1): DerivedIslandEdge[]
           if (fromIslandId === toIslandId) {
             continue;
           }
-          const [normalizedFromId, normalizedToId] = normalizeUndirectedIslands(fromIslandId, toIslandId);
-          const key = `derived-island:${normalizedFromId}|${normalizedToId}|${edge.type}`;
-          addContribution(key, normalizedFromId, normalizedToId, "island", edge, fromKind, toKind);
+
+          // DOMAIN-KJ-01 (schemas.md §3.3.1): causal is directed
+          // (fromId=cause -> toId=effect), so neither the rendered endpoints
+          // nor the aggregate key may be pair-normalized. The other known
+          // types are undirected; unknown types resolve to the display-time
+          // related fallback and remain normalized as before.
+          const [aggregateFromId, aggregateToId] =
+            resolveKnownEdgeType(edge.type) === "causal"
+              ? [fromIslandId, toIslandId]
+              : normalizeUndirectedIslands(fromIslandId, toIslandId);
+          const key = `derived-island:${aggregateFromId}|${aggregateToId}|${edge.type}`;
+          addContribution(key, aggregateFromId, aggregateToId, "island", edge, fromKind, toKind);
         }
       }
       continue;
