@@ -1,0 +1,34 @@
+name: Domain KJ causal issue closeout verify once
+
+on:
+  push:
+    branches:
+      - fix/domain-kj-causal-direction-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate active issue memos
+        run: python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues
+      - name: Run issue validator tests
+        run: python -m unittest discover -s 01_Plans/issues/tests -p 'test_*.py'
+      - name: Docs check
+        run: python 01_Plans/docs_check.py
+      - name: Verify diff hygiene
+        run: git diff --check 7d8df2748f5f35b53061341df2fe156634a2c990...HEAD
+      - name: Retire one-shot
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/domain-kj-causal-closeout-once.yml
+          git commit -m "ci: retire causal issue closeout one-shot"
+          git push origin HEAD:fix/domain-kj-causal-direction-20260910
