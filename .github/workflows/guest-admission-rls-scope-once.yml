@@ -1,0 +1,90 @@
+name: Guest admission RLS scope verify once
+
+on:
+  push:
+    branches:
+      - fix/guest-admission-rls-scope-contract-20260909
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Sync guest admission RLS scope contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('03_Implement/backend/tests/test_document_access_rls_postgres.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''    "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",\n}\n'''
+          new = '''    "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",\n    # ADR-0080: these rows are looked up by opaque keyed hashes before the\n    # tenant is known. They establish authentication context only; after\n    # resolution, principal/grant/document access returns to FORCE-RLS tables.\n    "guest_auth_sessions": "pre-tenant guest authentication session lookup",\n    "guest_redeem_states": "pre-tenant one-time guest invitation state lookup",\n}\n'''
+          if old not in text:
+              raise SystemExit('RLS exemption insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '''        "generation_deletion_audit_events",\n        "inquiry_bundle_deletion_audit_events",\n'''
+          new = '''        "generation_deletion_audit_events",\n        "guest_document_grants",\n        "guest_principals",\n        "inquiry_bundle_deletion_audit_events",\n'''
+          if old not in text:
+              raise SystemExit('protected-table insertion point not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 03_Implement/backend/tests/test_document_access_rls_postgres.py
+          git diff --cached --check
+          git commit -m 'test(rls): sync guest admission table scope'
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Focused RLS scope contract
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_document_access_rls_postgres.py::test_rls_scope_is_derived_from_every_tenant_scoped_model -q
+
+      - name: Full backend regression
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/ -q
+
+      - name: Focused lint
+        working-directory: 03_Implement/backend
+        run: ruff check tests/test_document_access_rls_postgres.py
+
+      - name: Verify diff scope
+        run: |
+          git diff --check origin/main...HEAD
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              '.github/workflows/guest-admission-rls-scope-once.yml',
+              '03_Implement/backend/tests/test_document_access_rls_postgres.py',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected diff scope: {sorted(actual)}')
+          PY
+
+      - name: Retire one-shot and publish verified commit
+        run: |
+          git rm .github/workflows/guest-admission-rls-scope-once.yml
+          git diff --cached --check
+          git commit -m 'ci: retire guest admission RLS scope one-shot'
+          git push origin HEAD:${GITHUB_REF_NAME}
