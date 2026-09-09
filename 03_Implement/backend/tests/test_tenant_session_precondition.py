@@ -22,6 +22,7 @@ from kj_atlas_api.routes.docs import (
 )
 from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
 from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
+from kj_atlas_api.routes.guest_session import GuestRedeemRequest, redeem_guest_session
 from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
 from kj_atlas_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
@@ -219,6 +220,11 @@ _BODY_BORNE_EXPECTED_VERSION = "body-borne-expected-version"
 # _NO_TENANT_RESOURCE it may reach the database (it reads IdP rows and persists
 # the minted auth session) but must never touch a tenant-scoped resource.
 _PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"
+# Guest invitation redeem also runs before a tenant session exists, but unlike
+# OAuth callback its tenant/principal scope comes only from the opaque one-time
+# host state. It must therefore stay unguarded by tenant-session version while
+# remaining client-tenant-free.
+_PRE_SESSION_GUEST_REDEEM_FLOW = "pre-session-guest-redeem-flow"
 
 _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     ("GET", "/healthz"): _NO_TENANT_RESOURCE,
@@ -233,6 +239,9 @@ _UNGUARDED_ROUTE_EXEMPTIONS: dict[tuple[str, str], str] = {
     # The callback persists the minted auth session, so it may reach the DB but
     # still owns no tenant-scoped resource.
     ("GET", "/session/callback"): _PRE_SESSION_OAUTH_FLOW,
+    # ADR-0080: redeem happens before a guest session exists; tenant/principal
+    # are recovered from server-owned one-time state, never from client scope.
+    ("POST", "/session/guest/redeem"): _PRE_SESSION_GUEST_REDEEM_FLOW,
     ("POST", "/session/logout"): _NO_TENANT_RESOURCE,
     ("POST", "/admin/provision/users"): _CONTROL_PLANE_AUTHORIZED,
     # ADR-0063/0064: Platform Control Plane — IdP registration and the A2/A3
@@ -375,6 +384,17 @@ def test_pre_session_oauth_flow_exemptions_use_the_database_without_a_tenant_bou
         # rows and persists the minted auth session, so get_db is expected.
         assert get_db in _flattened_dependency_calls(route.dependant), route_key
         assert not _installs_tenant_scoped_boundary(route), route_key
+
+
+def test_pre_session_guest_redeem_exemption_derives_scope_from_server_state() -> None:
+    exempt_routes = _exempt_routes(_PRE_SESSION_GUEST_REDEEM_FLOW)
+    assert set(exempt_routes) == {("POST", "/session/guest/redeem")}
+
+    route = exempt_routes[("POST", "/session/guest/redeem")]
+    assert route.endpoint is redeem_guest_session
+    assert not _installs_tenant_scoped_boundary(route)
+    assert set(GuestRedeemRequest.model_fields) == {"state", "identity_credential"}
+    assert GuestRedeemRequest.model_config.get("extra") == "forbid"
 
 
 def test_control_plane_exemption_requires_control_plane_authorization() -> None:
