@@ -14,6 +14,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import _normalize_database_url
+# These late-defined ORM modules must be imported explicitly so Base.metadata
+# is complete even when this contract test is run in isolation.
+from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow  # noqa: F401
+from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401
+from kj_atlas_api.guest_redeem_state_models import GuestRedeemStateRow  # noqa: F401
 from kj_atlas_api.models import (
     Base,
     DocumentAccessAdminAuditEventRow,
@@ -42,6 +47,11 @@ RLS_EXEMPT_TENANT_TABLES = {
     # context, and pre-tenant bootstrap rows carry a NULL tenant_id. Applying
     # data-plane RLS would hide those rows from the control-plane reader.
     "admin_audit_events": "control-plane audit trail (bootstrap rows have NULL tenant)",
+    # ADR-0080: these rows are looked up by opaque keyed hashes before the
+    # tenant is known. They establish authentication context only; after
+    # resolution, principal/grant/document access returns to FORCE-RLS tables.
+    "guest_auth_sessions": "pre-tenant guest authentication session lookup",
+    "guest_redeem_states": "pre-tenant one-time guest invitation state lookup",
 }
 
 
@@ -70,6 +80,8 @@ def test_rls_scope_is_derived_from_every_tenant_scoped_model() -> None:
         "documents",
         "external_agent_tasks",
         "generation_deletion_audit_events",
+        "guest_document_grants",
+        "guest_principals",
         "inquiry_bundle_deletion_audit_events",
         "inquiry_bundles",
         "merge_decision_logs",
