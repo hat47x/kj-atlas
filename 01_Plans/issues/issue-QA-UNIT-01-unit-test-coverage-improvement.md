@@ -370,3 +370,123 @@ G1（unit段階ゲート）欄への証跡: QA-MONKEY-13の再発は`clampMaxDep
 ### 判定境界
 
 本バッチはtenant切替dialogのkeyboard/focus/decisionという1欠陥クラスを固定する。`happy-dom`の一律展開やUI coverage率の最大化は引き続き行わず、`QA-UNIT-01` は `In Progress` を維持する。
+
+## 2026-09-10 第6バッチ — InquiryEndConfirmationDialogの実keyboard/decision境界（事後記録、PR #3123）
+
+`InquiryEndConfirmationDialog.test.ts`は第5バッチ以前、focus/Escape/Tab trapの3挙動を`readFileSync`+`expect(source).toContain(...)`という**component source文字列の存在確認だけ**で検証していた（第5バッチが置き換えた`TenantChangeConfirmationDialog`と同型の欠陥検知ギャップ）。
+
+### 選定理由
+
+このdialogは調査（inquiry）終了前の未保存変更についてsave/discard/cancelを確定する境界であり、第5バッチの`TenantChangeConfirmationDialog`と同じ「不可逆性を含むユーザー意思決定」クラスに属する。文字列一致テストはhandlerの配線・ref対象・processing遷移が壊れてもsource上の文字列が残ればpassし得るため、実DOM境界へ置き換える価値が高いと判断した。
+
+### 追加した実検証
+
+`InquiryEndConfirmationDialog.test.ts`をfile-local `happy-dom`へ移し、React `createRoot`+`act`で実componentをmountして次を固定した。製品componentは変更していない。
+
+- 初期focusは安全側の`cancel` buttonへ置かれる。
+- 最終buttonからの`Tab`はcancelへ、cancelからの`Shift+Tab`は最終buttonへwrapし、dialog外へfocusを逃がさない。
+- 非processing時の`Escape`はdefaultをpreventし、`onDecision("cancel")`を1回通知する。
+- `isProcessing=true`へ遷移すると3 decision buttonは全てdisabledになり、processing statusへfocusが移り、`Escape`はdecisionを発火しない。
+- cancel/discard/saveそれぞれの実clickが対応するdecisionを通知する。
+
+### 検証結果
+
+- `npm run test`（本セッションで`~/kjnative-fe`経由の全件再実行により確認、下記参照）。
+
+### 判定境界
+
+本バッチは調査終了確認dialogのkeyboard/focus/decisionという1欠陥クラスを固定する。`QA-UNIT-01`は引き続き`In Progress`。
+
+## 2026-09-10 第7バッチ — DiagnosticsBundlePanelの状態無効化境界（事後記録、PR #3124）
+
+`DiagnosticsBundlePanel.test.ts`は新規追加。診断バンドル生成パネルは、分類未選択時の生成ボタン無効化、HTTPステータスの数字以外除去（サニタイズ）、許可済みフィールドのみを含むJSONプレビュー生成、分類変更時の既存プレビュー破棄、Escapeでのin-memoryプレビュー破棄とfocus復帰という複数の状態遷移を持つが、実DOM挙動を検証するテストがこれまで存在しなかった。
+
+### 選定理由
+
+診断バンドルは外部（サポート等）へ渡す情報であり、`document`/`runtime`セクションの内容が許可済みフィールドに限定されること、および分類変更後に古い（別分類の）プレビューが残らないことは、単なる表示の正しさを超えてAGENTS.mdの情報境界に関わる。文字列確認では検知できない実状態遷移が対象。
+
+### 追加した実検証
+
+`DiagnosticsBundlePanel.test.ts`をfile-local `happy-dom`で新規実装し、React `createRoot`+`act`で実componentをmountして次を固定した。製品componentは変更していない。
+
+- 分類未選択の間はGenerateが無効。HTTPステータス入力`"5x0 4"`が`"504"`へサニタイズされる。
+- 分類選択後のGenerateが、許可済みフィールド（`schemaVersion`/`incident`/`runtime`/`document`）のみを含むJSONプレビューを生成する。
+- 既存プレビューがある状態で分類を変更すると、プレビューとcopyボタンが消え、Generateが再度有効になる（stale previewの残存防止）。
+- Escapeがin-memoryプレビューを破棄し、パネルを閉じ、triggerへfocusを復帰する。
+
+### 検証結果
+
+- `npm run test`（本セッションで`~/kjnative-fe`経由の全件再実行により確認、下記参照）。
+
+### 判定境界
+
+本バッチは診断バンドルの分類駆動状態無効化という1欠陥クラスを固定する。`QA-UNIT-01`は引き続き`In Progress`。
+
+## 2026-09-10 第8バッチ — AgentTaskExportPanelの持ち出し境界（事後記録、PR #3125）
+
+`AgentTaskExportPanel.test.ts`は新規追加。外部AI（エージェント）向けタスク書き出しパネルは、非空scope＋明示的scope確認の両方が揃うまで書き出し操作を無効化する二重ゲート、SafeMode時の「未レビュー下書きを含める」opt-inの非表示、desiredCountの境界clamp（下限1・上限20）という複数の安全境界を持つが、実DOM挙動を検証するテストがこれまで存在しなかった。
+
+### 選定理由
+
+このパネルは「エージェントへ何を持ち出すか」を確定する境界であり、AGENTS.mdの安全不変条件（`AI出力はproposal-onlyで、自動適用しない`／`SafeModeは既定ON`）に直接関わる。scope確認前に書き出しボタンが有効になる、あるいはSafeMode下でも未レビュー下書きopt-inが露出する、といった配線回帰は表示テストでは検知できない。
+
+### 追加した実検証
+
+`AgentTaskExportPanel.test.ts`をfile-local `happy-dom`で新規実装し、React `createRoot`+`act`で実componentをmountして次を固定した。製品componentは変更していない。
+
+- 選択scopeが空、またはscope未確認の間は3つの書き出しボタン（copy/download markdown、download JSON）が全て無効。非空scope＋scope確認の両方が揃って初めて有効になり、実clickが各callbackを1回ずつ呼ぶ。
+- `safeMode=true`では「未レビュー下書きを含める」opt-inが描画されず、代わりにSafeMode注記が表示される。`safeMode=false`でのみopt-inが現れ、実clickが`onIncludeUnreviewedDraftsChange(true)`を通知する。
+- desiredCount入力が実入力イベントで`0→1`・`99→20`へclampされる。task種別select・source参照checkbox・scope確認checkboxそれぞれの実イベントが、scopeを広げることなく対応するcallbackへ正しい値で配線されている。
+
+### 検証結果
+
+- `npm run test`（本セッションで`~/kjnative-fe`経由の全件再実行により確認、下記参照）。
+
+### 判定境界
+
+本バッチはエージェント向け持ち出しの二重ゲート・SafeMode境界・入力clampという欠陥クラスを固定する。`QA-UNIT-01`は引き続き`In Progress`。
+
+### 2026-09-10 baseline確認（第6〜8バッチ事後記録に伴う再実行）
+
+上記3バッチは元コミット（#3123/#3124/#3125）ではissueメモを更新していなかったため、本記録は事後的に追記したものである。本セッションで`~/kjnative-fe`（WSLネイティブclone、B-UNIT-03確定プロファイル）から`npm run test`を実行し、**Test Files 259 passed (259)・Tests 1657 passed (1657)**を確認した（第6〜8バッチのtestを含む現状のmain HEAD `dae19abe`に対する全件green確認）。
+
+## 2026-09-10 第9バッチ — SharePanelのAC-5共有前サマリーゲート実状態機械
+
+候補選定は、複数の独立したサーベイ観点（share/export、import/SafeMode、他の確認dialog、admin/document-access）を並行して調査させたところ、いずれも独立に`SharePanel.tsx`の「共有前サマリーゲート」（UX-SHARE-01、ADR-0048）を最重要ギャップとして指摘し収束した。
+
+### 選定理由
+
+`SharePanel.test.ts`（313行、既存15 `it()`ブロック）は全件`renderToStaticMarkup`+`toContain`のみで、`createRoot`/`act`/DOMイベント発火は皆無だった。一方`SharePanel.tsx`のExport Bundleボタンは、`unreviewedTotal===0 && critiqueTargets===0 && contradictionLinks===0`のときだけAC-5としてゲートを完全skipして直接exportし（992-997行）、それ以外は`role="alertdialog"`の確認ゲートを表示し、'Continue'（`confirmPreShareGate`）と'Back'（`closePreShareGate`、focusを`exportBundleButtonRef`へ復帰）のみが唯一の分岐であり、さらにゲート内Escapeは`event.stopPropagation()`（517行、「外側パネルのEscapeへbubbleさせてはならない」という明示コメント付き）で外側パネルの`handlePanelKeyDown`から意図的に分離している。これはAGENTS.md 7章の安全不変条件「share/exportで未レビュー情報や秘密情報を意図せず共有しない」に直接対応する境界であり、この状態機械が壊れても既存の静的markup文字列テストは一切検知できない。関連する`ux_operability_regression.test.ts`の同名テストも`readFileSync`+`toContain`の文字列一致のみで、実DOM未検証という同型のギャップを共有していたため、本バッチでは対象を`SharePanel.test.ts`自体に絞り、そちらは変更しなかった（既存の広域回帰pinとして別目的で残す）。
+
+### 追加した実検証
+
+`SharePanel.test.ts`をfile-local `happy-dom`へ移し（既存の`renderToStaticMarkup`ベースの15testは環境非依存のため無変更で継続green）、React `createRoot`+`act`で実componentをmountする新規`describe`ブロックを追加した。製品componentは変更していない。
+
+- 開示すべき情報がゼロ（`domainExpressionSummary`全項目0）のときはゲートを表示せず、`onExportBundleZip`が捕捉したoptionsで即座に1回呼ばれる（AC-5 skip）。
+- 未レビュー・違和感・矛盾のいずれかが非ゼロのときはゲート（`role="alertdialog"`）が表示され、`onExportBundleZip`は呼ばれない。Continueクリックで捕捉済みoptionsのまま1回だけ呼ばれ、ゲートが閉じる。
+- Backクリックは`onExportBundleZip`を呼ばず、ゲートを閉じ、focusをexportボタンへ復帰する。
+- ゲート内でのEscapeは`onToggleOpen`（外側パネルの閉じるhandler）を一切呼ばない——ゲートのみを閉じ、外側`role="dialog"`パネルは開いたまま、focusはexportボタンへ復帰する。
+
+### 変異検査
+
+3件のmutationを個別に適用し、対象testのみが失敗し他は無影響であることを確認した（復元後、対象file 19 tests全pass）。
+
+1. `handlePreShareGateKeyDown`の`event.stopPropagation()`を無効化 → 「Escape inside the gate...」のみ失敗（`onToggleOpen`が誤って1回呼ばれる）。
+2. AC-5 skip条件を`if (false)`に固定 → 「skips the gate...」のみ失敗（`onExportBundleZip`が0回のまま）。
+3. Continue/Backの`onClick`ハンドラを入れ替え → 「shows the gate...Continue exports...」と「Back cancels...」の2件が失敗し、Escapeとskipのtestは無影響。
+
+### 検証結果
+
+- tested branch: `main`、base commit `dae19abe`（本バッチはこのHEADに対する追加テストのみ）。
+- 実行環境: `~/kjnative-fe`（WSLネイティブclone、B-UNIT-03確定プロファイル）。
+- `npm run typecheck`: 0 errors。
+- `npx vitest run src/ui/SharePanel.test.ts`: 19/19 pass（新規4 testsを含む）。
+- frontend full `npm run test`: **Test Files 259 passed (259)・Tests 1661 passed (1661)**（第6〜8バッチ確認時の1657から新規4件増）。
+- `SharePanel.tsx`（製品コード）は本バッチ全体を通じて無変更（mutation検証は`~/kjnative-fe`側の一時コピーのみに適用し、都度復元・`diff -q`でWindows側原本との同一性を確認）。
+- `python3 01_Plans/issues/validate_active_issue_memos.py`: `ok: validated 38 active issue memos`。
+- `python3 01_Plans/docs_check.py`（`~/kjnative-fe`実行。DrvFs経由の`/mnt/d/...`実行は内部`unittest discover`のgit subprocess多発により著しく遅いため、frontendと同じネイティブclone側で実行し直した）: 278 tests中、`test_stale_merge_reintroduction_tree_noop.py`の2件のみ失敗。これは`agent_failure_log.md`2026-09-09記録済みの既知環境依存事象（このWSL2環境のgitが`2.34.1`で`git merge-tree --write-tree`未対応、本セッションで`git --version`により再確認）であり、本バッチの変更とは無関係。
+- `git diff --check`: 対象2ファイルともクリーン（改行コード正規化の情報のみ）。
+
+### 判定境界
+
+本バッチはAC-5共有前サマリーゲートのskip条件・Continue/Back配線・Escape stopPropagationという1欠陥クラスを固定する。同一調査で挙がった`safeMode`チェックボックスおよびview/pack visibility selectの配線（admin_document_access観点で指摘済み）は、対象が重複しつつも別の欠陥クラスであるため次バッチ候補として残し、本バッチのscopeには含めない。`QA-UNIT-01`は引き続き`In Progress`を維持する。
