@@ -1,7 +1,7 @@
 {
   "_comment": [
-    "AI-IR-PROJECTION-01 AC-7. The expected output(s) for the derived-island-edge implementation",
-    "pair, computed from derived_island_edges_document.json.",
+    "AI-IR-PROJECTION-01 AC-7. Shared contract-correct output for the derived-island-edge implementation pair,",
+    "computed from derived_island_edges_document.json.",
     "Readers: backend tests/test_derived_island_relations_ts_equivalence.py (Python side, via",
     "llm_input_ir.derived_island_relations) and frontend",
     "src/domain/island_edge_aggregate.python_equivalence.test.ts (TS side, via",
@@ -10,7 +10,9 @@
     "Expected content, by construction of the fixture: related:c1:c2 is internal to isl-a and",
     "is dropped; related:c8:c9 joins two lone wolves and is dropped; the two isl-a -> isl-b",
     "causal edges aggregate into ONE row with aggregateCount 2; causal:c7:c1 runs the other",
-    "way (isl-b -> isl-a) and is a SEPARATE row, because causal is directed."
+    "way (isl-b -> isl-a) and is a SEPARATE row, because causal is directed.",
+    "DOMAIN-KJ-CAUSAL-DIRECTION-01 removed the former TS-only divergent golden: both implementations",
+    "now preserve causal direction and assert this single shared array."
   ],
   "derivedIslandEdges": [
     {
@@ -48,62 +50,6 @@
       "aggregateCount": 1,
       "contributingEdgeIds": ["causal:c7:c1"],
       "contributingCardIds": ["c7", "c1"]
-    },
-    {
-      "id": "derived-island:isl-b|isl-c|negate",
-      "fromId": "isl-b",
-      "toId": "isl-c",
-      "fromKind": "island",
-      "toKind": "island",
-      "type": "negate",
-      "isDerived": true,
-      "aggregateCount": 1,
-      "contributingEdgeIds": ["negate:c3:c5"],
-      "contributingCardIds": ["c3", "c5"]
-    }
-  ],
-  "_tsCurrentComment": [
-    "KNOWN, DOCUMENTED DIVERGENCE -- read this before 'fixing' either side.",
-    "derivedIslandEdges above is the contract-correct output: DOMAIN-KJ-01",
-    "(02_Architecture/schemas.md 3.3.1) makes 'causal' the one DIRECTED edge type and forbids",
-    "pair normalization for it in aggregation, while allowing it for the undirected types.",
-    "llm_input_ir.derived_island_relations() (Python) obeys that rule.",
-    "getDerivedIslandEdges() (TS) does NOT: island_edge_aggregate.ts calls",
-    "normalizeUndirectedIslands() for every type with no causal exemption, so it (a) reverses",
-    "the isl-b -> isl-a causal pair to isl-a -> isl-b and (b) keys it identically to the",
-    "opposite-direction rows, collapsing all three causal edges into ONE aggregate of 3.",
-    "This is a PRE-EXISTING TS bug, not drift introduced by AI-IR-PROJECTION-01; it is filed as",
-    "01_Plans/issues/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md.",
-    "tsCurrentDerivedIslandEdges pins what TS produces TODAY so the divergence is enumerated",
-    "rather than merely asserted. When that issue is fixed, DELETE this array and point the TS",
-    "test back at derivedIslandEdges -- the two become identical again.",
-    "The two arrays MUST stay identical on every non-causal row; the TS test asserts that, so",
-    "any divergence beyond causal fails loudly instead of hiding here."
-  ],
-  "tsCurrentDerivedIslandEdges": [
-    {
-      "id": "derived-card:isl-c|c9|related",
-      "fromId": "isl-c",
-      "toId": "c9",
-      "fromKind": "island",
-      "toKind": "card",
-      "type": "related",
-      "isDerived": true,
-      "aggregateCount": 1,
-      "contributingEdgeIds": ["related:c5:c9"],
-      "contributingCardIds": ["c5", "c9"]
-    },
-    {
-      "id": "derived-island:isl-a|isl-b|causal",
-      "fromId": "isl-a",
-      "toId": "isl-b",
-      "fromKind": "island",
-      "toKind": "island",
-      "type": "causal",
-      "isDerived": true,
-      "aggregateCount": 3,
-      "contributingEdgeIds": ["causal:c1:c3", "causal:c2:c4", "causal:c7:c1"],
-      "contributingCardIds": ["c1", "c3", "c2", "c4", "c7"]
     },
     {
       "id": "derived-island:isl-b|isl-c|negate",
