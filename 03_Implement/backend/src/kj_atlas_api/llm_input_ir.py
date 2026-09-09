@@ -1229,21 +1229,12 @@ def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
     Those are exactly the projection differences the IR introduces by design;
     they are boundary conditions of the comparison, not drift.
 
-    A FIFTH difference is of a different kind -- it is not a condition on the
-    input but a deliberate behavioural divergence, and on the causal type this
-    function is the one that is right:
-
-    - `causal` KEEPS ITS DIRECTION here (`from` = cause, `to` = effect), while
-      the TS function lexically normalizes the island pair for every type.
-      DOMAIN-KJ-01 (`02_Architecture/schemas.md` §3.3.1) states the rule
-      plainly: 集約（島間派生エッジ...）では、無方向種別はペアを正規化してよいが、
-      `causal` はペア正規化を行わず方向を保存する. `getDerivedIslandEdges()`
-      violates that rule (its `normalizeUndirectedIslands()` call has no type
-      exemption) -- a pre-existing bug, filed as
-      `01_Plans/issues/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md`
-      and NOT introduced by the IR rollout. The counter-example to copy is
-      `frontend/src/export/abstract_map_export.ts`, which already special-cases
-      `causal` out of its own `normalizePair()` with the same citation.
+    The former fifth divergence is resolved by
+    `DOMAIN-KJ-CAUSAL-DIRECTION-01`: both this function and
+    `getDerivedIslandEdges()` now preserve `causal` direction (`from` = cause,
+    `to` = effect) in both the rendered island pair and the aggregation key,
+    while undirected types keep pair normalization. Completion record:
+    `01_Plans/issues/done/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md`.
 
     Still inherited from the TS shape, and NOT fixed here (same new issue,
     item 2): the island <-> lone-wolf-card promotion pins `from_kind` to
@@ -1307,8 +1298,8 @@ def derived_island_relations(ir: dict[str, Any]) -> list[dict[str, Any]]:
             # pair, which is the part that is easy to get wrong. `A --causal--> B`
             # and `B --causal--> A` are two different claims; keying both as the
             # normalized pair would collapse them into one row and lose one of
-            # them (that is exactly what the TS function still does -- see the
-            # docstring's fifth difference). Undirected types keep collapsing,
+            # them (the TS function now uses the same exemption after
+            # DOMAIN-KJ-CAUSAL-DIRECTION-01). Undirected types keep collapsing,
             # because for them the two orders ARE the same relation.
             if relation["type"] == "causal":
                 a, b = from_island, to_island
