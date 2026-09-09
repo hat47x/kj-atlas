@@ -1,0 +1,65 @@
+name: Diagnostics bundle panel unit verify once
+
+on:
+  push:
+    branches:
+      - qa/unit-diagnostics-bundle-panel-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 03_Implement/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 03_Implement/frontend
+        run: npm ci
+
+      - name: Targeted diagnostics panel tests
+        working-directory: 03_Implement/frontend
+        run: npx vitest run src/ui/DiagnosticsBundlePanel.test.ts
+
+      - name: Full frontend tests
+        working-directory: 03_Implement/frontend
+        run: npm run test
+
+      - name: Typecheck
+        working-directory: 03_Implement/frontend
+        run: npm run typecheck
+
+      - name: Verify diff scope
+        run: |
+          git diff --check origin/main...HEAD
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '.github/workflows/qa-unit-diagnostics-bundle-panel-once.yml',
+              '03_Implement/frontend/src/ui/DiagnosticsBundlePanel.test.ts',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected diff scope: {sorted(actual)}')
+          PY
+
+      - name: Retire one-shot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/qa-unit-diagnostics-bundle-panel-once.yml
+          git diff --cached --check
+          git commit -m 'ci: retire diagnostics bundle panel verification one-shot'
+          git push origin HEAD:${GITHUB_REF_NAME}
