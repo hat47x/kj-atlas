@@ -78,6 +78,7 @@ export function RecentDocumentsDialog({
   isArchiving,
 }: RecentDocumentsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const hasDocumentChoices = recentDocumentIds.length > 0 || Boolean(documents?.length);
   const canOpen = selectedRecentDocumentId.length > 0 && selectedRecentDocumentId !== activeDocumentId && !isLoading;
 
   useEffect(() => {
@@ -221,10 +222,12 @@ export function RecentDocumentsDialog({
               ))}
             </select>
           </label>
-          <button type="button" onClick={handleOpenClick} disabled={!canOpen} style={{ ...buttonStyle, opacity: canOpen ? 1 : 0.5, justifySelf: "start" }}>
-            {t("app.toolbar.open")}
-          </button>
         </>
+      ) : null}
+      {hasDocumentChoices ? (
+        <button type="button" onClick={handleOpenClick} disabled={!canOpen} style={{ ...buttonStyle, opacity: canOpen ? 1 : 0.5, justifySelf: "start" }}>
+          {t("app.toolbar.open")}
+        </button>
       ) : null}
       {selectedRecentDocumentId && !isArchiving ? (
         <div style={{ display: "flex", gap: 8 }}>
