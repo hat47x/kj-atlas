@@ -74,6 +74,66 @@ describe("getDerivedIslandEdges", () => {
     ]);
   });
 
+  it("preserves causal direction even when the cause island sorts after the effect island", () => {
+    const document: DocumentV1 = {
+      ...baseDocument,
+      edges: [{ id: "cause-b-to-a", fromId: "card-b", toId: "card-a", type: "causal" }],
+    };
+
+    expect(getDerivedIslandEdges(document)).toEqual([
+      {
+        id: "derived-island:island-b|island-a|causal",
+        fromId: "island-b",
+        toId: "island-a",
+        fromKind: "island",
+        toKind: "island",
+        type: "causal",
+        isDerived: true,
+        aggregateCount: 1,
+        contributingEdgeIds: ["cause-b-to-a"],
+        contributingCardIds: ["card-b", "card-a"],
+      },
+    ]);
+  });
+
+  it("keeps opposite causal directions as separate aggregates", () => {
+    const document: DocumentV1 = {
+      ...baseDocument,
+      edges: [
+        { id: "cause-a-to-b-1", fromId: "card-a", toId: "card-b", type: "causal" },
+        { id: "cause-a-to-b-2", fromId: "card-z", toId: "card-b", type: "causal" },
+        { id: "cause-b-to-a", fromId: "card-b", toId: "card-a", type: "causal" },
+      ],
+    };
+
+    expect(getDerivedIslandEdges(document)).toEqual([
+      {
+        id: "derived-island:island-a|island-b|causal",
+        fromId: "island-a",
+        toId: "island-b",
+        fromKind: "island",
+        toKind: "island",
+        type: "causal",
+        isDerived: true,
+        aggregateCount: 2,
+        contributingEdgeIds: ["cause-a-to-b-1", "cause-a-to-b-2"],
+        contributingCardIds: ["card-a", "card-b", "card-z"],
+      },
+      {
+        id: "derived-island:island-b|island-a|causal",
+        fromId: "island-b",
+        toId: "island-a",
+        fromKind: "island",
+        toKind: "island",
+        type: "causal",
+        isDerived: true,
+        aggregateCount: 1,
+        contributingEdgeIds: ["cause-b-to-a"],
+        contributingCardIds: ["card-b", "card-a"],
+      },
+    ]);
+  });
+
   it("does not derive from persisted island-to-island edges", () => {
     const document: DocumentV1 = {
       ...baseDocument,
