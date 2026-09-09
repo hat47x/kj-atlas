@@ -30,7 +30,7 @@ from kj_atlas_api.models import (
 from kj_atlas_api.routes.docs import router as docs_router
 from kj_atlas_api.routes.guest_session import router as guest_session_router
 
-NOW = datetime(2026, 9, 7, 0, 30, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 TS = NOW.isoformat()
 STATE_HASH_KEY = b"guest-redeem-state-test-key-012345"
 SESSION_HASH_KEY = b"guest-session-test-key-01234567890"
