@@ -59,7 +59,8 @@ async function changeValue(
 ): Promise<void> {
   await act(async () => {
     element.value = value;
-    element.dispatchEvent(new Event("change", { bubbles: true }));
+    const eventName = element instanceof HTMLInputElement ? "input" : "change";
+    element.dispatchEvent(new Event(eventName, { bubbles: true }));
   });
 }
 
