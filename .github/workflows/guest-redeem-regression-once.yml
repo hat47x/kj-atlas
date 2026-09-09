@@ -1,0 +1,131 @@
+name: Guest redeem regression repair verify once
+
+on:
+  push:
+    branches:
+      - fix/guest-redeem-regression-contract-20260909
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Classify guest redeem as an explicit pre-session boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('03_Implement/backend/tests/test_tenant_session_precondition.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = 'from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session\nfrom kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session\n'
+          new = 'from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session\nfrom kj_atlas_api.routes.guest_session import GuestRedeemRequest, redeem_guest_session\nfrom kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session\n'
+          if old not in text:
+              raise SystemExit('guest-session import insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '_PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"\n\n_UNGUARDED_ROUTE_EXEMPTIONS'
+          new = '_PRE_SESSION_OAUTH_FLOW = "pre-session-oauth-flow"\n# Guest invitation redeem also runs before a tenant session exists, but unlike\n# OAuth callback its tenant/principal scope comes only from the opaque one-time\n# host state. It must therefore stay unguarded by tenant-session version while\n# remaining client-tenant-free.\n_PRE_SESSION_GUEST_REDEEM_FLOW = "pre-session-guest-redeem-flow"\n\n_UNGUARDED_ROUTE_EXEMPTIONS'
+          if old not in text:
+              raise SystemExit('pre-session exemption insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '    ("GET", "/session/callback"): _PRE_SESSION_OAUTH_FLOW,\n    ("POST", "/session/logout"): _NO_TENANT_RESOURCE,\n'
+          new = '    ("GET", "/session/callback"): _PRE_SESSION_OAUTH_FLOW,\n    # ADR-0080: redeem happens before a guest session exists; tenant/principal\n    # are recovered from server-owned one-time state, never from client scope.\n    ("POST", "/session/guest/redeem"): _PRE_SESSION_GUEST_REDEEM_FLOW,\n    ("POST", "/session/logout"): _NO_TENANT_RESOURCE,\n'
+          if old not in text:
+              raise SystemExit('guest redeem exemption insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '''def test_control_plane_exemption_requires_control_plane_authorization() -> None:\n'''
+          new = '''def test_pre_session_guest_redeem_exemption_derives_scope_from_server_state() -> None:\n    exempt_routes = _exempt_routes(_PRE_SESSION_GUEST_REDEEM_FLOW)\n    assert set(exempt_routes) == {("POST", "/session/guest/redeem")}\n\n    route = exempt_routes[("POST", "/session/guest/redeem")]\n    assert route.endpoint is redeem_guest_session\n    assert not _installs_tenant_scoped_boundary(route)\n    assert set(GuestRedeemRequest.model_fields) == {"state", "identity_credential"}\n    assert GuestRedeemRequest.model_config.get("extra") == "forbid"\n\n\ndef test_control_plane_exemption_requires_control_plane_authorization() -> None:\n'''
+          if old not in text:
+              raise SystemExit('guest redeem focused test insertion point not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 03_Implement/backend/tests/test_tenant_session_precondition.py
+          git diff --cached --check
+          git commit -m 'test(security): classify guest redeem as pre-session route'
+
+      - name: Make guest redeem HTTP clock deterministic
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('03_Implement/backend/tests/test_guest_redeem_http.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''class RejectingVerifier:\n    def verify_identity(self, *, credential: str, verification_method: str) -> VerifiedGuestIdentity:\n        raise GuestIdentityVerificationError("provider rejected credential")\n\n\n@pytest.fixture\n'''
+          new = '''class RejectingVerifier:\n    def verify_identity(self, *, credential: str, verification_method: str) -> VerifiedGuestIdentity:\n        raise GuestIdentityVerificationError("provider rejected credential")\n\n\nclass FixedClockGuestRedeemStateStore(DatabaseGuestRedeemStateStore):\n    \"\"\"Exercise the store's public ``now`` seam without wall-clock drift.\"\"\"\n\n    def resolve_challenge(\n        self, *, raw_state: str, hash_key: bytes, now: datetime | None = None\n    ):\n        return super().resolve_challenge(\n            raw_state=raw_state,\n            hash_key=hash_key,\n            now=NOW if now is None else now,\n        )\n\n    def redeem_verified_identity(\n        self,\n        *,\n        raw_state: str,\n        hash_key: bytes,\n        session_hash_key: bytes,\n        identity: VerifiedGuestIdentity,\n        now: datetime | None = None,\n    ) -> str:\n        return super().redeem_verified_identity(\n            raw_state=raw_state,\n            hash_key=hash_key,\n            session_hash_key=session_hash_key,\n            identity=identity,\n            now=NOW if now is None else now,\n        )\n\n\n@pytest.fixture\n'''
+          if old not in text:
+              raise SystemExit('fixed-clock store insertion point not found')
+          text = text.replace(old, new, 1)
+
+          old = '    state_store = DatabaseGuestRedeemStateStore(factory)\n'
+          new = '    state_store = FixedClockGuestRedeemStateStore(factory)\n'
+          if old not in text:
+              raise SystemExit('state store construction point not found')
+          text = text.replace(old, new, 1)
+
+          old = '                expires_at=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()\n'
+          new = '                expires_at=(NOW - timedelta(minutes=1)).isoformat()\n'
+          if old not in text:
+              raise SystemExit('expired-state clock point not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git add 03_Implement/backend/tests/test_guest_redeem_http.py
+          git diff --cached --check
+          git commit -m 'test(guest): make redeem HTTP clock deterministic'
+
+      - name: Install backend test dependencies
+        working-directory: 03_Implement/backend
+        run: python -m pip install -e '.[test]'
+
+      - name: Focused guest redeem regression tests
+        working-directory: 03_Implement/backend
+        run: python -m pytest tests/test_tenant_session_precondition.py tests/test_guest_redeem_http.py -q
+
+      - name: Focused lint
+        working-directory: 03_Implement/backend
+        run: ruff check tests/test_tenant_session_precondition.py tests/test_guest_redeem_http.py
+
+      - name: Verify final diff scope
+        run: |
+          git diff --check origin/main...HEAD
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              '.github/workflows/guest-redeem-regression-once.yml',
+              '03_Implement/backend/tests/test_guest_redeem_http.py',
+              '03_Implement/backend/tests/test_tenant_session_precondition.py',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main...HEAD'], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected diff scope: {sorted(actual)}')
+          PY
+
+      - name: Retire one-shot workflow and publish verified commits
+        run: |
+          git rm .github/workflows/guest-redeem-regression-once.yml
+          git diff --cached --check
+          git commit -m 'ci: retire guest redeem regression one-shot'
+          git push origin HEAD:${GITHUB_REF_NAME}
