@@ -20,9 +20,8 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
 
-          old_path = "01_Plans/issues/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md"
+          old_path = "01_Plans/issues/" + "issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md"
           done_path = "01_Plans/issues/done/issue-DOMAIN-KJ-CAUSAL-DIRECTION-01-derived-island-edge-causal-pair-normalization.md"
 
           ai_issue = Path("01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md")
