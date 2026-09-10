@@ -2,78 +2,95 @@
 
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
-- Type: Process
-- Status: In Progress
-- Source Issue: `COGNITIVE-EVAL-01`
-- Priority: P1
-- Owner: Maintainer
-- Scope: `01_Plans/research/`, `01_Plans/dogfood/`, `01_Plans/issues/`, PoC用の非製品コード
-- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
-- Norms: `DOM-CORE-01`, `DOM-CORE-02`, `DOM-CORE-03`, `DOM-CORE-04`
-- Expected verification level: docs-check + reproducible offline benchmark
-- Working branch: `research/cognitive-assoc-01-kj-semantic-field-20260910`
-- Research record: `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
+## 1. 根幹の趣旨
 
-> `kj_*`を含むRelatedのパスやworking branch名は既存の技術識別子であり、本issueで用いる技法の一般名称ではない。
+kj-atlasが支援したいのは、カードを機械的に分類することではない。
 
-## 三要素整合（ADR-0067）
+人間がまだ名前を与えていない関係を見つけ、複数のカードを一緒に眺めたときに立ち上がる「訴え」を感じ取り、必要なら離し、保留し、残余を残しながら意味を組み上げていく探索を支援することである。
 
-- **業務設計（Business）**: 親和図法の束ねでは、語彙類似ではなく「訴えの近さ」を2〜3枚の小さな集合として感じ取り、人間が表札を書く前の探索を支える必要がある。本PoCは候補生成を検証し、自動島形成は行わない。
-- **データ設計（Data）**: benchmark annotation、derived signature、実験結果は研究データであり、Document / Consensus Graphの正本ではない。PoCを理由にproduction schemaへ型を追加しない。
-- **機能設計（Function）**: 最初はoffline harnessだけで比較する。本番API/UI/worker/provider契約は定義しない。既存境界を越える必要が出た場合だけ、`ADR-0047` R-1..R-4へ戻す。
+そのため、認知支援層には単なる語彙類似検索より深い能力が必要になる。一方で、その能力をLLMだけへ依存すると、常時localで軽量に動かすこと、再現可能な候補生成を行うこと、LLMとは異なる探索経路を持つことが難しくなる。
 
-## 課題
+本Issueの目的は、**人間の親和図作業を置き換えず、その前段で「一緒に読んでみる価値のある組合せ」を軽量・再現可能に浮上させる認知層が成立し得るかを検証すること**である。
 
-- `suggest_card_groups` は「分類ではなく訴えの類似性」で束ねることを要求するが、現在のAI実行経路は主にLLMを前提としている。
-- FlyHashは軽量な疎近傍検索として有望だが、それだけでは入力特徴に存在しない深層意味を獲得できない。
-- FlyVec / Comply等は疎な生物模倣motifから言語意味表現まで進める可能性を示すが、親和図法で必要なlatent advocacy、hard negative、2〜3枚のset-level coherenceに届くかは未検証である。
-- 「軽量だから」「ハエ脳由来だから」という理由自体は採用根拠にしない。
+Fly-inspired方式はそのための候補の一つにすぎず、採用すること自体を目的としない。
 
-要求水準に届けば、provider=`none`でも常時localに候補関係・違和感の契機を浮上させ、LLMとは異なる認知経路を持てる可能性がある。届かなければFly-inspired方式は近傍index等の限定用途へ縮小し、深層意味候補にはlocal sentence encoderまたはLLMを使う。
+## 2. 守るべき原則
 
-## 検証仮説
+このPoCでは、方式の良し悪しより先に、製品として守るべき境界を固定する。
 
-> 一般言語から得たsemantic representationに、親和図作業のgroup/separate/Critique/hold等の局所文脈を重ねることで、表層語彙が異なるhard positiveを回収しつつ、高表層類似のhard negativeと、単独島・保留・残余を保護できる。
-
-問いを次の順で分離する。
-
-1. sparse expansionだけで表層baselineを超えるか。
-2. 深層意味表現が必要ならFlyVec/Comply-inspired encoderに研究価値があるか。
-3. 一般sentence encoderに対し、親和図作業固有のfeedback / graph / space / historyを加えることに独立増分があるか。
-4. その増分が探索を広げるのか、機械候補へのanchoringを強めるのか。
-
-## 対応方針
-
-### 実施すること
-
-1. モデル結果を見る前に、既存dogfoodからsmall-set benchmarkを作成する。
-2. benchmarkにはhard positive / hard negative / held-or-ambiguous / singleton islandを含める。
-3. 各annotationは元カードID、source snapshot、判断時点へ戻れるようにする。
-4. 最初のbaselineは次の3系に限定する。
-   - A: character/word n-gram + TF-IDF cosine
-   - C: FlyHash-like sparse expansion + WTA
-   - E: strong local sentence encoder
-5. A/C/Eの結果からD（learned sparse semantic encoder）を作る意味があるか判定する。
-6. Dに進む場合もFlyVec/Complyを無批判に移植せず、日本語短文・親和図カードという入力条件を明示する。
-7. F（affinity-specific multi-channel extension）はsemantic channel単体を評価してから追加する。
-8. 評価は`COGNITIVE-EVAL-01`のM1/M3/M4/M7/M9へ接続する。
-9. 全方式で同じsource snapshotと事前固定benchmarkを使う。
-10. seed、algorithm version、parameter setを記録し、同一入力から候補を再生成できるようにする。
-
-### 実施しないこと
-
-- benchmark作成時にモデル候補を見てannotationを調整しない。
-- Fly-inspired方式を採用すること自体を成功条件にしない。
-- LLMまたはsemantic kernelにIsland / Cluster / Labelを自動確定させない。
-- 内部similarity / activation / confidenceを利用者向け内容スコアとして表示しない。
-- held / ambiguousを評価都合でpositive/negativeへ強制分類しない。
-- 単独島をpending / held / shelvedへ読み替えない。
-- kernel候補を理由に、戻し検査・空白列挙・A/B照合等の規範的verification scopeを削らない。
+- 人間が意味を立ち上げる主体であり、AIまたは非LLM kernelが島・表札・関係を自動確定しない。
+- 「近いものを全部まとめる」ことを最適化しない。単独島、保留、違和感、残余を正規の状態として残す。
+- 語彙が似ていることと、同じ訴えであることを混同しない。
+- pairwise similarityだけで束を推移的に決めず、2〜3枚を一緒に読んだときの集合としての立ち上がりを扱う。
+- 内部similarity / activation / confidenceを利用者向け内容スコアへ変換しない。
+- 候補kernelを理由に、戻し検査・空白列挙・A/B照合等のverification scopeを削らない。
 - PoCのためだけにDocument schema、Consensus Graph、production APIを変更しない。
 
-## 実行タスク
+## 3. 必要となる認知能力
 
-- [x] **T1 Research**: FlyHash / BioHash / FlyVec / Comply / APL局所抑制と親和図法の要求との差を整理する。
+根幹の趣旨から、少なくとも次の能力が必要になる。
+
+1. **表層を越えた意味近接**  
+   使用語彙や具体例が違っても、背後の問題構造・経験上の訴えが近いカードを候補化できる。
+2. **高表層類似の拒否**  
+   同じ語彙でも、時点・因果方向・立場・肯否・役割が違う場合に安易に一束へ寄せない。
+3. **small-set coherence**  
+   2〜3枚を同時に読んだときに初めて成立するまとまりを扱える。
+4. **残余保持**  
+   単独島・保留・少数カードを強制的に既存の束へ吸収しない。
+5. **文脈適応**  
+   現在の探究、周囲のカード、過去の束ね・分離履歴によって候補の意味を調整できる可能性を持つ。
+6. **再現性と軽量性**  
+   常時localで使える負荷と、同一入力から候補を再生成できる追跡可能性を持つ。
+
+## 4. このIssueで分けて検証する問い
+
+上記の能力を一度に一つの仕組みへ押し込まず、次の順で問いを分離する。
+
+1. 表層特徴だけでは、どこまで届くか。
+2. sparse expansionだけで表層baselineを超えられるか。
+3. 深層意味表現が必要な場合、FlyVec / Comply系の疎意味表現に独立した研究価値があるか。
+4. strong local sentence encoderで十分なのか。
+5. 一般意味表現に対して、親和図作業固有のgroup / separate / Critique / hold / graph / space / historyを加えることに独立増分があるか。
+6. 候補提示が探索を広げるのか、それとも最初の機械候補へのanchoringを強めるのか。
+
+## 5. 研究仮説
+
+> 一般言語から得たsemantic representationに、親和図作業のgroup / separate / Critique / hold等の局所文脈を重ねることで、表層語彙が異なるhard positiveを回収しつつ、高表層類似のhard negativeと、単独島・保留・残余を保護できる。
+
+この仮説を検証する研究上の仮称を **Affinity Semantic Field** とする。製品名称でも採用済みアーキテクチャでもない。
+
+## 6. 比較する方式
+
+方式は根幹要件を満たすための候補として比較する。
+
+| 系 | 役割 |
+|---|---|
+| A. character/word n-gram + TF-IDF cosine | 表層類似の基準線 |
+| B. conventional sparse/hash baseline | 単なるhash高速化との差を分離 |
+| C. FlyHash-like sparse expansion | sparse expansion + WTA単体の寄与 |
+| D. learned sparse semantic encoder | FlyVec/Comply系の意味表現寄与 |
+| E. strong local sentence encoder | 深層意味近接の現実的な比較基準 |
+| F. affinity-specific multi-channel extension | 親和図作業固有履歴・graph・spaceの増分 |
+| G. current LLM proposal | 上限・性質比較用 |
+
+最初から全部実装せず、まずA/C/Eで表層・疎拡張・dense semanticの差を確認する。その結果を見てD/Fへ進む意味があるか判定する。
+
+## 7. benchmarkの考え方
+
+評価系が研究方式へ引きずられないよう、モデル結果を見る前にbenchmarkを固定する。
+
+- 今回の研究より前から存在するreviewed dogfoodを観測データとして使う。
+- 既存の同一複数カード島を`observedPositiveSet`として扱うが、普遍的なsemantic ground truthとはみなさない。
+- 単独島は`observedSingletonIsland`としてそのまま残し、`held / pending / shelved`へ読み替えない。
+- cross-islandであること自体をhard negativeとみなさず、人間判定前のcontrast poolへ置く。
+- human adjudicationが終わるまでsemantic baselineを実行しない。
+
+現在のv0ではMeta R1とR3の29 reviewed cardsを用い、cross-island pair 173件、2+1 candidate 346件、計519件を監査母集団として固定している。人間判定はこの全件ではなく、モデル非依存の決定論的規則でbounded review setを先に抽出する。
+
+## 8. 実行タスク
+
+- [x] **T1 Research**: FlyHash / BioHash / FlyVec / Comply / APL局所抑制と、親和図法が要求する認知能力との差を整理する。
   - 成果: `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
 - [ ] **T2 Benchmark freeze**: dogfoodからsmall-set benchmark v0をmodel実行前に固定する。
   - [x] T2a: `textReviewed=true`のMeta R1 / R3をblob SHAで固定し、29枚のblind input、既存複数カード島、単独島、challenge positiveを事前登録した。
@@ -87,36 +104,20 @@
 - [ ] **T7 Cognitive dogfood**: 候補提示あり/なしで探索の増分とanchoringを比較する。
 - [ ] **T8 Architecture decision**: `no adoption / retrieval-only / candidate-cognition layer / ADR trigger` のいずれかへ変換する。
 
-## 評価軸
+## 9. 評価軸と判定ゲート
 
 - **R1 Deep-semantic candidate recall**: hard positiveの候補回収。
 - **R2 Surface-decoy rejection**: hard negativeを語彙類似だけで近接扱いしないこと。
 - **R3 Singleton / residual survival**: singleton / held / minority cardsを強制回収しないこと。
-- **R4 Set-level coherence**: pairの近さだけでなく2〜3枚集合としての適合を扱えること。
+- **R4 Set-level coherence**: 2〜3枚集合としての適合を扱えること。
 - **R5 Wording stability**: 軽微な言い換えで候補が崩れすぎないこと。
 - **R6 Affinity-feedback increment**: 親和図作業履歴の追加に独立した改善があること。
 - **R7 Continuous-local budget**: CPU/memory/index更新が常時local運用候補として現実的であること。
 - **R8 Cognitive-control increment**: 発見・残余保持・早期収束耐性・注意再配分に実利用上の増分があること。
 
-## 判定ゲート
+Gate Aでは表層類似を越えたか、Gate BではFly-inspired方式に独立した理由があるか、Gate Cでは親和図作業固有情報に増分があるか、Gate Dでは実際に認知拡張になっているかを順に判定する。
 
-### Gate A — 表層類似を越えたか
-
-CまたはDがAに対してhard positiveを改善し、同時にR2/R3を壊していないことを見る。
-
-### Gate B — Fly-inspired方式に独立した理由があるか
-
-Eと比較し、品質・continuous-local負荷・更新容易性・説明可能性・affinity-feedbackへの適応の少なくとも一つに検証可能な利点があるかを見る。Eの方が単純で同等以上ならFly-inspired方式を意味層として採用しない。
-
-### Gate C — 親和図作業固有情報に増分があるか
-
-一般意味表現だけの場合とFを比較する。Fの改善がなければgraph/space/historyをsemantic kernelへ混ぜず、既存構造として別に保持する。
-
-### Gate D — 認知拡張になっているか
-
-offline精度が高くても、dogfoodで候補へのanchoring、残余消失、機械的な束ねが増えるなら製品導入しない。
-
-## 受入条件
+## 10. 受入条件
 
 - [ ] model出力を見る前にsmall-set benchmark v0のcontrast判定までcommitで固定されている。
 - [ ] A/C/Eが同じsnapshot・同じ候補数条件で比較できる。
@@ -128,30 +129,30 @@ offline精度が高くても、dogfoodで候補へのanchoring、残余消失、
 - [ ] **AIまたは非LLM kernelが人間の明示操作なしに島・表札・関係を確定しない。**
 - [x] production schema/APIを変更していない。
 
-## 事前凍結時点の検証記録
+## 11. 事前凍結時点の検証記録
 
 - sourceは今回の研究より前に存在する`doc_cognitive_dogfood_meta_r1`と`doc_kj_atlas_dogfood_r3`を使用する。これらのIDはhistorical evidenceとして保持する。
 - 両sourceの全29カードが`textReviewed=true`であることを確認した。
 - Meta R1は5つの複数カード島 + 1つの単独島、R3は4つの複数カード島 + 1つの単独島としてsource blobを確認した。
 - model-visible fieldは`documentId / cardId / text`だけに固定した。
-- 既存の島外であることをhard negativeとみなさず、人間判定前のcontrast poolへ置く。
 - synthetic unit testでblind field限定、未レビュー拒否、blob SHA不一致拒否、co-island pair除外、異なるsingleton間のcontrast維持、challenge setの島跨ぎ拒否、membership漏れ拒否を確認した。
 - この実行環境からGitHubへのDNS解決ができずremote branchをcloneできなかったため、実sourceを用いたCLI end-to-end実行は未実施。source blob自体はGitHub connectorで正本を確認した。T2d後のbaseline開始前に通常の開発環境で実source prepを再実行する。
 - **semantic baseline / embedding / FlyHash候補はまだ一度も生成していない。** benchmark labelはmodel-blindのままである。
 
-## 責任分界
+## 12. 管理情報
 
-- 実行責任（R）: AI agent / Maintainer
-- 受入判定（A）: Maintainer
-- 契約チェックポイント: `DOM-CORE-01..04`, proposal-only, `ADR-0046`, `ADR-0047`, `ADR-0067`
-- 停止基準: benchmark未固定のままモデル比較を始める、Canonical Graph変更が必要になる、既存性能予算を越える、または評価結果から都合よくannotationを変更する必要が生じた場合はProceedしない。
+- Type: Process
+- Status: In Progress
+- Source Issue: `COGNITIVE-EVAL-01`
+- Priority: P1
+- Owner: Maintainer
+- Scope: `01_Plans/research/`, `01_Plans/dogfood/`, `01_Plans/issues/`, PoC用の非製品コード
+- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
+- Norms: `DOM-CORE-01`, `DOM-CORE-02`, `DOM-CORE-03`, `DOM-CORE-04`
+- Expected verification level: docs-check + reproducible offline benchmark
+- Working branch: `research/cognitive-assoc-01-kj-semantic-field-20260910`
+- Research record: `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
 
-## AIレーン宣言
+`kj_*`を含む既存パスやworking branch名は技術識別子であり、本issueで用いる技法の一般名称ではない。
 
-- Lane: N/A（主対象は非生成・local cognition PoC。LLMは比較用reference armのみ）
-- データ境界: PoCはlocal/offlineを既定とし、dogfoodカードを外部providerへ送らない。
-- SafeMode/監査/人間レビュー境界: proposal-only、人間確定、非序列化を維持する。
-
-## 補足
-
-本issueは新ADRを起票しない。`ADR-0047`のexecution-first方針に従い先に実証する。PoCの結果として新しい永続状態、production API、provider、安全境界、性能予算超過等が必要になった場合のみR-1..R-4を確認して設計判断へ戻る。
+本issueは新ADRを起票しない。`ADR-0047`のexecution-first方針に従い先に実証し、永続状態、production API、provider、安全境界、性能予算等に新しい設計判断が必要になった場合のみR-1..R-4へ戻る。
