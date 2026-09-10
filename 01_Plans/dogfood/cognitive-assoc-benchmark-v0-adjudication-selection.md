@@ -31,7 +31,7 @@ candidate IDのSHA-256だけを使い、hash値の昇順から抽出する。
 
 ### L: lexical-stress stratum
 
-表層的には近く見えるが、既存KJでは別島だった例を意図的に多く含め、R2 `Surface-decoy rejection`へ圧力を掛ける。
+表層的には近く見えるが、既存の親和図では別島だった例を意図的に多く含め、R2 `Surface-decoy rejection`へ圧力を掛ける。
 
 選定に使うのはsemantic encoderではなく、次の固定した文字n-gram overlapだけとする。
 
@@ -62,14 +62,14 @@ UとLで同じcandidateが選ばれた場合は一件へ統合する。
 ### 言えること
 
 - 表層語彙に依存しない事前抽出(U)で、cross-island candidateをどう読むか。
-- 表層類似が高いstress set(L)で、単純なsimilarityがKJ上の分離を壊しやすいか。
+- 表層類似が高いstress set(L)で、単純なsimilarityが親和的な束ねにおける分離を壊しやすいか。
 - hard negative / related-but-separate / ambiguous-or-heldが実際に存在するか。
 - semantic model比較前に、評価すべきcontrast caseを固定できる。
 
 ### 言えないこと
 
 - 519件全体における各labelの母比率。
-- KJカード一般のhard-negative発生率。
+- 親和図カード一般のhard-negative発生率。
 - L stratumの成績を通常データ分布での平均性能と読み替えること。
 
 結果はU/Lを分けて報告し、単一のaccuracyへ畳まない。
