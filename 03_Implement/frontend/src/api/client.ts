@@ -54,7 +54,7 @@ type ParsedErrorDetail = {
 
 const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
 const MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES = 4 * 1024;
-export const TENANT_SESSION_VERSION_HEADER = "SUI Sensemaking-Tenant-Session-Version";
+export const TENANT_SESSION_VERSION_HEADER = "Sui-Sensemaking-Tenant-Session-Version";
 
 export type TenantScopedRequestOptions = Readonly<{
   tenantSessionContext?: TenantSessionContextV1;

@@ -11,7 +11,7 @@ from sui_sensemaking_api.runtime_bootstrap import resolve_tenant_session_bootstr
 from sui_sensemaking_api.saas_request_context import resolve_trusted_saas_request_session
 
 
-TENANT_SESSION_VERSION_HEADER = "SUI Sensemaking-Tenant-Session-Version"
+TENANT_SESSION_VERSION_HEADER = "Sui-Sensemaking-Tenant-Session-Version"
 
 
 def tenant_session_precondition_required(request: Request) -> bool:

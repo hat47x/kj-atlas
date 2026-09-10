@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const TENANT_SESSION_HEADER = "SUI Sensemaking-Tenant-Session-Version";
-const CSRF_COOKIE = "Kj-Atlas-Csrf";
-const CSRF_HEADER = "X-Kj-Atlas-Csrf";
+const TENANT_SESSION_HEADER = "Sui-Sensemaking-Tenant-Session-Version";
+const CSRF_COOKIE = "Sui-Sensemaking-Csrf";
+const CSRF_HEADER = "X-Sui-Sensemaking-Csrf";
 
 type TenantSummary = {
   id: string;

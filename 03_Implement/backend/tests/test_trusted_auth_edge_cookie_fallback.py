@@ -27,7 +27,7 @@ from sui_sensemaking_api.trusted_auth_edge import (
 )
 
 TIMESTAMP = "2026-08-20T00:00:00Z"
-COOKIE_NAME = "Kj-Atlas-Auth-Session"
+COOKIE_NAME = "Sui-Sensemaking-Auth-Session"
 HASH_KEY = b"cookie-fallback-test-key-0123456"
 ISSUER = "https://broker.invalid/issuer"
 RAW_SESSION = "opaque-raw-session-value-abcdef"

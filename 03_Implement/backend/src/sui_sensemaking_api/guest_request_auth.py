@@ -10,7 +10,7 @@ from fastapi import HTTPException, Request
 from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
 from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore
 
-GUEST_AUTH_SESSION_COOKIE = "Kj-Atlas-Guest-Session"
+GUEST_AUTH_SESSION_COOKIE = "Sui-Sensemaking-Guest-Session"
 _MAX_GUEST_AUTH_SESSION_COOKIE_LENGTH = 256
 
 

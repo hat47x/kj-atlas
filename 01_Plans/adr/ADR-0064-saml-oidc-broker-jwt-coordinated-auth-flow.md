@@ -65,7 +65,7 @@ ADR-0020 §1.1 の「認証・セッション・再認証の責務は前段 IAP/
 
 - フロントエンドは Broker のログインページへリダイレクトする。
 - Broker が認可コードグラント + PKCE を処理し、セッション cookie を発行する。
-- sui-sensemaking Backend は Broker が発行した JWT を `X-Kj-Atlas-Authorization` ヘッダーで受け取る。
+- sui-sensemaking Backend は Broker が発行した JWT を `X-Sui-Sensemaking-Authorization` ヘッダーで受け取る。
 
 ただし、開発者体験のため、**mock レベルのログインフローを Level 2 テストハーネスに実装する**（D4 参照）。
 
@@ -79,7 +79,7 @@ ADR-0020 §1.1 の「認証・セッション・再認証の責務は前段 IAP/
 | `authenticated` | JWT 検証済み | 通常画面 |
 | `session-expired` | JWT 期限切れ | 再ログイン案内 |
 
-フロントエンドは Broker のログイン URL へリダイレクトし、認証完了後 Broker がフロントエンドへリダイレクトバックする。フロントエンドは Broker から JWT を受け取り、以降の API リクエストに `X-Kj-Atlas-Authorization: Bearer <jwt>` を付与する。
+フロントエンドは Broker のログイン URL へリダイレクトし、認証完了後 Broker がフロントエンドへリダイレクトバックする。フロントエンドは Broker から JWT を受け取り、以降の API リクエストに `X-Sui-Sensemaking-Authorization: Bearer <jwt>` を付与する。
 
 ### D4: Mock ログインフロー実装計画（Phase 1）
 
@@ -102,7 +102,7 @@ Level 2 mock IdP に以下を追加する：
 - `tests/federation/mock_sp.py` の `/sp/jwt/{provider}/docs/{doc_id}` エンドポイント（実装済み）を拡張し、完全なログインフローに対応させる：
   1. `/login` → 認可コード取得
   2. `/oauth/token` → JWT 取得
-  3. JWT を `X-Kj-Atlas-Authorization` ヘッダーで Backend へ転送
+  3. JWT を `X-Sui-Sensemaking-Authorization` ヘッダーで Backend へ転送
 
 ### D5: 外部 IdP 連携計画（Phase 2）
 

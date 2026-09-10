@@ -56,7 +56,7 @@ def test_saas_runtime_accepts_exact_current_version() -> None:
     with _client(runtime_profile="saas-multitenant") as client:
         response = client.get(
             "/guarded",
-            headers={"SUI Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
+            headers={"Sui-Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
         )
 
     assert response.status_code == 200
@@ -65,12 +65,12 @@ def test_saas_runtime_accepts_exact_current_version() -> None:
 def test_saas_runtime_rejects_missing_stale_malformed_and_duplicate_versions() -> None:
     requests: tuple[dict[str, object], ...] = (
         {},
-        {"headers": {"SUI Sensemaking-Tenant-Session-Version": "stale-session-v1"}},
-        {"headers": {"SUI Sensemaking-Tenant-Session-Version": "contains spaces"}},
+        {"headers": {"Sui-Sensemaking-Tenant-Session-Version": "stale-session-v1"}},
+        {"headers": {"Sui-Sensemaking-Tenant-Session-Version": "contains spaces"}},
         {
             "headers": [
-                ("SUI Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
-                ("SUI Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
+                ("Sui-Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
+                ("Sui-Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
             ]
         },
     )
@@ -93,7 +93,7 @@ def test_unknown_runtime_fails_closed_without_inspecting_header() -> None:
     with _client(runtime_profile="unknown") as client:
         response = client.get(
             "/guarded",
-            headers={"SUI Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
+            headers={"Sui-Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
         )
 
     assert response.status_code == 503
@@ -128,7 +128,7 @@ def test_tenant_scoped_dependency_rejects_stale_version_before_endpoint(
     with TestClient(app) as client:
         response = client.post(
             "/guarded",
-            headers={"SUI Sensemaking-Tenant-Session-Version": "stale-session-v1"},
+            headers={"Sui-Sensemaking-Tenant-Session-Version": "stale-session-v1"},
         )
 
     assert response.status_code == 409

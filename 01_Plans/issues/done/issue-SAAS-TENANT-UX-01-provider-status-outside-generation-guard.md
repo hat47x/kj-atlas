@@ -11,7 +11,7 @@
 
 ## 課題
 
-SAAS-TENANT-01のフロントエンド側監査（2026-08-06）で判明: `getProviderStatus()`（`GET /ai/provider-status`）はtenant資源を扱わないため`SUI Sensemaking-Tenant-Session-Version`ヘッダーの対象外（正しい判断、`no-tenant-resource`）である一方、`App.tsx:1495`の呼び出しは**tenant session generation guard**（tenant切替時に古いresponseのcommitを防ぐ仕組み）の外にある唯一のclient呼び出しである。
+SAAS-TENANT-01のフロントエンド側監査（2026-08-06）で判明: `getProviderStatus()`（`GET /ai/provider-status`）はtenant資源を扱わないため`Sui-Sensemaking-Tenant-Session-Version`ヘッダーの対象外（正しい判断、`no-tenant-resource`）である一方、`App.tsx:1495`の呼び出しは**tenant session generation guard**（tenant切替時に古いresponseのcommitを防ぐ仕組み）の外にある唯一のclient呼び出しである。
 
 これにより、tenant切替の最中またはその直後にprovider-status応答が遅延到着した場合、古いgenerationからの応答でも`setProviderKind`が呼ばれる。provider種別（none/local/large-scale等）はtenant固有の秘匿情報ではなく表示専用の設定echoだが、切替直後に旧tenantのprovider表示が一瞬残る可能性がある。
 

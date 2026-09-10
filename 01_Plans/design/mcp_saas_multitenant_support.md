@@ -24,7 +24,7 @@ OAuth 2.1 Resource Server として Bearer token 検証を行う。しかし `sa
 ```
 Client → MCP Server
   Header: Authorization: Bearer <JWT>
-  Header: Kj-Atlas-Tenant-Session-Version: <version>
+  Header: Sui-Sensemaking-Tenant-Session-Version: <version>
 
 MCP Server:
   1. JWT 検証（既存の OAuth 2.1 RS ロジック）

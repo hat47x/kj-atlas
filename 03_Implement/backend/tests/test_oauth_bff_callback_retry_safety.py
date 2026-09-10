@@ -4,7 +4,7 @@ AC-6 asks whether an ambiguous/timed-out retry of a mutating request fails
 closed instead of silently double-applying. The BFF login mutation
 (GET /session/callback) is exactly this shape: a browser that never saw the
 first response (network timeout, tab closed mid-redirect) resubmits the same
-`code`/`state` against the same still-present `Kj-Atlas-Oauth-Pending`
+`code`/`state` against the same still-present `Sui-Sensemaking-Oauth-Pending`
 cookie. OAuth 2.0 authorization codes are single-use by construction (both
 the mock IdP in tests/level2/mock_idp.py and any real broker delete/consume
 the code on first exchange), so the retry's `exchange_code_for_tokens` call
@@ -97,7 +97,7 @@ def _request(*, store, factory) -> Request:
         )
     )
     pending = json.dumps({"state": "state-1", "code_verifier": "verifier-1", "next": "/docs/doc-1"})
-    headers = [(b"cookie", f"Kj-Atlas-Oauth-Pending={pending}".encode())]
+    headers = [(b"cookie", f"Sui-Sensemaking-Oauth-Pending={pending}".encode())]
     return Request(
         scope={
             "type": "http",

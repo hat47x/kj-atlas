@@ -131,7 +131,7 @@ def test_saas_document_read_denies_without_body_when_external_pdp_transport_is_d
             response = client.get(
                 "/docs/doc-pdp-outage",
                 headers={
-                    "SUI Sensemaking-Tenant-Session-Version": "session-v2",
+                    "Sui-Sensemaking-Tenant-Session-Version": "session-v2",
                     "x-doc-visibility": "Org",
                     "x-policy-ref": "opa://tenant/document-read/v1",
                 },

@@ -882,3 +882,19 @@ Updated: 2026-08-03
      - `test_guest_identity_verifier.py`の3件は**test隔離の問題**（full suite内でのみ失敗、単体実行では統合前・統合後どちらの状態でも9件全passした）。他のtestとの間でmodule levelの状態（DBセッション・monkeypatch等）が漏れている可能性が高いが、原因箇所は未特定。
 - 対応: 9件（自分のtest fixture不備）はStage 1の2 test fileに1行ずつ追加して解消。残り8件は自分の統合作業のscope外と判断し、変更しなかった（該当機能・testの担当ではなく、原因不明のまま推測でproduction/testを書き換えるのは危険）。
 - 再発防止: 大規模branch統合後にbackend全体回帰が失敗したら、失敗したtestファイルを**単体で**再実行し（test隔離問題の切り分け）、次に`git worktree add --detach <統合直前のcommit>`で同じtestを統合前の状態に対して実行する（自分の統合作業由来かどうかの切り分け）。両方が同じ結果なら統合作業は無罪であり、原因追及・修正は別issueとして切り出す。
+
+## 2026-09-11: リポジトリ全体改名（kj-atlas → SUI Sensemaking）で大文字小文字バリアントを取りこぼし、backend 53件失敗
+
+- 事象: ADR-0083に基づく一括改名（commit `e7b5ab0d`）の直後、backend全体回帰が53件失敗した。`test_trusted_auth_edge.py`（10件）・`test_saas_e2e_tenant_isolation.py`・`test_saas_oauth_login_e2e.py`・`test_saml_broker_jwt_coordinated_flow.py`など、いずれもSaaS認証edgeとtenant session関連。401 / 409（`tenant_session_changed`）で落ちていた。
+- 原因: 一括置換のパターンが `KJ Atlas` / `KJ-Atlas` / `kj-atlas` / `kj_atlas` / `KJ_ATLAS` の5系のみで、**HTTPヘッダー・cookie契約名に多用される title-case `Kj-Atlas`（73件）と camelCase `kjAtlas`（15件）・PascalCase `KjAtlas`（2件）を取りこぼした**。production側の `_JWT_HEADER = "X-Kj-Atlas-Authorization"` 等が旧名のまま、test側だけ新名になり、bearer検出やversion照合が不一致になった。さらに `KJ-Atlas` → `SUI Sensemaking`（**スペース区切り**）というマッピングが、`KJ-Atlas-Tenant-Session-Version` のようなハイフン連結の識別子を `SUI Sensemaking-Tenant-Session-Version`（スペース入り）に壊した。HTTPヘッダー名はcase-insensitiveだがスペースとハイフンは別文字なので、test側の `sui-sensemaking-tenant-session-version` と一致しなくなった。
+- 対応:
+  1. 2周目の一括置換で `Kj-Atlas` → `Sui-Sensemaking`、`kjAtlas` → `suiSensemaking`、`KjAtlas` → `SuiSensemaking`（凍結ファイル・ADR-0083・NOTICEは除外）。
+  2. `SUI Sensemaking-`（スペース＋ハイフン）を検出して全て `Sui-Sensemaking-` へ是正（production `client.ts` / `tenant_session_precondition.py` と全test・全doc）。
+  3. pytestは `PYTHONPATH=src` を明示しないと `test_docs_endpoints_disabled_on_production_profiles` のsubprocess（`python -c "from sui_sensemaking_api..."`）がworktreeのsymlink venv（editable installは共有repoの旧 `kj_atlas_api` を指す）で `ModuleNotFoundError` になる。`CONTRIBUTING.md` 記載どおり `export PYTHONPATH=src` を付けて実行。
+  4. Oracle schema例 `SCHEMAS=KJ_ATLAS` → `sui_sensemaking`（大文字 `SUI_SENSEMAKING` にすると DC-CMD-001 が `SUI_[A-Z0-9_]+` にマッチし未登録runtime paramとして誤検知するため小文字にした。Oracleの非引用識別子はcase-insensitiveなので意味は同じ）。
+  結果、53件 → 0件（対象subset 198 pass）、frontend 1657 pass、MCP 65 pass、docs_check高速チェック0 error。
+- 再発防止:
+  - 識別子の一括改名では、置換前に `git grep -ohiE '<旧名>' | sort | uniq -c` で**実在する全大文字小文字バリアント**を数え、それぞれに対応する置換規則を用意する。特にHTTPヘッダー／cookie名は title-case（`Xxx-Yyy`）、JS globalは camel/Pascal。
+  - ハイフン連結の識別子を含む場合、スペース区切りの表示名（`SUI Sensemaking`）とハイフン形（`Sui-Sensemaking`）を**別のマッピングとして**扱う。表示名のあとにハイフンが来ることはないので、`<表示名>-` は常に壊れた識別子。
+  - 改名後は必ず「production定数とtest送信値」をペアで grep 突き合わせる（`git grep -nE 'Sui-Sensemaking-[A-Za-z-]+'` で全wire契約名を一覧化して一意性を確認）。
+  - `git restore <file>` はpass適用済みの未コミット変更も巻き戻す。CRLFファイルへのEdit後にdiffがCRLFノイズで膨れたら、`git restore` ではなく `sed -i`（CRLF保持）で該当行だけ再適用する。

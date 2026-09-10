@@ -177,7 +177,7 @@ def _persist_session_keyed_selection(
     cookie-fallback identity resolver reads active_tenant_id from, so the very
     next request (which rebuilds VerifiedTenantClaim from that row) sees the
     new tenant without needing a reissued token. No separate version cookie
-    is set here -- the presented Kj-Atlas-Auth-Session cookie is already the
+    is set here -- the presented Sui-Sensemaking-Auth-Session cookie is already the
     binding, and the new version is returned in the JSON body like the
     principal-keyed path.
     """
@@ -262,7 +262,7 @@ class InMemoryActiveTenantSessionPersister:
 
     Stores per-principal session versions in a dict. persist() atomically
     compares the expected version before issuing a new one, and sets a
-    session cookie (Kj-Atlas-Tenant-Session-Version) on the response.
+    session cookie (Sui-Sensemaking-Tenant-Session-Version) on the response.
 
     ADR-0064 D4: cookie-based session for mock/OAuth login flow.
 
@@ -274,7 +274,7 @@ class InMemoryActiveTenantSessionPersister:
     - Uses the shared BFF CSRF middleware when cookie authentication is active
     """
 
-    _COOKIE_KEY = "Kj-Atlas-Tenant-Session-Version"
+    _COOKIE_KEY = "Sui-Sensemaking-Tenant-Session-Version"
 
     def __init__(self, *, secure_cookie: bool = False) -> None:
         self._sessions: dict[str, str] = {}

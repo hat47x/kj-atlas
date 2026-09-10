@@ -124,7 +124,7 @@ sequenceDiagram
     participant ACL as access_control
     participant DAR as document_access_resource
 
-    Client->>FastAPI: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: v1
+    Client->>FastAPI: GET /docs/{id}<br/>X-Sui-Sensemaking-Authorization: Bearer JWT<br/>Sui-Sensemaking-Tenant-Session-Version: v1
 
     FastAPI->>TSP: tenant_session_precondition_required()
     TSP-->>FastAPI: True (saas-multitenant)

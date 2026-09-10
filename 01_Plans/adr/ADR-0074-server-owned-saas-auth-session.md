@@ -124,9 +124,9 @@ Maintainerの要請により以下4項目への回答案を作成し、個別確
 
 回答案1（BFF内蔵）を採る場合、**CORS設定の新規追加は不要**。影響を受ける既存資産は次の3点:
 
-- **SaaS向けE2E**（`playwright.saas.config.ts`、`tenant_session_multitab.spec.ts`等）: 現状は`SUI Sensemaking-Tenant-Session-Version`ヘッダーとmock session objectを直接注入している。BFF移行後はOAuth callbackを経由したcookie発行を模擬する経路へ書き換えが必要。
-- **Level 1/2テストハーネス**（`tests/federation/mock_sp.py`、`tests/level2/mock_idp.py`）: 現状はJWTを`X-Kj-Atlas-Authorization`ヘッダーで直接転送する構成（`ADR-0064` D4-4）。BFF移行後は「BFFがtoken交換を代行し、browserにはcookieだけを返す」経路への拡張が必要。
-- **frontend `api/client.ts`**: 現状のBearerヘッダー送信から、cookie送信（`credentials`指定）への切替が必要。tenant session precondition headerの扱い（`SUI Sensemaking-Tenant-Session-Version`）自体は維持可能。
+- **SaaS向けE2E**（`playwright.saas.config.ts`、`tenant_session_multitab.spec.ts`等）: 現状は`Sui-Sensemaking-Tenant-Session-Version`ヘッダーとmock session objectを直接注入している。BFF移行後はOAuth callbackを経由したcookie発行を模擬する経路へ書き換えが必要。
+- **Level 1/2テストハーネス**（`tests/federation/mock_sp.py`、`tests/level2/mock_idp.py`）: 現状はJWTを`X-Sui-Sensemaking-Authorization`ヘッダーで直接転送する構成（`ADR-0064` D4-4）。BFF移行後は「BFFがtoken交換を代行し、browserにはcookieだけを返す」経路への拡張が必要。
+- **frontend `api/client.ts`**: 現状のBearerヘッダー送信から、cookie送信（`credentials`指定）への切替が必要。tenant session precondition headerの扱い（`Sui-Sensemaking-Tenant-Session-Version`）自体は維持可能。
 
 ## Traceability
 

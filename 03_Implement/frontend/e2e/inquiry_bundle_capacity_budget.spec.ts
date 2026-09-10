@@ -23,7 +23,7 @@ const MAX_PARALLEL_CI_LONG_TASK_MS = 150;
 async function installLongTaskProbe(page: Page) {
   await page.evaluate(() => {
     const records: number[] = [];
-    (window as unknown as { __kjAtlasInquiryLongTasks: number[] }).__kjAtlasInquiryLongTasks = records;
+    (window as unknown as { __suiSensemakingInquiryLongTasks: number[] }).__suiSensemakingInquiryLongTasks = records;
     if (!("PerformanceObserver" in window)) return;
     try {
       const observer = new PerformanceObserver((list) => {
@@ -138,14 +138,14 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
     timeout: 1_000,
   });
   await page.evaluate(() => {
-    (window as unknown as { __kjAtlasInquiryLongTasks: number[] }).__kjAtlasInquiryLongTasks.length = 0;
+    (window as unknown as { __suiSensemakingInquiryLongTasks: number[] }).__suiSensemakingInquiryLongTasks.length = 0;
   });
   await expect(inquiryPanel.getByRole("status").last()).toContainText("Inquiry file imported", {
     timeout: MAX_IO_WALL_TIME_MS,
   });
   const uiImportMs = performance.now() - uiImportStartedAt;
   const maxLongTaskMs = await page.evaluate(() => {
-    const records = (window as unknown as { __kjAtlasInquiryLongTasks?: number[] }).__kjAtlasInquiryLongTasks ?? [];
+    const records = (window as unknown as { __suiSensemakingInquiryLongTasks?: number[] }).__suiSensemakingInquiryLongTasks ?? [];
     return records.reduce((maximum, duration) => Math.max(maximum, duration), 0);
   });
 

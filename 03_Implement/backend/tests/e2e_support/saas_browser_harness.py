@@ -121,7 +121,7 @@ async def gateway(path: str, request: Request) -> Response:
         response.raw_headers.append((name.encode("latin-1"), value.encode("latin-1")))
     for cookie in upstream.headers.get_list("set-cookie"):
         response.raw_headers.append((b"set-cookie", cookie.encode("latin-1")))
-    response.headers["X-SUI Sensemaking-E2E-Upstream"] = worker_name
+    response.headers["X-Sui-Sensemaking-E2E-Upstream"] = worker_name
     return response
 
 

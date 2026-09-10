@@ -155,7 +155,7 @@ def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkey
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 422, resp.text
-        # A different KJ_ATLAS secret is still forbidden: prefix matching must
+        # A different SUI_ secret is still forbidden: prefix matching must
         # never let a model provider retrieve the control-plane credential.
         resp = client.post(
             "/admin/provision/models/providers",

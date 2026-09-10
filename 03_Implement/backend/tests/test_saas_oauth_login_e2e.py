@@ -3,7 +3,7 @@
 Verifies the full SAML/OIDC broker coordination flow at mock level:
   1. User logs in via mock IdP (OAuth 2.0 authorization code grant)
   2. Mock IdP issues a signed RS256 JWT
-  3. JWT is forwarded as X-Kj-Atlas-Authorization Bearer token
+  3. JWT is forwarded as X-Sui-Sensemaking-Authorization Bearer token
   4. sui-sensemaking verifies the JWT, resolves tenant, returns tenant-scoped data
   5. Cross-tenant isolation is enforced
 """

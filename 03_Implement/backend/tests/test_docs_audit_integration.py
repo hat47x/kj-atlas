@@ -275,7 +275,7 @@ def test_context_audit_rejects_stale_session_before_tracker_mutation(
             client.app.state.runtime_profile = "saas-multitenant"
             response = client.post(
                 "/docs/doc-context/context-audit",
-                headers={"SUI Sensemaking-Tenant-Session-Version": "session-v1"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v1"},
                 json={
                     "operation": "query",
                     "safeMode": True,

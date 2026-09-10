@@ -76,7 +76,7 @@ BFF Cookie経路では、次を運用上の前提とします。
 
 - Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意のtoken識別子であり、同じ有効tokenを通常の連続API要求へ使用できます。`jti`を一回使用nonceとして扱いません。
 - 現行Bearer方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出しません。より強いreplay防御の方式判断は`AUTH-ONE-TIME-JWT-01`を正本とします。
-- principal-keyed互換経路で使う`Kj-Atlas-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Kj-Atlas-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。
+- principal-keyed互換経路で使う`Sui-Sensemaking-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Sui-Sensemaking-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。
 
 現行実装では、request処理用のDB sessionを保持している間に、認証session storeが別のDB sessionを開く経路があります。実PostgreSQLの複数app検証では、1 instanceあたり`pool_size=1`かつ`max_overflow=0`まで絞ると、共有sessionの解決前にconnection pool timeoutとなり503へfail-closedすることを確認しました。本番では「1 requestにつき常に1接続」と仮定せず、API replica数と同時request数に対して接続poolへ余力を持たせてください。pool timeoutが見えた場合は、DB停止だけでなくpool枯渇も切り分け対象です。
 
@@ -271,11 +271,11 @@ RESTORE DATABASE "sui_sensemaking" FROM LATEST IN 'nodelocal://1/sui_sensemaking
 Data Pump directoryへのread/write権限、source schemaのexport権限、復元schemaの作成・quota設定が必要です。passwordを引数へ埋め込まず、walletまたは対話入力等の組織標準のsecret受渡しを使用します。復元先schemaを事前作成してから`REMAP_SCHEMA`で隔離します。
 
 ```bash
-expdp "$DB_ADMIN_USER@$ORACLE_SERVICE" SCHEMAS=KJ_ATLAS DIRECTORY=DATA_PUMP_DIR \
+expdp "$DB_ADMIN_USER@$ORACLE_SERVICE" SCHEMAS=sui_sensemaking DIRECTORY=DATA_PUMP_DIR \
   DUMPFILE=sui_sensemaking.dmp LOGFILE=sui_sensemaking_exp.log REUSE_DUMPFILES=YES
 impdp "$DB_ADMIN_USER@$ORACLE_SERVICE" DIRECTORY=DATA_PUMP_DIR \
   DUMPFILE=sui_sensemaking.dmp LOGFILE=sui_sensemaking_imp.log \
-  REMAP_SCHEMA=KJ_ATLAS:RESTORED_SCHEMA
+  REMAP_SCHEMA=sui_sensemaking:RESTORED_SCHEMA
 ```
 
 復元確認後は検証用database/schemaと一時backupを、組織の保持・監査方針に従って削除します。削除対象をsourceと照合し、名前が曖昧な状態では実行しません。

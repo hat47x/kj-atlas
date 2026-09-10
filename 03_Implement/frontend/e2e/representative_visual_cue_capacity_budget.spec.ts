@@ -227,11 +227,11 @@ test("representative visual cues stay within layout, storage, memory, and respon
   test.setTimeout(60_000);
   const document = buildRepresentativeDocument();
   await page.addInitScript(() => {
-    const target = window as Window & { __kjAtlasLongTasks?: number[] };
-    target.__kjAtlasLongTasks = [];
+    const target = window as Window & { __suiSensemakingLongTasks?: number[] };
+    target.__suiSensemakingLongTasks = [];
     if (PerformanceObserver.supportedEntryTypes.includes("longtask")) {
       new PerformanceObserver((list) => {
-        target.__kjAtlasLongTasks?.push(...list.getEntries().map((entry) => entry.duration));
+        target.__suiSensemakingLongTasks?.push(...list.getEntries().map((entry) => entry.duration));
       }).observe({ type: "longtask", buffered: true });
     }
   });
@@ -274,7 +274,7 @@ test("representative visual cues stay within layout, storage, memory, and respon
     loadedMetrics.metrics.find((metric) => metric.name === "JSHeapUsedSize")?.value ?? 0;
   const heapGrowthBytes = Math.max(0, loadedHeapBytes - baselineHeapBytes);
   const longTasks = await page.evaluate(() =>
-    (window as Window & { __kjAtlasLongTasks?: number[] }).__kjAtlasLongTasks ?? [],
+    (window as Window & { __suiSensemakingLongTasks?: number[] }).__suiSensemakingLongTasks ?? [],
   );
   const maxLongTaskMs = Math.max(0, ...longTasks);
 

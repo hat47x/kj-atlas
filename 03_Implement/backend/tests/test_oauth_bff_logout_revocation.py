@@ -20,7 +20,7 @@ from sui_sensemaking_api.models import Base
 from sui_sensemaking_api.oauth_bff import revoke_auth_session_cookie
 from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
 
-COOKIE_NAME = "Kj-Atlas-Auth-Session"
+COOKIE_NAME = "Sui-Sensemaking-Auth-Session"
 HASH_KEY = b"logout-revocation-test-key-01234"
 ISSUER = "https://broker.invalid/issuer"
 RAW_SESSION = "opaque-logout-session-value"

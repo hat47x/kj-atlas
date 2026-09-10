@@ -74,7 +74,7 @@
   brokerの応答に`refresh_token`が含まれていてもその値を保持するフィールドが存在しない——
   新規テスト`tests/test_oauth_broker_client.py::test_exchange_drops_the_refresh_token_even_when_the_broker_returns_one`
   でbroker応答に`refresh_token`を含めても`exchange_code_for_tokens`の戻り値に残らないことを固定した。
-  (2) `oauth_bff.py::handle_callback`のredirect responseはHttpOnlyな`Kj-Atlas-Auth-Session`
+  (2) `oauth_bff.py::handle_callback`のredirect responseはHttpOnlyな`Sui-Sensemaking-Auth-Session`
   （opaque `secrets.token_urlsafe(32)`、broker tokenとは無関係な値）と非HttpOnlyなCSRF synchronizer
   token（認証credentialではない）の2 cookieのみを設定し、token値はheader/bodyのどこにも現れない——
   新規テストの`first.raw_headers`検査で直接確認した。(3) frontendの現行Bearer互換経路

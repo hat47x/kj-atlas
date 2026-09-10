@@ -32,7 +32,7 @@ Both ADRs are **Accepted with an explicit Implementation gate** (ADR-0059:105-11
 Honored / implemented:
 - D5/D8 tenant guard: `access_control.py:449-469` `apply_tenant_boundary_guard` denies `tenant_context_missing`/`resource_tenant_missing`/`tenant_mismatch` before any PDP call; wired at `access_control.py:490-495`.
 - Resource-path enforcement: `routes/docs.py:272-278` calls `resolve_access_decision(..., require_tenant_scope=True)`.
-- Session-precondition (ADR-0061 D2 `tenantSessionVersion`): `tenant_session_precondition.py:33-72` validates the `SUI Sensemaking-Tenant-Session-Version` header and rejects stale/missing versions; applied on 7 AI routes (`routes/ai.py:506..671`), `routes/ai_relations.py:121`, `routes/context.py:25`.
+- Session-precondition (ADR-0061 D2 `tenantSessionVersion`): `tenant_session_precondition.py:33-72` validates the `Sui-Sensemaking-Tenant-Session-Version` header and rejects stale/missing versions; applied on 7 AI routes (`routes/ai.py:506..671`), `routes/ai_relations.py:121`, `routes/context.py:25`.
 - Fail-closed SaaS startup (D8/D10): `trusted_saas_runtime.py:64-81,92-120` requires PostgreSQL + disabled JIT + `external_http` access control + `deny` fail-safe + external policy binding + external capability; single-tenant profile cannot enable SaaS adapters (`:180-183`). Preflight is wired into lifespan (`main.py:72-77`).
 
 Gaps against the gate (drift = "gate not finished", not "violated"):

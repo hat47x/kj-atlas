@@ -41,7 +41,7 @@ test("BFF login survives routing from worker 1 to worker 2 through shared Postgr
   });
 
   const authCookie = (await page.context().cookies()).find(
-    (cookie) => cookie.name === "Kj-Atlas-Auth-Session",
+    (cookie) => cookie.name === "Sui-Sensemaking-Auth-Session",
   );
   expect(authCookie).toBeDefined();
   expect(authCookie?.httpOnly).toBe(true);

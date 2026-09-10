@@ -23,7 +23,7 @@ from tests.test_saas_auth_session_postgres_multi_instance import (
     _seed_shared_auth_data,
 )
 
-TENANT_SESSION_VERSION_HEADER = "SUI Sensemaking-Tenant-Session-Version"
+TENANT_SESSION_VERSION_HEADER = "Sui-Sensemaking-Tenant-Session-Version"
 
 
 class _FailIfReachedDocumentResourceResolver:

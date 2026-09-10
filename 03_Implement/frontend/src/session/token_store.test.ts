@@ -27,7 +27,7 @@ describe("token_store", () => {
     expect(getAccessToken()).toBe("short-lived-token");
     expect(isAuthenticated()).toBe(true);
     expect(authorizationHeader()).toEqual({
-      "X-Kj-Atlas-Authorization": "Bearer short-lived-token",
+      "X-Sui-Sensemaking-Authorization": "Bearer short-lived-token",
     });
     expect(sessionStorage.getItem).not.toHaveBeenCalled();
     expect(sessionStorage.setItem).not.toHaveBeenCalled();

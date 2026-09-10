@@ -41,7 +41,7 @@ _JWKS_MAX_RESPONSE_BYTES = 128 * 1024
 _ALLOWED_JWK_KEY_TYPES = frozenset({"RSA", "EC"})
 # ADR-0074 decision 1/3: the BFF-issued opaque session cookie, read only when
 # no bearer token is present (AC-1 cookie-fallback branch, ADR-0074 decision 2).
-_AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
+_AUTH_SESSION_COOKIE = "Sui-Sensemaking-Auth-Session"
 # SAAS-TENANT-SESSION-BINDING-01 AC-6: generous headroom over the real
 # secrets.token_urlsafe(32) length (~43 chars), not a tight format check.
 _MAX_AUTH_SESSION_COOKIE_LENGTH = 256
@@ -66,7 +66,7 @@ def _jwt_algorithms() -> list[str]:
     return algorithms
 
 # Header name carrying the JWT bearer token (ADR-0020 §3-2 jwt_header mode).
-_JWT_HEADER = "X-Kj-Atlas-Authorization"
+_JWT_HEADER = "X-Sui-Sensemaking-Authorization"
 
 
 def _extract_bearer_token(request: Request) -> str | None:
@@ -546,7 +546,7 @@ class JwtSaasIdentityContextResolver:
 
     def _resolve_from_auth_session_cookie(self, *, db: Session, request: Request) -> ResolvedIdentity:
         """AC-1 cookie-fallback branch (ADR-0074 decisions 2/3): no bearer token
-        present, try the BFF-issued Kj-Atlas-Auth-Session cookie instead.
+        present, try the BFF-issued Sui-Sensemaking-Auth-Session cookie instead.
 
         The resolved row is re-verified against ClaimBasedTenantContextResolver
         by the caller via the same VerifiedTenantClaim the bearer path builds --

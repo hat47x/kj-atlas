@@ -2,7 +2,7 @@
 login. GET /session/login starts an authorization-code+PKCE flow against the
 broker; GET /session/callback exchanges the code, verifies the returned
 token against the same JWKS pipeline the bearer path uses
-(trusted_auth_edge.py), and mints a server-owned Kj-Atlas-Auth-Session
+(trusted_auth_edge.py), and mints a server-owned Sui-Sensemaking-Auth-Session
 cookie. ADR-0074 decisions 2/5 and 回答案2 define the cookie attributes and
 the anti-CSRF contract this flow must satisfy.
 """
@@ -46,8 +46,8 @@ from sui_sensemaking_api.trusted_auth_edge import (
 
 logger = logging.getLogger(__name__)
 
-_AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
-_OAUTH_PENDING_COOKIE = "Kj-Atlas-Oauth-Pending"
+_AUTH_SESSION_COOKIE = "Sui-Sensemaking-Auth-Session"
+_OAUTH_PENDING_COOKIE = "Sui-Sensemaking-Oauth-Pending"
 _OAUTH_PENDING_PATH = "/session"
 _OAUTH_PENDING_MAX_AGE_SECONDS = 300
 _AUTH_SESSION_MAX_AGE_SECONDS = 3600

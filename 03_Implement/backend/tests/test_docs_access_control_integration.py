@@ -140,12 +140,12 @@ def test_tenant_scoped_profile_denies_read_when_adapter_is_missing(
             client.app.state.runtime_profile = "saas-multitenant"
             read_resp = client.get(
                 "/docs/doc-adapter-missing",
-                headers={"SUI Sensemaking-Tenant-Session-Version": "session-v2"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v2"},
             )
             write_resp = client.put(
                 "/docs/doc-adapter-missing",
                 json=_sample_payload("doc-adapter-missing"),
-                headers={"SUI Sensemaking-Tenant-Session-Version": "session-v2"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v2"},
             )
         finally:
             client.app.state.runtime_profile = original_runtime_profile

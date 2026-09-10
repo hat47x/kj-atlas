@@ -167,11 +167,11 @@ def test_redeem_uses_host_state_then_existing_exact_grant(redeem_env) -> None:
         response = _redeem(client, raw_state)
         assert response.status_code == 200
         assert response.json() == {"status": "redeemed"}
-        assert "Kj-Atlas-Guest-Session" in response.cookies
+        assert "Sui-Sensemaking-Guest-Session" in response.cookies
         read = client.get(
             "/docs/doc-granted",
             cookies={
-                "Kj-Atlas-Guest-Session": response.cookies["Kj-Atlas-Guest-Session"]
+                "Sui-Sensemaking-Guest-Session": response.cookies["Sui-Sensemaking-Guest-Session"]
             },
         )
         assert read.status_code == 200

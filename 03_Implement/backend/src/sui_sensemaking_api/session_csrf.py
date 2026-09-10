@@ -12,9 +12,9 @@ from starlette.responses import JSONResponse
 from sui_sensemaking_api.active_tenant_session import tenant_session_cookie_is_secure
 from sui_sensemaking_api.trusted_auth_edge import _extract_bearer_token
 
-AUTH_SESSION_COOKIE = "Kj-Atlas-Auth-Session"
-CSRF_COOKIE = "Kj-Atlas-Csrf"
-CSRF_HEADER = "X-Kj-Atlas-Csrf"
+AUTH_SESSION_COOKIE = "Sui-Sensemaking-Auth-Session"
+CSRF_COOKIE = "Sui-Sensemaking-Csrf"
+CSRF_HEADER = "X-Sui-Sensemaking-Csrf"
 CSRF_TOKEN_MAX_AGE_SECONDS = 3600
 _MAX_AUTH_SESSION_COOKIE_LENGTH = 256
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})

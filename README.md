@@ -1,4 +1,4 @@
-# sui-sensemaking
+# SUI Sensemaking
 
 > **重要: 本プロジェクトは、現在も生成AIを用いた開発中であり、人的レビューは不完全です。**
 >
@@ -6,7 +6,7 @@
 
 A tool for keeping ambiguous meanings suspended, not for finding a single correct answer.
 
-**sui-sensemaking** は、LLM（大規模言語モデル）を伴走者として用い、
+**SUI Sensemaking** は、LLM（大規模言語モデル）を伴走者として用い、
 人間の「違和感」「保留」「未分化な意味」を起点に、
 カード配置と対話的修正を通じて思考を深めていくための
 **親和図法（affinity diagram）系の図解／意味探索ツール**です。
@@ -25,7 +25,7 @@ A tool for keeping ambiguous meanings suspended, not for finding a single correc
 - チームや個人による思考の可視化・共有
 - 研究・企画・設計・政策・プロダクト検討などの前段整理
 
-sui-sensemaking の目的は、
+SUI Sensemaking の目的は、
 **「正しい結論を素早く出すこと」ではありません。**
 
 > 分からないことを、分からないまま扱い、
@@ -112,7 +112,7 @@ docker compose up --build
 
 ---
 
-## sui-sensemaking が目指さないこと
+## SUI Sensemaking が目指さないこと
 
 誤解を避けるため、以下を明示します。
 
@@ -121,7 +121,7 @@ docker compose up --build
 - きれいな最終図をゴールにしません
 - 未測定・不確実性を消し去りません
 
-sui-sensemaking は、
+SUI Sensemaking は、
 **違和感・保留・揺らぎを扱うための道具**です。
 
 ---

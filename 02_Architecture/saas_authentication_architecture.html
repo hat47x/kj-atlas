@@ -69,7 +69,7 @@ graph TB
     BROKER --> SAML2OIDC
     SAML2OIDC --> JWT_ISSUE
     JWT_ISSUE --> TENANT_CLAIM
-    TENANT_CLAIM -->|X-Kj-Atlas-Authorization: Bearer JWT| JWT_VERIFY
+    TENANT_CLAIM -->|X-Sui-Sensemaking-Authorization: Bearer JWT| JWT_VERIFY
     JWT_VERIFY --> TENANT_RESOLVE
     TENANT_RESOLVE --> SESSION
     SESSION -.->|active tenant正本は未実装| DOC_ACCESS
@@ -107,7 +107,7 @@ sequenceDiagram
 
     Frontend->>Frontend: keep JWT in module memory only
 
-    Frontend->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>Kj-Atlas-Tenant-Session-Version: ...
+    Frontend->>Backend: GET /docs/{id}<br/>X-Sui-Sensemaking-Authorization: Bearer JWT<br/>Sui-Sensemaking-Tenant-Session-Version: ...
 
     Backend->>Backend: JWT検証 (RS256, iss/aud/exp/iat/nbf)
     Backend->>Backend: tenant_ref → identity_providers → tenant_id
@@ -191,7 +191,7 @@ sequenceDiagram
 
     Note over Client,Persister: 初回アクセス（bootstrapping）
 
-    Client->>Backend: GET /docs/{id}<br/>X-Kj-Atlas-Authorization: Bearer JWT<br/>(no session version header)
+    Client->>Backend: GET /docs/{id}<br/>X-Sui-Sensemaking-Authorization: Bearer JWT<br/>(no session version header)
     Backend->>Persister: current_version(principal_id)<br/>暫定・認証session IDなし
     Persister->>Persister: 新規 version 生成
     Persister-->>Backend: version=v1
@@ -200,7 +200,7 @@ sequenceDiagram
 
     Note over Client,Persister: 後続リクエスト
 
-    Client->>Backend: GET /docs/{id}<br/>Kj-Atlas-Tenant-Session-Version: v1
+    Client->>Backend: GET /docs/{id}<br/>Sui-Sensemaking-Tenant-Session-Version: v1
     Backend->>Persister: current_version(principal_id)<br/>暫定・別sessionも同じkey
     Persister->>Persister: principal_idでDB lookup<br/>(現行実装はcookieを照合しない)
     Persister-->>Backend: version=v1
@@ -213,7 +213,7 @@ sequenceDiagram
     Backend->>Persister: persist(v1 → v2)
     Persister->>Persister: compare_and_swap(v1, v2) → OK
     Persister-->>Backend: version=v2
-    Backend-->>Client: 200 + Set-Cookie: Kj-Atlas-Tenant-Session-Version=v2
+    Backend-->>Client: 200 + Set-Cookie: Sui-Sensemaking-Tenant-Session-Version=v2
 </div>
 
 </details>

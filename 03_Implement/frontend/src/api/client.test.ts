@@ -76,7 +76,7 @@ describe("tenant-scoped document request precondition", () => {
       unavailableReason: "tenant_policy_excludes_all",
     });
     expect(fetchMock).toHaveBeenCalledWith("/api/ai/available-models", {
-      headers: { "SUI Sensemaking-Tenant-Session-Version": "session-v1" },
+      headers: { "Sui-Sensemaking-Tenant-Session-Version": "session-v1" },
     });
   });
 
@@ -91,7 +91,7 @@ describe("tenant-scoped document request precondition", () => {
     await getDocument("doc-1", { tenantSessionContext });
 
     expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1", {
-      headers: { "SUI Sensemaking-Tenant-Session-Version": "session-v1" },
+      headers: { "Sui-Sensemaking-Tenant-Session-Version": "session-v1" },
     });
   });
 
@@ -115,13 +115,13 @@ describe("tenant-scoped document request precondition", () => {
       headers: {
         "Content-Type": "application/json",
         "If-Match": '"etag-v1"',
-        "SUI Sensemaking-Tenant-Session-Version": "session-v1",
+        "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
       },
     });
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
       headers: {
         "Content-Type": "application/json",
-        "SUI Sensemaking-Tenant-Session-Version": "session-v1",
+        "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
       },
     });
   });
@@ -214,7 +214,7 @@ describe("tenant-scoped document request precondition", () => {
       expect(init).toMatchObject({
         headers: {
           "Content-Type": "application/json",
-          "SUI Sensemaking-Tenant-Session-Version": "session-v1",
+          "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
         },
       });
     }
@@ -595,13 +595,13 @@ describe("tenant session version client coverage contract", () => {
   it("keeps the version header name bound to the one shared helper", () => {
     const clientSource = readFrontendModule(CLIENT_MODULE_PATH);
 
-    expect(clientSource.match(/"SUI Sensemaking-Tenant-Session-Version"/g)).toHaveLength(1);
+    expect(clientSource.match(/"Sui-Sensemaking-Tenant-Session-Version"/g)).toHaveLength(1);
     expect(clientSource.match(/TENANT_SESSION_VERSION_HEADER/g)).toHaveLength(2);
     expect(
       productionSourceModules(FRONTEND_SRC_ROOT).filter(
         (modulePath) =>
           modulePath !== CLIENT_MODULE_PATH
-          && /SUI Sensemaking-Tenant-Session-Version|TENANT_SESSION_VERSION_HEADER/.test(
+          && /Sui-Sensemaking-Tenant-Session-Version|TENANT_SESSION_VERSION_HEADER/.test(
             readFrontendModule(modulePath),
           ),
       ),

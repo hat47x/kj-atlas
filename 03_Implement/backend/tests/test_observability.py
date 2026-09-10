@@ -508,7 +508,7 @@ def test_saas_trusted_session_precondition_binds_actor_ref_hash_for_the_endpoint
         with TestClient(app_under_test) as client:
             response = client.get(
                 "/guarded",
-                headers={"SUI Sensemaking-Tenant-Session-Version": "session-v1"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v1"},
             )
     finally:
         Base.metadata.drop_all(bind=engine)

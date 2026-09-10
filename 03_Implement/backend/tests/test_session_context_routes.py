@@ -375,7 +375,7 @@ def test_logout_expires_secure_tenant_session_cookie_without_jwt(tmp_path) -> No
                 InMemoryActiveTenantSessionPersister(secure_cookie=True)
             )
             client.cookies.set(
-                "Kj-Atlas-Tenant-Session-Version",
+                "Sui-Sensemaking-Tenant-Session-Version",
                 "presented-version",
             )
             response = client.post("/session/logout")
@@ -384,7 +384,7 @@ def test_logout_expires_secure_tenant_session_cookie_without_jwt(tmp_path) -> No
 
     assert response.status_code == 204
     cookie = response.headers["set-cookie"]
-    assert "Kj-Atlas-Tenant-Session-Version=" in cookie
+    assert "Sui-Sensemaking-Tenant-Session-Version=" in cookie
     assert "Max-Age=0" in cookie
     assert "HttpOnly" in cookie
     assert "Secure" in cookie

@@ -52,7 +52,7 @@
 - [x] AC-8: `SAAS-TENANT-01` AC-6/13、`OPS-SAAS-SCALE-01` AC-1、API/運用文書の達成表現を実際の保証へ同期する。
   — 2026-08-22。`SAAS-TENANT-01`のAC-6注記を是正（BFF cookie経路は解決済み、現行SPAのBearer経路は対象外と明記、ACは`[~]`のまま維持）。`api.md` §10.1の2箇所（原子化未完了の記述）へ「BFF cookie経路は解決済み・Bearer経路は対象外」の是正注記を追加。`OPS-SAAS-SCALE-01` AC-1（principal単位版のCAS）・AC-3（本番gate未充足の明記）は既に正確だったため変更なし。「AC-13」は`SAAS-TENANT-01`に存在しない（`AC-6`のみが該当）——本issue起票時の参照誤りと判断し、`AC-6`のみを対象とした。
 - [x] AC-9: cookieを採用する場合はserver-side session ownershipとanti-forgery契約を固定し、未提示・別session・改ざん・cross-site要求を拒否する。採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する。
-  — 2026-09-04。ADR-0074は既に案2（server-owned BFF session）をAcceptedとしており、判断待ちではなかった。unsafe methodをBFF cookieで認証する場合だけ、SameSite=Strictに加えてOrigin/Host一致とsession-bound `X-Kj-Atlas-Csrf`を共通middlewareで要求する。CSRF tokenはopaque auth-session cookieへserver keyでHMAC束縛し、非HttpOnly `Kj-Atlas-Csrf` cookieからfrontendがheaderへ複写する。未提示・別session・改ざん・cross-siteは403、server key欠落は503でfail-closed。Bearer優先の互換経路は別cutoverまで維持する。
+  — 2026-09-04。ADR-0074は既に案2（server-owned BFF session）をAcceptedとしており、判断待ちではなかった。unsafe methodをBFF cookieで認証する場合だけ、SameSite=Strictに加えてOrigin/Host一致とsession-bound `X-Sui-Sensemaking-Csrf`を共通middlewareで要求する。CSRF tokenはopaque auth-session cookieへserver keyでHMAC束縛し、非HttpOnly `Sui-Sensemaking-Csrf` cookieからfrontendがheaderへ複写する。未提示・別session・改ざん・cross-siteは403、server key欠落は503でfail-closed。Bearer優先の互換経路は別cutoverまで維持する。
 
 ## 非目標
 
@@ -106,7 +106,7 @@ ADR-0074決定3の列構成で、server-owned auth sessionテーブルを追加�
 **すでに実装・コミット済み（HEAD時点）**:
 
 - `oauth_bff.py`: BFFのOAuth経路（`GET /session/login`のauthorization-code+PKCE開始、
-  `GET /session/callback`のcode交換・token検証・`Kj-Atlas-Auth-Session` cookie発行）。
+  `GET /session/callback`のcode交換・token検証・`Sui-Sensemaking-Auth-Session` cookie発行）。
 - `auth_session_hash.py`: `derive_session_key_hash()`（cookie生値ではなくkeyed HMAC-SHA256を保存）。
 - `DatabaseSaasAuthSessionStore`（`saas_auth_state.py`）: `create_auth_session` /
   `resolve_auth_session`（revoked・絶対期限12h・idle 60minをfail-closedで判定し`last_used_at`をslide）/
@@ -128,7 +128,7 @@ session識別子のフィールドが無く、`resolve_active_tenant_session_ver
    bearer優先の現行SPAでは新経路が使われない。
 2. `SaasAuthSessionRow.tenant_session_version`は書き込み専用で、`resolve_auth_session`は返さず、
    rotateする経路も無い。`revoke_auth_session`は呼び出し元がゼロ。
-3. `POST /session/logout`は`Kj-Atlas-Auth-Session` cookieを削除せず`revoke_auth_session`も呼ばないため、
+3. `POST /session/logout`は`Sui-Sensemaking-Auth-Session` cookieを削除せず`revoke_auth_session`も呼ばないため、
    logout後もBFF sessionが生存する。
 4. **`oauth_bff`・cookie-fallback経路・`DatabaseSaasAuthSessionStore`のテストがゼロ**
    （`test_oauth_broker_client.py`のみ）。`DatabaseActiveTenantSessionPersister`にも単体テストが無い。
@@ -220,7 +220,7 @@ auth関連4ファイル計41件の回帰なし。
 
 ### Implementation checkpoint 2026-08-20: logout がBFF sessionを失効させるよう是正（決定6）
 
-前記 checkpoint で挙げた「`POST /session/logout` が `Kj-Atlas-Auth-Session` cookie を削除せず
+前記 checkpoint で挙げた「`POST /session/logout` が `Sui-Sensemaking-Auth-Session` cookie を削除せず
 `revoke_auth_session` も呼ばないため logout 後も BFF session が生存する」を修正した。これにより
 `revoke_auth_session` に初めて呼び出し元がついた。
 
@@ -298,7 +298,7 @@ AC-2以降（active tenant の session 単位保存・CAS更新・anti-CSRF・cu
 
 前checkpointの続きとして着手した。**発見**: cookie-fallback経路（`trusted_auth_edge.py::_resolve_from_auth_session_cookie`）は、実は既に`VerifiedTenantClaim.tenant_id`を`SaasAuthSessionRow.active_tenant_id`から**毎request再構築**していた（AC-1実装時点から）。つまりAC-3の**読み取り側**はcookie経路に限りAC-1時点で既に成立していた。欠けていたのは(a)切替の**書き込み側**——`persist_active_tenant_selection()`が選択tenantを`SaasAuthSessionRow`へ書き戻していなかった——と、(b)version読み取り側の一貫性——`resolve_active_tenant_session_version()`が別テーブル（`saas_tenant_sessions`、principal単位）のversionを返していたため、CASの基準点が実際に更新される行と一致しなかった、の2点。
 
-- `active_tenant_session.py`: `resolve_active_tenant_session_version()`/`persist_active_tenant_selection()`へ`auth_session_key_hash: str | None = None`を追加。非Noneの場合は`app.state.saas_auth_session_store`から直接読み書きする新経路（`_resolve_session_keyed_version`/`_persist_session_keyed_selection`）へ分岐し、既存のprincipal単位persisterには一切触れない（AC-6: fallback禁止）。store未配線・session不明はいずれも既存のエラーコード（503 `session_context_unavailable`/`active_tenant_update_unavailable`、409 `tenant_session_changed`）でfail-closed。session-keyed書き込みは別cookieを発行しない（提示された`Kj-Atlas-Auth-Session`自体が束縛のため）。
+- `active_tenant_session.py`: `resolve_active_tenant_session_version()`/`persist_active_tenant_selection()`へ`auth_session_key_hash: str | None = None`を追加。非Noneの場合は`app.state.saas_auth_session_store`から直接読み書きする新経路（`_resolve_session_keyed_version`/`_persist_session_keyed_selection`）へ分岐し、既存のprincipal単位persisterには一切触れない（AC-6: fallback禁止）。store未配線・session不明はいずれも既存のエラーコード（503 `session_context_unavailable`/`active_tenant_update_unavailable`、409 `tenant_session_changed`）でfail-closed。session-keyed書き込みは別cookieを発行しない（提示された`Sui-Sensemaking-Auth-Session`自体が束縛のため）。
 - `saas_request_context.py`/`routes/session.py`: `identity.auth_session_key_hash`を両関数へ配線。
 - `oauth_bff.py::handle_callback`: 初期`tenant_session_version`の生成元を、principal単位store（`saas_auth_state_store.current_or_create_session_version`）から独立した`_new_session_version()`へ変更した。従来はprincipalが同じなら2つの独立loginが同じ初期versionを共有していた（AC-5の趣旨に反する残存結合）。`auth_state_store`はこの関数から完全に不要になったため削除した。
 
@@ -348,7 +348,7 @@ AC-6の4条件（session ID欠損・不正・過大、共有ストア不達、�
 
 **回帰**: auth/session/tenant/identity該当 **479 passed・7 skipped・0 failed**（新規1件を含む）。
 
-**引き続き未着手**: AC-7（複数worker/instance統合テスト。schema・CAS・switch・session分離は既に個別checkpointで確認済みだが、複数worker/複数instance同時実行という条件そのものは未検証）、AC-8（`SAAS-TENANT-01`/`OPS-SAAS-SCALE-01`/API文書の達成表現同期）、AC-9（cookie/anti-CSRF方針の最終決定——現状、session-keyed経路は追加cookieを発行しない設計にしたため、AC-9の「採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する」側に近いが、既存のprincipal-keyed経路（bearer flow）が使う`Kj-Atlas-Tenant-Session-Version`cookie自体の扱いはこのissueの範囲でまだ判断していない）。
+**引き続き未着手**: AC-7（複数worker/instance統合テスト。schema・CAS・switch・session分離は既に個別checkpointで確認済みだが、複数worker/複数instance同時実行という条件そのものは未検証）、AC-8（`SAAS-TENANT-01`/`OPS-SAAS-SCALE-01`/API文書の達成表現同期）、AC-9（cookie/anti-CSRF方針の最終決定——現状、session-keyed経路は追加cookieを発行しない設計にしたため、AC-9の「採用しない場合は現在のversion cookieとanti-forgery達成表現を削除する」側に近いが、既存のprincipal-keyed経路（bearer flow）が使う`Sui-Sensemaking-Tenant-Session-Version`cookie自体の扱いはこのissueの範囲でまだ判断していない）。
 
 ### Implementation checkpoint 2026-08-22（続き）: AC-7 複数worker CAS integration testを追加
 

@@ -212,7 +212,7 @@ class TestPersistSessionKeyedSelection:
         assert exc.value.detail["code"] == "active_tenant_update_unavailable"
 
     def test_does_not_set_any_cookie_on_the_response(self, tmp_path) -> None:
-        """The presented Kj-Atlas-Auth-Session cookie is already the binding;
+        """The presented Sui-Sensemaking-Auth-Session cookie is already the binding;
         a session-keyed switch must not also mint a version cookie."""
         store, factory = _store(tmp_path)
         _seed_tenant(factory, "tenant-a")

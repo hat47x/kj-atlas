@@ -220,7 +220,7 @@ def _redeem(client: TestClient, raw_state: str, token: str):
 
 
 def _guest_cookie(response) -> dict[str, str]:
-    return {"Kj-Atlas-Guest-Session": response.cookies["Kj-Atlas-Guest-Session"]}
+    return {"Sui-Sensemaking-Guest-Session": response.cookies["Sui-Sensemaking-Guest-Session"]}
 
 
 def test_real_signed_guest_token_redeems_without_member_or_tenant_idp_trust(guest_env) -> None:

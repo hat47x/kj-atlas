@@ -177,8 +177,8 @@ curl -X POST http://localhost:18080/realms/sui-sensemaking/protocol/openid-conne
 JWT="<access_token from above>"
 
 curl http://localhost:18000/docs/shared-doc \
-  -H "X-Kj-Atlas-Authorization: Bearer $JWT" \
-  -H "Kj-Atlas-Tenant-Session-Version: <session_version>"
+  -H "X-Sui-Sensemaking-Authorization: Bearer $JWT" \
+  -H "Sui-Sensemaking-Tenant-Session-Version: <session_version>"
 ```
 
 ## 10. Level 3 E2E テスト（将来計画）

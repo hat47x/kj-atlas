@@ -100,7 +100,7 @@ def test_bearer_priority_path_does_not_require_cookie_csrf() -> None:
     client = _cookie_client()
     response = client.post(
         "/resource",
-        headers={"X-Kj-Atlas-Authorization": "Bearer malformed-but-present"},
+        headers={"X-Sui-Sensemaking-Authorization": "Bearer malformed-but-present"},
     )
     assert response.status_code == 204
 

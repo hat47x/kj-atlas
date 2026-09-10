@@ -29,7 +29,7 @@ from sui_sensemaking_api.oauth_bff import (
 )
 from sui_sensemaking_api.settings import settings
 
-PENDING_COOKIE = "Kj-Atlas-Oauth-Pending"
+PENDING_COOKIE = "Sui-Sensemaking-Oauth-Pending"
 
 
 def _request(cookies: dict[str, str] | None = None, runtime_profile: str = "saas-multitenant"):
