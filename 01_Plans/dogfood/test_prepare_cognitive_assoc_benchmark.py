@@ -34,7 +34,10 @@ class CognitiveAssocBenchmarkPreparationTest(unittest.TestCase):
             "observedPositiveSets": [
                 {"sourceIslandId": "i1", "cardIds": ["c1", "c2"]}
             ],
-            "observedResiduals": ["c4"],
+            "observedSingletonIslands": [
+                {"sourceIslandId": "i2", "cardId": "c3"},
+                {"sourceIslandId": "i3", "cardId": "c4"},
+            ],
             "challengePositiveSets": [["c1", "c2"]],
         }
 
@@ -85,14 +88,14 @@ class CognitiveAssocBenchmarkPreparationTest(unittest.TestCase):
                     "id": "c4",
                     "x": 7,
                     "y": 8,
-                    "text": "どこにも入れず残すこと自体が意味を持つ。",
+                    "text": "一枚だけで島として成立することもある。",
                     "textReviewed": True,
                     "meta": {"source": "secret-source-d"},
                 },
             ],
             "islands": [
                 {"id": "i1", "title": "モデルへ見せない表札", "cardIds": ["c1", "c2"]},
-                {"id": "i2", "title": "別の表札", "cardIds": ["c3"]},
+                {"id": "i2", "title": "別の単独島", "cardIds": ["c3"]},
                 {"id": "i3", "title": "単独", "cardIds": ["c4"]},
             ],
             "edges": [{"id": "e1", "fromId": "c1", "toId": "c3", "type": "related"}],
@@ -137,7 +140,7 @@ class CognitiveAssocBenchmarkPreparationTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "source blob mismatch"):
                 prepare_source(root, spec)
 
-    def test_pair_pool_excludes_observed_co_island_but_not_residual(self) -> None:
+    def test_pair_pool_excludes_co_island_but_keeps_distinct_singletons(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source_path = self.write_json(root, "source.json", self.reviewed_document())
@@ -158,6 +161,18 @@ class CognitiveAssocBenchmarkPreparationTest(unittest.TestCase):
             spec["challengePositiveSets"] = [["c1", "c3"]]
 
             with self.assertRaisesRegex(ValueError, "challengePositiveSet crosses"):
+                prepare_source(root, spec)
+
+    def test_every_eligible_card_requires_observed_island_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source_path = self.write_json(root, "source.json", self.reviewed_document())
+            spec = self.source_spec(source_path, root)
+            spec["observedSingletonIslands"] = [
+                {"sourceIslandId": "i2", "cardId": "c3"}
+            ]
+
+            with self.assertRaisesRegex(ValueError, "lack observed island membership"):
                 prepare_source(root, spec)
 
 
