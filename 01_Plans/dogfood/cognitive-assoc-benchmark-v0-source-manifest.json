@@ -2,21 +2,11 @@
   "id": "cognitive-assoc-benchmark-v0",
   "status": "pre_adjudication_frozen",
   "frozenAt": "2026-09-10T19:22:00+09:00",
-  "purpose": "Freeze model-blind KJ grouping observations before running any semantic baseline for COGNITIVE-ASSOC-01.",
+  "purpose": "Freeze model-blind affinity-grouping observations before running any semantic baseline for COGNITIVE-ASSOC-01.",
   "sourceRepository": "hat47x/kj-atlas",
   "inputContract": {
     "modelVisibleFields": ["documentId", "cardId", "text"],
-    "hiddenFromModels": [
-      "x",
-      "y",
-      "islandId",
-      "islandTitle",
-      "edges",
-      "readingOrder",
-      "narratives",
-      "claimType",
-      "meta.source"
-    ],
+    "hiddenFromModels": ["x", "y", "islandId", "islandTitle", "edges", "readingOrder", "narratives", "claimType", "meta.source"],
     "eligibility": "Only cards with textReviewed=true may enter model evaluation in benchmark v0.",
     "candidateScope": "Within-document retrieval first; cross-document evaluation is a later secondary analysis.",
     "noModelRunBeforeAdjudication": true
@@ -39,14 +29,8 @@
         {"sourceIslandId": "i4", "cardIds": ["c10", "c11", "c12"]},
         {"sourceIslandId": "i5", "cardIds": ["c13", "c14", "c15"]}
       ],
-      "observedSingletonIslands": [
-        {"sourceIslandId": "i6", "cardId": "c16"}
-      ],
-      "challengePositiveSets": [
-        ["c01", "c03", "c04"],
-        ["c10", "c11", "c12"],
-        ["c13", "c14", "c15"]
-      ]
+      "observedSingletonIslands": [{"sourceIslandId": "i6", "cardId": "c16"}],
+      "challengePositiveSets": [["c01", "c03", "c04"], ["c10", "c11", "c12"], ["c13", "c14", "c15"]]
     },
     {
       "documentId": "doc_kj_atlas_dogfood_r3",
@@ -59,14 +43,8 @@
         {"sourceIslandId": "i3", "cardIds": ["c07", "c08", "c09"]},
         {"sourceIslandId": "i4", "cardIds": ["c10", "c11"]}
       ],
-      "observedSingletonIslands": [
-        {"sourceIslandId": "i5", "cardId": "c12"}
-      ],
-      "challengePositiveSets": [
-        ["c01", "c02", "c03"],
-        ["c07", "c08", "c09"],
-        ["c10", "c11"]
-      ]
+      "observedSingletonIslands": [{"sourceIslandId": "i5", "cardId": "c12"}],
+      "challengePositiveSets": [["c01", "c02", "c03"], ["c07", "c08", "c09"], ["c10", "c11"]]
     }
   ],
   "labelSemantics": {
