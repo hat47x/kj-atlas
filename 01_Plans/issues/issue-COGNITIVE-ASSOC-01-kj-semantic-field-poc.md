@@ -33,7 +33,7 @@
 
 ## 検証仮説
 
-> 一般言語から得たsemantic representationに、KJ作業のgroup/separate/Critique/hold等の局所文脈を重ねることで、表層語彙が異なるhard positiveを回収しつつ、高表層類似のhard negativeと残余を保護できる。
+> 一般言語から得たsemantic representationに、KJ作業のgroup/separate/Critique/hold等の局所文脈を重ねることで、表層語彙が異なるhard positiveを回収しつつ、高表層類似のhard negativeと、単独島・保留・残余を保護できる。
 
 仮説を一度に全部実装せず、次の問いを順に分離する。
 
@@ -51,6 +51,7 @@
    - hard positive: 表層語彙が離れているが、一緒に読んでみる価値がある2〜3枚
    - hard negative: 語彙は似るが、訴え・因果方向・時点・立場が異なる2〜3枚
    - held / ambiguous: 人間も確定しない組合せ
+   - singleton island: 既存KJで一枚だけの島として成立したカード
 3. 各annotationは元カードID、source snapshot、判断時点へ戻れるようにする。
 4. 最初のbaselineを次の3系に限定して実行する。
    - A: character/word n-gram + TF-IDF cosine
@@ -70,6 +71,7 @@
 - LLMまたはsemantic kernelにIsland / Cluster / Labelを自動確定させない。
 - 内部similarity / activation / confidenceを利用者向け内容スコアとして表示しない。
 - held / ambiguousを評価都合でpositive/negativeへ強制分類しない。
+- 単独島をpending / held / shelvedへ読み替えない。
 - kernel候補を理由に、戻し検査・空白列挙・A/B照合等の規範的verification scopeを削らない。
 - PoCのためだけにDocument schema、Consensus Graph、production APIを変更しない。
 
@@ -78,8 +80,12 @@
 - [x] **T1 Research**: FlyHash / BioHash / FlyVec / Comply / APL局所抑制とKJ要求の差を整理する。
   - 成果: `01_Plans/research/fly-inspired-kj-semantic-field-research-2026-09-10.md`
 - [ ] **T2 Benchmark freeze**: dogfoodからsmall-set benchmark v0を作り、model実行前のcommitで固定する。
-- [ ] **T3 Baseline harness**: A/C/Eを同じinterfaceで実行できるoffline harnessを作る。
-- [ ] **T4 Baseline evaluation**: deep-semantic recall / surface-decoy rejection / residual survival / wording stability / CPU budgetを比較する。
+  - [x] T2a: `textReviewed=true`のMeta R1 / R3をblob SHAで固定し、29枚のblind input、既存複数カード島、単独島、challenge positiveを事前登録した。
+  - [x] T2b: cross-island pair 173件 / 2+1 candidate 346件の生成規則と期待件数を固定した。
+  - [x] T2c: 座標・島タイトル・edge・source等をmodel inputから除外し、未レビューcardやblob driftをfail-closedにする準備器とunit testを追加した。
+  - [ ] T2d: contrast poolをモデル出力を見る前にMaintainerが`hard_negative / related_but_separate / ambiguous_or_held / exclude`へ判定し、benchmarkをadjudicated revisionとして凍結する。
+- [ ] **T3 Baseline harness**: A/C/Eを同じinterfaceで実行できるoffline harnessを作る。T2d完了前はsemantic resultを生成しない。
+- [ ] **T4 Baseline evaluation**: deep-semantic recall / surface-decoy rejection / singleton・residual survival / wording stability / CPU budgetを比較する。
 - [ ] **T5 Learned sparse gate**: T4を根拠にDを実装する価値をProceed / Hold / Rejectで判断する。
 - [ ] **T6 KJ-specific increment**: Proceed時のみFを追加し、group/separate/Critique/hold/graph/space/historyの寄与をablationする。
 - [ ] **T7 Cognitive dogfood**: 候補提示あり/なしで探索の増分とanchoringを比較する。
@@ -91,7 +97,7 @@
 
 - **R1 Deep-semantic candidate recall**: hard positiveの候補回収。
 - **R2 Surface-decoy rejection**: hard negativeを語彙類似だけで近接扱いしないこと。
-- **R3 Residual survival**: isolated / held / minority cardsを強制回収しないこと。
+- **R3 Singleton / residual survival**: singleton / held / minority cardsを強制回収しないこと。v0の観測対象はsingleton islandであり、explicit held/pending/shelvedは将来caseで分ける。
 - **R4 Set-level coherence**: pairの近さだけでなく2〜3枚集合としての適合を扱えること。
 - **R5 Wording stability**: 軽微な言い換えで候補が崩れすぎないこと。
 - **R6 KJ-feedback increment**: KJ固有履歴の追加に独立した改善があること。
@@ -121,15 +127,26 @@ offline精度が高くても、dogfoodで候補へのanchoring、残余消失、
 
 ## 受入条件
 
-- [ ] model出力を見る前にsmall-set benchmark v0がcommitで固定されている。
+- [ ] model出力を見る前にsmall-set benchmark v0のcontrast判定までcommitで固定されている。
 - [ ] A/C/Eが同じsnapshot・同じ候補数条件で比較できる。
-- [ ] hard positiveだけでなくhard negative / held / residualを含む結果が残る。
+- [ ] hard positiveだけでなくhard negative / held-or-ambiguous / singletonを含む結果が残る。
 - [ ] pairwise retrievalと2〜3枚set-level評価を区別している。
 - [ ] `COGNITIVE-EVAL-01`の該当軸へ結果を戻せる。
 - [ ] seed / algorithm version / parameter setから再実行可能である。
 - [ ] Fly-inspired方式が不利だった場合もReject/縮小判断をそのまま記録する。
 - [ ] **AIまたは非LLM kernelが人間の明示操作なしに島・表札・関係を確定しない。**
-- [ ] production schema/APIを変更していない。必要になった場合は本issueを止め、`ADR-0047`の再起票条件を確認する。
+- [x] production schema/APIを変更していない。必要になった場合は本issueを止め、`ADR-0047`の再起票条件を確認する。
+
+## 2026-09-10 事前凍結時点の検証記録
+
+- sourceは今回の研究より前に存在する`doc_cognitive_dogfood_meta_r1`と`doc_kj_atlas_dogfood_r3`を使用する。
+- 両sourceの全29カードが`textReviewed=true`であることを確認した。
+- Meta R1は5つの複数カード島 + 1つの単独島、R3は4つの複数カード島 + 1つの単独島としてsource blobを確認した。
+- model-visible fieldは`documentId / cardId / text`だけに固定した。
+- 既存の島外であることをhard negativeとみなさず、人間判定前のcontrast poolへ置く。
+- 準備器のsynthetic unit testで、blind field限定、未レビュー拒否、blob SHA不一致拒否、co-island pair除外、異なるsingleton間のcontrast維持、challenge setの島跨ぎ拒否、membership漏れ拒否を確認した。
+- この実行環境からGitHubへのDNS解決ができずremote branchをcloneできなかったため、実sourceを用いたCLI end-to-end実行は未実施。source blob自体はGitHub connectorで正本を確認した。T2d後のbaseline開始前に、通常の開発環境で実source prepを再実行する。
+- **semantic baseline / embedding / FlyHash候補はまだ一度も生成していない。** benchmark labelはmodel-blindのままである。
 
 ## 責任分界
 
@@ -149,7 +166,7 @@ offline精度が高くても、dogfoodで候補へのanchoring、残余消失、
 - 実行する確認:
   - benchmark固定commitの確認。
   - A/C/Eの同条件再実行。
-  - hard positive / hard negative / heldの誤り事例レビュー。
+  - hard positive / hard negative / held-or-ambiguous / singletonの誤り事例レビュー。
   - seed固定によるreproducibility確認。
   - CPU latency / memory / index sizeの実測。
   - `COGNITIVE-EVAL-01`への認知dogfood結果の戻し。
