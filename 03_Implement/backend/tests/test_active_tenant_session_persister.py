@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-import kj_atlas_api.active_tenant_session as active_tenant_session
-from kj_atlas_api.active_tenant_session import (
+import sui_sensemaking_api.active_tenant_session as active_tenant_session
+from sui_sensemaking_api.active_tenant_session import (
     InMemoryActiveTenantSessionPersister,
     TenantSessionChangedError,
     _new_session_version,
     canonical_tenant_session_version,
     tenant_session_cookie_is_secure,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 from tests.conftest import fake_request, fake_response
 
 

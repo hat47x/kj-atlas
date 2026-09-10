@@ -7,9 +7,9 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.routes import ai
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.settings import settings
 
 
 @pytest.fixture(autouse=True)
@@ -27,10 +27,10 @@ def _app_db_schema() -> None:
     neither until seeded."""
     from sqlalchemy.exc import IntegrityError
 
-    from kj_atlas_api.db import SessionLocal, engine
-    from kj_atlas_api.models import Base
-    from kj_atlas_api.model_registry_repository import register_model, register_provider
-    from kj_atlas_api.settings import settings
+    from sui_sensemaking_api.db import SessionLocal, engine
+    from sui_sensemaking_api.models import Base
+    from sui_sensemaking_api.model_registry_repository import register_model, register_provider
+    from sui_sensemaking_api.settings import settings
 
     _NOW = "2026-08-15T00:00:00+00:00"
     original_provider = settings.llm_provider
@@ -329,7 +329,7 @@ def test_every_content_ai_route_rejects_unreviewed_text(monkeypatch, path, paylo
 
 def test_newly_gated_routes_accept_reviewed_text(monkeypatch) -> None:
     """The two routes closed in iteration 48 accept reviewed content (200)."""
-    from kj_atlas_api.routes import ai_relations
+    from sui_sensemaking_api.routes import ai_relations
 
     monkeypatch.setattr(ai, "generate_with_fallback", _stub_generate_by_task)
     # ai_relations imports generate_with_fallback directly, so stub its module.

@@ -10,7 +10,7 @@
 
 ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → session persister）の基盤が実装された。ただし2026-08-11の再監査で、共有persisterはprincipal単位versionのみを保存し、認証セッション単位のactive tenant正本を持たないことが判明した。設定上の起動は可能でも、`SAAS-TENANT-SESSION-BINDING-01`完了まで共有SaaSの本番利用gateは未充足である。加えて以下の認証フローは未検証・未実装である：
 
-1. **SAML IdP → Broker (SAML→OIDC) → JWT → kj-atlas** のエンドツーエンド協調動作
+1. **SAML IdP → Broker (SAML→OIDC) → JWT → sui-sensemaking** のエンドツーエンド協調動作
 2. **OAuth 2.0 / OIDC によるログインフロー**（認可コードグラント、PKCE）
 3. **外部 IdP（Google, Azure AD, Okta）との連携手順**
 4. **フロントエンドのログイン UI とセッション管理**
@@ -39,7 +39,7 @@ ADR-0063 D9 により trusted auth edge（JWT 検証 → tenant 解決 → sessi
 
 ### なぜ今この計画が必要か
 
-ADR-0063 は「SAML をアプリに実装しない」と決定したが、その決定が正しく機能すること——broker が SAML→OIDC を変換し、kj-atlas が JWT を検証し、SAML 顧客が実際にログインできること——は未証明である。また OAuth 2.0 ログイン要件の有無も明示的に判断されていない。
+ADR-0063 は「SAML をアプリに実装しない」と決定したが、その決定が正しく機能すること——broker が SAML→OIDC を変換し、sui-sensemaking が JWT を検証し、SAML 顧客が実際にログインできること——は未証明である。また OAuth 2.0 ログイン要件の有無も明示的に判断されていない。
 
 ## Decision
 
@@ -47,7 +47,7 @@ ADR-0063 は「SAML をアプリに実装しない」と決定したが、その
 
 ```
 ┌──────────────┐     SAML/OIDC      ┌──────────────┐     Signed JWT     ┌──────────────┐
-│  External IdP │ ─────────────────→ │   Broker     │ ─────────────────→ │  kj-atlas    │
+│  External IdP │ ─────────────────→ │   Broker     │ ─────────────────→ │  sui-sensemaking    │
 │  (Google etc) │                    │  (Keycloak/  │                    │  Backend     │
 │  SAML IdP     │                    │   Authentik) │                    │  (JWT verify)│
 └──────────────┘                    └──────────────┘                    └──────────────┘
@@ -55,17 +55,17 @@ ADR-0063 は「SAML をアプリに実装しない」と決定したが、その
   (外部委譲)                           JWT 発行                           認可・データ
 ```
 
-- **Layer 1 (External IdP)**: Google, Azure AD, Okta, SAML IdP — ユーザーの実際の認証を行う。kj-atlas は関与しない。
-- **Layer 2 (Broker)**: Keycloak / Authentik / WorkOS — 複数の外部 IdP を集約し、SAML→OIDC 変換、JWT 発行、tenant claim 注入を行う。kj-atlas は特定製品に依存しない。
-- **Layer 3 (kj-atlas)**: JWT 検証、tenant 解決、認可。既存の `trusted_auth_edge.py` がこの層を実装する。
+- **Layer 1 (External IdP)**: Google, Azure AD, Okta, SAML IdP — ユーザーの実際の認証を行う。sui-sensemaking は関与しない。
+- **Layer 2 (Broker)**: Keycloak / Authentik / WorkOS — 複数の外部 IdP を集約し、SAML→OIDC 変換、JWT 発行、tenant claim 注入を行う。sui-sensemaking は特定製品に依存しない。
+- **Layer 3 (sui-sensemaking)**: JWT 検証、tenant 解決、認可。既存の `trusted_auth_edge.py` がこの層を実装する。
 
-### D2: OAuth 2.0 ログインフローは kj-atlas に実装しない（Broker 委譲）
+### D2: OAuth 2.0 ログインフローは sui-sensemaking に実装しない（Broker 委譲）
 
-ADR-0020 §1.1 の「認証・セッション・再認証の責務は前段 IAP/SP に委譲」に従い、**OAuth 2.0 認可コードグラント、PKCE、トークンエンドポイント、リダイレクト URI 管理は kj-atlas 本体に実装しない**。
+ADR-0020 §1.1 の「認証・セッション・再認証の責務は前段 IAP/SP に委譲」に従い、**OAuth 2.0 認可コードグラント、PKCE、トークンエンドポイント、リダイレクト URI 管理は sui-sensemaking 本体に実装しない**。
 
 - フロントエンドは Broker のログインページへリダイレクトする。
 - Broker が認可コードグラント + PKCE を処理し、セッション cookie を発行する。
-- kj-atlas Backend は Broker が発行した JWT を `X-Kj-Atlas-Authorization` ヘッダーで受け取る。
+- sui-sensemaking Backend は Broker が発行した JWT を `X-Kj-Atlas-Authorization` ヘッダーで受け取る。
 
 ただし、開発者体験のため、**mock レベルのログインフローを Level 2 テストハーネスに実装する**（D4 参照）。
 
@@ -108,7 +108,7 @@ Level 2 mock IdP に以下を追加する：
 
 #### D5-1: Google OAuth 2.0 / OIDC
 - Broker に Google IdP を設定する手順書を作成する（Keycloak の Identity Provider 設定）。
-- kj-atlas 側の `identity_providers` テーブルに Google の issuer (`https://accounts.google.com`) と audience を登録する手順。
+- sui-sensemaking 側の `identity_providers` テーブルに Google の issuer (`https://accounts.google.com`) と audience を登録する手順。
 - tenant マッピング: Google の `hd` (hosted domain) claim またはカスタム claim を `external_tenant_ref` へマップ。
 
 #### D5-2: その他の IdP
@@ -123,14 +123,14 @@ Level 2 mock IdP に以下を追加する：
 | Level 0 (unit) | JWT resolver, JWKS store, tenant resolver, session persister | ✅ 実装済み (42 tests) |
 | Level 1 (integration) | HTTP-level E2E tenant isolation with signed JWT | ✅ 実装済み (10 tests) |
 | Level 2 (mock login) | Mock OAuth 2.0 認可コードグラント + PKCE → JWT 発行 → リクエスト転送 | ✅ 実装済み (8 tests) |
-| Level 3 (broker E2E) | 実 Broker (Keycloak) + mock IdP + kj-atlas Backend | ❌ Phase 2 |
+| Level 3 (broker E2E) | 実 Broker (Keycloak) + mock IdP + sui-sensemaking Backend | ❌ Phase 2 |
 | Level 4 (external IdP) | Google / Azure AD 連携実証 | ❌ Phase 2 |
 
 ### D7: OAuth 2.0 ログイン要件の確認
 
-以下のユースケースについて、kj-atlas の要件を確認する：
+以下のユースケースについて、sui-sensemaking の要件を確認する：
 
-| ユースケース | kj-atlas での必要性 | 実装場所 |
+| ユースケース | sui-sensemaking での必要性 | 実装場所 |
 |---|---|---|
 | 認可コードグラント (Authorization Code Grant) | ✅ 必要（Broker→フロントエンド間） | Broker |
 | PKCE (Proof Key for Code Exchange) | ✅ 必要（public client 対応） | Broker |
@@ -140,7 +140,7 @@ Level 2 mock IdP に以下を追加する：
 | OIDC Session Management | ✅ 必要 | Broker |
 | RP-Initiated Logout | ✅ 必要 | Broker |
 
-**結論**: OAuth 2.0 / OIDC ログインフローは **すべて Broker が担当**する。kj-atlas Backend は JWT 検証のみ。フロントエンドは Broker のログインページへリダイレクトする。
+**結論**: OAuth 2.0 / OIDC ログインフローは **すべて Broker が担当**する。sui-sensemaking Backend は JWT 検証のみ。フロントエンドは Broker のログインページへリダイレクトする。
 
 ### D8: 実装フェーズ
 
@@ -159,7 +159,7 @@ Level 2 mock IdP に以下を追加する：
 2. Google OAuth 2.0 / OIDC 設定手順
 3. SAML IdP → Broker 設定手順
 4. `identity_providers` テーブルへの Broker 登録手順
-5. Level 3 E2E test (実 Broker + kj-atlas)
+5. Level 3 E2E test (実 Broker + sui-sensemaking)
 6. フロントエンドのログインリダイレクト対応
 
 #### Phase 3: 本番運用準備
@@ -171,7 +171,7 @@ Level 2 mock IdP に以下を追加する：
 
 ## Alternatives considered
 
-1. **kj-atlas に OAuth 2.0 RP を実装する**: ADR-0020 で否決済み。認証プロトコル実装責務をアプリに持ち込まない原則を維持する。
+1. **sui-sensemaking に OAuth 2.0 RP を実装する**: ADR-0020 で否決済み。認証プロトコル実装責務をアプリに持ち込まない原則を維持する。
 2. **フロントエンドが JWT を直接保持しない**: セッション cookie のみで運用する方式。SPA の API 呼び出しに JWT が必要なため、フロントエンドが JWT をメモリに保持することは許容する。HttpOnly cookie との二重管理は複雑性を増すため不採用。
 3. **Broker なしで Google OAuth を直接検証**: ADR-0063 D1 で否決。multi-IdP 対応の拡張性を失う。
 
@@ -179,22 +179,22 @@ Level 2 mock IdP に以下を追加する：
 
 | 次元 | このADRでの主張 | 他次元への制約 |
 |------|----------------|---------------|
-| **業務設計** | SAML顧客はBrokerのSAML→OIDC変換を通じてkj-atlasを利用し、開発者はmockログインでE2E認証フローをテストできる。OAuth 2.0ログインフローはBrokerが担当しkj-atlas本体に実装しない | 機能: フロントエンドは最小限の認証状態管理（リダイレクト+JWT保持）で済む。データ: SAML assertion検証はbrokerに委譲 |
+| **業務設計** | SAML顧客はBrokerのSAML→OIDC変換を通じてsui-sensemakingを利用し、開発者はmockログインでE2E認証フローをテストできる。OAuth 2.0ログインフローはBrokerが担当しsui-sensemaking本体に実装しない | 機能: フロントエンドは最小限の認証状態管理（リダイレクト+JWT保持）で済む。データ: SAML assertion検証はbrokerに委譲 |
 | **データ設計** | SPAへ返す短命Bearer access tokenはmodule memoryだけに保持し`sessionStorage`/`localStorage`へ保存しない。reload後は再認証。refresh token grantはSPA clientで無効化 | 業務: tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`、`local-dev`以外では`Secure`必須。機能: ログアウトは同じ属性とpathで失効させる |
 | **機能設計** | JwtSaasIdentityContextResolver・JwksStore・ClaimBasedTenantContextResolver・mock IdP（/login /oauth/authorize /oauth/token /oauth/userinfo）・mock SPのOAuth login flow proxyを実装済み。共有persisterはprincipal単位の暫定実装 | 業務: active tenant/session束縛は`SAAS-TENANT-SESSION-BINDING-01`完了まで本番利用gate未充足。データ: sender-constrained replay防御は別ADRで方式決定 |
 
 ## Consequences
 
 - 開発者は mock ログインで E2E 認証フローをテストできる。
-- SAML 顧客は Broker の SAML→OIDC 変換を通じて kj-atlas を利用できる。
-- OAuth 2.0 ログインフローは kj-atlas 本体に実装されず、Broker が担当する。
+- SAML 顧客は Broker の SAML→OIDC 変換を通じて sui-sensemaking を利用できる。
+- OAuth 2.0 ログインフローは sui-sensemaking 本体に実装されず、Broker が担当する。
 - フロントエンドは最小限の認証状態管理（リダイレクト + JWT 保持）で済む。
 - SPAへ返す短命Bearer access tokenはmodule memoryだけに保持し、有効期間中の連続API要求へ使用できる。`sessionStorage` / `localStorage`へ保存せず、reload後は再認証する。refresh token grantと`refresh_token`応答はSPA clientで無効にする。sender-constrained replay防御は別ADRで方式決定する。
 - tenant-session cookieは`HttpOnly; SameSite=Strict; Path=/`とし、`local-dev`以外では`Secure`を必須にする。ログアウトでは同じ属性とpathで失効させる。
 
 ## Non-goals
 
-- kj-atlas 本体への OAuth 2.0 RP 実装
+- sui-sensemaking 本体への OAuth 2.0 RP 実装
 - Broker 製品の同梱・配布
 - SCIM / 自動 deprovisioning
 - M2M (machine-to-machine) client credentials grant

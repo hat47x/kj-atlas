@@ -30,7 +30,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = REPO_ROOT / "03_Implement" / "backend" / "scripts" / "check_contract_drift.py"
-AI_ROUTES_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "routes" / "ai.py"
+AI_ROUTES_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "sui_sensemaking_api" / "routes" / "ai.py"
 
 
 _WANTED = (

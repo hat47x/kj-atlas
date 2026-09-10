@@ -28,7 +28,7 @@
 
 ## 2) 背景 / Context
 
-- 仕様正本: `02_Architecture/design/kj-atlas 拡張提案.dc.html` §アクセシビリティ画面別仕様（2026-07-04 版）。要点: 作業モード=role=dialog aria-modal＋role=tablist 矢印移動＋Esc段階／選択コンテキスト=aria-live=polite・読み上げ順固定／共有前確認=トラップ＋aria-describedby 警告／凡例=非モーダル dialog／一括操作バー=aria-live「n件選択」（評価語なし）。
+- 仕様正本: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html` §アクセシビリティ画面別仕様（2026-07-04 版）。要点: 作業モード=role=dialog aria-modal＋role=tablist 矢印移動＋Esc段階／選択コンテキスト=aria-live=polite・読み上げ順固定／共有前確認=トラップ＋aria-describedby 警告／凡例=非モーダル dialog／一括操作バー=aria-live「n件選択」（評価語なし）。
 - 各実装 issue（UX-NAV-01 AC-2・UX-VISUAL-01・UX-SHARE-01・UX-SCALE-01）は自面の基本契約を実装し、本Issueは**横断の一貫性検証と残補完**を担う（重複させない: 実装済み属性の再実装はしない）。
 
 ## 3) 判断基準による優先度評価
@@ -82,7 +82,7 @@
 
 - Related: `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`（UQ-2）
 - Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-01-accessibility-test-expansion.md`（Done・非重複の適用先違い）
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§a11y 画面別仕様・2026-07-04 版）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（§a11y 画面別仕様・2026-07-04 版）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 完了記録（部分）2026-07-09（Claude Code）

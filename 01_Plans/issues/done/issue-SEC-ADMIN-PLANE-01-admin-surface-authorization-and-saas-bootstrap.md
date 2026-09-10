@@ -5,7 +5,7 @@
 - Source Issue: `SAAS-TENANT-AUTHEDGE-01`
 - Priority: P0
 - Owner: Maintainer
-- Scope: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
+- Scope: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`, `03_Implement/backend/src/sui_sensemaking_api/main.py`, `03_Implement/backend/src/sui_sensemaking_api/settings.py`, `04_Documentation/security.md`, `04_Documentation/configuration.md`, `THREAT_MODEL.md`, `02_Architecture/enterprise_architecture.html`
 - Related ADR/Spec: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/enterprise_architecture.html`
 - Expected verification level: `integration`
 
@@ -20,8 +20,8 @@
 `/admin/provision/*` の唯一の保護はグローバル middleware `require_api_key`（`main.py:135-146`）である。`settings.py:263-266` により `api_key` の既定値は `None` で、その場合 middleware は素通りする。
 
 ```
-$ KJ_ATLAS_RUNTIME_PROFILE=enterprise-production python3 -c \
-  "from kj_atlas_api.settings import Settings; print(repr(Settings().api_key))"
+$ SUI_RUNTIME_PROFILE=enterprise-production python3 -c \
+  "from sui_sensemaking_api.settings import Settings; print(repr(Settings().api_key))"
 None
 ```
 
@@ -39,7 +39,7 @@ None
 $ python3 -c "
 from unittest.mock import MagicMock
 from fastapi import HTTPException
-from kj_atlas_api.routes.admin import require_single_tenant_provisioning_surface
+from sui_sensemaking_api.routes.admin import require_single_tenant_provisioning_surface
 for p in ['enterprise-production','saas-multitenant']:
     r = MagicMock(); r.app.state.runtime_profile = p
     try: require_single_tenant_provisioning_surface(r); print(f'{p} -> ALLOWED')
@@ -74,7 +74,7 @@ saas-multitenant      -> HTTP 404 {'code': 'strict_provisioning_unavailable', ..
 - [x] AC-1: `enterprise-production` および `saas-multitenant` は、認証手段が未設定なら起動時に fail-fast する（D3=A）。`Settings()` 構築時に `ValueError`。`test_control_plane_authorization.py` で固定。
 - [x] AC-2: `/admin/provision/**` が業務API と分離された認可を要求し、業務面の資格情報だけでは到達できない。3ルート全てについて `X-Api-Key` 提示時に 401 `control_plane_unauthorized` を返すことを固定。
 - [x] AC-3: `saas-multitenant` で IdP 登録が実行可能な経路が存在する（D2=A。旧実装は 404 だった）。手順は `04_Documentation/security.md`「管理面（Control Plane）の保護」に記載。**空DBから認証成立までの通し検証は未実施**（下記「残作業」）。
-- [x] AC-4: `trusted_saas_runtime.py` の起動時警告が、実際に到達可能な手順を案内している。`X-Admin-Api-Key` と `KJ_ATLAS_ADMIN_API_KEY` を明記し、業務面キーが使えないことも記載。文言と実装の一致をテストで固定。
+- [x] AC-4: `trusted_saas_runtime.py` の起動時警告が、実際に到達可能な手順を案内している。`X-Admin-Api-Key` と `SUI_ADMIN_API_KEY` を明記し、業務面キーが使えないことも記載。文言と実装の一致をテストで固定。
 - [x] AC-5: 管理面操作の監査証跡（主体・時刻・対象）。→ **`issue-SEC-ADMIN-PLANE-03` で完了**（2026-08-15・iteration 40）。`admin_audit_events` テーブル＋記録middleware＋`GET /admin/provision/audit`（allowlist・composite cursor）。`verify_api_admin.sh` 実走行10/10。
 - [x] AC-6: `THREAT_MODEL.md` と `04_Documentation/security.md` に管理面の保護要件を追記した。アプリ側保証と前段委譲（D1=C）の責務境界、および SaaS でのテナント発行の業務的正当性が範囲外であることを明記。
 - [x] AC-7: 越境の negative matrix を integration テストで固定した — 業務面キーで到達不可、資格情報なしで到達不可、誤った資格情報で到達不可、拒否応答が「未設定」と「誤り」を区別しない、提示値・設定値を反射しない、未知 profile が open へ fall through しない。

@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.engine import make_url
 
-from kj_atlas_api.database_support import (
+from sui_sensemaking_api.database_support import (
     alembic_config_database_url,
     create_verified_database_engine,
     database_support_for_backend,
@@ -13,7 +13,7 @@ from kj_atlas_api.database_support import (
     require_verified_database_url,
     verified_database_backends,
 )
-from kj_atlas_api.settings import Settings
+from sui_sensemaking_api.settings import Settings
 
 
 def test_verified_database_capabilities_are_explicit() -> None:
@@ -59,14 +59,14 @@ def test_verified_database_capabilities_are_explicit() -> None:
 
 
 def test_alembic_config_url_escapes_percent_encoding_without_exposing_credentials() -> None:
-    url = "mssql+pymssql://user:encoded%21password@db/kj_atlas"
+    url = "mssql+pymssql://user:encoded%21password@db/sui_sensemaking"
 
     assert alembic_config_database_url(url) == url.replace("%", "%%")
 
 
 def test_unknown_database_is_rejected_without_echoing_credentials() -> None:
     with pytest.raises(ValueError) as captured:
-        require_verified_database_url("db2://sensitive-user:secret-password@db/kj_atlas")
+        require_verified_database_url("db2://sensitive-user:secret-password@db/sui_sensemaking")
 
     message = str(captured.value)
     assert "Unsupported database backend: db2" in message
@@ -83,18 +83,18 @@ def test_malformed_database_url_is_rejected_with_stable_error() -> None:
 @pytest.mark.parametrize(
     ("database_url", "expected_drivername"),
     [
-        ("sqlite+aiosqlite:///./kj_atlas.db", "sqlite"),
-        ("postgresql://user:p%40ss@db:5432/kj_atlas", "postgresql+psycopg"),
-        ("postgresql+asyncpg://user:p%40ss@db:5432/kj_atlas", "postgresql+psycopg"),
-        ("mysql://user:p%40ss@db:3306/kj_atlas", "mysql+pymysql"),
-        ("mariadb://user:p%40ss@db:3306/kj_atlas", "mariadb+pymysql"),
-        ("mssql://user:p%40ss@db:1433/kj_atlas", "mssql+pymssql"),
+        ("sqlite+aiosqlite:///./sui_sensemaking.db", "sqlite"),
+        ("postgresql://user:p%40ss@db:5432/sui_sensemaking", "postgresql+psycopg"),
+        ("postgresql+asyncpg://user:p%40ss@db:5432/sui_sensemaking", "postgresql+psycopg"),
+        ("mysql://user:p%40ss@db:3306/sui_sensemaking", "mysql+pymysql"),
+        ("mariadb://user:p%40ss@db:3306/sui_sensemaking", "mariadb+pymysql"),
+        ("mssql://user:p%40ss@db:1433/sui_sensemaking", "mssql+pymssql"),
         (
             "oracle://user:p%40ss@db:1521?service_name=FREEPDB1",
             "oracle+oracledb",
         ),
         (
-            "cockroachdb://user:p%40ss@db:26257/kj_atlas?sslmode=disable",
+            "cockroachdb://user:p%40ss@db:26257/sui_sensemaking?sslmode=disable",
             "cockroachdb+psycopg",
         ),
     ],
@@ -117,12 +117,12 @@ def test_sync_normalization_uses_verified_driver_and_preserves_url_parts(
 @pytest.mark.parametrize(
     "database_url",
     [
-        "postgresql+psycopg2://sensitive-user:secret-password@db/kj_atlas",
-        "mysql+mysqldb://sensitive-user:secret-password@db/kj_atlas",
-        "mariadb+mariadbconnector://sensitive-user:secret-password@db/kj_atlas",
-        "mssql+pyodbc://sensitive-user:secret-password@db/kj_atlas",
-        "oracle+cx_oracle://sensitive-user:secret-password@db/kj_atlas",
-        "cockroachdb+psycopg2://sensitive-user:secret-password@db/kj_atlas",
+        "postgresql+psycopg2://sensitive-user:secret-password@db/sui_sensemaking",
+        "mysql+mysqldb://sensitive-user:secret-password@db/sui_sensemaking",
+        "mariadb+mariadbconnector://sensitive-user:secret-password@db/sui_sensemaking",
+        "mssql+pyodbc://sensitive-user:secret-password@db/sui_sensemaking",
+        "oracle+cx_oracle://sensitive-user:secret-password@db/sui_sensemaking",
+        "cockroachdb+psycopg2://sensitive-user:secret-password@db/sui_sensemaking",
     ],
 )
 def test_unverified_driver_is_rejected_without_echoing_credentials(
@@ -148,13 +148,13 @@ def test_engine_creation_reports_missing_optional_driver_without_credentials(
         raise ModuleNotFoundError("No module named 'pymysql'")
 
     monkeypatch.setattr(
-        "kj_atlas_api.database_support.create_engine",
+        "sui_sensemaking_api.database_support.create_engine",
         missing_driver,
     )
 
     with pytest.raises(RuntimeError) as captured:
         create_verified_database_engine(
-            "mysql://sensitive-user:secret-password@db/kj_atlas"
+            "mysql://sensitive-user:secret-password@db/sui_sensemaking"
         )
 
     message = str(captured.value)
@@ -166,8 +166,8 @@ def test_engine_creation_reports_missing_optional_driver_without_credentials(
 
 def test_settings_rejects_unknown_database_before_engine_creation(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setenv(
-        "KJ_ATLAS_DATABASE_URL",
-        "db2://sensitive-user:secret-password@db/kj_atlas",
+        "SUI_DATABASE_URL",
+        "db2://sensitive-user:secret-password@db/sui_sensemaking",
     )
 
     with pytest.raises(ValidationError) as captured:

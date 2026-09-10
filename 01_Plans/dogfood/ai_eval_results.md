@@ -66,7 +66,7 @@
 | suggest-island-summaryエンドポイント経由 | `test_suggest_island_summary_endpoint_mock_eval` | ✅ summary+groundingIds |
 | suggest-island-summary全4島駆動 | `test_suggest_island_summary_eval_covers_all_fixture_islands` | ✅ 4回呼出 |
 
-**結論**: 評価手順は実エンドポイント経由で完全に動作する。`KJ_ATLAS_DEEPSEEK_API_KEY` を設定し、backendを起動して同一の手順を実行するだけで実API評価が行える。コード変更は不要。
+**結論**: 評価手順は実エンドポイント経由で完全に動作する。`SUI_DEEPSEEK_API_KEY` を設定し、backendを起動して同一の手順を実行するだけで実API評価が行える。コード変更は不要。
 
 ## 評価方法
 
@@ -85,12 +85,12 @@
 
 ```bash
 # 1. API key設定
-export KJ_ATLAS_LLM_PROVIDER=deepseek
-export KJ_ATLAS_DEEPSEEK_API_KEY=<key>
+export SUI_LLM_PROVIDER=deepseek
+export SUI_DEEPSEEK_API_KEY=<key>
 
 # 2. backend起動
 cd 03_Implement/backend
-.venv/bin/uvicorn kj_atlas_api.main:app --port 8000
+.venv/bin/uvicorn sui_sensemaking_api.main:app --port 8000
 
 # 3. refine_card_text評価（10件）
 #    fixtureのカードc01〜c10を1件ずつPOST /ai/refine-card-textへ

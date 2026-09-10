@@ -36,7 +36,7 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 
 - タブは **`role=tablist`**、矢印キーで移動、Escape段階処理と整合。
 - 5タブ: **差分／選択マージ／AI提案／診断／文章化**（「レビュー」は語彙衝突のため不採用、確定名称は「作業」）。
-- 各タブの状態遷移（idle→loading→list→applied 等）とCB-1〜4自己申告・5判断軸自己評価まで含め詳細設計済み（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §P21 参照）。
+- 各タブの状態遷移（idle→loading→list→applied 等）とCB-1〜4自己申告・5判断軸自己評価まで含め詳細設計済み（`02_Architecture/design/sui-sensemaking 拡張提案.dc.html` §P21 参照）。
 
 一方、現行実装（`App.tsx` の `advancedWorkModeContent`）は:
 
@@ -87,7 +87,7 @@ Claude Design 実装照合レビュー（2026-07-11、拡張提案 P21「作業�
 - Related: `01_Plans/adr/ADR-0052-canvas-and-menu-aria-semantics.md`（C-5の解消先）
 - Related: `01_Plans/issues/done/issue-UI-QUALITY-A11Y-02-per-surface-aria-focus-spec.md`（作業モードタブ role=tablist 残課題の解消先）
 - Related: `01_Plans/issues/done/issue-QA-MONKEY-12-work-mode-suggest-layout-button-overlap.md`（タブ化で副次的に解消する可能性がある重なりバグ）
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html` §P21（完全設計の正本）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html` §P21（完全設計の正本）
 
 ## 完了記録 2026-07-13（Claude Code）
 

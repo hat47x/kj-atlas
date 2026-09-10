@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/routes/`
+- Scope: `02_Architecture/api.md`, `03_Implement/backend/src/sui_sensemaking_api/routes/`
 - Related ADR/Spec: `ADR-0067-three-element-constraint-design-method.md`
 - Expected verification level: `docs-check`
 

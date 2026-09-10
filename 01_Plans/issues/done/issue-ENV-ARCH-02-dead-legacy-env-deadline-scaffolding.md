@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/tests/test_settings_env_migration.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/settings.py`, `03_Implement/backend/tests/test_settings_env_migration.py`
 - Related ADR/Spec: `issue-ENV-ARCH-01`（E3決定: 猶予期限運用は不採用）
 - Expected verification level: `unit`
 
@@ -30,7 +30,7 @@
 
 上記「論点」が最終判断を人的確認に委ねた理由は一点だけだった：`LEGACY_ENV_COMPAT_DEADLINE`の導入経緯（大規模squashコミット`4ba6ec45`）から単独の意図を追跡しづらく、「E3以降に方針を再検討する決定が別途あった可能性」を否定しきれなかったこと。この一点を次の2つの独立した確認で解消した。
 
-1. `git log --all -S "LEGACY_ENV_COMPAT_DEADLINE" -- 03_Implement/backend/src/kj_atlas_api/settings.py`（pickaxe検索、全履歴・全ブランチ対象）は、この文字列を導入した`4ba6ec45`以外のコミットを一件も返さない。つまりこの定数は導入以降、一度も変更・再配線・再検討されていない。
+1. `git log --all -S "LEGACY_ENV_COMPAT_DEADLINE" -- 03_Implement/backend/src/sui_sensemaking_api/settings.py`（pickaxe検索、全履歴・全ブランチ対象）は、この文字列を導入した`4ba6ec45`以外のコミットを一件も返さない。つまりこの定数は導入以降、一度も変更・再配線・再検討されていない。
 2. `4ba6ec45`へsquashされた個別コミット`df8bc3c0`（"fix(CI): fix unreachable provider validation + remove nonexistent migration test"）を直接確認した。この時点で`validate_llm_provider_guards`から`populate_by_name=True`と早期return（`if not detected_legacy: return self`）が除去され、レガシーキー検出時は即座にエラーを送出する形になっている（=関数内でこの時点より後にある猶予期限比較コードへは、この変更以降そもそも到達し得ない）。このコミットの意図は明示的に「無関係な別バグ（provider validationが到達不能だった問題と、存在しない移行パスをテストしていた1テストの削除）」であり、E3方針の再検討ではない。
 
 以上より、「E3以降の再検討」を裏付ける形跡は存在せず、現在の無条件拒否という挙動はE3決定と一貫して整合していると確認できた。よって以下を実施した。

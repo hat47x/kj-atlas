@@ -6,7 +6,7 @@ import { buildPatchSummary, formatPatchSummaryMarkdown } from "./patch_summary";
 describe("patch_summary", () => {
   it("builds deterministic stats, highlights, and warnings", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "4", kind: "upsert_card", card: { id: "card-b", text: "Card B detail", x: 0, y: 0 } },
@@ -75,7 +75,7 @@ describe("patch_summary", () => {
 
   it("masks card, island, and relation text in highlights under SafeMode (default)", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "1", kind: "upsert_card", card: { id: "card-b", text: "Card B detail", x: 0, y: 0 } },

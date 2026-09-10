@@ -19,9 +19,9 @@ depends_on: str | Sequence[str] | None = None
 
 _BUNDLE_TABLE = "inquiry_bundles"
 _AUDIT_TABLE = "inquiry_bundle_deletion_audit_events"
-_BUNDLE_POLICY = "kj_atlas_inquiry_bundles_tenant_isolation"
-_AUDIT_POLICY = "kj_atlas_inquiry_bundle_deletion_audit_tenant_isolation"
-_TENANT_USING = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+_BUNDLE_POLICY = "sui_sensemaking_inquiry_bundles_tenant_isolation"
+_AUDIT_POLICY = "sui_sensemaking_inquiry_bundle_deletion_audit_tenant_isolation"
+_TENANT_USING = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 
 
 def _enable_rls(table_name: str, policy_name: str) -> None:

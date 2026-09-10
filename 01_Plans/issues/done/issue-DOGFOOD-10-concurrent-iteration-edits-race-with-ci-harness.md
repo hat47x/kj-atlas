@@ -49,7 +49,7 @@
 
 `verify_all.sh` check 10 を、各E2Eスクリプトを**同じディレクトリの一時スナップショット**（`.e2e_snapshot_$$_<basename>`）へコピーしてから実行する方式へ変更した（`run_e2e_snapshot` ヘルパー）。同一ディレクトリに置くことで、各スクリプトの `BASH_SOURCE` 由来パス（`SCRIPT_DIR` / `ROOT_DIR` / `examples/admin_lifecycle.py`）が単独実行と同一に解決される。実行後はスナップショットを削除する。
 
-- 対象: `verify_business_flow_e2e.sh`・`verify_admin_ops_flow_e2e.sh`・`verify_kj_multi_round.sh`（check 10 の3本）
+- 対象: `verify_business_flow_e2e.sh`・`verify_admin_ops_flow_e2e.sh`・`verify_sui_multi_round.sh`（check 10 の3本）
 - 検証: `verify_all.sh` フル実走行で **All checks passed**（business-flow・admin・kj multi-round・MCP CE-4 audit の4本すべて PASS）。admin E2E はスナップショット経由でも `examples/admin_lifecycle.py` のパス解決が正しく 12/12。
 - 補足: 並行ファイアのポート重複（8005-8007）による競合は、ファイアが REPL アイドル時のみ起動する運用（案B）に依存するため、本Issueでは案Aのみ採択。競合が再発する場合は案B（interval延長・single-flight）を適用する。
 

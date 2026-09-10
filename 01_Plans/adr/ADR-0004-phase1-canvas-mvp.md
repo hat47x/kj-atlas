@@ -19,7 +19,7 @@
 このドキュメントは、`01_Plans/adr/ADR-0002-internal-roadmap.md` に基づき、**Phase 1：Canvas MVP** を実行するための
 **実装計画書**です。
 
-Phase 0 で整えた足場の上に、kj-atlas の核となる **A型図解（Canvas）** を最小構成で成立させます。
+Phase 0 で整えた足場の上に、sui-sensemaking の核となる **A型図解（Canvas）** を最小構成で成立させます。
 
 ---
 

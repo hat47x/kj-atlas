@@ -1,7 +1,7 @@
 # 継続dogfood R40 — branch差分とcurrent mainへのnet tree effectを分ける
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r40.json`
+Canvas: `doc_sui_sensemaking_dogfood_r40.json`
 
 ## 1. Trigger
 
@@ -111,4 +111,4 @@ R40はtree-noop mergeを全面禁止しない。commit relationそのものに�
 
 R40はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

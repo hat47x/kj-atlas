@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-09
 - Deciders: Maintainer（仮承認 2026-08-13。ドッグフーディングループの仮承認方針に基づく。否認・補正可）
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `models.py`, `models_ai.py`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `02_Architecture/llm_escalation_policy.html`, `03_Implement/frontend/src/api/client.ts`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `models.py`, `models_ai.py`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `02_Architecture/llm_escalation_policy.html`, `03_Implement/frontend/src/api/client.ts`
 
 ## Context
 
@@ -47,7 +47,7 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
 
 ### 帰結
 
-SafeMode の未レビュー本文保護は**フロントエンドのみの強制**である。`KJ_ATLAS_LLM_PROVIDER=large-scale` の構成では、API を直接呼ぶ経路（curl、別クライアント、将来のMCP/エージェント連携）を通じて**未レビュー本文が外部サービスへ送出される**。外部LLM利用時の実質的な信頼境界は API であり、そこに防御が無い。
+SafeMode の未レビュー本文保護は**フロントエンドのみの強制**である。`SUI_LLM_PROVIDER=large-scale` の構成では、API を直接呼ぶ経路（curl、別クライアント、将来のMCP/エージェント連携）を通じて**未レビュー本文が外部サービスへ送出される**。外部LLM利用時の実質的な信頼境界は API であり、そこに防御が無い。
 
 なお、外部送出そのもののガード（`llm_large_scale_opt_in` + `llm_escalation_enabled` の二段 opt-in、ホスト allowlist、trusted-HTTP 検証）は `settings.py:473-520` で堅く実装されている。欠けているのは「**送出してよい構成において、何を送るか**」の側である。
 

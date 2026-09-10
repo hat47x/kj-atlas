@@ -15,10 +15,10 @@ from fastapi import Request, Response
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.auth_session_hash import derive_session_key_hash
-from kj_atlas_api.models import Base
-from kj_atlas_api.oauth_bff import revoke_auth_session_cookie
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.oauth_bff import revoke_auth_session_cookie
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
 
 COOKIE_NAME = "Kj-Atlas-Auth-Session"
 HASH_KEY = b"logout-revocation-test-key-01234"

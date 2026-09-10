@@ -3,7 +3,7 @@
 - Date: 2026-09-03
 - Scope: 日常開発の自己分析と、継続dogfood記録のナビゲーション非後退。Case 001〜003の統制比較には含めない。
 - Question: 継続dogfoodが増え続けても、過去の観察・判断・修正へ戻る導線を手作業の記憶に頼らず保てるか。
-- Canvas: `doc_kj_atlas_dogfood_r14.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r14.json`
 - Result class: 継続dogfoodの内部所見と文書導線の非後退検査。第三者価値実証や認知比較結果の代替証拠ではない。
 
 ## 1. このラウンドを始めた理由
@@ -12,7 +12,7 @@ R13でAI入力IRの経路被覆をCIへ戻した後、次に進められるdogfo
 
 そこで、継続dogfoodの実体と索引に時間差があることが分かった。
 
-- R7の記録と `doc_kj_atlas_dogfood_r7.json` は存在するが、索引の継続dogfood欄には載っていない。
+- R7の記録と `doc_sui_sensemaking_dogfood_r7.json` は存在するが、索引の継続dogfood欄には載っていない。
 - R8〜R10は索引に載っている。
 - R11〜R13の記録とキャンバスは存在するが、索引にはまだ載っていない。
 
@@ -22,7 +22,7 @@ R13でAI入力IRの経路被覆をCIへ戻した後、次に進められるdogfo
 
 正規データは次のDocumentV1に残した。
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r14.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r14.json`
 
 今回のカードも生成AIが作成した提案段階の材料なので、`textReviewed: false` としている。
 
@@ -41,7 +41,7 @@ R11〜R13は実際にROADMAP、優先順位判断、AI入力IRのCI契約へ変�
 
 ## 4. 島2 — 現行の構造検査では索引の欠落を見つけられない
 
-`validate_dogfood_docs.py` は `doc_kj_atlas_dogfood_r*.json` を列挙し、カード、島、関係、readingOrder、narrativeなどの構造を検査している。
+`validate_dogfood_docs.py` は `doc_sui_sensemaking_dogfood_r*.json` を列挙し、カード、島、関係、readingOrder、narrativeなどの構造を検査している。
 
 この検査によって、R11〜R13のキャンバス自体は正常であることを確認できる。一方、Markdownの継続dogfood記録が `cognitive-dogfood-index.md` に載っているかは検査していない。
 
@@ -54,7 +54,7 @@ R11〜R13は実際にROADMAP、優先順位判断、AI入力IRのCI契約へ変�
 このため、内容の意味を機械判定しなくても、次の三点は決定論的に検査できる。
 
 1. 存在するすべての継続dogfood記録が索引に掲載されている。
-2. 各記録が `doc_kj_atlas_dogfood_rN.json` を参照している。
+2. 各記録が `doc_sui_sensemaking_dogfood_rN.json` を参照している。
 3. 参照されたキャンバスが実際に存在する。
 
 R14ではR7、R11、R12、R13を索引へ補い、R14自身も同じ変更で索引へ載せる。そのうえで `validate_dogfood_docs.py` に被覆検査を追加する。

@@ -149,7 +149,7 @@ def endpoint_matches_documented(referenced: str, documented: str) -> bool:
     return True
 
 
-# Endpoints that are NOT kj-atlas's own API: external IdP/broker endpoints
+# Endpoints that are NOT sui-sensemaking's own API: external IdP/broker endpoints
 # (OAuth/OIDC/SAML) and wildcard "future" references. These must not be
 # flagged as api.md gaps.
 EXTERNAL_ENDPOINT_PREFIXES = (
@@ -165,7 +165,7 @@ EXTERNAL_ENDPOINT_PREFIXES = (
     # Mock IdP admin surface (tests/level2/mock_idp.py): registration of
     # client secrets / back-channel logout URIs and Logout Token dispatch used
     # by the OIDC/back-channel-logout test flows. These are served by the mock
-    # IdP app, not kj-atlas's own API, so they must not be flagged as api.md
+    # IdP app, not sui-sensemaking's own API, so they must not be flagged as api.md
     # gaps -- same rationale as the /login, /oauth/, /.well-known/ entries.
     "/admin/register-",
     "/admin/trigger-backchannel-",

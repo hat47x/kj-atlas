@@ -7,10 +7,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-SAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
-MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
-OAUTH_BFF = ROOT / "03_Implement/backend/src/kj_atlas_api/oauth_bff.py"
+SETTINGS = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+SAAS_POLICY = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
+MAIN = ROOT / "03_Implement/backend/src/sui_sensemaking_api/main.py"
+OAUTH_BFF = ROOT / "03_Implement/backend/src/sui_sensemaking_api/oauth_bff.py"
 
 
 def _profile_row(registry: str, profile: str) -> list[str]:
@@ -40,20 +40,20 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         evaluation = _profile_row(self.registry, "evaluation")
         self.assertEqual(local[2], "なし（追加のprofile固有hard gateなし）")
         self.assertEqual(evaluation[2], "なし（追加のprofile固有hard gateなし）")
-        for token in ("KJ_ATLAS_DATABASE_URL", "KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_ALLOW_JIT_PROVISIONING"):
+        for token in ("SUI_DATABASE_URL", "SUI_LLM_PROVIDER", "SUI_ALLOW_JIT_PROVISIONING"):
             self.assertIn(token, local[3])
-        for token in ("KJ_ATLAS_DATABASE_URL", "KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_AUDIT_TRANSPORT", "KJ_ATLAS_ACCESS_CONTROL_ADAPTER"):
+        for token in ("SUI_DATABASE_URL", "SUI_LLM_PROVIDER", "SUI_AUDIT_TRANSPORT", "SUI_ACCESS_CONTROL_ADAPTER"):
             self.assertIn(token, evaluation[3])
 
     def test_enterprise_profile_exposes_settings_fail_fast_credentials(self) -> None:
         row = _profile_row(self.registry, "enterprise-production")
         required, operating = row[2], row[3]
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY=<secret>`", required)
-        self.assertIn("`KJ_ATLAS_API_KEY=<secret>`", required)
+        self.assertIn("`SUI_ADMIN_API_KEY=<secret>`", required)
+        self.assertIn("`SUI_API_KEY=<secret>`", required)
         for token in (
-            "KJ_ATLAS_ALLOW_JIT_PROVISIONING",
-            "KJ_ATLAS_LLM_PROVIDER",
-            "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE",
+            "SUI_ALLOW_JIT_PROVISIONING",
+            "SUI_LLM_PROVIDER",
+            "SUI_ACCESS_CONTROL_FAIL_SAFE_MODE",
         ):
             self.assertNotIn(token, required)
             self.assertIn(token, operating)
@@ -67,17 +67,17 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
             for line in self.configuration.splitlines()
             if line.startswith("- `enterprise-production`:")
         )
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", summary)
-        self.assertIn("`KJ_ATLAS_API_KEY`", summary)
+        self.assertIn("`SUI_ADMIN_API_KEY`", summary)
+        self.assertIn("`SUI_API_KEY`", summary)
 
     def test_oauth_bff_conditional_rows_expose_request_phase_requiredness(self) -> None:
         backend = self.registry.split("## Backend settings", 1)[1].split(
             "## Compose and frontend build keys", 1
         )[0]
-        token_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT"
-        redirect_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"
-        client_id_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"
-        secret_key = "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"
+        token_key = "SUI_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT"
+        redirect_key = "SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"
+        client_id_key = "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"
+        secret_key = "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"
         keys = (token_key, redirect_key, client_id_key, secret_key)
         registry_rows = {
             key: next(line for line in backend.splitlines() if line.startswith(f"| `{key}` |"))
@@ -106,18 +106,18 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
         row = _profile_row(self.registry, "saas-multitenant")
         required, conditional, notes = row[2], row[3], row[4]
         required_tokens = (
-            "`KJ_ATLAS_ADMIN_API_KEY=<secret>`",
-            "`KJ_ATLAS_DATABASE_URL=<PostgreSQL URL>`",
-            "`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`",
-            "`KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`",
-            "`KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`",
-            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER=external_http`",
-            "`KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_TENANT_CAPABILITY_RESOLVER=external_http`",
-            "`KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT=<HTTPS URL>`",
-            "`KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY=<64 lowercase hex>`",
+            "`SUI_ADMIN_API_KEY=<secret>`",
+            "`SUI_DATABASE_URL=<PostgreSQL URL>`",
+            "`SUI_ALLOW_JIT_PROVISIONING=false`",
+            "`SUI_ACCESS_CONTROL_ADAPTER=external_http`",
+            "`SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`",
+            "`SUI_DOCUMENT_POLICY_BINDING_RESOLVER=external_http`",
+            "`SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`SUI_TENANT_CAPABILITY_RESOLVER=external_http`",
+            "`SUI_TENANT_CAPABILITY_HTTP_ENDPOINT=<HTTPS URL>`",
+            "`SUI_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT=<HTTPS URL>`",
+            "`SUI_SAAS_AUTH_SESSION_HASH_KEY=<64 lowercase hex>`",
         )
         for token in required_tokens:
             with self.subTest(token=token):
@@ -138,17 +138,17 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
                 self.assertIn(fragment, self.saas_policy)
 
         for endpoint_key in (
-            "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT",
+            "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT",
         ):
             self.assertIn(endpoint_key, self.settings)
 
         callback_only = (
-            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
-            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
-            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID",
-            "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET",
+            "SUI_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+            "SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+            "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID",
+            "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET",
         )
         for key in callback_only:
             self.assertNotIn(key, required)
@@ -172,7 +172,7 @@ class ProductionProfileRequiredSettingsContractTests(unittest.TestCase):
             if line.startswith("- `saas-multitenant`:")
         )
         for fragment in (
-            "`KJ_ATLAS_ADMIN_API_KEY`",
+            "`SUI_ADMIN_API_KEY`",
             "PostgreSQL",
             "OAuth authorize endpoint",
             "auth-session hash key",

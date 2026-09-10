@@ -4,7 +4,7 @@ Verifies the full SAML/OIDC broker coordination flow at mock level:
   1. User logs in via mock IdP (OAuth 2.0 authorization code grant)
   2. Mock IdP issues a signed RS256 JWT
   3. JWT is forwarded as X-Kj-Atlas-Authorization Bearer token
-  4. kj-atlas verifies the JWT, resolves tenant, returns tenant-scoped data
+  4. sui-sensemaking verifies the JWT, resolves tenant, returns tenant-scoped data
   5. Cross-tenant isolation is enforced
 """
 
@@ -22,11 +22,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.active_tenant_session import InMemoryActiveTenantSessionPersister
-from kj_atlas_api.db import get_db
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.main import app as backend_app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.active_tenant_session import InMemoryActiveTenantSessionPersister
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.main import app as backend_app
+from sui_sensemaking_api.models import (
     Base,
     DocumentRow,
     IdentityProviderRow,
@@ -36,7 +36,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.tenant_context import (
     ClaimBasedTenantContextResolver,
     SingleTenantContextResolver,
     TenantContext,
@@ -47,7 +47,7 @@ from tests.level2.mock_idp import app as mock_idp_app
 
 TIMESTAMP = "2026-08-07T00:00:00Z"
 ISSUER = "http://mock-idp.local/mock-client"
-AUDIENCE = "kj-atlas"
+AUDIENCE = "sui-sensemaking"
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ def _seed_backend_db(db: Session) -> None:
 def _backend_saas_client(
     tmp_path, jwk: dict[str, object],
 ) -> Iterator[tuple[TestClient, InMemoryActiveTenantSessionPersister]]:
-    from kj_atlas_api.trusted_auth_edge import JwtSaasIdentityContextResolver
+    from sui_sensemaking_api.trusted_auth_edge import JwtSaasIdentityContextResolver
 
     db_path = tmp_path / "oauth_e2e.sqlite3"
     engine = create_engine(f"sqlite:///{db_path}")
@@ -251,7 +251,7 @@ def _backend_saas_client(
 
     backend_app.dependency_overrides[get_db] = _get_test_db
     with patch(
-        "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+        "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
         return_value=[jwk],
     ):
         try:
@@ -312,8 +312,8 @@ class TestOAuthLoginE2E:
             resp = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp.status_code == 200, f"body={resp.json()}"
@@ -336,8 +336,8 @@ class TestOAuthLoginE2E:
             resp = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp.status_code == 200, f"body={resp.json()}"
@@ -361,8 +361,8 @@ class TestOAuthLoginE2E:
             resp_a = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token_a}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token_a}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp_a.status_code == 200
@@ -371,8 +371,8 @@ class TestOAuthLoginE2E:
             resp_b = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token_b}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token_b}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp_b.status_code == 200
@@ -394,8 +394,8 @@ class TestOAuthLoginE2E:
             resp = backend_client.get(
                 "/docs/nonexistent-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp.status_code == 404
@@ -416,8 +416,8 @@ class TestOAuthLoginE2E:
             resp = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {token}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {token}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             assert resp.status_code == 401, f"body={resp.json()}"
@@ -462,8 +462,8 @@ class TestOAuthLoginE2E:
             resp = backend_client.get(
                 "/docs/shared-doc",
                 headers={
-                    "x-kj-atlas-authorization": f"Bearer {expired_token}",
-                    "kj-atlas-tenant-session-version": sv,
+                    "x-sui-sensemaking-authorization": f"Bearer {expired_token}",
+                    "sui-sensemaking-tenant-session-version": sv,
                 },
             )
             # The token will fail at the unverified peek stage because

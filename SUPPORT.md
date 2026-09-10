@@ -1,6 +1,6 @@
 # SUPPORT
 
-kj-atlas の使い方、障害調査、セキュリティ連絡の入口をまとめます。まず [README.md](README.md) で目的と基本操作を確認し、具体的な切り分けは [診断と障害調査](04_Documentation/diagnostics.md) を参照してください。
+sui-sensemaking の使い方、障害調査、セキュリティ連絡の入口をまとめます。まず [README.md](README.md) で目的と基本操作を確認し、具体的な切り分けは [診断と障害調査](04_Documentation/diagnostics.md) を参照してください。
 
 **English summary:** Start with README for basic usage. GitHub Issues are not currently active; use Discussions for questions, bug candidates, and feature ideas, and use SECURITY.md for vulnerability reports. Never share API keys, tokens, passwords, or raw customer data.
 

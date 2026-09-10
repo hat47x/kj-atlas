@@ -23,11 +23,11 @@ import json
 from contextlib import contextmanager
 from typing import Any, Iterator
 
-import kj_atlas_api.llm_input_ir as ir_module
-from kj_atlas_api.llm_input_ir import _normalize_cards, source_from_document
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import SuggestCardGroupsRequest
-from kj_atlas_api.routes.ai import (
+import sui_sensemaking_api.llm_input_ir as ir_module
+from sui_sensemaking_api.llm_input_ir import _normalize_cards, source_from_document
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import SuggestCardGroupsRequest
+from sui_sensemaking_api.routes.ai import (
     _build_prompt,
     _build_suggest_card_groups_prompt,
     _card_group_candidates,

@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { VISUAL_CUE_BUNDLE_FILE_NAME } from "../domain/representative_visual_cue_assets";
 
 const ALLOWED_EXTENSIONS = [".json", ".md", ".png"] as const;
-const STRIPPABLE_ROOT_PREFIXES = ["kj-atlas-review-pack-"] as const;
+const STRIPPABLE_ROOT_PREFIXES = ["sui-sensemaking-review-pack-"] as const;
 
 export const ZIP_MAX_UNCOMPRESSED_BYTES = 20 * 1024 * 1024;
 export const ZIP_MAX_FILE_COUNT = 200;

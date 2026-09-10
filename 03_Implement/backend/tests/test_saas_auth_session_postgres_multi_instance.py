@@ -25,11 +25,11 @@ from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.active_tenant_session import DatabaseActiveTenantSessionPersister
-from kj_atlas_api.auth_session_hash import derive_session_key_hash
-from kj_atlas_api.db import _normalize_database_url, get_db
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.models import (
+from sui_sensemaking_api.active_tenant_session import DatabaseActiveTenantSessionPersister
+from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
+from sui_sensemaking_api.db import _normalize_database_url, get_db
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.models import (
     IdentityProviderRow,
     SaasAuthSessionRow,
     TenantIdentityProviderRow,
@@ -38,26 +38,26 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.routes.session import router as session_router
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore, DatabaseSaasAuthStateStore
-from kj_atlas_api.session_csrf import (
+from sui_sensemaking_api.routes.session import router as session_router
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore, DatabaseSaasAuthStateStore
+from sui_sensemaking_api.session_csrf import (
     AUTH_SESSION_COOKIE,
     BffCsrfProtectionMiddleware,
     CSRF_HEADER,
     derive_session_csrf_token,
 )
-from kj_atlas_api.tenant_context import ClaimBasedTenantContextResolver
-from kj_atlas_api.trusted_auth_edge import JwtSaasIdentityContextResolver
+from sui_sensemaking_api.tenant_context import ClaimBasedTenantContextResolver
+from sui_sensemaking_api.trusted_auth_edge import JwtSaasIdentityContextResolver
 from tests.conftest import StubCapabilityResolver
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-RUN_PG_TESTS_ENV = "KJ_ATLAS_RUN_PG_TESTS"
-DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-POSTGRES_CONTAINER_ENV = "KJ_ATLAS_TEST_POSTGRES_CONTAINER"
+RUN_PG_TESTS_ENV = "SUI_RUN_PG_TESTS"
+DATABASE_URL_ENV = "SUI_DATABASE_URL"
+POSTGRES_CONTAINER_ENV = "SUI_TEST_POSTGRES_CONTAINER"
 HASH_KEY = b"ops-saas-scale-postgres-key-0123456789"
 ROTATED_HASH_KEY = b"ops-saas-scale-rotated-key-987654321"
 ISSUER = "https://broker.example.test/issuer"
-AUDIENCE = "kj-atlas"
+AUDIENCE = "sui-sensemaking"
 TIMESTAMP = "2026-09-04T00:00:00Z"
 
 
@@ -85,7 +85,7 @@ def _run_alembic(database_url: str, *args: str) -> subprocess.CompletedProcess[s
 @contextmanager
 def _isolated_postgres_database():
     base_url = make_url(os.environ[DATABASE_URL_ENV])
-    database_name = f"kj_atlas_ops_scale_{uuid4().hex[:16]}"
+    database_name = f"sui_sensemaking_ops_scale_{uuid4().hex[:16]}"
     if not re.fullmatch(r"[a-z0-9_]+", database_name):
         raise ValueError("isolated database name must be a simple identifier")
 

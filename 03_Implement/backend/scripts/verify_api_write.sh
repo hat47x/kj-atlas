@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the kj-atlas HTTP API WRITE path from an external script
+# Verify the sui-sensemaking HTTP API WRITE path from an external script
 # (admin/CI path). Companion to verify_api.sh (read-only): this exercises
 # document creation via PUT /docs/{id} and the GET read-back roundtrip, so
 # an administrator who writes their own script can rely on the full
@@ -10,9 +10,9 @@
 #     BASE_URL  default http://127.0.0.1:8000
 #     DOC_ID    default admin_write_probe
 #
-# Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000).
+# Requires a running backend (uvicorn sui_sensemaking_api.main:app --port 8000).
 # The probe document is created and left in place (idempotent PUT).
-# If KJ_ATLAS_API_KEY is set, it is passed via X-API-Key.
+# If SUI_API_KEY is set, it is passed via X-API-Key.
 
 set -u
 BASE_URL="${1:-http://127.0.0.1:8000}"
@@ -34,8 +34,8 @@ check() {
 # auth_header is a bash ARRAY so a keyed backend sends a well-formed
 # X-API-Key header (the string form word-split into a malformed curl header).
 auth_header=()
-if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+if [ -n "${SUI_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${SUI_API_KEY}")
 fi
 
 # Minimal DocumentV1 payload that passes the A1 contract (PUT returns 2xx).
@@ -58,7 +58,7 @@ payload="$(cat <<JSON
 JSON
 )"
 
-echo "=== kj-atlas API WRITE verification (base: $BASE_URL, doc: $DOC_ID) ==="
+echo "=== sui-sensemaking API WRITE verification (base: $BASE_URL, doc: $DOC_ID) ==="
 
 # 1. Create/overwrite the document via PUT /docs/{id}.
 put_code=$(curl -s -o /tmp/kj_write_put.json -w '%{http_code}' "${auth_header[@]}" \

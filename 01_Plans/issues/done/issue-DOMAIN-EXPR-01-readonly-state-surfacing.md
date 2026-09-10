@@ -65,7 +65,7 @@ ADR-0040 Phase 1 読取UI第一級化 完了。Schema変更なし、既存往復
 - [x] 「未レビュー」「根拠なし」「違和感あり」で対象を絞り込める。→ `DomainStateFilterBar.tsx` + `domain_state_filter.ts` に claimType / unreviewedOnly / hasCritique / holdStates のフィルタを実装（`domain_state_filter.test.ts` 56行で検証）。
 - [x] schema（DocumentV2）に変更がない（往復保存フィールドの読取のみ）。→ Done 2026-06-20 節「Schema: 変更なし (ADR-0040 Phase 1 非破壊原則遵守)」。
 - [x] AI/worker/API が `human_reviewed` を自動昇格しない（CE0-REVIEW-IF 非後退）。→ `core_value_guard.test.ts` CVI-3「human_reviewed promotion is human-only」で担保。
-- [x] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも表示・絞り込みが成立する。→ 表示・絞り込みは純 frontend 処理で LLM 非依存（provider=none でも成立）。
+- [x] `SUI_LLM_PROVIDER=none` 既定でも表示・絞り込みが成立する。→ 表示・絞り込みは純 frontend 処理で LLM 非依存（provider=none でも成立）。
 - [x] E2E で状態表示と絞り込みを検証する。→ `e2e/domain_expression_keyboard_access.spec.ts`（状態表示・キーボード到達性）。
 
 ## 5) 検証計画 / Validation plan
@@ -94,7 +94,7 @@ ADR-0040 Phase 1 読取UI第一級化 完了。Schema変更なし、既存往復
 
 - 対象: `origin/main@3abccd34` の local-dev UI。
 - 起動: frontend `http://127.0.0.1:4173/`、backend `http://127.0.0.1:8000/`。
-- 環境: `KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`、`KJ_ATLAS_LLM_PROVIDER=none`。
+- 環境: `SUI_DATABASE_URL=sqlite:///./sui_sensemaking.db`、`SUI_LLM_PROVIDER=none`。
 - この追記は Draft gate の証跡整理であり、Status変更、schema変更、API変更、SafeMode変更、実装着手許可ではない。
 
 ### Observed UI evidence

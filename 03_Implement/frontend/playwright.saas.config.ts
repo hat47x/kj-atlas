@@ -21,7 +21,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
-      KJ_ATLAS_RUNTIME_PROFILE: "saas-multitenant",
+      SUI_RUNTIME_PROFILE: "saas-multitenant",
     },
   },
 });

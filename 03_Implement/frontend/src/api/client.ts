@@ -15,7 +15,7 @@ import { csrfHeader } from "../session/csrf";
 import { resolveFrontendApiBase } from "./base_path";
 
 const API_BASE = resolveFrontendApiBase(
-  import.meta.env.KJ_ATLAS_FRONTEND_API_BASE,
+  import.meta.env.SUI_FRONTEND_API_BASE,
 );
 
 export class ApiError extends Error {
@@ -54,7 +54,7 @@ type ParsedErrorDetail = {
 
 const MAX_TENANT_SESSION_RESPONSE_BYTES = 64 * 1024;
 const MAX_TENANT_SESSION_BOOTSTRAP_POLICY_BYTES = 4 * 1024;
-export const TENANT_SESSION_VERSION_HEADER = "KJ-Atlas-Tenant-Session-Version";
+export const TENANT_SESSION_VERSION_HEADER = "SUI Sensemaking-Tenant-Session-Version";
 
 export type TenantScopedRequestOptions = Readonly<{
   tenantSessionContext?: TenantSessionContextV1;

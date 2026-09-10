@@ -1,7 +1,7 @@
 # 継続dogfood R34 — 文書契約のshapeに応じて実行可能な正本照合を選ぶ
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r34.json`
+Canvas: `doc_sui_sensemaking_dogfood_r34.json`
 
 ## 1. Trigger
 
@@ -20,7 +20,7 @@ R33統合後のmainで、公開文書・runtime registry・ADRに残ったcurren
 
 #3030では、標準Composeの `api.environment` / `web.build.args` という明示的な配送面がある。ここで必要なのは説明文の単語検索ではなく、文書が公開するkey集合と実Compose定義のkey集合を比較することだった。
 
-また `KJ_ATLAS_FRONTEND_API_BASE` はdirect frontend buildでは入力能力を持つが、standard Composeでは同梱Nginxと整合させて `/api` に固定される。R31で分けたcomponent capability / deployment-profile realizabilityが、利用者文書の配送表にも同じ境界として現れた。
+また `SUI_FRONTEND_API_BASE` はdirect frontend buildでは入力能力を持つが、standard Composeでは同梱Nginxと整合させて `/api` に固定される。R31で分けたcomponent capability / deployment-profile realizabilityが、利用者文書の配送表にも同じ境界として現れた。
 
 ### B. enum契約は集合として比較する
 
@@ -76,4 +76,4 @@ R33統合後のmainで、公開文書・runtime registry・ADRに残ったcurren
 
 R34はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

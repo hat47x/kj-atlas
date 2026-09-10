@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const TENANT_SESSION_HEADER = "KJ-Atlas-Tenant-Session-Version";
+const TENANT_SESSION_HEADER = "SUI Sensemaking-Tenant-Session-Version";
 const CSRF_COOKIE = "Kj-Atlas-Csrf";
 const CSRF_HEADER = "X-Kj-Atlas-Csrf";
 
@@ -62,7 +62,7 @@ async function login(page: Page): Promise<TenantSessionContext> {
   );
   await signIn.click();
   const loginResponse = await loginResponsePromise;
-  expect(loginResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-1");
+  expect(loginResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-1");
 
   await expect(page).toHaveURL(/localhost:9100\/oauth\/authorize/);
   await expect(page.getByRole("heading", { name: "Authorize Application" })).toBeVisible();
@@ -79,10 +79,10 @@ async function login(page: Page): Promise<TenantSessionContext> {
 
   const callbackResponse = await callbackResponsePromise;
   expect(callbackResponse.status()).toBe(302);
-  expect(callbackResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-1");
+  expect(callbackResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-1");
 
   const sessionResponse = await authenticatedContextPromise;
-  expect(sessionResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-2");
+  expect(sessionResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-2");
   expect(sessionResponse.request().headers()["authorization"]).toBeUndefined();
 
   return await sessionResponse.json() as TenantSessionContext;

@@ -5,7 +5,7 @@
 - Source Issue: DOGFOOD-01（ドッグフーディング検証経路の拡張で発見）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `01_Plans/dogfood/`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `01_Plans/dogfood/`
 - Related ADR/Spec: `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`, `02_Architecture/schemas.md`, `03_Implement/backend/scripts/verify_api.sh`
 - Expected verification level: `unit` + `docs-check`
 
@@ -29,7 +29,7 @@ API経路の 500 は**Web初回起動のブロッカー**に増幅されるこ�
   `loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true })`（`App.tsx` L3740）で自動ロードする。
 - `allowCreateOnNotFound` は **404 のみ**を救済する。保存済み `doc_phase1_canvas` が 500（contract外version）を返すと
   404分岐に入らず、`formatLoadDocumentFailure(error)` がエラー状態を表示する。
-- 実測（Playwright、backend:8000 + frontend:4173、`kj_atlas.db` に `version:2` の `doc_phase1_canvas` が残る状態）:
+- 実測（Playwright、backend:8000 + frontend:4173、`sui_sensemaking.db` に `version:2` の `doc_phase1_canvas` が残る状態）:
   - `GET /packs/index.json` → 200、`GET /api/docs/doc_phase1_canvas` → **500**
   - ステータスメッセージ: 「ドキュメントを読み込めませんでした（HTTP 500: Internal Server Error）…」が表示
   - キャンバスは空（0カード）、「サンプルを開く」ボタンのみが抜け道
@@ -52,14 +52,14 @@ API経路の 500 は**Web初回起動のブロッカー**に増幅されるこ�
 
 - [x] `GET /docs/{doc_id}` が、旧版（`version ≠ 1`）文書に対して素の 500 を返さない。— `_validate_document_payload_with_a1_contract` をGET経路に適用（56ca9335）
 - [x] 版不一致の応答が構造化された 4xx（A1 契約）として返り、内部スタックトレースが漏れない。— version≠1 で A1_SCHEMA_VERSION_MISMATCH（422）
-- [x] `verify_api.sh` が旧版文書を明示的に含む環境でも fail しない（または意図的な期待失敗として文書化される）。— 実DB（`kj_atlas.db` の `version:2` 文書）で `verify_api.sh` を実行し、`/docs/{id}` が 422 を reachable として PASS・3 pass 0 fail（exit 0）。
+- [x] `verify_api.sh` が旧版文書を明示的に含む環境でも fail しない（または意図的な期待失敗として文書化される）。— 実DB（`sui_sensemaking.db` の `version:2` 文書）で `verify_api.sh` を実行し、`/docs/{id}` が 422 を reachable として PASS・3 pass 0 fail（exit 0）。
 - [x] **Web 初回起動（デフォルト文書 `doc_phase1_canvas` の自動ロード）が 500 エラー画面にならない**（404 と同様に既知状態として扱うか、構造化エラーを回復可能な形で表示する）。— `App.tsx` の `loadDocument` に 422（A1契約）分岐を追加（2aeba616）し、旧版文書は専用メッセージ（`document_stale_version_recovery`）＋既存の「サンプルを開く」導線へ回復。
 
 ## 進捗（2026-08-12）
 
 backend GET読取経路のA1契約検証を実装（56ca9335）。version≠1文書は構造化422を返し、素の500が解消。docs関連テスト34 passed（回帰なし）。Web初回起動（frontend側のallowCreateOnNotFound拡張）は別途対応が必要。
 
-e2e確認（2026-08-12）: 実DB（`kj_atlas.db` の `version:2` `doc_phase1_canvas`）に対して backend 起動＋`verify_api.sh` を実行し、`GET /docs/doc_phase1_canvas` が構造化422（`A1_REQUIRED_FIELD_MISSING`・スタックトレース非漏洩）を返すことを確認。`verify_api.sh` は 3 pass 0 fail（exit 0）で旧版文書環境でも fail しない（受入条件3充足）。
+e2e確認（2026-08-12）: 実DB（`sui_sensemaking.db` の `version:2` `doc_phase1_canvas`）に対して backend 起動＋`verify_api.sh` を実行し、`GET /docs/doc_phase1_canvas` が構造化422（`A1_REQUIRED_FIELD_MISSING`・スタックトレース非漏洩）を返すことを確認。`verify_api.sh` は 3 pass 0 fail（exit 0）で旧版文書環境でも fail しない（受入条件3充足）。
 
 frontend 側（受入条件4）: `App.tsx` の `loadDocument` catch に 422（A1契約）分岐を追加（2aeba616）。旧版文書は汎用ロード失敗ではなく「現在の形式と互換性のない旧版文書」の専用メッセージを表示し、既存の「サンプルを開く」導線へ回復する。frontend typecheck＋全テスト（1427 tests）pass。
 
@@ -72,12 +72,12 @@ frontend 側（受入条件4）: `App.tsx` の `loadDocument` catch に 422（A1
 
 ## 補足
 
-- 再現環境の `kj_atlas.db` は gitignore 対象のローカル DB であり、2026-06-20 時点の `version: 2` サンプルが残っていた。新しい検証経路が「素の500」を検出できたことは、経路追加の効果の実証でもある。
+- 再現環境の `sui_sensemaking.db` は gitignore 対象のローカル DB であり、2026-06-20 時点の `version: 2` サンプルが残っていた。新しい検証経路が「素の500」を検出できたことは、経路追加の効果の実証でもある。
 - 根本原因は GET/PUT の検証経路の非対称であり、ADR-0058 の fail-closed 意図自体は正しい。この issue は「拒否方法の非対称」の解消を求める。
 
 ## 修正案（proposal-only・L2: 最終判断は人間）
 
-**対象1: backend GET 経路**（`03_Implement/backend/src/kj_atlas_api/routes/docs.py` `get_document` 末尾）
+**対象1: backend GET 経路**（`03_Implement/backend/src/sui_sensemaking_api/routes/docs.py` `get_document` 末尾）
 
 現状:
 ```python

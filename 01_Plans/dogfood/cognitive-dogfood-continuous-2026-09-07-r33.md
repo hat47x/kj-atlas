@@ -3,13 +3,13 @@
 - Date: 2026-09-07
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 同じ公開設定keyのcanonical値が複数componentで一致していても、その値が運用上必要な観測surfaceまで届いていなければ、契約はどこまで未完のまま残るか。
-- Canvas: `doc_kj_atlas_dogfood_r33.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r33.json`
 - Observation baseline: PR #3026 / merge commit `a37dba2f9fef321937148929913ddc960c9016c1`, PR #3027 / merge commit `42f5c63b465662f6a114d77053c2d0c9d08eb4c7`
 - Result class: current repositoryで実際に観測されたAPP_REVISIONの意味driftと観測surface欠落。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
 
 ## 1. #3026で見つかったcanonical意味のずれ
 
-`KJ_ATLAS_APP_REVISION` は同じ公開keyだったが、frontend診断bundleとbackend `/version` で受理規則が一致していなかった。
+`SUI_APP_REVISION` は同じ公開keyだったが、frontend診断bundleとbackend `/version` で受理規則が一致していなかった。
 
 frontendは `^[A-Za-z0-9._-]{1,64}$` に限定し、不正値を `unknown` へ丸めていた。一方backend Settingsは任意文字列を受理していたため、`release+1`、`feature/revision`、65文字以上などを与えると、同じ入力から `/version.revision` と診断bundle `app.revision` が別の値になり得た。
 
@@ -44,7 +44,7 @@ R29ではkey existenceとdefault意味一致を分けた。R30では同一surfac
 
 ### F0 — 生の観察として保持
 
-- 同じ `KJ_ATLAS_APP_REVISION` でもbackendとfrontendでcanonicalizationが異なり、同一入力から別値になり得た。
+- 同じ `SUI_APP_REVISION` でもbackendとfrontendでcanonicalizationが異なり、同一入力から別値になり得た。
 - #3026でcanonical value contractを統一した。
 - その後もstructured logにはrevisionが存在せず、build同定という観測用途が未成立だった。
 - #3027でcanonical revisionをJSON/human-readable logへ配線した。
@@ -75,4 +75,4 @@ R29ではkey existenceとdefault意味一致を分けた。R30では同一surfac
 
 R33はcurrent repositoryのAPP_REVISION運用から得た内部所見であり、formal Case 001 Arm Cの結果ではない。第三者価値実証、AI-IR named-provider evidenceにも加算しない。
 
-この記録のために追加のpreflight、KPI、実験スキーマは作らない。formal mainlineは引き続き、既知仮説から隔離したfresh contextとfrozen KJ Atlas UIでのCase 001 Arm C実走である。
+この記録のために追加のpreflight、KPI、実験スキーマは作らない。formal mainlineは引き続き、既知仮説から隔離したfresh contextとfrozen SUI Sensemaking UIでのCase 001 Arm C実走である。

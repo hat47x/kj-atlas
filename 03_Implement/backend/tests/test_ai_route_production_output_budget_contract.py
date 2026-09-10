@@ -5,8 +5,8 @@ import inspect
 import textwrap
 from collections.abc import Callable
 
-from kj_atlas_api.llm.provider import LLMRequest
-from kj_atlas_api.routes import ai
+from sui_sensemaking_api.llm.provider import LLMRequest
+from sui_sensemaking_api.routes import ai
 from scripts import analyze_ai_route_provider_measurement as analysis
 
 

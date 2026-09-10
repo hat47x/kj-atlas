@@ -8,7 +8,7 @@
 
 `COGNITIVE-EVAL-01`では、性質の異なる少なくとも3つの開発課題について4Arm比較を行う。
 
-Case 001の結果を見た後で、KJ Atlasまたはcultural-substrate-weavingが有利になりそうな課題だけをCase 002/003として選ぶことを防ぐため、**Case 001を実行する前に、3Caseの問いと選定理由を固定する。**
+Case 001の結果を見た後で、SUI Sensemakingまたはcultural-substrate-weavingが有利になりそうな課題だけをCase 002/003として選ぶことを防ぐため、**Case 001を実行する前に、3Caseの問いと選定理由を固定する。**
 
 各Caseの詳細なsource manifestは、そのCaseを開始する前にsnapshotとして固定する。ただし、問いの中心を先行Caseの結果に応じて差し替えない。
 
@@ -28,11 +28,11 @@ Case 001の結果を見た後で、KJ Atlasまたはcultural-substrate-weaving�
 
 ### Fixed question
 
-> KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
+> SUI Sensemakingは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
 
 ### 主な不確実性
 
-- KJ Atlasに固有のswitch reasonが本当に存在するか。
+- SUI Sensemakingに固有のswitch reasonが本当に存在するか。
 - 内部で重要だと考えて設計してきた価値が、第三者にとっての価値と一致するか。
 
 ### 選定理由
@@ -47,7 +47,7 @@ Case 001の結果を見た後で、KJ Atlasまたはcultural-substrate-weaving�
 
 ### Fixed question
 
-> KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、または十分に一般的な安全境界か。
+> SUI Sensemakingのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、または十分に一般的な安全境界か。
 
 ### 主な不確実性
 
@@ -60,7 +60,7 @@ Case 001の結果を見た後で、KJ Atlasまたはcultural-substrate-weaving�
 
 詳細なmanifestはCase 002開始前に固定するが、少なくとも次の種類を含める。
 
-- KJ AtlasのAI API / model / proposal契約。
+- SUI SensemakingのAI API / model / proposal契約。
 - DOGFOOD-17 / 20等で生じた意味接地の失敗と修正。
 - proposal-only / review state / human final authorityに関するADR・仕様。
 - 実際のAI操作について残っている誤り・訂正履歴。
@@ -83,11 +83,11 @@ KJ法や文化体系を使うことで論点を広げられるだけで、具体
 
 ### Fixed question
 
-> KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
+> SUI Sensemakingはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
 
 ### 主な不確実性
 
-- offline / self-hostは利用者がKJ Atlasへ切り替える理由なのか、それとも特定導入環境における必要条件なのか。
+- offline / self-hostは利用者がSUI Sensemakingへ切り替える理由なのか、それとも特定導入環境における必要条件なのか。
 - sensitive / unfinishedな定性資料のcontrolと、共同作業の即時性をどう両立するか。
 - local-first / CRDT等の技術方向へ進む価値を、実利用証拠がない段階で過大評価していないか。
 - enterprise / public-sectorのself-host要求と、個人・小規模チームの簡便な利用を、同じ製品境界で扱えるか。
@@ -96,7 +96,7 @@ KJ法や文化体系を使うことで論点を広げられるだけで、具体
 
 詳細なmanifestはCase 003開始前に固定するが、少なくとも次の種類を含める。
 
-- KJ Atlas README / ROADMAPのoffline / self-host / share / collaboration方針。
+- SUI Sensemaking README / ROADMAPのoffline / self-host / share / collaboration方針。
 - security / data boundary / schema / transportに関するADR。
 - public sharing / export / SafeMode / tenant / collaborationに関する実装・dogfood。
 - 実運用上のdeployment friction。
@@ -122,7 +122,7 @@ Case 001の結果にかかわらず、原則として **001 → 002 → 003** �
 
 次の理由だけではCaseを差し替えない。
 
-- Case 001でKJ Atlasが良く見えた、または悪く見えた。
+- Case 001でSUI Sensemakingが良く見えた、または悪く見えた。
 - cultural-substrate-weavingの増分が出た、または出なかった。
 - Case 002/003が特定の方法に不利そうだと感じた。
 
@@ -173,7 +173,7 @@ Case 001〜003のArm C/Dは、認知比較のtreatmentであると同時に、`D
 
 3Caseが終了して初めて、次を横断的に判定する。
 
-1. KJ Atlasによる増分が、特定の抽象的なテーマにだけ現れたか。
+1. SUI Sensemakingによる増分が、特定の抽象的なテーマにだけ現れたか。
 2. cultural-substrate-weavingによる増分が、特定の文化体系や領域にだけ依存したか。
 3. Arm Dに正の相互作用があるか、あるいは方法過多による負の相互作用があるか。
 4. M1の増加がM9の摩擦増加に見合うか。

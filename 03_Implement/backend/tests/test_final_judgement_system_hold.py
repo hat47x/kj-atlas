@@ -10,26 +10,26 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.llm.provider import (
+from sui_sensemaking_api.llm.provider import (
     LLMCallMetadata,
     ProviderDisabledError,
     ProviderRequestError,
 )
-from kj_atlas_api.models import AIProposalDecisionStateRow, Base, DocumentV1
-from kj_atlas_api.models_ai import (
+from sui_sensemaking_api.models import AIProposalDecisionStateRow, Base, DocumentV1
+from sui_sensemaking_api.models_ai import (
     CheckNarrativeRequest,
     DetectContradictionRequest,
     ExternalProposalReference,
 )
-from kj_atlas_api.proposal_decision_repository import (
+from sui_sensemaking_api.proposal_decision_repository import (
     ProposalSystemHoldReceipt,
     hold_external_proposal_for_final_judgement_failure,
     record_proposal_decision,
     register_external_agent_proposal,
     register_external_agent_task,
 )
-from kj_atlas_api.routes import ai
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ai_eval_kj_document.json"

@@ -52,7 +52,7 @@ describe("tenant session transition", () => {
       [previousRecent]: "a",
       [previousView]: "b",
       [otherRecent]: "c",
-      "kj-atlas/legacy": "legacy",
+      "sui-sensemaking/legacy": "legacy",
     });
     const cleanupOrder: string[] = [];
     const replaceDocument = vi.fn();
@@ -77,7 +77,7 @@ describe("tenant session transition", () => {
       "revoke-object-urls",
       "clear-memory",
     ]);
-    expect(storage.keys()).toEqual([otherRecent, "kj-atlas/legacy"]);
+    expect(storage.keys()).toEqual([otherRecent, "sui-sensemaking/legacy"]);
     expect(result).toEqual({
       nextScope: otherScope,
       clearedStorageEntries: 2,

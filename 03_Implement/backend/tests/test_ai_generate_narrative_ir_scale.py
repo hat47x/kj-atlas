@@ -5,14 +5,14 @@ from __future__ import annotations
 import pytest
 from fastapi import HTTPException
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     IRSource,
     MAX_CARDS,
     SourceCard,
     SourceRelation,
 )
-from kj_atlas_api.models_ai import GenerateNarrativeRequest
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.models_ai import GenerateNarrativeRequest
+from sui_sensemaking_api.routes.ai import (
     _build_generate_narrative_prompt,
     _generate_narrative_ir,
     _narrative_required_card_ids,

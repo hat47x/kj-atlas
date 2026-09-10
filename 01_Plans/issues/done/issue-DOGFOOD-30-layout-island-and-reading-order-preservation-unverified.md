@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ124）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/done/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc）, `01_Plans/issues/done/issue-DOGFOOD-23-layout-card-preservation-unverified.md`（全カード保持）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（読み順）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -20,7 +20,7 @@ case "$dp_layout" in *'"suggestedDoc"'*'d1'*'d2'*'d3'*'d4'*)  # 全カードの�
 したがって:
 
 - **配置提案が島を落とす/読み順を変える回帰**が起きても、業務フローE2E は全部 pass する。
-- 配置（レイアウト）は島形成の前段として**島・読み順を保持**しながら空間へ置くことが重要（kj_technique.md §3）。その保全が未検証。
+- 配置（レイアウト）は島形成の前段として**島・読み順を保持**しながら空間へ置くことが重要（sensemaking_technique.md §3）。その保全が未検証。
 
 実機再現（iteration 194）:
 

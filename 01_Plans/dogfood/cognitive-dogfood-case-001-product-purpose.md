@@ -1,28 +1,28 @@
-# 認知dogfood Case 001 — KJ Atlasの存在目的と一次利用仕事
+# 認知dogfood Case 001 — SUI Sensemakingの存在目的と一次利用仕事
 
 - 状態: 準備済み / 入力凍結済み
 - 準備日: 2026-08-29
-- KJ Atlas product snapshot: `main@2232b3bb26647e5c4a083f55bdbf83c161698649`
+- SUI Sensemaking product snapshot: `main@2232b3bb26647e5c4a083f55bdbf83c161698649`
 - B/D用cultural-substrate-weaving method snapshot: `main@3988e12e5f7f316f377d3391e9486c8467a111d5`
 - 関連する実験統治: `COGNITIVE-DOGFOOD-01`, `COGNITIVE-EVAL-01`
 
 ## 1. 固定する問い
 
-> KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
+> SUI Sensemakingは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
 
-このCaseでは、最初から「KJ Atlasは認知環境である」「KJ法市場を狙う」「offline / self-hostが主な価値である」といった結論を固定しない。
+このCaseでは、最初から「SUI Sensemakingは認知環境である」「KJ法市場を狙う」「offline / self-hostが主な価値である」といった結論を固定しない。
 
 ## 2. 実験入力と評価資料を分離する
 
 ### 2.1 全Armへ渡す製品資料
 
-全Armへ、KJ Atlas `main@2232b3bb26647e5c4a083f55bdbf83c161698649`の同一資料を渡す。実際の入力の正本は`cognitive-dogfood-case-001-round1-source-manifest.json`とする。
+全Armへ、SUI Sensemaking `main@2232b3bb26647e5c4a083f55bdbf83c161698649`の同一資料を渡す。実際の入力の正本は`cognitive-dogfood-case-001-round1-source-manifest.json`とする。
 
 固定済みの20資料は次のとおり。
 
 - `README.md`
 - `ROADMAP.md`
-- `00_Prompt/kj_technique.md`
+- `00_Prompt/sensemaking_technique.md`
 - `01_Plans/adr/ADR-0032-product-value-realization-model.md`
 - `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md`
 - `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
@@ -31,11 +31,11 @@
 - `01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md`
 - `01_Plans/issues/issue-VR-ROADMAP-01-value-to-social-goal-phase-baseline.md`
 - `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r4.json`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r1.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r2.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r3.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r4.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r5.json`
 - `01_Plans/issues/done/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md`
 - `01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md`
 - `01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md`
@@ -67,11 +67,11 @@ Arm B/Dには、`cultural-substrate-weaving main@3988e12e5f7f316f377d3391e9486c8
 
 ### Round 1 — 内部証拠だけを使う
 
-固定済みのKJ Atlas repository snapshotだけで分析する。
+固定済みのSUI Sensemaking repository snapshotだけで分析する。
 
 目的は次の2点である。
 
-- 外部の市場カテゴリや競合の言い回しに先に引かれず、KJ Atlas自身の設計、実装、dogfoodから利用仕事を立ち上げられるかを見る。
+- 外部の市場カテゴリや競合の言い回しに先に引かれず、SUI Sensemaking自身の設計、実装、dogfoodから利用仕事を立ち上げられるかを見る。
 - repository内に共存する時間差、訂正、矛盾を適切に扱えるかを見る。
 
 ### Round 2 — 全Armへ同じ外部資料を追加する
@@ -124,24 +124,24 @@ T1〜T3は、偽情報を人工的に注入したテストではない。実開�
 
 ### Arm A — 通常AI + 通常文書
 
-- KJ Atlasキャンバスを使わない。
+- SUI Sensemakingキャンバスを使わない。
 - `cultural-substrate-weaving`を使わない。
 - 共通資料から問いへ回答し、課題、価値、提案をまとめる。
 - 一般的な分析用の見出しやメモは使用してよい。ただし、KJ固有のカード、束ね、表札手順を実験者側から要求しない。
 
 ### Arm B — 通常AI + cultural-substrate-weaving
 
-- KJ Atlasキャンバスを使わない。
+- SUI Sensemakingキャンバスを使わない。
 - `cultural-substrate-weaving`を明示的に適用する。
 - 体系由来の所見はremoval / substitution等を通し、対象側で生き残ったものだけを最終成果へ残す。
 
-### Arm C — KJ Atlas + 通常AI
+### Arm C — SUI Sensemaking + 通常AI
 
-- KJ Atlas上で、生カード、束ね、表札、関係、空白、反対視点を扱う。
+- SUI Sensemaking上で、生カード、束ね、表札、関係、空白、反対視点を扱う。
 - `cultural-substrate-weaving`は使わない。
 - AI提案はproposal-onlyとし、人間が採否を確定する。
 
-### Arm D — KJ Atlas + cultural-substrate-weaving
+### Arm D — SUI Sensemaking + cultural-substrate-weaving
 
 - Arm Cの外部表象に加えて、`cultural-substrate-weaving`を適用する。
 - 文化的体系をカードの分類器には使わず、探索対象、空白、関係候補を広げるために使う。
@@ -161,11 +161,11 @@ T1〜T3は、偽情報を人工的に注入したテストではない。実開�
 
 各Armは、少なくとも次を返す。
 
-1. KJ Atlasが解こうとしている利用者の仕事。
+1. SUI Sensemakingが解こうとしている利用者の仕事。
 2. 既存手段で十分な領域と、不十分になり得る領域。
-3. 現在のKJ Atlasがすでに実現している価値。
+3. 現在のSUI Sensemakingがすでに実現している価値。
 4. まだ実証されていない価値仮説。
-5. 最も重要な反証、または「KJ Atlasが不要かもしれない条件」。
+5. 最も重要な反証、または「SUI Sensemakingが不要かもしれない条件」。
 6. 次に実施すべき検証 / issue。
 7. 主張ごとの主要根拠と、その根拠の時点。
 8. 読んだ資料の中で、訂正、矛盾、旧情報と判断した箇所。
@@ -193,7 +193,7 @@ Case 001では、特に次を重視する。
 
 - M1 生存所見: 基準線にはなく、対象へ戻しても残る重要所見。
 - M2 根拠接地: 価値主張が実装、ADR、dogfood観察へ接地し、時点を区別しているか。
-- M3 異論・残差保持: 「KJ Atlasは不要かもしれない」という材料を保持できるか。
+- M3 異論・残差保持: 「SUI Sensemakingは不要かもしれない」という材料を保持できるか。
 - M4 早期収束耐性: 既存の価値原則、issueタイトル、初期記述を前提に結論を固定していないか。
 - M5 AI依存校正: T1〜T3を含む古い・訂正済み主張を適切に棄却・更新できるか。
 - M6 再訪・訂正可能性: 後の第三者実利用結果によって価値定義を修正できるか。
@@ -207,7 +207,7 @@ Case 0の結果を、Case 001の正解表として使用しない。Case 0から
 
 ## 11. 完了条件
 
-- [x] KJ Atlas共通sourceのcommit SHAを固定した。
+- [x] SUI Sensemaking共通sourceのcommit SHAを固定した。
 - [x] B/D用cultural-substrate-weavingのcommit SHAを固定した。
 - [x] Arm入力からPR #2805の回答仮説を除外した。
 - [x] repository内の自然な訂正履歴をT1〜T3として事前登録した。

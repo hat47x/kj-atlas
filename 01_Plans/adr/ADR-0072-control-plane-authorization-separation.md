@@ -5,7 +5,7 @@
 - Accepted: 2026-08-13（**D1=A+B の二段 / D2=A / D3=A**。保守者による明示承認。仮承認ではない）
 - Renumbered: 2026-08-10（起票時に ADR-0067 を採番したが、同番号が `ADR-0067-three-element-constraint-design-method.md`（2026-08-08、先行）と衝突していた。`docs_check` の DC-ADR-001 の指示どおり、先行分を維持し本ADRを次の未使用番号へ改番した。判断内容は無変更。）
 - Deciders: Maintainer（2026-08-13 採択済み。採択内容は下記「採択記録」を正とする。ドッグフーディングループの承認方針に基づく）
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `main.py`, `settings.py`, `runtime_bootstrap.py`, `02_Architecture/enterprise_architecture.html`, `04_Documentation/security.md`, `THREAT_MODEL.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`, `main.py`, `settings.py`, `runtime_bootstrap.py`, `02_Architecture/enterprise_architecture.html`, `04_Documentation/security.md`, `THREAT_MODEL.md`
 
 ## Context
 
@@ -26,7 +26,7 @@ if settings.api_key:
 `settings.py:263-266` で `api_key` の既定値は `None` である。実行確認:
 
 ```
-$ KJ_ATLAS_RUNTIME_PROFILE=enterprise-production python3 -c "from kj_atlas_api.settings import Settings; print(Settings().api_key)"
+$ SUI_RUNTIME_PROFILE=enterprise-production python3 -c "from sui_sensemaking_api.settings import Settings; print(Settings().api_key)"
 None
 ```
 
@@ -69,7 +69,7 @@ saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
 
 | 論点 | 採択 | 内容 |
 |---|---|---|
-| **D1** | **A+B の二段** | 静的 admin bearer（`KJ_ATLAS_ADMIN_API_KEY`）を**ブートストラップ専用の最小権限経路**として `/admin/**` のみに適用し、IdP登録後の通常運用は trusted auth edge の JWT ＋ platform-operator capability claim で行う。D1=C（ネットワーク分離）は**アプリ側の保証ではなく deployment 側の推奨構成**として文書化し、A+B と排他にしない |
+| **D1** | **A+B の二段** | 静的 admin bearer（`SUI_ADMIN_API_KEY`）を**ブートストラップ専用の最小権限経路**として `/admin/**` のみに適用し、IdP登録後の通常運用は trusted auth edge の JWT ＋ platform-operator capability claim で行う。D1=C（ネットワーク分離）は**アプリ側の保証ではなく deployment 側の推奨構成**として文書化し、A+B と排他にしない |
 | **D2** | **A** | 管理面を SaaS でも開放し、D1 の認可で保護する。`require_single_tenant_provisioning_surface` を認可判定へ置き換える |
 | **D3** | **A** | `enterprise-production` / `saas-multitenant` で認証手段が未設定なら `Settings()` 構築時に fail-fast（`ADR-0062` と同じ方針を認証そのものへ一貫適用） |
 
@@ -109,7 +109,7 @@ saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
 
 | 案 | 内容 | 利点 | 欠点 |
 |---|---|---|---|
-| **A** | 業務面とは別の静的 bearer（`KJ_ATLAS_ADMIN_API_KEY`）を必須化し、`/admin/**` のみに適用 | 実装が最小。ブートストラップ時（IdP未登録）にも使える | 静的秘密の運用（ローテーション・失効）が残る。主体特定ができず監査が弱い |
+| **A** | 業務面とは別の静的 bearer（`SUI_ADMIN_API_KEY`）を必須化し、`/admin/**` のみに適用 | 実装が最小。ブートストラップ時（IdP未登録）にも使える | 静的秘密の運用（ローテーション・失効）が残る。主体特定ができず監査が弱い |
 | **B** | trusted auth edge の JWT ＋ platform-operator capability claim を要求 | 主体が特定でき監査に載る。plane 分離の要求に最も整合 | IdP 未登録状態では使えない（ブートストラップに別経路が必要） |
 | **C** | 管理面を別 listen port / 別 ASGI app へ分離し、ネットワーク層で到達制御 | 前段委譲が構造的に閉じる。企業・行政の一般的な運用形 | デプロイ構成が複雑化。単一プロセス前提の現行構成から乖離 |
 | **D** | HTTP を廃し、ブートストラップ操作は CLI（`cli.py`）専用にする | HTTP 到達面が消える。最も攻撃面が小さい | 遠隔運用・自動化がしにくい。既存 `/admin/provision/users` の互換を壊す |
@@ -134,7 +134,7 @@ saas-multitenant       -> HTTP 404 {'code': 'strict_provisioning_unavailable'}
 
 | 次元 | このADRでの主張 | 他次元への制約 |
 |------|----------------|---------------|
-| **業務設計** | 管理面（provisioning）側の認可が認証基盤の外側に取り残され、`/admin/provision/identity-providers`が信頼するJWT発行者とJWKS URIを登録するエンドポイントとして任意の利用者・任意のテナントとして認証できる越境の起点になる。管理面の認可を業務面から分離しSaaSでも到達可能にする | 機能: 業務面とは別の静的bearer（KJ_ATLAS_ADMIN_API_KEY）とtrusted auth edgeのJWT+platform-operator capability claimの二段構成。データ: IdP未登録状態（ブートストラップ）と通常運用（capability claim）を構造的に区別 |
+| **業務設計** | 管理面（provisioning）側の認可が認証基盤の外側に取り残され、`/admin/provision/identity-providers`が信頼するJWT発行者とJWKS URIを登録するエンドポイントとして任意の利用者・任意のテナントとして認証できる越境の起点になる。管理面の認可を業務面から分離しSaaSでも到達可能にする | 機能: 業務面とは別の静的bearer（SUI_ADMIN_API_KEY）とtrusted auth edgeのJWT+platform-operator capability claimの二段構成。データ: IdP未登録状態（ブートストラップ）と通常運用（capability claim）を構造的に区別 |
 | **データ設計** | `enterprise-production`はAPIキー未設定のまま起動でき、その場合すべてのエンドポイントが無認証になる。キーを設定しても文書API・AI API・管理APIが同一の共有静的キー1本で保護される。D3=Aで本番相当profileでは認証を必須化 | 業務: 明示選択したのに設定が無ければ起動を止める（ADR-0062のfail-fast方針を認証へ一貫適用）。機能: 管理面の認可はcapability claimで監査に載せる |
 | **機能設計** | D1=A+Bの二段（静的admin bearerはブートストラップ専用の最小権限経路、IdP登録後はcapability claim）。D2=AでSaaSでも管理面を開放し`require_single_tenant_provisioning_surface`を認可判定へ置換。D1=C（ネットワーク分離）はdeployment側の選択として文書化 | 業務: R-3（非機能境界の超過）としてADR-0063/0064で追加したSaaS認証が管理面認可の境界を越えた。データ: D3=AはADR-0062の判断を認証そのものへ一貫適用 |
 

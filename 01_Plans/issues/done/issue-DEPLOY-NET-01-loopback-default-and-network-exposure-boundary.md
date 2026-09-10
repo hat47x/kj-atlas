@@ -17,7 +17,7 @@
 
 ```yaml
 ports:
-  - "${KJ_ATLAS_WEB_PORT:-8080}:80"
+  - "${SUI_WEB_PORT:-8080}:80"
 ```
 
 host IPを省略したDockerのport公開はloopback限定ではなく、ホストの全インターフェースを対象にする。利用者は`http://localhost:8080`でアクセスできるが、同じLANやホストへ到達できる別主体からも接続可能になり得る。
@@ -25,9 +25,9 @@ host IPを省略したDockerのport公開はloopback限定ではなく、ホス�
 現在の文書と安全モデルには次の不整合がある。
 
 - `installation.md`とREADMEは「ローカルまたは評価環境」として標準Composeを案内し、アクセス先に`localhost`だけを示すが、bind範囲を説明しない。
-- `KJ_ATLAS_API_KEY`は未設定が既定で、標準Composeへも未配送である（`ENV-COMPOSE-01`）。
+- `SUI_API_KEY`は未設定が既定で、標準Composeへも未配送である（`ENV-COMPOSE-01`）。
 - API keyを有効にしても同梱SPAは`X-API-Key`を送らないため、通常のブラウザ利用を保ったままdefault exposureを補う認証にはならない。
-- `deployment.md`は`KJ_ATLAS_WEB_PORT`を「公開port」と呼ぶが、bind address、loopback、LAN公開の契約がない。
+- `deployment.md`は`SUI_WEB_PORT`を「公開port」と呼ぶが、bind address、loopback、LAN公開の契約がない。
 - `THREAT_MODEL.md`はimport、render、supply chain、export等を扱う一方、認証なしHTTP面の誤公開を脅威として扱わない。
 - `security.md`は「公開ネットワークではTLS、認証proxy等を組み合わせる」と述べるが、標準Composeが既にどのinterfaceへ公開されるかを伝えない。
 
@@ -41,7 +41,7 @@ host IPを省略したDockerのport公開はloopback限定ではなく、ホス�
 
 - base `docker-compose.yml`のweb portをIPv4 loopbackへ明示bindする。
 - 既定の利用導線を`127.0.0.1` / `localhost`からの単一ホスト評価と定義する。
-- `KJ_ATLAS_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする。
+- `SUI_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする。
 - README、installation、configuration、operationsで「同一ホストからだけ使う評価構成」と明記する。
 - SafeModeやAPI keyをnetwork access controlの代替として説明しない。
 
@@ -49,7 +49,7 @@ host IPを省略したDockerのport公開はloopback限定ではなく、ホス�
 
 ```yaml
 ports:
-  - "127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80"
+  - "127.0.0.1:${SUI_WEB_PORT:-8080}:80"
 ```
 
 ### Phase B: 非loopback公開は別profileとして扱う
@@ -95,8 +95,8 @@ Phase Bの配布profileは本Issueの必須実装にしない。新しいbind-ad
 
 ## 受入条件
 
-- [x] base Composeのweb portがloopbackへ明示bindされ、host IP省略または`0.0.0.0`へ戻らない。→ `docker-compose.yml`の`web.ports`を`127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80`へ変更済み（下記「実装記録」参照）。
-- [x] `KJ_ATLAS_WEB_PORT`を変更してもbind addressはloopbackのままである。→ 環境変数はport番号のみに作用し、host IP部分は固定文字列。contract testで固定。
+- [x] base Composeのweb portがloopbackへ明示bindされ、host IP省略または`0.0.0.0`へ戻らない。→ `docker-compose.yml`の`web.ports`を`127.0.0.1:${SUI_WEB_PORT:-8080}:80`へ変更済み（下記「実装記録」参照）。
+- [x] `SUI_WEB_PORT`を変更してもbind addressはloopbackのままである。→ 環境変数はport番号のみに作用し、host IP部分は固定文字列。contract testで固定。
 - [x] READMEとinstallationが標準Composeを同一ホスト評価用と明記し、`localhost`表示だけを到達範囲の根拠にしない。→ 両文書に明記済み。
 - [x] deployment、configuration、operationsがbase profileと非loopback deploymentの責務を区別する。→ 3文書とも該当箇所を更新済み。
 - [x] security文書がSafeMode/API keyの非保証範囲と、SPAを含む前段認証の必要性を説明する。→ `security.md`のAPI key節へ追記済み。
@@ -129,10 +129,10 @@ Dockerを利用できない環境では静的検査だけを成功扱いにし�
 
 ## 実装記録（2026-07-17）: Phase A 完了
 
-- **`docker-compose.yml`**: `web.ports`を`"${KJ_ATLAS_WEB_PORT:-8080}:80"`から`"127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80"`へ変更した。
-- **`THREAT_MODEL.md`**: §7「標準Composeのネットワーク公開境界（DEPLOY-NET-01）」を新規追加し、対象範囲一覧にも追記した。保護資産・攻撃者・入口・誤解しやすい非対策（SafeMode、`KJ_ATLAS_API_KEY`、`localhost`表示）・想定対策を記載した。
-- **文書更新**: `README.md`（開発者向け起動手順の直後）、`04_Documentation/installation.md`（Compose起動手順の直後）、`04_Documentation/operations.md`（標準URL説明）、`04_Documentation/security.md`（API key節）、`02_Architecture/deployment.md`（基本方針・公開設定キー表・Registry/Deploy alignment matrix）に、標準構成がloopback限定の同一ホスト評価用であることを明記した。`04_Documentation/configuration.md`の`KJ_ATLAS_WEB_PORT`行も同様に更新した。
-- **contract test**: `01_Plans/tests/test_deploy_network_exposure_contract.py`を新規追加した。`docker-compose.yml`の`web.ports`マッピングを解析し、(1) `127.0.0.1:`で始まること、(2) `0.0.0.0`を含まないこと、(3) `KJ_ATLAS_WEB_PORT`変数を含み`host_ip:port:container_port`の3要素構造を保つこと、を検証する2 test。修正前の設定（host IP省略）に対しては両testがfailすることを負例として確認済み。
+- **`docker-compose.yml`**: `web.ports`を`"${SUI_WEB_PORT:-8080}:80"`から`"127.0.0.1:${SUI_WEB_PORT:-8080}:80"`へ変更した。
+- **`THREAT_MODEL.md`**: §7「標準Composeのネットワーク公開境界（DEPLOY-NET-01）」を新規追加し、対象範囲一覧にも追記した。保護資産・攻撃者・入口・誤解しやすい非対策（SafeMode、`SUI_API_KEY`、`localhost`表示）・想定対策を記載した。
+- **文書更新**: `README.md`（開発者向け起動手順の直後）、`04_Documentation/installation.md`（Compose起動手順の直後）、`04_Documentation/operations.md`（標準URL説明）、`04_Documentation/security.md`（API key節）、`02_Architecture/deployment.md`（基本方針・公開設定キー表・Registry/Deploy alignment matrix）に、標準構成がloopback限定の同一ホスト評価用であることを明記した。`04_Documentation/configuration.md`の`SUI_WEB_PORT`行も同様に更新した。
+- **contract test**: `01_Plans/tests/test_deploy_network_exposure_contract.py`を新規追加した。`docker-compose.yml`の`web.ports`マッピングを解析し、(1) `127.0.0.1:`で始まること、(2) `0.0.0.0`を含まないこと、(3) `SUI_WEB_PORT`変数を含み`host_ip:port:container_port`の3要素構造を保つこと、を検証する2 test。修正前の設定（host IP省略）に対しては両testがfailすることを負例として確認済み。
 - **Docker検証（実機、2026-07-17）**:
   - `docker compose config`: レンダリング結果の`web.ports`が`host_ip: 127.0.0.1`であることを確認。
   - `docker compose up --build -d`: 実際に起動し、`docker compose ps`のPORTS列が`127.0.0.1:8080->80/tcp`であることを確認。

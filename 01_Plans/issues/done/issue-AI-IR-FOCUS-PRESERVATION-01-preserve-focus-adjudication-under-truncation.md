@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-SCALE-01`, `AI-IR-PROJECTION-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_detect_contradiction_ir.py`, `02_Architecture/llm_input_ir_spec.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_detect_contradiction_ir.py`, `02_Architecture/llm_input_ir_spec.md`
 - Related ADR/Spec: `ADR-0069`, `02_Architecture/llm_input_ir_spec.md` §2.2B / §5, `AI-IR-PROJECTION-01` AC-1, `AI-IR-SCALE-01`
 - Expected verification level: integration
 
@@ -37,7 +37,7 @@ R16で定めた「routeごとに必要な意味集合を先に確認する」と
 
 `detect-contradiction` にとって対象2カードと、その2枚に対する `confirmed` / `held` の矛盾状態は、`AI-IR-PROJECTION-01` AC-1が明示した**route固有の必要意味**である。これを規模上限で失うと、人間がすでに下した判断をAIが新規提案として再提示し得る。
 
-KJ Atlasのproposal-only / human-in-the-loop境界に直接関わるため、token予算全体の最終決定を待たず、対象カードの保持方法を先に固定する。
+SUI Sensemakingのproposal-only / human-in-the-loop境界に直接関わるため、token予算全体の最終決定を待たず、対象カードの保持方法を先に固定する。
 
 ## 対応方針
 
@@ -110,7 +110,7 @@ GitHub Actionsは現在リポジトリ側で無効化されており、merge com
 - `python -m pytest tests/test_llm_input_ir_required_cards.py tests/test_ai_detect_contradiction_ir_scale.py tests/test_ai_route_required_meaning_scale.py -q` — 成功。
 - 共有IRでは、required指定なしの従来投影、末尾required pairとevidenceの保持、決定性、予算超過時のfail-closedを実行確認した。
 - `/ai/detect-contradiction` では、300カードの末尾pairについて `confirmed` / `held` を再提案せず、`unconfirmed` / `resolved` は対象pairを保持したままLLM stubへ進むことを実行確認した。
-- 実行記録: `https://github.com/hat47x/kj-atlas/actions/runs/33723114607`（run id `33723114607`）。
+- 実行記録: `https://github.com/hat47x/sui-sensemaking/actions/runs/33723114607`（run id `33723114607`）。
 
 この確認により、本Issue固有の未完了条件は満たした。300カード全体の意味保存戦略やnamed providerのtoken予算は、引き続き `AI-IR-SCALE-01` の責務とする。
 

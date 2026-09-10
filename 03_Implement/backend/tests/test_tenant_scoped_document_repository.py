@@ -3,14 +3,14 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.document_repository import (
+from sui_sensemaking_api.document_repository import (
     get_document_row,
     list_document_rows,
     list_merge_decision_logs_by_group,
     list_merge_decision_logs_by_snapshot,
 )
-from kj_atlas_api.models import Base, DocumentRow, MergeDecisionLogRow, TenantRow
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.models import Base, DocumentRow, MergeDecisionLogRow, TenantRow
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 def _tenant(tenant_id: str) -> TenantContext:

@@ -5,17 +5,17 @@
 - Source Issue: SEC-ADMIN-PLANE-01（分離の残余ギャップ。ドッグフーディングで実測）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/tests/test_control_plane_authorization.py`, `03_Implement/backend/tests/test_a2_a3_gate_validation.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/main.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`, `03_Implement/backend/tests/test_control_plane_authorization.py`, `03_Implement/backend/tests/test_a2_a3_gate_validation.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0072-control-plane-authorization-separation.md`, `02_Architecture/runtime_parameter_registry.md`
 - Expected verification level: `integration`
 
 ## 課題
 
-`KJ_ATLAS_API_KEY` と `KJ_ATLAS_ADMIN_API_KEY` を**両方設定して実機走行**したとき、管理面の認可分離に2つのギャップを確認した。
+`SUI_API_KEY` と `SUI_ADMIN_API_KEY` を**両方設定して実機走行**したとき、管理面の認可分離に2つのギャップを確認した。
 
 ### 事実1: 管理面（/admin/provision/*）が業務キーを前提とする
 
-`main.py` のグローバル middleware `require_api_key` は `/healthz` を除く全パスに業務キー（`X-API-Key`）を要求する。管理面もこの middleware を通るため、`KJ_ATLAS_ADMIN_API_KEY` 設定時に **`X-Admin-Api-Key` のみでは 401** になる。
+`main.py` のグローバル middleware `require_api_key` は `/healthz` を除く全パスに業務キー（`X-API-Key`）を要求する。管理面もこの middleware を通るため、`SUI_ADMIN_API_KEY` 設定時に **`X-Admin-Api-Key` のみでは 401** になる。
 
 ```text
 === provision/users — admin key ONLY ===  → 401（middleware が x-api-key 欠損で拒否）
@@ -72,4 +72,4 @@
 ## 補足
 
 - 発見経緯: ドッグフーディングで「管理者が自前スクリプトで CLI/API を利用する」経路を検証すべく、両キー設定の実バックエンドで /admin/provision/* を実走行した際に検出（2026-08-14）。
-- 三要素分析: **業務設計**（管理面は業務面と独立した制御プレーン）／**機能設計**（middleware と route dependency の二段が管理面に業務キーを要求）／**データ設計**（`KJ_ATLAS_ADMIN_API_KEY` は /admin/* 専用と registry に明記）のうち、機能設計が業務設計に追従していない実例。
+- 三要素分析: **業務設計**（管理面は業務面と独立した制御プレーン）／**機能設計**（middleware と route dependency の二段が管理面に業務キーを要求）／**データ設計**（`SUI_ADMIN_API_KEY` は /admin/* 専用と registry に明記）のうち、機能設計が業務設計に追従していない実例。

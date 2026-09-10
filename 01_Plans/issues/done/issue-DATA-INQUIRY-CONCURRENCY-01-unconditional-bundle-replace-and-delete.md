@@ -5,7 +5,7 @@
 - Source Issue: `DOMAIN-W-ITERATION-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/database_content_store.py`, `03_Implement/backend/src/kj_atlas_api/routes/inquiry_bundles.py`, frontend inquiry client、migration
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/database_content_store.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/inquiry_bundles.py`, frontend inquiry client、migration
 - Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.html`, `02_Architecture/api.md`
 - Expected verification level: `integration`
 
@@ -83,7 +83,7 @@ connection pool再利用・backup/restoreは、本issue固有の要件ではな�
 
 ## 対応記録3（2026-08-25・AC-9完了、issue Done）
 
-AC-9の残務だったブラウザE2Eを追加した。`03_Implement/frontend/e2e/inquiry_bundle_backend_conflict.spec.ts`（`ai_model_ux_available_models_reason.spec.ts`と同じ`KJ_ATLAS_E2E_REAL_BACKEND`ゲート・同じ実backend起動手順を再利用、新規env varは導入していない）。
+AC-9の残務だったブラウザE2Eを追加した。`03_Implement/frontend/e2e/inquiry_bundle_backend_conflict.spec.ts`（`ai_model_ux_available_models_reason.spec.ts`と同じ`SUI_E2E_REAL_BACKEND`ゲート・同じ実backend起動手順を再利用、新規env varは導入していない）。
 
 シナリオ: 実browserで新規journeyをStart→「Save to backend」で作成（`If-None-Match: *` → 201, ETag `"1"`）。ブラウザの外から（このbrowserとは別の同時編集者を模した、直接backendへの2本目のHTTPクライアント）取得済みpayloadへ`If-Match: "1"`でPUTし、revisionをserver側で2へ進める。ブラウザは依然revision 1を保持したまま、ローカルでラウンドを1件追加してから「Save to backend」を再実行し、実409を受け取る。
 
@@ -101,7 +101,7 @@ DELETE側（AC-3/AC-9が示唆するstale `If-Match` DELETE）は、パネルに
 - `npx tsc --noEmit`（frontend）: エラーなし。
 - `npx vitest run src/api/client.test.ts`: 44/44 pass（`InquiryJourneyPrototypePanel`自体のunit testは元から存在しない）。
 - backend: `test_inquiry_bundle_repository.py` / `test_inquiry_bundle_revision_migration.py` / `test_inquiry_bundle_routes.py` = 15/15 pass（drift無し。PostgreSQL専用の`test_inquiry_bundle_revision_postgres.py`は本チェックポイントでは対象外、対応記録2で別途確認済み）。
-- `KJ_ATLAS_E2E_REAL_BACKEND=1 npx playwright test e2e/inquiry_bundle_backend_conflict.spec.ts`: 1/1 pass。env var未設定時は1 skipped（既定の`npm run e2e`を壊さないことを確認）。
+- `SUI_E2E_REAL_BACKEND=1 npx playwright test e2e/inquiry_bundle_backend_conflict.spec.ts`: 1/1 pass。env var未設定時は1 skipped（既定の`npm run e2e`を壊さないことを確認）。
 - 全体`npx vitest run`: 1547/1548 pass、1 failed suite。失敗2件（`external_agent_workflow_doc.test.ts`、`representative_visual_cue_prototype.test.ts`）は、検証に使ったWSL-native copy（`03_Implement/frontend`のみをrsyncしたもの）に`04_Documentation`/`02_Architecture`が兄弟ディレクトリとして存在しないためのpre-existing gapで、本PRのdiff（新規e2e specファイル1本のみ）とは無関係（`01_Plans/agent_failure_log.md`の2026-08-25追記を参照）。
 - 全体Playwright suite（実backend fixtureをPID killで確実に停止した後に実行）: 224件中200 passed・11 skipped・13 failed。13件のうち11件は`issue-AI-MODEL-UX-01-empty-model-state-lacks-cause.md`対応記録2に既に記録済みの既知8ファイル（`agent_response_import.spec.ts`×2・`agent_task_export.spec.ts`×1・`ce3_patch_workspace.spec.ts`×1・`diagnostics_structural_metrics.spec.ts`×1・`first_meaningful_map_mouse_flow.spec.ts`×2・`large_document_operability.spec.ts`×1・`public_pack_visibility_compat.spec.ts`×2・`representative_visual_cue_capacity_budget.spec.ts`×1）と完全一致した。残り2件（`document-title-editor.spec.ts`の"shows the suggest-title button when a provider is configured"・"title candidates explain proposal-only adoption and preserve keyboard focus"）は上記の既知一覧に含まれておらず、本チェックポイントで新たに確認した。`--workers=1`での単独再実行でも再現し、フレークではない。本PRのdiffはtest/doc専用（`git diff`で確認済み、`InquiryJourneyPrototypePanel.tsx`等production codeへの変更は皆無）であり、この2件が本PRと無関係であることは差分そのものから自明である。原因はテストfixtureが`/ai/available-models`をmockしていないため、AI-MODEL-UX-01がbackend駆動へ変えたmodel availability解決が実backend停止環境で失敗し、suggest-titleボタンの表示条件に影響したと推測される（未確認）。本issueのscope外のため深追いせず、別issueとしてフォローアップを起票した。
 

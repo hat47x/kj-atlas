@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from kj_atlas_api import cli
-from kj_atlas_api.audit import CE4_AUDIT_REQUIRED_FIELDS, CE4_AUDIT_SCHEMA_VERSION
+from sui_sensemaking_api import cli
+from sui_sensemaking_api.audit import CE4_AUDIT_REQUIRED_FIELDS, CE4_AUDIT_SCHEMA_VERSION
 
 
 class _DummyResponse:
@@ -61,7 +61,7 @@ def test_build_payload_requires_ce4_hash_keys(missing_key: str) -> None:
 
 def test_main_posts_context_audit_payload_and_headers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     request_log: dict[str, object] = {}
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-secret")
+    monkeypatch.setenv("SUI_API_KEY", "business-secret")
 
     def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
         request_log.update({"url": url, "json": json, "headers": headers, "timeout": timeout})
@@ -108,7 +108,7 @@ def test_main_posts_context_audit_payload_and_headers(tmp_path: Path, monkeypatc
 
 def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     request_log: dict[str, object] = {}
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-secret")
+    monkeypatch.setenv("SUI_API_KEY", "business-secret")
 
     def _fake_post(url: str, json: dict[str, object], headers: dict[str, str], timeout: float):
         request_log.update({"url": url, "json": json, "headers": headers, "timeout": timeout})
@@ -152,10 +152,10 @@ def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.Monke
 
 
 def test_business_plane_headers_omit_unset_or_blank_secret(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("KJ_ATLAS_API_KEY", raising=False)
+    monkeypatch.delenv("SUI_API_KEY", raising=False)
     assert cli._business_plane_headers() == {}
 
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", "   ")
+    monkeypatch.setenv("SUI_API_KEY", "   ")
     assert cli._business_plane_headers(actor_ref="operator") == {"x-actor-ref": "operator"}
 
 

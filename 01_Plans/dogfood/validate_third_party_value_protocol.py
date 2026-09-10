@@ -47,9 +47,9 @@ REQUIRED_SNIPPETS = {
         "support / modify / narrow / reject / unresolved",
     ],
     "launch": [
-        "最初の実資料をKJ Atlasへ入力する前に",
+        "最初の実資料をSUI Sensemakingへ入力する前に",
         "AI provider / endpoint actually used",
-        "KJ Atlasのprocess / device外へ資料が送られるか",
+        "SUI Sensemakingのprocess / device外へ資料が送られるか",
         "GO-WITH-REDUCTION",
         "STOP-DATA-BOUNDARY",
         "検証を完遂するために、資料統制の条件を緩めない",
@@ -94,9 +94,9 @@ REQUIRED_SNIPPETS = {
 
 FORBIDDEN_SNIPPETS = {
     "participant": [
-        "KJ Atlasなら根拠を残せます",
-        "KJ Atlasなら異論を保持できます",
-        "KJ Atlasなら再訪できます",
+        "SUI Sensemakingなら根拠を残せます",
+        "SUI Sensemakingなら異論を保持できます",
+        "SUI Sensemakingなら再訪できます",
     ],
 }
 

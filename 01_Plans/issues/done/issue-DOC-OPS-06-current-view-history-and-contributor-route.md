@@ -155,7 +155,7 @@
 - dry-run: `README.md` → `CONTRIBUTING.md` → `triage_actionable_plans.py`の`Ready issues` → `issues/README.md` / 対象memo → `TEMPLATE.md` → `codex/` branch規律 → validator / 対象testをfresh-clone想定で追跡し、全地点へ到達した。
 - `CONTRIBUTING.md`に残っていた廃止済み「Active表」参照を生成viewへ修正した。GitHub Issuesを現行正本とする矛盾、current 3文書のStream/rerun drift、旧04 E2E文書の独立規範はいずれも0件。
 - currentから除いた反復ログはGit履歴で復元でき、別archiveが必要な一次証拠は0件と確認した。既存architecture historyのInformativeメタ・逆リンクは`DOC-ARCH-02`で検証済み。
-- SafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、`KJ_ATLAS_LLM_PROVIDER=none`への現行導線を確認した。
+- SafeMode既定ON、share/export漏洩防止、proposal-only、`human_reviewed`人手限定、`SUI_LLM_PROVIDER=none`への現行導線を確認した。
 - route対象10文書の相対link 76件エラー0、Active issue validatorはclose直前33件・Done反映後32件、validator/triage unit 12件、`git diff --check`がpassした。再発防止境界は`DX-DOC-02`へ引き渡した。
 - 全Acceptance criteriaとT1〜T8を満たしたためDoneとする。
 

@@ -238,7 +238,7 @@
 
 ### Verify
 - `rg -n "後回し|将来拡張|ETag|If-Match|POST /docs|認証|監査|Context|AI" 02_Architecture/api.md 01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
-- `rg -n "GET /docs|PUT /docs|If-Match|ETag|export-audit|context-audit|merge-decision-logs|similar-candidate-groups" 02_Architecture/api.md 03_Implement/backend/src/kj_atlas_api/routes/docs.py 03_Implement/backend/tests/test_docs_roundtrip.py`
+- `rg -n "GET /docs|PUT /docs|If-Match|ETag|export-audit|context-audit|merge-decision-logs|similar-candidate-groups" 02_Architecture/api.md 03_Implement/backend/src/sui_sensemaking_api/routes/docs.py 03_Implement/backend/tests/test_docs_roundtrip.py`
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check -- 01_Plans 02_Architecture`

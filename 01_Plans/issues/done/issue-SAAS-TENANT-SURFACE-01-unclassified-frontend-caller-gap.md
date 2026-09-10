@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/context.py`
 - Related ADR/Spec: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `docs-check`
 
@@ -54,7 +54,7 @@ SAAS-TENANT-01の2件の監査（2026-08-06、backend全routeの網羅性監査�
 
 課題文の「9件」という数字と、routeのグルーピング（`merge-decision-logs系3route`／`/context/*`4route）を鵜呑みにせず、次の手順で現在のコードから独立に再導出した。
 
-1. `03_Implement/backend/src/kj_atlas_api/routes/{docs,ai,context}.py`の全`@router.`宣言を洗い出し、`_authorize_request`（docs.py）または`require_tenant_scoped_api_precondition`（ai.py個別route依存 / context.py router全体依存）でtenant-guardされているものだけを対象にした。`GET /ai/provider-status`はどちらのゲートも掛かっていないため対象外。
+1. `03_Implement/backend/src/sui_sensemaking_api/routes/{docs,ai,context}.py`の全`@router.`宣言を洗い出し、`_authorize_request`（docs.py）または`require_tenant_scoped_api_precondition`（ai.py個別route依存 / context.py router全体依存）でtenant-guardされているものだけを対象にした。`GET /ai/provider-status`はどちらのゲートも掛かっていないため対象外。
 2. `03_Implement/frontend/src/api/client.ts`（784行、全文読み込み済み）の全export関数を洗い出し、各routeに対応するwrapperが存在するか、存在する場合はそのwrapperの呼び出し元が`client.ts`/`client.test.ts`以外（実際には主に`App.tsx`）に存在するかを`Grep`で確認した（未使用wrapperもgapとして扱う方針に従った）。
 3. gapと判定したroute（wrapperが無い、またはwrapperがあっても呼び出し元が無いもの）について、`git log --oneline -S'<対象文字列>' -- 03_Implement/frontend/src`で「frontendでそのroute文字列が過去に増減した commit」の有無を確認し、(a)の可能性を機械的に判定した（0件なら(a)ではない）。
 4. 残りについて、`03_Implement/mcp/src`内の参照、`01_Plans/issues/`・`02_Architecture/`内の関連ADR/issue/spec、および frontend側のコードコメント・関連domainモジュールを調査し、(b)/(c)の判断根拠を集めた。

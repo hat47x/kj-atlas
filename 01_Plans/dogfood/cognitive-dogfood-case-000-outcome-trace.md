@@ -3,14 +3,14 @@
 - Status: Completed retrospective supplement / exploratory only
 - Audit date: 2026-08-30
 - Parent audit: `cognitive-dogfood-case-000-r1-r5-audit.md`
-- Source artifacts: `doc_kj_atlas_dogfood_r1.json` ... `doc_kj_atlas_dogfood_r5.json`
+- Source artifacts: `doc_sui_sensemaking_dogfood_r1.json` ... `doc_sui_sensemaking_dogfood_r5.json`
 - Related: `COGNITIVE-DOGFOOD-01`, `COGNITIVE-EVAL-01`, `DOMAIN-W-ITERATION-01`
 
 ## 1. この補遺の役割
 
 親監査は、R1〜R5を認知dogfoodの比較前観察として扱える理由と、対照条件・AI提案履歴・認知摩擦等が欠ける限界を整理した。本補遺はそこへ、**R1〜R5の論点が後続のrepository contract・実装・dogfood運用へどのように着地したか**の代表的な追跡を追加する。
 
-これはKJ Atlasの認知増分を証明する文書ではない。観察できるのは「当時の問題・理解・具体策と、後の実装状態の間に対応する変換経路があること」であり、「KJ Atlasを使ったから変更が起きた」という因果帰属ではない。
+これはSUI Sensemakingの認知増分を証明する文書ではない。観察できるのは「当時の問題・理解・具体策と、後の実装状態の間に対応する変換経路があること」であり、「SUI Sensemakingを使ったから変更が起きた」という因果帰属ではない。
 
 また、本書はCase 001のanswer keyとして使用しない。Case 001 Round 1のarmには本書を入力しない。
 
@@ -46,7 +46,7 @@ R4-c08 → 運用化
 - `surviving/open`: 後続でも未解決論点として残る。
 - `untraceable`: artifactだけでは後続状態を安全に結べない。
 
-`resolved` は「KJ Atlasが解決を生んだ」という意味ではない。
+`resolved` は「SUI Sensemakingが解決を生んだ」という意味ではない。
 
 ## 3. 代表的な意味チェーン
 
@@ -56,7 +56,7 @@ R4-c08 → 運用化
 | C0-2 三要素整合 | R1-c04: 三要素設計法が明確でない | R3-c04: 方法があってもissue workflowへ出てこない問題へ変化。R4-c01/R5-c03: template/CIへ接続する具体策 | 現在の `01_Plans/issues/TEMPLATE.md` は新規設計判断向けに Business/Data/Function の三要素整合欄を持つ | transformed/implemented | M8 |
 | C0-3 文書タイトル | R1-c12: AIタイトル提案なし。R2-c12: `DocumentTitleEditor` は実装されたが実機/E2E未完了 | R5-c04: 新規文書→編集→AI提案→Adoptの一連フローを実機確認する具体策 | `DocumentTitleEditor.tsx` は手動編集、AI候補、明示Adoptを実装。`document-title-editor.spec.ts` は表示・編集・proposal-only・keyboard・Adopt・provider noneを検証 | resolved/implemented for the described flow | M6, M8 |
 | C0-4 App.tsx分離 | R1-c16: 約12,200行。R2-c13: 12,252行で分離判断未解決 | R3-c06: 分離コスト認知の偏りという仮説。R4-c07/R5-c11: `DocumentTitleEditor`→`Shell`/`SidePanel`/`WorkModePanel`を段階分離 | 現在これらの独立componentは存在する一方、`App.tsx` 自体も約478KBあり依然大きい | transformed/partial | M4, M8 |
-| C0-5 dogfood運用 | R1-c10: dogfood必須なのに具体計画なし。R2-c10: R1/R2成果はあるが運用未成熟 | R3-c10: R1→R2を初の構造的feedback attemptとして認識。R4-c08/R5-c09: KJ Atlas自身を継続dogfoodする運用へ | `DOGFOODING_MANIFEST.md` は再検証可能なdogfood集約を持ち、iteration 240時点で170 scenarios / business-flow 1026 checks / total 1084 checks / dogfood由来Done issue群を記録 | resolved/implemented as verification program; cognitive/value validation remains open | M6, M8 |
+| C0-5 dogfood運用 | R1-c10: dogfood必須なのに具体計画なし。R2-c10: R1/R2成果はあるが運用未成熟 | R3-c10: R1→R2を初の構造的feedback attemptとして認識。R4-c08/R5-c09: SUI Sensemaking自身を継続dogfoodする運用へ | `DOGFOODING_MANIFEST.md` は再検証可能なdogfood集約を持ち、iteration 240時点で170 scenarios / business-flow 1026 checks / total 1084 checks / dogfood由来Done issue群を記録 | resolved/implemented as verification program; cognitive/value validation remains open | M6, M8 |
 
 ## 4. 各チェーンの読み解き
 
@@ -89,7 +89,7 @@ R3-c04の重要点は、三要素設計法そのものの存在ではなく、�
 - R5: 新規文書→タイトル編集→AI提案→Adoptを明示的な具体策にする。
 - 現在: componentとE2Eの双方でproposal-only adoptionまで検証されている。
 
-特に現在のE2Eは、AI候補が出てもcurrent titleを自動変更せず、人間が `Adopt` して初めて変えることを固定している。これはKJ Atlasの「AIはproposal、人間が決定」という価値境界が、抽象原則から具体UI contractへ変換された例でもある。
+特に現在のE2Eは、AI候補が出てもcurrent titleを自動変更せず、人間が `Adopt` して初めて変えることを固定している。これはSUI Sensemakingの「AIはproposal、人間が決定」という価値境界が、抽象原則から具体UI contractへ変換された例でもある。
 
 ### C0-4 App.tsx: 成功例だけで監査しない
 
@@ -122,7 +122,7 @@ Case 001以降はこの差を埋めるためにある。
 | M5 AI依存校正 | not measurable | rejected/modified proposal ledgerが不足 |
 | M6 再訪・訂正可能性 | round別artifactとexplicit source refsにより時間変化を再監査できる | 現行InquiryJourneyと同水準の完全revisit性 |
 | M7 注意・探索制御 | bugだけでなく設計・process・human cognitionへ観察対象が広がった | 通常chatより広がったという因果比較 |
-| M8 決定への変換品質 | docs drift、title、template、dogfoodでdownstream implementation/contractを確認。App分離はpartial | KJ Atlasが変更の原因だったという主張 |
+| M8 決定への変換品質 | docs drift、title、template、dogfoodでdownstream implementation/contractを確認。App分離はpartial | SUI Sensemakingが変更の原因だったという主張 |
 | M9 認知摩擦 | not measurable | useful/waste frictionの比較 |
 
 Case 0のM8は従来より強く評価できる。ただし名称は **transformation evidence** とし、`causal cognitive benefit` へ読み替えない。
@@ -184,4 +184,4 @@ Case 0を深く追うと、R1〜R5は単なる「考えて終わったキャン�
 
 とくに文書ドリフト、DocumentTitleEditor、三要素整合、dogfood運用は下流証拠が強い。一方App.tsxはpartialであり、すべてが解決したわけではない。
 
-この結果はM8の**決定・行動への変換可能性**を支持する探索的証拠にはなるが、KJ Atlasの認知優位性を証明しない。次に必要なのは、同じ問い・同じsource snapshotをA〜Dへ与えたprospective comparisonである。
+この結果はM8の**決定・行動への変換可能性**を支持する探索的証拠にはなるが、SUI Sensemakingの認知優位性を証明しない。次に必要なのは、同じ問い・同じsource snapshotをA〜Dへ与えたprospective comparisonである。

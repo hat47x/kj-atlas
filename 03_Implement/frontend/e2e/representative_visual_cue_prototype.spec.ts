@@ -27,7 +27,7 @@ async function openPrototype(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }) => {
   await routeFixture(page);
-  await page.addInitScript(() => window.localStorage.removeItem("kj-atlas.advanced-ui-enabled"));
+  await page.addInitScript(() => window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled"));
   await page.goto("/?locale=ja");
   await page.getByRole("button", { name: "サンプルを開く" }).click();
 });

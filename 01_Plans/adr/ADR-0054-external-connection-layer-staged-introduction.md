@@ -18,7 +18,7 @@
 
 ## Context
 
-- リサーチ（`01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`＋同日追補）の結論: トリガー型AI（頼まれず動くAI）はプラットフォーマーの主戦場になったが、トリガー面・配信面は変動が激しい。kj-atlas は前面を取りに行かず、**日常ツールの背後に立つ「認識論的ガバナンス付きの共有文脈基盤」**になる。競合する記憶基盤（mem0/Zep/Letta/knowledgeplane 等）には「この記憶はレビュー済みか・保留中か・根拠は何か・誰が承認したか」の層が丸ごと欠けており、kj-atlas のドメインモデルはこの空白の形をしている。
+- リサーチ（`01_Plans/research/research-2026-07-12-trigger-ai-external-integration.md`＋同日追補）の結論: トリガー型AI（頼まれず動くAI）はプラットフォーマーの主戦場になったが、トリガー面・配信面は変動が激しい。sui-sensemaking は前面を取りに行かず、**日常ツールの背後に立つ「認識論的ガバナンス付きの共有文脈基盤」**になる。競合する記憶基盤（mem0/Zep/Letta/knowledgeplane 等）には「この記憶はレビュー済みか・保留中か・根拠は何か・誰が承認したか」の層が丸ごと欠けており、sui-sensemaking のドメインモデルはこの空白の形をしている。
 - 追補で確定した外部事実: (i) MCP は Linux Foundation 傘下 AAIF へ移管済みで 2026-07-28 に大型仕様改訂（ステートレスコア・OAuth 2.1 リソースサーバー正式化）が確定、(ii) ChatGPT Developer Mode / Copilot Studio / Claude の3エコシステムすべてが MCP クライアント対応済み（ただし ChatGPT はリモートHTTPS必須・個人プランは読み取り専用強制）、(iii) TRACE（arXiv:2606.13174）は「Mem0 記憶でも選好違反が57.5%残る」ことを示し、訂正は記憶でなく**実行時制約**として渡す必要があるという役割Cの前提を定量的に裏付けた。
 - 既存資産との関係: `ADR-0028` CE-4 は ContextQuery/Bundle の API/CLI 提供を既に予定している（本ADRはその外向き部分の具体化）。`ADR-0049`（外部定額エージェント連携）は copy/paste の**手動レーン**として `agent-task.v1` / `agent-response.v1` 契約とその安全境界（SafeMode本文redaction・未レビュー既定除外・反スコアリング・proposal-only・sanitize-on-import）を実装・検証済み（EXT-AGENT-01/02/03 Done）。本ADRは**同じ契約と安全境界の自動輸送版**であり、新しい安全判断をなるべく増やさない。
 - 再起票基準: `ADR-0047` R-2（外部接続という新たな不可逆境界の導入）に該当するため ADR とする。
@@ -51,7 +51,7 @@
 
 - 順序はリスク昇順: 読み取り公開（既存の SafeMode/投影契約の再利用のみ）→ proposal-only 原則で守られた書き込み → 新規仕様設計を要する訂正輸出。
 - ADR-0049 手動レーンで契約と安全境界が実地検証済みのため、本ADRで新設する安全判断は「公開エンドポイントの認証・認可」に集中できる。
-- kj-atlas は「Agent Inbox（処理すべき受信箱）」ではなく「縁側（処理義務のない受け入れ縁）」であり、critique は notify/question/review に続く第4のHITLパターンとして差別化される（追補A5、用語定義参照）。
+- sui-sensemaking は「Agent Inbox（処理すべき受信箱）」ではなく「縁側（処理義務のない受け入れ縁）」であり、critique は notify/question/review に続く第4のHITLパターンとして差別化される（追補A5、用語定義参照）。
 
 ### 非目標
 

@@ -16,9 +16,9 @@ services:
 
   api:
     environment:
-      KJ_ATLAS_LLM_PROVIDER: local
-      KJ_ATLAS_LOCAL_LLM_BASE_URL: http://llm-stub:8089
-      KJ_ATLAS_LOCAL_LLM_MODEL: llm-stub
+      SUI_LLM_PROVIDER: local
+      SUI_LOCAL_LLM_BASE_URL: http://llm-stub:8089
+      SUI_LOCAL_LLM_MODEL: llm-stub
     depends_on:
       llm-stub:
         condition: service_started

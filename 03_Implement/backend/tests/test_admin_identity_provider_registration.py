@@ -10,14 +10,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import (
     Base,
     TenantRow,
 )
-from kj_atlas_api.persistence_shapes import OIDC_AUDIENCE_MAX_CHARS, OIDC_ISSUER_MAX_CHARS
-from kj_atlas_api.trusted_saas_runtime import TrustedSaasRuntimePolicy
+from sui_sensemaking_api.persistence_shapes import OIDC_AUDIENCE_MAX_CHARS, OIDC_ISSUER_MAX_CHARS
+from sui_sensemaking_api.trusted_saas_runtime import TrustedSaasRuntimePolicy
 from tests.conftest import TIMESTAMP
 
 
@@ -89,7 +89,7 @@ class TestRegisterIdentityProvider:
     ) -> None:
         payload = {
             "issuer": "https://broker.example.com/issuer",
-            "audience": "kj-atlas",
+            "audience": "sui-sensemaking",
             field: value,
         }
         with _admin_test_client(tmp_path) as client:
@@ -102,7 +102,7 @@ class TestRegisterIdentityProvider:
                 "/admin/provision/identity-providers",
                 json={
                     "issuer": "https://broker.example.com/issuer",
-                    "audience": "kj-atlas",
+                    "audience": "sui-sensemaking",
                     "protocol": "oidc",
                     "jwksUri": "https://broker.example.com/jwks.json",
                 },
@@ -110,7 +110,7 @@ class TestRegisterIdentityProvider:
             assert resp.status_code == 201, f"body={resp.json()}"
             data = resp.json()
             assert data["issuer"] == "https://broker.example.com/issuer"
-            assert data["audience"] == "kj-atlas"
+            assert data["audience"] == "sui-sensemaking"
             assert data["protocol"] == "oidc"
             assert data["jwksUri"] == "https://broker.example.com/jwks.json"
             assert data["identityProviderId"].startswith("idp-")

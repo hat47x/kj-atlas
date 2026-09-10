@@ -27,7 +27,7 @@
      - ゲスト個人単位の信頼と、組織（IdP）単位の信頼をどう分離しているか。
      - 招待・承認フロー（誰が招待でき、相手組織側で何を承認するか）。
      - 境界を越えたアクセスの取り消し・失効の仕組み。
-  2. `03_Implement/backend/src/kj_atlas_api/tenant_context.py`の`resolve_verified_claim_tenant_context()`が
+  2. `03_Implement/backend/src/sui_sensemaking_api/tenant_context.py`の`resolve_verified_claim_tenant_context()`が
      現状要求する「テナント単位のIdP全部信頼」という粒度と、調査結果を対比する。
   3. 調査結果を設計正本（`02_Architecture/`のHTML＋Mermaid）として記録し、第5反復の認可プリミティブ設計の
      判断材料を供給する。

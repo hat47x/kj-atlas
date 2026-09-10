@@ -7,7 +7,7 @@
 
 ## Context
 
-`kj-atlas` は enterprise/government 運用を想定しつつ、OSS として軽量性・安全性・再現性を維持する必要がある。
+`sui-sensemaking` は enterprise/government 運用を想定しつつ、OSS として軽量性・安全性・再現性を維持する必要がある。
 既存方針では、アプリ本体は認証機構を内包せず、外部基盤（リバースプロキシ / IdP）へ委譲する。`02_Architecture/enterprise_architecture.html`
 
 一方で、OIDC/SAML 連携の実装～検証を AI エージェント主体で継続するには、次の論点を同時に解く必要がある。
@@ -24,7 +24,7 @@
 本番/準本番は **「完全ヘッダー認証方式（Identity-Aware Proxy モデル）」** を第一選択とする。
 
 - 認証（OIDC/SAML）とセッション管理は前段SP/IAPにオフロードする。
-- `kj-atlas` Backend は、信頼されたプロキシから渡される認証済みヘッダーを受け取って `AuthContext` を構築する。
+- `sui-sensemaking` Backend は、信頼されたプロキシから渡される認証済みヘッダーを受け取って `AuthContext` を構築する。
 - アプリ本体はパスワード・秘密情報・認証セッションを保持しない。
 
 この判断は、`02_Architecture/enterprise_architecture.html` の「認証は外部責務」「アプリは署名済みユーザコンテキストを受け取る」方針を具体化するものである。
@@ -32,7 +32,7 @@
 
 ### 1.1) 認証責務境界（固定）
 
-- 認証・セッション・再認証（step-up）の責務は前段 IAP / SP に委譲し、`kj-atlas` 本体は保持しない。
+- 認証・セッション・再認証（step-up）の責務は前段 IAP / SP に委譲し、`sui-sensemaking` 本体は保持しない。
 - Backend の責務は「信頼境界の検証（trusted proxy）」「入力ヘッダー/JWT の検証」「`AuthContext` 正規化」の3点に限定する。
 - `AuthContext` 正規化後の契約（`userId`/`provider`/`subject`）のみをアプリ内部の認可・帰属判定に使用し、生のヘッダー差異を下流へ漏らさない。
 
@@ -40,7 +40,7 @@
 
 1. 認証外部委譲（IdP/IAP）とアプリ非保持原則を維持する。
 2. `AuthContext` はアプリ内部I/Fの唯一契約とし、provider依存分岐を実装へ持ち込まない。
-3. strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）を本番既定とし、例外緩和は承認付き一時運用に限定する。
+3. strict mode（`SUI_ALLOW_JIT_PROVISIONING=false`）を本番既定とし、例外緩和は承認付き一時運用に限定する。
 4. SafeMode既定ON・PII最小化・監査最小化の上位契約を破らない。
 
 ### 2) 方式比較（意思決定根拠）
@@ -64,16 +64,16 @@
 
 - 認証責務を分離し、アプリ本体の攻撃面を縮小できる。
 - 企業・行政で一般的な統制（IdP連携、証明書運用、監査）と親和性が高い。
-- `kj-atlas` はヘッダー契約に集中でき、後方互換維持が容易。
+- `sui-sensemaking` はヘッダー契約に集中でき、後方互換維持が容易。
 
 課題:
 
 - 配備時にプロキシ設定（trusted proxy, header contract）が必須。
 - ローカル開発では簡易導線（Basic認証等）を別途準備する必要がある。
 
-**結論**: `kj-atlas` の価値軸（軽量・安全・外部統合）を優先し、B を採用する。
+**結論**: `sui-sensemaking` の価値軸（軽量・安全・外部統合）を優先し、B を採用する。
 
-### 3) Backend（kj-atlas 本体）必須契約
+### 3) Backend（sui-sensemaking 本体）必須契約
 
 FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以下を満たす。
 
@@ -100,11 +100,11 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 ### 3.5) ユーザー識別・保持モデル（認証情報なし前提）
 
-認証情報（password/MFA secret）を保持しない場合でも、`kj-atlas` 側の **ユーザーマスタは必須** とする。
+認証情報（password/MFA secret）を保持しない場合でも、`sui-sensemaking` 側の **ユーザーマスタは必須** とする。
 理由は、認可判定・データ所有権・レビュー帰属をアプリ内部で安定参照するためである。
 
 - 原則:
-  - 認証は外部（IdP/IAP）責務、`kj-atlas` は認証結果を受ける。
+  - 認証は外部（IdP/IAP）責務、`sui-sensemaking` は認証結果を受ける。
   - ただしアプリ内部では `internal_user_id`（不変キー）を保持し、データはこの内部IDに紐づける。
 - 推奨データモデル（将来のschema更新方針）:
   - `users`（内部主体）
@@ -121,7 +121,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 - 基本方針:
   - アプリUIとしてのアカウントリンク機能は持たない（複雑性/脆弱性増加を回避）。
-  - 可能な限り前段IdPで統合し、`kj-atlas` には単一安定IDを渡す。
+  - 可能な限り前段IdPで統合し、`sui-sensemaking` には単一安定IDを渡す。
 - 例外対応（必要時のみ）:
   - IdP移行・メール/所属変更等で識別子が変わる場合に備え、
     管理者API/CLIで `user_identities` の付替え・追加を可能にする設計余地を持つ。
@@ -129,7 +129,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 ### 3.7) JIT と事前プロビジョニングの運用モード
 
-`kj-atlas` は OSS普及性と enterprise統制の両立のため、**ハイブリッド運用** を採用する。
+`sui-sensemaking` は OSS普及性と enterprise統制の両立のため、**ハイブリッド運用** を採用する。
 
 - 既定（OSS向け）: `ALLOW_JIT_PROVISIONING=true`
   - 未登録アイデンティティ到達時に動的作成を許可。
@@ -164,14 +164,14 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 ### 6) E2E検証プロファイル（Mock SP/IdP の必要性を含む再整理）
 
-結論として、`kj-atlas` の主契約は「IAP/プロキシ -> AuthContext 正規化」であり、
+結論として、`sui-sensemaking` の主契約は「IAP/プロキシ -> AuthContext 正規化」であり、
 **常に Mock SP/IdP を必須化しない**。検証は次の2層で運用する。
 
 #### Level 1: 既定（必須）— AuthContext 契約E2E
 
 - 対象: `TRUSTED_PROXIES`、header/JWTマッピング、JIT Provisioning、拒否/許可制御。
 - 方式: 軽量プロキシ（またはテストハーネス）から認証済みコンテキストを注入し、
-  `kj-atlas` 側の契約を直接検証する。
+  `sui-sensemaking` 側の契約を直接検証する。
 - 目的: 本プロジェクトの本質価値（アプリ境界の安全性・互換性）を最短経路で回帰保証する。
 
 #### Level 2: 拡張（条件付き）— Federation フローE2E
@@ -187,7 +187,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - 実行例（Docker非依存）:
   - `uvicorn mock_idp:app --port 8081`
   - `uvicorn mock_sp:app --port 8080`
-  - `uvicorn kj_atlas_backend.main:app --port 8000`
+  - `uvicorn sui_sensemaking_backend.main:app --port 8000`
 
 #### Mock SP/IdP を実施すべき条件
 
@@ -240,7 +240,7 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
   - `AuthContext.userId = users.id`
   - `reviewerRef = ownerRef = user:<users.id>`
 - strict mode 契約を固定:
-  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
+  - `SUI_ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
   - 事前プロビジョニング `POST /admin/provision/users`（将来SCIM置換点）
 - 監査最小化契約を固定:
   - `amr/acr/aal/auth_time` の生値永続化を禁止し、監査は正規化指標（`hasStepUp`/`assuranceLevel`/`authAgeBucket`）のみ許可
@@ -252,11 +252,11 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 
 ### 10) IdP がパスキー（FIDO2/WebAuthn）を提供する場合の考慮事項
 
-前段 IdP/SP 側がパスキー認証を採用しても、`kj-atlas` 本体の基本原則（認証情報を保持しない）は維持する。
+前段 IdP/SP 側がパスキー認証を採用しても、`sui-sensemaking` 本体の基本原則（認証情報を保持しない）は維持する。
 
 - 位置づけ:
-  - パスキーは IdP 側の認証手段（Authenticator）であり、`kj-atlas` は直接 WebAuthn 検証を実装しない。
-  - `kj-atlas` が信頼するのは最終的な認証済みコンテキスト（ヘッダー/トークン検証結果）のみ。
+  - パスキーは IdP 側の認証手段（Authenticator）であり、`sui-sensemaking` は直接 WebAuthn 検証を実装しない。
+  - `sui-sensemaking` が信頼するのは最終的な認証済みコンテキスト（ヘッダー/トークン検証結果）のみ。
 - 最低限の受信属性（将来拡張を含む）:
   - 必須: `userId`（`X-Forwarded-User` 相当）
   - 任意: `amr`（認証手段, 例: `pwd`, `webauthn`）, `acr`/`aal`（保証レベル）, `auth_time`（認証時刻）
@@ -293,13 +293,13 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 
 | 次元 | このADRでの主張 | 他次元への制約 |
 |------|----------------|---------------|
-| **業務設計** | 企業・行政で要求される監査/統制と整合しつつ、kj-atlasは認証実装責務を最小化しOSSとしての安全運用性を高める。認証プロトコルはアプリに実装せず前段IAP/IdPへ委譲する | 機能: 本番IdP製品選定（Keycloak/Authentik/Cloud IAP等）は固定せず、アプリ内パスワード認証機能を追加しない。データ: 全RBAC実装を完了条件にせずI/F整備を優先 |
+| **業務設計** | 企業・行政で要求される監査/統制と整合しつつ、sui-sensemakingは認証実装責務を最小化しOSSとしての安全運用性を高める。認証プロトコルはアプリに実装せず前段IAP/IdPへ委譲する | 機能: 本番IdP製品選定（Keycloak/Authentik/Cloud IAP等）は固定せず、アプリ内パスワード認証機能を追加しない。データ: 全RBAC実装を完了条件にせずI/F整備を優先 |
 | **データ設計** | ユーザーデータ境界はAUTH-ARCH-01/AUTH-SCHEMA-01の決裁結果と同期し、変更時はfollow-up issueから再度ADRへ昇格する。Mock SP/IdPはIdP連携境界変更時の拡張ゲートとして運用 | 業務: 入力方式の差異（header/JWT、IAPヘッダー名差異）は設定テンプレートで吸収し実装分岐の増殖を抑制。機能: Level 2は主要IdPのデータ連携様式をfixture化して設定互換の回帰保証を担う |
 | **機能設計** | プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるためLevel 1 E2Eを常時維持する。Mock SP/IdPを「常時必須」にせず拡張ゲートとして運用 | 業務: 本番IdP選定は組織の既存投資を尊重し設定で対応。データ: header/JWTの入力形式差は設定テンプレートで吸収し認証境界を維持 |
 
 ## Consequences
 
-- `kj-atlas` は認証実装責務を最小化し、OSSとしての安全運用性を高める。
+- `sui-sensemaking` は認証実装責務を最小化し、OSSとしての安全運用性を高める。
 - 企業・行政で要求される監査/統制との整合が取りやすくなる。
 - 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、Level 1 E2Eを常時維持する必要がある。
 - Mock SP/IdP は「常時必須」ではなく、IdP連携境界変更時の拡張ゲートとして運用する。

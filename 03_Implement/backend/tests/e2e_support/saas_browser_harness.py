@@ -10,8 +10,8 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 
-from kj_atlas_api.db import SessionLocal
-from kj_atlas_api.models import (
+from sui_sensemaking_api.db import SessionLocal
+from sui_sensemaking_api.models import (
     IdentityProviderRow,
     TenantIdentityProviderRow,
     TenantMembershipRow,
@@ -22,7 +22,7 @@ from kj_atlas_api.models import (
 
 TIMESTAMP = datetime.now(timezone.utc).isoformat()
 
-policy_app = FastAPI(title="kj-atlas SaaS E2E policy stub")
+policy_app = FastAPI(title="sui-sensemaking SaaS E2E policy stub")
 
 
 @policy_app.get("/healthz")
@@ -48,7 +48,7 @@ def capabilities() -> dict[str, object]:
     }
 
 
-gateway_app = FastAPI(title="kj-atlas SaaS E2E deterministic gateway")
+gateway_app = FastAPI(title="sui-sensemaking SaaS E2E deterministic gateway")
 
 _HOP_BY_HOP = {
     "connection",
@@ -69,10 +69,10 @@ def _worker_for(path: str) -> tuple[str, str]:
     # only in worker-local memory.
     if path in {"session/login", "session/callback"}:
         return "worker-1", os.environ.get(
-            "KJ_ATLAS_E2E_WORKER_1", "http://127.0.0.1:8001"
+            "SUI_E2E_WORKER_1", "http://127.0.0.1:8001"
         )
     return "worker-2", os.environ.get(
-        "KJ_ATLAS_E2E_WORKER_2", "http://127.0.0.1:8002"
+        "SUI_E2E_WORKER_2", "http://127.0.0.1:8002"
     )
 
 
@@ -121,13 +121,13 @@ async def gateway(path: str, request: Request) -> Response:
         response.raw_headers.append((name.encode("latin-1"), value.encode("latin-1")))
     for cookie in upstream.headers.get_list("set-cookie"):
         response.raw_headers.append((b"set-cookie", cookie.encode("latin-1")))
-    response.headers["X-KJ-Atlas-E2E-Upstream"] = worker_name
+    response.headers["X-SUI Sensemaking-E2E-Upstream"] = worker_name
     return response
 
 
 def seed_database() -> None:
     issuer = os.environ.get(
-        "KJ_ATLAS_MOCK_IDP_BASE", "http://localhost:9100"
+        "SUI_MOCK_IDP_BASE", "http://localhost:9100"
     ).rstrip("/")
     with SessionLocal() as db:
         if db.get(UserRow, "user-1") is not None:
@@ -159,7 +159,7 @@ def seed_database() -> None:
                 IdentityProviderRow(
                     id="idp-1",
                     issuer=f"{issuer}/mock-client",
-                    audience="kj-atlas",
+                    audience="sui-sensemaking",
                     protocol="oidc",
                     jwks_uri=f"{issuer}/jwks.json",
                     lifecycle_state="active",

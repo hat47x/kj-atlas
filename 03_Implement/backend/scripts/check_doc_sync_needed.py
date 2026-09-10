@@ -8,7 +8,7 @@ mandatory documentation counterparts. When a change is detected in one
 of these areas, the script emits a reminder to update the corresponding doc.
 
 Mappings (code → mandatory doc update):
-  settings.py (new KJ_ATLAS_*) → runtime_parameter_registry.md
+  settings.py (new SUI_*) → runtime_parameter_registry.md
   models_ai.py (new class) → api.md (if new endpoint) + schemas.md
   routes/*.py (new endpoint) → api.md
   domain/types.ts (new type/field) → schemas.md
@@ -31,18 +31,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 # Mapping: changed file pattern → doc files that should be reviewed
 DOC_SYNC_MAP: dict[str, list[str]] = {
-    "03_Implement/backend/src/kj_atlas_api/settings.py": [
+    "03_Implement/backend/src/sui_sensemaking_api/settings.py": [
         "02_Architecture/runtime_parameter_registry.md",
     ],
-    "03_Implement/backend/src/kj_atlas_api/models_ai.py": [
+    "03_Implement/backend/src/sui_sensemaking_api/models_ai.py": [
         "02_Architecture/api.md",
         "02_Architecture/schemas.md",
     ],
-    "03_Implement/backend/src/kj_atlas_api/models.py": [
+    "03_Implement/backend/src/sui_sensemaking_api/models.py": [
         "02_Architecture/schemas.md",
         "02_Architecture/data_model_operations_overview.html",
     ],
-    "03_Implement/backend/src/kj_atlas_api/routes/": [
+    "03_Implement/backend/src/sui_sensemaking_api/routes/": [
         "02_Architecture/api.md",
     ],
     "03_Implement/frontend/src/domain/types.ts": [

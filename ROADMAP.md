@@ -1,7 +1,7 @@
 # ROADMAP
 
 **English summary**  
-kj-atlas is a safe, human-in-the-loop environment for structured qualitative synthesis. The core product foundation is already implemented; the current priority is to validate, with controlled comparison and third-party use, where that foundation creates a real cognitive and practical advantage. Future capabilities remain candidates until actual-use evidence justifies promoting them.
+sui-sensemaking is a safe, human-in-the-loop environment for structured qualitative synthesis. The core product foundation is already implemented; the current priority is to validate, with controlled comparison and third-party use, where that foundation creates a real cognitive and practical advantage. Future capabilities remain candidates until actual-use evidence justifies promoting them.
 
 この文書は、**開発コミュニティ向けの公開コミュニケーション文書**です。
 
@@ -9,7 +9,7 @@ kj-atlas is a safe, human-in-the-loop environment for structured qualitative syn
 
 ## 基本方針
 
-kj-atlas は、まとまりきらない定性資料や観察を、早すぎる分類・要約・合意で潰さず、出典・異論・保留・人間の判断権を残したまま構造化し、後から根拠へ戻れる共有可能な理解へ育てることを、現在の中心的な利用仕事として検証しています。
+sui-sensemaking は、まとまりきらない定性資料や観察を、早すぎる分類・要約・合意で潰さず、出典・異論・保留・人間の判断権を残したまま構造化し、後から根拠へ戻れる共有可能な理解へ育てることを、現在の中心的な利用仕事として検証しています。
 
 そのため、次を中核原則として維持します。
 
@@ -49,7 +49,7 @@ kj-atlas は、まとまりきらない定性資料や観察を、早すぎる�
 
 #### 2. 認知比較評価
 
-`COGNITIVE-EVAL-01` では、Case 001〜003について、通常のAIチャット、KJ支援skill、KJ Atlas、KJ Atlas + skill を比較する条件を準備しています。
+`COGNITIVE-EVAL-01` では、Case 001〜003について、通常のAIチャット、KJ支援skill、SUI Sensemaking、SUI Sensemaking + skill を比較する条件を準備しています。
 
 比較設計、凍結入力、起動用成果物、実行記録、blind review の手順は準備済みです。一方で、**有効な生の実行記録はまだ取得していません**。準備済みであることを、認知上の優位性が実証済みであることとはみなしません。
 
@@ -63,7 +63,7 @@ kj-atlas は、まとまりきらない定性資料や観察を、早すぎる�
 
 当面は次の順で前進します。
 
-1. Case 001から、隔離された新規コンテキストと実際のKJ Atlas操作による比較記録を得る。
+1. Case 001から、隔離された新規コンテキストと実際のSUI Sensemaking操作による比較記録を得る。
 2. Case 002、003へ同じ比較条件を広げ、特定ケースだけの偶然かを確認する。
 3. 第三者の実仕事に近い材料で、一次利用仕事と切替理由を検証する。
 4. dogfoodや第三者利用で再現した摩擦を既存Issueへ戻し、必要な場合だけ新しいIssueを起票する。
@@ -90,7 +90,7 @@ kj-atlas は、まとまりきらない定性資料や観察を、早すぎる�
 - SafeMode と人間の承認境界を利用形態にかかわらず維持する。
 - Providerやモデルを変えても、失敗や根拠の見え方が失われないようにする。
 
-現行のローカルLLM `/generate` 契約は kj-atlas 独自形状です。OpenAI/Ollama互換ワイヤ形式は、実使用で接続失敗が顕在化した場合に改めて判断します。
+現行のローカルLLM `/generate` 契約は sui-sensemaking 独自形状です。OpenAI/Ollama互換ワイヤ形式は、実使用で接続失敗が顕在化した場合に改めて判断します。
 
 ### C. 定額 / オフラインAIとの協働
 
@@ -127,7 +127,7 @@ visibility、read-only表示、Static Publish、DocumentACLなどは、実利用
 - 差分レビューを中心とした慎重な複数人協働
 - 署名付きレビュー記録や監査ログハッシュなど、研究・組織利用向け監査強化
 
-これらも固定した到達義務ではありません。kj-atlasの中心的な利用仕事を強める場合に限って取り込みます。
+これらも固定した到達義務ではありません。sui-sensemakingの中心的な利用仕事を強める場合に限って取り込みます。
 
 ## 非目標（Out of Scope）
 

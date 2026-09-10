@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `02_Architecture/llm_input_ir_spec.md`, `02_Architecture/api.md`, `03_Implement/backend/tests/test_ts_python_contract_drift.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`, `03_Implement/backend/src/sui_sensemaking_api/models_context.py`, `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, `02_Architecture/llm_input_ir_spec.md`, `02_Architecture/api.md`, `03_Implement/backend/tests/test_ts_python_contract_drift.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/llm_input_ir_spec.md`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `02_Architecture/canvas-projection-asymmetry-2026-08-09.html`
 - Expected verification level: `integration`
 
@@ -159,11 +159,11 @@ Stage 5では、残る経路を一括してIR化せず、`AI-IR-STAGE5-SCOPE-01`
 
 | 成果物 | パス | 役割 |
 |---|---|---|
-| IRビルダー | `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py` | `llm_input_ir_spec.md` §2〜§7 の決定論的実装。FastAPI・SQLAlchemy・時計・LLM のいずれにも依存しない純関数群 |
+| IRビルダー | `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py` | `llm_input_ir_spec.md` §2〜§7 の決定論的実装。FastAPI・SQLAlchemy・時計・LLM のいずれにも依存しない純関数群 |
 | 仕様改訂 | `02_Architecture/llm_input_ir_spec.md` | `ir_version` 1.0 → 1.1（D1・D3・`evidence_links`・`meta` 是正・§3/§5 の曖昧語解消） |
-| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `detect_contradiction` が IR 経由になり、プロンプトを IR から描画する |
-| リクエスト/レスポンス契約 | `03_Implement/backend/src/kj_atlas_api/models_ai.py` | `DetectContradictionRequest.doc`（任意）、`DetectContradictionResponse.alreadyRecorded` / `.existingContradictionState`（追加） |
-| LLM境界 | `03_Implement/backend/src/kj_atlas_api/llm/provider.py` | `LLMRequest.inputs`（任意）。transport は従来どおり `prompt` のみを送る |
+| ルート配線 | `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` | `detect_contradiction` が IR 経由になり、プロンプトを IR から描画する |
+| リクエスト/レスポンス契約 | `03_Implement/backend/src/sui_sensemaking_api/models_ai.py` | `DetectContradictionRequest.doc`（任意）、`DetectContradictionResponse.alreadyRecorded` / `.existingContradictionState`（追加） |
+| LLM境界 | `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py` | `LLMRequest.inputs`（任意）。transport は従来どおり `prompt` のみを送る |
 | 回帰データ | `03_Implement/backend/tests/fixtures/llm_input_ir_document.json`, `03_Implement/backend/tests/fixtures/llm_input_ir_expected.json` | 仕様 §6 の `document.json` → `llm_ir.json` ＋ SHA-256。Stage 1 当時の名は `..._v1_1.json` で、Stage 2 で版数を落として改名した（下の Stage 2 の表と仕様 §6.1 を参照） |
 | 再生成スクリプト | `03_Implement/backend/scripts/generate_llm_input_ir_fixture.py` | `--check` でドリフト検出。LLM も外部 provider も呼ばない |
 | ユニットテスト | `03_Implement/backend/tests/test_llm_input_ir.py` | AC-4 / AC-5 / AC-6 / AC-8 |
@@ -205,7 +205,7 @@ Stage 5では、残る経路を一括してIR化せず、`AI-IR-STAGE5-SCOPE-01`
 
 frontend は**変更していない**（`/ai/detect-contradiction` の呼び出し元が存在しないため）。したがって `npm run typecheck` / `vitest` は本変更の検証対象外。
 
-環境注記: このリポジトリの backend テストは `03_Implement/backend/.venv` の Python で実行する必要がある（システムの `python3` には `alembic` が入っておらず、`kj_atlas_api.main` の import で 110 件の collection error になる）。
+環境注記: このリポジトリの backend テストは `03_Implement/backend/.venv` の Python で実行する必要がある（システムの `python3` には `alembic` が入っておらず、`sui_sensemaking_api.main` の import で 110 件の collection error になる）。
 
 ### Stage 2〜5 に残っていること
 
@@ -234,10 +234,10 @@ AC-2 を `suggest-card-groups` に限定して実装した。Stage 1 の配線�
 
 | 成果物 | パス | 変更内容 |
 |---|---|---|
-| IRビルダー（加算） | `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py` | `HOLD_STATES` 定数、`SourceCard.hold_state`、`_card_to_ir()`、消費側ヘルパ `held_card_ids()`、`validate_llm_input_ir()` の hold_state 検査。`IR_VERSION` 1.1 → 1.2 |
+| IRビルダー（加算） | `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py` | `HOLD_STATES` 定数、`SourceCard.hold_state`、`_card_to_ir()`、消費側ヘルパ `held_card_ids()`、`validate_llm_input_ir()` の hold_state 検査。`IR_VERSION` 1.1 → 1.2 |
 | 仕様改訂 | `02_Architecture/llm_input_ir_spec.md` | §2.1 規則8（`hold_state`）、§4.1 / §4.2 スキーマ、§6.1 の fixture 名、§7.4 に 1.2 の行と版数根拠 |
-| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `_suggest_card_groups_ir()`（新規）、`_card_group_candidates()`（新規）、`_build_suggest_card_groups_prompt()` をIR描画へ、`_parse_suggest_card_groups_response()` に候補集合フィルタ、`suggest_card_groups()` 本体 |
-| リクエスト/レスポンス契約 | `03_Implement/backend/src/kj_atlas_api/models_ai.py` | `SuggestCardGroupsRequest.doc`（任意）、`SuggestCardGroupsResponse.excludedCardIds` / `.truncated`（追加） |
+| ルート配線 | `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` | `_suggest_card_groups_ir()`（新規）、`_card_group_candidates()`（新規）、`_build_suggest_card_groups_prompt()` をIR描画へ、`_parse_suggest_card_groups_response()` に候補集合フィルタ、`suggest_card_groups()` 本体 |
+| リクエスト/レスポンス契約 | `03_Implement/backend/src/sui_sensemaking_api/models_ai.py` | `SuggestCardGroupsRequest.doc`（任意）、`SuggestCardGroupsResponse.excludedCardIds` / `.truncated`（追加） |
 | API契約 | `02_Architecture/api.md` | `/ai/suggest-card-groups` の項のみ。あわせて `cards` の上限記述の陳腐化（「最大100件」→ 実装は 2〜1000件、`DOGFOOD-31` で引き上げ済み）を是正 |
 | 回帰データ | `tests/fixtures/llm_input_ir_document.json`, `tests/fixtures/llm_input_ir_expected.json` | 版数入りの旧名から改名（§6.1 に理由を明記）。`c-isolated` に `holdState: "held"` を追加して新フィールドを回帰データで覆う |
 | ユニットテスト | `tests/test_llm_input_ir.py` | `hold_state` の投影・省略・未知値・派生構造への非影響を追加（37 → 46件） |
@@ -253,7 +253,7 @@ AC-2 を `suggest-card-groups` に限定して実装した。Stage 1 の配線�
 
 1. **3値すべてを除外対象にした。** `held`（判断を保留）/ `pending`（未着手）/ `shelved`（Shelfへ退避）はいずれも `schemas.md` §14.1 で「人間が意図的に扱いを決めていない」状態であり、新しい島の構成員として提案することはその判断の上書きになる。AC-2 の「保留中」を「`holdState` が付いている＝非 active」と読んだ。3値のいずれかだけを対象にする読み方を採らなかった理由は、`pending` を候補に残すと「未着手だから束ねてよい」という解釈をコードが採ることになり、その判断は人間の側にあるためである。狭める必要が生じた場合は `held_card_ids()` の1箇所で変えられる。
 2. **抑止は二重にコードで行う。** (a) 候補集合から除外してプロンプトに載せない、(b) LLM応答の `cardIds` を候補集合へフィルタする。(b) が必要なのは、プロンプトの遵守が不変条件にならないため（Stage 1 の「再提示しない」を決定論で実現したのと同じ理由）。(b) は同時にID捏造の防御にもなる。フィルタで空になったグループは返さない。
-3. **候補が2枚未満なら LLM を呼ばない。** 1枚だけの「束」は KJ の束ではない（`ai_kj_execution_procedures.md` §2）。`groups: []` と `excludedCardIds` を決定論で返す。
+3. **候補が2枚未満なら LLM を呼ばない。** 1枚だけの「束」は KJ の束ではない（`ai_sensemaking_execution_procedures.md` §2）。`groups: []` と `excludedCardIds` を決定論で返す。
 4. **`doc` は任意フィールドにした。** フラットなカード配列だけの既存契約を壊さないため（AC-11）。`doc` 無しでも IR 経路を通る。ただし `doc` が無ければ hold 状態は入力に存在しないため、AC-2 の抑止が働くのは `doc` を渡した場合のみである（カード配列側に `holdState` を追加する案は採らなかった。`_CardRef` は `detect-contradiction` と共有しており、そちらの契約まで動かすことになるため）。
 5. **候補カード行の書式を維持した。** `  - id="...", text="..."` は `03_Implement/deploy/tools/mock_local_llm.py` のプロンプト解析（`_CARD_LINE_ID_TEXT`）との事実上の契約であり、business-flow E2E の27箇所がこれに依存する。IR から描画する形に変えても書式は同一に保ち、テストで固定した。並び順のみ IR の `id` 昇順になる（決定論のため）。
 6. **切り詰めを可視化した（`truncated`）。** リクエストは最大1000枚を受け付ける（`DOGFOOD-31`）のに対し、IR は `MAX_CARDS=200` / `MAX_TEXT_CHARS=12000`（仕様 §5.1）で切り詰める。IR 経路化により、**200枚超の束ね依頼では一部のカードがモデルへ届かなくなる**。上限値の妥当性は AC-10（延期中）の主題だが、黙って落とすことは避け、レスポンスに `truncated` を追加した。切り詰めで落ちたカードは `excludedCardIds`（人間が保留したもの）とは区別している。
@@ -311,7 +311,7 @@ AC-3 を `generate-narrative` に限定して実装した。Stage 1〜2 の配�
 
 | 成果物 | パス | 変更内容 |
 |---|---|---|
-| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `_generate_narrative_ir()` / `_reading_order_slots()` / `_narrative_relation_lines()` / `_narrative_spine_lines()`（いずれも新規）、`_build_generate_narrative_prompt()` に `ir` 引数を追加してIR描画へ、`generate_narrative()` 本体で `LLMRequest.inputs` にIRを載せる |
+| ルート配線 | `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` | `_generate_narrative_ir()` / `_reading_order_slots()` / `_narrative_relation_lines()` / `_narrative_spine_lines()`（いずれも新規）、`_build_generate_narrative_prompt()` に `ir` 引数を追加してIR描画へ、`generate_narrative()` 本体で `LLMRequest.inputs` にIRを載せる |
 | API契約 | `02_Architecture/api.md` | `/ai/generate-narrative` の項のみ。形は不変のため、追記したのは IR経由化・二層SafeMode・IR由来の422コード（`empty_cards` の挙動変更を含む）・座標非投影・切り詰めの扱い |
 | 統合テスト | `03_Implement/backend/tests/test_ai_generate_narrative_ir.py`（新規） | AC-3、読み順への写像、SafeMode二層の同時成立、後方互換、切り詰めの可視化（17件） |
 
@@ -365,7 +365,7 @@ frontend は**変更していない**（`git status --short -- 03_Implement/fron
 
 ### 事後検証で見つかった不備と是正（2026-08-30）
 
-Stage 3 の変更に独立レビューを掛けた。**`03_Implement/backend/src/kj_atlas_api/routes/ai.py` の実装・テストへの指摘はゼロ**（差分は4ファイルのみで範囲逸脱なし、中断した試行に由来する関数重複もなし、`api.md` の追記は `/ai/generate-narrative` の項に閉じている、他エンドポイントの evidence-link 描画は無変更 — いずれも再検証して確認）。是正はすべて記録側の文言である。
+Stage 3 の変更に独立レビューを掛けた。**`03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` の実装・テストへの指摘はゼロ**（差分は4ファイルのみで範囲逸脱なし、中断した試行に由来する関数重複もなし、`api.md` の追記は `/ai/generate-narrative` の項に閉じている、他エンドポイントの evidence-link 描画は無変更 — いずれも再検証して確認）。是正はすべて記録側の文言である。
 
 | 指摘 | 判定 | 対応 |
 |---|---|---|
@@ -389,8 +389,8 @@ Stage 3 の変更に独立レビューを掛けた。**`03_Implement/backend/src
 
 | 成果物 | パス | 変更内容 |
 |---|---|---|
-| IRビルダー（加算） | `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py` | 消費側ヘルパ `derived_island_relations()`（新規）。**IRのスキーマは変更していない**（`ir_version` 1.2 のまま） |
-| ルート配線 | `03_Implement/backend/src/kj_atlas_api/routes/ai.py` | `_suggest_layout_ir()` / `_layout_placement_lines()` / `_layout_relation_lines()` / `_layout_island_relation_lines()`（いずれも新規）、`_build_prompt()` に `ir` 引数を追加、`suggest_layout()` 本体で `LLMRequest.inputs` にIRを載せる |
+| IRビルダー（加算） | `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py` | 消費側ヘルパ `derived_island_relations()`（新規）。**IRのスキーマは変更していない**（`ir_version` 1.2 のまま） |
+| ルート配線 | `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` | `_suggest_layout_ir()` / `_layout_placement_lines()` / `_layout_relation_lines()` / `_layout_island_relation_lines()`（いずれも新規）、`_build_prompt()` に `ir` 引数を追加、`suggest_layout()` 本体で `LLMRequest.inputs` にIRを載せる |
 | API契約 | `02_Architecture/api.md` | `/ai/suggest-layout` の項のみ |
 | 共有 fixture（AC-7） | `03_Implement/backend/tests/fixtures/derived_island_edges_document.json`, `03_Implement/backend/tests/fixtures/derived_island_edges_expected.json` | TS と Python の双方が読む入力と期待出力 |
 | 同値性テスト（AC-7・Python側） | `03_Implement/backend/tests/test_derived_island_relations_ts_equivalence.py`（新規） | 4件 |

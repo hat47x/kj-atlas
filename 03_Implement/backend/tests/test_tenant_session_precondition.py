@@ -10,21 +10,21 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from starlette.routing import Route as StarletteRoute
 
-from kj_atlas_api.active_tenant_session import require_current_tenant_session_version
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app as main_app
-from kj_atlas_api.control_plane_auth import require_control_plane_authorization
-from kj_atlas_api.routes.docs import (
+from sui_sensemaking_api.active_tenant_session import require_current_tenant_session_version
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app as main_app
+from sui_sensemaking_api.control_plane_auth import require_control_plane_authorization
+from sui_sensemaking_api.routes.docs import (
     _authorize_request,
     _resolve_request_identity_and_tenant,
     _resolve_request_tenant,
     _transition_lifecycle,
 )
-from kj_atlas_api.routes.document_access_admin import _authorize_document_policy_management
-from kj_atlas_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
-from kj_atlas_api.routes.guest_session import GuestRedeemRequest, redeem_guest_session
-from kj_atlas_api.saas_request_context import resolve_trusted_saas_request_session
-from kj_atlas_api.tenant_session_precondition import (
+from sui_sensemaking_api.routes.document_access_admin import _authorize_document_policy_management
+from sui_sensemaking_api.routes.inquiry_bundles import _trusted_session as _inquiry_bundle_trusted_session
+from sui_sensemaking_api.routes.guest_session import GuestRedeemRequest, redeem_guest_session
+from sui_sensemaking_api.saas_request_context import resolve_trusted_saas_request_session
+from sui_sensemaking_api.tenant_session_precondition import (
     require_tenant_scoped_api_precondition,
     require_tenant_session_request_precondition,
 )
@@ -56,7 +56,7 @@ def test_saas_runtime_accepts_exact_current_version() -> None:
     with _client(runtime_profile="saas-multitenant") as client:
         response = client.get(
             "/guarded",
-            headers={"KJ-Atlas-Tenant-Session-Version": "trusted-session-v2"},
+            headers={"SUI Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
         )
 
     assert response.status_code == 200
@@ -65,12 +65,12 @@ def test_saas_runtime_accepts_exact_current_version() -> None:
 def test_saas_runtime_rejects_missing_stale_malformed_and_duplicate_versions() -> None:
     requests: tuple[dict[str, object], ...] = (
         {},
-        {"headers": {"KJ-Atlas-Tenant-Session-Version": "stale-session-v1"}},
-        {"headers": {"KJ-Atlas-Tenant-Session-Version": "contains spaces"}},
+        {"headers": {"SUI Sensemaking-Tenant-Session-Version": "stale-session-v1"}},
+        {"headers": {"SUI Sensemaking-Tenant-Session-Version": "contains spaces"}},
         {
             "headers": [
-                ("KJ-Atlas-Tenant-Session-Version", "trusted-session-v2"),
-                ("KJ-Atlas-Tenant-Session-Version", "trusted-session-v2"),
+                ("SUI Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
+                ("SUI Sensemaking-Tenant-Session-Version", "trusted-session-v2"),
             ]
         },
     )
@@ -93,7 +93,7 @@ def test_unknown_runtime_fails_closed_without_inspecting_header() -> None:
     with _client(runtime_profile="unknown") as client:
         response = client.get(
             "/guarded",
-            headers={"KJ-Atlas-Tenant-Session-Version": "trusted-session-v2"},
+            headers={"SUI Sensemaking-Tenant-Session-Version": "trusted-session-v2"},
         )
 
     assert response.status_code == 503
@@ -110,7 +110,7 @@ def test_tenant_scoped_dependency_rejects_stale_version_before_endpoint(
     endpoint_called = False
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_session_precondition.resolve_trusted_saas_request_session",
+        "sui_sensemaking_api.tenant_session_precondition.resolve_trusted_saas_request_session",
         lambda **_: SimpleNamespace(
             session=SimpleNamespace(tenant_session_version="trusted-session-v2")
         ),
@@ -128,7 +128,7 @@ def test_tenant_scoped_dependency_rejects_stale_version_before_endpoint(
     with TestClient(app) as client:
         response = client.post(
             "/guarded",
-            headers={"KJ-Atlas-Tenant-Session-Version": "stale-session-v1"},
+            headers={"SUI Sensemaking-Tenant-Session-Version": "stale-session-v1"},
         )
 
     assert response.status_code == 409

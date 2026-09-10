@@ -13,10 +13,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(frontendDir, "..", "..");
-const host = process.env.KJ_ATLAS_SCREENSHOT_HOST ?? "127.0.0.1";
-const port = Number(process.env.KJ_ATLAS_SCREENSHOT_PORT ?? "4173");
+const host = process.env.SUI_SCREENSHOT_HOST ?? "127.0.0.1";
+const port = Number(process.env.SUI_SCREENSHOT_PORT ?? "4173");
 const baseUrl = `http://${host}:${port}/?locale=ja`;
-const outputDir = process.env.KJ_ATLAS_SCREENSHOT_OUTPUT_DIR ?? path.resolve(repoRoot, ".tmp-teal-sky");
+const outputDir = process.env.SUI_SCREENSHOT_OUTPUT_DIR ?? path.resolve(repoRoot, ".tmp-teal-sky");
 
 const ts = "2026-07-12T00:00:00.000Z";
 

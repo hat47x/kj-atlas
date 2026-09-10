@@ -9,7 +9,7 @@
 
 ## Context
 
-`00_Prompt/ai_cognitive_externalization_requirements.md` が追加され、kj-atlas を「生成AIの認知外在化フレームワーク」として再定義する要件が提示された。
+`00_Prompt/ai_cognitive_externalization_requirements.md` が追加され、sui-sensemaking を「生成AIの認知外在化フレームワーク」として再定義する要件が提示された。
 一方、既存の文書体系では以下が未固定である。
 
 1. 新規要件の参照優先順位（Read Order）
@@ -258,11 +258,11 @@
 3. patch/diff監査可能
 4. 再現コマンド明記
 
-### D9. AIエージェントが kj-atlas を認知キャンバスとして識別・活用する具体方式（ACCI）
+### D9. AIエージェントが sui-sensemaking を認知キャンバスとして識別・活用する具体方式（ACCI）
 
 #### D9-1. ACCI（Agent Cognitive Canvas Identification）実行手順
 
-AIエージェントは自由文入力をそのまま処理せず、次の順で kj-atlas を扱う。
+AIエージェントは自由文入力をそのまま処理せず、次の順で sui-sensemaking を扱う。
 
 1. **Canvas Signature 認識**
    - `document/view/patch` の3系統入力だけを受理。
@@ -362,7 +362,7 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 
 | 次元 | このADRでの主張 | 他次元への制約 |
 |------|----------------|---------------|
-| **業務設計** | kj-atlasを「生成AIの認知外在化フレームワーク」として再定義する要件が追加された。未固定状態のまま実装するとPrompt要件がArchitecture/Implementへ未接続のまま分岐実装され、AI機能がチャット主導へ逸脱しcanvas主従関係が崩れるリスクがある | 機能: 認知外在化要件を「上位要件→設計→実装→運用」へ段階接続する5フェーズを固定。データ: safeMode既定ON・未レビュー保護が機能単位で後退しないようにする |
+| **業務設計** | sui-sensemakingを「生成AIの認知外在化フレームワーク」として再定義する要件が追加された。未固定状態のまま実装するとPrompt要件がArchitecture/Implementへ未接続のまま分岐実装され、AI機能がチャット主導へ逸脱しcanvas主従関係が崩れるリスクがある | 機能: 認知外在化要件を「上位要件→設計→実装→運用」へ段階接続する5フェーズを固定。データ: safeMode既定ON・未レビュー保護が機能単位で後退しないようにする |
 | **データ設計** | 新規要件の参照優先順位（Read Order）と00〜04レイヤへの分解責務（どの文書/層で何を決めるか）を固定。CE-1以降で参照する最小I/F境界を凍結 | 業務: 監査・差分・レビュー重視の既存方針と整合したAI拡張を進める。機能: CE-1以降の実装詳細（API payload・UI配置・CLI UX・RBAC実装）は非対象 |
 | **機能設計** | 5フェーズ（CE-0基盤→CE-1 context→CE-2提案→CE-3構造化変更→CE-4監査統合）を実装順序として固定し低リスク導入（CE-1/2）を優先する。Contract IDとGo/NoGo Gateを固定 | 業務: AI機能がチャット主導へ逸脱しないようcanvas主従関係を維持。データ: モデル選定/価格戦略の最終確定は非対象（modelTierは分離記録のみ凍結） |
 

@@ -3,7 +3,7 @@
 - Status: Proposed
 - Date: 2026-09-07
 - Deciders: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm/`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, database schema, `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/operations.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm/`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/settings.py`, database schema, `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/operations.md`
 
 ## Context
 
@@ -43,20 +43,20 @@
 - budget対象は外部送信を伴うprovider kindとする。現行では `large-scale` と `deepseek`、およびregistry経由でこれらへcanonicalizeされるproviderを対象とする。
 - `none`、`local`、`fixture` は外部budgetを消費しない。
 - budgetはtenant別ではなく、**1 deployment environment全体**で共有する。tenantごとに分けるとtenant数の増加で環境全体上限を迂回できるためである。
-- environment識別子は公開設定 `KJ_ATLAS_LLM_BUDGET_SCOPE` とし、空白を含まないbounded canonical identifierに正規化する。
+- environment識別子は公開設定 `SUI_LLM_BUDGET_SCOPE` とし、空白を含まないbounded canonical identifierに正規化する。
 - 月次periodはUTC暦月、各月1日 `00:00:00Z` から次月1日直前までとする。workerのローカルtimezoneには依存しない。
 
 ### D2. hard limit設定
 
 公開設定として以下を追加する。
 
-- `KJ_ATLAS_LLM_EXTERNAL_MONTHLY_CALL_LIMIT`: 月次外部callのhard上限。正整数。
-- `KJ_ATLAS_LLM_EXTERNAL_MONTHLY_TOKEN_RESERVATION_LIMIT`: 月次のconservative token-reservation units上限。正整数。
-- `KJ_ATLAS_LLM_BUDGET_SCOPE`: deployment environment識別子。
+- `SUI_LLM_EXTERNAL_MONTHLY_CALL_LIMIT`: 月次外部callのhard上限。正整数。
+- `SUI_LLM_EXTERNAL_MONTHLY_TOKEN_RESERVATION_LIMIT`: 月次のconservative token-reservation units上限。正整数。
+- `SUI_LLM_BUDGET_SCOPE`: deployment environment識別子。
 
 `large-scale` / `deepseek` がprimaryまたは登録model経由で到達可能な構成では3設定を完全セットとして要求する。部分設定はstartup validationで拒否する。
 
-`KJ_ATLAS_LLM_PROVIDER=none` 既定は変更しない。budget設定によって外部providerが自動的に有効化されることもない。
+`SUI_LLM_PROVIDER=none` 既定は変更しない。budget設定によって外部providerが自動的に有効化されることもない。
 
 SafeMode、proposal-only、human review、不正なmodel/providerを拒否する既存gateはbudgetより前に維持し、budget機構を外部送信の新しい許可根拠にはしない。
 
@@ -125,7 +125,7 @@ provider-reported usageは応答後にしか得られず、現行backendはprovi
 2. local providerが利用不能なら`none`相当のfail-closed結果へ閉じる。
 3. final-judgement routeで外部proposalとの明示linkがある場合、既存system-hold規則へ接続し、proposalを自動accept/rejectしない。
 
-budget deny/store outageから別の外部providerへfallbackしてはならない。`KJ_ATLAS_LLM_FALLBACK_TO_NONE=false` でも、budget機構をfail-openして外部送信することは許さない。
+budget deny/store outageから別の外部providerへfallbackしてはならない。`SUI_LLM_FALLBACK_TO_NONE=false` でも、budget機構をfail-openして外部送信することは許さない。
 
 ### D7. 観測と非目標
 
@@ -176,6 +176,6 @@ budget deny/store outageから別の外部providerへfallbackしてはならな�
 - Related: `01_Plans/adr/ADR-0009-local-llm-integration.md`
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（R-3）
 - Related: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
-- Related: `03_Implement/backend/src/kj_atlas_api/generation_repository.py`（共有DB row lock/CASの既存実装例）
+- Related: `03_Implement/backend/src/sui_sensemaking_api/generation_repository.py`（共有DB row lock/CASの既存実装例）
 
 ---

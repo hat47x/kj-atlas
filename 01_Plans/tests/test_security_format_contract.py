@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -63,8 +63,8 @@ class SecurityFormatContractTests(unittest.TestCase):
     def test_saas_session_hash_key_lowercase_hex_contract_matches_public_docs(self) -> None:
         self.assertEqual(_hex_key_pattern(), r"^[0-9a-f]{64}$")
 
-        registry_row = _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY")
-        configuration_row = _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY")
+        registry_row = _public_row(REGISTRY_PATH, "SUI_SAAS_AUTH_SESSION_HASH_KEY")
+        configuration_row = _public_row(CONFIG_PATH, "SUI_SAAS_AUTH_SESSION_HASH_KEY")
 
         for row in (registry_row, configuration_row):
             self.assertIn("64", row)
@@ -79,8 +79,8 @@ class SecurityFormatContractTests(unittest.TestCase):
         )
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
+            _public_row(REGISTRY_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
+            _public_row(CONFIG_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI"),
         ):
             self.assertIn("`/session/callback`", row)
 
@@ -89,15 +89,15 @@ class SecurityFormatContractTests(unittest.TestCase):
         endpoints = (
             (
                 "self.saas_oauth_broker_http_authorize_endpoint",
-                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT",
+                "SUI_SAAS_OAUTH_BROKER_HTTP_AUTHORIZE_ENDPOINT",
             ),
             (
                 "self.saas_oauth_broker_http_token_endpoint",
-                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
+                "SUI_SAAS_OAUTH_BROKER_HTTP_TOKEN_ENDPOINT",
             ),
             (
                 "self.saas_oauth_broker_http_redirect_uri",
-                "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
+                "SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI",
             ),
         )
 
@@ -122,11 +122,11 @@ class SecurityFormatContractTests(unittest.TestCase):
         endpoints = (
             (
                 "self.audit_http_endpoint",
-                "KJ_ATLAS_AUDIT_HTTP_ENDPOINT",
+                "SUI_AUDIT_HTTP_ENDPOINT",
             ),
             (
                 "self.access_control_external_http_endpoint",
-                "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+                "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
             ),
         )
 
@@ -147,13 +147,13 @@ class SecurityFormatContractTests(unittest.TestCase):
             validator,
         )
         self.assertIn(
-            'value_key="KJ_ATLAS_DEEPSEEK_MODEL"',
+            'value_key="SUI_DEEPSEEK_MODEL"',
             validator,
         )
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_MODEL"),
+            _public_row(REGISTRY_PATH, "SUI_DEEPSEEK_MODEL"),
+            _public_row(CONFIG_PATH, "SUI_DEEPSEEK_MODEL"),
         ):
             self.assertIn("256", row)
             self.assertIn("canonical", row)
@@ -177,14 +177,14 @@ class SecurityFormatContractTests(unittest.TestCase):
                 alias = ast.literal_eval(alias_node)
             except Exception:
                 continue
-            if alias == "KJ_ATLAS_JWT_ALGORITHMS":
+            if alias == "SUI_JWT_ALGORITHMS":
                 jwt_default = ast.literal_eval(default_node)
                 break
         self.assertEqual(jwt_default, "RS256,ES256")
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_JWT_ALGORITHMS"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_JWT_ALGORITHMS"),
+            _public_row(REGISTRY_PATH, "SUI_JWT_ALGORITHMS"),
+            _public_row(CONFIG_PATH, "SUI_JWT_ALGORITHMS"),
         ):
             self.assertIn("RS256,ES256", row)
             self.assertIn("HMAC", row)

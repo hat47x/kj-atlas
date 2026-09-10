@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from kj_atlas_api.control_plane_auth import TENANT_PROVISION_CAPABILITY
-from kj_atlas_api.routes.session import _session_response
-from kj_atlas_api.session_context import (
+from sui_sensemaking_api.control_plane_auth import TENANT_PROVISION_CAPABILITY
+from sui_sensemaking_api.routes.session import _session_response
+from sui_sensemaking_api.session_context import (
     KNOWN_EFFECTIVE_CAPABILITIES,
     PLATFORM_CONTROL_PLANE_EFFECTIVE_CAPABILITIES,
     TENANT_ADMIN_EFFECTIVE_CAPABILITIES,
@@ -12,7 +12,7 @@ from kj_atlas_api.session_context import (
     WORKSPACE_SESSION_VISIBLE_CAPABILITIES,
     TenantSessionContext,
 )
-from kj_atlas_api.tenant_context import TenantContext, TenantSummary
+from sui_sensemaking_api.tenant_context import TenantContext, TenantSummary
 
 
 def _trusted_session_with_all_capabilities() -> TenantSessionContext:

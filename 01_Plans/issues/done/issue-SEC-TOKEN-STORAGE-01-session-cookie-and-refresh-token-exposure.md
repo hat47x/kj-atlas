@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Unassigned
-- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/frontend/src/session/token_store.ts`, `03_Implement/frontend/src/session/oauth_callback.ts`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `THREAT_MODEL.md`, `04_Documentation/security.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/active_tenant_session.py`, `03_Implement/frontend/src/session/token_store.ts`, `03_Implement/frontend/src/session/oauth_callback.ts`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `THREAT_MODEL.md`, `04_Documentation/security.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 

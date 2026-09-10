@@ -3,11 +3,11 @@
 - Status: Accepted
 - Date: 2026-08-18
 - Deciders: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `routes/ai.py`, `02_Architecture/api.md`（suggest-island-summary 契約）, `03_Implement/deploy/tools/mock_local_llm.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`, `routes/ai.py`, `02_Architecture/api.md`（suggest-island-summary 契約）, `03_Implement/deploy/tools/mock_local_llm.py`
 
 ## Context
 
-W型探求（2026-08-17〜18、R1問題提起〜R6手順計画、カード444枚）の結論として、kj-atlas の次段階の価値は「**凝縮（核融合法）**」にあると判明した。
+W型探求（2026-08-17〜18、R1問題提起〜R6手順計画、カード444枚）の結論として、sui-sensemaking の次段階の価値は「**凝縮（核融合法）**」にあると判明した。
 
 - **現状**: `POST /ai/suggest-island-summary` は単一の `summaryText` を返す。`groundingIds`（接地・代表カード≤10）と `summaryText`（凝縮・志）が「唯一の答え」として一体に返るため、接地と凝縮が概念として混在している。
 - **なぜ今必要か**: 川喜田の核融合法・04ステップでは、表札づくりは複数カードの「志」（こころ+指す、全体として能動的に訴えかけるもの）を汲み上げて1枚の表札へ凝縮する。この「志」は集約的・生成的なものであり、**単発の自動採否ではなく、複数候補・代替候補・チャット壁打ちで対話的に収束するのが最適**である（ユーザー要望・R4構想/R5具体策で合意）。
@@ -58,7 +58,7 @@ W型探求（2026-08-17〜18、R1問題提起〜R6手順計画、カード444枚
 - Related: `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`（flash/pro 分業）
 - Related: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`（proposal-only・unreviewed 境界）
 - Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`（DOMAIN-EXPR-03 再提案 → 壁打ちへの発展）
-- Related: `00_Prompt/kj_technique.md` §3（表札検査）, `00_Prompt/ai_kj_execution_procedures.md` §3（代弁文）
+- Related: `00_Prompt/sensemaking_technique.md` §3（表札検査）, `00_Prompt/ai_sensemaking_execution_procedures.md` §3（代弁文）
 - Related: `01_Plans/issues/issue-DOGFOOD-33-*.md`（本ADRの実装issue）
 - Derived-from: W型探求（2026-08-17〜18）R4構想・R5具体策・R6手順計画の結論
 ---

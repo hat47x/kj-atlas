@@ -18,15 +18,15 @@
 
 from __future__ import annotations
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     MAX_CARDS,
     MAX_RELATIONS,
     MAX_TEXT_CHARS,
     source_from_document,
 )
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import DetectContradictionRequest
-from kj_atlas_api.routes import ai
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import DetectContradictionRequest
+from sui_sensemaking_api.routes import ai
 from scripts.measure_llm_input_ir_token_budget import (
     _PRE_IR_HEADER_ADDITIONS,
     _card_id,

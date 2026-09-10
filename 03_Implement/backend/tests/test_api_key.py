@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.settings import settings
 
 
 def test_allows_requests_when_api_key_is_unset() -> None:

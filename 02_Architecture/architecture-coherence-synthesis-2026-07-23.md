@@ -1,7 +1,7 @@
-# kj-atlas — Whole-System Architecture Coherence & Backlog Synthesis
+# sui-sensemaking — Whole-System Architecture Coherence & Backlog Synthesis
 
-Analysis date: 2026-07-23. Repo root: `C:/GIT/kj-atlas` (in sync with origin/main).
-Scope read: 62 ADRs (`01_Plans/adr/ADR-0000..0061`), 252 issue memos (198 Done, **51 open** = 47 Draft + 2 Open + 2 In Progress), backend (`03_Implement/backend/src/kj_atlas_api/`), frontend (`03_Implement/frontend/src/`), doc linters (`01_Plans/docs_check.py`).
+Analysis date: 2026-07-23. Repo root: `C:/GIT/sui-sensemaking` (in sync with origin/main).
+Scope read: 62 ADRs (`01_Plans/adr/ADR-0000..0061`), 252 issue memos (198 Done, **51 open** = 47 Draft + 2 Open + 2 In Progress), backend (`03_Implement/backend/src/sui_sensemaking_api/`), frontend (`03_Implement/frontend/src/`), doc linters (`01_Plans/docs_check.py`).
 
 Method note: every claim below is grounded in a file read this session. Where I inferred a relationship from an issue's own `Related ADR/Spec` cross-reference rather than re-deriving it from code, I say so. Where I did not trace every code path, I hedge explicitly.
 
@@ -20,7 +20,7 @@ ADR-0041 fixes 7 non-regression invariants (CVI-1..7) and mandates a **single cr
 | CVI-3 `human_reviewed` promotion human-only | Honored, actively enforced | `domain/hil_rs_apply.ts:10-29,57` — `hasReviewProtectedField()` rejects any rediff op that carries `reviewState`/`reviewed`/`reviewerRef`, so AI/worker cannot inject review state. |
 | CVI-4 Consensus direct-write prohibited | Honored | CE0 contract tests indexed (`core_value_guard.test.ts:65-73`). |
 | CVI-5 dryRun no side effects | Honored | Immutability asserted in `hil_rs_apply.test.ts` (indexed `:75-83`); `applyHilRsRediffPayload` clones the doc (`hil_rs_apply.ts:84`). |
-| CVI-6 `KJ_ATLAS_LLM_PROVIDER=none` default | Honored | `settings.py:218-220` `default="none"`; `NoneProvider` exists (`llm/provider.py:166-168`). |
+| CVI-6 `SUI_LLM_PROVIDER=none` default | Honored | `settings.py:218-220` `default="none"`; `NoneProvider` exists (`llm/provider.py:166-168`). |
 | CVI-7 Hold/Critique non-destructive | Honored | `hold_state_ops.test.ts`, critique-preserved assertion in `hil_rs_apply.test.ts` (indexed `:94-107`). |
 
 **Structural weakness in the "single fort."** `core_value_guard.test.ts` verifies CVI coverage by reading test-file *source strings* (`readSource(...).toContain("blocks text exposure ...")`, lines 22-26 etc.), not by exercising behavior. That is why CVI-1 shows green while `document.json` leaks in production: the guard confirms the policy *unit test* mentions the right words, but never asserts that a real export bundle contains no secret. ADR-0041's promise — "a single red catches any regression of core value" (ADR-0041:50) — is not actually met for egress surfaces. This is the single most important conformance finding.
@@ -32,7 +32,7 @@ Both ADRs are **Accepted with an explicit Implementation gate** (ADR-0059:105-11
 Honored / implemented:
 - D5/D8 tenant guard: `access_control.py:449-469` `apply_tenant_boundary_guard` denies `tenant_context_missing`/`resource_tenant_missing`/`tenant_mismatch` before any PDP call; wired at `access_control.py:490-495`.
 - Resource-path enforcement: `routes/docs.py:272-278` calls `resolve_access_decision(..., require_tenant_scope=True)`.
-- Session-precondition (ADR-0061 D2 `tenantSessionVersion`): `tenant_session_precondition.py:33-72` validates the `KJ-Atlas-Tenant-Session-Version` header and rejects stale/missing versions; applied on 7 AI routes (`routes/ai.py:506..671`), `routes/ai_relations.py:121`, `routes/context.py:25`.
+- Session-precondition (ADR-0061 D2 `tenantSessionVersion`): `tenant_session_precondition.py:33-72` validates the `SUI Sensemaking-Tenant-Session-Version` header and rejects stale/missing versions; applied on 7 AI routes (`routes/ai.py:506..671`), `routes/ai_relations.py:121`, `routes/context.py:25`.
 - Fail-closed SaaS startup (D8/D10): `trusted_saas_runtime.py:64-81,92-120` requires PostgreSQL + disabled JIT + `external_http` access control + `deny` fail-safe + external policy binding + external capability; single-tenant profile cannot enable SaaS adapters (`:180-183`). Preflight is wired into lifespan (`main.py:72-77`).
 
 Gaps against the gate (drift = "gate not finished", not "violated"):

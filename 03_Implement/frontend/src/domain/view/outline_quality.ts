@@ -162,7 +162,7 @@ export function analyzeOutlineQuality(
       detail: `${disconnectedIslands}/${islandCount} islands have no island-to-island connections (threshold: >20%).`,
       entityRefs: pickIslandRefs(islands, (island) => (degreeByIslandId.get(island.id) ?? 0) === 0),
       // DOMAIN-SCORING-SURFACE-01 (案A): island independence is a value in
-      // the method (kj_technique.md §4), so disconnectedness is a neutral
+      // the method (sensemaking_technique.md §4), so disconnectedness is a neutral
       // observation, not a defect to resolve. No resolution-oriented action.
       suggestedAction: "If the independence is intentional, make it explicit with a relation summary or edge label.",
     });
@@ -181,7 +181,7 @@ export function analyzeOutlineQuality(
   if (readingState.readingMode === "islands+cards" && islandCount > 0 && doc.cards.length > 0) {
     if (loneCards.length > 0) {
       // DOMAIN-SCORING-SURFACE-01 (案A): a lone card is a neutral fact, not a
-      // defect — kj_technique.md:109 "孤立した1枚が最も重要なことがある". So
+      // defect — sensemaking_technique.md:109 "孤立した1枚が最も重要なことがある". So
       // this is reported as a neutral observation without a resolution action.
       findings.push({
         severity: "info",
@@ -191,14 +191,14 @@ export function analyzeOutlineQuality(
         entityRefs: loneCards.slice(0, 10).map((card) => ({ kind: "card" as const, id: card.id })),
       });
     } else {
-      // kj_technique.md:195 — "どの束にも入らないカードがゼロ枚（無理に入れた
+      // sensemaking_technique.md:195 — "どの束にも入らないカードがゼロ枚（無理に入れた
       // 疑い）". Zero ungrouped cards is itself a failure signal: cards may have
       // been forced into islands. Surface it instead of treating it as ideal.
       findings.push({
         severity: "warn",
         code: "Q009",
         title: "No cards outside islands (possible forced grouping)",
-        detail: `Every card is assigned to an island. kj_technique.md lists zero ungrouped cards as a failure signal — cards may have been forced into islands they do not belong to.`,
+        detail: `Every card is assigned to an island. sensemaking_technique.md lists zero ungrouped cards as a failure signal — cards may have been forced into islands they do not belong to.`,
       });
     }
   }

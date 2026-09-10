@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 一回限りのworkflowが目的を達成したあともcurrent mainへ残り、後からstale current referenceを作る状態をどう防ぐか。
-- Canvas: `doc_kj_atlas_dogfood_r26.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r26.json`
 - Observation baseline: `main@66f6e3bcbf654cdb601341eb95c751bca193c7bb`
 - Trigger: R25 verification run `34023506343` のrepository-wide planning suiteで得た陽性failure。
 - Result class: 実運用で観測したretirement漏れ。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
@@ -80,4 +80,4 @@ R23では、stale-state診断について「作った / 再利用された / 実
 
 R26は内部運用の陽性証拠であり、formal cognitive dogfoodのArm結果ではない。Case 001 Arm Cの生実行、第三者価値実証、AI-IR named-provider evidenceへ加算しない。
 
-R26の修正後にplanning baselineがgreenになっても、それを理由にさらに新しいR27準備を作らない。新しい具体的な欠陥がなければ、本来のformal mainlineはfresh context + frozen KJ Atlas UIでのCase 001 Arm C実走へ戻る。
+R26の修正後にplanning baselineがgreenになっても、それを理由にさらに新しいR27準備を作らない。新しい具体的な欠陥がなければ、本来のformal mainlineはfresh context + frozen SUI Sensemaking UIでのCase 001 Arm C実走へ戻る。

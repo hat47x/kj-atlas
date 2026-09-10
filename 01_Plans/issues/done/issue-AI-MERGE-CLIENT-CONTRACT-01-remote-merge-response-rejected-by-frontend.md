@@ -6,7 +6,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/domain/merge_candidates.ts`, `03_Implement/frontend/src/api/client.test.ts`, `02_Architecture/api.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/models.py`
+- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `02_Architecture/api.md`, `03_Implement/backend/src/sui_sensemaking_api/models.py`
 - Expected verification level: integration
 
 ## 課題

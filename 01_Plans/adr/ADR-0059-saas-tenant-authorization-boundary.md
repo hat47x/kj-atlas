@@ -7,7 +7,7 @@
 
 ## Context
 
-現行kj-atlasは、外部認証と外部PDPへ接続できる単一デプロイ／単一組織向け構成である。`documents.id`はDB全体の主キーで、永続行、`AuthContext`、`AccessRequest`、ブラウザ保存にtenant境界がない。access-controlは構成により`noop`へ退避でき、PDP不達時の`read_only`はreadを許可する。これらは単一組織内の可用性選択肢にはなりうるが、相互に信頼しない複数顧客を同じサービスへ収容する境界にはならない。
+現行sui-sensemakingは、外部認証と外部PDPへ接続できる単一デプロイ／単一組織向け構成である。`documents.id`はDB全体の主キーで、永続行、`AuthContext`、`AccessRequest`、ブラウザ保存にtenant境界がない。access-controlは構成により`noop`へ退避でき、PDP不達時の`read_only`はreadを許可する。これらは単一組織内の可用性選択肢にはなりうるが、相互に信頼しない複数顧客を同じサービスへ収容する境界にはならない。
 
 SaaS対応を画面上のtenant選択や外部PDPのpolicy追加だけで行うと、IDOR、一覧・検索・キャッシュからの存在漏えい、workerやobject storageでのscope欠落、管理者権限の過大化が起きうる。tenantはroleの一種ではなく、データの所在と認可の評価範囲を決める構造境界として扱う必要がある。
 
@@ -48,7 +48,7 @@ TenantMembership(tenantId, userId, lifecycleState, ...)
 - `User`はグローバルなopaque principalとし、tenant所属は`TenantMembership`で表す。1人が複数tenantへ所属できる。
 - identityの一意性は曖昧な`provider`文字列ではなく、検証済みの`identityProviderId + subject`で固定する。`IdentityProvider`は少なくともissuerとaudienceを含むtrust configurationを識別する。
 - tenantが利用できるIdPは`TenantIdentityProvider`で明示し、issuerが同じという理由だけで別tenantへのmembershipを与えない。
-- roles/groupsはIdP/PDPからのtransient入力を維持し、kj-atlas内にrole editorを作らない。アプリ側はmembershipの有効性とtenant一致を構造境界として保持する。
+- roles/groupsはIdP/PDPからのtransient入力を維持し、sui-sensemaking内にrole editorを作らない。アプリ側はmembershipの有効性とtenant一致を構造境界として保持する。
 - API keyだけをSaaS利用者の主体・tenant証明に使わない。service/agent credentialは後述のtenant-bound registrationへ限定する。
 
 ### D7: tenant従属データをDB制約と物理境界で分離する
@@ -144,7 +144,7 @@ SaaS runtime profileは、実判定可能なaccess-control adapterと`deny` fail
 
 - 本ADRだけでSaaS提供や実装完了を宣言しない。
 - 課金、契約プラン、地域配置、tenant削除、保持期限、SCIMを定義しない。
-- roles/groupsをkj-atlasの編集可能マスタにしない。
+- roles/groupsをsui-sensemakingの編集可能マスタにしない。
 - support impersonationまたはbreak-glassを導入しない。
 - Documentスナップショットの公開payloadをtenant単位テーブルへ正規化しない。
 

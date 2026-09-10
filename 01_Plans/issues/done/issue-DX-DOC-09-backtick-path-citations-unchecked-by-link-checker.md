@@ -100,7 +100,7 @@ ADR番号は正しいが、スラグ（タイトル部分）が引用時点の�
 - [x] AC-2: パターン(a)〜(c)が修正され、修正後は当該パターンの再発をCIが検知する。→ 446件を修正（内訳は下記「実施結果」）。
 - [x] AC-3: パターン(d)の`.ts`/`.tsx`引用が修正される。→ 本着手時点で残存ゼロ。`.ts`引用のうち同名`.tsx`が実在するものは1件も検出されず、issue記載の`App.ts`・`SidePanel.ts`は既に修正済みだった（再走査で確認）。
 - [x] AC-4: `phase*.md`系の引用について、意図的な歴史的引用か単純な失効かを判定した記録が残る（削除は伴わなくてよい）。→ **歴史的引用と判定**。下記「`phase*.md`系の判定」を参照。削除していない。
-- [x] AC-5: `issue-DX-DOC-08`のScope欄が現行の`.html`パスへ更新される。→ 本着手時点で既に更新済み（Scope欄は `02_Architecture/api.md` と `03_Implement/backend/src/kj_atlas_api/routes/` のみを引用し、`.md`のまま残った4文書は含まれていなかった）。再確認のみで変更なし。
+- [x] AC-5: `issue-DX-DOC-08`のScope欄が現行の`.html`パスへ更新される。→ 本着手時点で既に更新済み（Scope欄は `02_Architecture/api.md` と `03_Implement/backend/src/sui_sensemaking_api/routes/` のみを引用し、`.md`のまま残った4文書は含まれていなかった）。再確認のみで変更なし。
 - [x] AC-6: 新検査導入後、`docs_check.py`がバッククォート引用のリンク切れをゼロ件で通過する。→ `docs-check passed`（`RETIRED_CITATION_TARGETS`の25件を除く）。
 - [x] AC-7: `ADR-0078`のIC-11行の記述を実態へ整合させる。→ 「未（自動検査なし）」は本issueの完了により事実に反するため、`DC-LNK-002`で充足（自動）へ更新した。
 

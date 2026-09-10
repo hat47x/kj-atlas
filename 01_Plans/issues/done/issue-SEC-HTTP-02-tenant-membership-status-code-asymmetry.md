@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/tenant_context.py`, `03_Implement/backend/src/kj_atlas_api/session_context.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/tenant_context.py`, `03_Implement/backend/src/sui_sensemaking_api/session_context.py`
 - Related ADR/Spec: `02_Architecture/api.md:406,720`, `ADR-0059-saas-tenant-authorization-boundary.md`
 - Expected verification level: `unit`
 

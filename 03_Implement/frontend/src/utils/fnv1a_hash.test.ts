@@ -4,11 +4,11 @@ import { fnv1aHash } from "./fnv1a_hash";
 
 describe("fnv1aHash", () => {
   it("is deterministic for the same input", () => {
-    expect(fnv1aHash("kj-atlas")).toBe(fnv1aHash("kj-atlas"));
+    expect(fnv1aHash("sui-sensemaking")).toBe(fnv1aHash("sui-sensemaking"));
   });
 
   it("produces an 8-character lowercase hex digest", () => {
-    expect(fnv1aHash("kj-atlas")).toMatch(/^[0-9a-f]{8}$/);
+    expect(fnv1aHash("sui-sensemaking")).toMatch(/^[0-9a-f]{8}$/);
   });
 
   it("differs for different inputs", () => {

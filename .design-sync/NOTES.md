@@ -1,7 +1,7 @@
-design-sync configuration for kj-atlas
+design-sync configuration for sui-sensemaking
 
 This directory holds this repository's own configuration and overrides for
-an external tool called design-sync, which converts kj-atlas's frontend
+an external tool called design-sync, which converts sui-sensemaking's frontend
 component set into a bundle uploadable to Claude Design. The tool itself
 (its build/validate scripts, its own node_modules) is not part of this
 repository -- it is installed separately, wherever it is run from, and is

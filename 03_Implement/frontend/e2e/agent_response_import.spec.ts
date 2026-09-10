@@ -58,7 +58,7 @@ function buildResponseJson(): string {
         content: {},
         rationale: "cleanup from a stale baseline",
         patch: {
-          kind: "kj-atlas-patch",
+          kind: "sui-sensemaking-patch",
           version: 1,
           baseDocSignature: "doc_agent_response_e2e_fixture:2020-01-01T00:00:00.000Z",
           ops: [{ id: "op1", kind: "delete_card", cardId: "c2" }],
@@ -197,7 +197,7 @@ test("all 5 proposal kinds can be individually imported as unreviewed, undo-able
         content: {},
         rationale: "r5",
         patch: {
-          kind: "kj-atlas-patch",
+          kind: "sui-sensemaking-patch",
           version: 1,
           baseDocSignature: "doc_agent_response_e2e_fixture:2026-07-09T00:00:00.000Z",
           ops: [{ id: "op1", kind: "upsert_card", card: { id: "c3", text: "patched-in card", x: 400, y: 0 } }],

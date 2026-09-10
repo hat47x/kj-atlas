@@ -8,7 +8,7 @@
 - Scope: `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `DOMAIN-CARD-QUALITY-01`
 - Related ADR/Spec: `00_Prompt/qualitative_card_quality_requirements.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md` P-08, `01_Plans/adr/ADR-0043-complexity-budget-for-cognitive-load.md`, `01_Plans/adr/ADR-0044-ui-ux-quality-baseline-and-verification.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/schemas.md`
-- Norms: `DOM-AI-08, DOM-AIOK-01, DOM-AIOK-02, KJT-SIGN-11`（AC-7の前後比較・原文復帰は、AIの言い換えが原文を上書きする失敗様態への対処）
+- Norms: `DOM-AI-08, DOM-AIOK-01, DOM-AIOK-02, SUI-SIGN-11`（AC-7の前後比較・原文復帰は、AIの言い換えが原文を上書きする失敗様態への対処）
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -70,7 +70,7 @@
 
 - LLMProviderまたは交換可能な支援ロジックは、分割案、確認質問、差分を提案できる。
 - 提案は既存のAIレーン、SafeMode、Context Query、proposal-only、人手昇格境界に従う。
-- `KJ_ATLAS_LLM_PROVIDER=none` ではPhase Bがそのまま利用でき、機能欠落として扱わない。
+- `SUI_LLM_PROVIDER=none` ではPhase Bがそのまま利用でき、機能欠落として扱わない。
 
 ### 非目標
 
@@ -91,7 +91,7 @@
 - [x] AC-7: 分割または言い換えの前後を比較し、元本文へ戻れる。
 - [x] AC-8: マウスとキーボードで支援の開始、採用、見送り、保留、本文へのフォーカス復帰を完了できる。
 - [x] AC-9: 日本語と英語で同じ意味と選択肢を提供し、390px幅で本文や主要操作を覆わない。
-- [x] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`KJ_ATLAS_LLM_PROVIDER=none` の回帰テストが通る。
+- [x] AC-10: SafeMode既定ON、proposal-only、`human_reviewed`人手昇格、`SUI_LLM_PROVIDER=none` の回帰テストが通る。
 - [x] AC-11: E2E証跡が6種の代表fixtureを含み、誤検知時にも保存と見送りが可能である。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -124,7 +124,7 @@
 - `src/domain/card_quality.test.ts` に5 testsを追加した。
   - 全6代表fixture × 3種の決定シーケンス（全apply／全keep_as_is／混在）で、凍結したCardオブジェクトが状態遷移の前後で完全に一致することを検証し、AC-5（採用前不変）を6 fixture全てで固定した（T4は1 fixtureのみで検証していた）。
   - `minority_or_contradiction` fixtureについて、4問すべてを最も積極的な"apply"で応答してもcritiqueTags・本文が変化しないことを個別に検証し、AC-6（少数・矛盾の非降格）を固定した。
-  - `core_value_guard.test.ts`のsource-string contract慣用句（`readFileSync`）を踏襲し、`card_quality.ts`のソース自体に対する境界テストを3件追加: (a) 型のみimport（`import type { Card }`）以外の実行時importが存在しないこと、(b) Provider/fetch/localStorage/worker等の外部I/Oキーワードが一切含まれないこと（`KJ_ATLAS_LLM_PROVIDER=none`は自明に成立）、(c) `.meta`/`.critique`/`.claimType`など、SafeModeが管理する自由記述フィールドへの参照が一切ないこと。
+  - `core_value_guard.test.ts`のsource-string contract慣用句（`readFileSync`）を踏襲し、`card_quality.ts`のソース自体に対する境界テストを3件追加: (a) 型のみimport（`import type { Card }`）以外の実行時importが存在しないこと、(b) Provider/fetch/localStorage/worker等の外部I/Oキーワードが一切含まれないこと（`SUI_LLM_PROVIDER=none`は自明に成立）、(c) `.meta`/`.critique`/`.claimType`など、SafeModeが管理する自由記述フィールドへの参照が一切ないこと。
 - 検証結果: 追加5 testsを含め対象13 tests、frontend全体1060/1060 pass（既存の無関係な1ファイル失敗はT4/T5と同じ、リポジトリルート非同梱の副作用）。AC-5・AC-6をチェック済みへ更新した。AC-10（SafeMode/proposal-only/human_reviewed/provider-noneの回帰）はアプリ全体の既存回帰テストが通り続けていることで裏付けられるが、実ブラウザでの確認を伴わないためチェックは見送り、T7のE2E証跡に委ねる。
 
 ### T7 状況（2026-07-15、未完了）
@@ -139,7 +139,7 @@
 - キーボード経路は4問への応答だけで終えず、完了後の「本文を編集する」からCanvas上の本文入力へフォーカスが移ることと、Escapeで編集を取り消せることまで確認した。
 - 6種fixtureでは「このまま保存」を選んだ後もカード本文と支援画面が維持され、少数意見・矛盾・出典不明を含めて自動変更や自動除外が起きないことを確認した。
 - アプリ内ブラウザの日本語画面でも、支援が右側パネル内に収まり、Canvasを覆わず、問い、理由、3つの判断、閉じる操作が同時に確認できるスクリーンショットを取得した。
-- `KJ_ATLAS_LLM_PROVIDER=none` 相当の応答を固定したE2Eと、既存のSafeMode・proposal-only・人手昇格回帰を含むfrontend全体テストの成功によりAC-10を完了とした。
+- `SUI_LLM_PROVIDER=none` 相当の応答を固定したE2Eと、既存のSafeMode・proposal-only・人手昇格回帰を含むfrontend全体テストの成功によりAC-10を完了とした。
 
 ### AC-3 実装記録（2026-07-17、未確認）
 

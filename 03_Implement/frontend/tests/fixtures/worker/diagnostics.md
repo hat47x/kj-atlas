@@ -17,7 +17,7 @@
   - detail: [REDACTED] (len:67)
   - refs: island:i1
 - [WARN] Q009: No cards outside islands (possible forced grouping)
-  - detail: [REDACTED] (len:164)
+  - detail: [REDACTED] (len:173)
 
 ## Recommendations (I11)
 

@@ -16,15 +16,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import (
     Base,
     LLMModelRegistryRow,
     LLMProviderRegistryRow,
     TenantRow,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 _ADMIN_KEY = "control-plane-model-key"
 _BUSINESS_KEY = "business-plane-key"
@@ -68,7 +68,7 @@ def test_register_list_disable_model_flow(tmp_path, monkeypatch) -> None:
         # Register a provider.
         resp = client.post(
             "/admin/provision/models/providers",
-            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek", "baseUrl": "https://api.deepseek.com", "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY"},
+            json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek", "baseUrl": "https://api.deepseek.com", "apiKeyRef": "SUI_DEEPSEEK_API_KEY"},
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 201, resp.text
@@ -105,10 +105,10 @@ def test_provider_api_key_ref_never_exposed_to_api_or_audit(tmp_path, monkeypatc
     monkeypatch.setattr(settings, "admin_api_key", _ADMIN_KEY)
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
 
-    from kj_atlas_api.models import AdminAuditEventRow
+    from sui_sensemaking_api.models import AdminAuditEventRow
 
     with _client(tmp_path) as (client, session_local):
-        api_key_ref = "KJ_ATLAS_DEEPSEEK_API_KEY"
+        api_key_ref = "SUI_DEEPSEEK_API_KEY"
         resp = client.post(
             "/admin/provision/models/providers",
             json={"id": "deepseek", "providerKind": "deepseek", "displayName": "DeepSeek",
@@ -148,7 +148,7 @@ def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkey
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 422, resp.text
-        # Arbitrary env-var name (not KJ_ATLAS_*) -> 422.
+        # Arbitrary env-var name (not SUI_*) -> 422.
         resp = client.post(
             "/admin/provision/models/providers",
             json={**base, "apiKeyRef": "MY_RANDOM_API_KEY"},
@@ -159,14 +159,14 @@ def test_provider_api_key_ref_rejects_plaintext_at_registration(tmp_path, monkey
         # never let a model provider retrieve the control-plane credential.
         resp = client.post(
             "/admin/provision/models/providers",
-            json={**base, "apiKeyRef": "KJ_ATLAS_ADMIN_API_KEY"},
+            json={**base, "apiKeyRef": "SUI_ADMIN_API_KEY"},
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 422, resp.text
-        # Valid allowlisted KJ_ATLAS_* ref -> 201.
+        # Valid allowlisted SUI_* ref -> 201.
         resp = client.post(
             "/admin/provision/models/providers",
-            json={**base, "id": "p2", "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY"},
+            json={**base, "id": "p2", "apiKeyRef": "SUI_DEEPSEEK_API_KEY"},
             headers={"X-Admin-Api-Key": _ADMIN_KEY},
         )
         assert resp.status_code == 201, resp.text
@@ -431,7 +431,7 @@ def test_env_seeding_registers_provider_and_model(tmp_path, monkeypatch) -> None
     """U4: the env-configured provider/model is seeded into the registry."""
     monkeypatch.setattr(settings, "llm_provider", "deepseek")
     monkeypatch.setattr(settings, "deepseek_model", "deepseek-v4-flash")
-    from kj_atlas_api.model_registry_seed import seed_registry_from_env
+    from sui_sensemaking_api.model_registry_seed import seed_registry_from_env
 
     engine = create_engine(f"sqlite:///{tmp_path / 'seed.sqlite3'}")
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -447,7 +447,7 @@ def test_env_seeding_registers_provider_and_model(tmp_path, monkeypatch) -> None
 def test_allowlist_repository_semantics(tmp_path, monkeypatch) -> None:
     """R3: the allowlist repository stores/clears tenant model ids."""
     monkeypatch.setattr(settings, "llm_provider", "none")
-    from kj_atlas_api.model_registry_repository import (
+    from sui_sensemaking_api.model_registry_repository import (
         list_tenant_allowed_model_ids,
         register_model,
         register_provider,
@@ -819,7 +819,7 @@ def test_registered_local_and_deepseek_models_dispatch_to_their_own_transports(
     monkeypatch.setattr(settings, "api_key", _BUSINESS_KEY)
     monkeypatch.setattr(settings, "llm_provider", "none")
     monkeypatch.setattr(settings, "llm_fallback_to_none", False)
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "integration-secret")
+    monkeypatch.setenv("SUI_DEEPSEEK_API_KEY", "integration-secret")
 
     destinations: list[tuple[str, str, str | None]] = []
 
@@ -859,7 +859,7 @@ def test_registered_local_and_deepseek_models_dispatch_to_their_own_transports(
             )
         raise AssertionError(f"unexpected destination: {req.full_url}")
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_http)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_http)
 
     with _client(tmp_path) as (client, _session_local):
         admin_headers = {"X-Admin-Api-Key": _ADMIN_KEY}
@@ -875,7 +875,7 @@ def test_registered_local_and_deepseek_models_dispatch_to_their_own_transports(
                 "providerKind": "deepseek",
                 "displayName": "DeepSeek A",
                 "baseUrl": "https://api.deepseek.example",
-                "apiKeyRef": "KJ_ATLAS_DEEPSEEK_API_KEY",
+                "apiKeyRef": "SUI_DEEPSEEK_API_KEY",
             },
         ):
             response = client.post(

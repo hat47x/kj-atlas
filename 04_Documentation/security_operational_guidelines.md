@@ -1,6 +1,6 @@
 # セキュリティ運用ガイドライン（例）
 
-対象読者: kj-atlas の安全設定を確認する管理者、運用担当者、セキュリティ担当者。
+対象読者: sui-sensemaking の安全設定を確認する管理者、運用担当者、セキュリティ担当者。
 
 目的: SafeMode、AI 接続、監査ログ連携、共有や export の設定を変える前に、最低限確認したい観点を整理します。
 
@@ -34,14 +34,14 @@
 ## Runtime profile とセキュリティ判断
 
 設定変更の前に、どの profile で運用するかを確定します。
-profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
+profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
 
-- `local-dev`: 外部共有を避ける初期検証向け（`KJ_ATLAS_LLM_PROVIDER=none`）。
+- `local-dev`: 外部共有を避ける初期検証向け（`SUI_LLM_PROVIDER=none`）。
 - `evaluation`: Compose評価向け。外部連携は必要時のみ限定有効化。
-- `enterprise-production`: strict 運用を前提に、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を標準とする。
-- `enterprise-production`: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` を `read_only` または `deny` で事前合意し、運用中に暗黙変更しない。
+- `enterprise-production`: strict 運用を前提に、`SUI_ALLOW_JIT_PROVISIONING=false` を標準とする。
+- `enterprise-production`: `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE` を `read_only` または `deny` で事前合意し、運用中に暗黙変更しない。
 
-プロファイル未確定のまま `KJ_ATLAS_ALLOW_JIT_PROVISIONING`、`KJ_ATLAS_AUDIT_*`、`KJ_ATLAS_ACCESS_CONTROL_*` を変更しないでください。
+プロファイル未確定のまま `SUI_ALLOW_JIT_PROVISIONING`、`SUI_AUDIT_*`、`SUI_ACCESS_CONTROL_*` を変更しないでください。
 
 ## 設定変更前の確認
 
@@ -49,7 +49,7 @@ profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://git
 
 | 確認 | 例 |
 | --- | --- |
-| 何を変えるか | `KJ_ATLAS_LLM_PROVIDER`、audit HTTP endpoint、access control adapter |
+| 何を変えるか | `SUI_LLM_PROVIDER`、audit HTTP endpoint、access control adapter |
 | なぜ必要か | 検証、障害調査、組織内 LLM との連携 |
 | 何を共有するか | LLM 入力、監査イベント、export ファイル、ログ |
 | 戻せるか | 元の環境変数、再起動手順、確認コマンド |
@@ -66,7 +66,7 @@ profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://git
 
 - 実際の接続先が local または組織内の管理された endpoint である。
 - 入力に秘密情報や未公開顧客情報を含めない運用になっている。
-- 失敗時に `KJ_ATLAS_LLM_PROVIDER=none` へ戻せる。
+- 失敗時に `SUI_LLM_PROVIDER=none` へ戻せる。
 
 保留する例:
 
@@ -141,4 +141,4 @@ curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 - [configuration.md](configuration.md)
 - [operations.md](operations.md)
 - [acceptance_check.md](acceptance_check.md)
-- [strict_mode_exception_approval_flow.html](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/strict_mode_exception_approval_flow.html)
+- [strict_mode_exception_approval_flow.html](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/strict_mode_exception_approval_flow.html)

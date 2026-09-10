@@ -11,7 +11,7 @@
 
 ## 課題
 
-- SQLAlchemyが認識するdialectを、そのままkj-atlasの正式対応DBとは扱えない。
+- SQLAlchemyが認識するdialectを、そのままsui-sensemakingの正式対応DBとは扱えない。
 - 現行の無制限`TEXT`主キー・索引とSQLite/PostgreSQL専用migrationは、MySQL/MariaDB等で成立しない。
 - DB追加ごとにruntime・migration・CIへ個別条件を散らすと、将来候補が増えるほど保守不能になる。
 
@@ -98,7 +98,7 @@
 - Settings、engine生成、Alembicが利用するURL正規化を同じverified判定へ接続した。未知DBとcandidateはdriver接続前に停止し、エラーへ接続URL・user・passwordを含めない。
 - MySQL/MariaDBを同一familyとして登録し、SQL Server、Oracle、CockroachDBも将来候補として同じ昇格手順へ載せた。現行TEXT主キー・索引がMySQL系で成立しないため、未検証のまま接続だけ許可する対応は行っていない。
 - SQLite/PostgreSQLだけを正式対応、共有schema SaaSはPostgreSQLだけとする既存境界を維持した。AC-4〜7は後続段階として残す。
-- 検証はdatabase registry／Settings／trusted SaaS runtime近接72件、SQLite tenant-key migration 2件、変更対象Ruff、Active issue validator 60件を通過した。backend全体は791件pass・25件skip・10件deselectで、今回と無関係な既存`ProposalDecisionAuditResponse` field不整合1件だけが単独再実行でもfailした。docs-checkも既存`KJ_ATLAS_LLM_TASK_MODEL_MAP`のruntime registry未登録1件でfailしており、本issueでは別領域の修正を混在させない。
+- 検証はdatabase registry／Settings／trusted SaaS runtime近接72件、SQLite tenant-key migration 2件、変更対象Ruff、Active issue validator 60件を通過した。backend全体は791件pass・25件skip・10件deselectで、今回と無関係な既存`ProposalDecisionAuditResponse` field不整合1件だけが単独再実行でもfailした。docs-checkも既存`SUI_LLM_TASK_MODEL_MAP`のruntime registry未登録1件でfailしており、本issueでは別領域の修正を混在させない。
 
 ## MySQL family promotion checkpoint 2026-08-10
 

@@ -40,12 +40,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     build_llm_input_ir,
     derived_island_relations,
     source_from_document,
 )
-from kj_atlas_api.models import DocumentV1
+from sui_sensemaking_api.models import DocumentV1
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 DOCUMENT_FIXTURE = FIXTURES / "derived_island_edges_document.json"

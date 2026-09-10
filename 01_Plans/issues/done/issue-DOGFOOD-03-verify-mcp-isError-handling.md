@@ -35,7 +35,7 @@ MCP クライアント検証経路 `verify_mcp.ts` を実走行したところ�
 ## 検証計画
 
 - 実行コマンド:
-  - `cd 03_Implement/mcp && KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 npm run verify -- nonexistent_doc reviewed-only`
+  - `cd 03_Implement/mcp && SUI_MCP_API_BASE_URL=http://127.0.0.1:8000 npm run verify -- nonexistent_doc reviewed-only`
   - 成功系: `cd 03_Implement/mcp && ... npm run verify -- doc_phase1_canvas reviewed-only`（シード済み環境）
   - 注: `npm run verify` は `tsx scripts/verify_mcp.ts` を実行する。verify_mcp.ts は .ts モジュールを import し TS 構文（`as`）を含むため、Node 20 の素の `node` では起動しない（ERR_UNKNOWN_FILE_EXTENSION）。
 - 期待結果: クラッシュなし。not_found の場合は経路稼働と対象不在を分けて報告。

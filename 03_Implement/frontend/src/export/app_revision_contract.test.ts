@@ -21,7 +21,7 @@ const CASES: Array<[string, string]> = [
   ["a".repeat(65), "unknown"],
 ];
 
-describe("KJ_ATLAS_APP_REVISION canonical observability contract", () => {
+describe("SUI_APP_REVISION canonical observability contract", () => {
   it.each(CASES)("normalizes %j to %s", (rawRevision, expectedRevision) => {
     const bundle = buildDiagnosticsBundle({ ...BASE_INPUT, appRevision: rawRevision });
     expect(bundle.app.revision).toBe(expectedRevision);

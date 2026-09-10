@@ -52,7 +52,7 @@ describe("view_visibility storage", () => {
   it("returns default fallback values for missing or invalid entries", () => {
     expect(loadViewVisibilityForDocument("doc-a")).toEqual({ viewVisibility: "Restricted", packVisibility: "Public" });
 
-    window.localStorage.setItem("kj-atlas/view-visibility-by-doc", JSON.stringify({
+    window.localStorage.setItem("sui-sensemaking/view-visibility-by-doc", JSON.stringify({
       "doc-a": { viewVisibility: "Restricted" },
       "doc-b": { packVisibility: "Org" },
       "doc-c": { viewVisibility: "FriendsOnly", packVisibility: "Public" },

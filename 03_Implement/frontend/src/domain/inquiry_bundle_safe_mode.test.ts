@@ -339,7 +339,7 @@ describe("deriveInquirySafeModeBundle", () => {
 });
 
 describe("deriveDocumentSafeModeProjection", () => {
-  it("redacts void title/detail while preserving structural fields (kj_technique.md §4)", () => {
+  it("redacts void title/detail while preserving structural fields (sensemaking_technique.md §4)", () => {
     const document: DocumentV1 = {
       version: 1,
       id: "doc-voids-safe",

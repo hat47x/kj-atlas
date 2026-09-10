@@ -76,7 +76,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/issues/done/issue-UX-CMDK-01-command-palette.md`（表記・バインド共通化）, `issue-PROJECT-GOV-01-mainline-convergence-and-branch-hygiene.md`（L699 棚卸し警告）
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（P8・図H）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（P8・図H）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04 Round 5）

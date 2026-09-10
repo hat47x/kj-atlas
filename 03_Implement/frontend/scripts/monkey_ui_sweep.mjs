@@ -2,14 +2,14 @@
 // acceptance work: keyboard navigation, focus management, card inline edit,
 // header toolbar, view / share panels, work mode tabs, legend.
 //
-// Usage: KJ_ATLAS_MONKEY_SEED=1 KJ_ATLAS_MONKEY_ACTIONS=150 KJ_ATLAS_MONKEY_VIEWPORT=1440 node monkey.mjs
+// Usage: SUI_MONKEY_SEED=1 SUI_MONKEY_ACTIONS=150 SUI_MONKEY_VIEWPORT=1440 node monkey.mjs
 import { chromium } from "@playwright/test";
 
-const SEED = Number(process.env.KJ_ATLAS_MONKEY_SEED ?? "1");
-const ACTIONS = Number(process.env.KJ_ATLAS_MONKEY_ACTIONS ?? "150");
-const WIDTH = Number(process.env.KJ_ATLAS_MONKEY_VIEWPORT ?? "1440");
+const SEED = Number(process.env.SUI_MONKEY_SEED ?? "1");
+const ACTIONS = Number(process.env.SUI_MONKEY_ACTIONS ?? "150");
+const WIDTH = Number(process.env.SUI_MONKEY_VIEWPORT ?? "1440");
 const HEIGHT = WIDTH <= 420 ? 720 : 900;
-const baseUrl = process.env.KJ_ATLAS_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
+const baseUrl = process.env.SUI_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
 
 // mulberry32
 let s = SEED >>> 0;
@@ -65,7 +65,7 @@ function buildDocument(n) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  executablePath: process.env.SUI_SCREENSHOT_BROWSER_PATH || undefined,
 });
 const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
 

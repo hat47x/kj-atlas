@@ -2,7 +2,7 @@
 
 - Status: Informative
 
-対象読者: kj-atlas に Codex や AI エージェントで貢献する開発者、レビュー担当者。
+対象読者: sui-sensemaking に Codex や AI エージェントで貢献する開発者、レビュー担当者。
 
 目的: 公開文書として、AI エージェント作業時に守る最小ルールと正本への導線を示します。
 
@@ -16,7 +16,7 @@
 
 ## まず読むもの
 
-AI エージェント作業では、最初にリポジトリルートの [AGENTS.md](https://github.com/hat47x/kj-atlas/blob/main/AGENTS.md) を読みます。AGENTS.md が、読み順、対象階層、設計正本、docs-only 作業の境界を示します。
+AI エージェント作業では、最初にリポジトリルートの [AGENTS.md](https://github.com/hat47x/sui-sensemaking/blob/main/AGENTS.md) を読みます。AGENTS.md が、読み順、対象階層、設計正本、docs-only 作業の境界を示します。
 
 ## 公開文書で決めること
 
@@ -57,9 +57,9 @@ rg -n "internal execution log|private approval|secret|token" 04_Documentation
 
 ## 関連文書
 
-- [AGENTS.md](https://github.com/hat47x/kj-atlas/blob/main/AGENTS.md)
-- [documentation_quality.md](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/documentation_quality.md)
-- [security.md](https://github.com/hat47x/kj-atlas/blob/main/04_Documentation/security.md)
+- [AGENTS.md](https://github.com/hat47x/sui-sensemaking/blob/main/AGENTS.md)
+- [documentation_quality.md](https://github.com/hat47x/sui-sensemaking/blob/main/01_Plans/documentation_quality.md)
+- [security.md](https://github.com/hat47x/sui-sensemaking/blob/main/04_Documentation/security.md)
 
 ## 運用手順（DOC-OPS-05）
 1. 対象読者（Audience）と目的（Goal）を先に確認する。

@@ -126,7 +126,7 @@ describe("App browser storage boundary", () => {
 
     expect(storage.clearScope()).toBe(0);
     expect(storage.scopeIdentity).toBe("legacy-single-tenant");
-    expect(window.localStorage.getItem("kj-atlas/recent-doc-ids")).toBe(
+    expect(window.localStorage.getItem("sui-sensemaking/recent-doc-ids")).toBe(
       JSON.stringify(["legacy-doc"]),
     );
   });

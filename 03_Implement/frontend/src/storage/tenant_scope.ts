@@ -6,7 +6,7 @@ export type TenantBrowserStorageScope = Readonly<{
 
 type StorageKeyIndex = Pick<Storage, "key" | "length" | "removeItem">;
 
-const TENANT_SCOPE_PREFIX = "kj-atlas/tenant-scope/v1";
+const TENANT_SCOPE_PREFIX = "sui-sensemaking/tenant-scope/v1";
 const INVALID_SCOPE_CHARACTER = /\p{C}/u;
 const MAX_SCOPE_LENGTH: Readonly<Record<string, number>> = {
   deployment: 2048,

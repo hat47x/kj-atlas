@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-SCALE-01`, `AI-IR-PROJECTION-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_route_prompt_coverage.py`, `03_Implement/backend/scripts/measure_ai_route_prompt_coverage.py`, `02_Architecture/llm_input_ir_spec.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_route_prompt_coverage.py`, `03_Implement/backend/scripts/measure_ai_route_prompt_coverage.py`, `02_Architecture/llm_input_ir_spec.md`
 - Related ADR/Spec: `ADR-0069`, `02_Architecture/llm_input_ir_spec.md`, `issue-AI-IR-SCALE-01-preserve-large-round-evidence-under-token-budget.md`
 - Expected verification level: docs-check
 
@@ -40,7 +40,7 @@ PR #2820で観測した数値は有効だが、R15で行った「`suggest-card-g
 
 ## R15で誤った点
 
-R15では、KJ Atlasの一次価値である「根拠・異論・保留・人間の判断を失わない」を重視するあまり、次の二つを暗黙に同一視した。
+R15では、SUI Sensemakingの一次価値である「根拠・異論・保留・人間の判断を失わない」を重視するあまり、次の二つを暗黙に同一視した。
 
 1. Document/IRに意味情報を保持すること。
 2. その全情報を、すべてのAI taskのprovider promptへ描画すること。

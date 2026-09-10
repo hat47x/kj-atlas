@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-import kj_atlas_api.llm_input_ir as ir_module
+import sui_sensemaking_api.llm_input_ir as ir_module
 from scripts import measure_ai_route_a2_candidate as a2
 from scripts.measure_ai_route_projection_candidates import _late_layout_document
 

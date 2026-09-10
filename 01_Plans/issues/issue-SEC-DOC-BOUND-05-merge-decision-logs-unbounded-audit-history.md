@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/document_repository.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/document_repository.py`
 - Related ADR/Spec: `issue-SEC-DOC-BOUND-04-document-access-admin-list-no-pagination.md`
 - Expected verification level: `integration`
 
@@ -23,7 +23,7 @@
     ).all()
     ```
   - `MergeDecisionLogRow`（`models.py:216-256`）の一意制約は`(tenant_id, doc_id, decision_id)`のみで、`group_id`/`snapshot_version`は一意制約に含まれない。つまり同一グループ/スナップショットに対して、マージ・取り消し・再マージのサイクルごとに新しい`decision_id`の行が積み上がる、正真正銘のappend-onlyな監査ログテーブルである。
-  - `03_Implement/backend/src/kj_atlas_api`内の既存の`.limit(...)`使用箇所（`identity_binding.py`、`tenant_context.py`の`MAX_SESSION_TENANT_COUNT=256`）はいずれも無関係な固定用途（存在確認、セッションあたりのテナント数上限）向けの小さな定数であり、監査ログ件数に模倣できる規約ではない。
+  - `03_Implement/backend/src/sui_sensemaking_api`内の既存の`.limit(...)`使用箇所（`identity_binding.py`、`tenant_context.py`の`MAX_SESSION_TENANT_COUNT=256`）はいずれも無関係な固定用途（存在確認、セッションあたりのテナント数上限）向けの小さな定数であり、監査ログ件数に模倣できる規約ではない。
 - 利用者または開発への影響: ドキュメントの候補グループ（またはスナップショット）が長期間の編集で多数のマージ判断イベントを蓄積すると、これらのGETエンドポイントを呼ぶたびに無制限に増え続ける全履歴を1レスポンスで返し続ける。`api.md:131-137`はこの2エンドポイントを「append order」の応答として公開文書化しており、`test_docs_roundtrip.py`等の既存テストでも到達可能な経路であることを確認済み。
 
 ## 対応方針

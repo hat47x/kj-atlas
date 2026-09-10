@@ -5,7 +5,7 @@
 - Source Issue: `DOMAIN-W-ITERATION-01` AC-11
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/database_content_store.py`, `03_Implement/backend/src/kj_atlas_api/routes/inquiry_bundles.py`, migration、purge runner、運用文書
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/database_content_store.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/inquiry_bundles.py`, migration、purge runner、運用文書
 - Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.html` §4.3
 - Expected verification level: `integration`
 

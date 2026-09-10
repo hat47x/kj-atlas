@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 FRONTEND_RUNTIME_PATH = ROOT / "03_Implement/frontend/src/session/runtime_activation.ts"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
@@ -103,18 +103,18 @@ class RuntimeProfileCrossSurfaceContractTests(unittest.TestCase):
 
     def test_backend_public_tables_name_the_same_profile_set(self) -> None:
         config_values = _explicit_profile_clause(
-            _purpose(self.configuration_backend, "KJ_ATLAS_RUNTIME_PROFILE", 2),
+            _purpose(self.configuration_backend, "SUI_RUNTIME_PROFILE", 2),
             self.backend,
         )
         registry_values = _explicit_profile_clause(
-            _purpose(self.registry_backend, "KJ_ATLAS_RUNTIME_PROFILE", 2),
+            _purpose(self.registry_backend, "SUI_RUNTIME_PROFILE", 2),
             self.backend,
         )
         self.assertEqual(config_values, self.backend)
         self.assertEqual(registry_values, self.backend)
 
     def test_frontend_registry_row_describes_saas_as_active_tenant_session_profile(self) -> None:
-        purpose = _purpose(self.registry_compose, "KJ_ATLAS_RUNTIME_PROFILE", 2)
+        purpose = _purpose(self.registry_compose, "SUI_RUNTIME_PROFILE", 2)
         self.assertEqual(_explicit_profile_clause(purpose, self.backend), self.backend)
         self.assertNotIn("予約中", purpose)
         self.assertIn("tenant session必須", purpose)

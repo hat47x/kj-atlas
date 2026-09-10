@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ111）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/qualitative_card_quality_requirements.md`（文面整えは**元の意味を保持**し過剰言い換えしない）, `00_Prompt/ai_kj_execution_procedures.md` §1（名詞止め禁止・述語文）, `02_Architecture/api.md`（refine-card-text 契約）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ1のみが文面整えを固定）
+- Related ADR/Spec: `00_Prompt/qualitative_card_quality_requirements.md`（文面整えは**元の意味を保持**し過剰言い換えしない）, `00_Prompt/ai_sensemaking_execution_procedures.md` §1（名詞止め禁止・述語文）, `02_Architecture/api.md`（refine-card-text 契約）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ1のみが文面整えを固定）
 - Expected verification level: `e2e`
 
 ## 課題

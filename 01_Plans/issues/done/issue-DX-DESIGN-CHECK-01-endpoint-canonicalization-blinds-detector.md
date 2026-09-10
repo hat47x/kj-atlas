@@ -43,7 +43,7 @@
 _CONCRETE_ID_RE = re.compile(r"([a-z][a-z0-9]+(?:[-_][a-z0-9]+)+)")
 ```
 
-意図は「テストfixtureの具体ID（`e2e-qa-roundtrip` 等）をプレースホルダ化する」ことだが、**ケバブケースのパスセグメントと区別がつかない**。kj-atlas のAI系エンドポイントは全てケバブケースであるため、`/ai/*` 10本が1つに潰れる。`/tenant-admin/document-access/{doc_id}` は両セグメントがケバブケースのため `GET /{param}` まで縮退する。
+意図は「テストfixtureの具体ID（`e2e-qa-roundtrip` 等）をプレースホルダ化する」ことだが、**ケバブケースのパスセグメントと区別がつかない**。sui-sensemaking のAI系エンドポイントは全てケバブケースであるため、`/ai/*` 10本が1つに潰れる。`/tenant-admin/document-access/{doc_id}` は両セグメントがケバブケースのため `GET /{param}` まで縮退する。
 
 **(2) `_is_external_or_wildcard()` がスラッシュ1個以下のパスを一律除外する**
 

@@ -12,15 +12,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AuthContext,
     ExternalPolicyAccessControlAdapter,
     ExternalPolicyAdapterConfig,
 )
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import LOCAL_DEFAULT_TENANT_ID, Base
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import LOCAL_DEFAULT_TENANT_ID, Base
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 @contextmanager
@@ -81,7 +81,7 @@ def test_saas_document_read_denies_without_body_when_external_pdp_transport_is_d
     """
 
     monkeypatch.setattr(
-        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        "sui_sensemaking_api.routes.docs.resolve_trusted_saas_request_session",
         lambda **_: SimpleNamespace(
             identity=SimpleNamespace(
                 auth_context=AuthContext(actor_ref="user-1", user_id="user-1"),
@@ -103,7 +103,7 @@ def test_saas_document_read_denies_without_body_when_external_pdp_transport_is_d
         raise urllib_error.URLError("pdp unavailable")
 
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         _raise_unreachable,
     )
 
@@ -131,7 +131,7 @@ def test_saas_document_read_denies_without_body_when_external_pdp_transport_is_d
             response = client.get(
                 "/docs/doc-pdp-outage",
                 headers={
-                    "KJ-Atlas-Tenant-Session-Version": "session-v2",
+                    "SUI Sensemaking-Tenant-Session-Version": "session-v2",
                     "x-doc-visibility": "Org",
                     "x-policy-ref": "opa://tenant/document-read/v1",
                 },

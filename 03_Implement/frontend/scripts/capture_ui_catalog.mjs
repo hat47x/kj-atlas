@@ -1,7 +1,7 @@
 // Captures a comprehensive catalog of current UI elements for user-facing docs and
 // design-review handoff. Complements capture_release_screenshots.mjs (entry flow)
 // and capture_product_value_screenshots.mjs (value states). Deterministic data, ja
-// locale, KJ_ATLAS_LLM_PROVIDER=none. No secrets/customer data.
+// locale, SUI_LLM_PROVIDER=none. No secrets/customer data.
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
@@ -13,11 +13,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(frontendDir, "..", "..");
 
-const host = process.env.KJ_ATLAS_SCREENSHOT_HOST ?? "127.0.0.1";
-const port = Number(process.env.KJ_ATLAS_SCREENSHOT_PORT ?? "4173");
-const baseUrl = process.env.KJ_ATLAS_SCREENSHOT_BASE_URL ?? `http://${host}:${port}/?locale=ja`;
+const host = process.env.SUI_SCREENSHOT_HOST ?? "127.0.0.1";
+const port = Number(process.env.SUI_SCREENSHOT_PORT ?? "4173");
+const baseUrl = process.env.SUI_SCREENSHOT_BASE_URL ?? `http://${host}:${port}/?locale=ja`;
 const outputDir =
-  process.env.KJ_ATLAS_SCREENSHOT_OUTPUT_DIR ??
+  process.env.SUI_SCREENSHOT_OUTPUT_DIR ??
   path.resolve(repoRoot, "04_Documentation", "assets", "screenshots");
 
 const ts = "2026-06-05T00:00:00.000Z";
@@ -171,7 +171,7 @@ async function capture() {
   await mkdir(outputDir, { recursive: true });
   const server = await ensureViteServer();
   const browser = await chromium.launch({
-    executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+    executablePath: process.env.SUI_SCREENSHOT_BROWSER_PATH || undefined,
   });
   try {
     // 1. Header / primary toolbar (clip to the top band)

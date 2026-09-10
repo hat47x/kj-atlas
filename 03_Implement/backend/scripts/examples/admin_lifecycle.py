@@ -11,15 +11,15 @@ Dependencies: Python 3 stdlib only (urllib). No venv, no pip -- an admin can
 run it on any box that can reach the backend.
 
 Usage:
-    KJ_ATLAS_API_BASE_URL=http://127.0.0.1:8000 \
-    KJ_ATLAS_API_KEY=biz-key \
-    KJ_ATLAS_ADMIN_API_KEY=adm-key \
+    SUI_API_BASE_URL=http://127.0.0.1:8000 \
+    SUI_API_KEY=biz-key \
+    SUI_ADMIN_API_KEY=adm-key \
     python3 admin_lifecycle.py [doc_id]
 
 Env:
-    KJ_ATLAS_API_BASE_URL   Backend base URL (default http://127.0.0.1:8000).
-    KJ_ATLAS_API_KEY        Business-plane key (X-API-Key) for /docs.
-    KJ_ATLAS_ADMIN_API_KEY  Control-plane key (X-Admin-Api-Key) for /admin/*.
+    SUI_API_BASE_URL   Backend base URL (default http://127.0.0.1:8000).
+    SUI_API_KEY        Business-plane key (X-API-Key) for /docs.
+    SUI_ADMIN_API_KEY  Control-plane key (X-Admin-Api-Key) for /admin/*.
     The two keys must differ; a deployment that leaves the admin key unset
     fails closed here (the script refuses to run) rather than guessing.
 """
@@ -32,9 +32,9 @@ import sys
 import urllib.error
 import urllib.request
 
-BASE_URL = (os.environ.get("KJ_ATLAS_API_BASE_URL") or "http://127.0.0.1:8000").rstrip("/")
-BIZ_KEY = os.environ.get("KJ_ATLAS_API_KEY") or ""
-ADM_KEY = os.environ.get("KJ_ATLAS_ADMIN_API_KEY") or ""
+BASE_URL = (os.environ.get("SUI_API_BASE_URL") or "http://127.0.0.1:8000").rstrip("/")
+BIZ_KEY = os.environ.get("SUI_API_KEY") or ""
+ADM_KEY = os.environ.get("SUI_ADMIN_API_KEY") or ""
 DOC_ID = sys.argv[1] if len(sys.argv) > 1 else "admin-self-script-doc"
 
 PASS = 0
@@ -74,7 +74,7 @@ def key_header(key: str) -> str:
 
 def main() -> int:
     if not BIZ_KEY or not ADM_KEY or BIZ_KEY == ADM_KEY:
-        print("admin_lifecycle.py: requires distinct KJ_ATLAS_API_KEY and KJ_ATLAS_ADMIN_API_KEY")
+        print("admin_lifecycle.py: requires distinct SUI_API_KEY and SUI_ADMIN_API_KEY")
         return 2
 
     print("=== admin self-script: document lifecycle + control-plane audit ===")

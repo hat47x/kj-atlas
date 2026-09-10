@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     IdentityProviderRow,
     TenantIdentityProviderRow,
@@ -16,7 +16,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.tenant_context import (
     ClaimBasedTenantContextResolver,
     VerifiedTenantClaim,
 )
@@ -45,7 +45,7 @@ def _seed(db: Session) -> None:
             IdentityProviderRow(
                 id="idp-1",
                 issuer="https://broker.invalid/issuer",
-                audience="kj-atlas",
+                audience="sui-sensemaking",
                 protocol="oidc",
                 jwks_uri="https://broker.invalid/jwks.json",
                 lifecycle_state="active",
@@ -96,7 +96,7 @@ class TestClaimBasedTenantContextResolver:
             tenant_id="tenant-a",
             identity_provider_id="idp-1",
             issuer="https://broker.invalid/issuer",
-            audience="kj-atlas",
+            audience="sui-sensemaking",
             subject="subject-1",
         )
         ctx = resolver.resolve(db=db, user_id="user-1", claim=claim)
@@ -122,7 +122,7 @@ class TestClaimBasedTenantContextResolver:
             tenant_id="tenant-a",
             identity_provider_id="idp-1",
             issuer="https://evil.invalid/issuer",
-            audience="kj-atlas",
+            audience="sui-sensemaking",
             subject="subject-1",
         )
         with pytest.raises(HTTPException) as exc:
@@ -135,7 +135,7 @@ class TestClaimBasedTenantContextResolver:
             tenant_id="tenant-unknown",
             identity_provider_id="idp-1",
             issuer="https://broker.invalid/issuer",
-            audience="kj-atlas",
+            audience="sui-sensemaking",
             subject="subject-1",
         )
         with pytest.raises(HTTPException) as exc:
@@ -148,7 +148,7 @@ class TestClaimBasedTenantContextResolver:
             tenant_id="tenant-a",
             identity_provider_id="idp-1",
             issuer="https://broker.invalid/issuer",
-            audience="kj-atlas",
+            audience="sui-sensemaking",
             subject="subject-1",
         )
         with pytest.raises(HTTPException) as exc:

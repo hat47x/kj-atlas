@@ -5,14 +5,14 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     LOCAL_DEFAULT_TENANT_ID,
     TenantMembershipRow,
     TenantRow,
     UserRow,
 )
-from kj_atlas_api.tenant_context import resolve_single_tenant_context
+from sui_sensemaking_api.tenant_context import resolve_single_tenant_context
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"

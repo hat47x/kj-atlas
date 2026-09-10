@@ -10,14 +10,14 @@ configured HTTP audit sink. Symmetric to verify_mcp_ce4_audit_e2e.py
 Chain exercised (self-contained, deterministic, no billing):
   audit sink (this script) <- POST <- backend (uvicorn, audit transport=http)
       <- POST /docs/{id}/context-audit (channel=cli, operation=query)
-          <- `kj` CLI (python -m kj_atlas_api.cli context-query)
+          <- `kj` CLI (python -m sui_sensemaking_api.cli context-query)
 
 Usage:
   .venv/bin/python scripts/verify_cli_ce4_audit_e2e.py [PORT]
 
 Requires the backend venv. Uses free ports for the backend and audit sink.
 The backend runs with a business-plane API key and the CLI reads that key from
-`KJ_ATLAS_API_KEY`; the secret is never placed in a process argument.
+`SUI_API_KEY`; the secret is never placed in a process argument.
 """
 
 from __future__ import annotations
@@ -101,7 +101,7 @@ class AuditSink:
 
 
 def _migrate(db_path: str) -> None:
-    env = dict(os.environ, KJ_ATLAS_DATABASE_URL=f"sqlite:///{db_path}")
+    env = dict(os.environ, SUI_DATABASE_URL=f"sqlite:///{db_path}")
     subprocess.run(
         [VENV_PYTHON, "-m", "alembic", "upgrade", "head"],
         cwd=BACKEND_DIR,
@@ -139,15 +139,15 @@ def main() -> int:
 
         backend_env = dict(
             os.environ,
-            KJ_ATLAS_DATABASE_URL=f"sqlite:///{db_path}",
-            KJ_ATLAS_API_KEY=BUSINESS_API_KEY,
-            KJ_ATLAS_AUDIT_EXPORT_ENABLED="1",
-            KJ_ATLAS_AUDIT_TRANSPORT="http",
-            KJ_ATLAS_AUDIT_HTTP_ENDPOINT=f"http://127.0.0.1:{sink_port}/audit",
-            KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE="1",
+            SUI_DATABASE_URL=f"sqlite:///{db_path}",
+            SUI_API_KEY=BUSINESS_API_KEY,
+            SUI_AUDIT_EXPORT_ENABLED="1",
+            SUI_AUDIT_TRANSPORT="http",
+            SUI_AUDIT_HTTP_ENDPOINT=f"http://127.0.0.1:{sink_port}/audit",
+            SUI_AUDIT_ALLOW_IN_SAFE_MODE="1",
         )
         backend_proc = subprocess.Popen(
-            [VENV_PYTHON, "-m", "uvicorn", "kj_atlas_api.main:app", "--port", str(backend_port), "--host", "127.0.0.1"],
+            [VENV_PYTHON, "-m", "uvicorn", "sui_sensemaking_api.main:app", "--port", str(backend_port), "--host", "127.0.0.1"],
             cwd=BACKEND_DIR,
             env=backend_env,
             stdout=subprocess.DEVNULL,
@@ -192,13 +192,13 @@ def main() -> int:
             ("proposal-diff", "proposal", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src}),
             ("apply", "apply", {"docId": DOC_ID, "equivalenceKey": eq, "bundleHash": bh, "queryCanonicalHash": eq, "sourceBundleHash": src, "sideEffect": "none"}),
         ]
-        cli_env = dict(os.environ, KJ_ATLAS_API_KEY=BUSINESS_API_KEY)
+        cli_env = dict(os.environ, SUI_API_KEY=BUSINESS_API_KEY)
         for cli_cmd, _op, payload in operations:
             input_path = os.path.join(tmp, f"cli_{cli_cmd}.json")
             with open(input_path, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh)
             proc = subprocess.run(
-                [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
+                [VENV_PYTHON, "-m", "sui_sensemaking_api.cli", "--api-base-url", base_url,
                  cli_cmd, "--input", input_path],
                 cwd=BACKEND_DIR,
                 env=cli_env,
@@ -215,7 +215,7 @@ def main() -> int:
         # /context/bundles:resolve — the CE4 contract-resolution path, distinct
         # from the /docs/{id}/context-audit lifecycle above. Doc-independent.
         resolve_proc = subprocess.run(
-            [VENV_PYTHON, "-m", "kj_atlas_api.cli", "--api-base-url", base_url,
+            [VENV_PYTHON, "-m", "sui_sensemaking_api.cli", "--api-base-url", base_url,
              "ce4", "resolve-bundle", "--query", "課題は何か",
              "--source-bundle-hash", "mock:" + ("d" * 64)],
             cwd=BACKEND_DIR,

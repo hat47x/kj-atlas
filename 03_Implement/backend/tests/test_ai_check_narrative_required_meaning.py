@@ -1,8 +1,8 @@
 import json
 
-from kj_atlas_api.models import Card, DocumentV1, Edge, Island, Transform
-from kj_atlas_api.models_ai import CheckNarrativeRequest
-from kj_atlas_api.routes.ai import _build_narrative_check_prompt
+from sui_sensemaking_api.models import Card, DocumentV1, Edge, Island, Transform
+from sui_sensemaking_api.models_ai import CheckNarrativeRequest
+from sui_sensemaking_api.routes.ai import _build_narrative_check_prompt
 
 
 def _payload() -> CheckNarrativeRequest:

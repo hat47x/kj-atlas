@@ -1,4 +1,4 @@
-# Case 003 Launch Packet — KJ Atlas external representation
+# Case 003 Launch Packet — SUI Sensemaking external representation
 
 - Status: Frozen before first valid Case 001 arm run
 - Evidence bundle: `case-003-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
@@ -7,7 +7,7 @@
 
 ## Context boundary
 
-このtaskでは、与えられたsanitized evidence bundleだけをKJ Atlasについての共通証拠として使用する。
+このtaskでは、与えられたsanitized evidence bundleだけをSUI Sensemakingについての共通証拠として使用する。
 
 同じrepositoryの別ファイル、PR/issue discussion、他ケースの成果、評価メモ、外部Web資料を追加で読まない。資料外の一般知識を使う場合は、bundle由来の主張と明確に分ける。追加資料が必要なら、そのrunだけへ追加せず `Candidate source request` として挙げる。
 
@@ -15,18 +15,18 @@ cultural-substrate-weavingは使用しない。
 
 ## Fixed question
 
-KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
+SUI Sensemakingはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
 
 ## Required output
 
 次を必ず含める。
 
-1. KJ Atlasにとってのlocal/offline/self-host/data-controlを分解し、同義語として扱わない境界案。
+1. SUI Sensemakingにとってのlocal/offline/self-host/data-controlを分解し、同義語として扱わない境界案。
 2. 個人・小チーム・組織・相互に信頼しないSaaS tenant等、利用形態ごとの必要条件と不要条件。
 3. 現行server-authoritative / snapshot / tenant / ownership / sharing設計が既に解いている問題。
 4. 現行設計では満たせない可能性が高いoffline・network partition・P2P・E2EE・portable ownership等の要求。
 5. CRDT/local-first等へ進むために、先に観測されるべき実利用トリガー。
-6. self-host/localがKJ Atlasのswitch reasonではなく単なるdeployment optionで十分かもしれない最強の反証。
+6. self-host/localがSUI Sensemakingのswitch reasonではなく単なるdeployment optionで十分かもしれない最強の反証。
 7. 逆にcloud/SaaS中心では失う可能性がある中核価値または利用ケース。
 8. collaborationを増やすことで、保留・違和感・少数意見・provenance・SafeModeが失われる失敗モード。
 9. 次に実施すべき検証/issue。技術方式の採択より、利用要求・運用摩擦・データ境界の観測を優先する。
@@ -36,7 +36,7 @@ KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・�
 
 ## Collaboration mode
 
-KJ Atlasを完成後の清書ではなく、分析中の外部表象として使う。human operatorがUI操作と最終採否を行い、分析AIは候補・批評・反対視点・空白等をproposalとして提示できるが、意味確定の最終権限を持たない。
+SUI Sensemakingを完成後の清書ではなく、分析中の外部表象として使う。human operatorがUI操作と最終採否を行い、分析AIは候補・批評・反対視点・空白等をproposalとして提示できるが、意味確定の最終権限を持たない。
 
 ### 1. 生材料
 
@@ -47,7 +47,7 @@ KJ Atlasを完成後の清書ではなく、分析中の外部表象として使
 - local execution / self-host / offline-first / local source of truth / P2P / E2EEを同義語化しない。
 - Accepted ADR、実装済みissue、将来条件、実利用未確認の価値仮説を時点と状態を保って材料化する。
 
-human operatorが最初の生カード集合を確認しKJ Atlasへ入れた後、InquiryJourneyのoriginを作る。
+human operatorが最初の生カード集合を確認しSUI Sensemakingへ入れた後、InquiryJourneyのoriginを作る。
 
 ### 2. KJ統合
 

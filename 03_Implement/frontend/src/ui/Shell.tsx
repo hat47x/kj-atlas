@@ -66,14 +66,14 @@ export function Shell({
     };
   }, []);
 
-  const shellStyle: CSSProperties & { "--kj-atlas-header-panel-top": string } = {
+  const shellStyle: CSSProperties & { "--sui-sensemaking-header-panel-top": string } = {
     display: "flex",
     flexDirection: "column",
     height: "100vh",
     width: "100vw",
     overflow: "hidden",
     fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif",
-    "--kj-atlas-header-panel-top": `${headerPanelTop}px`,
+    "--sui-sensemaking-header-panel-top": `${headerPanelTop}px`,
   };
 
   return (

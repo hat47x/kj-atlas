@@ -7,9 +7,9 @@
 
 ## 1. 目的
 
-Arm C/Dでは、KJ Atlasを**完成後の清書場所ではなく、分析している最中の外部表象**として実際に使用する。
+Arm C/Dでは、SUI Sensemakingを**完成後の清書場所ではなく、分析している最中の外部表象**として実際に使用する。
 
-本書は、その際に「どこを操作すればよいか」を探す負担を、KJ Atlasの認知摩擦M9やInquiryJourneyのT9へ誤って計上しないための、操作者専用の手順である。
+本書は、その際に「どこを操作すればよいか」を探す負担を、SUI Sensemakingの認知摩擦M9やInquiryJourneyのT9へ誤って計上しないための、操作者専用の手順である。
 
 各Caseの答え、カード、束、表札、価値仮説、AI境界案、local / collaboration境界案は本書で与えない。分析内容は各Caseのlaunch packetを正本とし、本書ではUIと記録操作だけを固定する。
 
@@ -26,13 +26,13 @@ Arm C/Dでは、KJ Atlasを**完成後の清書場所ではなく、分析して
 Arm Dだけに、固定済みの共通canonical skill bundle `3988e12e5f7f316f377d3391e9486c8467a111d5 / src/ja-JP`を追加する。Arm Cへskill sourceを渡さない。
 
 
-### 2.1 KJ Atlas runtimeも固定product commitを使う
+### 2.1 SUI Sensemaking runtimeも固定product commitを使う
 
-formal Round 1のC/Dで操作するKJ Atlas runtimeは、evidence bundleと同じ `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649` を基準とする。Arm packageはruntime本体を同梱しないため、操作者が固定commitのcheckout / worktreeからKJ Atlasを起動する。
+formal Round 1のC/Dで操作するSUI Sensemaking runtimeは、evidence bundleと同じ `hat47x/kj-atlas@2232b3bb26647e5c4a083f55bdbf83c161698649` を基準とする。Arm packageはruntime本体を同梱しないため、操作者が固定commitのcheckout / worktreeからSUI Sensemakingを起動する。
 
 current mainや別commitのUIを、同じformal runのruntimeとして黙って代用しない。固定commitで本書の必要操作経路を実行できない場合は、UI探索時間をM9へ算入して帳尻を合わせるのではなく、そのrunを`blocked / invalid / partial`として理由を残し、別revisionが必要かを判断する。
 
-この明示はproduct snapshotやtreatmentを変更するものではない。`cognitive-dogfood-case-portfolio-freeze.md`に既にある「3Caseで同じKJ Atlas product commitを使用する」という不変条件を、操作者が実行できる形へ展開したものである。
+この明示はproduct snapshotやtreatmentを変更するものではない。`cognitive-dogfood-case-portfolio-freeze.md`に既にある「3Caseで同じSUI Sensemaking product commitを使用する」という不変条件を、操作者が実行できる形へ展開したものである。
 
 ## 3. 実装上確認済みのUI経路
 
@@ -80,7 +80,7 @@ Undo this branch
 3. Arm Cでは、cultural-substrate-weavingがコンテキストへ入っていないことを確認する。
 4. Arm Dでは、固定済みの共通canonical skill bundleだけが追加されていることを確認する。
 5. 対象Case starterのcards / islands / evidenceLinks / readingOrder / narrativesが空であることを確認する。
-6. starterをKJ Atlasへ読み込み、現在のdocumentを置き換える。
+6. starterをSUI Sensemakingへ読み込み、現在のdocumentを置き換える。
 7. ここまでに生じるUI探索、ファイル選択、locale確認、bundle配置の負担は`operator/setup friction`としてrun recordへ分離し、M9 / T9へ算入しない。
 
 ## 5. 生カード化とInquiryJourneyの起点
@@ -91,7 +91,7 @@ Undo this branch
 4. 必要に応じて、fact / inference / uncertainty、古い状態 / 訂正済み状態 / 条件付き・未実装契約を区別する。
 5. 結論を先取りしたカテゴリへカードを入れない。
 6. model提案を人間が修正・棄却・保留した場合は、proposal ledgerへ残す。
-7. 最初の生カード集合を人間が確認し、KJ Atlasへ入れた直後を標準のInquiryJourney originとする。
+7. 最初の生カード集合を人間が確認し、SUI Sensemakingへ入れた直後を標準のInquiryJourney originとする。
 
 `Start from the current document`は、「その瞬間から思考を始める」という意味ではない。その時点までに外部化された意味状態を、探究のoriginとして固定する操作である。この標準originは比較実験上の操作を揃えるためのもので、W型stageの意味を変更しない。
 

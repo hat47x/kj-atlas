@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ109）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は**双方向**・方向と件数で報告）, `02_Architecture/api.md`（check-narrative 契約・direction `b_missing_in_a | a_missing_in_b`）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じく check-narrative の正パス盲点）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §5（A/B照合は**双方向**・方向と件数で報告）, `02_Architecture/api.md`（check-narrative 契約・direction `b_missing_in_a | a_missing_in_b`）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（同じく check-narrative の正パス盲点）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -27,7 +27,7 @@ return json.dumps({"issues": []})
 
 ### なぜ問題か
 
-- **kj_technique.md §5 の A/B照合は双方向を要求**しているのに、E2E は `a_missing_in_b` しか正パスを固定できない。
+- **sensemaking_technique.md §5 の A/B照合は双方向を要求**しているのに、E2E は `a_missing_in_b` しか正パスを固定できない。
 - **`b_missing_in_a` 検出の回帰が全部 pass する**: バックエンドが常に `b_missing_in_a` を報告しない（または応答解析が方向を落とす）回帰が起きても、636チェックの業務フローE2E は検知しない。
 - ナラティブに「カードにない主張」を混入させる分析者ミスは、定性的分析では典型的な品質リスク（根拠薄弱な結論）。その検出が未固定。
 

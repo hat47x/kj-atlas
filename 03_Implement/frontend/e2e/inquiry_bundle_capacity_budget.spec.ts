@@ -114,7 +114,7 @@ test("DOMAIN-W-ITERATION-01 measures a representative six-round bundle and guard
   await expect(inquiryPanel).toBeVisible();
   await installLongTaskProbe(page);
 
-  const inquiryPath = testInfo.outputPath("representative-inquiry.kj-atlas-inquiry.json");
+  const inquiryPath = testInfo.outputPath("representative-inquiry.sui-sensemaking-inquiry.json");
   await writeFile(inquiryPath, serialized.json, "utf8");
   const fileInput = inquiryPanel.locator('input[type="file"]');
   const oversizedPath = testInfo.outputPath("oversized-inquiry.json");

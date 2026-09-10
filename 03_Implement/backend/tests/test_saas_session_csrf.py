@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.session_csrf import (
+from sui_sensemaking_api.session_csrf import (
     AUTH_SESSION_COOKIE,
     CSRF_COOKIE,
     CSRF_HEADER,

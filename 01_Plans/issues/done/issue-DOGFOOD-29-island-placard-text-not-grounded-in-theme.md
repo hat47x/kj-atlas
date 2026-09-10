@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ123）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（表札は代弁・戻し検査）, `00_Prompt/qualitative_card_quality_requirements.md`, `02_Architecture/api.md`（suggest-island-summary 契約）, `01_Plans/issues/done/issue-DOGFOOD-13-island-summary-grounding-capped-at-three-cards.md`（接地カードの全接地）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §3（表札は代弁・戻し検査）, `00_Prompt/qualitative_card_quality_requirements.md`, `02_Architecture/api.md`（suggest-island-summary 契約）, `01_Plans/issues/done/issue-DOGFOOD-13-island-summary-grounding-capped-at-three-cards.md`（接地カードの全接地）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -41,7 +41,7 @@
 
 | 次元 | 分析 | 他次元への制約 |
 |------|------|---------------|
-| **業務設計** | 定性分析者は島を**代弁する述語文（表札）**を、メンバーカードのテーマを反映して得たい。汎用文では島の代弁にならない（kj_technique.md §3） | 島要約は **proposal 相当（read-only の下書き）** のまま。自動確定しない |
+| **業務設計** | 定性分析者は島を**代弁する述語文（表札）**を、メンバーカードのテーマを反映して得たい。汎用文では島の代弁にならない（sensemaking_technique.md §3） | 島要約は **proposal 相当（read-only の下書き）** のまま。自動確定しない |
 | **データ設計** | 島要約プロンプトはメンバーカード行（`- id="<id>", text="<text>"`・json.dumpsエスケープ）を含むため、モックは**デコードして（カテゴリ）テーマを抽出**し表札へ埋め込むことで「島の内容への接地」を決定的に表現できる | 既存の `groundingIds` assert は、表札文面を変えても成立（非後退）。カテゴリなしのカード（scenario 1等）は従来の汎用文面 |
 | **機能設計** | `suggest_island_summary` の表札を「（モック）<テーマ>をテーマとするメンバーカードに基づく下書き要約…」へ変更し、シナリオ123の島要約チェックで**表札がテーマ（顧客サービス）を参照**することを assert する。API契約（`SuggestIslandSummaryResponse`）は不変 | バックエンド実装・API契約は変更しない。既存シナリオは `groundingIds` キー assert のため非後退 |
 

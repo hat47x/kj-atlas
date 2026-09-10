@@ -5,8 +5,8 @@
 - Source Issue: W型KJ法探求（2026-08-17〜18）の第5ラウンド（具体策）「凝縮具体策」および第6ラウンド（手順計画）Phase 1。凝縮（核融合法）の第一級化の第一歩。
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`（`SuggestIslandSummaryResponse`）, `routes/ai.py`（prompt/parse/propose）, `03_Implement/deploy/tools/mock_local_llm.py`, `02_Architecture/api.md`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`, 関連テスト
-- Related ADR/Spec: `01_Plans/adr/ADR-0077-island-summary-condensation-multiple-candidates.md`, `00_Prompt/kj_technique.md` §3（表札検査）, `00_Prompt/ai_kj_execution_procedures.md` §3（代弁文）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`（`SuggestIslandSummaryResponse`）, `routes/ai.py`（prompt/parse/propose）, `03_Implement/deploy/tools/mock_local_llm.py`, `02_Architecture/api.md`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`, 関連テスト
+- Related ADR/Spec: `01_Plans/adr/ADR-0077-island-summary-condensation-multiple-candidates.md`, `00_Prompt/sensemaking_technique.md` §3（表札検査）, `00_Prompt/ai_sensemaking_execution_procedures.md` §3（代弁文）
 - Expected verification level: `unit` + `e2e`
 
 ## 課題

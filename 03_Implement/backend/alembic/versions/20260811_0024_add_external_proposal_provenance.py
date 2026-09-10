@@ -46,12 +46,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("tenant_id", "task_id"),
     )
     if op.get_bind().dialect.name == "postgresql":
-        tenant_using = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+        tenant_using = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
         op.execute(sa.text("ALTER TABLE external_agent_tasks ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text("ALTER TABLE external_agent_tasks FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(
-                "CREATE POLICY kj_atlas_external_agent_tasks_tenant_isolation "
+                "CREATE POLICY sui_sensemaking_external_agent_tasks_tenant_isolation "
                 "ON external_agent_tasks "
                 f"USING ({tenant_using}) WITH CHECK ({tenant_using})"
             )

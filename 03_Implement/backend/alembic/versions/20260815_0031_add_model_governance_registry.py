@@ -61,7 +61,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("tenant_id", "model_id"),
     )
     if op.get_bind().dialect.name == "postgresql":
-        tenant_using = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+        tenant_using = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
         op.execute(sa.text("ALTER TABLE tenant_model_allowlist ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text("ALTER TABLE tenant_model_allowlist FORCE ROW LEVEL SECURITY"))
         op.execute(

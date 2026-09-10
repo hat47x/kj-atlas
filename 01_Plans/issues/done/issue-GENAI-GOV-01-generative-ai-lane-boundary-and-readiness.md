@@ -23,16 +23,16 @@
 
 生成AI関連の文書とissueは、すでに複数の目的を持っている。
 
-- `ADR-0009` / `llm_provider_spec.md`: kj-atlas 内部から LLMProvider を呼び出す provider 抽象。
+- `ADR-0009` / `llm_provider_spec.md`: sui-sensemaking 内部から LLMProvider を呼び出す provider 抽象。
 - `ADR-0028`: 認知外在化のため、AI出力を提案として扱い、人間が採否する CE フェーズ計画。
-- `ADR-0049` / `02_Architecture/external_agent_collaboration_spec.html`: kj-atlas が外部エージェントを直接呼ばず、人間が依頼パッケージと応答を仲介する成果物ベース連携。
+- `ADR-0049` / `02_Architecture/external_agent_collaboration_spec.html`: sui-sensemaking が外部エージェントを直接呼ばず、人間が依頼パッケージと応答を仲介する成果物ベース連携。
 
 これらは相補的だが、同じ「生成AI」として読むと、次の誤解が起きる。
 
 - 外部エージェントへ人間がタスクシートを共有する経路を、LLMProvider の自動外部共有と誤読する。
 - provider の `external` 設定と、ADR-0049 の外部定額エージェント成果物連携を同一レイヤとして扱う。
 - AI出力の品質・確度・モデル名を、人間レビューや `human_reviewed` の代替根拠として扱う。
-- `KJ_ATLAS_LLM_PROVIDER=none` の既定価値成立と、AI強化経路の導入判断が混ざる。
+- `SUI_LLM_PROVIDER=none` の既定価値成立と、AI強化経路の導入判断が混ざる。
 
 この混線を防ぐため、生成AI関連作業をレーン単位で分類し、共通不変条件とADR起票条件を明示する。
 
@@ -40,7 +40,7 @@
 
 現行設計の重要な前提は次の通り。
 
-- kj-atlas の基本価値は `KJ_ATLAS_LLM_PROVIDER=none` でも成立する。
+- sui-sensemaking の基本価値は `SUI_LLM_PROVIDER=none` でも成立する。
 - AIは候補生成器であり、確定・公開・レビュー済み化を自動実行しない。
 - SafeMode は既定ONで、共有前確認と import-sanitize 境界を迂回しない。
 - 外部由来データは指示ではなくデータとして扱う。
@@ -60,9 +60,9 @@
 | Lane | 名前 | 代表文書 | データ境界 | 現在の扱い | 追加ADRが必要になる条件 |
 |---|---|---|---|---|---|
 | A | 手動中核 / AI無効 | `ADR-0041`, `value_traceability.md` | 外部AIへ共有しない | 既定・必須ベースライン | AIなしで主要価値が成立しなくなる変更 |
-| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/llm_escalation_policy.html` | `LLMRequest` / `LLMResponse` と `KJ_ATLAS_*` 設定 | opt-in。proposal-only の生成補助 | provider列挙、外部共有条件、fallback、監査語彙を変える変更 |
-| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.html`, `EXT-AGENT-01..03` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む | Proposed。Tier 0 は手動授受のみ | kj-atlas からの自動送信、自動受信、外部状態追跡、応答自動適用 |
-| D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | kj-atlas API と外部Agent/APIの直接通信 | 未承認・予約のみ | 認証、到達性、データ保持、tenant境界、失敗時動作、費用制御を決める新ADR |
+| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/llm_escalation_policy.html` | `LLMRequest` / `LLMResponse` と `SUI_*` 設定 | opt-in。proposal-only の生成補助 | provider列挙、外部共有条件、fallback、監査語彙を変える変更 |
+| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.html`, `EXT-AGENT-01..03` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む | Proposed。Tier 0 は手動授受のみ | sui-sensemaking からの自動送信、自動受信、外部状態追跡、応答自動適用 |
+| D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | sui-sensemaking API と外部Agent/APIの直接通信 | 未承認・予約のみ | 認証、到達性、データ保持、tenant境界、失敗時動作、費用制御を決める新ADR |
 
 ### レーン横断の不変条件
 
@@ -105,7 +105,7 @@ Lane D（直接API/Agent連携、ADR-0049 Tier 2相当）の実装提案がADR�
 
 | 観点 | ADR起票を要する条件 |
 | --- | --- |
-| 認証 | 外部Agentがkj-atlas APIへ直接アクセスする。OIDC/SAML/bearer token等の認証方式の選定、`AUTH-*` 境界（`issue-AUTH-*`）との整合、anti-forgery付きsession persister |
+| 認証 | 外部Agentがsui-sensemaking APIへ直接アクセスする。OIDC/SAML/bearer token等の認証方式の選定、`AUTH-*` 境界（`issue-AUTH-*`）との整合、anti-forgery付きsession persister |
 | 到達性 | 外部からのネットワーク到達が必要。loopback既定を外れ、TLS・認証proxy・接続元制限を要求（`DEPLOY-NET-01` Phase Bと整合） |
 | データ保持 | 外部送受信データの保持・削除・監査が必要。`ADR-0035` の本文禁止・標準機能外境界と整合 |
 | tenant境界 | 外部連携がtenantを越えてアクセスしうる。`ADR-0059`（SaaS tenant境界）と整合し、別tenant contextからの照会を拒否 |
@@ -148,7 +148,7 @@ Lane D（直接API/Agent連携、ADR-0049 Tier 2相当）の実装提案がADR�
 ADR化が必要になる条件:
 
 - Lane D（直接API/Agent連携）を実装する。
-- `KJ_ATLAS_LLM_PROVIDER=none` で主要価値が成立しない仕様に変更する。
+- `SUI_LLM_PROVIDER=none` で主要価値が成立しない仕様に変更する。
 - `human_reviewed`、採用、公開、共有前確認、SafeModeの責務境界を変更する。
 - 外部エージェントやLLM providerの出力を、レビュー済みまたは採用済みとして扱う。
 - provider の列挙、外部共有条件、fallback、監査語彙を変更する。

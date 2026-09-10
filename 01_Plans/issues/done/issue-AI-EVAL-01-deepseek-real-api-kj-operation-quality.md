@@ -16,7 +16,7 @@
 ## 対応方針
 
 - 実施すること:
-  1. DeepSeek API keyを取得し `KJ_ATLAS_DEEPSEEK_API_KEY` に設定
+  1. DeepSeek API keyを取得し `SUI_DEEPSEEK_API_KEY` に設定
   2. 評価用テスト文書（評価用fixture）を用意。島3〜5個・カード15〜30枚程度の中規模KJ法文書
   3. 以下の2操作で実API品質を評価:
      a. `refine_card_text`（カード化・低深度）: 10件のカード本文改善を実行し、名詞止め禁止・元意味保持・過剰言い換えなし の3軸で定性評価

@@ -11,12 +11,12 @@ export const USER_IMAGE_CUE_DIMENSION = 48;
 export const VISUAL_CUE_BUNDLE_MAX_ASSETS = 400;
 export const VISUAL_CUE_BUNDLE_MAX_BYTES = 2 * 1024 * 1024;
 export const VISUAL_CUE_BUNDLE_FILE_NAME = "representative_visual_cue_assets.json";
-const DATABASE_NAME = "kj-atlas-representative-visual-cues";
+const DATABASE_NAME = "sui-sensemaking-representative-visual-cues";
 const DATABASE_VERSION = 2;
 const LEGACY_STORE_NAME = "assets";
 const STORE_NAME = "assets-v2";
 const SCOPE_DOCUMENT_INDEX = "scopeDocumentKey";
-const LOCAL_SCOPE_KEY = "kj-atlas/local-scope/v1/";
+const LOCAL_SCOPE_KEY = "sui-sensemaking/local-scope/v1/";
 const VALID_IMAGE_REF = /^visual-cue:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type HandDrawnCuePointV1 = Readonly<{

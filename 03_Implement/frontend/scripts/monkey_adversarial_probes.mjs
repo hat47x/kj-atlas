@@ -2,7 +2,7 @@
 // acceptance work. Each probe states the documented expectation it checks.
 import { chromium } from "@playwright/test";
 
-const only = process.env.KJ_ATLAS_MONKEY_ONLY ? process.env.KJ_ATLAS_MONKEY_ONLY.split(",") : null;
+const only = process.env.SUI_MONKEY_ONLY ? process.env.SUI_MONKEY_ONLY.split(",") : null;
 const out = [];
 const rec = (id, title, ok, detail) =>
   out.push({ id, title, result: ok ? "ok" : "SUSPECT", detail });
@@ -26,7 +26,7 @@ function doc(cards, islands = []) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  executablePath: process.env.SUI_SCREENSHOT_BROWSER_PATH || undefined,
 });
 
 async function open(cards, islands, locale = "ja") {

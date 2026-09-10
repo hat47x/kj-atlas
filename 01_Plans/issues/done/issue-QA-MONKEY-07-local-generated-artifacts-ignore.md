@@ -19,12 +19,12 @@
 
 ## 1) 課題 / Problem statement
 
-- Manual setup created `03_Implement/frontend/node_modules/` and `03_Implement/backend/kj_atlas.db`.
+- Manual setup created `03_Implement/frontend/node_modules/` and `03_Implement/backend/sui_sensemaking.db`.
 - Both appeared as untracked files, making the worktree noisy and increasing the risk of accidental add.
 
 ## 2) 背景 / Context
 
-- `04_Documentation/installation.md` documents SQLite fallback with `kj_atlas.db`.
+- `04_Documentation/installation.md` documents SQLite fallback with `sui_sensemaking.db`.
 - Frontend dependency installation creates `node_modules/`.
 
 ## 3) 判断基準による優先度評価
@@ -57,14 +57,14 @@
   - `git status --short`
   - `git diff --check`
 - 期待結果:
-  - Generated `node_modules/` and `kj_atlas.db` are not listed as untracked changes.
+  - Generated `node_modules/` and `sui_sensemaking.db` are not listed as untracked changes.
 - 未実施時の理由・代替検証:
   - N/A.
 
 ## 8) 代替案 / Alternatives considered
 
 - 代替案A: Delete generated artifacts after every run. Rejected because the local environment remains useful for verification.
-- 代替案B: Ignore only the exact `kj_atlas.db` file. Rejected because SQLite local DB names may vary.
+- 代替案B: Ignore only the exact `sui_sensemaking.db` file. Rejected because SQLite local DB names may vary.
 
 ## 9) リスクとロールバック / Risks & rollback
 

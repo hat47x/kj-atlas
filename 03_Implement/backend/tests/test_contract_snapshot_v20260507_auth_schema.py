@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
+from sui_sensemaking_api.main import app
 
 CONTRACT_SNAPSHOT_ID = "contract_snapshot_v20260507"
 

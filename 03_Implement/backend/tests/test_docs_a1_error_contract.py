@@ -8,9 +8,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import _normalize_database_url, get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, DocumentRow
+from sui_sensemaking_api.db import _normalize_database_url, get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, DocumentRow
 
 
 @pytest.fixture()
@@ -139,7 +139,7 @@ def test_get_document_returns_a1_error_contract_for_stale_version(
     # structured A1 422 that PUT uses, not a raw 500. Replicate the exact
     # legacy DB state that caused the bug: a DocumentRow whose payload
     # declares version 2 and that has NO revision projection (pre-revision
-    # era sample, e.g. the 2026-06-20 kj_atlas.db).
+    # era sample, e.g. the 2026-06-20 sui_sensemaking.db).
     doc_id = "doc-a1-error-stale-version"
     payload = _sample_v2_payload(doc_id)
     payload["version"] = 2

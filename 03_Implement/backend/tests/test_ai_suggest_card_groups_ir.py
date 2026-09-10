@@ -20,10 +20,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm_input_ir import IR_VERSION
-from kj_atlas_api.main import app
-from kj_atlas_api.routes import ai
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.llm_input_ir import IR_VERSION
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.settings import settings
 
 _CAPTURED: list = []
 #: Mutated by the tests that need the model to answer with a specific grouping.
@@ -270,7 +270,7 @@ def test_truncation_is_reported_rather_than_silent() -> None:
     """The IR caps the projection at `MAX_CARDS` (spec §5.1) while the request
     accepts up to 1000 cards (DOGFOOD-31). Sizing that cap is AC-10 and is
     deferred; a caller must at least be able to see that it bit."""
-    from kj_atlas_api.llm_input_ir import MAX_CARDS
+    from sui_sensemaking_api.llm_input_ir import MAX_CARDS
 
     ids = [f"k-{index:03d}" for index in range(MAX_CARDS + 1)]
     _RESPONSE["groups"] = [{"label": "先頭2枚", "cardIds": ["k-000", "k-001"]}]

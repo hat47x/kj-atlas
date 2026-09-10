@@ -110,7 +110,7 @@ describe("CVI-5 dryRun no side effects", () => {
   });
 });
 
-// ── CVI-6: KJ_ATLAS_LLM_PROVIDER=none default ──
+// ── CVI-6: SUI_LLM_PROVIDER=none default ──
 describe("CVI-6 provider=none default", () => {
   it("has existing guard in ce2_suggestion_candidates.test.ts (no-LLM fallback)", () => {
     const source = readSource("domain/ce2_suggestion_candidates.test.ts");

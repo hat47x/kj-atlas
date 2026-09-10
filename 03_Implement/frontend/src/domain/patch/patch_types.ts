@@ -27,7 +27,7 @@ export type PatchOp =
   | { id: string; kind: "delete_evidence_link"; evidenceLinkId: string };
 
 export type PatchV1 = {
-  kind: "kj-atlas-patch";
+  kind: "sui-sensemaking-patch";
   version: 1;
   baseDocSignature?: string;
   author?: string;

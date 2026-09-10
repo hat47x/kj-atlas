@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>kj-atlas SaaS 認証アーキテクチャ — SAML/OIDC/Broker/JWT 協調フロー</title>
+<title>sui-sensemaking SaaS 認証アーキテクチャ — SAML/OIDC/Broker/JWT 協調フロー</title>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; color: #0f172a; background: #f8fafc; }
@@ -19,7 +19,7 @@
 </head>
 <body>
 
-<h1>kj-atlas SaaS 認証アーキテクチャ</h1>
+<h1>sui-sensemaking SaaS 認証アーキテクチャ</h1>
 <p>ADR-0063 / ADR-0064 に基づく SAML / OIDC / Broker / JWT 協調認証フロー</p>
 
 <nav style="background:#f1f5f9;padding:12px;border-radius:8px;margin:16px 0;">
@@ -32,8 +32,8 @@
 <details open>
 <summary style="font-size:1.2em;font-weight:bold;cursor:pointer;padding:8px 0;">クイックサマリー（1分で理解する）</summary>
 <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin:8px 0;">
-<p><strong>kj-atlas は認証を自前実装しません。</strong> 外部 IdP（Google, Azure AD, SAML IdP）がユーザを認証し、Broker（Keycloak）が SAML→OIDC 変換 + JWT 発行を行い、kj-atlas Backend が JWT を検証します。</p>
-<p><strong>3つの層</strong>: External IdP → Identity Broker → kj-atlas Backend</p>
+<p><strong>sui-sensemaking は認証を自前実装しません。</strong> 外部 IdP（Google, Azure AD, SAML IdP）がユーザを認証し、Broker（Keycloak）が SAML→OIDC 変換 + JWT 発行を行い、sui-sensemaking Backend が JWT を検証します。</p>
+<p><strong>3つの層</strong>: External IdP → Identity Broker → sui-sensemaking Backend</p>
 <p><strong>認可コードグラント + PKCE (S256)</strong>: CSRF と認可コード横取りを防止</p>
 <p><strong>JWT クレーム</strong>: <code>tenant_ref</code> でテナントを識別、<code>sub</code> でユーザを識別</p>
 <p><strong>テスト</strong>: 569 tests (ユニット + 統合 + E2E + Playwright)、Ruff lint clean</p>
@@ -56,7 +56,7 @@ graph TB
         TENANT_CLAIM[tenant_ref claim 注入]
     end
 
-    subgraph "Layer 3: kj-atlas Backend"
+    subgraph "Layer 3: sui-sensemaking Backend"
         JWT_VERIFY[JwtSaasIdentityContextResolver<br/>Bearer JWT 検証]
         TENANT_RESOLVE[ClaimBasedTenantContextResolver<br/>tenant_ref → tenant_id]
         SESSION[DatabaseActiveTenantSessionPersister<br/>principal単位version共有（暫定）<br/>cookieはsession束縛に未使用]
@@ -80,9 +80,9 @@ graph TB
 <div class="mermaid">
 sequenceDiagram
     actor User
-    participant Frontend as kj-atlas Frontend
+    participant Frontend as sui-sensemaking Frontend
     participant Broker as Identity Broker (Keycloak)
-    participant Backend as kj-atlas Backend
+    participant Backend as sui-sensemaking Backend
 
     Note over Frontend,Backend: PKCE S256 による安全な認可コードグラント
 
@@ -224,7 +224,7 @@ sequenceDiagram
 <tr><td>0 (unit)</td><td>JWT resolver, JWKS store, tenant resolver, session persister</td><td>42</td><td class="status-ok">✅</td></tr>
 <tr><td>1 (HTTP E2E)</td><td>JWT → tenant isolation (10), OAuth login → API (11), coordinated flow (6)</td><td>27</td><td class="status-ok">✅</td></tr>
 <tr><td>2 (mock login)</td><td>OAuth 2.0 + PKCE + refresh-token rejection + logout + UserInfo + OIDC Discovery</td><td>11</td><td class="status-ok">✅</td></tr>
-<tr><td>3 (broker E2E)</td><td>実 Keycloak + kj-atlas 統合テスト</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
+<tr><td>3 (broker E2E)</td><td>実 Keycloak + sui-sensemaking 統合テスト</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
 <tr><td>4 (external IdP)</td><td>Google / Azure AD / SAML IdP 連携</td><td>—</td><td class="status-pending">📋 Phase 2</td></tr>
 <tr><td>Playwright</td><td>マルチタブテナント切替, bfcache, auth-required, stale 409</td><td>8</td><td class="status-ok">✅</td></tr>
 </table>
@@ -232,11 +232,11 @@ sequenceDiagram
 <h2>7. 設定リファレンス</h2>
 <table>
 <tr><th>キー</th><th>既定値</th><th>説明</th></tr>
-<tr><td><code>KJ_ATLAS_RUNTIME_PROFILE</code></td><td><code>local-dev</code></td><td>実行プロファイル。SaaS は <code>saas-multitenant</code></td></tr>
-<tr><td><code>KJ_ATLAS_JWT_ALGORITHMS</code></td><td><code>RS256,ES256</code></td><td>JWT 署名アルゴリズム allowlist</td></tr>
-<tr><td><code>KJ_ATLAS_TENANT_CLAIM_NAME</code></td><td><code>tenant_ref</code></td><td>テナント識別子を運ぶ JWT claim 名</td></tr>
-<tr><td><code>KJ_ATLAS_TRUSTED_PROXIES</code></td><td>（空）</td><td>header 認証の信頼プロキシ CIDR リスト</td></tr>
-<tr><td><code>KJ_ATLAS_BROKER_BASE_URL</code></td><td><code>http://localhost:18081</code></td><td>Identity broker のベース URL（フロントエンド用）</td></tr>
+<tr><td><code>SUI_RUNTIME_PROFILE</code></td><td><code>local-dev</code></td><td>実行プロファイル。SaaS は <code>saas-multitenant</code></td></tr>
+<tr><td><code>SUI_JWT_ALGORITHMS</code></td><td><code>RS256,ES256</code></td><td>JWT 署名アルゴリズム allowlist</td></tr>
+<tr><td><code>SUI_TENANT_CLAIM_NAME</code></td><td><code>tenant_ref</code></td><td>テナント識別子を運ぶ JWT claim 名</td></tr>
+<tr><td><code>SUI_TRUSTED_PROXIES</code></td><td>（空）</td><td>header 認証の信頼プロキシ CIDR リスト</td></tr>
+<tr><td><code>SUI_BROKER_BASE_URL</code></td><td><code>http://localhost:18081</code></td><td>Identity broker のベース URL（フロントエンド用）</td></tr>
 </table>
 
 <h2>8. 主要コンポーネント一覧</h2>

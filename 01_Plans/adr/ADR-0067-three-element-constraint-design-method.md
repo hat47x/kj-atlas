@@ -18,11 +18,11 @@
 
 ## Decision
 
-渡辺幸三氏の三要素分析法を参考に、kj-atlas の設計方法論として **三要素牽制設計法 (Three-Element Constraint Design Method)** を採用する。
+渡辺幸三氏の三要素分析法を参考に、sui-sensemaking の設計方法論として **三要素牽制設計法 (Three-Element Constraint Design Method)** を採用する。
 
 ### 三要素の定義
 
-| 要素 | kj-atlasでの対応 | 問い |
+| 要素 | sui-sensemakingでの対応 | 問い |
 |------|-----------------|------|
 | **データ (Data)** | データ設計 — 正本・保存範囲・境界クラス・非表示原則 | 何が保存され、何が表示され、何が境界を越えるか |
 | **機能 (Function)** | 機能設計 — API契約・capability・state機械 | 誰が・どのAPIで・どの状態遷移を通して操作するか |

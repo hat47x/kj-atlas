@@ -4,7 +4,7 @@
 - Date: 2026-08-25
 - Accepted: 2026-08-26（**D1=A / D2=A / D3=A**。保守者による明示承認。仮承認ではない）
 - Deciders: Maintainer
-- Scope: `03_Implement/frontend`（将来の管理コンソール、採用する場合）、`03_Implement/backend/src/kj_atlas_api/control_plane_auth.py`、`02_Architecture/enterprise_architecture.html`、`THREAT_MODEL.md`
+- Scope: `03_Implement/frontend`（将来の管理コンソール、採用する場合）、`03_Implement/backend/src/sui_sensemaking_api/control_plane_auth.py`、`02_Architecture/enterprise_architecture.html`、`THREAT_MODEL.md`
 
 ## 採択記録（2026-08-26）
 
@@ -12,7 +12,7 @@
 
 ## Context
 
-`issue-OPS-ADMIN-UX-01-first-class-admin-console-and-cli.md` は、正式CLI（`kj_atlas_api.cli`）へのcontrol-plane command追加をAC-1〜4として完了させた（provider/model登録、tenant allowlist設定、監査照会、業務キー拒否、revision競合409、いずれも実backend E2Eで確認済み）。残るAC-5は次の一文である。
+`issue-OPS-ADMIN-UX-01-first-class-admin-console-and-cli.md` は、正式CLI（`sui_sensemaking_api.cli`）へのcontrol-plane command追加をAC-1〜4として完了させた（provider/model登録、tenant allowlist設定、監査照会、業務キー拒否、revision競合409、いずれも実backend E2Eで確認済み）。残るAC-5は次の一文である。
 
 > 管理コンソール採用時は利用者SPAへ管理credentialを保存・配送しない設計がADR化される。
 
@@ -24,7 +24,7 @@
 - tenant/model変更のpreview、revision競合時の再読込と差分再確認。
 - 利用者SPAとは別origin・別bundleとし、bootstrap keyをbrowser storageへ保存しない構成。
 
-`ADR-0072`（Accepted）は管理面APIの認可方式（D1=A+Bの二段: bootstrap専用の静的`KJ_ATLAS_ADMIN_API_KEY` + IdP登録後はtrusted auth edgeのJWT・platform-operator capability claim）を既に決定した。しかしADR-0072は**API側の認可**を扱い、**それを呼び出す管理コンソールという新しいフロントエンド資産が、その二段の鍵をどう保持・伝送・破棄するか**は決めていない。この欠落を放置したまま誰かが管理コンソールの実装に着手すると、静的admin bearerがブラウザ資産（bundle、localStorage、sessionStorage、DevToolsで観測可能なメモリ）へ漏れる設計を選びかねない。それは`ADR-0072`が明示的に避けようとした「静的秘密の運用リスク」をUI側で再導入する。
+`ADR-0072`（Accepted）は管理面APIの認可方式（D1=A+Bの二段: bootstrap専用の静的`SUI_ADMIN_API_KEY` + IdP登録後はtrusted auth edgeのJWT・platform-operator capability claim）を既に決定した。しかしADR-0072は**API側の認可**を扱い、**それを呼び出す管理コンソールという新しいフロントエンド資産が、その二段の鍵をどう保持・伝送・破棄するか**は決めていない。この欠落を放置したまま誰かが管理コンソールの実装に着手すると、静的admin bearerがブラウザ資産（bundle、localStorage、sessionStorage、DevToolsで観測可能なメモリ）へ漏れる設計を選びかねない。それは`ADR-0072`が明示的に避けようとした「静的秘密の運用リスク」をUI側で再導入する。
 
 ## 決定すべき論点
 

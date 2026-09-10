@@ -6,7 +6,7 @@
 
 ## 1. 目的
 
-第三者価値検証では、KJ Atlasの価値を確かめるために、本人の実資料や仕事上の文脈を扱う。
+第三者価値検証では、SUI Sensemakingの価値を確かめるために、本人の実資料や仕事上の文脈を扱う。
 
 一方、このrepositoryはpublic OSSである。Gitへ入った情報は、後からrepository上で削除しても、fork、clone、cache、引用等から完全には回収できない可能性がある。
 
@@ -46,7 +46,7 @@ public repositoryへ置けるのは、本人と操作者が公開範囲を確認
 - 参加者が公開可能と確認したparaphrase。
 - 元資料を復元できない粒度の観察記録。
 - value moment / friction / no-use reason / stop reasonの要旨。
-- 公開可能なKJ Atlas documentのsanitized derivative。
+- 公開可能なSUI Sensemaking documentのsanitized derivative。
 - 「証拠はprivate materialに存在するがpublicには保持しない」というexistence note。
 - findingの振り分け結果。
 
@@ -60,7 +60,7 @@ raw materialの具体的な保存先は、本repositoryでは規定しない。�
 - public Gitへ自動同期されるdirectoryをraw materialの保管場所にしない。
 - session開始前に、保存するか、終了後に破棄するかを決める。
 - 保存する場合は、用途と保持期間を参加者へ説明する。
-- KJ Atlas自体にraw materialを保存した場合、そのdocument / exportをpublic dogfood fixtureへ流用しない。
+- SUI Sensemaking自体にraw materialを保存した場合、そのdocument / exportをpublic dogfood fixtureへ流用しない。
 
 安全な保存先を用意できない場合は、raw materialを保存しない運用を選ぶ。
 
@@ -115,7 +115,7 @@ privacyを守るためpublic evidenceを粗くした場合、そのことを隠�
 
 - privacy / publicationだけに関する摩擦は、まず`VALUE-REALNESS-01`の実行観察として保持する。
 - 1回のsession固有の保存事情を、すぐに一般的な製品要求へ変換しない。
-- 複数の実利用で、KJ Atlas自身のdata boundary / sharing / AI送信契約によって仕事が成立しないことが再現した場合は、F2候補を検討する。
+- 複数の実利用で、SUI Sensemaking自身のdata boundary / sharing / AI送信契約によって仕事が成立しないことが再現した場合は、F2候補を検討する。
 - 権限、安全、共有意味論等にまたがるcontract変更が必要だと実証された場合だけ、`ADR-0047`に従ってADR候補とする。
 
 本書そのものを、新しい製品ADRとして扱わない。

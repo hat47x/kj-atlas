@@ -11,7 +11,7 @@
 
 ### 既にカバーされている範囲（重複を作らないための棚卸し）
 
-kj-atlas は既に、価値に沿った品質次元をIDで索引化する仕組みを持つ（`value_traceability.md`）。
+sui-sensemaking は既に、価値に沿った品質次元をIDで索引化する仕組みを持つ（`value_traceability.md`）。
 
 | 既存の次元 | 正本 | 対象 |
 |---|---|---|

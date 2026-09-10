@@ -6,8 +6,8 @@ from typing import Mapping
 
 import pytest
 
-from kj_atlas_api.content_store import ContentBlob
-from kj_atlas_api.external_content_store import (
+from sui_sensemaking_api.content_store import ContentBlob
+from sui_sensemaking_api.external_content_store import (
     ContentIntegrityError,
     ExternalContentStoreError,
     NasContentStore,

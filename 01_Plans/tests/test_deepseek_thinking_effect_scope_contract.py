@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PROVIDER_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/llm/provider.py"
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+PROVIDER_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -67,7 +67,7 @@ class DeepSeekThinkingEffectScopeContractTests(unittest.TestCase):
             validator_source,
         )
 
-        key = "KJ_ATLAS_DEEPSEEK_THINKING_MODE"
+        key = "SUI_DEEPSEEK_THINKING_MODE"
         registry_row = _public_row(REGISTRY_PATH, key)
         configuration_row = _public_row(CONFIG_PATH, key)
 

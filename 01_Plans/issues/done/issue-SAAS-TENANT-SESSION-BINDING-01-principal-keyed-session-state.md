@@ -5,7 +5,7 @@
 - Source Issue: `SAAS-TENANT-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/saas_request_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/session.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/active_tenant_session.py`, `03_Implement/backend/src/sui_sensemaking_api/saas_auth_state.py`, `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/saas_request_context.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/session.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（Accepted 2026-08-13）, `02_Architecture/api.md` §10
 - Expected verification level: `integration`
 
@@ -82,7 +82,7 @@
 
 **検証**: 新規`tests/test_mock_idp_backchannel_logout.py`12件（sid一貫性・sid分離・confidential client成功/失敗3種・Logout Tokenの`events`/`nonce`/署名検証・配送成功/失敗）を追加し全pass。既存の呼び出し元3ファイル（`test_saas_oauth_login_e2e.py`・`test_saml_broker_jwt_coordinated_flow.py`・`test_auth_federation_level2.py`、計20件）に回帰なし。配送成功のtestは`test_access_control_adapter_contracts.py`と同じ実ローカルHTTPサーバ（`http.server.HTTPServer`+`threading.Thread`）パターンを踏襲した。`ruff check`・`ruff format --check`両方pass。backend全体回帰は1,003 passed・34 skipped・8 deselected・failed 1（`test_alembic_has_single_head`、原因は本checkpointとは無関係な他セッションの未コミットmigrationによる一時的なhead不一致で、後続checkpointで解消）で確認した。
 
-**まだ実装していないもの**: kj-atlas backend側の`/backchannel-logout`受信endpoint（このissue本体のAC-1〜9）、BFF、confidential clientとしての実token交換、cookieベースsession。今回はテスト基盤の整備のみである。
+**まだ実装していないもの**: sui-sensemaking backend側の`/backchannel-logout`受信endpoint（このissue本体のAC-1〜9）、BFF、confidential clientとしての実token交換、cookieベースsession。今回はテスト基盤の整備のみである。
 
 ### Implementation checkpoint 2026-08-13: `saas_auth_sessions`のexpand migration（AC-2の器のみ）
 
@@ -113,7 +113,7 @@ ADR-0074決定3の列構成で、server-owned auth sessionテーブルを追加�
   `revoke_auth_session` / `preflight`。
 - `JwtSaasIdentityContextResolver._resolve_from_auth_session_cookie()`（`trusted_auth_edge.py`）:
   bearer token不在時にcookieから session を解決するfallback経路。
-- settings・preflight・`main.py`の結線（`KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY`等）。
+- settings・preflight・`main.py`の結線（`SUI_SAAS_AUTH_SESSION_HASH_KEY`等）。
 
 **AC-1の文言に対して残っている欠落**: AC-1は「principalとは別のserver-trusted認証セッション識別子を
 **解決する**」ことを要求するが、現状は解決した`session_key_hash`を**store照会に使った直後に捨てている**。

@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ119）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §5（A/B照合は双方向・件数）, `02_Architecture/api.md`（check-narrative 契約）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（島ID非依存化）, `01_Plans/issues/done/issue-DOGFOOD-14-check-narrative-lacks-b-missing-in-a-positive-path.md`（双方向の正パス）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §5（A/B照合は双方向・件数）, `02_Architecture/api.md`（check-narrative 契約）, `01_Plans/issues/done/issue-DOGFOOD-12-check-narrative-positive-path-hardcodes-island-i1.md`（島ID非依存化）, `01_Plans/issues/done/issue-DOGFOOD-14-check-narrative-lacks-b-missing-in-a-positive-path.md`（双方向の正パス）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -38,7 +38,7 @@ if "未検証の主張" in prompt:
 
 ### なぜ問題か
 
-- **複数島のA/B取りこぼし検出が未固定**: 島形成後の図解は複数島が典型であり、「どの島がナラティブで落ちたか」の検出（kj_technique.md §5）が単一島に限定されている。
+- **複数島のA/B取りこぼし検出が未固定**: 島形成後の図解は複数島が典型であり、「どの島がナラティブで落ちたか」の検出（sensemaking_technique.md §5）が単一島に限定されている。
 - **誤報告の固定**: 先頭島のみを報告するモックでは、正しい島の取りこぼしを E2E で検証できない。
 
 ## 三要素分析（ADR-0067）

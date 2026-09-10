@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from kj_atlas_api.models import CritiqueInput, ReproposalDiff, ReviewAttribution
+from sui_sensemaking_api.models import CritiqueInput, ReproposalDiff, ReviewAttribution
 
 
 def _now() -> datetime:
@@ -205,7 +205,7 @@ def test_review_attribution_rejects_email_like_owner_ref() -> None:
 
 
 def test_deterministic_tie_break_defaults_to_fixed_order() -> None:
-    from kj_atlas_api.models import DeterministicTieBreak
+    from sui_sensemaking_api.models import DeterministicTieBreak
 
     validated = DeterministicTieBreak(schemaVersion="1.0.0")
     assert validated.order == (
@@ -217,7 +217,7 @@ def test_deterministic_tie_break_defaults_to_fixed_order() -> None:
 
 
 def test_deterministic_tie_break_rejects_reordered_values() -> None:
-    from kj_atlas_api.models import DeterministicTieBreak
+    from sui_sensemaking_api.models import DeterministicTieBreak
 
     with pytest.raises(ValidationError):
         DeterministicTieBreak(

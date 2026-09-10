@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>業務意図拡張: 責務境界とフェーズゲート — kj-atlas</title>
+<title>業務意図拡張: 責務境界とフェーズゲート — sui-sensemaking</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -64,25 +64,25 @@
 </p>
 
 <div class="note">
-  この図解が示すのは、kj-atlas が <strong>意味の制御面（Semantic Control Plane）に留まり、実行面を持たない</strong>という境界と、
+  この図解が示すのは、sui-sensemaking が <strong>意味の制御面（Semantic Control Plane）に留まり、実行面を持たない</strong>という境界と、
   各フェーズが依存している<strong>未充足のゲート</strong>である。ゲートの状態は 2026-08-05 時点。
 </div>
 
 <h2>1. 責務境界</h2>
 
-<p>kj-atlas は業務を実行しない。合意された業務意図を構造化して外部へ渡し、実行結果を提案として受け取る層に限定する。</p>
+<p>sui-sensemaking は業務を実行しない。合意された業務意図を構造化して外部へ渡し、実行結果を提案として受け取る層に限定する。</p>
 
 <div class="diagram">
 <pre class="mermaid">
 flowchart TB
-  subgraph SCP["kj-atlas — 意味の制御面"]
+  subgraph SCP["sui-sensemaking — 意味の制御面"]
     direction TB
     A["観察 / 違和感 / 仮説 / 対立 / 保留"]
     B["目的 / 制約 / 判断 / 合意 / 系譜"]
     A --> B
   end
 
-  subgraph EXE["Enterprise Compiler / Runtime — 実行面（kj-atlas の外）"]
+  subgraph EXE["Enterprise Compiler / Runtime — 実行面（sui-sensemaking の外）"]
     direction TB
     C["実行方式選択 / 生成 / テスト / 接続"]
     D["デプロイ / SaaS操作 / 監視 / 復旧"]
@@ -101,7 +101,7 @@ flowchart TB
 </div>
 
 <p class="src">
-  実行面が破線なのは、kj-atlas が実装も所有もしないことを示す。デプロイ資格情報を保持せず、生成コードを本体内で実行しない。
+  実行面が破線なのは、sui-sensemaking が実装も所有もしないことを示す。デプロイ資格情報を保持せず、生成コードを本体内で実行しない。
 </p>
 
 <h2>2. 既存資産と真の差分</h2>
@@ -222,7 +222,7 @@ flowchart LR
 
 <h3>KJ法の検査を受入条件として使う</h3>
 
-<p><code>00_Prompt/kj_technique.md</code> の検査群を、意図パッケージの受入条件としてそのまま適用する。カードは「ちがう」と言えないため、この検査群がその代用品である。</p>
+<p><code>00_Prompt/sensemaking_technique.md</code> の検査群を、意図パッケージの受入条件としてそのまま適用する。カードは「ちがう」と言えないため、この検査群がその代用品である。</p>
 
 <ul>
   <li><strong>名詞止め禁止</strong> — <code>statement</code> はすべて述語を伴う文で書く</li>

@@ -91,7 +91,7 @@
 
 36. 本リポジトリは現在 solo・プレリリース（`README.md` NOTICE）であり、上記 1–35 のうち重量級の運用は段階に合わせて緩和する。詳細と不変条件は `ADR-0039` を正本とする。
 37. 緩和: 「1 ADR 50–180行」「Authoring Checklist 必須」「`Draft→Open` での `Source Issue` 必須」「`Open/In Progress/Done` の多役割承認」は solo 段階では推奨へ降格し、Status 遷移は Maintainer 単独で確定してよい。
-38. 維持（緩和禁止）: SafeMode 既定ON・漏えい防止・proposal-only・`human_reviewed` 人手昇格・`KJ_ATLAS_LLM_PROVIDER=none` 既定の各不変条件。これらはガバナンスではなくプロダクト本体として維持する。
+38. 維持（緩和禁止）: SafeMode 既定ON・漏えい防止・proposal-only・`human_reviewed` 人手昇格・`SUI_LLM_PROVIDER=none` 既定の各不変条件。これらはガバナンスではなくプロダクト本体として維持する。
 39. 再導入: 外部協力者の継続参加、または公開リリースで実ユーザーが付いた時点で、役割分離・Decision Queue・観測スコアカードを段階的に戻す。
 
 ### issue補助メモの一時退避運用(2026-08-16 追記)

@@ -3,7 +3,7 @@
 - Date: 2026-09-03
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: R16で導入した「routeごとの必要意味集合」という基準を適用すると、現在のscale測定から何が実際の欠陥として分離され、何がまだ測れていないか。
-- Canvas: `doc_kj_atlas_dogfood_r17.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r17.json`
 - Supporting map: `ai-ir-required-semantic-coverage-map-2026-09-03.md`
 - Result class: 継続dogfoodの内部所見。第三者価値実証や認知比較結果の代替証拠ではない。
 

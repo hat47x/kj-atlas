@@ -1,7 +1,7 @@
 # 継続dogfood R41 — 確認手順を主張対象を証明できる観測面へ結ぶ
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r41.json`
+Canvas: `doc_sui_sensemaking_dogfood_r41.json`
 
 ## 1. Trigger
 
@@ -17,19 +17,19 @@ access-control / document-binding / tenant-capability の3設定で、実装上�
 
 ### PR #3071 — runtime profile
 
-`KJ_ATLAS_RUNTIME_PROFILE` の確認先として `/healthz` を案内していたが、`/healthz` はliveness-onlyでprofileを返さない。
+`SUI_RUNTIME_PROFILE` の確認先として `/healthz` を案内していたが、`/healthz` はliveness-onlyでprofileを返さない。
 
 修正後は、validated profileを `runtimeProfile` として返す `GET /version` をprobe surfaceとした。
 
 ### PR #3073 — LLM provider
 
-`KJ_ATLAS_LLM_PROVIDER` の確認先も `/healthz` だったが、provider kindを返さないため、設定されたproviderを証明できなかった。
+`SUI_LLM_PROVIDER` の確認先も `/healthz` だったが、provider kindを返さないため、設定されたproviderを証明できなかった。
 
 修正後は `GET /ai/provider-status.providerKind` へ戻し、runtime registryのalias解決もfocused contractで固定した。
 
 ### PR #3074 — database readiness
 
-`KJ_ATLAS_DATABASE_URL` の確認先として `/healthz` を使っていたが、liveness-only surfaceはDatabase到達性やschema headを検査しない。
+`SUI_DATABASE_URL` の確認先として `/healthz` を使っていたが、liveness-only surfaceはDatabase到達性やschema headを検査しない。
 
 修正後は、Database到達性とAlembic schema headを検査する `GET /readyz` をprobe surfaceとした。
 
@@ -218,4 +218,4 @@ R41は次を主張しない。
 
 R41はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、第三者product-value validation、AI-IR named-provider evidenceを代替しない。
 
-formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

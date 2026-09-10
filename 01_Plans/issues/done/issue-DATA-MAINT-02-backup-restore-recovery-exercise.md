@@ -14,7 +14,7 @@
 
 - RequirementID: DATA-MAINT-02
 - RequirementStatement: MVPのDocument保存と判断ログについて、隔離環境でバックアップ、復元、整合確認を行う代表演習を定義し、製品化判断に使える証跡として残せるようにする。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが検証環境でkj-atlasの永続DBを扱う / 操作=代表Documentと`merge_decision_logs`を作成し、バックアップ、復元、整合確認を行う / 期待結果=復元後のDocument、判断ログ、共有前安全確認が破綻していないことを説明できる / 除外=本番DBへの破壊的restore、法域別保持期限の自動判定、削除/所有者移管の製品実装。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが検証環境でsui-sensemakingの永続DBを扱う / 操作=代表Documentと`merge_decision_logs`を作成し、バックアップ、復元、整合確認を行う / 期待結果=復元後のDocument、判断ログ、共有前安全確認が破綻していないことを説明できる / 除外=本番DBへの破壊的restore、法域別保持期限の自動判定、削除/所有者移管の製品実装。
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 
 ## Dependency graph（DATA-MAINT）
@@ -146,11 +146,11 @@
 | PostgreSQL toolchain | WSL2 `docker --version`; `docker compose version` | Pass: Docker 28.3.3 / Compose v2.39.1 | PostgreSQL実行条件 |
 | PostgreSQL schema | temporary PostgreSQL 16.14 container + `alembic upgrade head` | Pass: migrations `20260211_0001` through `20260314_0005` applied | L1 / L1.5 |
 | PostgreSQL app rehearsal | `python tests/scripts/data_maintenance_pg_rehearsal.py` against temporary PostgreSQL DB | Pass: `version=2`, card review flags `[true, false]`, decision logs `decision-pg-1`, `decision-pg-2`, SafeMode `403 Access denied: safe_mode` | DATA-MAINT-02 / G6 / G7 |
-| PostgreSQL dump/restore | `pg_dump -Fc -U kj_atlas kj_atlas`; `pg_restore -U kj_atlas -d kj_atlas_restore --clean --if-exists` | Pass: restored DB contains the rehearsal Document and `merge_decision_logs` in expected order | PostgreSQL代表演習 |
+| PostgreSQL dump/restore | `pg_dump -Fc -U sui_sensemaking sui_sensemaking`; `pg_restore -U sui_sensemaking -d sui_sensemaking_restore --clean --if-exists` | Pass: restored DB contains the rehearsal Document and `merge_decision_logs` in expected order | PostgreSQL代表演習 |
 
 ### PostgreSQL実施内容と残る前提
 
-- 実施環境: WSL2 / Docker 28.3.3 / PostgreSQL 16.14 / temporary Docker network `kj-atlas-rehearsal-20260525` / temporary DB `kj_atlas_restore`。
+- 実施環境: WSL2 / Docker 28.3.3 / PostgreSQL 16.14 / temporary Docker network `sui-sensemaking-rehearsal-20260525` / temporary DB `sui_sensemaking_restore`。
 - Compose build contextの検証で、backend配下の生成物 `.pytest_cache` がWSL/Dockerのxattr読み取りで失敗したため、`.dockerignore` を追加した。これはCompose運用上の不要ファイル混入を避ける修正であり、アプリの実行時契約は変更しない。
 - 代表データ:
   - Document: `doc-data-maint-pg-recovery-20260525`

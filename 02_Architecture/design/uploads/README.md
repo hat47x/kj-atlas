@@ -8,7 +8,7 @@
 - UI locale: `ja`
 - API: `http://127.0.0.1:8000`
 - frontend: `http://127.0.0.1:4173/?locale=ja`
-- LLM provider: `KJ_ATLAS_LLM_PROVIDER=none`
+- LLM provider: `SUI_LLM_PROVIDER=none`
 - 秘密情報、API key、組織固有の承認履歴、顧客データは含めない
 
 ファイル:
@@ -36,10 +36,10 @@ The script starts a temporary Vite server when port 4173 is free, uses determini
 
 Optional environment variables:
 
-- `KJ_ATLAS_SCREENSHOT_OUTPUT_DIR`: output directory. Defaults to `04_Documentation/assets/screenshots`.
-- `KJ_ATLAS_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
-- `KJ_ATLAS_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
-- `KJ_ATLAS_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
+- `SUI_SCREENSHOT_OUTPUT_DIR`: output directory. Defaults to `04_Documentation/assets/screenshots`.
+- `SUI_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
+- `SUI_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
+- `SUI_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
 
 ## Product Value Evidence Screenshots
 
@@ -61,11 +61,11 @@ cd 03_Implement/frontend
 C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe .\scripts\capture_product_value_screenshots.mjs
 ```
 
-The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the six PNG files above, and stops the server when it started it.
+The script starts a temporary Vite server when `SUI_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the six PNG files above, and stops the server when it started it.
 
 ## UI element catalog screenshots
 
-These images form a comprehensive catalog of current UI elements for the user-facing reference (`04_Documentation/ui_catalog.md`) and for design-review handoff. Deterministic fixture, `ja` locale, `KJ_ATLAS_LLM_PROVIDER=none`, no secrets.
+These images form a comprehensive catalog of current UI elements for the user-facing reference (`04_Documentation/ui_catalog.md`) and for design-review handoff. Deterministic fixture, `ja` locale, `SUI_LLM_PROVIDER=none`, no secrets.
 
 | File | Content |
 | --- | --- |
@@ -95,7 +95,7 @@ WSL/Nix 環境などローカルに Playwright のブラウザ依存が無い場
 docker run --rm --ipc=host \
   -v "$PWD/03_Implement/frontend:/app" \
   -v "$PWD/04_Documentation/assets/screenshots:/out" \
-  -w /app -e KJ_ATLAS_SCREENSHOT_OUTPUT_DIR=/out \
+  -w /app -e SUI_SCREENSHOT_OUTPUT_DIR=/out \
   mcr.microsoft.com/playwright:v1.58.2-jammy \
   bash -lc "node ./scripts/capture_ui_catalog.mjs"
 ```

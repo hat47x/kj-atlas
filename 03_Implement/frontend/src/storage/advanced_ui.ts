@@ -1,6 +1,6 @@
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const ADVANCED_UI_STORAGE_KEY = "kj-atlas.advanced-ui-enabled";
+const ADVANCED_UI_STORAGE_KEY = "sui-sensemaking.advanced-ui-enabled";
 
 function advancedUiStorageKey(scope?: TenantBrowserStorageScope): string {
   return scope ? buildTenantStorageKey(ADVANCED_UI_STORAGE_KEY, scope) : ADVANCED_UI_STORAGE_KEY;

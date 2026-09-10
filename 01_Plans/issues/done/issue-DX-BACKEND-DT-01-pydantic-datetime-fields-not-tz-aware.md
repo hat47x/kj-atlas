@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`
 - Related ADR/Spec: N/A
 - Expected verification level: `unit`
 
@@ -43,7 +43,7 @@
 `models.py`の`datetime` importの直後に、対象フィールド一覧・現状維持の理由・再検討すべき条件
 （比較/演算コードが追加された時点）を記すコメントを追加した。挙動の変更は無い。
 
-検証: `ruff check`（All checks passed）、`python -c "import kj_atlas_api.models"`（import成功、
+検証: `ruff check`（All checks passed）、`python -c "import sui_sensemaking_api.models"`（import成功、
 構文・実行時エラー無し）。「比較・演算箇所が無い」という本issue自身の主張を、対象フィールド名
 （`reviewedAt`/`auditRecordedAt`/`occurredAt`/`decidedAt`/`shelvedAt`/`generatedAt`）への比較演算子
 使用箇所の検索で独立に再確認し、該当無しを確認した。

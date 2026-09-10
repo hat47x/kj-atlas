@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: R24でhistorical coordinateをlive stale referenceから分離したあとも、current lifecycle closeoutがfrozen manifest自身のpathを書き換える再発をどう防ぐか。
-- Canvas: `doc_kj_atlas_dogfood_r25.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r25.json`
 - Observation baseline: `main@6dacc1de9335d9b9a8486a5cd40ef92ef164fc76`
 - Trigger: PR #3001 / merge commit `5dce7ac6754718f4661282ca24b9c076cc148695`
 - Result class: R24直後の実運用で観測したfrozen experiment inputの陽性再改変。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
@@ -98,4 +98,4 @@ R24では「historical pathを消さない」ために例外認識が必要だ�
 
 R25は陽性の内部回帰証拠だが、formal Case 001 Arm Cの結果ではない。Case 001〜003の比較結果、第三者価値実証、AI-IR named-provider evidenceへ加算しない。
 
-修正後もformal mainlineは変わらない。Case 001 Arm Cは、既知仮説から隔離したfresh contextと、frozen KJ Atlas UIの実操作が可能になった時点で実走する。この設計者チャットで代替回答を生成しない。
+修正後もformal mainlineは変わらない。Case 001 Arm Cは、既知仮説から隔離したfresh contextと、frozen SUI Sensemaking UIの実操作が可能になった時点で実走する。この設計者チャットで代替回答を生成しない。

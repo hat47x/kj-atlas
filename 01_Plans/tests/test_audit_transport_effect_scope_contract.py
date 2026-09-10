@@ -8,9 +8,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-AUDIT = ROOT / "03_Implement/backend/src/kj_atlas_api/audit.py"
-DOCS_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/docs.py"
-AI_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/ai.py"
+AUDIT = ROOT / "03_Implement/backend/src/sui_sensemaking_api/audit.py"
+DOCS_ROUTE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/docs.py"
+AI_ROUTE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/ai.py"
 
 
 def _row(text: str, key: str) -> str:
@@ -51,16 +51,16 @@ class AuditTransportEffectScopeContractTests(unittest.TestCase):
         )
 
     def test_public_rows_describe_export_enabled_as_master_gate(self) -> None:
-        for row in self._rows("KJ_ATLAS_AUDIT_EXPORT_ENABLED"):
+        for row in self._rows("SUI_AUDIT_EXPORT_ENABLED"):
             self.assertIn("master gate", row)
             self.assertIn("NoopAuditTransport", row)
-            self.assertIn("KJ_ATLAS_AUDIT_TRANSPORT", row)
+            self.assertIn("SUI_AUDIT_TRANSPORT", row)
 
     def test_transport_rows_make_http_activation_conditional_on_export_enabled(self) -> None:
-        for row in self._rows("KJ_ATLAS_AUDIT_TRANSPORT"):
-            self.assertIn("KJ_ATLAS_AUDIT_EXPORT_ENABLED=true", row)
+        for row in self._rows("SUI_AUDIT_TRANSPORT"):
+            self.assertIn("SUI_AUDIT_EXPORT_ENABLED=true", row)
             self.assertIn("NoopAuditTransport", row)
-        registry_row = _backend_registry_row(self.registry, "KJ_ATLAS_AUDIT_TRANSPORT")
+        registry_row = _backend_registry_row(self.registry, "SUI_AUDIT_TRANSPORT")
         self.assertNotIn("HTTP transport が選択されることをログで確認", registry_row)
         self.assertIn("test double", registry_row)
 
@@ -84,7 +84,7 @@ class AuditTransportEffectScopeContractTests(unittest.TestCase):
         self.assertTrue(any('"context-audit"' in source for source in dedup_sources))
         self.assertTrue(any('"export-audit"' in source for source in dedup_sources))
 
-        for row in self._rows("KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS"):
+        for row in self._rows("SUI_AUDIT_DEDUP_WINDOW_SECONDS"):
             self.assertIn("context-audit", row)
             self.assertIn("export-audit", row)
             self.assertIn("view", row)
@@ -102,7 +102,7 @@ class AuditTransportEffectScopeContractTests(unittest.TestCase):
         self.assertLess(except_block, enqueue)
         self.assertLess(enqueue, success_return)
 
-        for row in self._rows("KJ_ATLAS_AUDIT_QUEUE_SIZE"):
+        for row in self._rows("SUI_AUDIT_QUEUE_SIZE"):
             self.assertIn("送信失敗", row)
             self.assertIn("fail-open", row)
             self.assertIn("retry", row)

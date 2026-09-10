@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: historical exception allow-listが、参照消滅後も残ることでguardの意味を徐々に弱める状態をどう防ぐか。
-- Canvas: `doc_kj_atlas_dogfood_r27.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r27.json`
 - Observation baseline: `main@d2349cc7014bf5e63dc6ea169a4d6ca66b5339bd`
 - Trigger: R26 verification run `34023966836` のrepository-wide planning suiteで得た次の陽性failure。
 - Result class: 既存guardが自分自身のstale exceptionを検出した運用証拠。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
@@ -18,9 +18,9 @@ R26では、R25で見つかった成功済みone-shot workflowを退役させた
 
 消えていたのは次の5件である。
 
-- `doc_kj_atlas_dogfood_r15.json` × `AI-IR-PROMPT-EVIDENCE-01`
-- `doc_kj_atlas_dogfood_r18.json` × `DOC-ISSUE-LIFECYCLE-01`
-- `doc_kj_atlas_dogfood_r2.json` × `DX-CI-MCP-01`
+- `doc_sui_sensemaking_dogfood_r15.json` × `AI-IR-PROMPT-EVIDENCE-01`
+- `doc_sui_sensemaking_dogfood_r18.json` × `DOC-ISSUE-LIFECYCLE-01`
+- `doc_sui_sensemaking_dogfood_r2.json` × `DX-CI-MCP-01`
 - `core-value-realization-priorities-2026-07-18.md` × `MVP-EXIT-01`
 - `mvp-exit-01-human-acceptance-handoff.md` × `MVP-EXIT-01`
 
@@ -107,4 +107,4 @@ R27はさらに別の層である。structured frozen manifestではなく、少
 
 R27は内部planning guardの運用証拠であり、formal cognitive dogfoodのArm結果ではない。Case 001 Arm Cの生実行、第三者価値実証、AI-IR named-provider evidenceへ加算しない。
 
-R27でrepository-wide planning baselineがgreenになり、その先に新しい具体的failureが現れなければ、これ以上のpreflightを増やさずformal mainlineへ戻る。次はfresh context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+R27でrepository-wide planning baselineがgreenになり、その先に新しい具体的failureが現れなければ、これ以上のpreflightを増やさずformal mainlineへ戻る。次はfresh context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

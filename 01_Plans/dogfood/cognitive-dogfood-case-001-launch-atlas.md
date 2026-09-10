@@ -1,4 +1,4 @@
-# Case 001 Launch Packet — KJ Atlas external representation
+# Case 001 Launch Packet — SUI Sensemaking external representation
 
 - Status: Frozen before first raw run
 - Evidence bundle ID: `case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
@@ -7,7 +7,7 @@
 
 ## Context boundary
 
-このtaskは、operatorから与えられたsanitized evidence bundleのfrozen sourceから、KJ Atlasの存在目的と現在の実証状態を分析する。
+このtaskは、operatorから与えられたsanitized evidence bundleのfrozen sourceから、SUI Sensemakingの存在目的と現在の実証状態を分析する。
 
 製品についての証拠として使用してよいのは、evidence bundle内の20件の製品資料だけである。`_experiment/bundle-manifest.json` はファイル同一性確認のために参照してよいが、bundle外のrepository、近隣plan、PR discussion、Case 0監査、外部競合/研究資料を探索しない。operator用のsource manifestを探したり開いたりしない。
 
@@ -17,17 +17,17 @@ cultural-substrate-weavingは使用しない。
 
 ## Fixed question
 
-KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
+SUI Sensemakingは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
 
 ## Required output
 
 次を必ず含める。
 
-1. KJ Atlasが解こうとしている利用者の仕事。
+1. SUI Sensemakingが解こうとしている利用者の仕事。
 2. 既存手段で十分な領域と、不十分になり得る領域。
-3. 現在のKJ Atlasが既に実現している価値。
+3. 現在のSUI Sensemakingが既に実現している価値。
 4. 実証されていない価値仮説。
-5. 最重要の反証、またはKJ Atlasが不要かもしれない条件。
+5. 最重要の反証、またはSUI Sensemakingが不要かもしれない条件。
 6. 次に実施すべき検証/issue。
 7. 主要主張ごとの根拠と、その根拠が示す時点。
 8. 資料の中で、古い状態・後で訂正された状態・相互に緊張する記述を見つけた場合は、そのまま並べず現在状態との関係を示す。
@@ -35,13 +35,13 @@ KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツ�
 
 主要主張には、可能な限りsource path / stable identifier / evidence timeを付ける。断定できない場合は推測で埋めず保留する。
 
-結論をKJ Atlasに好意的にする必要はない。既存手段で十分、対象市場が狭い、価値仮説を棄却すべきという結論も許容される。
+結論をSUI Sensemakingに好意的にする必要はない。既存手段で十分、対象市場が狭い、価値仮説を棄却すべきという結論も許容される。
 
 最終required outputでは、分析手順そのものを成果の価値として数えない。方法への自己言及は、製品証拠の理解に本当に必要な場合だけにする。
 
 ## Collaboration mode
 
-KJ Atlasを、完成後の清書ではなく**分析中の外部表象**として使う。人間operatorがUI操作と最終採否を行う。分析AIはproposalを出せるが状態変更の最終権限を持たない。
+SUI Sensemakingを、完成後の清書ではなく**分析中の外部表象**として使う。人間operatorがUI操作と最終採否を行う。分析AIはproposalを出せるが状態変更の最終権限を持たない。
 
 ### 1. 生材料
 
@@ -52,7 +52,7 @@ KJ Atlasを、完成後の清書ではなく**分析中の外部表象**とし�
 - 初期カテゴリ名や最終結論をカードへ先取りしない。
 - 後段で訂正された古い状態も、誤情報として消すのではなく「当時そう見えていた」材料として時点を保つ。
 
-human operatorが最初の生カード集合を確認し、KJ Atlasへ入れた後にInquiryJourneyのoriginを作ることを標準とする。
+human operatorが最初の生カード集合を確認し、SUI Sensemakingへ入れた後にInquiryJourneyのoriginを作ることを標準とする。
 
 ### 2. KJ統合
 

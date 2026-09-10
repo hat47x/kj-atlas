@@ -19,18 +19,18 @@ TIMESTAMP = "2026-08-10T00:00:00Z"
 
 
 def _configured_urls() -> list[str]:
-    if os.getenv("KJ_ATLAS_RUN_MYSQL_TESTS") != "1":
+    if os.getenv("SUI_RUN_MYSQL_TESTS") != "1":
         return []
     return [
         value
-        for key in ("KJ_ATLAS_TEST_MYSQL_URL", "KJ_ATLAS_TEST_MARIADB_URL")
+        for key in ("SUI_TEST_MYSQL_URL", "SUI_TEST_MARIADB_URL")
         if (value := os.getenv(key))
     ]
 
 
 def _run_alembic(url: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = url
+    env["SUI_DATABASE_URL"] = url
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
@@ -68,8 +68,8 @@ def _verify_backup_restore(database_url: str) -> None:
         raise ValueError("MySQL family test database must use a simple identifier")
     restore_database = f"{database}_restore"
     container_env = {
-        "mysql": "KJ_ATLAS_TEST_MYSQL_CONTAINER",
-        "mariadb": "KJ_ATLAS_TEST_MARIADB_CONTAINER",
+        "mysql": "SUI_TEST_MYSQL_CONTAINER",
+        "mariadb": "SUI_TEST_MARIADB_CONTAINER",
     }
     container = os.environ[container_env[backend]]
     dump_command = "mysqldump" if backend == "mysql" else "mariadb-dump"

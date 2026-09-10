@@ -10,7 +10,7 @@ import { buildHttpApp } from "./http_server.js";
 // still go to stderr for consistency with the stdio deployment.
 
 async function main(): Promise<void> {
-  const transportKind = (process.env.KJ_ATLAS_MCP_TRANSPORT?.trim() || "stdio").toLowerCase();
+  const transportKind = (process.env.SUI_MCP_TRANSPORT?.trim() || "stdio").toLowerCase();
 
   if (transportKind === "stdio") {
     const server = createServer(loadDocumentClientConfigFromEnv());
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
     await new Promise<void>((resolve) => {
       app.listen(httpConfig.port, httpConfig.host, () => {
         process.stderr.write(
-          `kj-atlas-mcp: streamable-HTTP transport listening on http://${httpConfig.host}:${httpConfig.port}${"\n"}`
+          `sui-sensemaking-mcp: streamable-HTTP transport listening on http://${httpConfig.host}:${httpConfig.port}${"\n"}`
         );
         resolve();
       });
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  throw new Error(`Unknown KJ_ATLAS_MCP_TRANSPORT: ${transportKind} (expected "stdio" or "http")`);
+  throw new Error(`Unknown SUI_MCP_TRANSPORT: ${transportKind} (expected "stdio" or "http")`);
 }
 
 main().catch((error: unknown) => {

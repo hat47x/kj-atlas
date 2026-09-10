@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/llm_escalation_policy.html`, `04_Documentation/security.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/audit.py`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/llm_escalation_policy.html`, `04_Documentation/security.md`
 - Related ADR/Spec: `02_Architecture/enterprise_architecture.html` §04.6, `02_Architecture/llm_escalation_policy.html` §04（CE2-C5）, `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`
 - Expected verification level: `unit`
 
@@ -24,13 +24,13 @@ def _audit_llm_trace(task: str, llm_response) -> None:
 監査ディスパッチャ（`audit.py` の `build_audit_dispatcher()`、`main.py:89` で `app.state.audit_dispatcher` へ設定）を使うのは `routes/docs.py` のみである。
 
 ```
-$ grep -rln "audit_dispatcher" --include="*.py" 03_Implement/backend/src/kj_atlas_api/
+$ grep -rln "audit_dispatcher" --include="*.py" 03_Implement/backend/src/sui_sensemaking_api/
 audit.py
 main.py
 routes/docs.py
 ```
 
-つまり **LLM 呼び出しは外部監査基盤へ送出されない**。`KJ_ATLAS_AUDIT_TRANSPORT=http` を設定した組織でも、AI 関連イベントは届かず、アプリのローカルログにしか残らない。
+つまり **LLM 呼び出しは外部監査基盤へ送出されない**。`SUI_AUDIT_TRANSPORT=http` を設定した組織でも、AI 関連イベントは届かず、アプリのローカルログにしか残らない。
 
 ### 契約との乖離
 
@@ -63,7 +63,7 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 
 ## 受入条件
 
-- [x] AC-1: LLM 呼び出しが `audit_dispatcher` 経由で記録され、`KJ_ATLAS_AUDIT_TRANSPORT=http` 構成で外部へ送出されることを unit テストで固定する。— `_audit_llm_trace` を `build_event(event_type="llm")` で dispatcher へ emit するよう変更（`routes/ai.py` 全9ルート）。`test_audit.py` に dispatcher 発火の unit テスト追加。
+- [x] AC-1: LLM 呼び出しが `audit_dispatcher` 経由で記録され、`SUI_AUDIT_TRANSPORT=http` 構成で外部へ送出されることを unit テストで固定する。— `_audit_llm_trace` を `build_event(event_type="llm")` で dispatcher へ emit するよう変更（`routes/ai.py` 全9ルート）。`test_audit.py` に dispatcher 発火の unit テスト追加。
 - [x] AC-2: 監査イベントの項目が CE2-C5 と `enterprise_architecture` §04.6 の双方を満たす。— metadata に `task`/`routingStage`/`provider`/`model_id`/`trace_id`（`build_audit_fields`）＋ `occurredAt`（`build_event`）を記録。
 - [x] AC-3: プロンプト本文・カード本文・未レビュー情報が監査イベントに含まれないことをテストで固定する。— metadata は LLM 応答の audit fields のみ（本文なし）。`test_audit.py` で `prompt`/`text`/`unreviewed` 非含有を assert。
 - [x] AC-4: 監査送信失敗時にAI機能が停止しない（fail-open 維持）ことと、失敗が観測可能であることを確認する。— `AuditDispatcher.emit` は送信失敗時に fail-open（イベントをキュー退避し本体継続）＋ `logger.warning` に `queueLength`/`error` を記録（観測可能）。`test_dispatcher_fail_open_on_transport_failure` と `test_dispatcher_logs_a_warning_when_queue_flush_itself_fails` で固定済み。
@@ -86,4 +86,4 @@ logger.info("auth edge: unknown tenant provider=%s ref=%s subject=%s",
 - **イベント項目**: `task`/`routingStage`/`provider`/`model_id`/`transport`/`requested_at`/`fallback_to_none`/`execution_path`/`trace_id`（`build_audit_fields`）＋ `occurredAt`。本文・カード本文・未レビュー情報は含めない（AC-3）。
 - **テスト**: `test_audit.py` に「dispatcher 発火＋本文非含有」の unit テスト追加。AI/audit 系 108 tests pass。
 - **doc 無しルートの扱い**: `refine_card_text`/`suggest_card_groups`/`detect_contradiction`/`suggest_document_title` はリクエストに `doc` を持たないため、監査イベントの `docId` に `"(no-doc)"` を付与（`AuditEvent.docId` は min_length=1 のため空文字不可）。`propose_island_summary` からの内部呼び出しは `request`/`db` を引き渡すよう修正。
-- **検証**: `KJ_ATLAS_AUDIT_TRANSPORT=http` 構成では LLM イベントが外部へ送出される（dispatcher 経由のため）。`_audit_llm_trace` は dispatcher が無い場合もローカルログのみで動作（fail-open 維持）。
+- **検証**: `SUI_AUDIT_TRANSPORT=http` 構成では LLM イベントが外部へ送出される（dispatcher 経由のため）。`_audit_llm_trace` は dispatcher が無い場合もローカルログのみで動作（fail-open 維持）。

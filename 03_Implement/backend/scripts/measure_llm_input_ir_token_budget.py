@@ -38,15 +38,15 @@ import json
 from importlib.metadata import version as package_version
 from typing import Any
 
-from kj_atlas_api import llm_input_ir
-from kj_atlas_api.llm_input_ir import canonical_ir_json
-from kj_atlas_api.models import DocumentV1, SuggestLayoutRequest
-from kj_atlas_api.models_ai import (
+from sui_sensemaking_api import llm_input_ir
+from sui_sensemaking_api.llm_input_ir import canonical_ir_json
+from sui_sensemaking_api.models import DocumentV1, SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import (
     DetectContradictionRequest,
     GenerateNarrativeRequest,
     SuggestCardGroupsRequest,
 )
-from kj_atlas_api.routes import ai
+from sui_sensemaking_api.routes import ai
 
 CARD_COUNT = 300
 ISLAND_COUNT = 30

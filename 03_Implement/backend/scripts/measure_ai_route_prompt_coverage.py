@@ -24,9 +24,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import GenerateNarrativeRequest, SuggestCardGroupsRequest
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import GenerateNarrativeRequest, SuggestCardGroupsRequest
+from sui_sensemaking_api.routes.ai import (
     _build_generate_narrative_prompt,
     _build_prompt,
     _build_suggest_card_groups_prompt,

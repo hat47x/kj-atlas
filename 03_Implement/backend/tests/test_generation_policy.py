@@ -2,7 +2,7 @@ from hashlib import sha256
 
 import pytest
 
-from kj_atlas_api.generation_policy import (
+from sui_sensemaking_api.generation_policy import (
     GenerationMetadata,
     GenerationOrigin,
     GenerationReason,

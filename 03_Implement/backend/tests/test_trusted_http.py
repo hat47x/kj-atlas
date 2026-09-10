@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib import request as urllib_request
 
-from kj_atlas_api.trusted_http import _RejectRedirectHandler, open_trusted_http
+from sui_sensemaking_api.trusted_http import _RejectRedirectHandler, open_trusted_http
 
 
 def test_trusted_http_redirect_handler_does_not_create_forward_request() -> None:

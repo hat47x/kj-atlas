@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/canvas/CanvasShell.tsx`, `03_Implement/frontend/src/api/client.ts`
-- Related ADR/Spec: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
+- Related ADR/Spec: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`
 - Expected verification level: `unit`
 
 ## 課題

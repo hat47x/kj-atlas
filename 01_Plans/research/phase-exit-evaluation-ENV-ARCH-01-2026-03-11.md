@@ -16,7 +16,7 @@
 - [x] Issue: `ENV-ARCH-01` は Done で、integration レベル検証の証跡がある
   - **根拠**: `Status: Done` / `Expected verification level: integration`。`pytest ...` 実行で 31 passed, 8 skipped を確認。
 - [x] ADR: `ADR-0021` の制約（互換なし一括移行）に違反していない
-  - **根拠**: `ADR-0021` の Decision で「`KJ_ATLAS_*` のみ受理」「旧キー受理なし」「新旧混在は不正」明記。
+  - **根拠**: `ADR-0021` の Decision で「`SUI_*` のみ受理」「旧キー受理なし」「新旧混在は不正」明記。
 - [x] SSOT整合: `runtime_parameter_registry.md` と issue/ADR の E1/E2/E3 が一致
   - **根拠**: registry に `Option B` / `Option C` / `E3: 考慮外` が明記され、issue/ADR と整合。
 - [x] セキュリティ制約: SafeMode既定ON・share/export 漏えい防止を弱める変更はない

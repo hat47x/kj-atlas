@@ -3,9 +3,9 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 import pytest
 
-from kj_atlas_api.main import app
-from kj_atlas_api.models import A2A3GateValidationRequest
-from kj_atlas_api.routes.admin import validate_a2_a3_gate
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import A2A3GateValidationRequest
+from sui_sensemaking_api.routes.admin import validate_a2_a3_gate
 
 
 def _valid_payload() -> dict[str, object]:

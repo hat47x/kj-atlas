@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ116）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §4（ナラティブは読み順に沿って叙述）, `00_Prompt/ai_kj_execution_procedures.md`（B型叙述）, `02_Architecture/api.md`（generate-narrative 契約・basedOnReadingOrder）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（84シナリオが basedOnReadingOrder のみ assert）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §4（ナラティブは読み順に沿って叙述）, `00_Prompt/ai_sensemaking_execution_procedures.md`（B型叙述）, `02_Architecture/api.md`（generate-narrative 契約・basedOnReadingOrder）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（84シナリオが basedOnReadingOrder のみ assert）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -27,7 +27,7 @@ if task == "generate_narrative":
 
 - **ナラティブ本文が読み順の島（叙述の骨格）に接地しているか**を E2E で一切検証できない。
 - バックエンドがナラティブを読み順と無関係な本文に劣化させる（叙述の骨格を無視する）回帰が起きても、業務フローE2E は全部 pass する。
-- ナラティブは「読み順に沿った叙述」が核心（kj_technique.md §4）だが、その本文の接地が未固定。
+- ナラティブは「読み順に沿った叙述」が核心（sensemaking_technique.md §4）だが、その本文の接地が未固定。
 
 実機再現（iteration 186）:
 

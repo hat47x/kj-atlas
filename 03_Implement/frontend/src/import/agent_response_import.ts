@@ -133,7 +133,7 @@ function parseContent(value: unknown): AgentResponseProposalContent {
 }
 
 function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: string[]): { patch?: PatchV1; hasDeleteOps: boolean } {
-  if (!isRecord(value) || value.kind !== "kj-atlas-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
+  if (!isRecord(value) || value.kind !== "sui-sensemaking-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
     warnings.push("patch.invalid_shape");
     return { hasDeleteOps: false };
   }
@@ -151,7 +151,7 @@ function parsePatch(value: unknown, mode: AgentResponseImportMode, warnings: str
   const hasDeleteOps = validOps.some((op) => op.kind.startsWith("delete_"));
 
   const patch: PatchV1 = {
-    kind: "kj-atlas-patch",
+    kind: "sui-sensemaking-patch",
     version: 1,
     baseDocSignature: typeof value.baseDocSignature === "string" ? value.baseDocSignature : undefined,
     author: sanitizeString(value.author),

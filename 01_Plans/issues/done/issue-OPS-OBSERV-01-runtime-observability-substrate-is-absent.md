@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/observability.py`（新規）, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/README.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/main.py`, `03_Implement/backend/src/sui_sensemaking_api/observability.py`（新規）, `03_Implement/backend/src/sui_sensemaking_api/settings.py`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `04_Documentation/operations.md`, `04_Documentation/diagnostics.md`, `03_Implement/backend/README.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `04_Documentation/security.md`（ログのPII方針）
 - Expected verification level: `integration`
 
@@ -15,7 +15,7 @@
 
 ### 事実1: `extra={...}` で渡したログ情報は全て捨てられている
 
-バックエンドにログ設定が一切存在しない（`basicConfig` / `dictConfig` / ログ設定ファイル / `--log-config` のいずれも無し。`KJ_ATLAS_LOG_LEVEL` も未定義）。`logging.Formatter` の既定フォーマット文字列は `extra` のキーを描画しないため、**`extra` に載せた構造化情報は出力に現れない**。
+バックエンドにログ設定が一切存在しない（`basicConfig` / `dictConfig` / ログ設定ファイル / `--log-config` のいずれも無し。`SUI_LOG_LEVEL` も未定義）。`logging.Formatter` の既定フォーマット文字列は `extra` のキーを描画しないため、**`extra` に載せた構造化情報は出力に現れない**。
 
 ```python
 # routes/ai.py:92
@@ -34,7 +34,7 @@ logger.info("llm_generate", extra=metadata)   # 実際の出力: llm_generate
 
 結果として、利用者が「14:32に開けなかった」と報告したとき、**画面にもレスポンスボディにもログにも突き合わせるIDが無い**。管理者に残るのは uvicorn のアクセスログ（method / path / status のみ。テナントも主体も含まない）と時刻の目視照合だけである。
 
-`ADR-0053` の診断バンドルは設計としては良いが、**サーバ側の識別子を一切含まない**ため、サーバ側の何とも結合できない。さらに唯一の識別フィールドである `app.revision` は、`KJ_ATLAS_APP_REVISION` が `frontend/Dockerfile` の ARG にも `docker-compose.yml` にも渡されていないため、**標準Compose構成では常に `"unknown"`** になる（`vite.config.ts` の `envPrefix` は通っているので、配線2行の欠落）。
+`ADR-0053` の診断バンドルは設計としては良いが、**サーバ側の識別子を一切含まない**ため、サーバ側の何とも結合できない。さらに唯一の識別フィールドである `app.revision` は、`SUI_APP_REVISION` が `frontend/Dockerfile` の ARG にも `docker-compose.yml` にも渡されていないため、**標準Compose構成では常に `"unknown"`** になる（`vite.config.ts` の `envPrefix` は通っているので、配線2行の欠落）。
 
 ### 事実3: `/healthz` は定数を返す
 
@@ -69,10 +69,10 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 ## 対応方針
 
 - 実施すること（優先順）:
-  1. **ログ設定を出荷する。** `dictConfig` によるJSON formatter と `KJ_ATLAS_LOG_LEVEL` を追加する。これだけで既存8箇所の `extra` ペイロード（`tenantId` / `docId` / `eventType` / `queueLength` / LLM `trace_id`）が**コード変更なしで有効になる**。既に計算して捨てている情報なので、費用対効果が最も高い。`backend/README.md:146-153` の記述も同時に真になる。
+  1. **ログ設定を出荷する。** `dictConfig` によるJSON formatter と `SUI_LOG_LEVEL` を追加する。これだけで既存8箇所の `extra` ペイロード（`tenantId` / `docId` / `eventType` / `queueLength` / LLM `trace_id`）が**コード変更なしで有効になる**。既に計算して捨てている情報なので、費用対効果が最も高い。`backend/README.md:146-153` の記述も同時に真になる。
   2. **リクエストIDミドルウェアを追加する。** 受信時に生成（inbound `x-trace-id` があれば尊重）、`contextvars` フィルタでログレコードへ注入、`X-Request-Id` としてエコー、全エラーボディに含める。frontend の `ApiError` に保持させ、エラー表示と診断バンドルの許可リストへ追加する。**サーバ生成の不透明IDであり利用者コンテンツを含まないため `ADR-0053` の境界に抵触しない。**
   3. **`/healthz` を正直にし、`/readyz` を追加する。** `/healthz` は liveness のみと文書化し、`/readyz` で `SELECT 1` と `alembic_version` × `ScriptDirectory.get_heads()` の照合を行う。事実3のスキーマ齟齬もこれで塞がる。
-  4. **`KJ_ATLAS_APP_REVISION` を配線し、`/version` を追加する。** Dockerfile に ARG/ENV 2行、compose に build-arg 1行、route 1本。診断バンドルが匿名から特定可能になる。
+  4. **`SUI_APP_REVISION` を配線し、`/version` を追加する。** Dockerfile に ARG/ENV 2行、compose に build-arg 1行、route 1本。診断バンドルが匿名から特定可能になる。
   5. **`04_Documentation/` へ観測ガイドを追加する。** ログ行の実例、フィールドの意味、リクエストIDからの追跡手順。
 - 実施しないこと:
   1. メトリクス基盤（`/metrics` / Prometheus / OTel）の導入 — 依存が大きく、判断を要する。別issue（下記論点）。
@@ -86,10 +86,10 @@ Prometheus / OpenTelemetry / statsd / `/metrics` のいずれも存在しない�
 
 ## 受入条件
 
-- [x] AC-1: JSON formatter と `KJ_ATLAS_LOG_LEVEL` を出荷し、既存の `extra` ペイロードが出力に現れることを固定した（`test_observability.py::test_extra_fields_are_rendered`）。`KJ_ATLAS_LOG_JSON=false` の人間可読書式でも `requestId` を保持することも固定。秘密名のフィールドは `[redacted]` へ落とす。
+- [x] AC-1: JSON formatter と `SUI_LOG_LEVEL` を出荷し、既存の `extra` ペイロードが出力に現れることを固定した（`test_observability.py::test_extra_fields_are_rendered`）。`SUI_LOG_JSON=false` の人間可読書式でも `requestId` を保持することも固定。秘密名のフィールドは `[redacted]` へ落とす。
 - [x] AC-2: 全リクエストに `X-Request-Id` を付与し、ログレコードとエラーボディの双方から同じ値が取れることを固定した。inbound `x-trace-id` は安全な形式のみ採用し、不正値は**リクエストを失敗させず**サーバ発行へ倒す。
 - [x] AC-3: `/readyz` を追加し、DB到達不能時に 503 かつ接続文字列を反射しないことを固定した。`/healthz` の意味を `operations.md` / `diagnostics.md` / `SUPPORT.md` で liveness のみに訂正し、docstring にも明記した。
-- [x] AC-4: `KJ_ATLAS_APP_REVISION` を frontend build ARG と compose build arg へ配線した（`vite.config.ts` の `envPrefix` は既に通っていたため配線のみ）。併せて `GET /version` を追加した。
+- [x] AC-4: `SUI_APP_REVISION` を frontend build ARG と compose build arg へ配線した（`vite.config.ts` の `envPrefix` は既に通っていたため配線のみ）。併せて `GET /version` を追加した。
 - [x] AC-5: `03_Implement/backend/README.md` の構造化ログ記述を事実へ合わせた（`extra` 経由であること、以前は出力されていなかったこと、レベル変更方法）。
 - [x] AC-6: `04_Documentation/observability.md` を追加し、`operations.md` の「ログを見る」節と `04_Documentation/README.md` の公開一覧から参照した。**まだ観測できないこと**（メトリクス皆無、監査イベントが既定で捨てられること、ローカル保存と照会APIの不在、ログのローテーション未設定）も明記した。※管理面操作の監査は `SEC-ADMIN-PLANE-03`（マージ時点で実装済み・`GET /admin/provision/audit`）に委譲しているため観測ガイドからは「未監査」を削除した。
 
@@ -113,14 +113,14 @@ curl -s http://127.0.0.1:8000/api/readyz     # DB停止時に非200
 
 項目1〜4（ログ設定・リクエストID・/readyz・/version）と文書5を実装した。メトリクス基盤と主体の擬似識別子は「実施しないこと」のまま（判断待ち）。
 
-- **AC-1（ログ設定）**: `logging_config.py` を新設 — JSON formatter が `extra={...}` ペイロード（`tenantId`/`docId`/`queueLength`/`eventType`/`error`/LLM `trace_id` 等）を描画。`KJ_ATLAS_LOG_LEVEL` を settings へ追加（未知値は INFO へフォールバック）。`main.py` が `configure_logging(settings.log_level)` を module 読込時に呼ぶ。実走行で監査失敗 warning が `requestId` 込みの JSON 1行として出力されることを確認。
+- **AC-1（ログ設定）**: `logging_config.py` を新設 — JSON formatter が `extra={...}` ペイロード（`tenantId`/`docId`/`queueLength`/`eventType`/`error`/LLM `trace_id` 等）を描画。`SUI_LOG_LEVEL` を settings へ追加（未知値は INFO へフォールバック）。`main.py` が `configure_logging(settings.log_level)` を module 読込時に呼ぶ。実走行で監査失敗 warning が `requestId` 込みの JSON 1行として出力されることを確認。
 - **AC-2（リクエストID）**: `add_request_id` middleware を追加 — inbound `x-trace-id`（安全形式 `^[A-Za-z0-9._:-]{1,128}$`）を尊重、contextvar でログへ注入、全レスポンスへ `X-Request-Id` をエコー、エラーボディ（401/422/409/503/500）へ `requestId` を追加。catch-all 500 ハンドラも追加（例外をログし `requestId` を返す）。実走行でログの `requestId` == レスポンス `X-Request-Id` を確認。
 - **AC-3（/readyz）**: `/healthz` は liveness のみと文書化。`/readyz` を新設 — `SELECT 1` と `alembic_version` × `ScriptDirectory.get_heads()` 照合。DB 停止時 503 `database_unavailable`、schema 不一致時 503 `schema_mismatch`（`applied`/`expected` 付き）。`/readyz` は api-key middleware から除外（/healthz と同様）。
-- **AC-4（app.revision）**: settings へ `KJ_ATLAS_APP_REVISION`（既定 `unknown`）を追加し `/version` ルートを新設。frontend `Dockerfile` に ARG/ENV、`docker-compose.yml` の web build-arg と api environment に配線。registry へ `KJ_ATLAS_LOG_LEVEL` / `KJ_ATLAS_APP_REVISION` を登録。
-- **AC-5（README）**: `03_Implement/backend/README.md` の LLM 監査 metadata 節に JSON 形式・`requestId`・`KJ_ATLAS_LOG_LEVEL` を追記し、実装と一致させた。
+- **AC-4（app.revision）**: settings へ `SUI_APP_REVISION`（既定 `unknown`）を追加し `/version` ルートを新設。frontend `Dockerfile` に ARG/ENV、`docker-compose.yml` の web build-arg と api environment に配線。registry へ `SUI_LOG_LEVEL` / `SUI_APP_REVISION` を登録。
+- **AC-5（README）**: `03_Implement/backend/README.md` の LLM 監査 metadata 節に JSON 形式・`requestId`・`SUI_LOG_LEVEL` を追記し、実装と一致させた。
 - **AC-6（観測ガイド）**: `04_Documentation/observability.md` を新設（ログ形式・相関IDの突き合わせ手順・ヘルスチェックの意味）。operations.md / diagnostics.md / SUPPORT.md の /healthz 記述へ liveness と /readyz の注記を追加し、operations.md の「ログを見る」節から参照。
 
-検証: `tests/test_observability.py`（14 tests: formatter・requestId・readyz の成功/DB停止/schema不一致）、tenant-session exemption へ `/readyz`・`/version` を追加、docs-check pass、実走行で `/healthz` 200・`/readyz` 200・`/version` が `KJ_ATLAS_APP_REVISION` を反映・`X-Request-Id` ヘッダを確認。フル backend suite は実行中。
+検証: `tests/test_observability.py`（14 tests: formatter・requestId・readyz の成功/DB停止/schema不一致）、tenant-session exemption へ `/readyz`・`/version` を追加、docs-check pass、実走行で `/healthz` 200・`/readyz` 200・`/version` が `SUI_APP_REVISION` を反映・`X-Request-Id` ヘッダを確認。フル backend suite は実行中。
 
 ## 対応記録（2026-08-26）
 
@@ -132,7 +132,7 @@ curl -s http://127.0.0.1:8000/api/readyz     # DB停止時に非200
 - **重複排除**: `main.py` の `record_admin_plane_audit` が個別に持っていた `sha256(...).hexdigest()[:16]` を `observability.compute_actor_ref_hash` の呼び出しへ置き換えた（挙動は完全に同一）。監査テーブル側のセマンティクス・スキーマは変更していない。
 - **ログ行の例**:
   ```json
-  {"timestamp":"2026-08-26T09:12:33+0000","level":"INFO","logger":"kj_atlas_api.ai","message":"llm_generate","requestId":"9f2c1d...","actorRefHash":"a1b2c3d4e5f6a7b8","task":"refine_card_text"}
+  {"timestamp":"2026-08-26T09:12:33+0000","level":"INFO","logger":"sui_sensemaking_api.ai","message":"llm_generate","requestId":"9f2c1d...","actorRefHash":"a1b2c3d4e5f6a7b8","task":"refine_card_text"}
   ```
 - **ドキュメント**: `04_Documentation/observability.md` の「ログに出ないもの」節を訂正し、`actorRefHash` の説明（一方向ハッシュ・照合用fingerprint・主体解決できないリクエストでは出ない）を追加した。「主体を特定する手段がログには無い」という記述は「主体そのもの（誰か）の特定はできないが、同じ actor による複数ログ行の束ねはできる」に訂正した。
 - **検証**: `tests/test_observability.py` へ `compute_actor_ref_hash`（安定性・一意性・非可逆性・None扱い）、filter/formatter（bound時に出る・unbound時に出ない・人間可読書式）、3つの主体解決経路それぞれが実際に bind することを直接検証するテストを追加（SaaS/control-planeの2件は実際に `Depends(...)` を通したFastAPI実行で確認 — `async def` 変更の効果そのものを検証する目的）。フル backend suite を実行して regression が無いことを確認（実行結果は本file差分と同時にPRへ記録）。

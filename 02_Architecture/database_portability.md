@@ -1,6 +1,6 @@
 # Database portability
 
-DB対応の正本は本書とする。SQLAlchemyがdialectを提供していることは、kj-atlasがそのDBを正式対応していることを意味しない。
+DB対応の正本は本書とする。SQLAlchemyがdialectを提供していることは、sui-sensemakingがそのDBを正式対応していることを意味しない。
 
 ## Support matrix
 

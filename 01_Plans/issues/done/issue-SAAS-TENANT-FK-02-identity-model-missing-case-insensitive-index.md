@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/tests/test_auth_context_resolution.py`, `03_Implement/backend/tests/test_auth_jit_provisioning.py`, `03_Implement/backend/tests/test_identity_lookup_uniqueness_migration.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/tests/test_auth_context_resolution.py`, `03_Implement/backend/tests/test_auth_jit_provisioning.py`, `03_Implement/backend/tests/test_identity_lookup_uniqueness_migration.py`
 - Related ADR/Spec: `03_Implement/backend/alembic/versions/20260314_0005_enforce_identity_lookup_uniqueness.py`
 - Expected verification level: `unit`
 
@@ -31,6 +31,6 @@
 ## Validation
 
 - `python -m pytest tests/test_auth_context_resolution.py tests/test_auth_jit_provisioning.py tests/test_identity_lookup_uniqueness_migration.py -q`: 25 passed。
-- `ruff check src/kj_atlas_api/models.py tests/test_auth_context_resolution.py tests/test_auth_jit_provisioning.py tests/test_identity_lookup_uniqueness_migration.py`: passed。
+- `ruff check src/sui_sensemaking_api/models.py tests/test_auth_context_resolution.py tests/test_auth_jit_provisioning.py tests/test_identity_lookup_uniqueness_migration.py`: passed。
 - `python 01_Plans/docs_check.py --root .`: passed。
 - `python 01_Plans/issues/validate_active_issue_memos.py --root .`: passed。

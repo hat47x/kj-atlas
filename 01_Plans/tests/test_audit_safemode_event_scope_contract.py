@@ -6,9 +6,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-AUDIT = ROOT / "03_Implement/backend/src/kj_atlas_api/audit.py"
-AI_ROUTES = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/ai.py"
-DOC_ROUTES = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/docs.py"
+AUDIT = ROOT / "03_Implement/backend/src/sui_sensemaking_api/audit.py"
+AI_ROUTES = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/ai.py"
+DOC_ROUTES = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/docs.py"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 
@@ -70,7 +70,7 @@ class AuditSafeModeEventScopeContractTests(unittest.TestCase):
         self.assertIn(('"export"', "payload.safeMode"), docs_modes)
 
     def test_public_rows_describe_event_flag_scope_and_negative_controls(self) -> None:
-        key = "KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE"
+        key = "SUI_AUDIT_ALLOW_IN_SAFE_MODE"
         for row in (_row(REGISTRY, key), _row(CONFIGURATION, key)):
             self.assertIn("AuditEvent.safeMode=true", row)
             self.assertIn("view", row)

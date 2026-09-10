@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`
 - Related ADR/Spec: N/A
 - Expected verification level: `integration`
 

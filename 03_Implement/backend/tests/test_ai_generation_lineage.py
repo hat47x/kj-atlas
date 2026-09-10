@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     AiGenerationRunRow,
     Base,
     CanvasRevisionRow,

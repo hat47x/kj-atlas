@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Verify the kj-atlas MCP server from a client (AI/generator verification path).
+// Verify the sui-sensemaking MCP server from a client (AI/generator verification path).
 //
 // This is the "generative AI uses MCP to verify" path — a standalone MCP
 // client that starts the server over stdio and calls get_context_projection.
@@ -7,12 +7,12 @@
 // Usage (must run under tsx — a .ts script that imports a .ts module and uses
 // TS `as` syntax; plain Node 20 rejects these with ERR_UNKNOWN_FILE_EXTENSION
 // / SyntaxError):
-//   KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 \
+//   SUI_MCP_API_BASE_URL=http://127.0.0.1:8000 \
 //     npm run verify -- [docId] [constraint]     # from 03_Implement/mcp
-//   KJ_ATLAS_MCP_API_BASE_URL=http://127.0.0.1:8000 \
+//   SUI_MCP_API_BASE_URL=http://127.0.0.1:8000 \
 //     npx tsx scripts/verify_mcp.ts [docId] [constraint]   # from this dir
 //
-// Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000)
+// Requires a running backend (uvicorn sui_sensemaking_api.main:app --port 8000)
 // and a document id (default: doc_phase1_canvas).
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -30,11 +30,11 @@ const transport = new StdioClientTransport({
   cwd: new URL("..", import.meta.url).pathname,
   env: {
     ...process.env,
-    KJ_ATLAS_MCP_TRANSPORT: "stdio",
+    SUI_MCP_TRANSPORT: "stdio",
   },
 });
 
-const client = new Client({ name: "kj-atlas-mcp-verify", version: "1.0.0" });
+const client = new Client({ name: "sui-sensemaking-mcp-verify", version: "1.0.0" });
 
 try {
   await client.connect(transport);

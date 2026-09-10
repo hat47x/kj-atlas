@@ -543,7 +543,7 @@ describe("validateImportedDocument", () => {
     expect(result.document.islands[0]?.geometry).toEqual(source.islands[0].geometry);
   });
 
-  it("keeps narrative check A/B direction and counts (優先3, kj_technique.md §5)", () => {
+  it("keeps narrative check A/B direction and counts (優先3, sensemaking_technique.md §5)", () => {
     const source = {
       version: 1,
       id: "doc_narrative_ab",
@@ -588,7 +588,7 @@ describe("validateImportedDocument", () => {
     expect(check?.counts).toEqual({ bMissingInA: 1, aMissingInB: 0 });
   });
 
-  it("keeps stored voids (kj_technique.md §4, 優先3-1)", () => {
+  it("keeps stored voids (sensemaking_technique.md §4, 優先3-1)", () => {
     const source = {
       version: 1,
       id: "doc_voids",

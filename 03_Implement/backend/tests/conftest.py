@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for kj-atlas test suite.
+"""Shared pytest fixtures for sui-sensemaking test suite.
 
 Fixtures defined here are automatically available to all test modules
 without explicit import (pytest conftest convention).
@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 
 # CI harness may export a generic DATABASE_URL for unrelated jobs.
-# ENV-ARCH-01 enforces KJ_ATLAS_* only and rejects legacy keys at import-time,
+# ENV-ARCH-01 enforces SUI_* only and rejects legacy keys at import-time,
 # so we sanitize test process env before application modules are imported.
 os.environ.pop("DATABASE_URL", None)
 
@@ -39,7 +39,7 @@ class StubCapabilityResolver:
     """
 
     def resolve(self, *, db, principal_id, tenant):
-        from kj_atlas_api.session_context import CapabilitySnapshot
+        from sui_sensemaking_api.session_context import CapabilitySnapshot
 
         return CapabilitySnapshot(
             effective_capabilities=("document.read", "document.write"),
@@ -73,7 +73,7 @@ def fake_response():
 # accumulate past the 60/min limit. Each test starts from a clean window.
 # ---------------------------------------------------------------------------
 
-from kj_atlas_api.rate_limit import DEFAULT_RATE_LIMITER  # noqa: E402
+from sui_sensemaking_api.rate_limit import DEFAULT_RATE_LIMITER  # noqa: E402
 
 
 def _reset_rate_limiter() -> None:

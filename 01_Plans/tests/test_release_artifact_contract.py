@@ -41,8 +41,8 @@ class ReleaseArtifactContractTest(unittest.TestCase):
         )
         self.assertIn("frontend-dist-<tag>", self.doc_text)
         self.assertIn("push: false", workflow_text)
-        self.assertIn("kj-atlas-api:${{ github.ref_name }}", workflow_text)
-        self.assertIn("kj-atlas-api:<tag>", self.doc_text)
+        self.assertIn("sui-sensemaking-api:${{ github.ref_name }}", workflow_text)
+        self.assertIn("sui-sensemaking-api:<tag>", self.doc_text)
 
         for marker in ("npm run test", "pytest", "playwright test"):
             self.assertNotIn(

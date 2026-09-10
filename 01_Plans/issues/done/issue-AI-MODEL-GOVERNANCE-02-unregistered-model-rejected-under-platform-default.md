@@ -5,7 +5,7 @@
 - Source Issue: ドッグフーディング iteration 109（scenario 47 実装時の観察）。`verify_business_flow_e2e.sh` で available-models / 403 強制を業務フロー化する過程で、**プラットフォーム既定（空allowlist）では未登録モデルIDが governance を通過して LLM 呼び出しに到達する**ことを実走行で確認。
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`（`_assert_model_allowed`）, `03_Implement/backend/tests/test_model_governance.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（scenario 47）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`（`_assert_model_allowed`）, `03_Implement/backend/tests/test_model_governance.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（scenario 47）
 - Related ADR/Spec: `01_Plans/issues/done/issue-AI-MODEL-GOVERNANCE-01-per-operation-model-selection-and-tenant-restriction.md`（R3）, `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`
 - Expected verification level: `integration` + 業務フローE2E
 

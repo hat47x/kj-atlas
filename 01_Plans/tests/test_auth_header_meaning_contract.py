@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
+AUTH_CONTEXT = ROOT / '03_Implement/backend/src/sui_sensemaking_api/auth_context.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 API_DOC = ROOT / '02_Architecture/api.md'

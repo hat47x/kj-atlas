@@ -49,7 +49,7 @@ export function buildHttpApp(config: HttpTransportConfig, documentClientConfig: 
     // No score/rank/confidence/priority fields exist on this MCP server's
     // tool output (ADR-0041 CVI anti-scoring); nothing here echoes that
     // vocabulary into the discovery document either.
-    resource_name: "kj-atlas read-only context projection",
+    resource_name: "sui-sensemaking read-only context projection",
   };
   // metadataHandler returns a Router (it restricts to GET/OPTIONS and adds
   // CORS internally) -- it must be mounted with app.use so Express strips

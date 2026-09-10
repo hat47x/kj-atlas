@@ -20,7 +20,7 @@ operator packで指定したRound 1の共通入力20件を、すべてproduct sn
 |---:|---|---|---|
 | 1 | `README.md` | `e9a98fd727d553739dbe404104793ace6e5c9cdf` | present |
 | 2 | `ROADMAP.md` | `e93a3dbb24e5058a6e3b07cb63bf85a8d66842fb` | present |
-| 3 | `00_Prompt/kj_technique.md` | `1e202ceb833b35a35eca842919d7bbf1404d5d89` | present |
+| 3 | `00_Prompt/sensemaking_technique.md` | `1e202ceb833b35a35eca842919d7bbf1404d5d89` | present |
 | 4 | `01_Plans/adr/ADR-0032-product-value-realization-model.md` | `98a09a5dcd34d02fcc3d64fdf8cfa423b7f3143f` | present |
 | 5 | `01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md` | `e1cd3af831a0f2982c2fa476069d9206fa3aa93a` | present |
 | 6 | `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md` | `6b068e48ba28823a3214ee4ba4c0aac7a05c281b` | present |
@@ -29,11 +29,11 @@ operator packで指定したRound 1の共通入力20件を、すべてproduct sn
 | 9 | `01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md` | `948561157ea716ccbf6f3dba789dbde929d45035` | present |
 | 10 | `01_Plans/issues/issue-VR-ROADMAP-01-value-to-social-goal-phase-baseline.md` | `245b62c3479ea5810fb841dca9de499ce6d6b217` | present |
 | 11 | `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` | `4597c11804960dd8e6b16c176b8e78fc82013c62` | present |
-| 12 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json` | `c6ae2f6635a30d94a5d7bd671785e6fa5e6f1acc` | present |
-| 13 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json` | `27a00fddcf6717a0af1ba2bf67ef8faebc7f6985` | present |
-| 14 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json` | `edb83ab819984f20052b644898613e1457a8a1f1` | present |
-| 15 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r4.json` | `8241de96cb8c7a6267fbdcba840a23d9be6b0950` | present |
-| 16 | `01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json` | `9aa694d334409ce3bf3c29fc8a84f61c9b64cf17` | present |
+| 12 | `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r1.json` | `c6ae2f6635a30d94a5d7bd671785e6fa5e6f1acc` | present |
+| 13 | `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r2.json` | `27a00fddcf6717a0af1ba2bf67ef8faebc7f6985` | present |
+| 14 | `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r3.json` | `edb83ab819984f20052b644898613e1457a8a1f1` | present |
+| 15 | `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r4.json` | `8241de96cb8c7a6267fbdcba840a23d9be6b0950` | present |
+| 16 | `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r5.json` | `9aa694d334409ce3bf3c29fc8a84f61c9b64cf17` | present |
 | 17 | `01_Plans/issues/done/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md` | `ef3b1be00e0d478fcf23c0bf556b51ec1abca2d1` | present |
 | 18 | `01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md` | `50124de1ea8b507d5d97ac4c7ea6f85dfb6f6829` | present |
 | 19 | `01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md` | `455185f1e12490c6a1d97c45a221491b5c2131cc` | present |
@@ -121,7 +121,7 @@ SHA-256:
 | Round 1共通入力20件は固定commit / blobから再取得可能 | evidence / no issue | 実験開始条件を満たす |
 | T1〜T3は自然発生した時間差テストとして成立 | evidence / no issue | 新しい機能要求ではない |
 | InquiryJourney Phase 2実使用をC/Dへ接続可能 | F1 existing issue | `DOMAIN-W-ITERATION-01` T9がすでに実使用証拠を待っている |
-| 現在の実験者contextはArmとして汚染済み | experiment constraint | KJ Atlas製品の欠陥ではない |
+| 現在の実験者contextはArmとして汚染済み | experiment constraint | SUI Sensemaking製品の欠陥ではない |
 | operator packのArm順記述がpreflightと競合していた | experiment protocol defect / corrected before first run | C → D → B → Aへ一本化した |
 | B/Dで必須のskill実行記録に、共通template上の専用欄がなかった | experiment record defect / corrected before first run | run record §12を追加した |
 | static intakeが人手確認だけだった | experiment record risk / corrected before first run | `validate_cognitive_run_records.py`を追加した |

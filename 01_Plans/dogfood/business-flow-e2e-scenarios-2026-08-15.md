@@ -2054,13 +2054,13 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 | 軸 | 内容 |
 |----|------|
-| 業態 | ソフトウェア開発組織（kj-atlas プロダクト改善） |
+| 業態 | ソフトウェア開発組織（sui-sensemaking プロダクト改善） |
 | 想定人物 | プロダクトオーナー（4部署の声を第1ラウンド200枚にカード化） |
 | 業務領域 | 第1ラウンドで200枚のカードを作り、実物大のキャンバスで叙述化・A/B照合まで行う |
 | 操作内容 | 文書作成(200枚) → **読戻し(200枚保持)** → **ナラティブ(generate-narrative)** → **A/B照合(check-narrative)** → **card-groups(100枚境界)** |
-| 注意事項 | `kj_technique.md` §1「数百枚は正常」。200枚の文書作成・叙述・A/Bは成立。card-groups は**100枚上限**（DOGFOOD-31）を境界として固定（101枚→422） |
+| 注意事項 | `sensemaking_technique.md` §1「数百枚は正常」。200枚の文書作成・叙述・A/Bは成立。card-groups は**100枚上限**（DOGFOOD-31）を境界として固定（101枚→422） |
 
-シナリオ170は **高度ドッグフーディングの第1ラウンド200枚**という実物大規模で、kj-atlas 自身のプロダクト改善を題材にした。4部署（開発・運用・サポート・営業）×50枚＝200枚の観察カードを1キャンバスに投入し、**200枚の文書作成・読戻し・ナラティブ・A/B照合が実規模で成立する**ことを固定。あわせて **card-groups の入力上限が100枚**（`models_ai.py`・`max_length=100`）で、101枚以上は 422 になる境界を assert する（**DOGFOOD-31**・実規模とAI操作上限の乖離を起票）。**1025/1025 pass**（シナリオ1〜170・170業態）。
+シナリオ170は **高度ドッグフーディングの第1ラウンド200枚**という実物大規模で、sui-sensemaking 自身のプロダクト改善を題材にした。4部署（開発・運用・サポート・営業）×50枚＝200枚の観察カードを1キャンバスに投入し、**200枚の文書作成・読戻し・ナラティブ・A/B照合が実規模で成立する**ことを固定。あわせて **card-groups の入力上限が100枚**（`models_ai.py`・`max_length=100`）で、101枚以上は 422 になる境界を assert する（**DOGFOOD-31**・実規模とAI操作上限の乖離を起票）。**1025/1025 pass**（シナリオ1〜170・170業態）。
 
 ## E2E の固定方法
 
@@ -2070,7 +2070,7 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 上記業務フローをアサーション付きで実走行する（`bash scripts/verify_business_flow_e2e.sh [PORT]`）。
 
 ```
-モックLLM(mock_local_llm.py) → バックエンド(KJ_ATLAS_LLM_PROVIDER=local) → フロー実走行
+モックLLM(mock_local_llm.py) → バックエンド(SUI_LLM_PROVIDER=local) → フロー実走行
   PUT 文書 → GET 読戻し → refine-card-text → suggest-island-summary → generate-narrative
   → 未レビュー境界 422 の確認（SafeMode）
 ```
@@ -2078,7 +2078,7 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 ### UI 層 E2E（将来拡張）
 
 フロントエンドの AI 操作は CE4 proposal 連鎖（query→bundle→proposal）を持つため、UI 層 E2E での
-固定は将来のイテレーションで追加する。その際も `KJ_ATLAS_LLM_PROVIDER=local` のモックで駆動する。
+固定は将来のイテレーションで追加する。その際も `SUI_LLM_PROVIDER=local` のモックで駆動する。
 
 ## ローカルLLM縮退スイッチ
 
@@ -2086,13 +2086,13 @@ AI 操作のカバー領域を拡大しており、業態・想定人物も調�
 
 | 設定 | 値 | 効果 |
 |------|----|------|
-| `KJ_ATLAS_LLM_PROVIDER` | `deepseek` | 課金API（`KJ_ATLAS_DEEPSEEK_API_KEY` 必須） |
-| `KJ_ATLAS_LLM_PROVIDER` | `local` | ローカル/モック（`KJ_ATLAS_LOCAL_LLM_BASE_URL` で宛先指定） |
-| `KJ_ATLAS_LLM_PROVIDER` | `none` | AI 無効（fail-closed） |
+| `SUI_LLM_PROVIDER` | `deepseek` | 課金API（`SUI_DEEPSEEK_API_KEY` 必須） |
+| `SUI_LLM_PROVIDER` | `local` | ローカル/モック（`SUI_LOCAL_LLM_BASE_URL` で宛先指定） |
+| `SUI_LLM_PROVIDER` | `none` | AI 無効（fail-closed） |
 
 - **モック（GPU不要・決定的・無料）**: `deploy/tools/mock_local_llm.py` — `/generate` 契約で
   per-task の schema 準拠 canned 応答を返す。E2E の決定性に最適。
-- **実ローカルLLM（例: Ollama）**: `KJ_ATLAS_LOCAL_LLM_BASE_URL` を差し替えるだけでよい
+- **実ローカルLLM（例: Ollama）**: `SUI_LOCAL_LLM_BASE_URL` を差し替えるだけでよい
   （`/generate` 契約は同一・OpenAI 互換。小さい CPU モデルは strict JSON が不安定なため
   実業務ではモック/検証用途で利用）。
 

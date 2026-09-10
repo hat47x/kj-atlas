@@ -5,7 +5,7 @@
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §13.2（第4反復三要素分析で発見）, `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md` AC-11
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`（`InquiryBundleRow`）, `03_Implement/backend/src/kj_atlas_api/routes/inquiry_bundles.py`, `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`（参照する既存モデル）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`（`InquiryBundleRow`）, `03_Implement/backend/src/sui_sensemaking_api/routes/inquiry_bundles.py`, `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`（参照する既存モデル）
 - Related ADR/Spec: `01_Plans/adr/ADR-0057-w-type-cumulative-inquiry-model.md`, `02_Architecture/inquiry_journey_model.html`, `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`, `01_Plans/issues/done/issue-SEC-DOC-BOUND-06-list-and-archive-bypass-visibility-and-capability.md`（同型の境界を`DocumentV1`側で実装した先例）
 - Expected verification level: `integration`
 
@@ -15,7 +15,7 @@
 （`issue-DOMAIN-W-ITERATION-01`が実装した第2の成果物型）の backend 永続化に、第2反復（`ADR-0073`）が
 `DocumentV1`へ確立した所有者・可視性・capabilityの境界が及んでいないことが判明した。
 
-`InquiryBundleRow`（`03_Implement/backend/src/kj_atlas_api/models.py`）の主キーは`(tenant_id, journey_id)`
+`InquiryBundleRow`（`03_Implement/backend/src/sui_sensemaking_api/models.py`）の主キーは`(tenant_id, journey_id)`
 のみであり、`created_by`や`visibility`に相当する列が無い。`/inquiry-bundles/{journey_id}`のGET/PUT/DELETE
 （`routes/inquiry_bundles.py`）はテナント境界のみを`_trusted_session`で確認し、journey_idの作成者以外の
 同テナント利用者からのアクセスを区別しない。したがって**同一テナント内の任意の利用者が、journey_idを知る

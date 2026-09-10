@@ -3,7 +3,7 @@
 - Date: 2026-09-04
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 意味保存型mergeの主要実装が揃った現在、backend・frontend・ローカルfallback・判断記録は同じ契約境界を共有し、実際の利用経路として機能する状態になっているか。
-- Canvas: `doc_kj_atlas_dogfood_r18.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r18.json`
 - Result class: 継続dogfoodの内部所見。第三者価値実証や認知比較結果の代替証拠ではない。
 
 ## 1. 出発点

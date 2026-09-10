@@ -17,9 +17,9 @@
 ### Done
 - SidePanel reproposal diff preview: Shows 3 most recent reproposalDiffs with ops, rationale, iteration (2f170b17)
 - "Open Reproposal" action button in SidePanel (island + card critique sections) → opens advanced UI + focuses critique workflow
-- `KJ_ATLAS_LLM_PROVIDER=none` explicit warning banner in critique sections (2026-06-29)
+- `SUI_LLM_PROVIDER=none` explicit warning banner in critique sections (2026-06-29)
   - Detects provider-disabled errors from suggest-layout API
-  - Shows amber warning: "AI-powered re-proposals are unavailable (KJ_ATLAS_LLM_PROVIDER=none). Critique notes and tags are still saved."
+  - Shows amber warning: "AI-powered re-proposals are unavailable (SUI_LLM_PROVIDER=none). Critique notes and tags are still saved."
   - i18n: `side_panel.critique.provider_disabled` (en/ja)
 - Existing infrastructure: critique note + tags editing in SidePanel, SuggestionPanel for resuggest, HilRsRediffPreview for diff details, DomainStateFilterBar hasCritique filter
 - Integration test: critique→preview→apply→critique preserved (hil_rs_client_apply.integration.test.ts)
@@ -71,7 +71,7 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 - [x] カード/島/関係に Critique を理由任意で付けられる（domain.md の5種に対応）。（実装記録 2026-06-23）
 - [x] Critique 付与後、再提案候補と前案の差分が確認できる。（HilRsRediffPreview + SuggestionPanel、2026-07-11 provider=local 実走行でも確認）
 - [x] AI提案は proposal-only で、採否は人間操作。違和感は消されず保持される。（2026-07-11 実走行: 提案到着後も違和感メモ/タグが保持され、破棄は人間操作、自動適用なし）
-- [x] `KJ_ATLAS_LLM_PROVIDER=none` 既定でも、Critiqueの登録・保存・表示が成立する（再提案生成のAI依存部は明示的に分離）。（E2E追認 2026-06-29）
+- [x] `SUI_LLM_PROVIDER=none` 既定でも、Critiqueの登録・保存・表示が成立する（再提案生成のAI依存部は明示的に分離）。（E2E追認 2026-06-29）
 - [x] schema変更がある場合は `schemas.md` 先行更新と往復互換を満たす。（schema変更なしで完了）
 - [x] E2E で 違和感付与→再提案→差分確認 を検証する。（domain_expression_keyboard_access + 2026-07-11 provider=local 実走行）
 
@@ -97,10 +97,10 @@ domain.md の Critique（理由の有無を問わない否定・ツッコミ）�
 - ステータスへの影響: このissueは引き続き `Draft`。スキーマ中立の最初のスライスは計画できるが、批評から再提案までの完全なループを実装するには、受け入れ済みの契約が不足している。
 - Phase 1 依存ゲート: DOMAIN-EXPR-01 が「読み取り専用状態の表示」の基準として受け入れられてから、批評入力と再提案確認を日常操作へ組み込む。
 - Critique 契約ゲート: 最初の実装で既存の `critique` / `critiqueTags` を使うのか、`critiqueInputs` を導入するのか、または互換レイヤーで扱うのかを決める。分類やpayload契約を変える場合は、先に `02_Architecture/schemas.md` を更新する。
-- 再提案の生成元ゲート: `KJ_ATLAS_LLM_PROVIDER=none` とAI支援時のふるまいを分けて定義する。AIなしでも批評の登録・表示は成立させる。AI支援による再提案はproposal-onlyとし、自動適用しない。
+- 再提案の生成元ゲート: `SUI_LLM_PROVIDER=none` とAI支援時のふるまいを分けて定義する。AIなしでも批評の登録・表示は成立させる。AI支援による再提案はproposal-onlyとし、自動適用しない。
 - 差分・意思決定UIゲート: どの変更前後フィールドを表示するか、利用者が候補を承認・却下する手順、承認・却下・保留後も元の批評をどう見せるかを決める。
 - ADRゲート: 既存フィールドを見せるだけのスキーマ中立UIスライスではADR不要。批評分類、再提案の権限、スキーマ互換性、AI提案と人間判断の境界を変える場合は、実装前にADRの作成または更新を行う。
-- 推奨する次のスライス: まずAIなし・スキーマ中立のUIフローを文書化し、テストする。カードまたはクラスタを選択し、既存の批評種別と任意メモを付与し、文脈内に表示する。`KJ_ATLAS_LLM_PROVIDER=none` では「AIによる再提案は生成されない」状態を明示する。AI生成の再提案候補は、上記契約が受け入れられるまで延期する。
+- 推奨する次のスライス: まずAIなし・スキーマ中立のUIフローを文書化し、テストする。カードまたはクラスタを選択し、既存の批評種別と任意メモを付与し、文脈内に表示する。`SUI_LLM_PROVIDER=none` では「AIによる再提案は生成されない」状態を明示する。AI生成の再提案候補は、上記契約が受け入れられるまで延期する。
 - この同期は実装を承認しない。スキーマ、AI権限、操作設計を1つのPRに混ぜずに済むよう、次の計画判断を絞り込むための更新である。
 
 ## 7) Additional context
@@ -151,7 +151,7 @@ Playwright証跡」を完了し、本Issueを Done とする。
 ### 検証環境（本物のprovider transport を使用）
 
 - compose 3サービス（db+api+web）＋ `docker-compose.llm-stub.yml` オーバーレイ:
-  `KJ_ATLAS_LLM_PROVIDER=local` / `KJ_ATLAS_LOCAL_LLM_BASE_URL=http://llm-stub:8089`。
+  `SUI_LLM_PROVIDER=local` / `SUI_LOCAL_LLM_BASE_URL=http://llm-stub:8089`。
 - `03_Implement/deploy/llm-stub/server.py`: LocalProvider の HTTP 契約
   （POST /generate → `{"text": ...}`）をそのまま話す決定論スタブ。プロンプトの
   `- id="..."` 行からカードIDを抽出し、`re_layout` / `suggest_merges` に対して
@@ -178,5 +178,5 @@ Playwright証跡」を完了し、本Issueを Done とする。
 - `large-scale` provider の成功経路は対象外のまま: 設計上、外部エンドポイント・明示的オプトイン・
   許可リストを要求する（`_ensure_large_scale_allowlist`）。実外部接続を伴うため、
   実施する場合は人間の承認と実エンドポイントが前提（本Issueの残件ではなく運用時の受入項目）。
-- compose 既定は `KJ_ATLAS_LLM_PROVIDER=none` のまま不変。オーバーレイは検証専用で、
+- compose 既定は `SUI_LLM_PROVIDER=none` のまま不変。オーバーレイは検証専用で、
   ユーザー向けデプロイには使用しない旨をファイル内に明記済み。

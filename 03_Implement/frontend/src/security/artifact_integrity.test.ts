@@ -47,7 +47,7 @@ describe("artifact integrity", () => {
   });
 
   it("fails on signing key mismatch in verifier script", () => {
-    const tmpRoot = mkdtempSync(path.join(tmpdir(), "kj-atlas-integrity-"));
+    const tmpRoot = mkdtempSync(path.join(tmpdir(), "sui-sensemaking-integrity-"));
     try {
       const dataPath = path.join(tmpRoot, "document.json");
       writeFileSync(dataPath, '{"id":"doc"}\n', "utf-8");

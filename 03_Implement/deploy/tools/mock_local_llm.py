@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Deterministic mock ``/generate`` server for kj-atlas local-LLM (GPU-free) demos.
+"""Deterministic mock ``/generate`` server for sui-sensemaking local-LLM (GPU-free) demos.
 
-kj-atlas's local provider (``KJ_ATLAS_LLM_PROVIDER=local``) POSTs to
+sui-sensemaking's local provider (``SUI_LLM_PROVIDER=local``) POSTs to
 ``{base_url}/generate`` a body ``{"task","prompt","temperature","max_tokens","model"}``
 and expects ``{"text": "<JSON>"}`` where ``<JSON>`` is a *string* whose contents match
 the strict per-task schema the API then validates. Small CPU-only models rarely emit
@@ -15,10 +15,10 @@ Usage:
     python3 mock_local_llm.py                       # 127.0.0.1:8001
     python3 mock_local_llm.py --host 0.0.0.0 --port 8001
 
-Then point kj-atlas at it:
-    export KJ_ATLAS_LLM_PROVIDER=local
-    export KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001
-    export KJ_ATLAS_LOCAL_LLM_MODEL=mock
+Then point sui-sensemaking at it:
+    export SUI_LLM_PROVIDER=local
+    export SUI_LOCAL_LLM_BASE_URL=http://localhost:8001
+    export SUI_LOCAL_LLM_MODEL=mock
 """
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ _GRID_SPACING_Y = 160
 
 
 def build_text_for_task(task: str, prompt: str) -> str:
-    """Return the stringified per-task JSON the kj-atlas API will ``json.loads(text)``."""
+    """Return the stringified per-task JSON the sui-sensemaking API will ``json.loads(text)``."""
     if task == "re_layout":
         card_ids = _CARD_LINE.findall(prompt)
         cards = [
@@ -212,7 +212,7 @@ def build_text_for_task(task: str, prompt: str) -> str:
         # Deterministic A/B mismatch paths (iteration 99 / 179, DOGFOOD-14):
         # the narrative carries marker phrases that deterministically trigger the
         # b_missing_in_a / a_missing_in_b directions, so the business-flow E2E
-        # freezes BOTH A/B cross-check directions (kj_technique.md §5) — not just
+        # freezes BOTH A/B cross-check directions (sensemaking_technique.md §5) — not just
         # a_missing_in_b. Without the b_missing_in_a path the E2E could never
         # verify that narrative-claims-not-in-the-diagram are reported.
         if "根拠のない主張" in prompt:
@@ -267,7 +267,7 @@ def build_text_for_task(task: str, prompt: str) -> str:
         if len(card_ids) < 2:
             return json.dumps({"groups": []})
         # Group by the (カテゴリ) theme segment when 2+ themes exist, so the E2E
-        # can freeze that bundling follows theme similarity (kj_technique.md §2),
+        # can freeze that bundling follows theme similarity (sensemaking_technique.md §2),
         # not document position. Previously the mock split by position, so the
         # most-used operation's semantic grouping was never verifiable
         # (iteration 185, DOGFOOD-20).
@@ -389,15 +389,15 @@ class _Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Deterministic mock /generate server for kj-atlas local-LLM demos."
+        description="Deterministic mock /generate server for sui-sensemaking local-LLM demos."
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
     args = parser.parse_args()
 
     server = ThreadingHTTPServer((args.host, args.port), _Handler)
-    print(f"kj-atlas mock /generate server listening on http://{args.host}:{args.port}")
-    print("Set KJ_ATLAS_LLM_PROVIDER=local and KJ_ATLAS_LOCAL_LLM_BASE_URL to this URL.")
+    print(f"sui-sensemaking mock /generate server listening on http://{args.host}:{args.port}")
+    print("Set SUI_LLM_PROVIDER=local and SUI_LOCAL_LLM_BASE_URL to this URL.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

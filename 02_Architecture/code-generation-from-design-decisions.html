@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>設計判断からのコード生成仕様 — kj-atlas</title>
+<title>設計判断からのコード生成仕様 — sui-sensemaking</title>
 <style>
   :root {
     --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #cbd5e1;
@@ -195,7 +195,7 @@ flowchart TB
     <tr><td>4</td><td><code>api/client.ts</code></td><td>suggestDocumentTitle() + 型定義</td><td>suggestLayout() のパターン</td></tr>
     <tr><td>5</td><td><code>tests/test_llm_provider.py</code></td><td>DeepSeekProviderテスト（正常系・認証エラー・空レスポンス）</td><td>既存テストのパターン</td></tr>
     <tr><td>6</td><td><code>AGENTS.md</code> §1.2</td><td>操作別モデルレベル表に1行追加</td><td>既存行のパターン</td></tr>
-    <tr><td>7</td><td><code>ai_kj_execution_procedures.md</code></td><td>AI実行手順に1項目追加</td><td>既存項目のパターン</td></tr>
+    <tr><td>7</td><td><code>ai_sensemaking_execution_procedures.md</code></td><td>AI実行手順に1項目追加</td><td>既存項目のパターン</td></tr>
     <tr><td>8</td><td><code>tests/test_codegen_{task}.py</code></td><td>エンドポイントテスト（成功 + provider-disabled 503）</td><td>test_ai_provider_error_contract.py のパターン（DX-CODEGEN-03）</td></tr>
   </tbody>
 </table>
@@ -390,7 +390,7 @@ flowchart TB
   <li><code>01_Plans/adr/ADR-0067-three-element-constraint-design-method.md</code> — 設計方法論</li>
   <li><code>02_Architecture/three-element-constraint-checklist.html</code> — 生成前の必須チェック</li>
   <li><code>AGENTS.md</code> §1.2 — 操作別モデルレベル定義</li>
-  <li><code>00_Prompt/ai_kj_execution_procedures.md</code> — 各操作のAI実行手順</li>
+  <li><code>00_Prompt/ai_sensemaking_execution_procedures.md</code> — 各操作のAI実行手順</li>
   <li><code>.github/workflows/ci.yml</code> — 生成後のCI検証</li>
 </ul>
 

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
-- Scope: `00_Prompt/kj_technique.md`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `AGENTS.md`
+- Scope: `00_Prompt/sensemaking_technique.md`, `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, `AGENTS.md`
 - Related ADR/Spec: `ADR-0067-three-element-constraint-design-method.md`, `02_Architecture/dogfooding-ai-collaboration-plan.html`
 - Expected verification level: `unit`
 
@@ -19,7 +19,7 @@
 - 実施すること:
   1. 各KJ操作の必要推論深度を低・中・高の3段階で定義
   2. 推論深度ごとに推奨モデルを割り当て（DeepSeek / Sonnet / Opus）
-  3. モデル選択を環境変数で操作別に上書き可能にする仕組み（KJ_ATLAS_MODEL_LEVEL_LOW / _MEDIUM / _HIGH）
+  3. モデル選択を環境変数で操作別に上書き可能にする仕組み（SUI_MODEL_LEVEL_LOW / _MEDIUM / _HIGH）
   4. AGENTS.md と llm/provider.py にモデルレベル対応を実装
 - 実施しないこと:
   1. 利用者向けUIでのモデル選択機能（現段階では開発者向け設定に留める）
@@ -43,14 +43,14 @@
 ## 受入条件
 
 - [ ] 10操作の推論深度と推奨モデルが定義されている
-- [ ] 環境変数 KJ_ATLAS_MODEL_LEVEL_LOW / _MEDIUM / _HIGH でモデル指定可能
+- [ ] 環境変数 SUI_MODEL_LEVEL_LOW / _MEDIUM / _HIGH でモデル指定可能
 - [ ] provider=none 時は全操作でAI呼び出しをスキップ
 - [ ] モデルレベル定義が AGENTS.md に反映されている
 
 
 ## 完了記録（2026-08-12）
 
-AGENTS.md §1.2に10操作の推論深度・推奨モデル表を定義。resolve_model_for_task + KJ_ATLAS_LLM_TASK_MODEL_MAPで実装
+AGENTS.md §1.2に10操作の推論深度・推奨モデル表を定義。resolve_model_for_task + SUI_LLM_TASK_MODEL_MAPで実装
 ## 補足
 
 - DeepSeek API の provider 追加（issue-AI-PROVIDER-01）に依存

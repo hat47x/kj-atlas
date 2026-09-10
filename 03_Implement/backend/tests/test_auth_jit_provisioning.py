@@ -8,9 +8,9 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import (
     Base,
     IdentityProviderRow,
     LOCAL_DEFAULT_TENANT_ID,
@@ -20,7 +20,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 
 @contextmanager

@@ -22,7 +22,7 @@ function makeDoc(): DocumentV1 {
 describe("lintPatchAgainstCurrentDoc", () => {
   it("returns P001 error for islands referencing missing cards", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op-island", kind: "upsert_island", island: { id: "i2", cardIds: ["missing-card"] } }],
     };
@@ -33,7 +33,7 @@ describe("lintPatchAgainstCurrentDoc", () => {
 
   it("returns P007 for duplicate op ids", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "dup", kind: "delete_card", cardId: "c1" },
@@ -50,7 +50,7 @@ describe("lintPatchAgainstCurrentDoc", () => {
     doc.edges = [{ id: "e1", fromId: "i1", toId: "c1", fromKind: "island", toKind: "card", type: "related" }];
 
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op-delete-island", kind: "delete_island", islandId: "i1" }],
     };
@@ -61,7 +61,7 @@ describe("lintPatchAgainstCurrentDoc", () => {
 
   it("returns warnings without blocking codes for delete-card hazards", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op-delete", kind: "delete_card", cardId: "c1" }],
     };
@@ -74,7 +74,7 @@ describe("lintPatchAgainstCurrentDoc", () => {
 
   it("returns P009 for evidence links referencing missing cards", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         {

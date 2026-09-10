@@ -8,7 +8,7 @@
 
 ## 0. 結論
 
-現行kj-atlasは、外部認証・外部PDPへ接続できる**単一デプロイ／単一テナント相当のOSS**であり、共有DB型SaaSのマルチテナント分離を保証していない。`02_Architecture/enterprise_architecture.html`もSaaSマルチテナント管理を非目標としている。
+現行sui-sensemakingは、外部認証・外部PDPへ接続できる**単一デプロイ／単一テナント相当のOSS**であり、共有DB型SaaSのマルチテナント分離を保証していない。`02_Architecture/enterprise_architecture.html`もSaaSマルチテナント管理を非目標としている。
 
 SaaS対応では、テナントを単なる表示ラベルや外部PDPの判定条件にせず、アプリ本体が必ず守る**構造的なデータ境界**にする必要がある。具体的には、すべての永続データ・API・キャッシュ・非同期処理・監査・外部エージェント資格情報を`tenantId`でスコープし、主体テナントと資源テナントの不一致をPDP呼出前に必ず拒否する。
 
@@ -139,8 +139,8 @@ tenantIdをheaderで受ける場合、公開proxyは外部から届いた同名h
 
 ### SaaS profileの必須条件
 
-- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`等、実判定可能なadapterを必須化する。
-- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`を必須化する。
+- `SUI_ACCESS_CONTROL_ADAPTER=external_http`等、実判定可能なadapterを必須化する。
+- `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=deny`を必須化する。
 - adapter endpoint欠損、`noop`、API keyだけの主体識別、tenant解決不能では起動またはrequestをfail-fastにする。
 - `read_only` fallbackは単一組織内の可用性選択肢にはなりうるが、共有SaaSのtenant境界には使わない。
 
@@ -160,7 +160,7 @@ SaaSでは「管理者」を1種類にしない。
 - UIはrole名を解釈せず、backendが返す`effectiveCapabilities`で操作の有無と理由を表示する。APIは同じcapabilityを再検証する。
 - Tenant Adminは自tenantのmembership/agentだけを扱い、Platform operator権限へ昇格できない。
 - Platform Control PlaneとTenant Adminは別サーフェス・別認可とし、全tenantの文書一覧を持つ「スーパー管理画面」を作らない。
-- 外部IdP/PDPで管理するroles/groupsはkj-atlas内で編集せず、必要なら外部管理先への案内を表示する。
+- 外部IdP/PDPで管理するroles/groupsはsui-sensemaking内で編集せず、必要なら外部管理先への案内を表示する。
 
 ### Tenant切替
 
@@ -227,8 +227,8 @@ SaaSでは「管理者」を1種類にしない。
 - `02_Architecture/data_model_operations_overview.html` §2、§4、§5.2
 - `02_Architecture/runtime_parameter_registry.md`（現行profilesとaccess-control設定）
 - `THREAT_MODEL.md`
-- `03_Implement/backend/src/kj_atlas_api/models.py`
-- `03_Implement/backend/src/kj_atlas_api/auth_context.py`
-- `03_Implement/backend/src/kj_atlas_api/access_control.py`
-- `03_Implement/backend/src/kj_atlas_api/routes/docs.py`
-- `03_Implement/backend/src/kj_atlas_api/routes/admin.py`
+- `03_Implement/backend/src/sui_sensemaking_api/models.py`
+- `03_Implement/backend/src/sui_sensemaking_api/auth_context.py`
+- `03_Implement/backend/src/sui_sensemaking_api/access_control.py`
+- `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`
+- `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`

@@ -26,7 +26,7 @@ def _api_environment_keys(compose_text: str) -> list[str]:
     block = re.search(r"(?ms)^    environment:\n(?P<body>.*?)(?=^    \S|\Z)", api)
     if block is None:
         raise AssertionError("api.environment is missing")
-    return re.findall(r"^      - (KJ_ATLAS_[A-Z0-9_]+)(?:=|\s*$)", block.group("body"), re.M)
+    return re.findall(r"^      - (SUI_[A-Z0-9_]+)(?:=|\s*$)", block.group("body"), re.M)
 
 
 def _web_build_arg_keys(compose_text: str) -> list[str]:
@@ -34,7 +34,7 @@ def _web_build_arg_keys(compose_text: str) -> list[str]:
     block = re.search(r"(?ms)^      args:\n(?P<body>.*?)(?=^      \S|^    \S|\Z)", web)
     if block is None:
         raise AssertionError("web.build.args is missing")
-    return re.findall(r"^        (KJ_ATLAS_[A-Z0-9_]+):", block.group("body"), re.M)
+    return re.findall(r"^        (SUI_[A-Z0-9_]+):", block.group("body"), re.M)
 
 
 def _documented_surface_keys(config_text: str, surface: str) -> list[str]:
@@ -44,7 +44,7 @@ def _documented_surface_keys(config_text: str, surface: str) -> list[str]:
     )
     if row is None:
         raise AssertionError(f"configuration delivery row is missing: {surface}")
-    return re.findall(r"`(KJ_ATLAS_[A-Z0-9_]+)`", row)
+    return re.findall(r"`(SUI_[A-Z0-9_]+)`", row)
 
 
 def _first_bash_block(section: str) -> str:
@@ -78,35 +78,35 @@ class ConfigurationComposeDeliveryContractTests(unittest.TestCase):
 
     def test_stale_two_key_compose_claim_is_absent(self) -> None:
         self.assertNotIn(
-            "`KJ_ATLAS_DATABASE_URL` と `KJ_ATLAS_LLM_PROVIDER` の2キーだけ",
+            "`SUI_DATABASE_URL` と `SUI_LLM_PROVIDER` の2キーだけ",
             self.config_text,
         )
 
     def test_standard_compose_does_not_claim_production_profiles_are_realizable_by_profile_name_alone(self) -> None:
         actual = _api_environment_keys(self.compose_text)
-        self.assertIn("KJ_ATLAS_RUNTIME_PROFILE", actual)
-        self.assertNotIn("KJ_ATLAS_ADMIN_API_KEY", actual)
+        self.assertIn("SUI_RUNTIME_PROFILE", actual)
+        self.assertNotIn("SUI_ADMIN_API_KEY", actual)
 
         delivery_section = self.config_text.split("## 起動面ごとの配送範囲（重要）", 1)[1].split(
             "## 公開設定と内部adapter境界", 1
         )[0]
         self.assertIn("標準 Compose は同梱の `evaluation` 用スタック", delivery_section)
         self.assertIn("`enterprise-production` / `saas-multitenant`", delivery_section)
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY` を配送せず", delivery_section)
+        self.assertIn("`SUI_ADMIN_API_KEY` を配送せず", delivery_section)
         self.assertIn("profile名だけを変更しても起動はfail-fast", delivery_section)
         self.assertIn("組織側overlay", delivery_section)
 
     def test_standard_compose_minimal_example_does_not_claim_api_base_passthrough(self) -> None:
         section = self.config_text.split("## 最小設定", 1)[1].split("## Backend 環境変数", 1)[0]
-        self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", _first_bash_block(section))
+        self.assertNotIn("SUI_FRONTEND_API_BASE", _first_bash_block(section))
 
     def test_standard_compose_evaluation_example_does_not_claim_api_base_passthrough(self) -> None:
         section = self.config_text.split("### Docker Compose 評価", 1)[1].split("### API key 付き検証", 1)[0]
-        self.assertNotIn("KJ_ATLAS_FRONTEND_API_BASE", _first_bash_block(section))
+        self.assertNotIn("SUI_FRONTEND_API_BASE", _first_bash_block(section))
 
     def test_direct_frontend_build_keeps_api_base_as_public_build_input(self) -> None:
         section = self.config_text.split("直接frontend buildを実行する場合", 1)[1].split("## API キーを有効にする", 1)[0]
-        self.assertIn("export KJ_ATLAS_FRONTEND_API_BASE=/api", _first_bash_block(section))
+        self.assertIn("export SUI_FRONTEND_API_BASE=/api", _first_bash_block(section))
 
 
 if __name__ == "__main__":

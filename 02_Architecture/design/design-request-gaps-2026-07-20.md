@@ -119,7 +119,7 @@
 ### F-1 詳細（今すぐ照合可能な実装照合）
 
 - 依頼種別: 実装照合のみ（`master-data-settings-ui-ux-concept.md`の規範との照合）。有効化条件（`runtime profile=saas-multitenant`）とは独立に今すぐ実施できる。
-- 背景（現状）: `TenantSessionControl`は`verifiedTenantSession`が非nullのときのみ描画され（SaaS entry path＝`KJ_ATLAS_RUNTIME_PROFILE=saas-multitenant`→`tenant-session-required`のみ、他profileでは非表示）、membershipが1件なら静的label、複数ならサーバー返却の`availableTenants`だけの`select`スイッチャを出す（tenantId自由入力なし）。切替要求は`isDirty`時のみ`TenantChangeConfirmationDialog`（`role="alertdialog"`、cancel/discard/saveの三択）を開き、clean時は即時切替。確定後は文書・選択・検索・work mode・import preview・recent・QueryPreset・request cacheを破棄して新tenantで再取得する（`performTenantSwitch`のcleanup）。
+- 背景（現状）: `TenantSessionControl`は`verifiedTenantSession`が非nullのときのみ描画され（SaaS entry path＝`SUI_RUNTIME_PROFILE=saas-multitenant`→`tenant-session-required`のみ、他profileでは非表示）、membershipが1件なら静的label、複数ならサーバー返却の`availableTenants`だけの`select`スイッチャを出す（tenantId自由入力なし）。切替要求は`isDirty`時のみ`TenantChangeConfirmationDialog`（`role="alertdialog"`、cancel/discard/saveの三択）を開き、clean時は即時切替。確定後は文書・選択・検索・work mode・import preview・recent・QueryPreset・request cacheを破棄して新tenantで再取得する（`performTenantSwitch`のcleanup）。
 - 照合チェックポイント（`master-data-settings-ui-ux-concept.md`規範6点）:
   1. §3.4 「active tenantを静かに示す／1件はlabel・複数はサーバー選択肢のswitcher／自由入力禁止」 — **適合**（実装どおり）。
   2. §3.4 「切替時に未保存変更があれば保存・破棄・取消を選ばせ、確定後に文書等を破棄・再取得」 — **適合**（dialogの三択＋cleanup一覧）。

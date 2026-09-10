@@ -17,7 +17,7 @@
 
 - 存在しないリポジトリパスへの参照（Markdown 側では `check_repository_path_commands` が検出する）
 - 壊れた相対リンク（Markdown 側では `check_relative_links` が DC-LNK-001 として検出する）
-- 実在しない `npm run` スクリプトや `KJ_ATLAS_*` キーの記載（Markdown 側では対応する検査がある）
+- 実在しない `npm run` スクリプトや `SUI_*` キーの記載（Markdown 側では対応する検査がある）
 
 この非対称は「安全がサーフェスごとの opt-in になっている」という既知の系統的パターン（`02_Architecture/architecture-coherence-synthesis-2026-07-23.md`）と同型である。HTML 側だけ検査が無いため、そちらへ書けば検査を回避できる状態になっている。
 
@@ -39,7 +39,7 @@
 
 ### スコープ判断: リンク検査のみ拡張し、repo-path検査は拡張しない
 
-`check_repository_path_commands` は `_is_current_public_doc()` で `CURRENT_PUBLIC_DOC_ROOTS`（`README.md` / `CONTRIBUTING.md` / `04_Documentation` / `03_Implement/frontend/docs/e2e_testing.md`）に限定されている。**`02_Architecture` は含まれない**ため、この検査はそもそも設計文書のMarkdownにも適用されていない。HTMLへ拡張しても現状の効果はゼロであり、`ADR-0039` の「予測だけで実装しない」に反する。同じ理由で npm script / `KJ_ATLAS_*` キー / CLI option / localhost の各検査も拡張しない。
+`check_repository_path_commands` は `_is_current_public_doc()` で `CURRENT_PUBLIC_DOC_ROOTS`（`README.md` / `CONTRIBUTING.md` / `04_Documentation` / `03_Implement/frontend/docs/e2e_testing.md`）に限定されている。**`02_Architecture` は含まれない**ため、この検査はそもそも設計文書のMarkdownにも適用されていない。HTMLへ拡張しても現状の効果はゼロであり、`ADR-0039` の「予測だけで実装しない」に反する。同じ理由で npm script / `SUI_*` キー / CLI option / localhost の各検査も拡張しない。
 
 一方 `check_relative_links` は全追跡Markdownに適用されるため、HTMLへの拡張に実効がある。現在の対象は5件（`business-intent-boundary-and-phases.html` と `design/*.dc.html` 4件）。
 

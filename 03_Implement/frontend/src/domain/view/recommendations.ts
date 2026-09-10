@@ -160,7 +160,7 @@ export function generateRecommendations(
       priority: 4,
       category: "structure",
       title: "孤立カードの意図を確認する",
-      description: "島に属していないカードがあります。孤立した1枚が最も重要なことがあります（kj_technique.md）。属すべき島があるかを確認してください。",
+      description: "島に属していないカードがあります。孤立した1枚が最も重要なことがあります（sensemaking_technique.md）。属すべき島があるかを確認してください。",
       targetEntities: pickTargets(report, "Q007", loneCards),
       rationaleCodes: ["Q007"],
       suggestedActions: ["意図的な孤立なら、そのまま保持する", "属すべき島があるなら編入する"],

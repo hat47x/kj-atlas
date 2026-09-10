@@ -4,7 +4,7 @@
 - Date: 2026-08-06
 - Implemented: 2026-08-08 (D9-1 through D9-8)
 - Deciders: Project Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/`（`auth_context.py` / `tenant_context.py` / `trusted_saas_runtime.py` / `main.py` / `settings.py` / `models.py`）、`02_Architecture/`、`saas-multitenant` runtime profile
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/`（`auth_context.py` / `tenant_context.py` / `trusted_saas_runtime.py` / `main.py` / `settings.py` / `models.py`）、`02_Architecture/`、`saas-multitenant` runtime profile
 
 ## Context
 
@@ -21,8 +21,8 @@
 
 ### 起票時の前提に対する訂正（本 ADR で確定させる事実）
 
-1. **`install_trusted_saas_runtime()` の呼び出し元はゼロだが、`initialize_trusted_saas_runtime()` は `main.py` から呼ばれている。** 欠けているのは「adapter bundle を install する側」だけである。`install_` も `_trusted_saas_runtime_preflight()` も `_kj_atlas_runtime_started` が立った後の実行を拒否するため、install は lifespan の中ではなく `app = FastAPI(...)` 直後の module scope で行う必要がある。issue AC-3 はこの粒度で読む。
-2. **`TRUSTED_PROXIES` は実装されていない（2026-08-06時点）。** `03_Implement/backend/src` に該当コードは無く、`ADR-0020` §3-1 は未達のままである。`resolve_identity_context()` は proxy allowlist なしで `X-Forwarded-User` 等を読む。したがって「trusted proxy 判定は既存」という前提で SaaS を設計できない。これは single-tenant profile 側にも残る別 gap であり、本 ADR では解決せず follow-up として明示する。**2026-09-07訂正**: 本ADRと同一コミット（`161c2223`）で`_check_trusted_proxy()`（`auth_context.py`、`KJ_ATLAS_TRUSTED_PROXIES`設定によるCIDR allowlist）が実装され、`resolve_identity_context()`の先頭で呼ばれている。single-tenant側のgapは解消済みである（下記「Consequences」の訂正も参照）。ただしこの事実は本ADRのD2判断（SaaS向けにheader modeを拒否しJWT検証を必須にする）を変更しない——D2の理由はCIDR設定ミス1つで全tenant越境になる点と、暗号的証拠なしに`resolved_by="verified_claim"`を名乗れない点の2つであり、後者はTRUSTED_PROXIES実装の有無と無関係に成立する。
+1. **`install_trusted_saas_runtime()` の呼び出し元はゼロだが、`initialize_trusted_saas_runtime()` は `main.py` から呼ばれている。** 欠けているのは「adapter bundle を install する側」だけである。`install_` も `_trusted_saas_runtime_preflight()` も `_sui_sensemaking_runtime_started` が立った後の実行を拒否するため、install は lifespan の中ではなく `app = FastAPI(...)` 直後の module scope で行う必要がある。issue AC-3 はこの粒度で読む。
+2. **`TRUSTED_PROXIES` は実装されていない（2026-08-06時点）。** `03_Implement/backend/src` に該当コードは無く、`ADR-0020` §3-1 は未達のままである。`resolve_identity_context()` は proxy allowlist なしで `X-Forwarded-User` 等を読む。したがって「trusted proxy 判定は既存」という前提で SaaS を設計できない。これは single-tenant profile 側にも残る別 gap であり、本 ADR では解決せず follow-up として明示する。**2026-09-07訂正**: 本ADRと同一コミット（`161c2223`）で`_check_trusted_proxy()`（`auth_context.py`、`SUI_TRUSTED_PROXIES`設定によるCIDR allowlist）が実装され、`resolve_identity_context()`の先頭で呼ばれている。single-tenant側のgapは解消済みである（下記「Consequences」の訂正も参照）。ただしこの事実は本ADRのD2判断（SaaS向けにheader modeを拒否しJWT検証を必須にする）を変更しない——D2の理由はCIDR設定ミス1つで全tenant越境になる点と、暗号的証拠なしに`resolved_by="verified_claim"`を名乗れない点の2つであり、後者はTRUSTED_PROXIES実装の有無と無関係に成立する。
 3. **Level 2 の mock IdP は JWT を発行していない。** `tests/level2/mock_idp.py` の `/oidc/token` は claim の JSON dict を返すだけで、署名も JWKS endpoint も無く、`mock_sp.py` はそれを平文 header へ写している。`ADR-0020` §6 の harness は header mapping fixture であり、暗号的な IdP スタブではない。SaaS の e2e にはこの harness を骨格として **実署名と JWKS を足す** 必要がある。
 4. **`identity_providers` / `tenant_identity_providers` に trust material が無い。** 現在の列は `identity_providers(id, issuer, audience, lifecycle_state, created_at, updated_at)` と `tenant_identity_providers(tenant_id, identity_provider_id, lifecycle_state, created_at, updated_at)` だけである。protocol 判別列も JWKS URI も署名鍵も外部 org 参照も無い。「protocol 非依存で既に存在する」は「protocol が名指しされていない」という意味であって、どの選択肢を採っても migration は必要である。
 5. **`TenantContextResolver.resolve()` は `request` も claim も受け取らない**（`def resolve(self, *, db, user_id)`）。検証済み claim を identity 層から tenant 層へ渡す経路が型として存在しない。これは issue の AC に書かれていない未認識の blocker である。
@@ -35,7 +35,7 @@
 
 ### D1: multi-IdP は upstream identity broker で吸収し、アプリは single-issuer を前提としない multi-issuer 検証として実装する
 
-`saas-multitenant` の本番構成は、**顧客ごとの IdP（Okta / Azure AD / SAML IdP 等）を 1 つの identity broker が集約し、kj-atlas へは単一 issuer・単一 audience の JWT と tenant 識別 claim を渡す**構成を前提とする。broker 製品は固定しない（Keycloak の identity brokering、Authentik、WorkOS、Auth0 Organizations 等はいずれもこの形をとる）。
+`saas-multitenant` の本番構成は、**顧客ごとの IdP（Okta / Azure AD / SAML IdP 等）を 1 つの identity broker が集約し、sui-sensemaking へは単一 issuer・単一 audience の JWT と tenant 識別 claim を渡す**構成を前提とする。broker 製品は固定しない（Keycloak の identity brokering、Authentik、WorkOS、Auth0 Organizations 等はいずれもこの形をとる）。
 
 これは `ADR-0020` の再決定ではない。`ADR-0020` が禁じたのは「アプリが SP/RP として redirect / callback / assertion 交換を行うこと」であり、broker モデルはその責務境界をそのまま保つ。tenant ごとの IdP 差異は broker の設定で吸収され、アプリのコード分岐にはならない——`ADR-0020` §3-3 の「provider 差異は設定で吸収し実装分岐を増やさない」と同じ原則の延長である。
 
@@ -46,7 +46,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 ### D2: `saas-multitenant` では JWT 検証を必須とし、平文 header mode を起動時に拒否する
 
 - `ADR-0020` §3-2 の 2 mode のうち、SaaS profile が受理するのは `jwt_header` だけとする。`header` mode は設定検証で拒否する。
-- 理由: single-tenant では header mode の信頼境界は「1 組織の proxy を正しく置いたか」であり組織内リスクに閉じるが、shared SaaS では trusted proxy 設定の 1 箇所のミス・header 除去漏れが即座に全 tenant 越境になる。起票時点（訂正2）では `TRUSTED_PROXIES` も未実装で、network 配置と `KJ_ATLAS_API_KEY` 以外の境界が無かった（**2026-09-07訂正**: 本ADR起票と同一コミットで実装済み。CIDR設定ミス1つが全tenant越境になる点自体は変わらず、この理由の結論には影響しない）。
+- 理由: single-tenant では header mode の信頼境界は「1 組織の proxy を正しく置いたか」であり組織内リスクに閉じるが、shared SaaS では trusted proxy 設定の 1 箇所のミス・header 除去漏れが即座に全 tenant 越境になる。起票時点（訂正2）では `TRUSTED_PROXIES` も未実装で、network 配置と `SUI_API_KEY` 以外の境界が無かった（**2026-09-07訂正**: 本ADR起票と同一コミットで実装済み。CIDR設定ミス1つが全tenant越境になる点自体は変わらず、この理由の結論には影響しない）。
 - `TenantContext.resolved_by = "verified_claim"` と `VerifiedTenantClaim` の docstring が要求する「署名・issuer・audience 検証済み」を満たすには暗号的証拠が要る。header mode ではこの契約を型どおりに満たせない。
 - `trusted_host_mapping`（tenant 別 subdomain 等）は `TenantResolutionMethod` に予約されているが、本 ADR では実装対象外とする。
 
@@ -100,7 +100,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 ### D8: tenant claim は tenant の「要求」であって権限ではない
 
 - token の tenant claim は「どの tenant として振る舞いたいか」の表明にすぎず、権限の根拠は常に DB 側の `tenant_identity_providers` + `user_identities` + `tenant_memberships` である。これは既に `resolve_verified_claim_tenant_context()` が実装している性質であり、broker 共有 issuer 構成でも越境が成立しないことの根拠になる。
-- claim が運ぶのは kj-atlas 内部 ID ではなく **外部 organization 参照**とする。`tenant_identity_providers` に `external_tenant_ref` 列を追加し、`unique(identity_provider_id, external_tenant_ref)` を張って `tenants.id` へ写す。理由は、(a) 運用者に IdP 設定へ kj-atlas の内部 ID を書かせない、(b) `ADR-0059` D5/D10 の「`tenants.id` は opaque・外部へ出さない」を保つ、(c) 共有 broker では `tenant_identity_providers` 行が単なる N:1 の飾りになってしまうところに実データを持たせられる、の 3 点である。
+- claim が運ぶのは sui-sensemaking 内部 ID ではなく **外部 organization 参照**とする。`tenant_identity_providers` に `external_tenant_ref` 列を追加し、`unique(identity_provider_id, external_tenant_ref)` を張って `tenants.id` へ写す。理由は、(a) 運用者に IdP 設定へ sui-sensemaking の内部 ID を書かせない、(b) `ADR-0059` D5/D10 の「`tenants.id` は opaque・外部へ出さない」を保つ、(c) 共有 broker では `tenant_identity_providers` 行が単なる N:1 の飾りになってしまうところに実データを持たせられる、の 3 点である。
 - tenant claim が無い token は deny する。membership が 1 件だけなら推定する、という縮退は入れない。`resolved_by="verified_claim"` は「検証済み証拠から解決した」を意味しなければならず、複数 membership 利用者の tenant 切替は `ADR-0061` の tenant session と `select_active_tenant_context()` が既に扱う別経路である。
 
 ### D9: 実装スコープと起動拒否の解除条件
@@ -133,20 +133,20 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 
 | 次元 | このADRでの主張 | 他次元への制約 |
 |------|----------------|---------------|
-| **業務設計** | 顧客ごとのIdP（Okta/Azure AD/SAML等）をidentity brokerが集約し、kj-atlasへは単一issuer・単一audienceのJWTとtenant識別claimを渡す。broker製品は固定しない（Keycloak/Authentik/WorkOS/Auth0 Organizations等） | 機能: アプリはSP/RPとしてredirect/callback/assertion交換を行わない（ADR-0020の責務境界を維持）。データ: tenantごとのIdP差異はbroker設定で吸収しアプリのコード分岐にしない |
+| **業務設計** | 顧客ごとのIdP（Okta/Azure AD/SAML等）をidentity brokerが集約し、sui-sensemakingへは単一issuer・単一audienceのJWTとtenant識別claimを渡す。broker製品は固定しない（Keycloak/Authentik/WorkOS/Auth0 Organizations等） | 機能: アプリはSP/RPとしてredirect/callback/assertion交換を行わない（ADR-0020の責務境界を維持）。データ: tenantごとのIdP差異はbroker設定で吸収しアプリのコード分岐にしない |
 | **データ設計** | `identity_providers`行の作成はPlatform Control Planeの運用者操作に限定しtenant adminのself-service登録は提供しない。アプリが信頼する鍵の出所をtenant編集可能なデータにしない | 業務: アプリ側実装はissuerをハードコードせず検証済みissuerから`identity_providers`行を引くmulti-issuer構造。機能: migrationでtrust material列を追加 |
 | **機能設計** | 実HTTPリクエストのcredentialを検証して`VerifiedTenantClaim`を作る層を実装。multi-issuer JWT検証（PyJWT+cryptography）。`TenantContextResolver.resolve()`はrequest/claimを受け取る形に署名変更 | 業務: IdP/JWKS障害時は1800秒猶予後に全面停止（可用性より機密性、ADR-0059の帰結）。データ: single-tenant挙動は既定値により無変更 |
 
 ## Consequences
 
-- `saas-multitenant` の運用者は identity broker の設置・維持を負う。kj-atlas はその選定・同梱を行わない。
+- `saas-multitenant` の運用者は identity broker の設置・維持を負う。sui-sensemaking はその選定・同梱を行わない。
 - SAML 顧客はアプリのコード変更なしに収容できる。protocol 差異の吸収点が broker に一元化される。
 - 新規 runtime 依存が 2 つ増える（PyJWT、`cryptography`）。現在 backend は JWT ライブラリを一切持っていない。
 - migration が 1 本増える（`identity_providers` 2 列、`tenant_identity_providers` 1 列）。
 - `TenantContextResolver` protocol の署名が変わる。呼び出し元は 2 箇所で、single-tenant 挙動は既定値により無変更。
 - `resolve_verified_claim_tenant_context()` と既存の unit test は無変更のまま流用され、AC-4 の証明が resolver 単体から HTTP 経由へ拡張される。
 - IdP/JWKS 障害時、SaaS deployment は 1800 秒の猶予の後に全面停止する。可用性より機密性を優先する `ADR-0059` の帰結を identity 層へも適用したことになる。
-- `TRUSTED_PROXIES` 未実装は本 ADR では解消されない。single-tenant profile 向けの独立した gap として残る。**2026-09-07訂正**: この gap は本ADR起票と同一コミット（`161c2223`）で既に`_check_trusted_proxy()`として実装されていたが、本節の記述が同期されていなかった。`KJ_ATLAS_TRUSTED_PROXIES`未設定時は起動時警告付きで全origin許可（後方互換）、設定時はCIDR外接続元を`403 untrusted_proxy`で拒否し、`resolve_identity_context()`の先頭（forwarded headerを読む前）で必ず評価される。2026-09-07時点では専用回帰テストが無かったため、`tests/test_auth_context_resolution.py`へ6件追加した（未設定時許可・CIDR内許可・CIDR外拒否・client IP不明時拒否・不正形式IP拒否・信頼できないproxyからの完全なidentity headerセットも先頭で拒否されること）。既存のguardを一時的に無効化してこれらのテストが期待どおり失敗することを確認した上で復元済み。
+- `TRUSTED_PROXIES` 未実装は本 ADR では解消されない。single-tenant profile 向けの独立した gap として残る。**2026-09-07訂正**: この gap は本ADR起票と同一コミット（`161c2223`）で既に`_check_trusted_proxy()`として実装されていたが、本節の記述が同期されていなかった。`SUI_TRUSTED_PROXIES`未設定時は起動時警告付きで全origin許可（後方互換）、設定時はCIDR外接続元を`403 untrusted_proxy`で拒否し、`resolve_identity_context()`の先頭（forwarded headerを読む前）で必ず評価される。2026-09-07時点では専用回帰テストが無かったため、`tests/test_auth_context_resolution.py`へ6件追加した（未設定時許可・CIDR内許可・CIDR外拒否・client IP不明時拒否・不正形式IP拒否・信頼できないproxyからの完全なidentity headerセットも先頭で拒否されること）。既存のguardを一時的に無効化してこれらのテストが期待どおり失敗することを確認した上で復元済み。
 
 ## Non-goals
 
@@ -176,7 +176,7 @@ v1 では `identity_providers` 行の作成を Platform Control Plane（`ADR-005
 - Related: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`（tenant session と切替の再認可）
 - Related: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`（外部 HTTP 連携の完全設定要求）
 - Related governance: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`
-- Runtime contract: `02_Architecture/runtime_parameter_registry.md`（新規 `KJ_ATLAS_*` キーは実装時に登録する）
+- Runtime contract: `02_Architecture/runtime_parameter_registry.md`（新規 `SUI_*` キーは実装時に登録する）
 - Schema contract: `02_Architecture/schemas.md`
 - API contract: `02_Architecture/api.md`
 - Security boundary: `THREAT_MODEL.md`, `04_Documentation/security.md`

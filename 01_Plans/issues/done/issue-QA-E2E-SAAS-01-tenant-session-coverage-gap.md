@@ -24,7 +24,7 @@
 
 したがって「TenantSession UIのブラウザE2Eが存在しない」こと自体は解消している。
 
-一方、このspecはPlaywrightの`context.route()`で`/api/`を`ServerState`へ差し替えている。browserは実物だが、kj-atlas backend、PostgreSQL、Identity Brokerを同じscenario内では起動しない。このspec単体を、実backendのHTTP integrationまで含めた「SaaS E2E完了」と読み替えてはならない。
+一方、このspecはPlaywrightの`context.route()`で`/api/`を`ServerState`へ差し替えている。browserは実物だが、sui-sensemaking backend、PostgreSQL、Identity Brokerを同じscenario内では起動しない。このspec単体を、実backendのHTTP integrationまで含めた「SaaS E2E完了」と読み替えてはならない。
 
 ## 現在の証拠を三層に分ける
 
@@ -71,7 +71,7 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 
 `SAAS-TENANT-01`の現行AC-10/12/13を再確認した。AC-10で停止理由だったAI generation guardの機構固有計装はPR #2917とDoneとなった`SAAS-TENANT-E2E-01`で解消済みであり、同一shared guardを7種類へ重複probeすることは残条件としない。AC-10に残るのはAPI/MCP/worker/browser cacheを一体化したsame-docId越境negative matrix、AC-12はAC-1〜11完了後のRound 8 UI検証で本Issueより後段、AC-13は認証層の縦断経路を`AUTH-ONE-TIME-JWT-01`で完了しつつbrowser/consumer側の残差を引き続き追う。
 
-`tenant_session_multitab.spec.ts`の既存8 testを実際に読み、実行して確認した（Docker Playwright `v1.58.2-jammy`、`KJ_ATLAS_E2E_SAAS=1`、8 passed）。全testは**単一の認証済みsessionが自分のactive tenantを切り替える**シナリオであり、`ServerState`も`activeTenantId`を1つだけ持つ設計になっている。
+`tenant_session_multitab.spec.ts`の既存8 testを実際に読み、実行して確認した（Docker Playwright `v1.58.2-jammy`、`SUI_E2E_SAAS=1`、8 passed）。全testは**単一の認証済みsessionが自分のactive tenantを切り替える**シナリオであり、`ServerState`も`activeTenantId`を1つだけ持つ設計になっている。
 
 最初に「tenant A・tenant Bをそれぞれ別の`BrowserContext`で同時に開き、一方の操作がもう一方へ混入しないことを固定する」案を検討したが、これは**却下する**。Playwrightの`BrowserContext`は元々cookie/storage/JSヒープが分離されており、別々の`ServerState`を持つ2つのcontextを比べても、Playwright自身の分離機構を確認するだけでproduct codeの契約は何も検証しない。R16の解釈補正と同じ理由で、この案は退ける。
 
@@ -93,7 +93,7 @@ PR #2885の`test_saas_auth_session_postgres_multi_instance.py`とPR #2893のPost
 - [x] tenant AではQueryPreset panelに`Tenant A preset`だけが現れ、tenant Bのpresetを表示しない。
 - [x] tenant A→B切替後のhard reloadで、recent dialogは`doc_tenant_b_recent`を表示し、tenant Aのrecent項目を表示しない。
 - [x] 同じ切替後にQueryPreset panelは`Tenant B preset`を表示し、tenant Aのpresetを表示しない。
-- [x] transition後、旧tenant Aの`kj-atlas/tenant-scope/v1/...` localStorage keyが残っていないことも同じbrowser scenarioで確認する。
+- [x] transition後、旧tenant Aの`sui-sensemaking/tenant-scope/v1/...` localStorage keyが残っていないことも同じbrowser scenarioで確認する。
 
 初期seedは`sessionStorage` markerで一度だけ投入する。tenant切替のhard reload時には再seedしないため、`executeTenantSessionTransition()`が旧scopeを消去してから新scopeでAppを再bootstrapする実際の契約を迂回しない。`/api/docs`だけは既存`ServerState`に現在tenantの一覧応答を追加し、recent dialogのserver-side canvas listも決定的に保つ。
 

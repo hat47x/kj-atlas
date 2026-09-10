@@ -17,10 +17,10 @@ depends_on: str | Sequence[str] | None = None
 _TABLE = "ai_proposal_decision_events"
 _STATE_TABLE = "ai_proposal_decision_states"
 _PROPOSAL_TABLE = "ai_proposals"
-_POLICY = "kj_atlas_ai_proposal_decision_events_tenant_isolation"
-_STATE_POLICY = "kj_atlas_ai_proposal_decision_states_tenant_isolation"
-_PROPOSAL_POLICY = "kj_atlas_ai_proposals_tenant_isolation"
-_TENANT_USING = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+_POLICY = "sui_sensemaking_ai_proposal_decision_events_tenant_isolation"
+_STATE_POLICY = "sui_sensemaking_ai_proposal_decision_states_tenant_isolation"
+_PROPOSAL_POLICY = "sui_sensemaking_ai_proposals_tenant_isolation"
+_TENANT_USING = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 
 
 def upgrade() -> None:

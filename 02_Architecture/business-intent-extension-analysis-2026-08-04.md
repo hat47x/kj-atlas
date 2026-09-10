@@ -1,6 +1,6 @@
 # 業務意図基盤化提案の分析と段階計画（2026-08-04）
 
-区分: 分析・計画（非正本）。外部提案「kj-atlasを生成AI企業の業務意図形成基盤へ拡張するための機能要件案」（2026-08-04、非正本）を、実装コードと既存ADR/issueへ突き合わせて評価し、実行可能な段階計画へ落としたもの。採否そのものはMaintainer判断であり、本書はその判断材料である。
+区分: 分析・計画（非正本）。外部提案「sui-sensemakingを生成AI企業の業務意図形成基盤へ拡張するための機能要件案」（2026-08-04、非正本）を、実装コードと既存ADR/issueへ突き合わせて評価し、実行可能な段階計画へ落としたもの。採否そのものはMaintainer判断であり、本書はその判断材料である。
 
 検証範囲: `03_Implement/frontend/src`（型・エクスポート・SafeMode・探究）、`03_Implement/backend/src`、`02_Architecture/schemas.md`、`02_Architecture/value_traceability.md`、`01_Plans/adr/`（ADR-0039/0041/0043/0047/0048/0049/0054/0056/0057/0058）、関連issue。提案の「新規」主張は額面で受けず、実コードに当てて再判定した。
 
@@ -30,7 +30,7 @@
 
 ## 3. 真の差分（新規性があり、取り組む価値がある部分）
 
-| # | 差分 | なぜkj-atlas固有の価値になるか |
+| # | 差分 | なぜsui-sensemaking固有の価値になるか |
 |---|---|---|
 | D1 | **Acceptance Example / 反例の第一級化** | `acceptanceExample`に相当する構造はフロントエンド全体に存在しない（grep確認）。自然言語を正本にする際の曖昧さを具体例で補う機構であり、既存の「観察と解釈を混同しない」原則の自然な延長 |
 | D2 | **意図の型付き集約**（purpose / protectedValues / invariants / decisionCandidates / unresolvedQuestions） | カード・島は「意味の断片」を扱うが、「守るべきこと・未解決なこと」を項目単位でレビュー可能な単位として束ねる型は無い |
@@ -56,7 +56,7 @@
 
 ## 5. 落とす / 形を変えるべきもの
 
-- **9段階の承認ラダー（提案§6.4）は内蔵しない。** 既存語彙は`reviewState: "unreviewed" | "human_reviewed"`と`HoldState`のみ。`agreed_for_trial`・`approved_for_compilation`・`approved_for_production`をkj-atlas内部状態にすると、OSS本体が組織承認の意味論を抱えることになる。提案自身も「OSS既定では正式な組織承認機構を内蔵しない」と述べており、**外部承認参照（ID・署名・外部システム参照）に限定**するのが一貫する。
+- **9段階の承認ラダー（提案§6.4）は内蔵しない。** 既存語彙は`reviewState: "unreviewed" | "human_reviewed"`と`HoldState`のみ。`agreed_for_trial`・`approved_for_compilation`・`approved_for_production`をsui-sensemaking内部状態にすると、OSS本体が組織承認の意味論を抱えることになる。提案自身も「OSS既定では正式な組織承認機構を内蔵しない」と述べており、**外部承認参照（ID・署名・外部システム参照）に限定**するのが一貫する。
 - **実行方式比較（提案§6.5、11方式×12観点）は表形式にしない。** 12観点の一覧比較は事実上のスコアカードに退化しやすく、反スコアリング不変条件と緊張する。`decisionCandidates`に定性的なトレードオフ記述として添える形に留め、方式選択の理由を文章で残す。「システムを作らない案」を常に含める点は提案どおり維持する。
 - **インターフェース投影候補（提案§6.12）は現段階では扱わない。** 実ユーザー不在での投影方式検討は予測に基づく設計になる。
 - **組織・企業間関係表現（§6.13）と組織共有境界（§6.14）はVR5ゲート待ち。** 実利用事例が前提。
@@ -82,7 +82,7 @@
 
 ### Step 1: 境界ADR 1本（Step 0の記録を根拠に）
 
-内容: kj-atlasを意味の制御面に限定し実行面を持たない / 意図パッケージは派生エクスポートであり既存SafeMode・共有前確認に従う / 新規モデルはDocumentV1へ入れない / `human_reviewed`を超える承認は外部参照に限る / 非目標一覧。
+内容: sui-sensemakingを意味の制御面に限定し実行面を持たない / 意図パッケージは派生エクスポートであり既存SafeMode・共有前確認に従う / 新規モデルはDocumentV1へ入れない / `human_reviewed`を超える承認は外部参照に限る / 非目標一覧。
 
 - R-3を明示引用する（既存予算・不変条件で覆えない境界の超過）。ADR-0049の引用形式に倣う。
 - GENAI-GOV-01 §2.9のADR先行ルールも根拠として記す。
@@ -102,7 +102,7 @@
 
 ### Step 4: 外部コンパイラ連携（**ADR-0049のAccept待ち**）
 
-既存AgentTaskPackageへ新タスク種別を加算する形で実装。応答は非信頼入力。元意図との逸脱差分。stale検知。kj-atlas内でコード実行しない。
+既存AgentTaskPackageへ新タスク種別を加算する形で実装。応答は非信頼入力。元意図との逸脱差分。stale検知。sui-sensemaking内でコード実行しない。
 
 ### Step 5: Runtime Feedback（**EXT-CONN-01運用実績＋D3認可待ち**）
 
@@ -144,7 +144,7 @@ EXT-CONN-02の輸送・着地規律の上に、runtime-feedback意味論のpaylo
 
 ## Traceability
 
-- Related: 外部提案「kj-atlasを生成AI企業の業務意図形成基盤へ拡張するための機能要件案」（2026-08-04、非正本、リポジトリ外）
+- Related: 外部提案「sui-sensemakingを生成AI企業の業務意図形成基盤へ拡張するための機能要件案」（2026-08-04、非正本、リポジトリ外）
 - Related: `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`（ADRモラトリアムと再起票基準R-1..R-4）
 - Related: `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`（過剰ガバナンス回避・再導入トリガー）
 - Related: `01_Plans/adr/ADR-0049-external-flat-rate-agent-collaboration.md`（Status: Proposed、Phase相当Step 4の前提）

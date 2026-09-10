@@ -112,8 +112,8 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - Pending-1/Pending-2に続き、B-UNIT-03（unit実行プロファイル未選択）を2026-07-18に解消した。
 - **B-UNIT-03確定値**: 次の2本立てで固定する。
   1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
-  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
-  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`SUI_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`SUI_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
 - `Execution: Ready`（承認・技術的ブロッカーはすべて解消。初回実行バッチは別PRで進める）
 
 
@@ -213,8 +213,8 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-UNIT-03は技術的�
 
 - **B-UNIT-03（unit実行プロファイル）**: 次の2本立てで固定する。
   1. frontend: `npm run test`（vitest全件、WSLクローン`~/kjnative-fe`で実行。DrvFs経由の`/mnt/c/...`では実行しない）。
-  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`KJ_ATLAS_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
-  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`KJ_ATLAS_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
+  2. backend: `python3 -m pytest`（既定プロファイル。PostgreSQL roundtripテストは`SUI_RUN_PG_TESTS`未設定で自動スキップされ、CI既定と同一になる）。
+  - 根拠: どちらもCIが実行するのと同一のプロファイルであり、追加インフラ・環境変数・外部依存を要求しない。PG roundtripが必要な変更では`SUI_RUN_PG_TESTS=1`のopt-in実行を証跡に追記する（プロファイルの置換ではなく追加実行として扱う）。
 
 ### 解除手順（docs-only、1 PR）
 

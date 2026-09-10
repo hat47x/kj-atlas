@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/20260720_0012_add_admin_audit_document_fk.py`, `03_Implement/backend/tests/test_document_access_admin_audit_migration.py`, `03_Implement/backend/tests/test_alembic_lineage.py`, `02_Architecture/schemas.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/alembic/versions/20260720_0012_add_admin_audit_document_fk.py`, `03_Implement/backend/tests/test_document_access_admin_audit_migration.py`, `03_Implement/backend/tests/test_alembic_lineage.py`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `integration`
 
@@ -33,7 +33,7 @@
 
 - `pytest tests/test_document_access_admin_audit_migration.py tests/test_document_access_admin_routes.py tests/test_alembic_lineage.py -q`: 18 passed。
 - `pytest -q`: 603 passed, 25 skipped。
-- `ruff check src/kj_atlas_api/models.py tests/test_document_access_admin_audit_migration.py tests/test_alembic_lineage.py`: passed。
+- `ruff check src/sui_sensemaking_api/models.py tests/test_document_access_admin_audit_migration.py tests/test_alembic_lineage.py`: passed。
 - `python ../../01_Plans/docs_check.py --root ../..`: passed。
 
 ## 補足

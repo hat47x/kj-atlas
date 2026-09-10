@@ -7,10 +7,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-AUTH_CONTEXT = ROOT / "03_Implement/backend/src/kj_atlas_api/auth_context.py"
-TRUSTED_AUTH_EDGE = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py"
-TRUSTED_SAAS_RUNTIME = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
-KEY = "KJ_ATLAS_ALLOW_JIT_PROVISIONING"
+AUTH_CONTEXT = ROOT / "03_Implement/backend/src/sui_sensemaking_api/auth_context.py"
+TRUSTED_AUTH_EDGE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_auth_edge.py"
+TRUSTED_SAAS_RUNTIME = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
+KEY = "SUI_ALLOW_JIT_PROVISIONING"
 
 
 def _row(text: str, key: str) -> str:

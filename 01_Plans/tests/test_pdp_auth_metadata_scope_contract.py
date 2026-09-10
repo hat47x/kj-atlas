@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-ACCESS_CONTROL = ROOT / "03_Implement/backend/src/kj_atlas_api/access_control.py"
-SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+ACCESS_CONTROL = ROOT / "03_Implement/backend/src/sui_sensemaking_api/access_control.py"
+SETTINGS = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 
 
 def _row(text: str, key: str) -> str:
@@ -37,7 +37,7 @@ class PdpAuthMetadataScopeContractTests(unittest.TestCase):
         )
 
     def test_auth_mode_is_documented_as_pdp_metadata_not_authorization_generation(self) -> None:
-        key = "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE"
+        key = "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE"
         for row in self._rows(key):
             self.assertIn("x-acl-auth-mode", row)
             self.assertIn("Authorization", row)
@@ -46,7 +46,7 @@ class PdpAuthMetadataScopeContractTests(unittest.TestCase):
         self.assertIn('headers["authorization"] = f"Bearer {self._config.static_bearer_token}"', self.access_control)
 
     def test_idp_issuer_is_forwarded_metadata_not_local_issuer_verification(self) -> None:
-        key = "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER"
+        key = "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER"
         for row in self._rows(key):
             self.assertIn("x-idp-issuer", row)
             self.assertIn("ローカル検証", row)
@@ -54,7 +54,7 @@ class PdpAuthMetadataScopeContractTests(unittest.TestCase):
         self.assertNotIn("issuer 検証が設定値と一致", registry_row)
         self.assertIn('headers["x-idp-issuer"] = self._config.idp_issuer', self.access_control)
         self.assertIn("_validate_optional_header_value(", self.settings)
-        self.assertIn('value_key="KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER"', self.settings)
+        self.assertIn('value_key="SUI_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER"', self.settings)
 
 
 if __name__ == "__main__":

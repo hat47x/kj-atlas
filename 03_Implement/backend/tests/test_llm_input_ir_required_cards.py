@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     IRGenerationError,
     IRSource,
     SourceCard,

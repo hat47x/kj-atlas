@@ -40,11 +40,11 @@
   <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
       <span style="width:8px; height:8px; border-radius:2px; background:#0f766e; display:inline-block;"></span>
-      kj-atlas ・ Architecture ・ 正本
+      sui-sensemaking ・ Architecture ・ 正本
     </div>
     <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">全体アーキテクチャ</h1>
     <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
-      kj-atlas の<strong>構成要素・責務境界・デプロイ形態</strong>を定義する。上位層（README / <code>00_Prompt</code> / <code>01_Plans</code>）を前提とし、思想や要件の追加はせず<strong>実装可能な構造</strong>へ落とす。最小MVPは Phase 0〜3 を主対象とし、AIは後付け可能な境界だけを先に定義する。
+      sui-sensemaking の<strong>構成要素・責務境界・デプロイ形態</strong>を定義する。上位層（README / <code>00_Prompt</code> / <code>01_Plans</code>）を前提とし、思想や要件の追加はせず<strong>実装可能な構造</strong>へ落とす。最小MVPは Phase 0〜3 を主対象とし、AIは後付け可能な境界だけを先に定義する。
     </p>
     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
       <span class="badge" style="background:#f0fdfa; color:#0f766e; border-color:#99f6e4;">責務境界の正本</span>
@@ -82,7 +82,7 @@
         <tr><td>Frontend</td><td>開始、カード化、保留/違和感の記録、選択コンテキスト、共有前確認を利用者の主要導線として扱う</td></tr>
         <tr><td>Backend</td><td>保存、検証、ContextBundle、proposal、監査イベントを扱うが、<strong>AI提案の自動確定や <code>human_reviewed</code> 自動昇格を行わない</strong></td></tr>
         <tr><td>DB</td><td>作業状態、表示状態、レビュー状態、共有用メタデータを破壊的に混在させず、共有時に削除・抑制できる境界を維持する</td></tr>
-        <tr><td>AI連携</td><td>任意機能であり、<code>KJ_ATLAS_LLM_PROVIDER=none</code> の既定構成でも、開始・外在化・構造化・共有前確認の主要価値が成立する</td></tr>
+        <tr><td>AI連携</td><td>任意機能であり、<code>SUI_LLM_PROVIDER=none</code> の既定構成でも、開始・外在化・構造化・共有前確認の主要価値が成立する</td></tr>
         <tr><td>共有 / export</td><td>単なるファイル出力ではなく、確定点・保留点・未レビュー情報・根拠への戻り方を安全に伝える成果物化の責務を持つ</td></tr>
       </tbody>
     </table>
@@ -150,7 +150,7 @@ flowchart TB
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">2.2 永続化と切替方針</h3>
     <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">MVPの永続化は、細かい論理エンティティを全て正規化する設計ではない。<strong>ドキュメント本体はスナップショットとして保存し</strong>、補助ログや認証主体の対応表だけを別テーブルで扱う。物理ER・論理ER・CRUD可否・ステークホルダー別の保守責任は <a href="data_model_operations_overview.html">data_model_operations_overview.html</a> を正本とする。</p>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">接続先は設定ファイル／環境変数で切替える（<code>KJ_ATLAS_DATABASE_URL=sqlite+aiosqlite:///...</code> / <code>postgresql+asyncpg://...</code>）。DB依存をAPI層の末端に隔離し、上位のユースケースはDB種別を意識しない。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:8px 0 0;">接続先は設定ファイル／環境変数で切替える（<code>SUI_DATABASE_URL=sqlite+aiosqlite:///...</code> / <code>postgresql+asyncpg://...</code>）。DB依存をAPI層の末端に隔離し、上位のユースケースはDB種別を意識しない。</p>
   </section>
 
   <!-- 03 API I/F -->
@@ -202,7 +202,7 @@ flowchart LR
       </pre>
       <figcaption style="font-size:12.5px; color:#6b7280; margin-top:9px; line-height:1.65;">Provider列挙は<strong>信頼境界</strong>（none / fixture / local / external）で固定する。通信差異は環境変数ではなく内部の transport 抽象で分離する。AI処理は同一サービスに実装しても、別コンテナ（<code>ai-service</code>）として分離してもよい構造とする。</figcaption>
     </figure>
-    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">選択は環境変数で行う: <code>KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external</code>、<code>KJ_ATLAS_LOCAL_LLM_BASE_URL</code>、<code>KJ_ATLAS_LOCAL_LLM_MODEL</code>、<code>KJ_ATLAS_LLM_ESCALATION_ENABLED=false</code>（既定）。</p>
+    <p style="font-size:12.5px; color:#6b7280; margin:12px 0 0;">選択は環境変数で行う: <code>SUI_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external</code>、<code>SUI_LOCAL_LLM_BASE_URL</code>、<code>SUI_LOCAL_LLM_MODEL</code>、<code>SUI_LLM_ESCALATION_ENABLED=false</code>（既定）。</p>
     <div style="margin:14px 0 0; padding:12px 14px; background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 4px 4px 0;">
       <p style="font-size:12.5px; line-height:1.75; color:#52606d; margin:0;"><strong>代表視覚手掛かりは生成AIだけに依存しない。</strong>標準KJ法の手描きシンボルと連続する基本描画・利用者画像、通信不要の絵文字・同梱プリセット、権利確認済み外部素材、proposal-only画像生成を<strong>別経路</strong>とする。写真・図が観察データである場合は、識別用手掛かりではなく一次視覚資料として元文脈を保持する。意味境界と段階導入は <code>00_Prompt/representative_visual_cue_requirements.md</code>、供給・保存の判断は <code>ADR-0060</code> を参照する。<em>現行MVPに画像生成APIまたは永続契約が実装済みであることを示すものではない。</em></p>
     </div>
@@ -374,7 +374,7 @@ flowchart LR
     <h3 style="font-size:15px; font-weight:700; margin:20px 0 0;">7.3 AuthContext / JIT / strict 境界 <span style="font-size:11.5px; color:#94a3b8; font-weight:500;">AUTH-ARCH-01</span></h3>
     <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:8px 0 0;">
       <li>認証境界の正本は <code>ADR-0020</code> とし、実装契約は <a href="schemas.md">schemas.md</a> / <a href="api.md">api.md</a> / <a href="review_attribution.md">review_attribution.md</a> を同一論点で同期する。</li>
-      <li><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=true</code> では未登録subjectをJITで <code>users</code> + <code>user_identities</code> 作成、<code>false</code> では <code>403</code> 拒否して事前プロビジョニング導線へ誘導する。</li>
+      <li><code>SUI_ALLOW_JIT_PROVISIONING=true</code> では未登録subjectをJITで <code>users</code> + <code>user_identities</code> 作成、<code>false</code> では <code>403</code> 拒否して事前プロビジョニング導線へ誘導する。</li>
       <li>attribution の正規キーは <code>users.id</code> で、外部subjectは <code>user_identities</code> でのみ解決する。</li>
     </ul>
 

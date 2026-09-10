@@ -75,7 +75,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/adr/ADR-0046-responsiveness-performance-budget.md`, `01_Plans/issues/done/issue-PERF-BUDGET-01-large-document-performance-assertions.md`
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点2・図R/S/T）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（観点2・図R/S/T）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04 Round 5）

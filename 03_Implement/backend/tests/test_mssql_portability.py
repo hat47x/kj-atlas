@@ -19,14 +19,14 @@ TIMESTAMP = "2026-08-10T00:00:00Z"
 
 
 def _configured_url() -> str | None:
-    if os.getenv("KJ_ATLAS_RUN_MSSQL_TESTS") != "1":
+    if os.getenv("SUI_RUN_MSSQL_TESTS") != "1":
         return None
-    return os.getenv("KJ_ATLAS_TEST_MSSQL_URL")
+    return os.getenv("SUI_TEST_MSSQL_URL")
 
 
 def _run_alembic(url: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = url
+    env["SUI_DATABASE_URL"] = url
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,

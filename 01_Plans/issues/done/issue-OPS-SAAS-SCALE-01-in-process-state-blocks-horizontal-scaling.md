@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/src/kj_atlas_api/saas_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `04_Documentation/operations.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/active_tenant_session.py`, `03_Implement/backend/src/sui_sensemaking_api/saas_auth_state.py`, `03_Implement/backend/src/sui_sensemaking_api/main.py`, `04_Documentation/operations.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0061-saas-active-tenant-session-concurrency.md`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`, `01_Plans/adr/ADR-0074-server-owned-saas-auth-session.md`（**Accepted 2026-08-13**: 案2 server-owned BFF session）
 - Expected verification level: `integration`
 
@@ -60,7 +60,7 @@ JWKS cacheはinstanceごとでよい。これはBrokerへの取得負荷には�
 
 - `python -m pytest tests/test_saas_auth_state.py tests/test_active_tenant_session_persister.py -q`
 - `python -m pytest tests/test_tenant_session_precondition.py tests/test_saas_e2e_tenant_isolation.py -q`
-- `KJ_ATLAS_RUN_PG_TESTS=1 KJ_ATLAS_TEST_POSTGRES_CONTAINER=<container> KJ_ATLAS_DATABASE_URL=<postgresql-url> python -m pytest -m postgres tests/test_saas_auth_session_postgres_multi_instance.py tests/test_saas_tenant_resource_gate_postgres.py -q`
+- `SUI_RUN_PG_TESTS=1 SUI_TEST_POSTGRES_CONTAINER=<container> SUI_DATABASE_URL=<postgresql-url> python -m pytest -m postgres tests/test_saas_auth_session_postgres_multi_instance.py tests/test_saas_tenant_resource_gate_postgres.py -q`
 - PostgreSQL 16 Run `33864904968`: 複数app共有実証成功、関連session/CSRF回帰50 passed、migration往復成功。
 - PostgreSQL 16 Run `33870926894`: PostgreSQL試験2 passed、frontend 48 passed、AC-6 branchのTypeScript error 33件とmainの33件が同一で追加error 0件、active Issue memo 48件、docs-check tracked Markdown 774件、design consistency 0 errors / 0 warnings。一時workflowは成功後に自己削除した。
 

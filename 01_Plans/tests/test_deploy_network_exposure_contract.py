@@ -27,7 +27,7 @@ class DeployNetworkExposureContractTest(unittest.TestCase):
 
     Omitting the host IP in a Docker port mapping binds 0.0.0.0, exposing this
     unauthenticated evaluation stack to the whole LAN. SafeMode and
-    KJ_ATLAS_API_KEY do not control network reachability -- this loopback bind
+    SUI_API_KEY do not control network reachability -- this loopback bind
     is the only thing that does.
     """
 
@@ -42,9 +42,9 @@ class DeployNetworkExposureContractTest(unittest.TestCase):
     def test_web_port_env_var_only_changes_port_not_bind_address(self):
         mapping = _web_port_mapping()
         self.assertIn(
-            "${KJ_ATLAS_WEB_PORT",
+            "${SUI_WEB_PORT",
             mapping,
-            "KJ_ATLAS_WEB_PORT must remain the only user-facing port override",
+            "SUI_WEB_PORT must remain the only user-facing port override",
         )
         # Collapse the ${VAR:-default} substitution to one token before counting
         # separators, since its own ":-" would otherwise be miscounted as a

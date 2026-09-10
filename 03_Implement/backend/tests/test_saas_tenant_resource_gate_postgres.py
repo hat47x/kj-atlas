@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.routes.docs import router as docs_router
+from sui_sensemaking_api.routes.docs import router as docs_router
 from tests.test_saas_auth_session_postgres_multi_instance import (
     _build_app,
     _configured,
@@ -23,7 +23,7 @@ from tests.test_saas_auth_session_postgres_multi_instance import (
     _seed_shared_auth_data,
 )
 
-TENANT_SESSION_VERSION_HEADER = "KJ-Atlas-Tenant-Session-Version"
+TENANT_SESSION_VERSION_HEADER = "SUI Sensemaking-Tenant-Session-Version"
 
 
 class _FailIfReachedDocumentResourceResolver:

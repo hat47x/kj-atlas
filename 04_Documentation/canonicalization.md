@@ -2,7 +2,7 @@
 
 対象読者: import/export、差分比較、AI 提案の根拠確認を行う利用者、開発者、QA。
 
-目的: kj-atlas でいう canonicalization の考え方と、利用者が確認すべき境界を説明します。
+目的: sui-sensemaking でいう canonicalization の考え方と、利用者が確認すべき境界を説明します。
 
 範囲外: 内部アルゴリズムの完全仕様、未公開のレビュー手順、設計判断ログ。
 
@@ -14,7 +14,7 @@
 
 canonicalization は、同じ意味のデータを同じ形にそろえる処理です。
 
-たとえば、人が見れば同じ内容でも、JSON のキー順、空白、生成時刻、trace id が違うだけで、機械的には別物に見えることがあります。kj-atlas では、そのような表記ゆれや一時的な情報に左右されず、カード、島、関係、レビュー状態、bundle hash などを安定して比較できるようにします。
+たとえば、人が見れば同じ内容でも、JSON のキー順、空白、生成時刻、trace id が違うだけで、機械的には別物に見えることがあります。sui-sensemaking では、そのような表記ゆれや一時的な情報に左右されず、カード、島、関係、レビュー状態、bundle hash などを安定して比較できるようにします。
 
 これは「内容が正しいことを保証する仕組み」ではありません。canonicalization は比較を安定させるための土台です。内容の妥当性は、人間のレビュー、受け入れ確認、スキーマ検証などで判断します。
 
@@ -71,8 +71,8 @@ hash が一致していても、提案はまだ「候補」です。内容の正
 
 詳細な schema と設計上の根拠は、次の文書を参照してください。
 
-- [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
-- [architecture.html](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/architecture.html)
+- [schemas.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/schemas.md)
+- [architecture.html](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/architecture.html)
 - [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md)
 
 ## 関連文書

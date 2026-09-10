@@ -4,7 +4,7 @@ only ever been exercised against SQLite
 (test_inquiry_bundle_revision_migration.py). This runs the same round-trip
 and a real CAS race against PostgreSQL, the flagship "Verified server DB".
 
-Uses an isolated, throwaway database (never the shared `kj_atlas` database
+Uses an isolated, throwaway database (never the shared `sui_sensemaking` database
 other `@pytest.mark.postgres` tests in the same CI job depend on being at
 head), matching test_postgres_migration_downgrade_matrix.py's pattern.
 """
@@ -31,15 +31,15 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 def _configured() -> bool:
     return (
-        os.getenv("KJ_ATLAS_RUN_PG_TESTS") == "1"
-        and bool(os.getenv("KJ_ATLAS_DATABASE_URL"))
-        and bool(os.getenv("KJ_ATLAS_TEST_POSTGRES_CONTAINER"))
+        os.getenv("SUI_RUN_PG_TESTS") == "1"
+        and bool(os.getenv("SUI_DATABASE_URL"))
+        and bool(os.getenv("SUI_TEST_POSTGRES_CONTAINER"))
     )
 
 
 def _run_alembic(database_url: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = database_url
+    env["SUI_DATABASE_URL"] = database_url
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
@@ -53,9 +53,9 @@ def _run_alembic(database_url: str, *args: str) -> subprocess.CompletedProcess[s
 @pytest.mark.postgres
 @pytest.mark.skipif(not _configured(), reason="PostgreSQL matrix is not configured")
 def test_inquiry_bundle_revision_round_trips_and_cas_races_on_postgres() -> None:
-    base_url = os.environ["KJ_ATLAS_DATABASE_URL"]
+    base_url = os.environ["SUI_DATABASE_URL"]
     url = make_url(base_url)
-    isolated_name = f"kj_atlas_dataic01_{uuid4().hex[:16]}"
+    isolated_name = f"sui_sensemaking_dataic01_{uuid4().hex[:16]}"
     if not re.fullmatch(r"[a-z0-9_]+", isolated_name):
         raise ValueError("isolated database name must be a simple identifier")
     admin_url = url.set(database="postgres")
@@ -96,9 +96,9 @@ def test_inquiry_bundle_revision_round_trips_and_cas_races_on_postgres() -> None
         # single-statement UPDATE/DELETE the issue's AC-3/AC-4 require) work
         # unchanged against this dialect, and that a stale-revision racer
         # loses cleanly.
-        from kj_atlas_api.content_store import ContentBlob
-        from kj_atlas_api.database_content_store import DatabaseBundleContentStore
-        from kj_atlas_api.tenant_context import TenantContext
+        from sui_sensemaking_api.content_store import ContentBlob
+        from sui_sensemaking_api.database_content_store import DatabaseBundleContentStore
+        from sui_sensemaking_api.tenant_context import TenantContext
 
         factory = sessionmaker(bind=create_engine(isolated_url), class_=Session, expire_on_commit=False)
         tenant = TenantContext(

@@ -6,8 +6,8 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `03_Implement/frontend/src/domain/view/outline_quality.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/frontend/src/i18n/locales/ja.json`, `03_Implement/frontend/src/domain/view/recommendations.ts`, `03_Implement/frontend/src/domain/view/structural_metrics.ts`
-- Related ADR/Spec: `02_Architecture/design/ui_design_handoff.md`, `00_Prompt/kj_technique.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`
-- Norms: `DOM-CORE-04`, `DOM-AI-07`, `KJT-SIGN-03`
+- Related ADR/Spec: `02_Architecture/design/ui_design_handoff.md`, `00_Prompt/sensemaking_technique.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`
+- Norms: `DOM-CORE-04`, `DOM-AI-07`, `SUI-SIGN-03`
 - Expected verification level: `unit`
 
 ## 課題
@@ -45,12 +45,12 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 方法論の正本は逆を述べている。
 
-> `00_Prompt/kj_technique.md` §2 束ねる（グループ編成）。孤立カードをゼロにすることは `KJT-SIGN-03` が失敗の徴候として挙げている
+> `00_Prompt/sensemaking_technique.md` §2 束ねる（グループ編成）。孤立カードをゼロにすることは `SUI-SIGN-03` が失敗の徴候として挙げている
 > 孤立した1枚が最も重要なことがある。
 
-さらに `kj_technique.md:195` は**孤立カードがゼロであること自体を失敗の徴候**として挙げている。つまり Q007 は、方法論が「探索が足りない証拠」と呼ぶ状態へ利用者を誘導している。`suggestedAction` には "when they should be" という留保が付いているが、**所見（finding）として提示されている時点で「解消すべきもの」という枠組みを与えている**。
+さらに `sensemaking_technique.md:195` は**孤立カードがゼロであること自体を失敗の徴候**として挙げている。つまり Q007 は、方法論が「探索が足りない証拠」と呼ぶ状態へ利用者を誘導している。`suggestedAction` には "when they should be" という留保が付いているが、**所見（finding）として提示されている時点で「解消すべきもの」という枠組みを与えている**。
 
-同様の傾向が `Q005 "Many islands are disconnected"` にもある。`kj_technique.md` §4 は島の真の独立性を価値として扱う。
+同様の傾向が `Q005 "Many islands are disconnected"` にもある。`sensemaking_technique.md` §4 は島の真の独立性を価値として扱う。
 
 ### 事実3: 同じクラスの surface が他にもある
 
@@ -77,17 +77,17 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 - 実施すること:
   1. **判断を仰いだうえで**、`health` の提示形式を決める（下記論点）。
-  2. Q007 / Q005 の扱いを方法論と整合させる。孤立カードは「所見」ではなく**中立な事実の提示**（例: 「島に属さないカード: 3枚」）とし、`suggestedAction` の解消誘導を外す。ゼロのときにこそ注意を促すのが方法論に忠実（`kj_technique.md:195`）。
+  2. Q007 / Q005 の扱いを方法論と整合させる。孤立カードは「所見」ではなく**中立な事実の提示**（例: 「島に属さないカード: 3枚」）とし、`suggestedAction` の解消誘導を外す。ゼロのときにこそ注意を促すのが方法論に忠実（`sensemaking_technique.md:195`）。
   3. `recommendations.ts` / `structural_metrics.ts` の数値提示を棚卸しする。
   4. 画面表示に対する反スコアリング検査を追加する。書き出し境界と同じ形式（禁止語彙 + 数値提示の形式検査）をUI層へ適用する。
 - 実施しないこと:
-  1. 品質検査ロジック自体の削除。**検査は方法論が要求している**（`kj_technique.md` §6 の失敗の徴候12項目）。問題は検査の存在ではなく、その結果を**点数へ畳んで提示している**ことにある。
+  1. 品質検査ロジック自体の削除。**検査は方法論が要求している**（`sensemaking_technique.md` §6 の失敗の徴候12項目）。問題は検査の存在ではなく、その結果を**点数へ畳んで提示している**ことにある。
 
 ## 論点（保守者判断が必要な理由）
 
 `health` をどうするかは3案ある。方法論の解釈が絡むため保守者判断とする。
 
-- **案A: 点数を廃し、件数と種別で提示する。** 「未検討の指摘: 4件（うち重大 1件）」。`kj_technique.md:185` が A/B照合について「報告は件数で」と明示しており、**方法論はすでに件数を正しい提示形式として指定している**。最も整合する。
+- **案A: 点数を廃し、件数と種別で提示する。** 「未検討の指摘: 4件（うち重大 1件）」。`sensemaking_technique.md:185` が A/B照合について「報告は件数で」と明示しており、**方法論はすでに件数を正しい提示形式として指定している**。最も整合する。
 - **案B: 点数を残し、上昇を良しとしない文脈へ置く。** 「健全性」という語を捨て、100%を目標としない旨を併記する。ただし数値である限り最大化圧力は残り、`ui_design_handoff.md:32` の「準備度スコア」に該当し続ける懸念がある。
 - **案C: `ui_design_handoff.md:32` を改める。** 採点を許容する範囲を明文化する。`ADR-0041` の CVI 群および KJ法の方法論的根拠との整合を示す必要がある（`AI-IMPORTANCE-SCORING-01` の D-c と同じ構造）。
 
@@ -95,9 +95,9 @@ suggestedAction: "Group lone cards into islands when they should be part of the 
 
 ## 受入条件
 
-- [x] AC-1: 上記案から方針を決定する。— **案A（点数を廃し、件数と種別で提示）を採択**。方向性レビュー優先2と方法論（`kj_technique.md:185`「報告は件数で」）が同一の指針を指定しており、検査ロジックを失わずに不変条件と整合できるため。仮承認に基づき採択。
+- [x] AC-1: 上記案から方針を決定する。— **案A（点数を廃し、件数と種別で提示）を採択**。方向性レビュー優先2と方法論（`sensemaking_technique.md:185`「報告は件数で」）が同一の指針を指定しており、検査ロジックを失わずに不変条件と整合できるため。仮承認に基づき採択。
 - [x] AC-2: `outline_quality.ts` の提示が採択案に従っている。案Aの場合、0〜100の数値が画面に現れない。— `health` フィールドを `OutlineQualityReport` から削除し、`SidePanel` の描画と i18n キーを撤去。
-- [x] AC-3: Q007 が孤立カードを欠陥として提示していない。孤立カードがゼロの場合の注意喚起が方法論（`kj_technique.md:195`）に従って存在する。— Q007 を `info` の中立事実へ変更（`suggestedAction` 撤去・`kj_technique.md:109`「孤立した1枚が最も重要なことがある」を明記）。ゼロ枚時は新コード **Q009**（`warn`・forced-grouping の失敗徴候）を発行。
+- [x] AC-3: Q007 が孤立カードを欠陥として提示していない。孤立カードがゼロの場合の注意喚起が方法論（`sensemaking_technique.md:195`）に従って存在する。— Q007 を `info` の中立事実へ変更（`suggestedAction` 撤去・`sensemaking_technique.md:109`「孤立した1枚が最も重要なことがある」を明記）。ゼロ枚時は新コード **Q009**（`warn`・forced-grouping の失敗徴候）を発行。
 - [x] AC-4: `recommendations.ts` / `structural_metrics.ts` の数値提示が棚卸しされ、採択案に従っている。— 棚卸し結果: `connectivityScore` は表示（SidePanel metrics・`diagnostics.md`）から撤去（内部計算は維持・`structural_metrics.test.ts` は継続）。`recommendations.impactLevel` / `priority` は内部ソート用に維持し、表示（バッジ・エクスポートタグ・高影響フィルタ）を撤去。Q005 は `info` の中立観察へ変更（島の独立性を価値とする方法論 §4 と整合）。
 - [x] AC-5: UI層への反スコアリング検査がテストで固定されている（書き出し境界の既存検査と同形式）。— `worker_golden.test.ts` に `diagnosticsMd`（SidePanel表示・診断追記・bundle export の表面）が `/score|rank|confidence|priority|readiness|優先度の数値|点数|順位/i` に一致しないことを固定。`outlineReport` に `health` が存在しないことも固定。
 - [x] AC-6: `AI-IMPORTANCE-SCORING-01` へ、同一不変条件の防御がクライアント側に及んでいなかった事実を追記する（判断の取り消しではなく記録の正確化として）。— `01_Plans/issues/done/issue-AI-IMPORTANCE-SCORING-01-importance-rating-conflicts-with-no-scoring.md`「記録の正確化（2026-08-13、DOMAIN-SCORING-SURFACE-01 AC-6）」節として追記済みであることを確認した。

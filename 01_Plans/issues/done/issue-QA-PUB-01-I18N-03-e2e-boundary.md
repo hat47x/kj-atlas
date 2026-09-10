@@ -321,7 +321,7 @@ Pending-1/2は2026-07-16にMaintainer承認済み。残るB-ENV-01は技術的�
 - `npx playwright test e2e/pub_visibility_i18n_readonly_flow.spec.ts e2e/realistic_user_journey_expansion.spec.ts`: 8/8 pass（新規1件＋既存7件、回帰なし）。
 - `npx vitest run`: 239 file / 1,435 tests 全pass（環境依存の既知失敗は今回発生せず）。
 - `npm run build`: pass。
-- 実行環境: WSL Node 20.20.2（`.nvmrc`指定）、`/mnt/d/GIT/kj-atlas`を直接操作（別checkoutへのrsyncなし、`02_Architecture/`・`04_Documentation/`が実在するため環境依存failureが発生しない構成）。
+- 実行環境: WSL Node 20.20.2（`.nvmrc`指定）、`/mnt/d/GIT/sui-sensemaking`を直接操作（別checkoutへのrsyncなし、`02_Architecture/`・`04_Documentation/`が実在するため環境依存failureが発生しない構成）。
 
 **適用範囲についての限定**: 今回是正したのはカード**位置**（drag & drop）のreadOnly保護のみである。同ソース調査記録（前回バッチ）が個別に指摘したdblclick編集**開始**自体（`onBeginEdit`）の未ゲート状態は、コミット時ゲートで実害が閉じているため対象外のまま維持する。カード以外の要素（island境界、edge等）のdrag操作は本バッチの棚卸し対象に含めていない。
 

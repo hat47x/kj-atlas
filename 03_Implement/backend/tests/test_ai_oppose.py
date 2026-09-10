@@ -16,13 +16,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.model_registry_repository import register_model, register_provider
-from kj_atlas_api.routes import ai
-from kj_atlas_api.db import get_db
-from kj_atlas_api.llm.provider import LLMResponse
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, TenantRow
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.model_registry_repository import register_model, register_provider
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.llm.provider import LLMResponse
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, TenantRow
+from sui_sensemaking_api.settings import settings
 
 _NOW = "2026-08-15T00:00:00+00:00"
 
@@ -95,11 +95,11 @@ def _client(tmp_path) -> Iterator[TestClient]:
 def _stub_response(monkeypatch, raw_text: str) -> None:
     """Patch generate_with_fallback via monkeypatch so it auto-restores and
     never leaks into other test modules in the same pytest process."""
-    from kj_atlas_api.llm.provider import _new_metadata
+    from sui_sensemaking_api.llm.provider import _new_metadata
 
     def _fake_generate(_req):
         return LLMResponse(raw_text=raw_text, metadata=_new_metadata(provider_kind="local", provider_name="local", model_id="default", transport="none"))
-    import kj_atlas_api.routes.ai as ai_module
+    import sui_sensemaking_api.routes.ai as ai_module
     monkeypatch.setattr(ai_module, "generate_with_fallback", _fake_generate)
 
 
@@ -137,7 +137,7 @@ def test_route_sends_target_ir_and_human_contradiction_state(tmp_path, monkeypat
     doc["evidenceLinks"][0]["contradictionState"] = "held"
     captured = {}
 
-    from kj_atlas_api.llm.provider import _new_metadata
+    from sui_sensemaking_api.llm.provider import _new_metadata
 
     def _fake_generate(req):
         captured["request"] = req
@@ -200,8 +200,8 @@ def test_propose_opposing_viewpoint_rejects_unknown_target(tmp_path, monkeypatch
 def test_opposing_viewpoint_prompt_is_grounded_in_doc() -> None:
     """The prompt must carry the target card, all cards, and evidence links, so
     the model proposes only from the doc's structure (M4)."""
-    from kj_atlas_api.models import DocumentV1
-    from kj_atlas_api.models_ai import ProposeOpposingViewpointRequest
+    from sui_sensemaking_api.models import DocumentV1
+    from sui_sensemaking_api.models_ai import ProposeOpposingViewpointRequest
 
     payload = ProposeOpposingViewpointRequest.model_validate({"doc": DocumentV1.model_validate(_doc()), "targetCardId": "c-claim"})
     built = ai._build_opposing_viewpoint_prompt(payload)

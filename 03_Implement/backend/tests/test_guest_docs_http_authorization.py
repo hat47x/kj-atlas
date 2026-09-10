@@ -10,14 +10,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.guest_admission_repository import GuestAdmissionRepository
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401
-from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
-from kj_atlas_api.guest_request_auth import GUEST_AUTH_SESSION_COOKIE, issue_guest_auth_session
-from kj_atlas_api.models import Base, DocumentRow, TenantMembershipRow, TenantRow
-from kj_atlas_api.routes.docs import router as docs_router
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.guest_admission_repository import GuestAdmissionRepository
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401
+from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore
+from sui_sensemaking_api.guest_request_auth import GUEST_AUTH_SESSION_COOKIE, issue_guest_auth_session
+from sui_sensemaking_api.models import Base, DocumentRow, TenantMembershipRow, TenantRow
+from sui_sensemaking_api.routes.docs import router as docs_router
 
 TIMESTAMP = "2026-09-06T00:00:00+00:00"
 HASH_KEY = b"guest-http-test-key-01234567890123"

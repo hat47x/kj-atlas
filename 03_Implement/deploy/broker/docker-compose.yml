@@ -1,22 +1,22 @@
-# Identity Broker (Keycloak) for kj-atlas SaaS multi-tenant authentication.
+# Identity Broker (Keycloak) for sui-sensemaking SaaS multi-tenant authentication.
 #
 # Usage:
 #   cd 03_Implement/deploy
 #   docker compose -f docker-compose.yml -f broker/docker-compose.yml up -d
 #
-# This adds Keycloak as the SAML→OIDC broker in front of kj-atlas.
+# This adds Keycloak as the SAML→OIDC broker in front of sui-sensemaking.
 # The broker:
 #   - Aggregates multiple external IdPs (Google, Azure AD, SAML IdPs)
 #   - Issues signed RS256 JWTs with tenant_ref claim
 #   - Handles OAuth 2.0 / OIDC authorization code grant + PKCE
 #
 # Architecture:
-#   Browser → Keycloak (login) → kj-atlas API (JWT verification)
+#   Browser → Keycloak (login) → sui-sensemaking API (JWT verification)
 
 services:
   broker:
     image: quay.io/keycloak/keycloak:26.0
-    container_name: kj-atlas-broker
+    container_name: sui-sensemaking-broker
     command: start-dev
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -37,9 +37,9 @@ services:
       retries: 30
       start_period: 30s
     volumes:
-      - kj_atlas_keycloak_data:/opt/keycloak/data
+      - sui_sensemaking_keycloak_data:/opt/keycloak/data
     networks:
       - default
 
 volumes:
-  kj_atlas_keycloak_data:
+  sui_sensemaking_keycloak_data:

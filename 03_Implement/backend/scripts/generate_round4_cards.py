@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the W-type round-4 (構想計画) cards for kj-atlas self-improvement.
+"""Generate the W-type round-4 (構想計画) cards for sui-sensemaking self-improvement.
 
 Round 4 posture (構想計画) turns the essence findings (凝縮・多段編成・複層キャンバス・
 対話的洗練) into CONCRETE API/UI/data-contract design proposals.

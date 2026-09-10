@@ -5,7 +5,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 # llm_runtime_constraints — LLM実行時制約とサンドボックス前提（02_Architecture）
 
-本仕様は、kj-atlas の LLM連携を安全かつ再現可能に運用するため、実行環境制約（特にサンドボックスとネットワーク）を定義する。
+本仕様は、sui-sensemaking の LLM連携を安全かつ再現可能に運用するため、実行環境制約（特にサンドボックスとネットワーク）を定義する。
 
 ---
 
@@ -35,7 +35,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ## 3. CIで許容する実行パターン
 
-前提: `KJ_ATLAS_LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
+前提: `SUI_LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
 
 ### 3.1 常時利用可能（必須）
 
@@ -47,7 +47,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ### 3.3 定期実行のみ（通常PRでは非必須）
 
-- **External provider（strong model）**: `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
+- **External provider（strong model）**: `SUI_LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
 - PRごと必須にしない（コストと接続可用性のため）。
 
 ---
@@ -56,7 +56,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 - `offline`: none | fixture | local。外部サービスにデータを渡さない。
 - `intranet`: local中心、必要時に社内ゲートウェイ経由。
-- `scheduled-integration`: `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
+- `scheduled-integration`: `SUI_LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
 
 safeModeは全モードで既定ONとし、外部サービスとの共有可否と独立して漏えい防止ルールを適用する。
 
@@ -65,7 +65,7 @@ safeModeは全モードで既定ONとし、外部サービスとの共有可否�
 ## 5. 失敗時ポリシー
 
 - LocalProvider未起動時は FixtureProvider へフォールバック可能とする。
-- `KJ_ATLAS_LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
+- `SUI_LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
 - 外部通信不能はテスト警告扱い（ただし通常CIの必須判定から除外）。
 - スキーマ検証失敗は通信可否に関わらず失敗扱い（品質ゲート優先）。
 
@@ -81,7 +81,7 @@ safeModeは全モードで既定ONとし、外部サービスとの共有可否�
 
 ## 7. 設定キー整合
 
-- 本仕様の公開設定キーは `KJ_ATLAS_*` に統一する。
+- 本仕様の公開設定キーは `SUI_*` に統一する。
 - 接頭辞のない旧 LLM 設定キーは互換aliasを提供しない。
 
 ## 8. CE-2 Runtime Guardrails（low-risk / proposal-only）

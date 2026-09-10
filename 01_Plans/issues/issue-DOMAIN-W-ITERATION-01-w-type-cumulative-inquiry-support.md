@@ -91,7 +91,7 @@
 - [x] AC-7: 後続の仮説・方針・具体策から、元カード、ラウンド、出典を辿れる。
 - [x] AC-8: 中断後の再開ブリーフから、問い、未解決点、次の行動、元成果へ移動できる。
 - [x] AC-9: 引継ぎ確認を一件ずつ採用・修正・見送り・保留でき、未回答でも保存できる。
-- [x] AC-10: `KJ_ATLAS_LLM_PROVIDER=none` で中核操作を完了できる。
+- [x] AC-10: `SUI_LLM_PROVIDER=none` で中核操作を完了できる。
 - [x] AC-11: SafeMode、import strict validation、部分共有、履歴削除の境界が永続契約で定義される。SafeMode適用結果と共有範囲を受信側で検証できるbundle metadata、tenant-scoped backend保存、探究全体削除とcontent-free監査は実装済み。— **保持期限・expiry・purgeは DATA-INQUIRY-RETENTION-01 案A（自動期限なし・明示DELETEまで永続）を採択**し、非保証を api.md / UI / 運用文書に明記した。**2026-08-25是正**: 「残る部分共有・履歴削除の境界は未完了（別issueで追跡）」としていたが、その追跡issueは当時実際には起票されていなかった（`post-mvp-business-scope-design-program.html` §13.2が発見・記録）。`issue-SEC-INQUIRY-BOUND-01`として2026-08-22に起票・解決済み——`InquiryBundleRow.created_by`（不変事実、新規bundleのみ適用、既存bundleは遡及締出ししない）を追加し、GET・PUT（update経路）・DELETEすべてに所有者チェックを適用した。これにより部分共有（読取に所有者確認が必須）・履歴削除（DELETEに所有者確認が必須）の認可境界が永続契約として定義されたため、本ACを完了とする。
 - [x] AC-12: マウス・キーボード・390px・代表規模のE2Eが通る。
 - [x] AC-13: 探究終了（破壊的操作）の確認は、A-1（エージェント連携）と同型の保存・破棄・取消の3択とし、SafeMode既定ONの継承と出典・文面のサニタイズを満たす。→ 2026-07-29チェックポイントで完了。
@@ -206,7 +206,7 @@
 - 高度機能の探究タブ内に通常は閉じた「次への引継ぎを確認」を追加した。候補決定後は次の一件へ移り、前の候補にも戻れる。未回答でも保存できることを明示し、部分保存後も再開を遮断しない。通常画面とAI提案の権限境界は変更していない。
 - unit testで候補導出、採用・保留・見送り・修正、未回答の部分保存、完全回答時の状態遷移、snapshot非変更、不正参照拒否、strict JSON往復を確認した。frontend全215 files / 1,237 tests、typecheck、ja/enカタログ整合が通過した。
 - 390pxのPlaywright E2Eで、キーボード採用、マウス保留、文章修正、見送り、未回答を残した保存、ダウンロード後のstrict再読込、snapshot非変更、横切れがないことを確認した。実ブラウザでもviewport 390px、文書scroll幅390px、引継ぎ欄scroll幅=client幅357pxを確認した。
-- `KJ_ATLAS_LLM_PROVIDER=none`を明示し、backend/AI providerが利用できない状態で、300カード・30島・6ラウンドの代表bundle E2Eを完了した。1成果73,955 bytes、bundle 1,460,390 bytes、UI import 549.54msで既定上限内だった。既存の比較・再開・系譜・分岐取消E2Eと今回の引継ぎE2Eも同時に通過したため、AC-9、AC-10、AC-12、T7、T8を完了とする。
+- `SUI_LLM_PROVIDER=none`を明示し、backend/AI providerが利用できない状態で、300カード・30島・6ラウンドの代表bundle E2Eを完了した。1成果73,955 bytes、bundle 1,460,390 bytes、UI import 549.54msで既定上限内だった。既存の比較・再開・系譜・分岐取消E2Eと今回の引継ぎE2Eも同時に通過したため、AC-9、AC-10、AC-12、T7、T8を完了とする。
 
 ### AC-11 部分範囲の派生保存チェックポイント（2026-07-19）
 

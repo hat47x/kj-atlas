@@ -15,18 +15,18 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.guest_admission_repository import GuestAdmissionRepository
-from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
-from kj_atlas_api.guest_identity_verifier import DatabaseJwtGuestIdentityVerifier
-from kj_atlas_api.guest_redeem import (
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.guest_admission_repository import GuestAdmissionRepository
+from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore
+from sui_sensemaking_api.guest_identity_verifier import DatabaseJwtGuestIdentityVerifier
+from sui_sensemaking_api.guest_redeem import (
     DatabaseGuestRedeemStateStore,
     GuestIdentityVerificationError,
     GuestIdentityVerificationUnavailableError,
 )
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.models import (
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.models import (
     Base,
     DocumentRow,
     IdentityProviderRow,
@@ -35,13 +35,13 @@ from kj_atlas_api.models import (
     TenantRow,
     UserIdentityRow,
 )
-from kj_atlas_api.routes.docs import router as docs_router
-from kj_atlas_api.routes.guest_session import router as guest_session_router
+from sui_sensemaking_api.routes.docs import router as docs_router
+from sui_sensemaking_api.routes.guest_session import router as guest_session_router
 
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
 TS = NOW.isoformat()
 ISSUER = "https://personal-idp.example.test"
-AUDIENCE = "kj-atlas-guest"
+AUDIENCE = "sui-sensemaking-guest"
 STATE_HASH_KEY = b"guest-r2c-state-hash-key-0123456789"
 SESSION_HASH_KEY = b"guest-r2c-session-hash-key-0123456"
 
@@ -346,7 +346,7 @@ def test_jwks_outage_is_distinct_from_bad_identity(guest_env) -> None:
         session_factory=factory,
         jwks_store=JwksStore(),
     )
-    with patch("kj_atlas_api.trusted_auth_edge._fetch_jwks", side_effect=OSError):
+    with patch("sui_sensemaking_api.trusted_auth_edge._fetch_jwks", side_effect=OSError):
         with pytest.raises(GuestIdentityVerificationUnavailableError):
             verifier.verify_identity(
                 credential=_token(private_key),

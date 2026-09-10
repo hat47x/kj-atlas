@@ -7,8 +7,8 @@ cards that are not part of the current grouping request.
 
 from __future__ import annotations
 
-from kj_atlas_api.models_ai import SuggestCardGroupsRequest
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.models_ai import SuggestCardGroupsRequest
+from sui_sensemaking_api.routes.ai import (
     _build_suggest_card_groups_prompt,
     _card_group_candidates,
     _suggest_card_groups_ir,

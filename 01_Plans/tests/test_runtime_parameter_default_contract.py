@@ -23,12 +23,12 @@ class RuntimeParameterDefaultContractTests(unittest.TestCase):
             "### Profile default vs recommendation（既定値と推奨値）\n\n"
             "| Key | Implementation default | Enterprise recommendation | Rationale |\n"
             "| --- | --- | --- | --- |\n"
-            f"| `KJ_ATLAS_MAX_DOCUMENT_CARDS` | `{registry_default}` | any | test |\n"
-            "| `KJ_ATLAS_ADMIN_API_KEY` | 未設定 | required | test |\n"
-            "| `KJ_ATLAS_LLM_PROVIDER` | `none` | none | test |\n",
+            f"| `SUI_MAX_DOCUMENT_CARDS` | `{registry_default}` | any | test |\n"
+            "| `SUI_ADMIN_API_KEY` | 未設定 | required | test |\n"
+            "| `SUI_LLM_PROVIDER` | `none` | none | test |\n",
             encoding="utf-8",
         )
-        settings = root / "03_Implement/backend/src/kj_atlas_api/settings.py"
+        settings = root / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
         settings.parent.mkdir(parents=True)
         settings.write_text(
             "class Settings:\n"
@@ -53,7 +53,7 @@ class RuntimeParameterDefaultContractTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         finding = findings[0]
         self.assertEqual(finding.rule_id, MODULE.RUNTIME_PARAMETER_DEFAULT_RULE_ID)
-        self.assertEqual(finding.target, "KJ_ATLAS_MAX_DOCUMENT_CARDS")
+        self.assertEqual(finding.target, "SUI_MAX_DOCUMENT_CARDS")
         self.assertIn("10000", finding.message)
         self.assertIn("50000", finding.message)
 
@@ -64,8 +64,8 @@ class RuntimeParameterDefaultContractTests(unittest.TestCase):
             documented = MODULE._extract_profile_implementation_defaults(
                 (root / "02_Architecture/runtime_parameter_registry.md").read_text(encoding="utf-8")
             )
-        self.assertIsNone(documented["KJ_ATLAS_ADMIN_API_KEY"][0])
-        self.assertEqual(documented["KJ_ATLAS_LLM_PROVIDER"][0], "none")
+        self.assertIsNone(documented["SUI_ADMIN_API_KEY"][0])
+        self.assertEqual(documented["SUI_LLM_PROVIDER"][0], "none")
 
     def test_computed_defaults_are_outside_static_contract(self) -> None:
         settings = "class Settings:\n    value: int = Field(default_factory=lambda: 1)\n"

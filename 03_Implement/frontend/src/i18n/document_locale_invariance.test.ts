@@ -63,7 +63,7 @@ function buildBundleWithLocale(doc: DocumentV1, locale: "ja" | "en", extraViewSt
     },
   }, {
     ...deterministicContext,
-    rootFolderPath: `kj-atlas-export-${locale}`,
+    rootFolderPath: `sui-sensemaking-export-${locale}`,
   });
 }
 

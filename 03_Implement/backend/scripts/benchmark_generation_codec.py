@@ -7,7 +7,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation, restore_generation
+from sui_sensemaking_api.generation_codec import canonical_json_bytes, encode_generation, restore_generation
 
 
 def document(cards: list[dict[str, object]], generation: int) -> dict[str, object]:

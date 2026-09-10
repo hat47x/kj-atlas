@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api.audit import (
+from sui_sensemaking_api.audit import (
     AuditDispatcher,
     AuditEvent,
     HttpAuditTransport,
@@ -261,13 +261,13 @@ def test_dispatcher_no_dedup_key_bypasses_dedup() -> None:
 
 
 def test_build_audit_dispatcher_http_rejects_missing_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_transport", "http")
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_endpoint", None)
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_transport", "http")
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_http_endpoint", None)
 
     with pytest.raises(RuntimeError) as exc_info:
         build_audit_dispatcher()
 
-    assert "KJ_ATLAS_AUDIT_HTTP_ENDPOINT" in str(exc_info.value)
+    assert "SUI_AUDIT_HTTP_ENDPOINT" in str(exc_info.value)
 
 
 def test_build_audit_dispatcher_http_uses_configured_transport(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -285,15 +285,15 @@ def test_build_audit_dispatcher_http_uses_configured_transport(monkeypatch) -> N
         )
         return RecordingTransport()
 
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_export_enabled", True)
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_transport", "http")
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_export_enabled", True)
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_transport", "http")
     monkeypatch.setattr(
-        "kj_atlas_api.audit.settings.audit_http_endpoint",
+        "sui_sensemaking_api.audit.settings.audit_http_endpoint",
         "https://audit.example.invalid/events",
     )
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_api_key", "test-key")
-    monkeypatch.setattr("kj_atlas_api.audit.settings.audit_http_timeout_seconds", 1.5)
-    monkeypatch.setattr("kj_atlas_api.audit.HttpAuditTransport", recording_http_transport)
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_http_api_key", "test-key")
+    monkeypatch.setattr("sui_sensemaking_api.audit.settings.audit_http_timeout_seconds", 1.5)
+    monkeypatch.setattr("sui_sensemaking_api.audit.HttpAuditTransport", recording_http_transport)
 
     dispatcher = build_audit_dispatcher()
 
@@ -327,7 +327,7 @@ def test_dispatcher_logs_a_warning_when_queue_flush_itself_fails(caplog) -> None
     dispatcher.emit(first_event)
     caplog.clear()
 
-    with caplog.at_level("WARNING", logger="kj_atlas_api.audit"):
+    with caplog.at_level("WARNING", logger="sui_sensemaking_api.audit"):
         dispatcher.emit(second_event)
 
     flush_records = [
@@ -369,8 +369,8 @@ def test_audit_llm_trace_emits_llm_event_via_dispatcher() -> None:
     prompt/card text."""
     import json
 
-    from kj_atlas_api.routes.ai import _audit_llm_trace
-    from kj_atlas_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
+    from sui_sensemaking_api.routes.ai import _audit_llm_trace
+    from sui_sensemaking_api.tenant_context import LOCAL_DEFAULT_TENANT_CONTEXT
 
     class Recorder:
         def __init__(self) -> None:

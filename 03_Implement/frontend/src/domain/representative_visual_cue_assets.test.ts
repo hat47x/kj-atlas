@@ -162,7 +162,7 @@ describe("representative visual cue assets", () => {
       principalId: "user-1",
     });
 
-    expect(local).toBe("kj-atlas/local-scope/v1/");
+    expect(local).toBe("sui-sensemaking/local-scope/v1/");
     expect(tenantA).not.toBe(tenantB);
     expect(() =>
       visualCueAssetScopeKey({

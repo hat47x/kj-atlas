@@ -262,7 +262,7 @@ function buildOpList(incomingDoc: DocumentV1, selectedItems: MergeItem[]): Patch
 
 export function buildSelectedPatchFromItems(baseDoc: DocumentV1, incomingDoc: DocumentV1, selectedItems: MergeItem[]): PatchDocument {
   return {
-    kind: "kj-atlas-patch",
+    kind: "sui-sensemaking-patch",
     version: 1,
     baseDocSignature: `${baseDoc.id}:${baseDoc.updatedAt}`,
     ops: buildOpList(incomingDoc, selectedItems),

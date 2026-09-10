@@ -5,7 +5,7 @@
 - Source Issue: `AI-MODEL-GOVERNANCE-03`動的provider dispatch実装時のモンキーテスト（2026-08-26）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/model_registry.py`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, model registry tests
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/model_registry.py`, `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, model registry tests
 - Related ADR/Spec: `ADR-0065`, `AI-MODEL-GOVERNANCE-03`, trusted HTTP endpoint contract
 - Expected verification level: `integration`
 

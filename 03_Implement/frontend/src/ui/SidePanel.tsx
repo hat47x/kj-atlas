@@ -246,7 +246,7 @@ type SidePanelProps = {
   evidenceGapReport: EvidenceGapReport | null;
   dialecticBalanceReport: DialecticBalanceReport | null;
   onRunOutlineDiagnostics: () => void;
-  /** kj_technique.md §4 (優先3-1): run deterministic void detection and store results. */
+  /** sensemaking_technique.md §4 (優先3-1): run deterministic void detection and store results. */
   onDetectVoids: () => void;
   isDiagnosticsRunning: boolean;
   onCancelDiagnostics: () => void;

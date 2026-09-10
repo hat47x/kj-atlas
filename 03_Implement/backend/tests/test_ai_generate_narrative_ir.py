@@ -24,10 +24,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm_input_ir import IR_VERSION
-from kj_atlas_api.main import app
-from kj_atlas_api.routes import ai
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.llm_input_ir import IR_VERSION
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.settings import settings
 
 _CAPTURED: list = []
 _RESPONSE: dict = {}
@@ -312,7 +312,7 @@ def test_truncation_is_stated_in_the_prompt_rather_than_silent() -> None:
     """The IR caps the projection (spec §5.1). Sizing that cap is AC-10 and is
     deferred; the prompt must at least not present a truncated relation set as
     if it were the whole document."""
-    from kj_atlas_api.llm_input_ir import MAX_CARDS
+    from sui_sensemaking_api.llm_input_ir import MAX_CARDS
 
     doc = _doc()
     doc["cards"] = [
@@ -382,7 +382,7 @@ def test_ir_layer_refuses_unreviewed_text_independently_of_the_route_gate() -> N
     own if a future caller ever skipped the route gate
     (llm_input_ir_spec.md §7.1, ADR-0069 defense-in-depth).
     """
-    from kj_atlas_api.models_ai import GenerateNarrativeRequest
+    from sui_sensemaking_api.models_ai import GenerateNarrativeRequest
 
     raw = _doc()
     raw["cards"][0].pop("textReviewed")

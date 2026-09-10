@@ -19,7 +19,7 @@
 
 ## 1) 課題 / Problem statement
 
-- `llm_provider_spec.md` §4.1/4.2 は `LLMRequest`（`inputs`・`output_schema`・`options.timeout_ms`/`seed`・`context.trace_id`/`safe_mode`）と `LLMResponse`（`usage`・構造化`output`・`provider_meta`）を凍結済みの正規形として記載するが、`03_Implement/backend/src/kj_atlas_api/llm/provider.py:16-27` の実装は `LLMRequest{task, prompt, temperature, max_tokens}` → `LLMResponse{raw_text, metadata}` という大幅に単純化された形のみである。
+- `llm_provider_spec.md` §4.1/4.2 は `LLMRequest`（`inputs`・`output_schema`・`options.timeout_ms`/`seed`・`context.trace_id`/`safe_mode`）と `LLMResponse`（`usage`・構造化`output`・`provider_meta`）を凍結済みの正規形として記載するが、`03_Implement/backend/src/sui_sensemaking_api/llm/provider.py:16-27` の実装は `LLMRequest{task, prompt, temperature, max_tokens}` → `LLMResponse{raw_text, metadata}` という大幅に単純化された形のみである。
 - 「正本」を名乗る凍結文書が実装済みでない内容を確定事項のように記載しているため、実装者・監査者が実態を誤認するリスクがある。
 
 ## 2) 背景 / Context
@@ -59,7 +59,7 @@
 
 ## 7) 検証計画 / Validation plan
 
-- `grep -n "LLMRequest\|LLMResponse" 02_Architecture/llm_provider_spec.md 03_Implement/backend/src/kj_atlas_api/llm/provider.py` で記載とコードの用語一致を目視確認。
+- `grep -n "LLMRequest\|LLMResponse" 02_Architecture/llm_provider_spec.md 03_Implement/backend/src/sui_sensemaking_api/llm/provider.py` で記載とコードの用語一致を目視確認。
 
 ## 複雑性予算（ADR-0043 自己申告）
 
@@ -75,5 +75,5 @@
 ## 完了記録 2026-07-06（Claude Code）
 
 - §4 を「実装済み最小契約」（`task`/`prompt`/`temperature`/`max_tokens` → `raw_text`/`metadata`）として書き直し、新設 §4.4「Phase-2（未配線・Pending）」に `inputs`/`output_schema`/`options.timeout_ms`・`seed`/`context.trace_id`・`safe_mode`/`usage`/構造化`output` を分離。
-- 修正過程で副次的に発見した2件の軽微な乖離も同ドキュメント内で解消（スコープ外への拡大は避け、同一ファイル内の直接関連箇所のみ）: (1) §2 Provider enum の `fixture` が `KJ_ATLAS_LLM_PROVIDER` の実行時受理値でない（テスト専用）ことを注記、(2) §6 Attachments 制約の `LLMRequest.inputs` 参照を実装済みの `LLMRequest.prompt` へ修正。
+- 修正過程で副次的に発見した2件の軽微な乖離も同ドキュメント内で解消（スコープ外への拡大は避け、同一ファイル内の直接関連箇所のみ）: (1) §2 Provider enum の `fixture` が `SUI_LLM_PROVIDER` の実行時受理値でない（テスト専用）ことを注記、(2) §6 Attachments 制約の `LLMRequest.inputs` 参照を実装済みの `LLMRequest.prompt` へ修正。
 - 検証: `grep` によるドキュメント内表記統一確認のみ（コード変更なし・typecheck/vitest対象外）。

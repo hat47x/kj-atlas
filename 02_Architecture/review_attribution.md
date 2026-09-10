@@ -3,7 +3,7 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 ## Purpose
-kj-atlas は「曖昧さを保留したまま思考を進める」ための図解ツールであり、成果物は共有・レビューされることを前提とする。  
+sui-sensemaking は「曖昧さを保留したまま思考を進める」ための図解ツールであり、成果物は共有・レビューされることを前提とする。  
 本ドキュメントは、図解内の要素（島・カード・関係・要約等）について「レビュー済みかどうか」および（任意で）「誰が・いつ」レビューしたかを記録するための設計方針を示す。
 
 本機能は **設計のみ**とし、MVPには実装しない。
@@ -17,7 +17,7 @@ kj-atlas は「曖昧さを保留したまま思考を進める」ための図�
 - レビュー行為の“正しさ”を自動判定しない。
 
 ## Why view-scoped (privacy-first)
-kj-atlas は OSS として、多様な環境で利用される：
+sui-sensemaking は OSS として、多様な環境で利用される：
 - ローカル個人利用（ログイン無し）
 - 企業/行政のイントラ（SSOやアカウント管理あり）
 - 自前ホスティング（最小構成）
@@ -284,9 +284,9 @@ kj-atlas は OSS として、多様な環境で利用される：
   - `amr/acr/aal/auth_time` は reviewer attribution へ保存しない。
   - `roles/groups/policyRef` の生値は attribution 監査にも残さない。
 - strict mode:
-  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
+  - `SUI_ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
   - 管理導線の責務分担: backend は拒否契約 (`403`) と最小API (`POST /admin/provision/users`) を提供し、運用管理者は事前登録・再紐付けを実施する。
-  - strict 緩和（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` への変更）は Security Officer + System Owner の2者承認を必須とし、承認記録なき変更を禁止する。
+  - strict 緩和（`SUI_ALLOW_JIT_PROVISIONING=true` への変更）は Security Officer + System Owner の2者承認を必須とし、承認記録なき変更を禁止する。
 
 ### 8.1 `amr/acr/aal/auth_time` の表示・監査の固定方針
 

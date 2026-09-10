@@ -95,7 +95,7 @@
 
 段階5の機械的な部分（実際にfresh cloneしてrunbook記載コマンドを再現できるか）を代行した。Docker Desktopは本実行環境で未使用のため、CONTRIBUTING.mdが認めるSQLite代替経路相当（frontend/backendのローカルテスト実行）で検証した。
 
-- `git clone https://github.com/hat47x/kj-atlas`（`75d8fb76`時点）を新規ディレクトリへ実施。
+- `git clone https://github.com/hat47x/sui-sensemaking`（`75d8fb76`時点）を新規ディレクトリへ実施。
 - `cd 03_Implement/frontend && npm ci`: 74 packages、クリーンインストール成功（`npm audit`は6件の非関連devVulnerability検出のみ、本issueのscope外）。
 - `npm run typecheck`: 0 errors。
 - `npm run test`: 192 test files / 1,066 tests、全pass。

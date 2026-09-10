@@ -9,7 +9,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from kj_atlas_api.persistence_shapes import portable_binary_lob_type
+from sui_sensemaking_api.persistence_shapes import portable_binary_lob_type
 
 revision: str = "20260811_0021"
 down_revision: str | None = "20260810_0020"

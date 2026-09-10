@@ -3,7 +3,7 @@
 Covers the negative matrix the issue asks for (AC-2 / AC-7) and the D3=A
 production fail-fast (AC-1). The load-bearing assertion is that the
 business-plane credential does not reach the control plane: before this change,
-`KJ_ATLAS_API_KEY` was the only protection on
+`SUI_API_KEY` was the only protection on
 `POST /admin/provision/identity-providers`, which registers a trusted JWT issuer
 and its JWKS URI -- so a document-API caller could register their own issuer and
 then authenticate as any user in any tenant.
@@ -20,15 +20,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.control_plane_auth import (
+from sui_sensemaking_api.control_plane_auth import (
     ADMIN_API_KEY_HEADER,
     TENANT_PROVISION_CAPABILITY,
 )
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, TenantRow
-from kj_atlas_api.session_context import KNOWN_EFFECTIVE_CAPABILITIES
-from kj_atlas_api.settings import Settings, settings
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, TenantRow
+from sui_sensemaking_api.session_context import KNOWN_EFFECTIVE_CAPABILITIES
+from sui_sensemaking_api.settings import Settings, settings
 
 TIMESTAMP = "2026-08-13T00:00:00Z"
 
@@ -42,7 +42,7 @@ _CONTROL_PLANE_ROUTES = (
         "/admin/provision/identity-providers",
         {
             "issuer": "https://idp.example.com",
-            "audience": "kj-atlas",
+            "audience": "sui-sensemaking",
             "jwksUri": "https://idp.example.com/jwks",
         },
     ),
@@ -259,9 +259,9 @@ def test_provision_capability_is_a_known_capability() -> None:
 
 def _settings_env(profile: str, **overrides: str) -> dict[str, str]:
     env = {
-        "KJ_ATLAS_RUNTIME_PROFILE": profile,
-        "KJ_ATLAS_DATABASE_URL": "sqlite:///./kj_atlas.db",
-        "KJ_ATLAS_LLM_PROVIDER": "none",
+        "SUI_RUNTIME_PROFILE": profile,
+        "SUI_DATABASE_URL": "sqlite:///./sui_sensemaking.db",
+        "SUI_LLM_PROVIDER": "none",
     }
     env.update(overrides)
     return env
@@ -271,10 +271,10 @@ def _settings_env(profile: str, **overrides: str) -> dict[str, str]:
 def test_production_profile_without_control_plane_key_fails_fast(monkeypatch, profile) -> None:
     for key, value in _settings_env(profile).items():
         monkeypatch.setenv(key, value)
-    monkeypatch.delenv("KJ_ATLAS_ADMIN_API_KEY", raising=False)
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", _BUSINESS_KEY)
+    monkeypatch.delenv("SUI_ADMIN_API_KEY", raising=False)
+    monkeypatch.setenv("SUI_API_KEY", _BUSINESS_KEY)
 
-    with pytest.raises(ValueError, match="KJ_ATLAS_ADMIN_API_KEY"):
+    with pytest.raises(ValueError, match="SUI_ADMIN_API_KEY"):
         Settings()
 
 
@@ -282,18 +282,18 @@ def test_enterprise_production_without_business_key_fails_fast(monkeypatch) -> N
     """The original P0: this profile started fully unauthenticated at defaults."""
     for key, value in _settings_env("enterprise-production").items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", _ADMIN_KEY)
-    monkeypatch.delenv("KJ_ATLAS_API_KEY", raising=False)
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", _ADMIN_KEY)
+    monkeypatch.delenv("SUI_API_KEY", raising=False)
 
-    with pytest.raises(ValueError, match="KJ_ATLAS_API_KEY"):
+    with pytest.raises(ValueError, match="SUI_API_KEY"):
         Settings()
 
 
 def test_production_profile_with_both_keys_constructs(monkeypatch) -> None:
     for key, value in _settings_env("enterprise-production").items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", _ADMIN_KEY)
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", _BUSINESS_KEY)
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", _ADMIN_KEY)
+    monkeypatch.setenv("SUI_API_KEY", _BUSINESS_KEY)
 
     built = Settings()
     assert built.admin_api_key == _ADMIN_KEY
@@ -303,8 +303,8 @@ def test_production_profile_with_both_keys_constructs(monkeypatch) -> None:
 def test_business_and_control_plane_keys_must_be_distinct(monkeypatch) -> None:
     for key, value in _settings_env("enterprise-production").items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", _ADMIN_KEY)
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", _ADMIN_KEY)
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", _ADMIN_KEY)
+    monkeypatch.setenv("SUI_API_KEY", _ADMIN_KEY)
 
     with pytest.raises(ValueError, match="must be distinct credentials"):
         Settings()
@@ -314,8 +314,8 @@ def test_business_and_control_plane_keys_must_be_distinct(monkeypatch) -> None:
 def test_non_production_profiles_still_construct_without_any_key(monkeypatch, profile) -> None:
     for key, value in _settings_env(profile).items():
         monkeypatch.setenv(key, value)
-    monkeypatch.delenv("KJ_ATLAS_ADMIN_API_KEY", raising=False)
-    monkeypatch.delenv("KJ_ATLAS_API_KEY", raising=False)
+    monkeypatch.delenv("SUI_ADMIN_API_KEY", raising=False)
+    monkeypatch.delenv("SUI_API_KEY", raising=False)
 
     built = Settings()
     assert built.admin_api_key is None
@@ -324,7 +324,7 @@ def test_non_production_profiles_still_construct_without_any_key(monkeypatch, pr
 def test_control_plane_key_must_be_canonical(monkeypatch) -> None:
     for key, value in _settings_env("local-dev").items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "has whitespace")
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", "has whitespace")
 
     with pytest.raises(ValueError, match="canonical bearer"):
         Settings()
@@ -333,9 +333,9 @@ def test_control_plane_key_must_be_canonical(monkeypatch) -> None:
 def test_startup_warning_names_the_control_plane_credential() -> None:
     """AC-4: the warning previously named an endpoint that 404'd on this profile."""
     source = (
-        os.path.join(os.path.dirname(__file__), "..", "src", "kj_atlas_api", "trusted_saas_runtime.py")
+        os.path.join(os.path.dirname(__file__), "..", "src", "sui_sensemaking_api", "trusted_saas_runtime.py")
     )
     with open(source, encoding="utf-8") as handle:
         text = handle.read()
     assert "X-Admin-Api-Key" in text
-    assert "KJ_ATLAS_ADMIN_API_KEY" in text
+    assert "SUI_ADMIN_API_KEY" in text

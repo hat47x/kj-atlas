@@ -6,18 +6,18 @@
 - Source Issue: N/A（2026-08-16のDeepSeek実APIモンキーテストで発見）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/tests/test_ai_eval_pipeline.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, `03_Implement/backend/tests/test_ai_eval_pipeline.py`
 - Related Backlog: `AI-DEEPSEEK-MODEL-01`
 - Related ADR/Spec: `02_Architecture/llm_provider_spec.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`
 - Expected verification level: `e2e`
 
 ## 課題
 
-`KJ_ATLAS_LLM_PROVIDER=deepseek`かつ操作別model未指定の場合、routeのモデル統制は`default`を検査する一方、DeepSeek送信層だけが後から`deepseek-chat`へ置換していた。registryには`deepseek-chat`が正しく登録されていても、実API送信前に403 `model_not_registered`となり、既定設定の全AI操作が利用不能だった。既存の評価testは操作別model mapを明示していたため、この既定経路を覆えていなかった。
+`SUI_LLM_PROVIDER=deepseek`かつ操作別model未指定の場合、routeのモデル統制は`default`を検査する一方、DeepSeek送信層だけが後から`deepseek-chat`へ置換していた。registryには`deepseek-chat`が正しく登録されていても、実API送信前に403 `model_not_registered`となり、既定設定の全AI操作が利用不能だった。既存の評価testは操作別model mapを明示していたため、この既定経路を覆えていなかった。
 
 ## 対応方針
 
-- model解決の正本で、DeepSeek選択時の既定値を`KJ_ATLAS_DEEPSEEK_MODEL`へ確定する。
+- model解決の正本で、DeepSeek選択時の既定値を`SUI_DEEPSEEK_MODEL`へ確定する。
 - model mapやrequest overrideの優先順位は変えない。
 - 実API評価testは操作別mapなしの既定経路を固定する。
 

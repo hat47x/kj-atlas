@@ -21,7 +21,7 @@ export function registerProposalStatusTool(
     {
       title: "Get proposal lifecycle status",
       description:
-        "Read-only CE4 proposal lifecycle status for a kj-atlas document: whether each " +
+        "Read-only CE4 proposal lifecycle status for a sui-sensemaking document: whether each " +
         "AI proposal is still proposal-only (status=proposed) or was decided by a human " +
         "(accepted/rejected/held, with decidedAt). Read-only -- never mutates anything. " +
         "Use it to verify that an AI proposal has not been auto-applied and to trace the " +

@@ -47,7 +47,7 @@
 
 <h2>2. 第3反復への示唆</h2>
 <div class="recommend">
-<p><strong>勧告（判断材料）</strong>: kj-atlas はサーバ権威・単一正本（backendがDocumentV1を保存）のWebアプリである。Figma の「サーバ権威・property-level LWW」はこの構成に最も近く、既存の楽観的並行制御（ETag / If-Match・DATA-INQUIRY-CONCURRENCY-01・document CAS）と整合する。</p>
+<p><strong>勧告（判断材料）</strong>: sui-sensemaking はサーバ権威・単一正本（backendがDocumentV1を保存）のWebアプリである。Figma の「サーバ権威・property-level LWW」はこの構成に最も近く、既存の楽観的並行制御（ETag / If-Match・DATA-INQUIRY-CONCURRENCY-01・document CAS）と整合する。</p>
 <ul>
   <li><strong>選択肢A（推奨）: サーバ権威 LWW + 既存CAS</strong> — コンフリクトはサーバ側のrevisionで解決し、stale writeは409で拒否（既存のinquiry/document CASを拡張）。Figma式でクライアントCRDTの複雑性を導入しない。</li>
   <li><strong>選択肢B: クライアント側CRDT（Automerge/Yjs）</strong> — オフライン・P2P・E2EEが必要な場合のみ。現行のSafeMode/reviewed境界（未レビュー非表示）と、サーバ単一正本の前提と整合させる追加設計が要る。</li>

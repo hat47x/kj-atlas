@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from kj_atlas_api.database_support import database_support_for_backend
+from sui_sensemaking_api.database_support import database_support_for_backend
 
 revision: str = "20260717_0008"
 down_revision: str | None = "20260717_0007"

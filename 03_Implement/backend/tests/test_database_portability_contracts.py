@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import Base, DocumentRow, TenantRow
+from sui_sensemaking_api.models import Base, DocumentRow, TenantRow
 from tests.database_portability_contracts import TIMESTAMP, verify_revision_dag_contract
 
 

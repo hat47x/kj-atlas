@@ -19,15 +19,15 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from fastapi import HTTPException, Request
 
-from kj_atlas_api import oauth_bff
-from kj_atlas_api.oauth_bff import (
+from sui_sensemaking_api import oauth_bff
+from sui_sensemaking_api.oauth_bff import (
     _generate_pkce_pair,
     _parse_pending_cookie,
     _validate_next_path,
     handle_callback,
     initiate_login,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 PENDING_COOKIE = "Kj-Atlas-Oauth-Pending"
 
@@ -172,7 +172,7 @@ def _configure_broker(monkeypatch) -> None:
     monkeypatch.setattr(
         settings, "saas_oauth_broker_http_authorize_endpoint", "https://broker.invalid/authorize"
     )
-    monkeypatch.setattr(settings, "saas_oauth_broker_http_client_id", "kj-atlas-bff")
+    monkeypatch.setattr(settings, "saas_oauth_broker_http_client_id", "sui-sensemaking-bff")
     monkeypatch.setattr(
         settings, "saas_oauth_broker_http_redirect_uri", "https://app.invalid/session/callback"
     )
@@ -180,7 +180,7 @@ def _configure_broker(monkeypatch) -> None:
 
 def test_login_is_unavailable_until_the_broker_is_configured(monkeypatch) -> None:
     monkeypatch.setattr(settings, "saas_oauth_broker_http_authorize_endpoint", None)
-    monkeypatch.setattr(settings, "saas_oauth_broker_http_client_id", "kj-atlas-bff")
+    monkeypatch.setattr(settings, "saas_oauth_broker_http_client_id", "sui-sensemaking-bff")
     monkeypatch.setattr(settings, "saas_oauth_broker_http_redirect_uri", "https://app/callback")
 
     with pytest.raises(HTTPException) as exc:

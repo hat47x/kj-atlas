@@ -12,7 +12,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["SUI_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,

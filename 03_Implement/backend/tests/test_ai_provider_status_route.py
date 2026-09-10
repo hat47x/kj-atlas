@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm.provider import reset_llm_call_counts
-from kj_atlas_api.main import app
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.llm.provider import reset_llm_call_counts
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.settings import settings
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -15,9 +15,9 @@ def _app_db_schema() -> None:
     DB has neither until seeded."""
     from sqlalchemy.exc import IntegrityError
 
-    from kj_atlas_api.db import SessionLocal, engine
-    from kj_atlas_api.models import Base
-    from kj_atlas_api.model_registry_repository import register_model, register_provider
+    from sui_sensemaking_api.db import SessionLocal, engine
+    from sui_sensemaking_api.models import Base
+    from sui_sensemaking_api.model_registry_repository import register_model, register_provider
 
     _NOW = "2026-08-15T00:00:00+00:00"
     Base.metadata.create_all(bind=engine)
@@ -160,8 +160,8 @@ def test_provider_status_is_a_static_config_echo_not_a_connectivity_check() -> N
 def test_provider_status_reports_llm_call_counts_after_a_call(monkeypatch) -> None:
     """OPS-LLM-COST-01 (段階2): a real generate_with_fallback increments the
     in-process counter, referenceable via /ai/provider-status."""
-    from kj_atlas_api.llm import provider as llm_provider
-    from kj_atlas_api.routes import ai as ai_routes
+    from sui_sensemaking_api.llm import provider as llm_provider
+    from sui_sensemaking_api.routes import ai as ai_routes
 
     class _StubResponse:
         raw_text = '{"refinedText": "（モック）改善案", "reasoning": "r"}'
@@ -209,8 +209,8 @@ def test_provider_status_reports_llm_call_counts_after_a_call(monkeypatch) -> No
 def test_provider_status_reports_token_usage_from_provider_response(monkeypatch) -> None:
     """OPS-LLM-COST-01 (段階2): provider-reported input/output tokens are
     accumulated per provider kind and exposed via /ai/provider-status."""
-    from kj_atlas_api.llm import provider as llm_provider
-    from kj_atlas_api.routes import ai as ai_routes
+    from sui_sensemaking_api.llm import provider as llm_provider
+    from sui_sensemaking_api.routes import ai as ai_routes
 
     class _StubResponse:
         raw_text = '{"refinedText": "（モック）改善案", "reasoning": "r"}'
@@ -253,8 +253,8 @@ def test_provider_status_reports_token_usage_from_provider_response(monkeypatch)
 
 
 def test_provider_status_distinguishes_partial_provider_usage(monkeypatch) -> None:
-    from kj_atlas_api.llm import provider as llm_provider
-    from kj_atlas_api.routes import ai as ai_routes
+    from sui_sensemaking_api.llm import provider as llm_provider
+    from sui_sensemaking_api.routes import ai as ai_routes
 
     class _StubResponse:
         raw_text = '{"refinedText": "（モック）改善案", "reasoning": "r"}'

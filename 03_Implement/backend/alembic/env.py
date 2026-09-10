@@ -5,19 +5,19 @@ from alembic import context
 from sqlalchemy import pool
 
 # CI may export legacy DATABASE_URL for unrelated services.
-# ENV-ARCH-01 enforces KJ_ATLAS_* only, so remove legacy key before importing app settings.
+# ENV-ARCH-01 enforces SUI_* only, so remove legacy key before importing app settings.
 os.environ.pop("DATABASE_URL", None)
 
-from kj_atlas_api.database_support import (
+from sui_sensemaking_api.database_support import (
     alembic_config_database_url,
     create_verified_database_engine,
 )
-from kj_atlas_api.models import Base
-from kj_atlas_api import guest_admission_models as _guest_admission_models  # noqa: E402,F401
-from kj_atlas_api import guest_auth_session_models as _guest_auth_session_models  # noqa: E402,F401
-from kj_atlas_api import guest_redeem_state_models as _guest_redeem_state_models  # noqa: E402,F401
-from kj_atlas_api.persistence_shapes import install_portable_text_ddl_hook
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api import guest_admission_models as _guest_admission_models  # noqa: E402,F401
+from sui_sensemaking_api import guest_auth_session_models as _guest_auth_session_models  # noqa: E402,F401
+from sui_sensemaking_api import guest_redeem_state_models as _guest_redeem_state_models  # noqa: E402,F401
+from sui_sensemaking_api.persistence_shapes import install_portable_text_ddl_hook
+from sui_sensemaking_api.settings import settings
 
 config = context.config
 

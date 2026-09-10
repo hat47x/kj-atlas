@@ -6,7 +6,7 @@
 
 ## 1. 実験設計（なぜ3タスクに分けるか）
 
-Step 0 が答えるべき問いは「意図パッケージという出力形は、外部エージェントへ意図を伝えられるか」である。この問いを成立させるには、**消費側のエージェントが kj-atlas リポジトリを見ていないこと**が必須条件になる。リポジトリを見せれば、伝わったのはパッケージではなくリポジトリであり、実験は無意味になる。
+Step 0 が答えるべき問いは「意図パッケージという出力形は、外部エージェントへ意図を伝えられるか」である。この問いを成立させるには、**消費側のエージェントが sui-sensemaking リポジトリを見ていないこと**が必須条件になる。リポジトリを見せれば、伝わったのはパッケージではなくリポジトリであり、実験は無意味になる。
 
 そのため次の3タスクへ分離し、Task 1 と Task 2 は**必ず別セッション・別エージェント**で実行する。
 
@@ -113,11 +113,11 @@ executionPreferences:
 
 ## 5. Task 1 アクションスクリプト（貼り付け用・リポジトリ参照あり）
 
-以下をそのまま Claude Cowork または ChatGPT Work へ貼る。kj-atlas リポジトリへのアクセスを有効にした状態で実行する。
+以下をそのまま Claude Cowork または ChatGPT Work へ貼る。sui-sensemaking リポジトリへのアクセスを有効にした状態で実行する。
 
 ---
 
-あなたは `hat47x/kj-atlas` リポジトリ（KJ法／親和図法の知識ツール、個人OSS、プレリリース段階）で作業します。目的は、**使われていない、あるいは意図から逸脱した実装について、その実装が本来守ろうとしていた業務意図を復元し、構造化された「意図パッケージ」として書き出すこと**です。コードは一切変更しません。成果物はMarkdownとJSONのファイルだけです。
+あなたは `hat47x/sui-sensemaking` リポジトリ（KJ法／親和図法の知識ツール、個人OSS、プレリリース段階）で作業します。目的は、**使われていない、あるいは意図から逸脱した実装について、その実装が本来守ろうとしていた業務意図を復元し、構造化された「意図パッケージ」として書き出すこと**です。コードは一切変更しません。成果物はMarkdownとJSONのファイルだけです。
 
 ### 前提となる姿勢（最重要・ここを外すと成果物は無価値になります）
 
@@ -130,7 +130,7 @@ executionPreferences:
 
 ### 対象（3件。それぞれ独立した意図パッケージを作る）
 
-- **C1**: `01_Plans/issues/done/issue-ENV-ARCH-02-dead-legacy-env-deadline-scaffolding.md`。関連する記録済みの決定は `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md` の「人間判断の確定」節にあります。実装は `03_Implement/backend/src/kj_atlas_api/settings.py`。
+- **C1**: `01_Plans/issues/done/issue-ENV-ARCH-02-dead-legacy-env-deadline-scaffolding.md`。関連する記録済みの決定は `01_Plans/issues/done/issue-ENV-ARCH-01-global-env-prefix-migration.md` の「人間判断の確定」節にあります。実装は `03_Implement/backend/src/sui_sensemaking_api/settings.py`。
 - **C2**: `01_Plans/issues/done/issue-DX-CLEANUP-06-diffpanel-component-appears-dead.md`。実装は `03_Implement/frontend/src/ui/DiffPanel.tsx` と、置換したと見られる `03_Implement/frontend/src/ui/ReviewDiffPanel.tsx`。
 - **C3**: `03_Implement/frontend/src/ui/RepresentativeVisualCuePrototypePanel.tsx`。背景は `02_Architecture/design/design-request-gaps-2026-07-20.md` の N-1 節、および `01_Plans/issues/issue-DOMAIN-VISUAL-CUE-01-representative-visual-cues.md`。
 
@@ -201,7 +201,7 @@ Markdown版とJSON版は同じ内容を表すこと。JSONは §3 の骨格の�
 
 ## 6. Task 2 アクションスクリプト（貼り付け用・リポジトリ参照なし）
 
-**別セッション・別エージェントで実行する。** kj-atlas リポジトリへのアクセスを有効にしてはならない。コネクタを外した新規セッションで、Task 1 が出力した意図パッケージ1件だけを添付して実行する（3件それぞれ別セッション）。これが実験の成立条件である。
+**別セッション・別エージェントで実行する。** sui-sensemaking リポジトリへのアクセスを有効にしてはならない。コネクタを外した新規セッションで、Task 1 が出力した意図パッケージ1件だけを添付して実行する（3件それぞれ別セッション）。これが実験の成立条件である。
 
 ---
 

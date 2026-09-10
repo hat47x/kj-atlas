@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/request_body_safety.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, 近接テスト、`02_Architecture/api.md`, `02_Architecture/schemas.md`, `THREAT_MODEL.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/request_body_safety.py`, `03_Implement/backend/src/sui_sensemaking_api/models_context.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/context.py`, `03_Implement/backend/src/sui_sensemaking_api/main.py`, 近接テスト、`02_Architecture/api.md`, `02_Architecture/schemas.md`, `THREAT_MODEL.md`
 - Related ADR/Spec: `ADR-0039`, `ADR-0047`, `issue-SEC-DOC-BOUND-01-unbounded-document-and-identity-fields.md`, `issue-CE0-contract-freeze.md`, `issue-CE1-context-query-bundle-foundation.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`, `THREAT_MODEL.md`
 - Expected verification level: `unit + integration`
 

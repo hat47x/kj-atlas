@@ -13,7 +13,7 @@
 
 ## 課題
 
-恒久的なモンキーテスト記録は2026-08-13で止まっており、その後のQA-MONKEY-20〜25、日英locale、320px、300〜400 loop、focus遷移比較、拡張trace、固定プローブA10〜A15が記録されていなかった。また7月29日の再現例は`SEED`/`ACTIONS`/`VIEWPORT`/`ONLY`を使っているが、現行スクリプトが読む名前は`KJ_ATLAS_MONKEY_*`であり、そのままでは指定値が反映されない。
+恒久的なモンキーテスト記録は2026-08-13で止まっており、その後のQA-MONKEY-20〜25、日英locale、320px、300〜400 loop、focus遷移比較、拡張trace、固定プローブA10〜A15が記録されていなかった。また7月29日の再現例は`SEED`/`ACTIONS`/`VIEWPORT`/`ONLY`を使っているが、現行スクリプトが読む名前は`SUI_MONKEY_*`であり、そのままでは指定値が反映されない。
 
 ## 対応方針
 
@@ -33,7 +33,7 @@
 ## 対応結果（2026-08-16）
 
 - `mvp_exit_monkey_test_log_2026-08-16.md`を追加した。
-- 7月29日記録の再現コマンドを`KJ_ATLAS_MONKEY_SEED`等へ更新した。
+- 7月29日記録の再現コマンドを`SUI_MONKEY_SEED`等へ更新した。
 - docs-checkとactive issue validatorで文書契約を確認する。
 
 

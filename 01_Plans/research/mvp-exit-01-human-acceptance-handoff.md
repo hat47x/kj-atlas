@@ -115,7 +115,7 @@ MVP-EXIT-01は「開始、編集、保存、共有前確認」の4操作をス�
 以下をそのまま新しいCowork/Claude Codeセッションの最初のメッセージとして貼り付けて使う。
 
 ```
-kj-atlasリポジトリ（C:/GIT/kj-atlas）のMVP-EXIT-01（製品化準備）に残る、自動テストでは代替できない4つの人間確認を進めたいです。
+sui-sensemakingリポジトリ（C:/GIT/sui-sensemaking）のMVP-EXIT-01（製品化準備）に残る、自動テストでは代替できない4つの人間確認を進めたいです。
 
 参照文書:
 - 01_Plans/mvp-exit-01-human-acceptance-handoff.md（この文書。各タスクの手順・合格基準・記録先が書かれています）

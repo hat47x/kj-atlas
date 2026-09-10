@@ -9,10 +9,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, DocumentRow, TenantRow
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, DocumentRow, TenantRow
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"

@@ -1,6 +1,6 @@
 {
   "projectId": "ded56cba-06ff-44ce-9e7d-eb3f31357721",
-  "pkg": "kj-atlas-frontend",
+  "pkg": "sui-sensemaking-frontend",
   "globalName": "KjAtlasFrontend",
   "shape": "package",
   "componentSrcMap": {

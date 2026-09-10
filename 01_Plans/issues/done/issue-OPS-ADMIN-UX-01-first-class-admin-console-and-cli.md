@@ -5,13 +5,13 @@
 - Source Issue: 管理UI・CLI・利用者UIの協調モンキーテスト（2026-08-16）
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/cli.py`, new admin frontend or separately deployed console, operator documentation
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/cli.py`, new admin frontend or separately deployed console, operator documentation
 - Related ADR/Spec: `ADR-0072`, `ADR-0079`, `SEC-ADMIN-PLANE-03`, `AI-MODEL-GOVERNANCE-01`
 - Expected verification level: `e2e`
 
 ## 課題
 
-管理面APIはcontrol-plane認可・監査・モデルallowlistまで備える一方、正式な`kj_atlas_api.cli`はCE4監査操作だけで、モデル、tenant、IdP、監査照会を扱えない。`scripts/examples/admin_lifecycle.py`はキー分離の良い実例だが、文書ライフサイクルと監査照会に限られ、管理APIの入力検証や安全な確認操作を一貫して提供する運用品質のCLIではない。利用者SPAにも管理導線はなく、今回の実画面確認でも管理ラベル・管理資格情報入力面は0件だった。
+管理面APIはcontrol-plane認可・監査・モデルallowlistまで備える一方、正式な`sui_sensemaking_api.cli`はCE4監査操作だけで、モデル、tenant、IdP、監査照会を扱えない。`scripts/examples/admin_lifecycle.py`はキー分離の良い実例だが、文書ライフサイクルと監査照会に限られ、管理APIの入力検証や安全な確認操作を一貫して提供する運用品質のCLIではない。利用者SPAにも管理導線はなく、今回の実画面確認でも管理ラベル・管理資格情報入力面は0件だった。
 
 このため管理者はcurlや自作scriptへ依存し、tenant/model IDの誤入力、秘密値のshell履歴・process引数露出、変更前後差分の見落としが起きやすい。利用者SPAへ管理キーを持たせる解決は不可であり、管理面は別origin・別配備・短時間sessionを前提にする必要がある。
 
@@ -48,7 +48,7 @@
 - `admin tenants model-allowlist-get/model-allowlist-set`
 - `admin audit list`
 
-管理credentialは`KJ_ATLAS_ADMIN_API_KEY`からのみ読み、業務キーを管理面へ転用せず、引数で秘密値を受けない。writeは変更previewを標準errorへ出し、対話確認またはautomation用`--yes`を必須とした。実backend E2Eでは、provider/model登録、tenant allowlist設定、利用者APIへの反映、model無効化後の消失、業務キー拒否、secret非表示、監査照会まで20/20成功した。
+管理credentialは`SUI_ADMIN_API_KEY`からのみ読み、業務キーを管理面へ転用せず、引数で秘密値を受けない。writeは変更previewを標準errorへ出し、対話確認またはautomation用`--yes`を必須とした。実backend E2Eでは、provider/model登録、tenant allowlist設定、利用者APIへの反映、model無効化後の消失、業務キー拒否、secret非表示、監査照会まで20/20成功した。
 
 CLI部分は実装済みだが、Stage-B capability sessionを使う対話loginと、別origin・別bundleの管理consoleが残るため`In Progress`を維持する。
 

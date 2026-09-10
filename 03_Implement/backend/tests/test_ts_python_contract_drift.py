@@ -26,8 +26,8 @@ from pathlib import Path
 
 import pytest
 
-from kj_atlas_api import models
-from kj_atlas_api.routes.inquiry_bundles import MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES
+from sui_sensemaking_api import models
+from sui_sensemaking_api.routes.inquiry_bundles import MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TYPES_TS_PATH = REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "types.ts"
@@ -35,9 +35,9 @@ INQUIRY_BUNDLE_IO_TS_PATH = (
     REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "inquiry_bundle_io.ts"
 )
 VALIDATE_DOC_TS_PATH = REPO_ROOT / "03_Implement" / "frontend" / "src" / "domain" / "validate_doc.ts"
-MODELS_PY_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "models.py"
+MODELS_PY_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "sui_sensemaking_api" / "models.py"
 
-# TS type name -> Pydantic model class in kj_atlas_api.models. Names diverge in one case
+# TS type name -> Pydantic model class in sui_sensemaking_api.models. Names diverge in one case
 # (MergeSuggestionDecisionEntry / MergeSuggestionDecision) -- that mismatch is itself
 # tracked, not hidden, by keeping the mapping explicit here rather than assuming parity.
 TYPE_MAP: dict[str, str] = {

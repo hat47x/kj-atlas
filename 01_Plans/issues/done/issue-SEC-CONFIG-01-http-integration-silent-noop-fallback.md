@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Maintainer
-- Scope: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/api.md`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`, `03_Implement/backend/tests/test_audit.py`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `THREAT_MODEL.md`
+- Scope: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/api.md`, `02_Architecture/enterprise_architecture.html`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/sui_sensemaking_api/settings.py`, `03_Implement/backend/src/sui_sensemaking_api/access_control.py`, `03_Implement/backend/src/sui_sensemaking_api/audit.py`, `03_Implement/backend/tests/test_trusted_http_settings.py`, `03_Implement/backend/tests/test_access_control_external_http_adapter.py`, `03_Implement/backend/tests/test_audit.py`, `04_Documentation/configuration.md`, `04_Documentation/security.md`, `THREAT_MODEL.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0062-explicit-http-integration-fail-fast.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/api.md`, `THREAT_MODEL.md`
 - Expected verification level: `unit`
 
@@ -13,18 +13,18 @@
 
 - 現在の問題:
   - `settings.py:85-102` の `_validate_optional_http_integration()` は、`enabled=True` かつ `endpoint=None` の場合でも例外を送出せず、`Settings()` の構築が成功してしまう。
-  - この関数は `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http`（`settings.py:521-527`）と `KJ_ATLAS_AUDIT_TRANSPORT=http`（`settings.py:514-520`）の両方の検証に使われている。
+  - この関数は `SUI_ACCESS_CONTROL_ADAPTER=external_http`（`settings.py:521-527`）と `SUI_AUDIT_TRANSPORT=http`（`settings.py:514-520`）の両方の検証に使われている。
   - 実行時、`access_control.py:build_access_control_adapter()`（554-579行、特に568-579行）は、`adapter_name="external_http"` でもエンドポイントが解決できなければ **無警告で** `NoopAccessControlAdapter` を返し、その `authorize()`（116-120行）は常に `AccessDecision(allow=True)` を返す。つまり運用者が「外部PDPで認可を強制している」つもりでも、実際には**すべてのリクエストが無条件許可**される。
   - `audit.py:build_audit_dispatcher()`（364-390行）も同様に `NoopAuditTransport` へ縮退するが、こちらは `logger.warning(...)` を出すため、access_control側よりは検知可能性が高い。
   - 同じファイル内の兄弟実装 `document_policy_binding_resolver`/`tenant_capability_resolver` は `_validate_trusted_http_resolver()`（19-40行）で検証されており、`enabled` 時にエンドポイントが無ければ `Settings()` 構築の時点で明示的に `ValueError` を送出し、実行時ビルダーも fail-closed な `Unavailable*Resolver`（利用時に例外）を返す。`access_control`/`audit` の2箇所だけがこのパターンから外れ、fail-open になっている。
-  - **重要**: 単純に `_validate_optional_http_integration()` を厳格化するだけでは済まない。`test_access_control_external_http_adapter.py:381-388`（`test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing`）は、この「エンドポイント欠落時にnoopへ縮退する」挙動を**意図した仕様として明示的に固定するテスト**として既に存在する。また `test_trusted_http_settings.py:139-142`（`test_http_integration_normalizes_transport_and_rejects_unknown_value`）も、`KJ_ATLAS_AUDIT_TRANSPORT="http"` をエンドポイント未設定のまま構築できることに暗黙に依存している。このため、これが「見過ごされたバグ」なのか「意図されたグレースフルデグレード」なのかは人間の判断が必要であり、機械的に直すことはできない。
+  - **重要**: 単純に `_validate_optional_http_integration()` を厳格化するだけでは済まない。`test_access_control_external_http_adapter.py:381-388`（`test_build_access_control_adapter_external_http_fallbacks_to_noop_when_endpoint_missing`）は、この「エンドポイント欠落時にnoopへ縮退する」挙動を**意図した仕様として明示的に固定するテスト**として既に存在する。また `test_trusted_http_settings.py:139-142`（`test_http_integration_normalizes_transport_and_rejects_unknown_value`）も、`SUI_AUDIT_TRANSPORT="http"` をエンドポイント未設定のまま構築できることに暗黙に依存している。このため、これが「見過ごされたバグ」なのか「意図されたグレースフルデグレード」なのかは人間の判断が必要であり、機械的に直すことはできない。
 - 利用者または開発への影響:
-  - `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` の設定漏れやtypoだけで、外部PDPによる認可制御が完全に無効化され、しかもそれに気づく手段が現状ない（ログもエラーもない）。
+  - `SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` の設定漏れやtypoだけで、外部PDPによる認可制御が完全に無効化され、しかもそれに気づく手段が現状ない（ログもエラーもない）。
 
 ## 対応方針
 
 - (a) のfail-fastを採用した。外部HTTP連携の選択とendpointを不可分の設定とし、警告後のnoop縮退では認可の全許可を防げないためである。
-- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` または `KJ_ATLAS_AUDIT_TRANSPORT=http` を明示した場合、対応endpointがなければ `Settings()` 構築時に `ValueError` で停止する。
+- `SUI_ACCESS_CONTROL_ADAPTER=external_http` または `SUI_AUDIT_TRANSPORT=http` を明示した場合、対応endpointがなければ `Settings()` 構築時に `ValueError` で停止する。
 - runtime builderにも防御層を置き、設定差し替えや直接呼び出しでもendpoint欠落時に例外を送出し、noopへ縮退させない。
 - 既定値と明示的な `noop` は維持する。完全設定後のaccess-control実行時障害は既存の `read_only|deny`、audit送信障害は既存のfail-openを維持し、起動時の到達性probeは行わない。
 - 全runtime profileへ同じ規則を適用する。個人OSS・プレリリースで既存利用者向け移行契約がないため、互換flagは追加しない。
@@ -56,7 +56,7 @@
   - passed
 - backend全体回帰（補助コマンドの検索パスを補正し、既存の別OS向け `.venv/lib64` を走査する1件を除外）
   - `636 passed, 25 skipped, 1 deselected`
-- 除外した `test_project_env_access_points_use_kj_atlas_prefix` は別OS環境で単独実行し、既存のmonkey test scriptsにある非 `KJ_ATLAS_*` 環境変数5件を検出した。当issueの変更ファイル外にある既存失敗のため修正しない。
+- 除外した `test_project_env_access_points_use_sui_sensemaking_prefix` は別OS環境で単独実行し、既存のmonkey test scriptsにある非 `SUI_*` 環境変数5件を検出した。当issueの変更ファイル外にある既存失敗のため修正しない。
 
 ## 補足
 

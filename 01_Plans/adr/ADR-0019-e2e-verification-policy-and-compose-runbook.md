@@ -7,7 +7,7 @@
 
 ## Context
 
-`kj-atlas` は Canvas/UI（Frontend）・API（Backend）・永続化（DB）の連動で価値を提供する。
+`sui-sensemaking` は Canvas/UI（Frontend）・API（Backend）・永続化（DB）の連動で価値を提供する。
 このため unit/integration が通過していても、結合境界で不整合が残ると人間レビュー時に
 「実装不具合の切り分け」に時間を使い、仕様評価に集中できない。
 
@@ -54,7 +54,7 @@
 - Playwrightで smoke + 変更対象フロー1ケース以上を実行する。
 - PR本文に実行コマンドと結果（pass/fail/未実施理由）を記載する。
 
-### 4. kj-atlas向けE2E設計原則（将来拡張でも維持）
+### 4. sui-sensemaking向けE2E設計原則（将来拡張でも維持）
 
 1. **仕様境界優先**
    - カード編集、Island操作、保存復元、SafeMode、import/export など

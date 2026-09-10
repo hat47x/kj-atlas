@@ -5,14 +5,14 @@ import pytest
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.content_store import ContentBlob
-from kj_atlas_api.database_content_store import (
+from sui_sensemaking_api.content_store import ContentBlob
+from sui_sensemaking_api.database_content_store import (
     DatabaseAppendOnlyLogContentStore,
     DatabaseBundleContentStore,
     DatabaseDocumentContentStore,
     DocumentRevisionDivergence,
 )
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
@@ -20,7 +20,7 @@ from kj_atlas_api.models import (
     DocumentRow,
     TenantRow,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 def _tenant(tenant_id: str) -> TenantContext:

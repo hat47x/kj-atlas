@@ -4,7 +4,7 @@
 - Date: 2026-08-11
 - Accepted: 2026-08-13（**D1=C / D2=A / D3=A**。保守者による明示承認。仮承認ではない）
 - Deciders: Maintainer（2026-08-13 採択済み。採択内容は下記「採択記録」を正とする）
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/alembic/versions/`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`, `02_Architecture/api.md`
 
 ## Context
 

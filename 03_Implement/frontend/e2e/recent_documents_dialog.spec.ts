@@ -9,7 +9,7 @@ import { expect, test, type Page } from "@playwright/test";
 // disabled states, and Escape/close returning focus to the File menu button.
 
 const START_PANEL = '[data-panel="start-document-entry"]';
-const RECENT_STORAGE_KEY = "kj-atlas/recent-doc-ids";
+const RECENT_STORAGE_KEY = "sui-sensemaking/recent-doc-ids";
 
 function buildDocument(id: string, title: string) {
   return {

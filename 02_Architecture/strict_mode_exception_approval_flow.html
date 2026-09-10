@@ -39,18 +39,18 @@
   <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
       <span style="width:8px; height:8px; border-radius:2px; background:#7c3aed; display:inline-block;"></span>
-      kj-atlas ・ Architecture Spec ・ AUTH-OPS-03
+      sui-sensemaking ・ Architecture Spec ・ AUTH-OPS-03
     </div>
     <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">strict mode 例外緩和 承認フロー仕様</h1>
     <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
-      <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code>（strict）を本番標準としつつ、例外的に <code>true</code> へ緩和する際の承認フローを設計レベルで固定する。人間が短時間で判断でき、AIエージェントが推測で承認フローを補完しないことを目的とする。
+      <code>SUI_ALLOW_JIT_PROVISIONING=false</code>（strict）を本番標準としつつ、例外的に <code>true</code> へ緩和する際の承認フローを設計レベルで固定する。人間が短時間で判断でき、AIエージェントが推測で承認フローを補完しないことを目的とする。
     </p>
     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
       <span class="badge" style="background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe;">Status: Accepted (2026-03-06, D1〜D4 fixed)</span>
       <span class="badge" style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;">適用範囲=組織運用の一時緩和のみ</span>
     </div>
     <p style="font-size:12.5px; line-height:1.7; color:#6b7280; margin:20px 0 0; padding:10px 13px; background:#f8fafc; border-left:3px solid #cbd5e1;">
-      本書が正本（新規設計文書はHTML単独。<code>AGENTS.md</code> §3）。適用範囲: 組織運用で <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> を一時的に緩和する場合だけ適用する。個人OSSの日常開発・通常復旧の承認フローではない。2者承認を用意できない場合は例外を有効化せず、strict設定を維持する。
+      本書が正本（新規設計文書はHTML単独。<code>AGENTS.md</code> §3）。適用範囲: 組織運用で <code>SUI_ALLOW_JIT_PROVISIONING=false</code> を一時的に緩和する場合だけ適用する。個人OSSの日常開発・通常復旧の承認フローではない。2者承認を用意できない場合は例外を有効化せず、strict設定を維持する。
     </p>
     <p style="font-size:12px; line-height:1.6; color:#94a3b8; margin:10px 0 0;">
       Owner: Security Officer / System Owner / Platform Operator ・ Scope: <code>enterprise_architecture.html</code>, <code>04_Documentation/operations.md</code>, <code>security.md</code>, <code>security_operational_guidelines.md</code>, <code>acceptance_check.md</code>, <code>03_Implement/frontend/docs/e2e_testing.md</code> ・ Related issue: <code>issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md</code>
@@ -85,7 +85,7 @@
     <table class="grid">
       <thead><tr><th style="width:34%;">固定済み契約</th><th>内容</th></tr></thead>
       <tbody>
-        <tr><td>strict標準</td><td><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code>。例外緩和は通常「一時変更」として扱う</td></tr>
+        <tr><td>strict標準</td><td><code>SUI_ALLOW_JIT_PROVISIONING=false</code>。例外緩和は通常「一時変更」として扱う</td></tr>
         <tr><td>恒常運用の扱い</td><td>組織ポリシーで <code>true</code> を恒常採用する場合は「例外フロー」ではなく別途「公開運用プロファイル」を定義・審査・監査する</td></tr>
         <tr><td>2者承認責務</td><td>Security Officer + System Owner</td></tr>
         <tr><td>実行責務</td><td>Platform Operator（承認済み変更のみ実行）</td></tr>
@@ -263,7 +263,7 @@ sequenceDiagram
     <div style="margin:16px 0 0; padding:13px 15px; background:#fffbeb; border-left:3px solid #f59e0b; border-radius:0 4px 4px 0;">
       <p style="font-size:13px; line-height:1.7; color:#78350f; margin:0;"><strong>非矛盾ルール（§8.4）:</strong> 停止条件は「例外を有効化してよいか」の判定にのみ使用する。復旧条件は「すでに有効な例外をstrictに戻す」判定にのみ使用する。<strong>両方が同時に成立した場合、優先順位は「復旧実行 &gt; 停止記録」</strong>とする（先にstrict復帰を完了させる）。</p>
     </div>
-    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>復旧完了判定:</strong> <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> へ復帰済み／<code>endedAt</code>と復旧理由が記録済み／事後レビューの期限と担当が記録済み。</p>
+    <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:14px 0 0;"><strong>復旧完了判定:</strong> <code>SUI_ALLOW_JIT_PROVISIONING=false</code> へ復帰済み／<code>endedAt</code>と復旧理由が記録済み／事後レビューの期限と担当が記録済み。</p>
   </section>
 
   <!-- 9. 文書反映トレース + 状態更新方針 -->
@@ -313,7 +313,7 @@ flowchart LR
     <table class="grid">
       <thead><tr><th style="width:20%;">用語</th><th>意味</th></tr></thead>
       <tbody>
-        <tr><td>strict</td><td><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code> の状態。未登録主体を拒否する</td></tr>
+        <tr><td>strict</td><td><code>SUI_ALLOW_JIT_PROVISIONING=false</code> の状態。未登録主体を拒否する</td></tr>
         <tr><td>例外緩和</td><td><code>...=true</code> に変更して運用すること</td></tr>
         <tr><td>承認フロー</td><td>例外緩和を実施してよいかを決める手順</td></tr>
         <tr><td>復旧</td><td>例外終了後に <code>...=false</code> へ戻すこと</td></tr>

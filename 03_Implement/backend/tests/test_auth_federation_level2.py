@@ -11,15 +11,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.settings import settings
 from tests.level2.mock_idp import app as mock_idp_app
 from tests.level2.mock_sp import MockSpRuntime
 
 FIXTURE_DIR = Path(__file__).parent / "level2" / "fixtures"
-DIAG_DIR_ENV = "KJ_ATLAS_LEVEL2_DIAG_DIR"
+DIAG_DIR_ENV = "SUI_LEVEL2_DIAG_DIR"
 pytestmark = pytest.mark.auth_level2
 
 

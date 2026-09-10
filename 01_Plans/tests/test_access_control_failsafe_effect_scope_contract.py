@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ACCESS_CONTROL = ROOT / "03_Implement/backend/src/kj_atlas_api/access_control.py"
+ACCESS_CONTROL = ROOT / "03_Implement/backend/src/sui_sensemaking_api/access_control.py"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 
@@ -42,7 +42,7 @@ class AccessControlFailSafeEffectScopeContractTests(unittest.TestCase):
         self.configuration = CONFIGURATION.read_text(encoding="utf-8")
 
     def _public_rows(self) -> tuple[str, str]:
-        key = "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE"
+        key = "SUI_ACCESS_CONTROL_FAIL_SAFE_MODE"
         return (
             _registry_backend_row(self.registry, key),
             _row(self.configuration, key),

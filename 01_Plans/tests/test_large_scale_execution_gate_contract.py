@@ -7,9 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "04_Documentation/configuration.md"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-PROVIDER = ROOT / "03_Implement/backend/src/kj_atlas_api/llm/provider.py"
-KEY = "KJ_ATLAS_LLM_ESCALATION_ENABLED"
+SETTINGS = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+PROVIDER = ROOT / "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py"
+KEY = "SUI_LLM_ESCALATION_ENABLED"
 
 
 def _row(text: str, key: str) -> str:
@@ -70,7 +70,7 @@ class LargeScaleExecutionGateContractTests(unittest.TestCase):
         readiness = _function_source(self.settings, "provider_kind_readiness_errors")
         self.assertIn('elif normalized == "large-scale":', readiness)
         self.assertIn('if not cfg.llm_escalation_enabled:', readiness)
-        self.assertIn('KJ_ATLAS_LLM_ESCALATION_ENABLED is not set', readiness)
+        self.assertIn('SUI_LLM_ESCALATION_ENABLED is not set', readiness)
 
     def test_direct_and_registered_large_scale_execution_share_the_gate(self) -> None:
         direct = _class_source(self.provider, "LargeScaleProvider")
@@ -84,7 +84,7 @@ class LargeScaleExecutionGateContractTests(unittest.TestCase):
         for row in (_row(self.config, KEY), _backend_row(self.registry, KEY)):
             self.assertIn("large-scale provider kind", row)
             self.assertIn("実行gate", row)
-            self.assertIn("KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true", row)
+            self.assertIn("SUI_LLM_LARGE_SCALE_OPT_IN=true", row)
         self.assertIn("primary", _row(self.config, KEY))
         self.assertIn("registered", _backend_row(self.registry, KEY))
 

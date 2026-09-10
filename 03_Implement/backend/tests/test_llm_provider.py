@@ -8,7 +8,7 @@ from urllib import error
 import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm.provider import (
+from sui_sensemaking_api.llm.provider import (
     LLMRequest,
     LLMCallMetadata,
     LLMResponse,
@@ -24,8 +24,8 @@ from kj_atlas_api.llm.provider import (
     generate_with_fallback,
     get_provider,
 )
-from kj_atlas_api.main import app
-from kj_atlas_api.settings import Settings, settings
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.settings import Settings, settings
 
 
 class _StubHTTPResponse:
@@ -93,7 +93,7 @@ def test_local_provider_returns_trace_fields(monkeypatch: pytest.MonkeyPatch) ->
         assert payload["model"] == "test-model"
         return _StubHTTPResponse('{"text":"ok"}')
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         response = LocalProvider().generate(LLMRequest(task="check_narrative", prompt="prompt"))
@@ -116,7 +116,7 @@ def test_local_provider_handles_http_errors(monkeypatch: pytest.MonkeyPatch) -> 
     def _fake_urlopen(req, timeout_seconds=60):
         raise error.URLError("offline")
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError):
@@ -133,7 +133,7 @@ def test_local_provider_maps_timeout_error_code(monkeypatch: pytest.MonkeyPatch)
     def _fake_urlopen(req, timeout_seconds=60):
         raise error.URLError(socket.timeout("timed out"))
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError) as exc_info:
@@ -150,7 +150,7 @@ def test_local_provider_maps_validation_error_code(monkeypatch: pytest.MonkeyPat
     def _fake_urlopen(req, timeout_seconds=60):
         return _StubHTTPResponse('{"text":123}')
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError) as exc_info:
@@ -177,7 +177,7 @@ def test_local_provider_rejects_unbounded_or_noncanonical_response_without_refle
     original_url = settings.local_llm_base_url
     settings.local_llm_base_url = "http://local-llm.test"
     monkeypatch.setattr(
-        "kj_atlas_api.llm.provider.open_trusted_http",
+        "sui_sensemaking_api.llm.provider.open_trusted_http",
         lambda request, timeout_seconds: _StubHTTPResponse(response_body),  # noqa: ARG005
     )
     try:
@@ -228,7 +228,7 @@ def test_local_provider_rejects_invalid_request_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.llm.provider.open_trusted_http",
+        "sui_sensemaking_api.llm.provider.open_trusted_http",
         _unexpected_transport,
     )
     try:
@@ -253,7 +253,7 @@ def test_local_provider_rejects_oversized_request_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.llm.provider.open_trusted_http",
+        "sui_sensemaking_api.llm.provider.open_trusted_http",
         _unexpected_transport,
     )
     try:
@@ -317,7 +317,7 @@ def test_generate_with_fallback_never_masks_validation_error(
     settings.llm_fallback_to_none = True
     settings.local_llm_base_url = "http://local-llm.test"
     monkeypatch.setattr(
-        "kj_atlas_api.llm.provider.open_trusted_http",
+        "sui_sensemaking_api.llm.provider.open_trusted_http",
         lambda request, timeout_seconds: _StubHTTPResponse(b"[]"),  # noqa: ARG005
     )
 
@@ -449,8 +449,8 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
             ),
         )
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_local_urlopen)
-    monkeypatch.setattr("kj_atlas_api.llm.provider.LargeScaleProvider.generate", _fake_large_scale_generate)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_local_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.LargeScaleProvider.generate", _fake_large_scale_generate)
 
     try:
         settings.api_key = None
@@ -539,23 +539,23 @@ def test_provider_error_contract_mapping_is_consistent() -> None:
 
 
 def test_settings_reject_large_scale_without_explicit_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "large-scale")
-    monkeypatch.setenv("KJ_ATLAS_LLM_ESCALATION_ENABLED", "true")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "large-scale")
+    monkeypatch.setenv("SUI_LLM_ESCALATION_ENABLED", "true")
 
-    with pytest.raises(ValueError, match="KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN"):
+    with pytest.raises(ValueError, match="SUI_LLM_LARGE_SCALE_OPT_IN"):
         Settings()
 
 
 def test_settings_accept_large_scale_with_opt_in_and_escalation(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "large-scale")
-    monkeypatch.setenv("KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN", "true")
-    monkeypatch.setenv("KJ_ATLAS_LLM_ESCALATION_ENABLED", "true")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "large-scale")
+    monkeypatch.setenv("SUI_LLM_LARGE_SCALE_OPT_IN", "true")
+    monkeypatch.setenv("SUI_LLM_ESCALATION_ENABLED", "true")
     monkeypatch.setenv(
-        "KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL",
+        "SUI_LARGE_SCALE_LLM_BASE_URL",
         "https://llm.example.invalid/v1",
     )
-    monkeypatch.setenv("KJ_ATLAS_LARGE_SCALE_LLM_MODEL", "model-v1")
-    monkeypatch.setenv("KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST", "llm.example.invalid")
+    monkeypatch.setenv("SUI_LARGE_SCALE_LLM_MODEL", "model-v1")
+    monkeypatch.setenv("SUI_LARGE_SCALE_LLM_ALLOWLIST", "llm.example.invalid")
 
     loaded = Settings()
     assert loaded.llm_provider == "large-scale"
@@ -581,17 +581,17 @@ def test_get_provider_supports_deepseek() -> None:
 
 
 def test_deepseek_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-    monkeypatch.delenv("KJ_ATLAS_DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("SUI_DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    monkeypatch.delenv("SUI_DEEPSEEK_API_KEY", raising=False)
 
-    with pytest.raises(ValueError, match="KJ_ATLAS_DEEPSEEK_API_KEY"):
+    with pytest.raises(ValueError, match="SUI_DEEPSEEK_API_KEY"):
         Settings()
 
 
 def test_deepseek_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("SUI_DEEPSEEK_API_KEY", "sk-test-key")
 
     loaded = Settings()
     assert loaded.llm_provider == "deepseek"
@@ -602,10 +602,10 @@ def test_deepseek_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_deepseek_settings_custom_model(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_MODEL", "deepseek-v4-pro")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_THINKING_MODE", "enabled")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("SUI_DEEPSEEK_API_KEY", "sk-test-key")
+    monkeypatch.setenv("SUI_DEEPSEEK_MODEL", "deepseek-v4-pro")
+    monkeypatch.setenv("SUI_DEEPSEEK_THINKING_MODE", "enabled")
 
     loaded = Settings()
     assert loaded.deepseek_model == "deepseek-v4-pro"
@@ -635,7 +635,7 @@ def test_deepseek_provider_returns_openai_chat_response(monkeypatch: pytest.Monk
         }
         return _StubHTTPResponse(json.dumps(response))
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         response = DeepSeekProvider().generate(
@@ -679,7 +679,7 @@ def test_deepseek_provider_maps_official_v4_usage_fields(
         }
         return _StubHTTPResponse(json.dumps(response))
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         response = DeepSeekProvider().generate(
@@ -719,7 +719,7 @@ def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> No
             '{"choices":[{"message":{"content":"ok"}}]}'
         )
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         response = DeepSeekProvider().generate(
@@ -734,11 +734,11 @@ def test_deepseek_task_model_map_override(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_deepseek_settings_reject_invalid_thinking_mode(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "deepseek")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_API_KEY", "sk-test-key")
-    monkeypatch.setenv("KJ_ATLAS_DEEPSEEK_THINKING_MODE", "auto")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("SUI_DEEPSEEK_API_KEY", "sk-test-key")
+    monkeypatch.setenv("SUI_DEEPSEEK_THINKING_MODE", "auto")
 
-    with pytest.raises(ValueError, match="KJ_ATLAS_DEEPSEEK_THINKING_MODE"):
+    with pytest.raises(ValueError, match="SUI_DEEPSEEK_THINKING_MODE"):
         Settings()
 
 
@@ -753,7 +753,7 @@ def test_deepseek_auth_error_401(monkeypatch: pytest.MonkeyPatch) -> None:
             req.full_url, 401, "Unauthorized", {}, io.BytesIO(b"{}")
         )
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError, match="authentication failed"):
@@ -774,7 +774,7 @@ def test_deepseek_empty_choices_error(monkeypatch: pytest.MonkeyPatch) -> None:
     def _fake_urlopen(req, timeout_seconds=120):
         return _StubHTTPResponse('{"choices":[]}')
 
-    monkeypatch.setattr("kj_atlas_api.llm.provider.open_trusted_http", _fake_urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.llm.provider.open_trusted_http", _fake_urlopen)
 
     try:
         with pytest.raises(ProviderRequestError, match="missing choices"):
@@ -789,7 +789,7 @@ def test_deepseek_empty_choices_error(monkeypatch: pytest.MonkeyPatch) -> None:
 # --- AI-ROUTE-01 MMR routing tests ---
 
 def test_routing_stage_classification() -> None:
-    from kj_atlas_api.llm.provider import routing_stage_for_task
+    from sui_sensemaking_api.llm.provider import routing_stage_for_task
 
     assert routing_stage_for_task("refine_card_text") == "intermediate"
     assert routing_stage_for_task("suggest_document_title") == "intermediate"
@@ -799,7 +799,7 @@ def test_routing_stage_classification() -> None:
 
 
 def test_final_judgement_routes_to_high_reasoning_model(monkeypatch: pytest.MonkeyPatch) -> None:
-    from kj_atlas_api.settings import settings
+    from sui_sensemaking_api.settings import settings
 
     original_high = settings.llm_high_reasoning_model
     original_local = settings.local_llm_model
@@ -808,7 +808,7 @@ def test_final_judgement_routes_to_high_reasoning_model(monkeypatch: pytest.Monk
         settings.llm_high_reasoning_model = "high-reasoning-model"
         settings.local_llm_model = "default-model"
         settings.llm_task_model_map = ""
-        from kj_atlas_api.llm.provider import resolve_model_for_task
+        from sui_sensemaking_api.llm.provider import resolve_model_for_task
 
         # final_judgement task → high-reasoning model
         assert resolve_model_for_task("check_narrative") == "high-reasoning-model"

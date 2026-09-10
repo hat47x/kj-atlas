@@ -780,13 +780,13 @@
 | #2331 | `codex/mvp-exit-data-lifecycle-boundary-sync-20260606` | Merged as `0fc84859` | MVP-EXIT high-privilege data lifecycle boundary sync is canonical on `main`. |
 | #2332 | `codex/data-maint-04-open-readiness-20260606` | Merged as `ed29ea90` | DATA-MAINT-04 Open-readiness decision packet clarification is canonical on `main`; the issue remains Draft-gated. |
 | #2333 | `codex/product-qa-post-2331-data-lifecycle-sync-20260606` | Merged as `3f894ca7` | PRODUCT-QA post-2332 data lifecycle release-gate interpretation is canonical on `main`. |
-| #2334 | `codex/env-prefix-adr-readability-sync-20260606` | Merged as `27862b21` | ADR-0021 public-prefix readability sync is canonical on `main`; public env keys remain `KJ_ATLAS_*` only. |
+| #2334 | `codex/env-prefix-adr-readability-sync-20260606` | Merged as `27862b21` | ADR-0021 public-prefix readability sync is canonical on `main`; public env keys remain `SUI_*` only. |
 
 ### Open PR inventory
 
 | PR | Branch | Topic | Governance classification | Recommended action |
 | --- | --- | --- | --- | --- |
-| #2335 | `codex/legacy-env-reference-adr-sync-20260606` | Historical ADR key-name normalization from legacy env examples to `KJ_ATLAS_*` | independent canonical / merge-ready | Review and merge independently. It is documentation-only and does not authorize runtime, SafeMode, share/export, LLM, audit, access-control, or Compose behavior changes. |
+| #2335 | `codex/legacy-env-reference-adr-sync-20260606` | Historical ADR key-name normalization from legacy env examples to `SUI_*` | independent canonical / merge-ready | Review and merge independently. It is documentation-only and does not authorize runtime, SafeMode, share/export, LLM, audit, access-control, or Compose behavior changes. |
 
 ### Cleanup candidate table
 

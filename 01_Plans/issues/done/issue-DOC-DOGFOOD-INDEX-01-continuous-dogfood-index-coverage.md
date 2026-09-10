@@ -34,7 +34,7 @@ R13を完了した後、次の作業候補を探すため `cognitive-dogfood-ind
 ## 受入条件
 
 - [x] R7〜R14の継続dogfood記録を索引から辿れる。
-- [x] R7〜R14の対応する `doc_kj_atlas_dogfood_r*.json` を索引または各記録から辿れる。
+- [x] R7〜R14の対応する `doc_sui_sensemaking_dogfood_r*.json` を索引または各記録から辿れる。
 - [x] `validate_dogfood_docs.py` が全 `cognitive-dogfood-continuous-*.md` を列挙する。
 - [x] 継続dogfood記録が索引にない場合、検査が失敗する。
 - [x] 継続dogfood記録が対応キャンバスを参照しない場合、検査が失敗する。

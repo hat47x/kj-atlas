@@ -11,7 +11,7 @@ const TARGET_LONG_TASK_MS = 100;
 const MAX_LONG_TASK_MS = 150;
 const MAX_VISUAL_CUE_STORAGE_BYTES = 200 * 1024;
 const MAX_HEAP_GROWTH_BYTES = 64 * 1024 * 1024;
-const LOCAL_SCOPE_KEY = "kj-atlas/local-scope/v1/";
+const LOCAL_SCOPE_KEY = "sui-sensemaking/local-scope/v1/";
 
 function imageRef(index: number): string {
   return `visual-cue:00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
@@ -145,7 +145,7 @@ async function seedPortableAssets(page: Page, documentId: string): Promise<{
 }> {
   return page.evaluate(async ({ targetDocumentId, scopeKey }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onupgradeneeded = () => {
         const store = request.result.createObjectStore("assets-v2", { keyPath: "storageKey" });
         store.createIndex("scopeDocumentKey", "scopeDocumentKey", { unique: false });

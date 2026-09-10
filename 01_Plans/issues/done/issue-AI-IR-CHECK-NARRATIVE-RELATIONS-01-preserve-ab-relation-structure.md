@@ -7,8 +7,8 @@
 - Source Issue: `AI-IR-STAGE5-SCOPE-01`, `AI-IR-SCALE-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_prompt.py`, `03_Implement/backend/scripts/measure_ai_route_provider_tokens.py`, `02_Architecture/api.md`
-- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `00_Prompt/kj_technique.md` §5–§6, `AI-IR-SCALE-01`, `AI-IR-STAGE5-SCOPE-01`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_prompt.py`, `03_Implement/backend/scripts/measure_ai_route_provider_tokens.py`, `02_Architecture/api.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `00_Prompt/sensemaking_technique.md` §5–§6, `AI-IR-SCALE-01`, `AI-IR-STAGE5-SCOPE-01`
 - Expected verification level: integration
 
 ## 課題
@@ -17,7 +17,7 @@
 
 一方、A型図解の `Edge` はprovider promptへ渡していない。このため、カードと島がすべて見えていても、A型に記録された `causal` / `negate` / `mutual` / `equivalence` / `related` 等の論理接続をAIが参照できない。
 
-`00_Prompt/kj_technique.md` §5はA型/B型を両方向に照合することを要求し、§6の `KJT-SIGN-09` は「B型がA型より論理的に整いすぎている（図にない接続詞で補っている）」ことを失敗徴候として扱う。したがって、relation graphは「IRに存在するから全部渡す」という理由ではなく、**B型がA型にない因果・対立・同値等を作っていないかを判定するためのroute-required meaning**である。
+`00_Prompt/sensemaking_technique.md` §5はA型/B型を両方向に照合することを要求し、§6の `SUI-SIGN-09` は「B型がA型より論理的に整いすぎている（図にない接続詞で補っている）」ことを失敗徴候として扱う。したがって、relation graphは「IRに存在するから全部渡す」という理由ではなく、**B型がA型にない因果・対立・同値等を作っていないかを判定するためのroute-required meaning**である。
 
 この欠落はscale問題とは分けて扱う。固定上限へ縮約する前に、現行の全Card・全Island coverageを保ったまま、A型の明示的なrelationをproviderへ届ける。
 
@@ -76,7 +76,7 @@
 
 ## 対応記録（2026-09-05・Done）
 
-`03_Implement/backend/src/kj_atlas_api/routes/ai.py` の `_build_narrative_check_prompt()` へ `Relations:` 節を追加した。`payload.doc.edges` の全件を、`fromKind`/`toKind` 未指定時はcard端点として解釈したうえで決定論的に描画し、prompt指示へ「narrative-vs-diagramの論理接続照合にrelation graphを使う」ことを明記した。既存のNarrative本文・reading order・全Card・全Islandの各節は変更していない。
+`03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` の `_build_narrative_check_prompt()` へ `Relations:` 節を追加した。`payload.doc.edges` の全件を、`fromKind`/`toKind` 未指定時はcard端点として解釈したうえで決定論的に描画し、prompt指示へ「narrative-vs-diagramの論理接続照合にrelation graphを使う」ことを明記した。既存のNarrative本文・reading order・全Card・全Islandの各節は変更していない。
 
 検証:
 

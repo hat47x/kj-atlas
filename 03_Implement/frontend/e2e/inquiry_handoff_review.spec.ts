@@ -93,7 +93,7 @@ test("DOMAIN-W-ITERATION-01 reviews one handoff candidate at a time and saves wi
   const downloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
   const download = await downloadPromise;
-  const savedPath = testInfo.outputPath("handoff-partial.kj-atlas-inquiry.json");
+  const savedPath = testInfo.outputPath("handoff-partial.sui-sensemaking-inquiry.json");
   await download.saveAs(savedPath);
   const parsed = await parseInquiryBundleJson(await readFile(savedPath, "utf8"));
   expect(parsed.ok).toBe(true);

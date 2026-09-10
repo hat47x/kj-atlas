@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BACKEND_SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-BACKEND_OBSERVABILITY = ROOT / "03_Implement/backend/src/kj_atlas_api/observability.py"
+BACKEND_SETTINGS = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+BACKEND_OBSERVABILITY = ROOT / "03_Implement/backend/src/sui_sensemaking_api/observability.py"
 FRONTEND_DIAGNOSTICS = ROOT / "03_Implement/frontend/src/export/diagnostics_bundle.ts"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
@@ -59,7 +59,7 @@ class AppRevisionObservabilityContractTests(unittest.TestCase):
         revision_rows = [
             line
             for line in registry.splitlines()
-            if line.startswith("| `KJ_ATLAS_APP_REVISION` |")
+            if line.startswith("| `SUI_APP_REVISION` |")
         ]
         self.assertEqual(len(revision_rows), 1)
         row = revision_rows[0]
@@ -76,8 +76,8 @@ class AppRevisionObservabilityContractTests(unittest.TestCase):
         self.assertIn("[rev=%(appRevision)s]", observability)
 
         for row in (
-            _public_row(REGISTRY, "KJ_ATLAS_APP_REVISION"),
-            _configuration_backend_row("KJ_ATLAS_APP_REVISION"),
+            _public_row(REGISTRY, "SUI_APP_REVISION"),
+            _configuration_backend_row("SUI_APP_REVISION"),
         ):
             self.assertIn("全アプリケーションログ", row)
             self.assertNotIn("構造化ログ", row)

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`
 - Related ADR/Spec: `issue-SEC-INQUIRY-01-inquiry-file-size-limit.md`, `issue-SEC-RATE-LIMIT-01-backend-api-has-no-rate-limiting.md`
 - Expected verification level: `unit`
 

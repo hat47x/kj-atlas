@@ -5,13 +5,13 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/audit.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/audit.py`
 - Related ADR/Spec: N/A
 - Expected verification level: `unit`
 
 ## 課題
 
-`src/kj_atlas_api/audit.py:400` の `event_to_log_fields(event: AuditEvent) -> dict[str, object]` は `json.loads(event.model_dump_json())` を返すモジュールレベル関数で、リポジトリ全体（srcとtests）を検索しても呼び出し箇所がゼロ件である。
+`src/sui_sensemaking_api/audit.py:400` の `event_to_log_fields(event: AuditEvent) -> dict[str, object]` は `json.loads(event.model_dump_json())` を返すモジュールレベル関数で、リポジトリ全体（srcとtests）を検索しても呼び出し箇所がゼロ件である。
 
 `audit.py` の他の export（`build_audit_dispatcher` / `build_event` / `normalize_ce4_audit_metadata` / `CE4_AUDIT_SCHEMA_VERSION`）は `main.py` / `cli.py` / `routes/docs.py` から参照されている。この関数だけが取り残されている。類似の JSON変換は `event.model_dump_json()` を直接呼ぶ形で既存consumerに実装済みの可能性が高く、この関数は不要である。
 

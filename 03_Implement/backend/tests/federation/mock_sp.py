@@ -6,8 +6,8 @@ import re
 import httpx
 from fastapi import FastAPI, HTTPException
 
-idp_base_url = os.getenv("KJ_ATLAS_AUTH_LEVEL2_MOCK_IDP_BASE_URL", "http://127.0.0.1:18081")
-backend_base_url = os.getenv("KJ_ATLAS_AUTH_LEVEL2_BACKEND_BASE_URL", "http://127.0.0.1:18000")
+idp_base_url = os.getenv("SUI_AUTH_LEVEL2_MOCK_IDP_BASE_URL", "http://127.0.0.1:18081")
+backend_base_url = os.getenv("SUI_AUTH_LEVEL2_BACKEND_BASE_URL", "http://127.0.0.1:18000")
 
 app = FastAPI(title="auth-level2-mock-sp")
 
@@ -84,7 +84,7 @@ def forward_put_doc(profile_name: str, doc_id: str, payload: dict) -> dict:
 
 # ADR-0063 D9-7: JWT bearer mode for SaaS trusted auth edge E2E.
 _level2_idp_base_url = os.getenv(
-    "KJ_ATLAS_AUTH_LEVEL2_MOCK_IDP_BASE_URL", "http://127.0.0.1:18081"
+    "SUI_AUTH_LEVEL2_MOCK_IDP_BASE_URL", "http://127.0.0.1:18081"
 )
 
 
@@ -113,7 +113,7 @@ def forward_jwt_doc(provider: str, doc_id: str, payload: dict) -> dict:
         access_token = token_data["access_token"]
 
         headers: dict[str, str] = {
-            "x-kj-atlas-authorization": f"Bearer {access_token}",
+            "x-sui-sensemaking-authorization": f"Bearer {access_token}",
         }
 
         put_resp = client.put(
@@ -214,7 +214,7 @@ def forward_oauth_login_doc(provider: str, doc_id: str, payload: dict) -> dict:
 
         # Step 5: Forward to backend with JWT Bearer token
         headers: dict[str, str] = {
-            "x-kj-atlas-authorization": f"Bearer {access_token}",
+            "x-sui-sensemaking-authorization": f"Bearer {access_token}",
         }
 
         doc_body = {

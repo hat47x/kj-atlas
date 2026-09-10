@@ -1,17 +1,17 @@
-# 生成AIの認知外在化機能としての kj-atlas 拡張要件
+# 生成AIの認知外在化機能としての sui-sensemaking 拡張要件
 
 - Status: Normative
 
 **English summary**  
-This document defines kj-atlas as a cognitive externalization framework for human–AI collaborative reasoning.  
+This document defines sui-sensemaking as a cognitive externalization framework for human–AI collaborative reasoning.  
 Its goal is not to let AI decide for humans, but to provide an external structured workspace that enables deeper, safer, and more context-sensitive information processing than current generative AI can sustain on its own.
 
 ---
 
 # 0. 本文書の位置づけ
 
-本書は、今後の kj-atlas プロジェクトにおける **中核文書** である。  
-ここで定義するのは単なる追加機能ではない。kj-atlas を、
+本書は、今後の sui-sensemaking プロジェクトにおける **中核文書** である。  
+ここで定義するのは単なる追加機能ではない。sui-sensemaking を、
 
 - 人間のための空間的思考環境
 - 生成AIのための認知外在化フレームワーク
@@ -92,12 +92,12 @@ Its goal is not to let AI decide for humans, but to provide an external structur
 
 # 2. 基本コンセプト
 
-## 2.1 kj-atlas の再定義
+## 2.1 sui-sensemaking の再定義
 
-kj-atlas は、単なるKJ法図解ツールではない。  
+sui-sensemaking は、単なるKJ法図解ツールではない。  
 また、単なる生成AI支援ツールでもない。
 
-kj-atlas は、
+sui-sensemaking は、
 
 > **生成AIと人間が、高度な情報処理と熟慮を継続するための、構造化された認知外在化環境**
 
@@ -106,7 +106,7 @@ kj-atlas は、
 ## 2.2 「知の竹馬」という比喩
 
 ここでのAI拡張は、AIそのものを作り替えることではない。  
-kj-atlas は、生成AIに対して、人間が高度な判断に必要とする
+sui-sensemaking は、生成AIに対して、人間が高度な判断に必要とする
 
 - 構造
 - 保留
@@ -117,7 +117,7 @@ kj-atlas は、生成AIに対して、人間が高度な判断に必要とする
 
 を与えることで、AIが単独では届かない地点まで **安全に到達できるよう支える補助具** として機能する。
 
-つまり、kj-atlas は「AIの代わりに考える」ものではなく、
+つまり、sui-sensemaking は「AIの代わりに考える」ものではなく、
 
 > **AIがまだ自前では維持しにくい思考の足場を、外部に作るもの**
 
@@ -208,12 +208,12 @@ AIは、島または利用者が明示的に選んだ情報集合を見つけ直
 
 ### 原則3c：表札（島タイトル）の代弁性を分類名化より優先する
 
-AIは島タイトル候補を提案してよい。ただし、その候補が別の島の上に置いても成立してしまう一般的な分類名（例：「重要な論点」「今後の課題」）になっていないかを検査し、該当する場合は書き直し案を示す。AIはタイトルを確定または自動適用してはならない。詳細は `00_Prompt/qualitative_card_quality_requirements.md` 第5章、転写検査そのものは `00_Prompt/kj_technique.md` 第3章を正本とする。
+AIは島タイトル候補を提案してよい。ただし、その候補が別の島の上に置いても成立してしまう一般的な分類名（例：「重要な論点」「今後の課題」）になっていないかを検査し、該当する場合は書き直し案を示す。AIはタイトルを確定または自動適用してはならない。詳細は `00_Prompt/qualitative_card_quality_requirements.md` 第5章、転写検査そのものは `00_Prompt/sensemaking_technique.md` 第3章を正本とする。
 
 ## 原則4：曖昧さ・対立・未解決を保持する
 
 AIは収束したがる。  
-kj-atlas は、
+sui-sensemaking は、
 
 - contradictions
 - unknowns
@@ -334,7 +334,7 @@ ContextQuery -> ContextBundle
 - **MMR-04（モデル階層）**:
   `final_judgement` は high-reasoning tier へルーティングする。
   **どのモデルが high-reasoning tier に該当するかは本書では定めない。**
-  設定は `02_Architecture/runtime_parameter_registry.md` の `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
+  設定は `02_Architecture/runtime_parameter_registry.md` の `SUI_LLM_HIGH_REASONING_MODEL`
   が持ち（同レジストリの当該行は本要件を MMR-04 として参照している）、
   複雑度とモデルの対応は `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md` が持つ。
   ここにモデル名を書くと、モデルが更新されるたびに憲法を書き換えることになる。
@@ -638,14 +638,14 @@ AI Context Query と AI出力は、必要に応じて
 
 # 16. 結論
 
-kj-atlas のAI拡張の本質は、AIを賢くすることではない。  
+sui-sensemaking のAI拡張の本質は、AIを賢くすることではない。  
 本質は、
 
 > **高度な文脈・対立・保留・根拠の構造を、認知主体を跨いで共有できる外部思考空間として保持すること**
 
 にある。
 
-この方向性において、kj-atlas は単なる図解ツールではなく、
+この方向性において、sui-sensemaking は単なる図解ツールではなく、
 
 > **KJ法という認知のフレームを適用し、その知識蓄積を担う基盤**
 

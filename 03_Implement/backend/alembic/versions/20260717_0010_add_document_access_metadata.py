@@ -15,9 +15,9 @@ down_revision: str | None = "20260717_0009"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-POLICY_NAME = "kj_atlas_document_access_metadata_tenant_isolation"
+POLICY_NAME = "sui_sensemaking_document_access_metadata_tenant_isolation"
 TENANT_EXPRESSION = (
-    "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+    "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 )
 
 

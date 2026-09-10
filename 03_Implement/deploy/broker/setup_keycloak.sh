@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# ADR-0064: Automated Keycloak setup for kj-atlas SaaS authentication.
+# ADR-0064: Automated Keycloak setup for sui-sensemaking SaaS authentication.
 #
 # Usage:
 #   docker compose -f docker-compose.yml -f broker/docker-compose.yml up -d
 #   bash setup_keycloak.sh
 #
-# Creates: kj-atlas realm, backend client, tenant_ref mapper, test users.
+# Creates: sui-sensemaking realm, backend client, tenant_ref mapper, test users.
 set -euo pipefail
 
 KEYCLOAK_BASE="${KEYCLOAK_BASE:-http://localhost:18080}"
 ADMIN_USER="${KEYCLOAK_ADMIN:-admin}"
 ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD:-admin}"
-REALM="kj-atlas"
-CLIENT_ID="kj-atlas-backend"
-CLIENT_SECRET="kj-atlas-backend-secret"
+REALM="sui-sensemaking"
+CLIENT_ID="sui-sensemaking-backend"
+CLIENT_SECRET="sui-sensemaking-backend-secret"
 
 # ------------------------------------------------------------------
 # Step 1: Get admin token
@@ -122,7 +122,7 @@ echo ""
 echo "OIDC Discovery: ${KEYCLOAK_BASE}/realms/${REALM}/.well-known/openid-configuration"
 echo "JWKS:           ${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/certs"
 echo ""
-echo "Next: Register the broker in kj-atlas:"
+echo "Next: Register the broker in sui-sensemaking:"
 echo "  curl -X POST http://localhost:18000/admin/provision/identity-providers \\"
 echo "    -H 'Content-Type: application/json' \\"
 echo "    -d '{\"issuer\":\"${KEYCLOAK_BASE}/realms/${REALM}\",\"audience\":\"${CLIENT_ID}\",\"protocol\":\"oidc\",\"jwksUri\":\"${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/certs\"}'"

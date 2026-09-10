@@ -4,7 +4,7 @@
 - Date: 2026-08-25
 - Accepted: 2026-08-26（**D1=多方式対応（A2） / D2=A（`guest_principals`+`guest_document_grants`） / D3=A / D4=A**。保守者による明示承認。仮承認ではない）
 - Deciders: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/tenant_context.py`, `models.py`（新規table候補）, `trusted_auth_edge.py`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `THREAT_MODEL.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/tenant_context.py`, `models.py`（新規table候補）, `trusted_auth_edge.py`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `THREAT_MODEL.md`
 
 ## 採択記録（2026-08-26）
 
@@ -25,7 +25,7 @@
 
 これらは再検討の対象ではない（同issue「実施しないこと」）。本ADRの論点は**どう実現するか**である。
 
-コードで確認した事実: `resolve_verified_claim_tenant_context()`（`tenant_context.py:188-227`）は、verified claimの`tenant_id`に対して`tenant_identity_providers`が`(tenant, identity_provider)`単位でactiveであることを要求し、そこから`user_identities`（`identity_provider_id + subject`）経由でしか個人を解決できない。**IdPを持たない個人を表現する経路が構造的に存在しない。** `issue-PGM-ITER-05-02`（外部比較調査、`02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`）の結論（§0）は、比較した4製品のうち3製品（Slack・Microsoft・Google）が「組織単位の信頼」と「個人単位の信頼」を別々のプリミティブとして持ち、Notionは組織単位の信頼という概念自体を持たない、という点で一致することを示した。kj-atlasはこの4製品のいずれとも異なり、個人単位の信頼を組織単位の信頼から独立に表現できない。
+コードで確認した事実: `resolve_verified_claim_tenant_context()`（`tenant_context.py:188-227`）は、verified claimの`tenant_id`に対して`tenant_identity_providers`が`(tenant, identity_provider)`単位でactiveであることを要求し、そこから`user_identities`（`identity_provider_id + subject`）経由でしか個人を解決できない。**IdPを持たない個人を表現する経路が構造的に存在しない。** `issue-PGM-ITER-05-02`（外部比較調査、`02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`）の結論（§0）は、比較した4製品のうち3製品（Slack・Microsoft・Google）が「組織単位の信頼」と「個人単位の信頼」を別々のプリミティブとして持ち、Notionは組織単位の信頼という概念自体を持たない、という点で一致することを示した。sui-sensemakingはこの4製品のいずれとも異なり、個人単位の信頼を組織単位の信頼から独立に表現できない。
 
 ## 決定すべき論点
 
@@ -125,7 +125,7 @@ CHK-X1〜X6（次元間クロスチェック）: 業務要求（個人単位受�
 
 **D1=多方式対応（A1: 自組織IdP連携 + A2: 汎用個人アカウント、Bは将来拡張余地として保留、Cは不採用）、D2=A（`guest_principals`+`guest_document_grants`、FD再検査済み）、D3=A、D4=A**。
 
-理由: D2=A・D3=Aは、`issue-PGM-ITER-05-02`が発見した「kj-atlasには個人単位の信頼を組織単位の信頼から独立に表現する経路がない」という欠陥を、データモデルの構造そのもので解消する。既存の`tenant_identity_providers`を流用する案（D2=B）は、粒度混在という同じ欠陥を別の場所で再生産するため採用しない。D1は、保守者の指示により当初の単一方式（原案A＝単回リンクのみ）から複数方式へ拡張し、「受入先テナント自身の企業IdPは不要だが、ゲスト自身は何らかのIdPを持つ」という補正後の要求2を、A1（自組織IdP連携）とA2（汎用個人アカウント）の2経路で満たす。D4=Aは要求されている取り消しの独立性と直接一致する。
+理由: D2=A・D3=Aは、`issue-PGM-ITER-05-02`が発見した「sui-sensemakingには個人単位の信頼を組織単位の信頼から独立に表現する経路がない」という欠陥を、データモデルの構造そのもので解消する。既存の`tenant_identity_providers`を流用する案（D2=B）は、粒度混在という同じ欠陥を別の場所で再生産するため採用しない。D1は、保守者の指示により当初の単一方式（原案A＝単回リンクのみ）から複数方式へ拡張し、「受入先テナント自身の企業IdPは不要だが、ゲスト自身は何らかのIdPを持つ」という補正後の要求2を、A1（自組織IdP連携）とA2（汎用個人アカウント）の2経路で満たす。D4=Aは要求されている取り消しの独立性と直接一致する。
 
 ## Non-goals
 

@@ -8,20 +8,20 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from "@
 // dependencies with page.route (see docs/e2e_testing.md "再現性・flaky対策"),
 // which is right for UI-only regression coverage but cannot prove that the
 // backend's `unavailableReason` resolver (03_Implement/backend/src/
-// kj_atlas_api/routes/ai.py get_available_models(), lines ~907-955) actually
+// sui_sensemaking_api/routes/ai.py get_available_models(), lines ~907-955) actually
 // drives the ModelSelector's guidance text end to end.
 //
 // Requires a live backend. Per CONTRIBUTING.md's "SQLite代替E2E" path:
 //
 //   cd 03_Implement/backend
-//   PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" \
+//   PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_model_ux_e2e.sqlite3" \
 //     python -m alembic upgrade head
-//   PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" \
-//     KJ_ATLAS_LLM_PROVIDER=none \
-//     python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+//   PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_model_ux_e2e.sqlite3" \
+//     SUI_LLM_PROVIDER=none \
+//     python -m uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000
 //
-// (KJ_ATLAS_LLM_PROVIDER=none is already the default -- set explicitly here so
-// the fixture's assumption is visible.) No KJ_ATLAS_API_KEY / _ADMIN_API_KEY
+// (SUI_LLM_PROVIDER=none is already the default -- set explicitly here so
+// the fixture's assumption is visible.) No SUI_API_KEY / _ADMIN_API_KEY
 // is required: local-dev is the zero-configuration profile, so both the
 // business plane and the control plane (/admin/provision/**) are open
 // (control_plane_auth.py `_OPEN_WHEN_UNCONFIGURED_PROFILES`). Use a *fresh*
@@ -32,10 +32,10 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from "@
 // Then, from 03_Implement/frontend (an npm-ci'd checkout -- WSL-native if on
 // Windows, see docs/e2e_testing.md):
 //
-//   KJ_ATLAS_E2E_REAL_BACKEND=1 npx playwright test \
+//   SUI_E2E_REAL_BACKEND=1 npx playwright test \
 //     e2e/ai_model_ux_available_models_reason.spec.ts --reporter=line --workers=1
 //
-// Gated behind KJ_ATLAS_E2E_REAL_BACKEND (mirrors the KJ_ATLAS_E2E_SAAS gate
+// Gated behind SUI_E2E_REAL_BACKEND (mirrors the SUI_E2E_SAAS gate
 // in tenant_session_multitab.spec.ts) so a plain `npm run e2e` -- which every
 // other spec here satisfies with mocks alone -- does not fail merely because
 // no backend happens to be running.
@@ -44,14 +44,14 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from "@
 // intersecting active registry models with providers whose registered
 // `providerKind` string-matches the actually configured runtime provider
 // (`_provider_matches_runtime`, ai.py ~line 94). With the backend run under
-// `KJ_ATLAS_LLM_PROVIDER=none`, a registry provider registered with
+// `SUI_LLM_PROVIDER=none`, a registry provider registered with
 // providerKind "none" is therefore "reachable" (no live LLM connectivity is
 // needed for this contract -- only the available-models listing is under
 // test, never an actual generate call), while providerKind "deepseek" is not.
 // That lets every scenario below run against one backend process without
-// juggling multiple KJ_ATLAS_LLM_PROVIDER runtimes.
+// juggling multiple SUI_LLM_PROVIDER runtimes.
 
-const BACKEND_URL = process.env.KJ_ATLAS_E2E_BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.SUI_E2E_BACKEND_URL ?? "http://127.0.0.1:8000";
 const TENANT_ID = "local-default";
 const START_PANEL = '[data-panel="start-document-entry"]';
 const MODEL_SELECTOR_REGION = '[data-ui-region="model-selector-title"]';
@@ -112,7 +112,7 @@ async function setTenantAllowlist(request: APIRequestContext, modelIds: string[]
 
 async function registerReachableModel(request: APIRequestContext): Promise<void> {
   // providerKind "none" string-matches the backend's actual configured
-  // provider (KJ_ATLAS_LLM_PROVIDER=none) -- see the mechanism note above.
+  // provider (SUI_LLM_PROVIDER=none) -- see the mechanism note above.
   await adminPost(request, "/admin/provision/models/providers", {
     id: REACHABLE_PROVIDER_ID,
     providerKind: "none",
@@ -160,21 +160,21 @@ function modelSelectorStatus(page: Page): Locator {
 
 test.beforeEach(() => {
   test.skip(
-    process.env.KJ_ATLAS_E2E_REAL_BACKEND !== "1",
+    process.env.SUI_E2E_REAL_BACKEND !== "1",
     "Requires a live backend -- see the file-header comment for setup, then "
-      + "set KJ_ATLAS_E2E_REAL_BACKEND=1 to run this spec.",
+      + "set SUI_E2E_REAL_BACKEND=1 to run this spec.",
   );
 });
 
 test.beforeAll(async ({ request }) => {
-  if (process.env.KJ_ATLAS_E2E_REAL_BACKEND !== "1") {
+  if (process.env.SUI_E2E_REAL_BACKEND !== "1") {
     return;
   }
   const health = await request.get(`${BACKEND_URL}/healthz`).catch(() => null);
   if (!health || !health.ok()) {
     throw new Error(
       `Backend not reachable at ${BACKEND_URL}/healthz. Start it per the `
-        + "file-header comment before running with KJ_ATLAS_E2E_REAL_BACKEND=1.",
+        + "file-header comment before running with SUI_E2E_REAL_BACKEND=1.",
     );
   }
 });

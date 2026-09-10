@@ -20,8 +20,8 @@ from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 ROUTE_FILES = (
-    BACKEND_ROOT / "src" / "kj_atlas_api" / "routes" / "ai.py",
-    BACKEND_ROOT / "src" / "kj_atlas_api" / "routes" / "ai_relations.py",
+    BACKEND_ROOT / "src" / "sui_sensemaking_api" / "routes" / "ai.py",
+    BACKEND_ROOT / "src" / "sui_sensemaking_api" / "routes" / "ai_relations.py",
 )
 
 IR_MIGRATED_TASKS = frozenset(

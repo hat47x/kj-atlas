@@ -12,10 +12,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.settings import settings
 from tests.federation.profile_loader import profile_names
 
 
@@ -49,12 +49,12 @@ def _require_auth_level2_mock_sp(base_url: str) -> None:
             response = client.get(f"{base_url}/healthz")
     except httpx.HTTPError:
         pytest.skip(
-            "auth_level2 mock SP is not reachable; run tests/scripts/run_auth_level2.sh or set KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL"
+            "auth_level2 mock SP is not reachable; run tests/scripts/run_auth_level2.sh or set SUI_AUTH_LEVEL2_SP_BASE_URL"
         )
 
     if response.status_code != 200:
         pytest.skip(
-            f"auth_level2 mock SP health check failed ({response.status_code}); check KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL={base_url}"
+            f"auth_level2 mock SP health check failed ({response.status_code}); check SUI_AUTH_LEVEL2_SP_BASE_URL={base_url}"
         )
 
 
@@ -97,7 +97,7 @@ def test_provider_profile_fixture_google_oidc_roundtrip(tmp_path) -> None:
 @pytest.mark.auth_level2
 @pytest.mark.parametrize("profile_name", profile_names())
 def test_provider_profile_fixture_via_mock_sp(profile_name: str) -> None:
-    base_url = os.getenv("KJ_ATLAS_AUTH_LEVEL2_SP_BASE_URL", "http://127.0.0.1:18080")
+    base_url = os.getenv("SUI_AUTH_LEVEL2_SP_BASE_URL", "http://127.0.0.1:18080")
     payload = _sample_payload(f"doc-{profile_name}")
     _require_auth_level2_mock_sp(base_url)
 

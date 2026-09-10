@@ -5,7 +5,7 @@ from urllib import error as urllib_error
 
 import pytest
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AccessControlInvalidRequestError,
     AccessControlInvalidPolicyError,
     AccessControlUnreachableError,
@@ -18,8 +18,8 @@ from kj_atlas_api.access_control import (
     build_access_control_adapter,
     resolve_access_decision,
 )
-from kj_atlas_api.settings import Settings
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.settings import Settings
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 class _Response:
@@ -63,7 +63,7 @@ def test_external_http_adapter_forwards_request_and_parses_decision(monkeypatch:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response({"allow": True, "readOnly": True, "reason": "external_read_only"})
 
-    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.access_control.open_trusted_http", _urlopen)
 
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(
@@ -113,7 +113,7 @@ def test_external_http_adapter_forwards_server_resolved_tenant(
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response({"allow": True})
 
-    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _urlopen)
+    monkeypatch.setattr("sui_sensemaking_api.access_control.open_trusted_http", _urlopen)
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(
             endpoint="https://policy.example.local/evaluate"
@@ -168,7 +168,7 @@ def test_external_http_adapter_error_mapping(monkeypatch: pytest.MonkeyPatch) ->
     def _raise_unreachable(request, timeout_seconds):  # noqa: ANN001
         raise urllib_error.URLError("down")
 
-    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_unreachable)
+    monkeypatch.setattr("sui_sensemaking_api.access_control.open_trusted_http", _raise_unreachable)
 
     with pytest.raises(AccessControlUnreachableError):
         adapter.authorize(_request())
@@ -182,7 +182,7 @@ def test_external_http_adapter_error_mapping(monkeypatch: pytest.MonkeyPatch) ->
             fp=None,
         )
 
-    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_invalid)
+    monkeypatch.setattr("sui_sensemaking_api.access_control.open_trusted_http", _raise_invalid)
 
     with pytest.raises(AccessControlInvalidPolicyError):
         adapter.authorize(_request())
@@ -212,7 +212,7 @@ def test_external_http_adapter_rejects_unbounded_or_noncanonical_response_withou
     response_body: bytes,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         lambda request, timeout_seconds: _Response(response_body),  # noqa: ARG005
     )
     adapter = ExternalPolicyAccessControlAdapter(
@@ -278,7 +278,7 @@ def test_external_http_adapter_rejects_invalid_request_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         _unexpected_transport,
     )
     adapter = ExternalPolicyAccessControlAdapter(
@@ -304,7 +304,7 @@ def test_external_http_adapter_rejects_oversized_utf8_request_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         _unexpected_transport,
     )
     adapter = ExternalPolicyAccessControlAdapter(
@@ -330,7 +330,7 @@ def test_external_http_adapter_invalid_request_uses_adapter_fail_safe(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
             AssertionError("transport must not be called")
         ),
@@ -359,7 +359,7 @@ def test_external_http_adapter_invalid_response_uses_deny_fail_safe(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.access_control.open_trusted_http",
+        "sui_sensemaking_api.access_control.open_trusted_http",
         lambda request, timeout_seconds: _Response(b'{"allow":true,"extra":1}'),  # noqa: ARG005
     )
     adapter = ExternalPolicyAccessControlAdapter(
@@ -381,12 +381,12 @@ def test_external_http_adapter_invalid_response_uses_deny_fail_safe(
 def test_build_access_control_adapter_external_http_rejects_missing_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("kj_atlas_api.settings.settings.access_control_external_http_endpoint", None)
+    monkeypatch.setattr("sui_sensemaking_api.settings.settings.access_control_external_http_endpoint", None)
 
     with pytest.raises(RuntimeError) as exc_info:
         build_access_control_adapter(adapter_name="external_http")
 
-    assert "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT" in str(exc_info.value)
+    assert "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT" in str(exc_info.value)
 
 
 def test_external_http_auth_mode_setting_rejects_invalid_value() -> None:
@@ -398,7 +398,7 @@ def test_external_http_adapter_unreachable_uses_existing_fail_safe_reason(monkey
     def _raise_unreachable(request, timeout_seconds):  # noqa: ANN001
         raise urllib_error.URLError("down")
 
-    monkeypatch.setattr("kj_atlas_api.access_control.open_trusted_http", _raise_unreachable)
+    monkeypatch.setattr("sui_sensemaking_api.access_control.open_trusted_http", _raise_unreachable)
 
     adapter = ExternalPolicyAccessControlAdapter(
         config=ExternalPolicyAdapterConfig(endpoint="https://policy.example.local/evaluate")

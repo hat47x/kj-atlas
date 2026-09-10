@@ -21,7 +21,7 @@ For standard users, these are likely to be one continuous workflow rather than s
 
 ## Why It Matters
 
-KJ Atlas should help users keep uncertainty visible without losing the reason for that uncertainty. If hold and critique are separated too strongly, users may preserve items without recording the reasoning that makes later review valuable.
+SUI Sensemaking should help users keep uncertainty visible without losing the reason for that uncertainty. If hold and critique are separated too strongly, users may preserve items without recording the reasoning that makes later review valuable.
 
 ## Expected Behavior
 

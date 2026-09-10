@@ -76,7 +76,7 @@
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/issues/done/issue-PRODUCT-UX-03-safe-share-export-flow.md`, `issue-DOMAIN-EXPR-04-evidence-claim-contradiction-review.md`, `issue-DOMAIN-TRACE-01-serial-number-and-source-provenance.md`
 - Related: `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§領域5・2026-07-04 版）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（§領域5・2026-07-04 版）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 完了記録 2026-07-09（Claude Code）

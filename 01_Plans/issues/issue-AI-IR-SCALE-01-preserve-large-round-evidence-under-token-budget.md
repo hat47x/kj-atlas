@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-PROJECTION-01` AC-10
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm_input_ir.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/scripts/`, `03_Implement/backend/tests/`, `02_Architecture/llm_input_ir_spec.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm_input_ir.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/scripts/`, `03_Implement/backend/tests/`, `02_Architecture/llm_input_ir_spec.md`
 - Related ADR/Spec: `ADR-0069`, `ADR-0047`, `02_Architecture/llm_input_ir_spec.md` §5, `issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md`
 - Expected verification level: integration
 
@@ -21,7 +21,7 @@ PR #2820で得たroute別の最終prompt計測値は、そのまま有効な観�
 
 ## 課題
 
-KJ Atlasは、数百枚のカードを扱うKJ実践を正常な利用規模としている。`DOGFOOD-31` では200枚の第1ラウンドを実走し、`suggest-card-groups` のリクエスト上限を100枚から1000枚へ緩和した。
+SUI Sensemakingは、数百枚のカードを扱うKJ実践を正常な利用規模としている。`DOGFOOD-31` では200枚の第1ラウンドを実走し、`suggest-card-groups` のリクエスト上限を100枚から1000枚へ緩和した。
 
 一方、`AI-IR-PROJECTION-01` が導入したLLM入力IRには、現在次の全体上限がある。
 
@@ -114,7 +114,7 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
 ### 実行境界
 
 1. 既定はdry-runとし、providerを生成せず、ネットワークにも接続しない。
-2. 外部送信には `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の**両方**を要求する。
+2. 外部送信には `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の**両方**を要求する。
 3. `--provider` と `--model` を必須にし、現在設定されたproviderと明示名が一致しない場合は、送信前に停止する。
 4. providerが返した `LLMResponse.input_tokens` だけを正確な入力token数として採用する。promptの文字数・UTF-8 byte数は診断情報として残すが、token数へ換算しない。
 5. providerがusageを返さない場合は `provider-did-not-report-usage` と記録し、`measurement_complete=false` のまま終了する。別tokenizerによる推定で埋めない。
@@ -134,10 +134,10 @@ PR #2820で、300カード・30島の同じ代表入力を、移行済み3 route
   --model deepseek-v4-flash
 ```
 
-実token数を測る場合は、既存の安全な方法で `KJ_ATLAS_LLM_PROVIDER`、providerの認証情報、必要ならmodel設定を事前に構成する。認証情報をコマンドラインや成果物へ直接書かない。そのうえで次を実行する。
+実token数を測る場合は、既存の安全な方法で `SUI_LLM_PROVIDER`、providerの認証情報、必要ならmodel設定を事前に構成する。認証情報をコマンドラインや成果物へ直接書かない。そのうえで次を実行する。
 
 ```bash
-KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
+SUI_TOKEN_MEASUREMENT_OPT_IN=1 \
 .venv/bin/python scripts/measure_ai_route_provider_tokens.py \
   --provider deepseek \
   --model deepseek-v4-flash \
@@ -173,7 +173,7 @@ Stage 5で最後に残る `check-narrative` を、R20のprovider token計測ハ�
 
 `check-narrative` は末尾の `c299` と `i29` までpromptへ含み、現行方式では300カード・30島のcoverageを切り落としていない。一方、dry-runのUTF-8 byte数は比較3ルート中で最大だった。したがって、Stage 5完了のために固定IR上限へ無理に押し込むのではなく、named provider/modelで実token数を測ったうえで、全量を保つA2と、全体被覆を壊さない分割・階層処理Cを主な比較対象とする。実測前にproduction上限や `check-narrative` の入力方式は変更しない。
 
-計測スクリプトはIssue本文に記載した直接CLI形式でも動くよう修正し、直接実行のdry-runを回帰テストへ追加した。外部送信には引き続き `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを要求する。
+計測スクリプトはIssue本文に記載した直接CLI形式でも動くよう修正し、直接実行のdry-runを回帰テストへ追加した。外部送信には引き続き `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを要求する。
 
 ### `check-narrative` へのRelation追加後の再計測（2026-09-05）
 
@@ -187,11 +187,11 @@ Stage 5で最後に残る `check-narrative` を、R20のprovider token計測ハ�
 
 ## 2026-09-04: named provider実測の実行可能性確認
 
-R20のハーネスを実際のnamed providerへ送れるか確認するため、branch-onlyのGitHub Actions Run `33875031314` で `KJ_ATLAS_DEEPSEEK_API_KEY` の**有無だけ**を検査した。secretの値は取得・出力していない。結果は未設定だった。
+R20のハーネスを実際のnamed providerへ送れるか確認するため、branch-onlyのGitHub Actions Run `33875031314` で `SUI_DEEPSEEK_API_KEY` の**有無だけ**を検査した。secretの値は取得・出力していない。結果は未設定だった。
 
 このため、合成データであっても外部providerへのrequestは送っていない。provider-reported usageもまだ得られていないので、上記の文字数・UTF-8 byte数をtoken数へ読み替えず、最初の2つの受入条件は未完了のまま維持する。probe用workflowは同じ成功run内で削除した。
 
-次に実測を行う条件は、計測対象として明示したprovider/modelの認証情報が安全な実行環境へ設定されていることである。その条件が満たされた後も、既存の `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを維持し、利用者データではなく決定論的な合成データだけを送る。
+次に実測を行う条件は、計測対象として明示したprovider/modelの認証情報が安全な実行環境へ設定されていることである。その条件が満たされた後も、既存の `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inを維持し、利用者データではなく決定論的な合成データだけを送る。
 
 ## R21: 上限引上げ・ルート別投影・分割処理の比較
 
@@ -255,7 +255,7 @@ R20のハーネスを実際のnamed providerへ送れるか確認するため、
 
 ## なぜ問題か
 
-KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
+SUI Sensemakingの一次価値は、根拠・異論・保留・人間の判断を途中で失わず、後から判断の経路へ戻れる理解へ育てることにある。
 
 現在のIR切り詰めは中心性順位を使うため決定論的ではあるが、300枚規模で「IRの3分の1を外し、島を空にする」ことを許す。中心性が低いカードが、少数意見、未決事項、反証、周辺観察である可能性はあるため、単に順序が決定論的であるだけでは意味保存を保証できない。
 
@@ -280,7 +280,7 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
    - `suggest-layout`: 全カード節を残したまま、契約上必要なrelation/island/relative-placement coverageがどこまで失われるか。
    - `generate-narrative`: reading orderと、叙述に必要なIR由来の論理構造のcoverage差。
 2. routeごとの「必要意味集合」を既存ADR・仕様・ACから明示し、測定項目をその集合へ対応づける。**完了。R19の表と `measure_ai_route_required_meaning.py` / `test_ai_route_required_meaning_scale.py` を対応づけた。** IRに存在するという理由だけで測定項目を必須化しない。
-3. 少なくとも次をnamed model/providerで実測する。**R20で実測ハーネスを用意した。2026-09-04にGitHub Actionsの認証情報有無だけを確認したが、`KJ_ATLAS_DEEPSEEK_API_KEY` は未設定だったため、外部送信は行わず、実providerでの測定値そのものは未取得のままである。**
+3. 少なくとも次をnamed model/providerで実測する。**R20で実測ハーネスを用意した。2026-09-04にGitHub Actionsの認証情報有無だけを確認したが、`SUI_DEEPSEEK_API_KEY` は未設定だったため、外部送信は行わず、実providerでの測定値そのものは未取得のままである。**
    - `suggest-layout` 相当: 座標・島・関係を含む最重量prompt。
    - 座標を使わない代表route。
 4. 正確なinput token数は、既存のprovider-reported usageを用いてmodel名とともに記録する。IR bytesから架空のtoken数を推定しない。**R20のハーネスで機械的にこの境界を固定した。**
@@ -338,12 +338,12 @@ KJ Atlasの一次価値は、根拠・異論・保留・人間の判断を途中
   - `tests/test_ai_layout_hierarchical_composition.py`
   - IR単体テスト、移行対象route統合テスト、backend全体回帰。
 - 実使用/外部依存確認:
-  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usage、canonical user prompt SHA-256、primary call provenanceを含むmeasurement reportを保存する。DeepSeekの場合はさらに、実transportと同じbuilderから得たsystem+user message contentのprovider-input SHA-256と、実requestの `thinking.type` をprovider-generation provenanceとして保存する。production既定と比較するDeepSeek V4実測では `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` と CLIの `--deepseek-thinking-mode disabled` を一致させ、R48のpreflightを通った場合だけ外部送信する。保存reportは `scripts/analyze_ai_route_provider_measurement.py` を通し、route/task/provider/model/usage/user-prompt fingerprint、transport/requested_at/trace_id、fallbackなし、primary execution pathに加え、DeepSeekではprovider-input fingerprintと `thinking.type` が現在のtransport/期待modeと一致した場合だけ方式比較の入力にする。named model/providerの文書化されたcontext-window値を確認できる場合は `--context-window-tokens` と、その値を採ったprovider/model資料URL・文書ID等の `--context-window-source` を対で明示し、provider-reported input usageに現行production output reserveを加えた最低context必要量がhard-fitするかを別途確認する。sourceは監査用provenanceでありanalyzerが真正性・最新性を自動保証するものではない。hard-fitはR21の「十分な余裕」そのものとは扱わない。
+  - 明示的に選んだnamed model/providerで1回以上の代表規模requestを行い、provider-reported usage、canonical user prompt SHA-256、primary call provenanceを含むmeasurement reportを保存する。DeepSeekの場合はさらに、実transportと同じbuilderから得たsystem+user message contentのprovider-input SHA-256と、実requestの `thinking.type` をprovider-generation provenanceとして保存する。production既定と比較するDeepSeek V4実測では `SUI_DEEPSEEK_THINKING_MODE=disabled` と CLIの `--deepseek-thinking-mode disabled` を一致させ、R48のpreflightを通った場合だけ外部送信する。保存reportは `scripts/analyze_ai_route_provider_measurement.py` を通し、route/task/provider/model/usage/user-prompt fingerprint、transport/requested_at/trace_id、fallbackなし、primary execution pathに加え、DeepSeekではprovider-input fingerprintと `thinking.type` が現在のtransport/期待modeと一致した場合だけ方式比較の入力にする。named model/providerの文書化されたcontext-window値を確認できる場合は `--context-window-tokens` と、その値を採ったprovider/model資料URL・文書ID等の `--context-window-source` を対で明示し、provider-reported input usageに現行production output reserveを加えた最低context必要量がhard-fitするかを別途確認する。sourceは監査用provenanceでありanalyzerが真正性・最新性を自動保証するものではない。hard-fitはR21の「十分な余裕」そのものとは扱わない。
   - 外部LLMを呼ばない通常の回帰では、exact token countを捏造せず構造・prompt coverageだけを決定論的に検査する。
 
 ### 外部実測runbook（R50）
 
-R20〜R49で固定した実測契約を、外部送信前に同じ順序で再現できる最小runbookとして正本化する。以下は `03_Implement/backend` を作業ディレクトリとする。API keyは既存の安全な方法で `KJ_ATLAS_DEEPSEEK_API_KEY` に設定済みであることを前提とし、本runbookからsecret値を表示・保存・再確認しない。
+R20〜R49で固定した実測契約を、外部送信前に同じ順序で再現できる最小runbookとして正本化する。以下は `03_Implement/backend` を作業ディレクトリとする。API keyは既存の安全な方法で `SUI_DEEPSEEK_API_KEY` に設定済みであることを前提とし、本runbookからsecret値を表示・保存・再確認しない。
 
 1. **まずnetwork-free dry-runを実行する。** これはproviderを解決せず、6 routeのcanonical prompt/report形状だけを確認する。
 
@@ -357,13 +357,13 @@ R20〜R49で固定した実測契約を、外部送信前に同じ順序で再�
 
    `executed=false`、6 route、`expected_deepseek_thinking_mode=disabled` を確認する。dry-runの `measurement_complete=false` は正常であり、token evidenceとして扱わない。
 
-2. **明示的に外部実測を許可した場合だけ、production既定相当のcore 6 requestを送る。** `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inに加え、provider/model/thinking modeを環境とCLIで一致させる。
+2. **明示的に外部実測を許可した場合だけ、production既定相当のcore 6 requestを送る。** `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-inに加え、provider/model/thinking modeを環境とCLIで一致させる。
 
    ```bash
-   KJ_ATLAS_LLM_PROVIDER=deepseek \
-   KJ_ATLAS_DEEPSEEK_MODEL=deepseek-v4-flash \
-   KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled \
-   KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1 \
+   SUI_LLM_PROVIDER=deepseek \
+   SUI_DEEPSEEK_MODEL=deepseek-v4-flash \
+   SUI_DEEPSEEK_THINKING_MODE=disabled \
+   SUI_TOKEN_MEASUREMENT_OPT_IN=1 \
    python scripts/measure_ai_route_provider_tokens.py \
      --provider deepseek \
      --model deepseek-v4-flash \
@@ -386,7 +386,7 @@ R20〜R49で固定した実測契約を、外部送信前に同じ順序で再�
 
 4. **core 6が正常に測れた後でのみ、必要なら候補比較を拡張する。** groups A2は `--include-groups-a2` で計7 request、layout Cは `--include-layout-c` で計37 request、両方同時なら計38 requestとなる。追加call数・費用・latencyを理解したうえで明示的に選ぶ。layout A2はR29どおりroute-Bとprompt同一なので重複送信しない。
 
-`--execute` だけを付け、`KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` を付けない場合は `external-execution-not-opted-in` / exit 2でprovider解決前に停止する。R50のnetwork-free回帰でこの順序も固定する。
+`--execute` だけを付け、`SUI_TOKEN_MEASUREMENT_OPT_IN=1` を付けない場合は `external-execution-not-opted-in` / exit 2でprovider解決前に停止する。R50のnetwork-free回帰でこの順序も固定する。
 
 ### 事前整備の完了境界（R50）
 
@@ -396,7 +396,7 @@ R20〜R49で、代表fixture、current/B/A2/C測定候補、provider-reported us
 
 ## 次の判断順序
 
-1. **named provider/modelの実入力tokenを測り、保存reportをR32/R33/R35/R37/R39/R41/R48 analyzerへ通す。** R48まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。DeepSeek V4をproduction既定と比較する場合は、環境の `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` に加えて `--deepseek-thinking-mode disabled` を明示する。reportにはexact UTF-8 user promptのSHA-256とprimary provider call provenanceを含め、DeepSeekでは実transportが送るsystem+user message contentのSHA-256と実 `thinking.type` も含める。現在のcanonical builder/transport input/期待thinking modeと一致しないstale/legacy report、fallback/non-primary call、trace欠落reportは比較根拠へ使わない。
+1. **named provider/modelの実入力tokenを測り、保存reportをR32/R33/R35/R37/R39/R41/R48 analyzerへ通す。** R48まで拡張したR20ハーネスを使う。既定はgroups/layoutのcurrent/Bとnarrative/checkの6比較、groups A2も測る場合だけ `--include-groups-a2` で1件追加、layout Cも測る場合だけ `--include-layout-c` で31件追加する。layout A2はR29でroute-Bとrendered promptが完全一致したため、同じprovider/model/task/max_tokens条件では重複requestを送らず `suggest-layout-route-b` のusageを同一prompt観測として扱う。DeepSeek V4をproduction既定と比較する場合は、環境の `SUI_DEEPSEEK_THINKING_MODE=disabled` に加えて `--deepseek-thinking-mode disabled` を明示する。reportにはexact UTF-8 user promptのSHA-256とprimary provider call provenanceを含め、DeepSeekでは実transportが送るsystem+user message contentのSHA-256と実 `thinking.type` も含める。現在のcanonical builder/transport input/期待thinking modeと一致しないstale/legacy report、fallback/non-primary call、trace欠落reportは比較根拠へ使わない。
 2. analyzerが `decision_ready=true` と判定したprovider-reported usageについて、named model/providerの文書化されたcontext-window値を確認できる場合はR39/R41の `--context-window-tokens` と `--context-window-source` を対で渡し、**input usage + 現行production output reserve** のhard-fitを確認する。layout Cは31件aggregateではなく最大単一requestを対象にする。context-window値またはその資料sourceが未確認ならhard-fitを推測しない。source参照は監査用であり、analyzerが資料の真正性・最新性を自動検証するものではない。
 3. hard-fitを満たすこととR21の「十分な余裕」は分ける。安全余裕policyを後付けで捏造せず、provider/modelの制約・実測値・必要なら実model品質を根拠にA2/B/Cを**ルートごと**に比較する。ここでの `decision_ready` と `hard_context_fit` は方式採択そのものではない。A1（`MAX_CARDS` だけを300へ上げる案）は比較対象から外す。
 4. `generate-narrative` の `causal` / `negate` はR22までにendpointとrelationの両方をrequired保護した。required card >200 / required relation >400は既にfail-closedであり、今後の判断対象は主にnamed provider/model上のtoken余裕と、文書規模でA2/B/Cのどれが妥当かである。
@@ -487,7 +487,7 @@ R23で方式B候補のcoverageを構造的に比較できたため、R20のprovi
 | `generate-narrative` | 89,322 | 実測待ち |
 | `check-narrative` | 198,083 | 実測待ち |
 
-このbyte数は診断情報でありtoken推定には使わない。正確な入力token数として採用するのは従来どおりprovider自身が返したusageだけである。`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-in、provider/model一致確認、fallback禁止、usage非返却時の`measurement_complete=false`も変更しない。
+このbyte数は診断情報でありtoken推定には使わない。正確な入力token数として採用するのは従来どおりprovider自身が返したusageだけである。`--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の二重opt-in、provider/model一致確認、fallback禁止、usage非返却時の`measurement_complete=false`も変更しない。
 
 R24により、認証情報が設定された後の作業は「currentだけを測ってからB用ハーネスを追加する」のではなく、groups/layoutのcurrent/Bとnarrative/checkを同一model上で一度に観測するところから開始できる。A2/B/Cの採択自体は引き続き実測後に行う。
 
@@ -530,7 +530,7 @@ R25で `suggest-layout` の階層C候補を30 local + 1 globalの31 requestと�
 
 - `build_representative_requests()` / `measure()` は `include_layout_c=False` を既定とし、通常のdry-run/executeはR24の6比較を変えない。
 - CLIへ `--include-layout-c` を追加した。このflagを指定した場合だけ `suggest-layout-c-local-01..30` と `suggest-layout-c-global` の31 requestを追加し、全体で37 requestになる。
-- 外部送信には従来どおり `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` が必要であり、Cについてはさらに `--include-layout-c` を明示しなければ送られない。provider名/model id一致確認、fallback禁止、合成データ限定も維持する。
+- 外部送信には従来どおり `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` が必要であり、Cについてはさらに `--include-layout-c` を明示しなければ送られない。provider名/model id一致確認、fallback禁止、合成データ限定も維持する。
 - Cの各requestはR25のmeasurement-only promptをそのまま使う。provider transportが送るのはpromptだけであり、この経路をproduction IR contractとして扱わない。
 - `layout_c_summary` は、Cを含めた場合のrequest数、最大単一prompt bytes、全C prompt bytes合計を診断値として返す。dry-runではR25と同じ **31 request / 最大7,486 bytes / 合計87,705 bytes** を再現した。
 - 実provider実行時の `aggregate_input_tokens` / `max_single_input_tokens` は、31件すべてが `input_tokens` をprovider-reported usageとして返した場合だけ集計する。1件でもusageが欠ければ両値を `None` のままにし、byte数から補完しない。
@@ -613,7 +613,7 @@ R29でA2下限候補をcharacterizeした結果、`suggest-card-groups` はA2と
 - `--include-groups-a2 --include-layout-c` を両方指定した場合は、既定6 + groups A2 1 + layout C 31 = **38 request**になる。
 - layout A2はR29でroute-Bとprompt文字列が完全一致しているため、`suggest-layout-a2-lower-bound` の重複provider requestは追加しない。layout A2のexact input usage比較には既存 `suggest-layout-route-b` のprovider-reported usageをそのまま同一prompt観測として使える。
 - groups A2 promptを作る際だけR29のtemporary representative-fit budgetを使い、provider requestを構築する前にproduction定数 `MAX_CARDS=200 / MAX_TEXT_CHARS=12,000 / MAX_RELATIONS=400` へ復元する。
-- 外部送信には従来どおり `--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` が必要であり、groups A2を送るにはさらに `--include-groups-a2` が必要である。provider/model一致確認、fallback禁止、合成データ限定も維持する。
+- 外部送信には従来どおり `--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` が必要であり、groups A2を送るにはさらに `--include-groups-a2` が必要である。provider/model一致確認、fallback禁止、合成データ限定も維持する。
 - groups A2の56,047 UTF-8 bytesはdiagnosticであり、provider usageへ換算しない。fake provider回帰では7件目に任意のreported usage `106` を返し、その値だけが `input_tokens` として記録されることを確認した。usage欠落時は `provider-did-not-report-usage` のままmeasurement incompleteになる。
 
 GitHub Actions run `33948026246` では、既定6 / A2 7 / A2+C 38のdry-run件数、direct CLIのnetwork-free性、provider-reported usageのみを採用する境界、R23〜R29関連を含む **45 test**、ruff、`git diff --check` が成功した。一時workflow/patch helperは成功後に自己削除済みである。
@@ -680,7 +680,7 @@ R33まででprovider-reported usageをcanonical promptへSHA-256で結び付け�
 
 branch-only GitHub Actions run `33952594490` で、R23〜R35関連を含む **68 test**、ruff、`git diff --check` が成功した。provider-call provenanceの保存、primary pathの正常系、fallback/non-primary、trace欠落、旧provenance契約欠落、dry-run非昇格を回帰へ固定し、一時patch/workflowも同run内で自己削除した。
 
-**非主張**: `provider_call` はproviderが署名したreceiptではなく、KJ Atlas側の既存 `LLMCallMetadata` に基づく監査情報である。外部providerは呼んでおらず、実token値・context余裕・cost・latency・品質、A2/B/C採択、production cap/routeは未変更である。本Issueは引き続きIn Progressであり、未完了ACは完了扱いにしない。
+**非主張**: `provider_call` はproviderが署名したreceiptではなく、SUI Sensemaking側の既存 `LLMCallMetadata` に基づく監査情報である。外部providerは呼んでおらず、実token値・context余裕・cost・latency・品質、A2/B/C採択、production cap/routeは未変更である。本Issueは引き続きIn Progressであり、未完了ACは完了扱いにしない。
 
 ## R36 — R35後のprovider実測readiness同期
 
@@ -692,7 +692,7 @@ R35でfuture provider measurementへcall provenance検証を追加したため�
 
 R33のcanonical prompt SHA-256とR35のcall provenanceにより、provider-reported usageを「現在のuser prompt」と「primary callの監査情報」へ結び付けられるようになった。一方、DeepSeek/OpenAI-compatible chat transportが入力tokenとして実際に送るのはuser prompt単体ではなく、task由来のsystem messageとuser messageの組である。system message templateが将来変わった場合、R33だけでは古いusageを現在と同じtransport inputの観測として誤利用する余地が残るため、R37でこの境界を閉じた。
 
-- `kj_atlas_api.llm.provider._openai_chat_messages()` を、DeepSeek/OpenAI-compatible transportが送るsystem+user message contentの単一source of truthとして切り出し、実transport自身が同helperを使う。
+- `sui_sensemaking_api.llm.provider._openai_chat_messages()` を、DeepSeek/OpenAI-compatible transportが送るsystem+user message contentの単一source of truthとして切り出し、実transport自身が同helperを使う。
 - DeepSeek実測responseでは、measurement reportに `provider_input={kind: openai-chat-messages-v1, sha256: ...}` を各routeへ保存する。SHA-256対象は同helperが返すmessage配列のcanonical JSON / UTF-8である。
 - top-level `provider_input_provenance` はversion / kind / algorithm / encodingを固定する。dry-runではrouteの `provider_input=null` のままであり、provider実測証拠へ昇格しない。
 - analyzerは `actual_provider_kind=deepseek` のrouteがある場合だけprovider-input provenance契約と、現在のcanonical requestから再生成したsystem+user message SHA-256との一致を要求する。missing / kind mismatch / stale hashはfail-closedする。
@@ -701,7 +701,7 @@ R33のcanonical prompt SHA-256とR35のcall provenanceにより、provider-repor
 
 branch-only GitHub Actions run `33953053815` で、R23〜R37関連を含む **73 test**、ruff、`git diff --check` が成功した。一時patch/helper/workflowも同run内で自己削除した。
 
-**非主張**: provider-input fingerprintはprovider署名receiptではなくKJ Atlas側の入力同一性証跡であり、tokenizerやtoken数を推定するものではない。外部providerは呼んでおらず、実token値・context余裕・cost・latency・品質、A2/B/C採択、production cap/routeは未変更である。本Issueは引き続きIn Progressであり、未完了ACは完了扱いにしない。
+**非主張**: provider-input fingerprintはprovider署名receiptではなくSUI Sensemaking側の入力同一性証跡であり、tokenizerやtoken数を推定するものではない。外部providerは呼んでおらず、実token値・context余裕・cost・latency・品質、A2/B/C採択、production cap/routeは未変更である。本Issueは引き続きIn Progressであり、未完了ACは完了扱いにしない。
 
 ## R38 — R37後のprovider-input readiness同期
 
@@ -776,7 +776,7 @@ GitHub Actions run `33963862577` でR23〜R43関連 **81 test**、ruff、`git di
 
 ## R44 — current DeepSeek measurement model / context source の更新
 
-2026-09-05時点のDeepSeek公式API資料を再確認したところ、R20作成時の例に残っていた `deepseek-chat` は現行のnamed measurement modelとして使えないことが判明した。公式Change Logは2026-04-24に `deepseek-chat` / `deepseek-reasoner` を2026-07-24で廃止すると告知しており、現在のQuick Startは `deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp` を現行model IDとして列挙している。したがって、本IssueのDeepSeek実測例は **`deepseek-v4-flash`** へ更新する。productionの `KJ_ATLAS_DEEPSEEK_MODEL` 既定値そのものは本Issueで黙って変更せず、thinking/non-thinking semanticsを含む別issue `AI-DEEPSEEK-V4-MIGRATION-01` へ切り出す。
+2026-09-05時点のDeepSeek公式API資料を再確認したところ、R20作成時の例に残っていた `deepseek-chat` は現行のnamed measurement modelとして使えないことが判明した。公式Change Logは2026-04-24に `deepseek-chat` / `deepseek-reasoner` を2026-07-24で廃止すると告知しており、現在のQuick Startは `deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp` を現行model IDとして列挙している。したがって、本IssueのDeepSeek実測例は **`deepseek-v4-flash`** へ更新する。productionの `SUI_DEEPSEEK_MODEL` 既定値そのものは本Issueで黙って変更せず、thinking/non-thinking semanticsを含む別issue `AI-DEEPSEEK-V4-MIGRATION-01` へ切り出す。
 
 公式Models & PricingはV4 Flashのcontext lengthを `1M` と記載する。一方、DeepSeek自身のagent integration例ではPi/Oh My Piが `contextWindow: 1000000`、Codex/Crushが `1048576` を記載しており、公開資料だけから「APIの唯一の厳密な整数上限」を断定しない。R41のhard-fitを実行する場合は、過大評価を避けるため、公式Pi integrationが明示する小さい方の **1,000,000 token** を保守的な運用値として使用できる。これはAPIの厳密最大値が1,000,000であるという主張ではない。
 
@@ -821,14 +821,14 @@ GitHub Actions run `33997380006` でDeepSeek transport metadata、measurement/an
 
 ## R49 — R48 thinking-mode実測手順をIssue前半へ同期
 
-R48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode provenanceへ追加した一方、Issue前半の「実使用/外部依存確認」と「次の判断順序」はR37時点のprovider-input fingerprintまでしか記載しておらず、外部実測時に新必須引数を落とす余地が残っていた。R49ではproduction既定と比較するDeepSeek V4実測を `KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled` + `--deepseek-thinking-mode disabled` と明示し、保存report/analyzerのgeneration-mode検証まで前半手順へ同期した。
+R48でDeepSeek V4の `thinking.type` をmeasurement reportのrequest-mode provenanceへ追加した一方、Issue前半の「実使用/外部依存確認」と「次の判断順序」はR37時点のprovider-input fingerprintまでしか記載しておらず、外部実測時に新必須引数を落とす余地が残っていた。R49ではproduction既定と比較するDeepSeek V4実測を `SUI_DEEPSEEK_THINKING_MODE=disabled` + `--deepseek-thinking-mode disabled` と明示し、保存report/analyzerのgeneration-mode検証まで前半手順へ同期した。
 
 併せて、checked済みroute-required regressionの証拠行をR43の81 testからR48 run `33997380006` の129 testへ更新した。未完了ACは変更せず、外部provider実測、provider-reported token取得、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
 
 
 ## R50 — 外部実測runbookと事前整備完了境界を固定
 
-R20〜R49の実測契約を、`dry-run -> core 6外部実測 -> analyzer -> 必要時だけA2/C追加` のrunbookへまとめた。GitHub Actions run `34001497304` では実際のCLIを用いてDeepSeek V4 production既定相当のdry-runが6 route・network-freeで成立することと、`--execute` だけでは `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` 不在によりprovider解決前にexit 2で停止することを確認した。
+R20〜R49の実測契約を、`dry-run -> core 6外部実測 -> analyzer -> 必要時だけA2/C追加` のrunbookへまとめた。GitHub Actions run `34001497304` では実際のCLIを用いてDeepSeek V4 production既定相当のdry-runが6 route・network-freeで成立することと、`--execute` だけでは `SUI_TOKEN_MEASUREMENT_OPT_IN=1` 不在によりprovider解決前にexit 2で停止することを確認した。
 
 本runで外部providerは呼んでいない。R50を外部実測前scaffoldingの完了境界とし、具体的な欠陥が新たに見つからない限りprovenanceや候補実装を追加しない。未完了AC、provider-reported token、A2/B/C採択、production cap/route、十分な余裕policyは変更しない。
 

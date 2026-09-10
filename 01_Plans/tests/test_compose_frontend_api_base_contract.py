@@ -36,15 +36,15 @@ class ComposeFrontendApiBaseContractTests(unittest.TestCase):
         cls.frontend_dockerfile = FRONTEND_DOCKERFILE_PATH.read_text(encoding="utf-8")
 
     def test_standard_compose_pins_frontend_api_base_to_nginx_proxy_path(self) -> None:
-        self.assertIn("KJ_ATLAS_FRONTEND_API_BASE: /api", self.web_section)
-        self.assertNotIn("${KJ_ATLAS_FRONTEND_API_BASE", self.web_section)
+        self.assertIn("SUI_FRONTEND_API_BASE: /api", self.web_section)
+        self.assertNotIn("${SUI_FRONTEND_API_BASE", self.web_section)
         self.assertIn("location /api/ {", self.nginx_text)
         self.assertIn("proxy_pass http://api:8000/;", self.nginx_text)
 
     def test_direct_frontend_build_keeps_custom_path_contract(self) -> None:
-        self.assertIn("ARG KJ_ATLAS_FRONTEND_API_BASE=/api", self.frontend_dockerfile)
+        self.assertIn("ARG SUI_FRONTEND_API_BASE=/api", self.frontend_dockerfile)
         self.assertIn(
-            "ENV KJ_ATLAS_FRONTEND_API_BASE=${KJ_ATLAS_FRONTEND_API_BASE}",
+            "ENV SUI_FRONTEND_API_BASE=${SUI_FRONTEND_API_BASE}",
             self.frontend_dockerfile,
         )
 

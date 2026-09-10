@@ -5,7 +5,7 @@
 - Source Issue: ドッグフーディング指令（2026-08-15）。「機能・操作毎の生成AIモデルの使い分けを画面上で指定可能にし、適宜切り替えて呼び出せるようにする。テナントや部署ごとに利用可能なモデルには制限を設ける。新規の生成AIモデル・サービスも管理者UI/CLI等から動的に追加できるようにする」
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/`（models / llm / routes / admin）, `03_Implement/frontend/src/`（api/client, ui）, `02_Architecture/`（api.md, llm_provider_spec.md, runtime_parameter_registry.md）, migration
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/`（models / llm / routes / admin）, `03_Implement/frontend/src/`（api/client, ui）, `02_Architecture/`（api.md, llm_provider_spec.md, runtime_parameter_registry.md）, migration
 - Related ADR/Spec: `01_Plans/adr/ADR-0065-llm-model-selection-by-task-complexity.md`（D2優先度2=テナント層は Phase 2 と明記）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `02_Architecture/llm_provider_spec.md`（provider抽象の正本）, `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `01_Plans/issues/done/issue-AI-ROUTE-01-multi-model-routing-and-final-judgment-boundary.md`, `01_Plans/issues/issue-OPS-LLM-COST-01-cost-control-contract-unimplemented.md`
 - Expected verification level: `integration`
 
@@ -15,10 +15,10 @@
 
 | 要求 | 現状 | ギャップ |
 |------|------|---------|
-| 機能・操作毎のモデル使い分けを**画面で指定** | `resolve_model_for_task()` は `request.model`（優先度1）→ `KJ_ATLAS_LLM_TASK_MODEL_MAP`（優先度3）の静的解決のみ。**AI リクエスト Pydantic スキーマ（`GenerateNarrativeRequest` 等）は `model` フィールドを露出していない** | 優先度1（リクエスト層）が API 境界に到達していない。UI 選択子が無い |
+| 機能・操作毎のモデル使い分けを**画面で指定** | `resolve_model_for_task()` は `request.model`（優先度1）→ `SUI_LLM_TASK_MODEL_MAP`（優先度3）の静的解決のみ。**AI リクエスト Pydantic スキーマ（`GenerateNarrativeRequest` 等）は `model` フィールドを露出していない** | 優先度1（リクエスト層）が API 境界に到達していない。UI 選択子が無い |
 | 適宜切り替えて呼び出す | 同上 | 同上 |
 | テナント/部署ごとに**利用可能モデル制限** | 無し。`tenant_settings` テーブルも無い。ADR-0065 D2 は「優先度2=テナント層は Phase 2」と将来扱い | allowlist/denylist の概念・テーブル・強制が全て欠落 |
-| 新規モデル/サービスを**管理者UI/CLIから動的追加** | `KJ_ATLAS_LLM_PROVIDER` は `none|local|local_http|large-scale|external|deepseek` の閉じた enum。モデルは `model_id` 文字列（≤256字）のみで**レジストリが無い** | 新サービス追加はコード変更＋再起動が必要。動的追加の土台が無い |
+| 新規モデル/サービスを**管理者UI/CLIから動的追加** | `SUI_LLM_PROVIDER` は `none|local|local_http|large-scale|external|deepseek` の閉じた enum。モデルは `model_id` 文字列（≤256字）のみで**レジストリが無い** | 新サービス追加はコード変更＋再起動が必要。動的追加の土台が無い |
 
 「部署」の概念も**現在データモデルに存在しない**（`tenants` と `tenant_memberships` と `users.roles` のみ）。テナントより細かい組織単位としての部署は新設が必要。
 
@@ -85,7 +85,7 @@
 
 **共通パターン**: グループは「テナント/ワークスペース内の名前付きメンバー集合」であり、**認証境界ではなくポリシー適用単位**（allowlist/権限ルールが参照する）。roles が権限（認可）を、グループがポリシーの適用範囲を担う。
 
-**kj-atlas への適用（メリット/デメリット/射程）**:
+**sui-sensemaking への適用（メリット/デメリット/射程）**:
 
 - **メリット**: ①KJ 実践の協働単位（チーム・プロジェクト・探究グループ）が動的に形成/解散する性質と整合 ②「部署」のような組織階層（報告線・所属）を前提にしない ③正規化テーブル（`member_groups` + `member_group_members`）で RLS（ADR-0059）・監査（SEC-ADMIN-PLANE-03）が成立 ④将来の文書共有/権限にも再利用可能
 - **デメリット**: 組織横断の一律ポリシー（「全社でXXモデル禁止」）はグループごとの明示適用が必要（テナント allowlist で吸収できる）

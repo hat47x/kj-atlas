@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the kj-atlas ADMIN plane (control-plane provisioning) over the HTTP
+# Verify the sui-sensemaking ADMIN plane (control-plane provisioning) over the HTTP
 # API from an external script (admin/CI path, SEC-ADMIN-PLANE-01/02).
 #
 # This is the "administrator writes their own script to use the CLI/API" path
@@ -11,12 +11,12 @@
 #   ./verify_api_admin.sh [BASE_URL]
 #     BASE_URL  default http://127.0.0.1:8000
 #
-# Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000).
+# Requires a running backend (uvicorn sui_sensemaking_api.main:app --port 8000).
 #
 # Mode is detected by probing the a2a3-gate helper with no credential:
 #   - 200  -> the admin plane is open (local-dev / evaluation, admin key
 #             unconfigured). Only the success paths are verified.
-#   - 401  -> the admin plane requires auth. If KJ_ATLAS_ADMIN_API_KEY is set
+#   - 401  -> the admin plane requires auth. If SUI_ADMIN_API_KEY is set
 #             (and matches the backend), the full auth boundary is verified:
 #             no key / wrong key / business key only -> 401, admin key -> success.
 #             If the key is unset, the boundary cannot be verified and the
@@ -30,7 +30,7 @@ set -u
 BASE_URL="${1:-http://127.0.0.1:8000}"
 PASS=0
 FAIL=0
-ADMIN_KEY="${KJ_ATLAS_ADMIN_API_KEY:-}"
+ADMIN_KEY="${SUI_ADMIN_API_KEY:-}"
 
 check() {
   local desc="$1" expected="$2" actual="$3"
@@ -55,7 +55,7 @@ gate_drift_code() {
     -H 'Content-Type: application/json' "$@" -d "$gate_drift_payload"
 }
 
-echo "=== kj-atlas ADMIN plane verification (base: $BASE_URL) ==="
+echo "=== sui-sensemaking ADMIN plane verification (base: $BASE_URL) ==="
 
 # --- Mode detection ---------------------------------------------------------
 probe=$(gate_code)
@@ -63,7 +63,7 @@ if [ "$probe" = "200" ]; then
   mode="open"
 elif [ "$probe" = "401" ] || [ "$probe" = "403" ]; then
   if [ -z "$ADMIN_KEY" ]; then
-    echo "  SKIP: admin plane requires auth but KJ_ATLAS_ADMIN_API_KEY is unset —"
+    echo "  SKIP: admin plane requires auth but SUI_ADMIN_API_KEY is unset —"
     echo "        set it (and start the backend with it) to verify the boundary. (exit 0)"
     exit 0
   fi
@@ -198,7 +198,7 @@ else
   esac
 
   echo "  INFO: auth boundary (401/403) not asserted — admin plane is open."
-  echo "        Set KJ_ATLAS_ADMIN_API_KEY and start the backend with it to lock in the separation."
+  echo "        Set SUI_ADMIN_API_KEY and start the backend with it to lock in the separation."
 fi
 
 echo ""

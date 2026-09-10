@@ -8,7 +8,7 @@ from urllib.parse import parse_qs
 
 import pytest
 
-from kj_atlas_api.oauth_broker_client import (
+from sui_sensemaking_api.oauth_broker_client import (
     MAX_TOKEN_RESPONSE_BYTES,
     BrokerTokenResponse,
     ExternalOauthBrokerConfig,
@@ -231,7 +231,7 @@ def test_exchange_maps_timeout_to_unavailable() -> None:
 def test_exchange_rejects_response_exceeding_byte_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     oversized = json.dumps({"access_token": "x" * MAX_TOKEN_RESPONSE_BYTES}).encode("utf-8")
     monkeypatch.setattr(
-        "kj_atlas_api.oauth_broker_client.open_trusted_http",
+        "sui_sensemaking_api.oauth_broker_client.open_trusted_http",
         lambda request, timeout_seconds: _Response(oversized),  # noqa: ARG005
     )
 
@@ -266,7 +266,7 @@ def test_exchange_rejects_response_exceeding_byte_cap(monkeypatch: pytest.Monkey
 )
 def test_exchange_rejects_malformed_response(monkeypatch: pytest.MonkeyPatch, body: bytes) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.oauth_broker_client.open_trusted_http",
+        "sui_sensemaking_api.oauth_broker_client.open_trusted_http",
         lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
@@ -290,7 +290,7 @@ def test_exchange_treats_non_string_id_token_as_absent(monkeypatch: pytest.Monke
         }
     ).encode("utf-8")
     monkeypatch.setattr(
-        "kj_atlas_api.oauth_broker_client.open_trusted_http",
+        "sui_sensemaking_api.oauth_broker_client.open_trusted_http",
         lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
@@ -308,7 +308,7 @@ def test_exchange_normalizes_url_error_to_unavailable(monkeypatch: pytest.Monkey
     def _raise(request, timeout_seconds):  # noqa: ANN001, ARG001
         raise urllib_error.URLError("internal service location")
 
-    monkeypatch.setattr("kj_atlas_api.oauth_broker_client.open_trusted_http", _raise)
+    monkeypatch.setattr("sui_sensemaking_api.oauth_broker_client.open_trusted_http", _raise)
 
     with pytest.raises(OauthBrokerUnavailableError):
         exchange_code_for_tokens(

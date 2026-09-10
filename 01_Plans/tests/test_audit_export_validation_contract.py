@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-AUDIT_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/audit.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+AUDIT_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/audit.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -50,8 +50,8 @@ class AuditExportValidationContractTests(unittest.TestCase):
 
     def test_public_docs_distinguish_validation_from_external_dispatch(self) -> None:
         for path in (REGISTRY_PATH, CONFIG_PATH):
-            export_row = _public_row(path, "KJ_ATLAS_AUDIT_EXPORT_ENABLED")
-            transport_row = _public_row(path, "KJ_ATLAS_AUDIT_TRANSPORT")
+            export_row = _public_row(path, "SUI_AUDIT_EXPORT_ENABLED")
+            transport_row = _public_row(path, "SUI_AUDIT_TRANSPORT")
 
             self.assertIn("外部送信", export_row)
             self.assertIn("NoopAuditTransport", export_row)

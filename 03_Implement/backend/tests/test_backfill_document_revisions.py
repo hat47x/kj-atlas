@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.backfill_document_revisions import backfill_document_revisions
-from kj_atlas_api.models import Base, CanvasRevisionHeadRow, DocumentRow, TenantRow
+from sui_sensemaking_api.backfill_document_revisions import backfill_document_revisions
+from sui_sensemaking_api.models import Base, CanvasRevisionHeadRow, DocumentRow, TenantRow
 
 
 TIMESTAMP = "2026-08-11T00:00:00Z"

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
-- Scope: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `03_Implement/frontend/src/api/client.ts`, `02_Architecture/api.md`, `THREAT_MODEL.md`
+- Scope: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`, `03_Implement/frontend/src/api/client.ts`, `02_Architecture/api.md`, `THREAT_MODEL.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0068-safemode-enforcement-at-api-boundary.md`, `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`, `02_Architecture/architecture.html`, `02_Architecture/llm_escalation_policy.html`
 - Expected verification level: `integration`
 
@@ -52,7 +52,7 @@ for card in payload.doc.cards:
 
 ### 帰結
 
-SafeMode の未レビュー本文保護は**フロントエンドのみの強制**である。`KJ_ATLAS_LLM_PROVIDER=large-scale` 構成では、API を直接呼ぶ経路（curl / 別クライアント / 将来の MCP・エージェント連携）で**未レビュー本文が外部サービスへ送出される**。外部LLM利用時の実質的な信頼境界は API であり、そこに防御が無い。
+SafeMode の未レビュー本文保護は**フロントエンドのみの強制**である。`SUI_LLM_PROVIDER=large-scale` 構成では、API を直接呼ぶ経路（curl / 別クライアント / 将来の MCP・エージェント連携）で**未レビュー本文が外部サービスへ送出される**。外部LLM利用時の実質的な信頼境界は API であり、そこに防御が無い。
 
 ### 影響範囲（対象エンドポイント）
 

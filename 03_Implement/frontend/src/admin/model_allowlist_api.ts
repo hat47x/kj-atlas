@@ -2,7 +2,7 @@ import { csrfHeader } from "../session/csrf";
 import { resolveFrontendApiBase } from "../api/base_path";
 
 const API_BASE = resolveFrontendApiBase(
-  import.meta.env.KJ_ATLAS_FRONTEND_API_BASE,
+  import.meta.env.SUI_FRONTEND_API_BASE,
 );
 const REVISION_PATTERN = /^[0-9a-f]{64}$/;
 

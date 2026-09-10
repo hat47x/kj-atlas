@@ -11,19 +11,19 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.active_tenant_session import (
+from sui_sensemaking_api.access_control import AuthContext
+from sui_sensemaking_api.active_tenant_session import (
     InMemoryActiveTenantSessionPersister,
     TenantSessionChangedError,
 )
-from kj_atlas_api.auth_context import ResolvedIdentity
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, SaasAuthSessionRow, TenantMembershipRow, TenantRow, UserRow
-from kj_atlas_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
-from kj_atlas_api.session_context import CapabilitySnapshot
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.auth_context import ResolvedIdentity
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, SaasAuthSessionRow, TenantMembershipRow, TenantRow, UserRow
+from sui_sensemaking_api.runtime_bootstrap import resolve_tenant_session_bootstrap_mode
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.session_context import CapabilitySnapshot
+from sui_sensemaking_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContext,
     select_active_tenant_context,

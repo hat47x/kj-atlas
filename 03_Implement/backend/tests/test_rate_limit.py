@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from kj_atlas_api.rate_limit import InMemoryRateLimiter
+from sui_sensemaking_api.rate_limit import InMemoryRateLimiter
 
 
 def test_limiter_allows_up_to_max_requests_then_rejects() -> None:

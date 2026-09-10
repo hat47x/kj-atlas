@@ -20,7 +20,7 @@
 ## 2) 背景 / Context
 
 - `ADR-0021` は一括移行（互換なし）へ更新済み。
-- `runtime_parameter_registry.md` は `KJ_ATLAS_*` 単独契約をSSOTとして管理する。
+- `runtime_parameter_registry.md` は `SUI_*` 単独契約をSSOTとして管理する。
 - `settings.py` / `docker-compose.yml` / 関連文書を同一方針で同期更新する必要がある。
 
 ### このIssueが保持する内容（実行管理SSOT）
@@ -39,7 +39,7 @@
 
 - 変更対象: Docs + Backend settings + Deploy設定 + tests。
 - 最小単位:
-  - `settings.py` を `KJ_ATLAS_*` 専用へ移行（旧キーalias削除）。
+  - `settings.py` を `SUI_*` 専用へ移行（旧キーalias削除）。
   - `docker-compose.yml` / README / operations を新キーのみへ更新。
   - テストで「旧キーは失敗」「新キーのみ受理」を固定。
 - 非目標:
@@ -49,7 +49,7 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [x] `KJ_ATLAS_*` のみ実装上の正規キーとして受理される。
+- [x] `SUI_*` のみ実装上の正規キーとして受理される。
 - [x] 旧キー単独指定は起動失敗する。
 - [x] 新旧混在指定は不正設定として起動失敗する。
 - [x] compose/runbook/README の実行例が新キーのみで統一される。
@@ -83,7 +83,7 @@
 
 - 失敗モード: 旧キー依存環境で起動失敗。
 - 影響範囲: backend起動、deploy運用、CI設定。
-- ロールバック手順: リリースを即時取り下げ、設定を `KJ_ATLAS_*` へ修正した上で再展開する（旧キー再受理は行わない）。
+- ロールバック手順: リリースを即時取り下げ、設定を `SUI_*` へ修正した上で再展開する（旧キー再受理は行わない）。
 
 ## 10) Additional context
 
@@ -105,18 +105,18 @@
 
 ## Stream E Progress (2026-04-30)
 - Phase 1 Read同期: 完了（Read OrderおよびADR-0021/registry確認）。
-- Phase 2 変数契約確定: `VITE_KJ_ATLAS_API_BASE` をfrontend正規キーとして追加し、`VITE_API_BASE` は互換shimへ明確化。
-- Phase 3 backend移行: 既存 `KJ_ATLAS_*` 専用契約を再確認（追加変更なし）。
-- Phase 4 frontend移行: `client.ts` で `VITE_KJ_ATLAS_API_BASE` 優先読取へ移行。
+- Phase 2 変数契約確定: `VITE_SUI_API_BASE` をfrontend正規キーとして追加し、`VITE_API_BASE` は互換shimへ明確化。
+- Phase 3 backend移行: 既存 `SUI_*` 専用契約を再確認（追加変更なし）。
+- Phase 4 frontend移行: `client.ts` で `VITE_SUI_API_BASE` 優先読取へ移行。
 - Phase 5 backward compatibility shim: `VITE_API_BASE` fallbackを維持（trim + trailing slash正規化）。
 - Phase 6 検証/issue更新: 本節および検証ログを追記。
 
 
 ## Stream F Progress (2026-05-02)
-- Phase 1 Read: `ADR-0021` と `runtime_parameter_registry.md` を再確認し、`KJ_ATLAS_*` 単独契約を再検証。
+- Phase 1 Read: `ADR-0021` と `runtime_parameter_registry.md` を再確認し、`SUI_*` 単独契約を再検証。
 - Phase 2 ADR/仕様明文化: Context/Decision/Consequences は `ADR-0021`、運用SSOTは本Issueとregistryに分離維持。
-- Phase 3 Plan: 旧prefix→新prefixは backend container default を優先更新、frontendは `VITE_KJ_ATLAS_API_BASE` 正規 + `VITE_API_BASE` shim維持。
-- Phase 4 Execute: `03_Implement/backend/Dockerfile` の `DATABASE_URL` / `LLM_PROVIDER` を `KJ_ATLAS_*` へ更新。
+- Phase 3 Plan: 旧prefix→新prefixは backend container default を優先更新、frontendは `VITE_SUI_API_BASE` 正規 + `VITE_API_BASE` shim維持。
+- Phase 4 Execute: `03_Implement/backend/Dockerfile` の `DATABASE_URL` / `LLM_PROVIDER` を `SUI_*` へ更新。
 - Phase 5 Verify: `test_settings_env_prefix_migration.py` と `rg` で旧キー拒否契約および残存箇所を確認。
 - Phase 6 Proceed: 競合なし。互換shim (`VITE_API_BASE`) は独立レイヤとして継続し、将来削除判断を別タスクに分離。
 
@@ -128,8 +128,8 @@
 ### Phase 1: Read同期（現状/未完了抽出）
 
 - 確認結果:
-  - backend契約は `KJ_ATLAS_*` 単独（旧prefix非受理）で確定済み。
-  - frontend API base は `VITE_KJ_ATLAS_API_BASE` 正規、`VITE_API_BASE` は互換shimとして残置。
+  - backend契約は `SUI_*` 単独（旧prefix非受理）で確定済み。
+  - frontend API base は `VITE_SUI_API_BASE` 正規、`VITE_API_BASE` は互換shimとして残置。
 - 未完了/継続監視項目:
   1. `VITE_API_BASE` shim の廃止判断と削除タイミングが未決定。
   2. CI/deploy/docs における旧prefix再混入の継続監視（回帰防止）が必要。
@@ -148,8 +148,8 @@
 ### Phase 3: Plan（段階化）
 
 1) 命名規約固定
-- backend: `KJ_ATLAS_*` のみ。
-- frontend: `VITE_KJ_ATLAS_API_BASE` を正規キーとして固定。
+- backend: `SUI_*` のみ。
+- frontend: `VITE_SUI_API_BASE` を正規キーとして固定。
 
 2) 互換層方針
 - backend: 互換層なし（旧prefix受理禁止を継続）。
@@ -206,7 +206,7 @@
 ## Stream J maintenance note (2026-05-18)
 
 - `runtime_parameter_registry.md` と `deployment.md` に prefix migration governance（互換期間なし・切替条件）を明文化し、運用判断の参照先を固定した。
-- Compose 公開入力 (`KJ_ATLAS_*`) と third-party private adapter (`POSTGRES_*`) の境界を再確認し、ENV-ARCH-01 の完了条件（公開契約の単一化）を維持していることを確認した。
+- Compose 公開入力 (`SUI_*`) と third-party private adapter (`POSTGRES_*`) の境界を再確認し、ENV-ARCH-01 の完了条件（公開契約の単一化）を維持していることを確認した。
 - 追加の破壊的変更（互換再導入・公開キー改名）は新規 ADR 必須の方針を追記済み。
 
 
@@ -219,13 +219,13 @@
 
 ### Phase 2) Context / Decision / Consequences
 
-- Context: backendは `KJ_ATLAS_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
-- Decision: 公開契約は `KJ_ATLAS_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
+- Context: backendは `SUI_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
+- Decision: 公開契約は `SUI_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
 - Consequences: 旧キー再導入や prefix例外は本streamで実施しない。必要時は新規ADRでGo/No-Goを先行確定する。
 
 ### Phase 3) グローバルprefix移行と互換レイヤ設計
 
-- Public layer: 利用者入力は `KJ_ATLAS_*` のみ受理。
+- Public layer: 利用者入力は `SUI_*` のみ受理。
 - Private layer: `POSTGRES_*` は third-party container内部名、`VITE_API_BASE` は非公開互換shimとして限定運用。
 - Exit条件: 命名/既定値/境界/profile の4観点が同時に満たされること。
 
@@ -243,5 +243,5 @@
 
 ## Stream F note (2026-05-20)
 
-- ENV-ARCH-01 の契約（公開キーは `KJ_ATLAS_*` のみ）を維持したまま、profile運用文書に「実装既定値」と「推奨値」の差分説明を追加した。
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` と `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の運用判断を profile 起点で統一し、非互換変更や互換レイヤ再導入は実施していない。
+- ENV-ARCH-01 の契約（公開キーは `SUI_*` のみ）を維持したまま、profile運用文書に「実装既定値」と「推奨値」の差分説明を追加した。
+- `SUI_ALLOW_JIT_PROVISIONING` と `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE` の運用判断を profile 起点で統一し、非互換変更や互換レイヤ再導入は実施していない。

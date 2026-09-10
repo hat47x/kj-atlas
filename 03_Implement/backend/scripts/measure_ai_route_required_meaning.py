@@ -21,14 +21,14 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from kj_atlas_api.llm_input_ir import adjudicated_contradiction
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import (
+from sui_sensemaking_api.llm_input_ir import adjudicated_contradiction
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import (
     DetectContradictionRequest,
     GenerateNarrativeRequest,
     SuggestCardGroupsRequest,
 )
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.routes.ai import (
     _build_detect_contradiction_prompt,
     _build_generate_narrative_prompt,
     _build_prompt,

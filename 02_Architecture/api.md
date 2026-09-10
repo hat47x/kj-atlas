@@ -1,10 +1,10 @@
-# kj-atlas MVP API I/F
+# sui-sensemaking MVP API I/F
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPのCRUDサポート表と運用保守境界は `02_Architecture/data_model_operations_overview.html` を参照する。
-本ドキュメントは、kj-atlas の **MVP API（Documentの保存・取得）** を定義します。
+本ドキュメントは、sui-sensemaking の **MVP API（Documentの保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
 - Document の標準CRUDは **全体保存/取得** に絞ります
@@ -103,7 +103,7 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
 - Request body: `{ "safeMode": boolean, "exportKind": string }`
 - Response: `{ "status": "accepted" }`
 - 目的: export完了通知を監査連携アダプタへ委譲（監査送信失敗でも本体機能を阻害しない）
-- SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/exportKind`）の重複POSTは、`KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない（クライアント再送・二重クリックの重複集計を防止）。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
+- SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/exportKind`）の重複POSTは、`SUI_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない（クライアント再送・二重クリックの重複集計を防止）。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
 
 **POST** `/docs/{doc_id}/context-audit`
 
@@ -125,8 +125,8 @@ Document 本体の標準CRUDとは別に、共有・Context操作の監査連携
   - 409: CE4の4点監査イベントが `apply` 時点で揃わない、または deterministic 判定が不成立
   - 422: operation/command不一致、`dryRun` 違反、`sourceBundleHash` 欠損などの契約違反
 - 目的: `query -> bundle -> proposal -> apply` の監査4点を同一 `equivalenceKey` / `bundleHash` で接続し、proposal-only / dry-run の境界を検証する。
-- SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/operation/equivalenceKey/bundleHash`）の重複POSTは、`KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
-- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui" | "mcp"`はGUI以外の呼び出し元（CLI、MCP経由の生成AI、将来のAgent連携等）を対等な一級市民として扱うために存在する契約である。2026-08-16時点で、read-only MCPサーバー（`03_Implement/mcp/`）が成功した各投影読み取りを`channel: "mcp"`で本エンドポイントへ監査送出する（`03_Implement/mcp/src/audit_log.ts` の `emitContextAuditEvent`）。CLI（`03_Implement/backend/src/kj_atlas_api/cli.py`）は`channel: "cli"`で送出する。監査はbest-effortであり、CE-4送出失敗は読み取り自体を失敗させない（MCP側のローカル監査エントリが読み取りの相関の正本）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
+- SEC-AUDIT-DUP-01: 同一論理操作（`tenant/doc/operation/equivalenceKey/bundleHash`）の重複POSTは、`SUI_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）内で外部シンクへ1回しか送出されない。HTTP応答はいずれも `{ "status": "accepted" }` のまま。
+- 消費者境界（外部消費者向け）: 本エンドポイントは`03_Implement/frontend/src`のUIから直接呼び出されることを想定しない。`channel: "api" | "cli" | "gui" | "mcp"`はGUI以外の呼び出し元（CLI、MCP経由の生成AI、将来のAgent連携等）を対等な一級市民として扱うために存在する契約である。2026-08-16時点で、read-only MCPサーバー（`03_Implement/mcp/`）が成功した各投影読み取りを`channel: "mcp"`で本エンドポイントへ監査送出する（`03_Implement/mcp/src/audit_log.ts` の `emitContextAuditEvent`）。CLI（`03_Implement/backend/src/sui_sensemaking_api/cli.py`）は`channel: "cli"`で送出する。監査はbest-effortであり、CE-4送出失敗は読み取り自体を失敗させない（MCP側のローカル監査エントリが読み取りの相関の正本）。分類の根拠と不確実性は`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の実装記録を参照。
 
 
 ### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）
@@ -442,7 +442,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 **GET** `/ai/available-models`
 
 - テナントの利用可能モデル一覧（AI-MODEL-GOVERNANCE-01 R2/R3・MMR-04）。active model・active provider・tenant allowlistを交差し、`_is_user_selectable_model`（intermediate/generate 層のみ）でフィルタする。`final_judgement` 専用モデルは除外する。
-- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: 各modelは自身が登録された `providerId` の `providerKind` が実行可能（必須設定が揃っている）かどうかで判定する。判定は `KJ_ATLAS_LLM_PROVIDER`（プロセス全体の既定値）と model 自身の `providerKind` が一致するかではなく、その `providerKind` 単独の設定完全性（例: `deepseek` なら `KJ_ATLAS_DEEPSEEK_API_KEY`）で行う。したがって、`KJ_ATLAS_LLM_PROVIDER=local` のプロセスでも、`KJ_ATLAS_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelも同時に一覧へ含まれる。ただし `KJ_ATLAS_LLM_PROVIDER=none` はプロセス全体のkill switchであり、この場合はどの `providerKind` の設定完全性に関わらず一覧は常に空になる。
+- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: 各modelは自身が登録された `providerId` の `providerKind` が実行可能（必須設定が揃っている）かどうかで判定する。判定は `SUI_LLM_PROVIDER`（プロセス全体の既定値）と model 自身の `providerKind` が一致するかではなく、その `providerKind` 単独の設定完全性（例: `deepseek` なら `SUI_DEEPSEEK_API_KEY`）で行う。したがって、`SUI_LLM_PROVIDER=local` のプロセスでも、`SUI_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelも同時に一覧へ含まれる。ただし `SUI_LLM_PROVIDER=none` はプロセス全体のkill switchであり、この場合はどの `providerKind` の設定完全性に関わらず一覧は常に空になる。
 - Response: モデルID・表示名・"auto" 既定の選択肢。UI の `ModelSelector` がこの一覧でモデル選択肢を限定する。
 - 一覧取得後に状態が変わった場合を含め、実行APIへ利用不可なmodel IDを直接指定すると、LLM送信前に503 `model_provider_unavailable`で拒否する（一覧と実行gateは同一の判定関数を使うため乖離しない）。
 
@@ -451,9 +451,9 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 全エンドポイント共通:
 - tenant-scoped precondition必須（§10 参照）
 - proposal-only: AI出力は候補生成に留まり、人間の明示操作なしに文書へ反映されない
-- **SafeMode は API 境界で強制（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う全エンドポイント（suggest-layout / suggest-merges / suggest-island-summary / generate-narrative / check-narrative / proposals/island-summary）は、未レビューカード（`textReviewed ≠ true`）を含む場合に **422 `unreviewed_text_not_allowed`** で拒否する。`allowUnreviewedText=true` かつ profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ緩和（監査へ記録）
-- `KJ_ATLAS_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す。AI-MODEL-GOVERNANCE-03以降もこれは無条件のkill switchであり、registryに他のproviderが設定済みでも動的dispatchは一切行われない
-- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: `model` を受け取るエンドポイント（suggest-island-summary / propose-opposing-viewpoint / generate-narrative / refine-card-text / suggest-card-groups / suggest-document-title）は、その model が registry 上で登録された `providerId` の `providerKind` へ直接dispatchする（`ProviderRegistry.resolve(providerKind)`）。`KJ_ATLAS_LLM_PROVIDER` と model の `providerKind` が異なっていても、その `providerKind` 自身の設定が完全なら実行できる。`model` を受け取らないエンドポイント（suggest-layout / suggest-merges / check-narrative / detect-contradiction）は従来どおり `KJ_ATLAS_LLM_PROVIDER` の既定transportを使う。`apiKeyRef` は登録時の参照検証（AC-4）を経た上で、実際の資格情報は引き続き `KJ_ATLAS_*_API_KEY` 環境変数から解決する（registry行の値を直接使う経路は追加しない）
+- **SafeMode は API 境界で強制（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う全エンドポイント（suggest-layout / suggest-merges / suggest-island-summary / generate-narrative / check-narrative / proposals/island-summary）は、未レビューカード（`textReviewed ≠ true`）を含む場合に **422 `unreviewed_text_not_allowed`** で拒否する。`allowUnreviewedText=true` かつ profile の `SUI_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ緩和（監査へ記録）
+- `SUI_LLM_PROVIDER=none` 時は全エンドポイントが503（provider disabled）を返す。AI-MODEL-GOVERNANCE-03以降もこれは無条件のkill switchであり、registryに他のproviderが設定済みでも動的dispatchは一切行われない
+- **AI-MODEL-GOVERNANCE-03（動的dispatch）**: `model` を受け取るエンドポイント（suggest-island-summary / propose-opposing-viewpoint / generate-narrative / refine-card-text / suggest-card-groups / suggest-document-title）は、その model が registry 上で登録された `providerId` の `providerKind` へ直接dispatchする（`ProviderRegistry.resolve(providerKind)`）。`SUI_LLM_PROVIDER` と model の `providerKind` が異なっていても、その `providerKind` 自身の設定が完全なら実行できる。`model` を受け取らないエンドポイント（suggest-layout / suggest-merges / check-narrative / detect-contradiction）は従来どおり `SUI_LLM_PROVIDER` の既定transportを使う。`apiKeyRef` は登録時の参照検証（AC-4）を経た上で、実際の資格情報は引き続き `SUI_*_API_KEY` 環境変数から解決する（registry行の値を直接使う経路は追加しない）
 - モデル選択は操作別モデルレベル定義（AGENTS.md §1.2）に従う
 
 **POST** `/ai/suggest-layout`
@@ -461,7 +461,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 - Request: `SuggestLayoutRequest`
   - `doc: DocumentV1` — 現在の文書全体
   - `instruction?: string` — 配置指示（任意）
-  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）。未レビューカード（`textReviewed ≠ true`）を含む文書は、この値が `true` かつ profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` でない限り **422 `unreviewed_text_not_allowed`** で拒否される。
+  - `allowUnreviewedText?: boolean` — **SEC-AI-SAFEMODE-01（ADR-0068）**: 未レビュー本文の送出許可（任意・既定 fail-closed）。未レビューカード（`textReviewed ≠ true`）を含む文書は、この値が `true` かつ profile の `SUI_ALLOW_UNREVIEWED_AI_TEXT=true` でない限り **422 `unreviewed_text_not_allowed`** で拒否される。
 - Response: `SuggestLayoutResponse`
   - `suggestionId: string` — 提案の一意識別子
   - `suggestedDoc: DocumentV1` — 再配置後の文書
@@ -499,7 +499,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
     - `summaryText: string` — 凝縮・志（述語を伴う代弁文。分類名・名詞止めでないこと）
     - `groundingIds: string[]` — 接地・根拠としたメンバーカードのID（1〜10件・重複なし・メンバー限定）
   - `warnings?: string[]`
-- 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（kj_technique.md §3 表札検査）。
+- 島の表札（ラベル）を提案する。表札は分類名ではなく、カード群の訴えを代弁する文でなければならない（sensemaking_technique.md §3 表札検査）。
 - AI入力は `DocumentV1` をそのまま広げず、対象島の全直接メンバーと、それらへ直接つながるcard relation / evidenceの両端だけへsourceを縮約してからLLM投入IRを構築する。無関係な文書カードはIRにも追加prompt文脈にも送らない。providerへ送る最終promptの直接メンバー本文もIR正規化後本文から描画し、Document側の生本文を同じ箇所へ再送しない。
 - 対象島の外側にある隣接カードは、relation / evidenceを理解するための**文脈専用**である。応答の `groundingIds` は従来どおり対象島の直接メンバーだけを許可し、外部カードへ広げない。
 - 親島、表札カード、review state、card relation、`contradictionState` はIR由来の構造としてAIへ渡す。親島は親子関係を保持する構造だけを残し、親島のカード集合まで入力へ広げない。`critiqueTags` / `critiqueText` と明示的なisland-to-island edgeはtask-local入力として従来の経路を維持する。
@@ -614,7 +614,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `text: string` — 生成された文章
   - `basedOnReadingOrder: string[]` — 参照した読取順
   - `warnings?: string[]`
-- A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（kj_technique.md §5）を人間が実施する必要がある。
+- A型図解（空間配置）からB型叙述（文章）を生成する。生成後はA/B照合（sensemaking_technique.md §5）を人間が実施する必要がある。
 - **`AI-IR-PROJECTION-01`（`ADR-0069`）Stage 3 で LLM投入IR 経由になった**（`02_Architecture/llm_input_ir_spec.md`、`ir_version` 1.2）。`doc.edges` の**カード間**関係（5語彙。特に `causal` / `negate`）と `evidenceLinks` の `contradictionState` が、読み順上のどの位置で効くかとあわせてAI入力へ届く。**リクエスト／レスポンスの形は変わらない**（後方互換。フロントエンドの `generateNarrative` は無改修）。
 - 読み順は IR のフィールドではない（`llm_input_ir_spec.md` §4 は閉じたスキーマであり `reading_order` を定義しない）。叙述の背骨は従来どおり `doc.readingOrder` から描画し、IR は骨格（関係）を供給する。島間の辺（`fromKind` / `toKind` = `island`）も IR の対象外であり（§2.3 規則6）、従来どおり `doc.edges` から描画する。
 - SafeMode は二層で強制される。**(1)** `_reject_unreviewed_text`（`ADR-0068` / `SEC-AI-SAFEMODE-01`、変更なし）。**(2)** IRビルダーが §7.1 に従い投影対象カードのレビュー状態を独立に再検査する。本エンドポイントは (1) と (2) の検査対象がいずれも同一の `doc` であるため (1) が必ず先に発火する。(2) は多層防御であり、(1) の置き換えではない。
@@ -633,7 +633,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `issues: NarrativeIssue[]` — A/B照合で検出された不整合
     - `direction: "b_missing_in_a" | "a_missing_in_b"` — B型（ナラティブ）にあるのにA型にない記述 / A型にあるのにB型で落ちた島
 - 生成されたナラティブとA型図解の整合性をチェックする。A型にあってB型で落ちた島、B型にあってA型にない記述を検出する。
-- **`AI-IR-CHECK-NARRATIVE-RELATIONS-01`**: promptは `doc.edges` の全件を `id` / `type` / `fromKind` / `fromId` / `toKind` / `toId` 付きで列挙する。ナラティブが図に無い因果・対立・同値等の論理接続を作っていないか（`kj_technique.md` §6 `KJT-SIGN-09`）をA/B双方向照合の判断材料にするためで、`fromKind`/`toKind` 未指定のlegacy edgeはcard端点として解釈する。IRへは移行していない（現行の全Card・全Island coverageを維持したままの追加であり、`AI-IR-SCALE-01` のscale方式決定を待つ）。
+- **`AI-IR-CHECK-NARRATIVE-RELATIONS-01`**: promptは `doc.edges` の全件を `id` / `type` / `fromKind` / `fromId` / `toKind` / `toId` 付きで列挙する。ナラティブが図に無い因果・対立・同値等の論理接続を作っていないか（`sensemaking_technique.md` §6 `SUI-SIGN-09`）をA/B双方向照合の判断材料にするためで、`fromKind`/`toKind` 未指定のlegacy edgeはcard端点として解釈する。IRへは移行していない（現行の全Card・全Island coverageを維持したままの追加であり、`AI-IR-SCALE-01` のscale方式決定を待つ）。
 
 **POST** `/ai/refine-card-text`
 
@@ -641,7 +641,7 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `cardText: string` — 元のカード本文
   - `context?: string` — 周辺カードの本文（任意）
   - `textReviewed?: boolean` — 入力本文が人間レビュー済みか（`SEC-AI-SAFEMODE-02`。**既定 false = fail-closed**。未指定・false は 422）
-  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`。`KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ有効）
+  - `allowUnreviewedText?: boolean` — 未レビュー本文の送信を明示的に許可（`SEC-AI-SAFEMODE-01`。`SUI_ALLOW_UNREVIEWED_AI_TEXT=true` のときのみ有効）
 - Response: `RefineCardTextResponse`
   - `refinedText: string` — 改善された文
   - `reasoning?: string` — 変更理由
@@ -837,7 +837,7 @@ BFFの `Kj-Atlas-Auth-Session` cookieで認証するunsafe method（POST/PUT/PAT
 
 - 未認証。稼働中のビルドを返す（OPS-OBSERV-01）。
 - Response: `{ revision: string, runtimeProfile: string }`
-- `revision` は `KJ_ATLAS_APP_REVISION`。未設定時は `"unknown"`。
+- `revision` は `SUI_APP_REVISION`。未設定時は `"unknown"`。
 - `runtimeProfile` はprofile名をそのまま返す。`GET /session/bootstrap-policy` が profile 名を隠してbootstrap modeへ写像するのとは**意図的に異なる**——運用者はどのprofileで動いているかを知る必要があり、profile名自体は秘密ではない。
 
 **GET** `/redoc`
@@ -971,7 +971,7 @@ SafeMode/readOnly 優先順:
 - 条件: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
 - 既定 `read_only`: `read` のみ許可、`write/export/share` は `403`。
 - オプション `deny`: 全アクション `403`。
-- 実装パラメータ: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
+- 実装パラメータ: `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
 
 fail-safe マトリクス:
 
@@ -980,7 +980,7 @@ fail-safe マトリクス:
 - `policyRef` 無効（形式不正/失効/署名不正）: `policy_ref_invalid`
 - adapter例外/想定外応答: `adapter_error`
 
-上記4系統は `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` に従い `read_only` または `deny` へ倒す。`visibility` が `Public/Unlisted` の場合は欠損系の強制fail-safe対象外。
+上記4系統は `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE` に従い `read_only` または `deny` へ倒す。`visibility` が `Public/Unlisted` の場合は欠損系の強制fail-safe対象外。
 
 ### 8.4 監査イベント連携点
 
@@ -999,13 +999,13 @@ fail-safe マトリクス:
 
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
-- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
+- `SUI_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
 - endpointはcredential/query/fragmentを含まないHTTPS、またはloopback HTTPに限定する。`external_http` を選択した場合はendpointを必須とし、欠損、固定bearerやIdP issuerだけが残る不完全設定、0以下または30秒超のtimeoutを起動時に拒否する。
 - request body は `AccessRequest` 契約から構成し、`auth.roles/groups` と `resource.policyRef` の意味解釈は行わない。一方で送信前の安全境界として、UTF-8 JSON全体を64KiB以下、識別子を256文字以下、`policyRef`を2,048文字以下、roles/groupsを各64件以下の重複なしcanonical文字列に限定する。
 - subject/resource欠損、制御文字・前後空白、未知のaction/visibility、型不正、上限超過を含むserver-composed requestはtransport前に拒否し、raw値をclient・logへ反射せず`adapter_error`としてfail-safeを適用する。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。object以外、余分なfield、64KiB超、非UTF-8/非JSON、512文字超または制御文字を含むreasonは受理せず、応答値をclient・logへ反射せずに`policy_ref_invalid`としてfail-safeを適用する。
-- `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` を `noop` へフォールバックせず、設定不備として起動を拒否する（`ADR-0062`）。明示的な `noop` と、完全設定後のPDP実行時障害に対する `read_only|deny` は従来どおり維持する。
+- `SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` を `noop` へフォールバックせず、設定不備として起動を拒否する（`ADR-0062`）。明示的な `noop` と、完全設定後のPDP実行時障害に対する `read_only|deny` は従来どおり維持する。
 
 ### 8.6 互換性
 
@@ -1017,11 +1017,11 @@ fail-safe マトリクス:
 ### 9.1 AuthContext 正規化
 
 - single-tenant の forwarded-header identity path の入力ヘッダ（設定差し替え可。`saas-multitenant` の trusted JWT/cookie path では使用しない）:
-  - `KJ_ATLAS_AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
-  - `KJ_ATLAS_AUTH_USER_FIELD`（既定 `x-forwarded-user`）
-  - `KJ_ATLAS_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
-  - `KJ_ATLAS_AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
-  - `KJ_ATLAS_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
+  - `SUI_AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
+  - `SUI_AUTH_USER_FIELD`（既定 `x-forwarded-user`）
+  - `SUI_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
+  - `SUI_AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
+  - `SUI_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
 - header意味:
   - external UID は `AUTH_SUBJECT_FIELD` を第一候補とし、欠損時だけ legacy `AUTH_USER_FIELD` へfallbackする。`AUTH_USER_FIELD` は内部 `users.id` の指定ではない。
   - provider はtrim・lowercase正規化し、欠損/空値は `header` とする。
@@ -1031,7 +1031,7 @@ fail-safe マトリクス:
   - `AuthContext.actorRef`: `user:<users.id>`
   - `AuthContext.provider` / `AuthContext.externalUid`
 - reviewerRef解決:
-  - `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER`（既定: `user_id`）で `reviewerRef/ownerRef` を解決する。
+  - `SUI_REVIEWER_REF_RESOLVER_ADAPTER`（既定: `user_id`）で `reviewerRef/ownerRef` を解決する。
   - adapter実装は `resolve(auth_context) -> { reviewerRef, ownerRef }` 契約を満たす。
   - profile:
     - `user_id`: `user:<users.id>`（未認証は `actorRef` → `null`）
@@ -1045,7 +1045,7 @@ fail-safe マトリクス:
 
 ### 9.2 strict mode 拒否契約
 
-- 条件: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
+- 条件: `SUI_ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
 - 応答: `403 Forbidden`
 - エラーボディ（最小契約）: `{ "code": "identity_not_provisioned", "message": "Identity not provisioned. Pre-provision via /admin/provision/users before access." }`
 
@@ -1070,7 +1070,7 @@ export type StrictProvisioningError = {
   - strict mode 条件に一致した要求を例外なく `403` で拒否する。
   - 緊急時でもアプリ内の一時バイパス（特定ユーザー許可など）を実装しない。
 - 例外承認責務:
-  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の切替承認は **Security Officer + System Owner の2者承認** を必須とする。
+  - `SUI_ALLOW_JIT_PROVISIONING` の切替承認は **Security Officer + System Owner の2者承認** を必須とする。
   - 実行（環境変数変更/再起動）は Platform Operator が行い、変更記録（時刻・理由・承認者）を監査証跡に残す。
 - 承認なき例外は不許可:
   - 開発者判断のみで strict mode を緩和してはならない。
@@ -1224,7 +1224,7 @@ export type ActiveTenantRequestV1 = {
 
 `effectiveCapabilities`は表示補助であり、APIの再認可を代替しない。trusted server-side sessionのcapability正本はWorkspace（`document.read/write/export/share`）、Tenant Admin（`document.policy.manage`、`membership.provision`、`agent.register/revoke`、`audit.read`）、Platform Control Plane（`tenant.provision/suspend`）の3つの認可surfaceへ明示分離する。`GET /session/context`とactive tenant変更responseはWorkspace＋Tenant Adminの9種だけを返し、Platform Control Plane capabilityをbrowser向けWorkspace contextへ露出しない。server内部のtrusted sessionからPlatform capabilityを削除してはならず、`/admin/provision/**`等の専用routeで独立に再認可する。cacheする場合は`deployment + tenantId + principalId + capabilityVersion`で分離し、auth sessionの有効期限を越えて保持しない。
 
-`tenantSessionVersion`はtenant/capabilityの認可根拠ではない。SaaS profileのtenant-scoped public APIと非同期開始点は、最後に検証したversionを単一の`KJ-Atlas-Tenant-Session-Version` request headerとして必須受領し、trusted sessionを解決した後、resource lookup、body parse後の副作用、PDP、job enqueueより前に一致を確認する。同名headerの欠損・重複・不正・不一致では本文・metadataを返さず`409 tenant_session_changed`へ閉じ、生versionや現在tenantを応答・log・監査へ反射しない。read、list、export、share、import、MCP、webhook、Tenant Adminも例外にせず、stale requestを新contextへ自動再送しない。このclient値からTenantContextを解決してはならない。browserから利用するSaaS配備ではCORS allow-headersへこの名前だけを明示し、proxy/CDNで同名headerを連結・複製しない。
+`tenantSessionVersion`はtenant/capabilityの認可根拠ではない。SaaS profileのtenant-scoped public APIと非同期開始点は、最後に検証したversionを単一の`SUI Sensemaking-Tenant-Session-Version` request headerとして必須受領し、trusted sessionを解決した後、resource lookup、body parse後の副作用、PDP、job enqueueより前に一致を確認する。同名headerの欠損・重複・不正・不一致では本文・metadataを返さず`409 tenant_session_changed`へ閉じ、生versionや現在tenantを応答・log・監査へ反射しない。read、list、export、share、import、MCP、webhook、Tenant Adminも例外にせず、stale requestを新contextへ自動再送しない。このclient値からTenantContextを解決してはならない。browserから利用するSaaS配備ではCORS allow-headersへこの名前だけを明示し、proxy/CDNで同名headerを連結・複製しない。
 
 frontend clientは現在の検証済み`availableTenants`にないtenantを通信前に拒否し、`no-store`・same-origin JSONでactive tenant変更を要求する。要求には現在の`tenantSessionVersion`を含め、成功responseは既存validatorに加えてprincipal不変、要求tenant一致、新versionへの変更を確認した後だけ遷移へ使用する。遷移時は進行中requestをabortし、workerをdisposeし、object URLと文書・選択・検索等のmemory stateを破棄し、旧browser storage scopeだけを削除してhard document replacementを行う。cleanup/storage削除の一部が失敗しても旧DOMを継続利用せずreplacementを優先する。未検証responseではcleanup、storage変更、navigationを開始しない。別タブ通知は旧DOMを早くblockする補助に限り、通知欠落時も次requestのserver preconditionで停止する。
 
@@ -1232,9 +1232,9 @@ Workspace用tenant controlは、検証済みmembershipが1件ならactive tenant
 
 `principalId`は認証済みUserに対応するserver-managed opaque IDであり、表示名やemail、外部IdP subjectを返さない。browser storage scopeのprincipal要素にはこの値だけを使う。
 
-実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させずruntime profileとも原子的に照合する起動前bundle境界は実装済みである。SaaS frontend entryはpolicy／session bootstrap成功後の検証済みcontextとbrowser scopeをApp hostへ同時注入し、single-tenant entryは従来どおり未注入で起動する。HTTP headerやqueryを直接verified evidenceへ変換する処理は単一テナント向けのlegacy経路である。SaaS向けtrusted auth edgeは `KJ_ATLAS_JWT_ALGORITHMS` の検証済みallowlist（既定 `RS256,ES256`。RS/ES/PS系の既知asymmetric algorithmを受理）でJWTの署名、issuer、audience、期限を検証し、HMAC/`none`/未知algorithmは受理しない。PKCE対応mock IdPによるE2E基盤を持つ。Bearer tokenの`jti`は任意であり、通常のrequest単位replay検出には使用しない。共有persisterは現時点でprincipal単位versionのみを保持するため、認証session IDとactive tenantの原子的正本化は`SAAS-TENANT-SESSION-BINDING-01`で未完了である。`saas-multitenant` profileは設定上起動できるが、本番利用gateを満たさない。**2026-08-22時点の是正**: `SAAS-TENANT-SESSION-BINDING-01`のAC-1〜6は、BFF cookie経路（`Kj-Atlas-Auth-Session`、trusted auth edgeが`auth_session_key_hash`を解決する経路）に限り完了した——共有store（`SaasAuthSessionRow`）は認証session識別子・active tenant・versionを同一行でCAS原子的に保持・更新する。**この本文が記述する現行SPAのBearer token経路は対象外のまま**であり、依然principal単位versionのみの旧storeを使う。BFF cookie経路への切替（AC-9・cutover）が完了するまで、本文の記述と本番利用gate未充足の結論は変わらない。
+実装準備として、署名・issuer・audience検証後の証跡を受け取る内部resolver、IdP/tenant binding、UserIdentity、active membershipの再照合、active membershipだけのtenant候補列挙と切替選択serviceを実装済みである。server runtime profileをprofile名非公開の2値へ写像する`GET /session/bootstrap-policy`、strict frontend client、profile別entry pointも実装済みで、frontendは成功・エラーresponseを4KiBまでに限定し、未知mode、余分なfield、非UTF-8、不正JSONを利用しない。session responseの内部builderと`GET /session/context` routeは、active tenantの再照合、opaque principalId、allowlist済みtenant候補、trusted capability resolverの既知capabilityだけを受理し、識別子・一覧件数・response sizeを上限内へ閉じる。不正・欠損したcapability snapshotは`503 capability_resolution_unavailable`、不正・過大なsession値は`503 session_context_unavailable`としてfail-closedにする。`POST /session/active-tenant`も現在contextと要求tenantのmembershipを再確認し、検証済み選択結果だけをtrusted session persisterへ渡す。frontend側はsession GET/POSTを`no-store`・same-originで行い、成功・エラーresponseのstreamを64KiBまでで打ち切って超過時はcancelする。成功response validatorを通過し、active tenantがavailableTenantsと一致したcontextだけをbrowser storage scope／transitionへ渡す。request coordinatorと任意注入App hostもcurrent session、要求tenant、旧scope、POST成功responseのprincipal／active tenantを独立に再検証し、未保存変更の取消・保存失敗では通信やcleanupを開始しない。未知・重複capability、余分なfield、非UTF-8、非表示・過大値は利用しない。strict external HTTP capability resolver、application lifecycleの既定unavailable配線、identity/tenant/persisterを部分注入させずruntime profileとも原子的に照合する起動前bundle境界は実装済みである。SaaS frontend entryはpolicy／session bootstrap成功後の検証済みcontextとbrowser scopeをApp hostへ同時注入し、single-tenant entryは従来どおり未注入で起動する。HTTP headerやqueryを直接verified evidenceへ変換する処理は単一テナント向けのlegacy経路である。SaaS向けtrusted auth edgeは `SUI_JWT_ALGORITHMS` の検証済みallowlist（既定 `RS256,ES256`。RS/ES/PS系の既知asymmetric algorithmを受理）でJWTの署名、issuer、audience、期限を検証し、HMAC/`none`/未知algorithmは受理しない。PKCE対応mock IdPによるE2E基盤を持つ。Bearer tokenの`jti`は任意であり、通常のrequest単位replay検出には使用しない。共有persisterは現時点でprincipal単位versionのみを保持するため、認証session IDとactive tenantの原子的正本化は`SAAS-TENANT-SESSION-BINDING-01`で未完了である。`saas-multitenant` profileは設定上起動できるが、本番利用gateを満たさない。**2026-08-22時点の是正**: `SAAS-TENANT-SESSION-BINDING-01`のAC-1〜6は、BFF cookie経路（`Kj-Atlas-Auth-Session`、trusted auth edgeが`auth_session_key_hash`を解決する経路）に限り完了した——共有store（`SaasAuthSessionRow`）は認証session識別子・active tenant・versionを同一行でCAS原子的に保持・更新する。**この本文が記述する現行SPAのBearer token経路は対象外のまま**であり、依然principal単位versionのみの旧storeを使う。BFF cookie経路への切替（AC-9・cutover）が完了するまで、本文の記述と本番利用gate未充足の結論は変わらない。
 
-frontend entryはbuild時の`KJ_ATLAS_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、server-owned BFF cookie sessionによるsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。active tenantは認証session keyへ束縛してserver側で正本化し、frontendはBearer tokenのtenant claimをactive tenant正本として使わない。
+frontend entryはbuild時の`SUI_RUNTIME_PROFILE`をclosed-worldに解決する。未指定・`local-dev`・`evaluation`・`enterprise-production`はpolicy通信を行わず従来のlocal-first Appをmountする。`saas-multitenant`だけはserver bootstrap policyが`tenant-session-required`と一致した後、server-owned BFF cookie sessionによるsession GETとresponse再検証を完了し、成功時だけ`deployment + tenantId + principalId` scope付きAppをmountする。未知・空・非canonical build値、policy取得失敗・不一致、401、403、session解決不能、不正response、不正deploymentは旧本文をmountしないretry可能なblocked stateへ分離し、upstream message、profile、principal、tenant値を表示しない。lifecycle abortは失敗表示へ変換せず破棄する。active tenantは認証session keyへ束縛してserver側で正本化し、frontendはBearer tokenのtenant claimをactive tenant正本として使わない。
 
 Appは注入されたbrowser storage scopeをmount時に検証・snapshotし、recent document、view mode/locale/visibility、reviewer、onboarding、advanced UI、Minimap、QueryPresetを同じscopeへbindingする。scopeを同一mount内で変更する場合は旧memory stateを再利用せず例外停止し、§10.1のhard document replacementを必須とする。App unmount時は進行中のdiff・diagnostics・bundle requestをabortし、bundle taskをcancelしてdiff・diagnostics workerをdisposeする。個別cleanup失敗で残りのcleanupやreplacementを止めない。scope省略時は既存single-tenant keyを維持する。`saas-multitenant` entryはsession bootstrap成功時だけscopeを注入するが、backend runtime gateと残る越境matrixが未完了のため、これだけをSaaS対応済みとは扱わない。
 
@@ -1324,7 +1324,7 @@ Inquiry bundle は `DocumentV1` の optional field ではなく、W型累積探�
 - tenant は request body、path、query、header の利用者入力から決定しない。server-resolved identity と active membership から解決された trusted `TenantContext` のみを使用する。
 - tenant session precondition がある構成では、既存の `tenantSessionVersion` guard を適用する。trusted tenant context を解決できない場合は fail-closed（`403 tenant_context_untrusted`）とする。
 - `journey_id` は空でない、前後に空白がない、printable、最大256文字の canonical文字列でなければならない。不正値は `422`（`invalid_journey_id`）とする。
-- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **20 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする（`MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES`。`KJ_ATLAS_MAX_DOCUMENT_BYTES` の文書サイズ上限 20 MiB と整合。**ドッグフーディング iteration 83 で実装値と契約の乖離を検出し api.md を修正**）。
+- request body は JSON として有限値だけを受け付け、UTF-8 serialized payload が **20 MiBを超える場合は保存せず `413`**（`inquiry_bundle_too_large`）とする（`MAX_INQUIRY_BUNDLE_PAYLOAD_BYTES`。`SUI_MAX_DOCUMENT_BYTES` の文書サイズ上限 20 MiB と整合。**ドッグフーディング iteration 83 で実装値と契約の乖離を検出し api.md を修正**）。
 - backend は payload の未知keyや将来versionを解釈・変換しない。Inquiry bundle のstrict import/export、SafeMode projection、DocumentV1との関係は既存のfrontend/domain契約が保持する。
 - **保持契約（DATA-INQUIRY-RETENTION-01 D1=案A）**: 探究bundleは **明示DELETEまで永続** する。自動期限・purge・保持例外（legal hold等）は**存在しない**。期限切れと長期停止は区別されず、backendはpayload内の日時・stage・個人情報有無から期限を推測しない。明示DELETEのみが削除経路で、削除時は本文なし監査を同一transactionで記録する。
 

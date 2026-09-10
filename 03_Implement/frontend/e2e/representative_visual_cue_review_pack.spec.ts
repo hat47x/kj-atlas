@@ -11,7 +11,7 @@ import {
 
 const imageRef = "visual-cue:12345678-1234-4123-8123-123456789abc";
 const userImageRef = "visual-cue:87654321-4321-4321-8321-cba987654321";
-const localScopeKey = "kj-atlas/local-scope/v1/";
+const localScopeKey = "sui-sensemaking/local-scope/v1/";
 
 const asset = {
   version: 1,
@@ -102,7 +102,7 @@ async function openSample(page: Page, document: DocumentV1): Promise<void> {
 async function seedAssets(page: Page, documentId: string): Promise<unknown> {
   return page.evaluate(async ({ drawingRef, cropRef, scopeKey, targetDocumentId, drawingAsset }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onupgradeneeded = () => {
         const store = request.result.createObjectStore("assets-v2", { keyPath: "storageKey" });
         store.createIndex("scopeDocumentKey", "scopeDocumentKey", { unique: false });
@@ -161,7 +161,7 @@ async function readAssetFromFreshContext(context: BrowserContext, cueRef: string
   const page = pages[0];
   return page.evaluate(async ({ cueRef, scopeKey }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -184,7 +184,7 @@ test("migrates a legacy scoped hand-drawn asset without losing its document bind
   await page.goto("/seed-legacy-visual-cue.html");
   await page.evaluate(async ({ cueRef, scopeKey, targetDocumentId, cueAsset }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 1);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 1);
       request.onupgradeneeded = () => {
         const store = request.result.createObjectStore("assets", { keyPath: "imageRef" });
         store.createIndex("scopeDocumentKey", "scopeDocumentKey", { unique: false });
@@ -217,7 +217,7 @@ test("migrates a legacy scoped hand-drawn asset without losing its document bind
   await expect(page.locator(`[data-representative-visual-cue="${imageRef}"]`)).toHaveCount(1);
   const stores = await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

@@ -5,7 +5,7 @@
 - Source Issue: `DOC-ARCH-02`（`CI-CE1-01`〜`CI-CE1-03` の異義定義を分離）
 - Priority: P1
 - Owner: Maintainer / Backend and Frontend contract contributor
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`, `03_Implement/backend/tests/test_context_bundle_routes.py`, `03_Implement/frontend/src/domain/context/query_preview.ts`, 同test
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `02_Architecture/architecture.html`, `03_Implement/backend/src/sui_sensemaking_api/models_context.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/context.py`, `03_Implement/backend/tests/test_context_bundle_routes.py`, `03_Implement/frontend/src/domain/context/query_preview.ts`, 同test
 - Related Backlog: `DOC-ARCH-02`, `CE1-CONTEXT-FOUNDATION`
 - Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`, `01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md`, `02_Architecture/contract_consolidation_inventory.md`
 - Expected verification level: `integration`
@@ -74,7 +74,7 @@ npm test -- --run src/domain/context/query_preview.test.ts
 
 追加確認:
 
-- `rg -n "ContextQueryV1|ContextBundleV1|schemaVersion|queryId|sourceBundleHash" 02_Architecture 03_Implement/backend/src/kj_atlas_api/models_context.py 03_Implement/frontend/src/domain/context`
+- `rg -n "ContextQueryV1|ContextBundleV1|schemaVersion|queryId|sourceBundleHash" 02_Architecture 03_Implement/backend/src/sui_sensemaking_api/models_context.py 03_Implement/frontend/src/domain/context`
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `git diff --check`
 

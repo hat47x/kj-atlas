@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/ai_kj_execution_procedures.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`
+- Scope: `00_Prompt/domain.md`, `00_Prompt/sensemaking_technique.md`, `00_Prompt/ai_sensemaking_execution_procedures.md`, `00_Prompt/qualitative_card_quality_requirements.md`, `00_Prompt/representative_visual_cue_requirements.md`, `01_Plans/docs_contract_checks.py`, `01_Plans/docs_check.py`
 - Related ADR/Spec: `01_Plans/research/00-prompt-improvement-program-2026-08-15.md`（本issueの根拠。P1〜P3に対応）, `00_Prompt/cognitive_frame_and_evolution_criteria.md`
 - Norms: `DOM-SHARE-04`
 - Expected verification level: `docs-check`
@@ -25,8 +25,8 @@
 | `representative_visual_cue_requirements.md` | 5（部分的） | なし |
 | `qualitative_card_quality_requirements.md` | 4（部分的） | Normative |
 | **`domain.md`** | **0** | **なし** |
-| **`kj_technique.md`** | **0** | Normative |
-| **`ai_kj_execution_procedures.md`** | **0** | Normative |
+| **`sensemaking_technique.md`** | **0** | Normative |
+| **`ai_sensemaking_execution_procedures.md`** | **0** | Normative |
 
 ### 事実2: 行番号参照が発生している
 
@@ -53,7 +53,7 @@
 
 1. **不変条件を変更したとき、何が壊れるか分からない。** どの計画がどの不変条件に依拠しているかを機械的に辿れない。
 2. **計画が不変条件に違反していても検出されない。**
-3. **未実装の規範を一覧化できない。** `kj_technique.md` §6 の失敗の徴候12項目のうち機械化されているのは1項目だけだが、識別子が無いためこの事実を計画側から追跡できない。
+3. **未実装の規範を一覧化できない。** `sensemaking_technique.md` §6 の失敗の徴候12項目のうち機械化されているのは1項目だけだが、識別子が無いためこの事実を計画側から追跡できない。
 
 `DOMAIN-SCORING-SURFACE-01`（画面に「健全性 N%」が出荷されていた件）はこの帰結の実例である。`domain.md` と `ui_design_handoff.md` が採点を禁じているのに、**禁止と実装を突き合わせる経路が無かった**ため長期間気づかれなかった。
 
@@ -65,7 +65,7 @@
 
 - **実施すること**:
   1. **P1**: `domain.md` の §2（基本思想3概念）と §7（AIの禁止事項）へ安定識別子を付す。`DOM-` 接頭辞、`WIR-01` 形式に倣う。AIの禁止事項は**1項目1ID**とする。
-  2. **P2**: `kj_technique.md`（`KJT-`。特に §3 表札検査・§4 空白の列挙・§5 A/B照合・§6 失敗の徴候12項目）、`ai_kj_execution_procedures.md`（`AKP-`）へ拡張し、部分的にしか持たない3文書の体系を揃える。
+  2. **P2**: `sensemaking_technique.md`（`SUI-`。特に §3 表札検査・§4 空白の列挙・§5 A/B照合・§6 失敗の徴候12項目）、`ai_sensemaking_execution_procedures.md`（`AKP-`）へ拡張し、部分的にしか持たない3文書の体系を揃える。
   3. **P3**: `docs_check` へ憲法層固有の規則を追加する。(a) Status 語彙の統制（`Normative / Informative / On-demand / Superseded`）、(b) 識別子の一意性、(c) **他層からの識別子参照が実在することの検証**、(d) 行番号参照の禁止。
 - **実施しないこと**:
   1. **既存の散文の書き換え。** 識別子の付与に限る。`domain.md` §9 は実装都合での変更を禁じており、本作業は**意味を変えない操作**として実施する。意味の変更が必要と判明した場合は本issueを止め、別途ADRを起こす。
@@ -81,10 +81,10 @@
 ## 受入条件
 
 - [x] AC-1: `domain.md` の §2 の3概念と §7 の禁止事項に、一意な識別子が付与されている。既存の散文の意味が変わっていない。
-- [x] AC-2: `kj_technique.md` の §3・§4・§5・§6 の各検査・各徴候に識別子が付与されている。
+- [x] AC-2: `sensemaking_technique.md` の §3・§4・§5・§6 の各検査・各徴候に識別子が付与されている。
 - [x] AC-3: `docs_check` が `00_Prompt` の Status 語彙を検証し、統制外の値で落ちる。
 - [x] AC-4: `docs_check` が `00_Prompt` 全体で識別子の重複を検出して落ちる。
-- [x] AC-5: **他層から `DOM-*` / `KJT-*` 等を参照したとき、実在しない識別子で落ちる。** 存在する識別子では通る。
+- [x] AC-5: **他層から `DOM-*` / `SUI-*` 等を参照したとき、実在しない識別子で落ちる。** 存在する識別子では通る。
 - [x] AC-6: 行番号参照を検出して落ちる。既存の該当箇所を識別子または節参照へ置換した（実測8件。当初「3件」としたのは計測漏れ）。
 - [x] AC-7: **能力カナリア** — 実在しない識別子への参照を意図的に入れると AC-5 が落ちることを、ミューテーションで確認する（`DOGFOOD-METRIC-01` 案A）。
 

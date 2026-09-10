@@ -6,8 +6,8 @@ import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS = ROOT / '03_Implement/backend/src/kj_atlas_api/settings.py'
-AUTH_EDGE = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
+SETTINGS = ROOT / '03_Implement/backend/src/sui_sensemaking_api/settings.py'
+AUTH_EDGE = ROOT / '03_Implement/backend/src/sui_sensemaking_api/trusted_auth_edge.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 API_DOC = ROOT / '02_Architecture/api.md'
@@ -38,8 +38,8 @@ def _documented_algorithms(row: str) -> set[str]:
 class JwtAlgorithmPublicContractTest(unittest.TestCase):
     def test_public_rows_name_exact_settings_allowlist(self) -> None:
         expected = _known_algorithms()
-        self.assertEqual(expected, _documented_algorithms(_row(CONFIG.read_text(encoding='utf-8'), 'KJ_ATLAS_JWT_ALGORITHMS')))
-        self.assertEqual(expected, _documented_algorithms(_row(REGISTRY.read_text(encoding='utf-8'), 'KJ_ATLAS_JWT_ALGORITHMS')))
+        self.assertEqual(expected, _documented_algorithms(_row(CONFIG.read_text(encoding='utf-8'), 'SUI_JWT_ALGORITHMS')))
+        self.assertEqual(expected, _documented_algorithms(_row(REGISTRY.read_text(encoding='utf-8'), 'SUI_JWT_ALGORITHMS')))
 
     def test_settings_and_auth_edge_enforce_configured_allowlist(self) -> None:
         settings_source = SETTINGS.read_text(encoding='utf-8')
@@ -54,11 +54,11 @@ class JwtAlgorithmPublicContractTest(unittest.TestCase):
 
     def test_profile_and_api_distinguish_default_from_requirement(self) -> None:
         registry = REGISTRY.read_text(encoding='utf-8')
-        self.assertNotIn('`KJ_ATLAS_JWT_ALGORITHMS=RS256,ES256`', registry)
+        self.assertNotIn('`SUI_JWT_ALGORITHMS=RS256,ES256`', registry)
         self.assertIn('未指定は既定 `RS256,ES256`', registry)
         self.assertIn('既知の非HMAC asymmetric algorithm', registry)
         api_doc = API_DOC.read_text(encoding='utf-8')
-        self.assertIn('`KJ_ATLAS_JWT_ALGORITHMS` の検証済みallowlist', api_doc)
+        self.assertIn('`SUI_JWT_ALGORITHMS` の検証済みallowlist', api_doc)
         self.assertIn('HMAC/`none`/未知algorithmは受理しない', api_doc)
 
 if __name__ == '__main__':

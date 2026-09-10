@@ -9,26 +9,26 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-import kj_atlas_api.guest_redeem as guest_redeem_module
-from kj_atlas_api.db import get_db
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
-from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
-from kj_atlas_api.guest_redeem import (
+import sui_sensemaking_api.guest_redeem as guest_redeem_module
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow
+from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore
+from sui_sensemaking_api.guest_redeem import (
     DatabaseGuestRedeemStateStore,
     GuestIdentityVerificationError,
     VerifiedGuestIdentity,
 )
-from kj_atlas_api.guest_redeem_state_models import GuestRedeemStateRow
-from kj_atlas_api.models import (
+from sui_sensemaking_api.guest_redeem_state_models import GuestRedeemStateRow
+from sui_sensemaking_api.models import (
     Base,
     DocumentRow,
     TenantIdentityProviderRow,
     TenantMembershipRow,
     TenantRow,
 )
-from kj_atlas_api.routes.docs import router as docs_router
-from kj_atlas_api.routes.guest_session import router as guest_session_router
+from sui_sensemaking_api.routes.docs import router as docs_router
+from sui_sensemaking_api.routes.guest_session import router as guest_session_router
 
 NOW = datetime.now(timezone.utc)
 TS = NOW.isoformat()

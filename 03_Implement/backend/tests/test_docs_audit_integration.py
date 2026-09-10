@@ -11,19 +11,19 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api import cli
-from kj_atlas_api.audit import AuditDispatcher, resolve_ce4_query_hash
-from kj_atlas_api.access_control import AccessDecision
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
-from kj_atlas_api.routes.docs import (
+from sui_sensemaking_api import cli
+from sui_sensemaking_api.audit import AuditDispatcher, resolve_ce4_query_hash
+from sui_sensemaking_api.access_control import AccessDecision
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.routes.docs import (
     _ce4_audit_event_tracker,
     _evict_stale_ce4_tracker_entries,
     _record_ce4_event_and_validate_completeness,
     reset_ce4_audit_event_tracker,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 
 class SpyAuditDispatcher:
@@ -259,13 +259,13 @@ def test_context_audit_rejects_stale_session_before_tracker_mutation(
         tracker_called = True
 
     monkeypatch.setattr(
-        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        "sui_sensemaking_api.routes.docs.resolve_trusted_saas_request_session",
         lambda **_: SimpleNamespace(
             session=SimpleNamespace(tenant_session_version="session-v2")
         ),
     )
     monkeypatch.setattr(
-        "kj_atlas_api.routes.docs._record_ce4_event_and_validate_completeness",
+        "sui_sensemaking_api.routes.docs._record_ce4_event_and_validate_completeness",
         _unexpected_tracker_mutation,
     )
 
@@ -275,7 +275,7 @@ def test_context_audit_rejects_stale_session_before_tracker_mutation(
             client.app.state.runtime_profile = "saas-multitenant"
             response = client.post(
                 "/docs/doc-context/context-audit",
-                headers={"KJ-Atlas-Tenant-Session-Version": "session-v1"},
+                headers={"SUI Sensemaking-Tenant-Session-Version": "session-v1"},
                 json={
                     "operation": "query",
                     "safeMode": True,
@@ -957,7 +957,7 @@ def test_ce4_tracker_evicts_entries_stale_beyond_ttl(monkeypatch) -> None:
     # cannot grow for the process lifetime.
     reset_ce4_audit_event_tracker()
     now = [1_000_000.0]
-    monkeypatch.setattr("kj_atlas_api.routes.docs.time.time", lambda: now[0])
+    monkeypatch.setattr("sui_sensemaking_api.routes.docs.time.time", lambda: now[0])
 
     for doc_id in ("d1", "d2"):
         _record_ce4_event_and_validate_completeness(
@@ -982,8 +982,8 @@ def test_ce4_tracker_caps_at_max_entries_keeping_newest(monkeypatch) -> None:
     # exceeds the bound.
     reset_ce4_audit_event_tracker()
     now = [1_000_000.0]
-    monkeypatch.setattr("kj_atlas_api.routes.docs.time.time", lambda: now[0])
-    monkeypatch.setattr("kj_atlas_api.routes.docs._CE4_TRACKER_MAX_ENTRIES", 3)
+    monkeypatch.setattr("sui_sensemaking_api.routes.docs.time.time", lambda: now[0])
+    monkeypatch.setattr("sui_sensemaking_api.routes.docs._CE4_TRACKER_MAX_ENTRIES", 3)
 
     for index in range(5):
         now[0] += 1.0  # each new entry is strictly newer

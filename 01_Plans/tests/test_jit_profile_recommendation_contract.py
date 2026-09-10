@@ -6,8 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-SAAS_POLICY = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
-KEY = "KJ_ATLAS_ALLOW_JIT_PROVISIONING"
+SAAS_POLICY = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
+KEY = "SUI_ALLOW_JIT_PROVISIONING"
 
 
 def _table_row(section: str, key: str) -> list[str]:
@@ -41,7 +41,7 @@ class JitProfileRecommendationContractTests(unittest.TestCase):
         )
         cells = [cell.strip() for cell in local_dev.strip().strip("|").split("|")]
         self.assertNotIn(KEY, cells[2])
-        self.assertIn("`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`", cells[3])
+        self.assertIn("`SUI_ALLOW_JIT_PROVISIONING=true`", cells[3])
         self.assertIn("場合だけ", cells[3])
 
     def test_production_profiles_and_saas_runtime_require_jit_disabled(self) -> None:
@@ -55,7 +55,7 @@ class JitProfileRecommendationContractTests(unittest.TestCase):
             line for line in profiles.splitlines() if line.startswith("| `saas-multitenant` |")
         )
         for row in (enterprise, saas):
-            self.assertIn("`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`", row)
+            self.assertIn("`SUI_ALLOW_JIT_PROVISIONING=false`", row)
 
         policy = SAAS_POLICY.read_text(encoding="utf-8")
         self.assertIn(

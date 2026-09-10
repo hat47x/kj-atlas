@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.routes import ai_relations
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.routes import ai_relations
+from sui_sensemaking_api.settings import settings
 
 
 class _StubProvider:

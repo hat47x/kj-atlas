@@ -12,9 +12,9 @@ from sqlalchemy import create_engine, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.auth_session_hash import derive_session_key_hash
-from kj_atlas_api.models import Base, SaasAuthSessionRow, TenantRow
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
+from sui_sensemaking_api.models import Base, SaasAuthSessionRow, TenantRow
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
 
 _KEY = b"hash-key-for-tests-0123456789ab"
 _ISSUER = "https://idp.example.test"

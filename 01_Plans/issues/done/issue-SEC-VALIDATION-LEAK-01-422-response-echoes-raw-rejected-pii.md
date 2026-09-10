@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai_relations.py`, `03_Implement/backend/src/kj_atlas_api/routes/context.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/main.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai_relations.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/context.py`
 - Related ADR/Spec: `issue-SEC-DOC-BOUND-03-context-query-constraints-unbounded-recursive-shape.md`, `issue-SEC-AUDIT-LOG-01-proposal-decision-reason-unmasked-in-server-log.md`
 - Expected verification level: `integration`
 

@@ -5,10 +5,10 @@ import os
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
+from sui_sensemaking_api.main import app
 
 
-DOC_ID = os.getenv("KJ_ATLAS_RECOVERY_DOC_ID", "doc-data-maint-pg-recovery-20260525")
+DOC_ID = os.getenv("SUI_RECOVERY_DOC_ID", "doc-data-maint-pg-recovery-20260525")
 GROUP_ID = "group-recovery-pg"
 SNAPSHOT_VERSION = "snapshot-recovery-pg-1"
 

@@ -43,7 +43,7 @@
 
 ## 完了記録（2026-08-12）
 
-AGENTS.md §1.1三要素牽制・§1.2モデルレベル・§1.3自律性レベルを追加。00_Prompt/ai_kj_execution_procedures.mdも作成
+AGENTS.md §1.1三要素牽制・§1.2モデルレベル・§1.3自律性レベルを追加。00_Prompt/ai_sensemaking_execution_procedures.mdも作成
 ## 補足
 
 - 本issueは `dogfooding-ai-collaboration-plan.html` のP1項目

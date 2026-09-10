@@ -4,8 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from kj_atlas_api.tenant_context import TenantContext
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_context, apply_database_tenant_id
+from sui_sensemaking_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_db_guard import apply_database_tenant_context, apply_database_tenant_id
 
 
 def _tenant(tenant_id: str = "tenant-a") -> TenantContext:
@@ -29,7 +29,7 @@ def test_postgres_context_uses_bound_transaction_local_set_config() -> None:
 
     session.execute.assert_called_once()
     statement, parameters = session.execute.call_args.args
-    assert "set_config('kj_atlas.tenant_id', :tenant_id, true)" in str(statement)
+    assert "set_config('sui_sensemaking.tenant_id', :tenant_id, true)" in str(statement)
     assert parameters == {"tenant_id": "tenant-a' OR true --"}
     assert "tenant-a" not in str(statement)
 
@@ -40,7 +40,7 @@ def test_membership_neutral_tenant_id_guard_uses_same_bound_postgres_setting() -
     apply_database_tenant_id(db=session, tenant_id=" guest-tenant ")
 
     statement, parameters = session.execute.call_args.args
-    assert "set_config('kj_atlas.tenant_id', :tenant_id, true)" in str(statement)
+    assert "set_config('sui_sensemaking.tenant_id', :tenant_id, true)" in str(statement)
     assert parameters == {"tenant_id": "guest-tenant"}
 
 

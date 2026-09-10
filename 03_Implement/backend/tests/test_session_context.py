@@ -7,13 +7,13 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
-from kj_atlas_api.session_context import (
+from sui_sensemaking_api.models import Base, TenantMembershipRow, TenantRow, UserRow
+from sui_sensemaking_api.session_context import (
     CapabilitySnapshot,
     build_tenant_session_context,
     switch_tenant_session_context,
 )
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.tenant_context import (
     TenantContext,
     TenantSummary,
     select_active_tenant_context,
@@ -257,7 +257,7 @@ def test_oversized_tenant_allowlist_fails_before_capability_resolution(
         with Session(engine) as db:
             _seed(db)
             monkeypatch.setattr(
-                "kj_atlas_api.session_context.list_active_tenant_summaries",
+                "sui_sensemaking_api.session_context.list_active_tenant_summaries",
                 lambda db, user_id, limit: tuple(  # noqa: ARG005
                     TenantSummary(
                         tenant_id=f"tenant-{index}",

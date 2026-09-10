@@ -10,11 +10,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.auth_context import ResolvedIdentity
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.access_control import AuthContext
+from sui_sensemaking_api.auth_context import ResolvedIdentity
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import (
     Base,
     DocumentAccessAdminAuditEventRow,
     DocumentAccessMetadataRow,
@@ -23,8 +23,8 @@ from kj_atlas_api.models import (
     TenantRow,
     UserRow,
 )
-from kj_atlas_api.session_context import CapabilitySnapshot
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.session_context import CapabilitySnapshot
+from sui_sensemaking_api.tenant_context import (
     SingleTenantContextResolver,
     TenantContext,
     select_active_tenant_context,
@@ -265,7 +265,7 @@ def test_saas_session_version_is_checked_before_document_lookup(
         return True
 
     monkeypatch.setattr(
-        "kj_atlas_api.routes.document_access_admin.document_access_target_exists",
+        "sui_sensemaking_api.routes.document_access_admin.document_access_target_exists",
         _unexpected_lookup,
     )
     with _tenant_admin_client(tmp_path) as fixture:

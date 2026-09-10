@@ -3,7 +3,7 @@ import json
 import pytest
 from fastapi import HTTPException
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Card,
     DocumentV1,
     Edge,
@@ -11,7 +11,7 @@ from kj_atlas_api.models import (
     SuggestMergesRequest,
     Transform,
 )
-from kj_atlas_api.routes.ai import _build_merge_prompt, _parse_merge_suggestions
+from sui_sensemaking_api.routes.ai import _build_merge_prompt, _parse_merge_suggestions
 
 
 def _card(card_id: str, text: str, **updates) -> Card:

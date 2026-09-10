@@ -5,7 +5,7 @@ import os
 import re
 from pathlib import Path
 
-from kj_atlas_api.settings import LEGACY_ENV_KEYS, Settings
+from sui_sensemaking_api.settings import LEGACY_ENV_KEYS, Settings
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -22,14 +22,14 @@ ENV_SCAN_ROOTS = [
 ]
 IGNORED_SCAN_PARTS = {".venv", "__pycache__", ".pytest_cache", "node_modules", "dist"}
 ALLOWED_NON_PROJECT_ENV_KEYS = {"DEV", "PYTHONPATH"}
-ENV_KEY_PATTERN = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
-ENV_WILDCARD_PATTERN = re.compile(r"`KJ_ATLAS_[A-Z0-9]+[A-Z0-9_]*\*`")
+ENV_KEY_PATTERN = re.compile(r"SUI_[A-Z0-9_]+")
+ENV_WILDCARD_PATTERN = re.compile(r"`SUI_[A-Z0-9]+[A-Z0-9_]*\*`")
 LEGACY_FRONTEND_ENV_KEYS = {"VITE_API_BASE", "FRONTEND_API_BASE"}
 
 
 def _unset_related_envs() -> None:
     for key in list(os.environ):
-        if key.startswith("KJ_ATLAS_") or key in LEGACY_ENV_KEYS:
+        if key.startswith("SUI_") or key in LEGACY_ENV_KEYS:
             os.environ.pop(key, None)
 
 
@@ -102,7 +102,7 @@ def _text_env_reads(path: Path) -> list[tuple[int, str]]:
 
 
 def _is_allowed_project_env_name(name: str) -> bool:
-    return name.startswith("KJ_ATLAS_") or name in ALLOWED_NON_PROJECT_ENV_KEYS
+    return name.startswith("SUI_") or name in ALLOWED_NON_PROJECT_ENV_KEYS
 
 
 def _env_keys(text: str) -> set[str]:
@@ -117,7 +117,7 @@ def _public_registry_env_keys() -> set[str]:
 
 def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_DATABASE_URL", "sqlite:///./canonical.db")
+    monkeypatch.setenv("SUI_DATABASE_URL", "sqlite:///./canonical.db")
 
     loaded = Settings()
 
@@ -126,12 +126,12 @@ def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-unt
 
 def test_settings_normalizes_available_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "  ENTERPRISE-PRODUCTION ")
+    monkeypatch.setenv("SUI_RUNTIME_PROFILE", "  ENTERPRISE-PRODUCTION ")
     # ADR-0072 D3=A: this profile refuses to construct without an authentication
     # means. This test is about profile-string normalization, so supply the keys
     # rather than weaken the fail-fast.
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "admin-key")
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-key")
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", "admin-key")
+    monkeypatch.setenv("SUI_API_KEY", "business-key")
 
     loaded = Settings()
 
@@ -143,11 +143,11 @@ def test_settings_accepts_saas_runtime_profile(monkeypatch) -> None:  # type: ig
     # Settings init. Startup validation is handled by TrustedSaasRuntimePolicy
     # and the main.py lifespan preflight instead.
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "saas-multitenant")
+    monkeypatch.setenv("SUI_RUNTIME_PROFILE", "saas-multitenant")
     # ADR-0072 D3=A: still not *unconditionally* blocked, but it does require a
     # control-plane credential. The business-plane key is not required here --
     # the trusted auth edge authenticates the business plane on this profile.
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "admin-key")
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", "admin-key")
 
     loaded = Settings()
 
@@ -156,13 +156,13 @@ def test_settings_accepts_saas_runtime_profile(monkeypatch) -> None:  # type: ig
 
 def test_settings_rejects_unknown_runtime_profile(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "shared-production")
+    monkeypatch.setenv("SUI_RUNTIME_PROFILE", "shared-production")
 
     try:
         Settings()
         assert False, "Expected unknown runtime profile to be rejected"
     except ValueError as exc:
-        assert "KJ_ATLAS_RUNTIME_PROFILE must be one of" in str(exc)
+        assert "SUI_RUNTIME_PROFILE must be one of" in str(exc)
 
 
 def test_settings_rejects_legacy_runtime_profile_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -209,11 +209,11 @@ def test_backend_ci_uses_canonical_database_test_keys_when_present() -> None:
 
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
     assert not re.search(r"^\s+(?:DATABASE_URL|RUN_PG_TESTS):", workflow, re.MULTILINE)
-    assert workflow.count("KJ_ATLAS_DATABASE_URL:") == 5
-    assert workflow.count("KJ_ATLAS_RUN_PG_TESTS:") == 1
+    assert workflow.count("SUI_DATABASE_URL:") == 5
+    assert workflow.count("SUI_RUN_PG_TESTS:") == 1
 
 
-def test_project_env_access_points_use_kj_atlas_prefix() -> None:
+def test_project_env_access_points_use_sui_sensemaking_prefix() -> None:
     violations: list[str] = []
 
     for path in _iter_scan_files():
@@ -239,7 +239,7 @@ def test_public_env_contract_docs_do_not_advertise_legacy_frontend_keys() -> Non
     for path in PUBLIC_ENV_CONTRACT_DOCS:
         text = path.read_text(encoding="utf-8")
         for key in sorted(LEGACY_FRONTEND_ENV_KEYS):
-            legacy_key_pattern = re.compile(rf"(?<!KJ_ATLAS_)\b{re.escape(key)}\b")
+            legacy_key_pattern = re.compile(rf"(?<!SUI_)\b{re.escape(key)}\b")
             if legacy_key_pattern.search(text):
                 violations.append(f"{path.relative_to(REPO_ROOT)}:{key}")
 
@@ -260,7 +260,7 @@ def test_settings_rejects_legacy_key_only(monkeypatch) -> None:  # type: ignore[
 
 def test_settings_rejects_mixed_prefixed_and_legacy_keys(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_DATABASE_URL", "sqlite:///./canonical.db")
+    monkeypatch.setenv("SUI_DATABASE_URL", "sqlite:///./canonical.db")
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./legacy.db")
 
     try:
@@ -273,7 +273,7 @@ def test_settings_rejects_mixed_prefixed_and_legacy_keys(monkeypatch) -> None:  
 
 def test_settings_normalizes_access_control_auth_mode(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE", "  OIDC ")
+    monkeypatch.setenv("SUI_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE", "  OIDC ")
 
     loaded = Settings()
 
@@ -282,8 +282,8 @@ def test_settings_normalizes_access_control_auth_mode(monkeypatch) -> None:  # t
 
 def test_settings_normalizes_access_control_adapter_and_fail_safe(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_ADAPTER", "  MOCK ")
-    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE", "  DENY ")
+    monkeypatch.setenv("SUI_ACCESS_CONTROL_ADAPTER", "  MOCK ")
+    monkeypatch.setenv("SUI_ACCESS_CONTROL_FAIL_SAFE_MODE", "  DENY ")
 
     loaded = Settings()
 
@@ -293,29 +293,29 @@ def test_settings_normalizes_access_control_adapter_and_fail_safe(monkeypatch) -
 
 def test_settings_rejects_invalid_access_control_adapter(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_ADAPTER", "custom")
+    monkeypatch.setenv("SUI_ACCESS_CONTROL_ADAPTER", "custom")
 
     try:
         Settings()
         assert False, "Expected invalid access-control adapter to be rejected"
     except ValueError as exc:
-        assert "KJ_ATLAS_ACCESS_CONTROL_ADAPTER" in str(exc)
+        assert "SUI_ACCESS_CONTROL_ADAPTER" in str(exc)
 
 
 def test_settings_rejects_invalid_access_control_fail_safe(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE", "allow")
+    monkeypatch.setenv("SUI_ACCESS_CONTROL_FAIL_SAFE_MODE", "allow")
 
     try:
         Settings()
         assert False, "Expected invalid access-control fail-safe mode to be rejected"
     except ValueError as exc:
-        assert "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE" in str(exc)
+        assert "SUI_ACCESS_CONTROL_FAIL_SAFE_MODE" in str(exc)
 
 
 def test_settings_normalizes_reviewer_ref_resolver_adapter(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER", "  SSO_SUBJECT ")
+    monkeypatch.setenv("SUI_REVIEWER_REF_RESOLVER_ADAPTER", "  SSO_SUBJECT ")
 
     loaded = Settings()
 
@@ -324,35 +324,35 @@ def test_settings_normalizes_reviewer_ref_resolver_adapter(monkeypatch) -> None:
 
 def test_settings_rejects_non_ce4_equivalence_mode(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_CE4_EQUIVALENCE_MODE", "bundle_hash_only")
+    monkeypatch.setenv("SUI_CE4_EQUIVALENCE_MODE", "bundle_hash_only")
 
     try:
         Settings()
         assert False, "Expected invalid CE4 equivalence mode to be rejected"
     except ValueError as exc:
-        assert "KJ_ATLAS_CE4_EQUIVALENCE_MODE" in str(exc)
+        assert "SUI_CE4_EQUIVALENCE_MODE" in str(exc)
 
 
 def test_settings_rejects_disabling_ce4_audit_require_all_events(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS", "false")
+    monkeypatch.setenv("SUI_CE4_AUDIT_REQUIRE_ALL_EVENTS", "false")
 
     try:
         Settings()
         assert False, "Expected CE4 audit fail-closed guard to be rejected"
     except ValueError as exc:
-        assert "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS" in str(exc)
+        assert "SUI_CE4_AUDIT_REQUIRE_ALL_EVENTS" in str(exc)
 
 
 def test_settings_rejects_disabling_ce4_stub_unresolved_contracts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS", "false")
+    monkeypatch.setenv("SUI_CE4_STUB_UNRESOLVED_CONTRACTS", "false")
 
     try:
         Settings()
         assert False, "Expected unresolved CE4 stub isolation to remain fail-closed"
     except ValueError as exc:
-        assert "KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS" in str(exc)
+        assert "SUI_CE4_STUB_UNRESOLVED_CONTRACTS" in str(exc)
 
 
 def test_settings_rejects_legacy_ce4_stub_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -379,7 +379,7 @@ def test_jwt_algorithms_default_is_valid(monkeypatch) -> None:  # type: ignore[n
 
 def test_jwt_algorithms_rejects_empty(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", " , , ")
+    monkeypatch.setenv("SUI_JWT_ALGORITHMS", " , , ")
     try:
         Settings()
         assert False, "Expected empty algorithm list to be rejected"
@@ -389,7 +389,7 @@ def test_jwt_algorithms_rejects_empty(monkeypatch) -> None:  # type: ignore[no-u
 
 def test_jwt_algorithms_rejects_unknown(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", "RS256,NONE")
+    monkeypatch.setenv("SUI_JWT_ALGORITHMS", "RS256,NONE")
     try:
         Settings()
         assert False, "Expected unknown algorithm to be rejected"
@@ -400,7 +400,7 @@ def test_jwt_algorithms_rejects_unknown(monkeypatch) -> None:  # type: ignore[no
 
 def test_jwt_algorithms_rejects_hmac(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", "HS256,RS256")
+    monkeypatch.setenv("SUI_JWT_ALGORITHMS", "HS256,RS256")
     try:
         Settings()
         assert False, "Expected HMAC algorithm to be rejected"
@@ -410,7 +410,7 @@ def test_jwt_algorithms_rejects_hmac(monkeypatch) -> None:  # type: ignore[no-un
 
 def test_jwt_algorithms_normalizes_whitespace(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_JWT_ALGORITHMS", " ES256 , RS256 ")
+    monkeypatch.setenv("SUI_JWT_ALGORITHMS", " ES256 , RS256 ")
     loaded = Settings()
     assert loaded.jwt_algorithms == "ES256,RS256"
 
@@ -423,7 +423,7 @@ def test_tenant_claim_name_default_is_valid(monkeypatch) -> None:  # type: ignor
 
 def test_tenant_claim_name_rejects_empty(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", "   ")
+    monkeypatch.setenv("SUI_TENANT_CLAIM_NAME", "   ")
     try:
         Settings()
         assert False, "Expected empty claim name to be rejected"
@@ -433,7 +433,7 @@ def test_tenant_claim_name_rejects_empty(monkeypatch) -> None:  # type: ignore[n
 
 def test_tenant_claim_name_rejects_spaces(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", "tenant claim")
+    monkeypatch.setenv("SUI_TENANT_CLAIM_NAME", "tenant claim")
     try:
         Settings()
         assert False, "Expected claim name with spaces to be rejected"
@@ -443,7 +443,7 @@ def test_tenant_claim_name_rejects_spaces(monkeypatch) -> None:  # type: ignore[
 
 def test_tenant_claim_name_rejects_leading_whitespace(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
-    monkeypatch.setenv("KJ_ATLAS_TENANT_CLAIM_NAME", " tenant_ref")
+    monkeypatch.setenv("SUI_TENANT_CLAIM_NAME", " tenant_ref")
     try:
         Settings()
         assert False, "Expected claim name with leading whitespace to be rejected"

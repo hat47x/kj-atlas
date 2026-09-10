@@ -11,7 +11,7 @@ test("DOMAIN-W-ITERATION-01 saves a selected round as an immutable self-containe
   expect(serialized.ok).toBe(true);
   if (!serialized.ok) return;
 
-  const inquiryPath = testInfo.outputPath("source-inquiry.kj-atlas-inquiry.json");
+  const inquiryPath = testInfo.outputPath("source-inquiry.sui-sensemaking-inquiry.json");
   await writeFile(inquiryPath, serialized.json, "utf8");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -45,8 +45,8 @@ test("DOMAIN-W-ITERATION-01 saves a selected round as an immutable self-containe
   const partialDownloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
   const partialDownload = await partialDownloadPromise;
-  expect(partialDownload.suggestedFilename()).toMatch(/-round-r3-1\.kj-atlas-inquiry\.json$/);
-  const partialPath = testInfo.outputPath("partial-inquiry.kj-atlas-inquiry.json");
+  expect(partialDownload.suggestedFilename()).toMatch(/-round-r3-1\.sui-sensemaking-inquiry\.json$/);
+  const partialPath = testInfo.outputPath("partial-inquiry.sui-sensemaking-inquiry.json");
   await partialDownload.saveAs(partialPath);
   const partial = await parseInquiryBundleJson(await readFile(partialPath, "utf8"));
   expect(partial.ok).toBe(true);
@@ -65,7 +65,7 @@ test("DOMAIN-W-ITERATION-01 saves a selected round as an immutable self-containe
   await scopeSelect.selectOption("");
   const fullDownloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
-  const fullPath = testInfo.outputPath("full-inquiry.kj-atlas-inquiry.json");
+  const fullPath = testInfo.outputPath("full-inquiry.sui-sensemaking-inquiry.json");
   await (await fullDownloadPromise).saveAs(fullPath);
   const full = await parseInquiryBundleJson(await readFile(fullPath, "utf8"));
   expect(full.ok).toBe(true);
@@ -77,9 +77,9 @@ test("DOMAIN-W-ITERATION-01 saves a selected round as an immutable self-containe
   await panel.getByRole("button", { name: "Save SafeMode share copy" }).click();
   const shareDownload = await shareDownloadPromise;
   expect(shareDownload.suggestedFilename()).toMatch(
-    /-round-r3-1\.safe-share\.kj-atlas-inquiry\.json$/,
+    /-round-r3-1\.safe-share\.sui-sensemaking-inquiry\.json$/,
   );
-  const sharePath = testInfo.outputPath("safe-share-inquiry.kj-atlas-inquiry.json");
+  const sharePath = testInfo.outputPath("safe-share-inquiry.sui-sensemaking-inquiry.json");
   await shareDownload.saveAs(sharePath);
   const shareRaw = await readFile(sharePath, "utf8");
   const shared = await parseInquiryBundleJson(shareRaw);

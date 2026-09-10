@@ -16,7 +16,7 @@ const rootElement = document.getElementById("root")!;
 rootElement.style.height = "100%";
 
 const runtimeEntryMode = resolveRuntimeEntryMode(
-  import.meta.env.KJ_ATLAS_RUNTIME_PROFILE,
+  import.meta.env.SUI_RUNTIME_PROFILE,
 );
 
 function renderRuntimeEntry() {

@@ -1,6 +1,6 @@
 # E2E Testing
 
-対象読者: kj-atlas の実装変更に対して Playwright E2E、回帰テスト、PR 前確認を行う開発者、QA、メンテナ。
+対象読者: sui-sensemaking の実装変更に対して Playwright E2E、回帰テスト、PR 前確認を行う開発者、QA、メンテナ。
 
 目的: Docker Compose またはローカル起動環境で、開発者向け E2E を再現できるようにします。一般利用者向けの画面確認は [受け入れ確認](../../../04_Documentation/acceptance_check.md) を参照してください。
 
@@ -128,7 +128,7 @@ python -m pytest
 | 保存経路 | 一意な合成documentの `PUT -> GET` でpayloadと `ETag` が一致し、固定seedデータに依存しない |
 | 保存 | 作成・編集した内容が再読み込み後も残る |
 | SafeMode | 未レビュー情報を AI が自動確定しない |
-| LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
+| LLM disabled | `SUI_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
 | export | 秘密情報や共有不要な調査メモが混ざらない |
 | 画面 | ヘッダー、ツールバー、主要ボタンが狭い幅でも重ならない |
 | 操作性・開始 | 初期表示で主要操作へ到達できる |
@@ -170,7 +170,7 @@ python -m pytest
 ### QA Monkey 群の優先境界
 
 1. SafeMode / share-export は fail-closed を維持する。
-2. `KJ_ATLAS_LLM_PROVIDER=none` でも回帰検証が継続可能である。
+2. `SUI_LLM_PROVIDER=none` でも回帰検証が継続可能である。
 3. `ja/en` のユーザージャーニー等価は E2E で機械判定し、翻訳品質は人間レビューに分離する。
 
 ### 再現性・flaky対策（必須）
@@ -252,35 +252,35 @@ node ./node_modules/@playwright/test/cli.js test e2e/pub_visibility_i18n_readonl
 
 `e2e/ai_model_ux_available_models_reason.spec.ts` は、`GET /ai/available-models` の `unavailableReason`（`no_active_models` / `provider_unavailable` / `tenant_policy_excludes_all`）が実backendのmodel registry・provider・tenant allowlist状態から実際に導かれ、ModelSelectorの案内文言へ正しく反映されることを固定するsuiteです。他のe2e specとは逆に、page.routeでは固定せず、`/admin/provision/models/**` 管理APIで実registryを変更し、reloadで再取得させます。
 
-`KJ_ATLAS_E2E_REAL_BACKEND=1` を設定しない限り全ケースskipするため、`npm run e2e` / `npm run e2e:mock` の既定実行は本suiteの影響を受けません。実行するには、SQLite代替E2Eの手順（本書冒頭）でbackendを起動したうえで:
+`SUI_E2E_REAL_BACKEND=1` を設定しない限り全ケースskipするため、`npm run e2e` / `npm run e2e:mock` の既定実行は本suiteの影響を受けません。実行するには、SQLite代替E2Eの手順（本書冒頭）でbackendを起動したうえで:
 
 ```bash
 cd 03_Implement/backend
-PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" python -m alembic upgrade head
-PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_model_ux_e2e.sqlite3" KJ_ATLAS_LLM_PROVIDER=none \
-  python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_model_ux_e2e.sqlite3" python -m alembic upgrade head
+PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_model_ux_e2e.sqlite3" SUI_LLM_PROVIDER=none \
+  python -m uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000
 
 cd 03_Implement/frontend
-KJ_ATLAS_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
+SUI_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
   e2e/ai_model_ux_available_models_reason.spec.ts --reporter=line --workers=1
 ```
 
-`no_active_models` のケースは空のmodel registryを前提とするため、backendは毎回フレッシュなSQLiteファイルで起動してください（前回実行のfixture登録が残っていると誤ってfailします）。ローカル-devプロファインは無設定で管理面が開いているため、`KJ_ATLAS_API_KEY` / `KJ_ATLAS_ADMIN_API_KEY` は不要です。第4のreason（`no_user_selectable_models`）はissue memoの受入条件が明示する3件（provider不一致・allowlist空・active modelなし）に含まれないため、本suiteでは対象外です。
+`no_active_models` のケースは空のmodel registryを前提とするため、backendは毎回フレッシュなSQLiteファイルで起動してください（前回実行のfixture登録が残っていると誤ってfailします）。ローカル-devプロファインは無設定で管理面が開いているため、`SUI_API_KEY` / `SUI_ADMIN_API_KEY` は不要です。第4のreason（`no_user_selectable_models`）はissue memoの受入条件が明示する3件（provider不一致・allowlist空・active modelなし）に含まれないため、本suiteでは対象外です。
 
 ### 実backend必須suiteの境界（DATA-INQUIRY-CONCURRENCY-01 AC-9）
 
 `e2e/inquiry_bundle_backend_conflict.spec.ts` は、`POST /inquiry-bundles/{journey_id}` の実CAS競合（stale `If-Match` → 409）が、実browserの`InquiryJourneyPrototypePanel`で偽の保存成功表示にならず、`conflict_backend`のコンフリクト文言を表示し、自動retry/自動mergeでローカル編集や観測済みrevisionを黙って書き換えないことを固定するsuiteです。ブラウザ自身の保存に加えて、`request`フィクスチャで同じjourneyへ直接2本目のPUT（正しい`If-Match`）を送り、実際にサーバー側のrevisionを進める、という2クライアント構成でしか再現できない競合を検証します。
 
-AI-MODEL-UX-01のsuiteと同じ`KJ_ATLAS_E2E_REAL_BACKEND`ゲート・同じSQLite代替E2E起動手順を再利用します（新しいenv varは導入していません）。journeyIdはテストごとに`crypto.randomUUID()`由来の値を新規生成するため、`no_active_models`のケースのようなフレッシュDB前提はなく、他のfixtureが残っているbackendへそのまま実行できます。
+AI-MODEL-UX-01のsuiteと同じ`SUI_E2E_REAL_BACKEND`ゲート・同じSQLite代替E2E起動手順を再利用します（新しいenv varは導入していません）。journeyIdはテストごとに`crypto.randomUUID()`由来の値を新規生成するため、`no_active_models`のケースのようなフレッシュDB前提はなく、他のfixtureが残っているbackendへそのまま実行できます。
 
 ```bash
 cd 03_Implement/backend
-PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" python -m alembic upgrade head
-PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" KJ_ATLAS_LLM_PROVIDER=none \
-  python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_inquiry_conflict_e2e.sqlite3" python -m alembic upgrade head
+PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_inquiry_conflict_e2e.sqlite3" SUI_LLM_PROVIDER=none \
+  python -m uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000
 
 cd 03_Implement/frontend
-KJ_ATLAS_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
+SUI_E2E_REAL_BACKEND=1 node ./node_modules/@playwright/test/cli.js test \
   e2e/inquiry_bundle_backend_conflict.spec.ts --reporter=line --workers=1
 ```
 

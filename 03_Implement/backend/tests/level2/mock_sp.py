@@ -49,7 +49,7 @@ class MockSpRuntime:
     def __init__(self, *, backend_app, idp_app):
         self._backend_client = TestClient(backend_app)
         self._idp_client = TestClient(idp_app)
-        self.app = FastAPI(title="kj-atlas mock sp")
+        self.app = FastAPI(title="sui-sensemaking mock sp")
         self.app.post("/proxy/docs")(self.proxy_docs)
         self.app.get("/healthz")(self.healthz)
 

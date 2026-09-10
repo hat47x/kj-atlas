@@ -1,19 +1,19 @@
-# Issue: KJ-PROMPT-ALIGN-01 実行時プロンプトが ai_kj_execution_procedures.md と乖離している
+# Issue: KJ-PROMPT-ALIGN-01 実行時プロンプトが ai_sensemaking_execution_procedures.md と乖離している
 
 - Type: Product Invariant / AI Integration
 - Status: Done
 - Source Issue: `01_Plans/research/direction-review-2026-08-13.md` 優先3-4
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`（prompt builder群）
-- Related ADR/Spec: `00_Prompt/ai_kj_execution_procedures.md`, `00_Prompt/kj_technique.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`（prompt builder群）
+- Related ADR/Spec: `00_Prompt/ai_sensemaking_execution_procedures.md`, `00_Prompt/sensemaking_technique.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 - Expected verification level: `integration`
 
 ## 課題
 
-`00_Prompt/ai_kj_execution_procedures.md` は KJ 各操作の判断基準・停止条件を normative に定めているが、実行時プロンプトがこれと乖離していた。方向性レビュー優先3-4 の指摘（「Normative文書が既にあるので設計は不要で、実装のみ」）。
+`00_Prompt/ai_sensemaking_execution_procedures.md` は KJ 各操作の判断基準・停止条件を normative に定めているが、実行時プロンプトがこれと乖離していた。方向性レビュー優先3-4 の指摘（「Normative文書が既にあるので設計は不要で、実装のみ」）。
 
-| 操作 | normative 要求（ai_kj_execution_procedures.md） | 修正前の実行時プロンプト |
+| 操作 | normative 要求（ai_sensemaking_execution_procedures.md） | 修正前の実行時プロンプト |
 |---|---|---|
 | `refine_card_text` | 名詞止め禁止・動詞で終わる文（§1） | 名詞止めへの言及なし |
 | `suggest_card_groups` | 2〜3枚制約・孤立カードを無理に入れない・分類ではなく訴えの類似性で束ねる（§2） | 「**thematic** islands」と分類誘導。制約なし |

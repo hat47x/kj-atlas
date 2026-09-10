@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -46,18 +46,18 @@ class HttpBearerFormatContractTests(unittest.TestCase):
         self.assertIn("any(not character.isprintable() for character in api_key)", bearer)
 
         field_keys = (
-            ("self.audit_http_api_key", "KJ_ATLAS_AUDIT_HTTP_API_KEY"),
+            ("self.audit_http_api_key", "SUI_AUDIT_HTTP_API_KEY"),
             (
                 "self.access_control_external_http_static_bearer_token",
-                "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN",
+                "SUI_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN",
             ),
             (
                 "self.document_policy_binding_http_api_key",
-                "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY",
+                "SUI_DOCUMENT_POLICY_BINDING_HTTP_API_KEY",
             ),
             (
                 "self.tenant_capability_http_api_key",
-                "KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY",
+                "SUI_TENANT_CAPABILITY_HTTP_API_KEY",
             ),
         )
         for field, key in field_keys:

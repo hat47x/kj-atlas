@@ -16,12 +16,12 @@ from fastapi import Request
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import Session, sessionmaker
 
-import kj_atlas_api.trusted_auth_edge as trusted_auth_edge
-from kj_atlas_api.auth_session_hash import derive_session_key_hash
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.models import Base, IdentityProviderRow, SaasAuthSessionRow, TenantRow
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
-from kj_atlas_api.trusted_auth_edge import (
+import sui_sensemaking_api.trusted_auth_edge as trusted_auth_edge
+from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.models import Base, IdentityProviderRow, SaasAuthSessionRow, TenantRow
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.trusted_auth_edge import (
     JwtIdentityError,
     JwtSaasIdentityContextResolver,
 )
@@ -63,7 +63,7 @@ def edge(tmp_path):
                 IdentityProviderRow(
                     id="idp-1",
                     issuer=ISSUER,
-                    audience="kj-atlas",
+                    audience="sui-sensemaking",
                     protocol="oidc",
                     jwks_uri="https://broker.invalid/jwks.json",
                     lifecycle_state="active",
@@ -89,7 +89,7 @@ def _request(cookie: str | None = None, bearer: str | None = None) -> Request:
     if cookie is not None:
         headers.append((b"cookie", f"{COOKIE_NAME}={cookie}".encode()))
     if bearer is not None:
-        headers.append((b"x-kj-atlas-authorization", f"Bearer {bearer}".encode()))
+        headers.append((b"x-sui-sensemaking-authorization", f"Bearer {bearer}".encode()))
     return Request(scope={"type": "http", "method": "GET", "path": "/", "headers": headers})
 
 
@@ -120,7 +120,7 @@ def test_valid_cookie_resolves_identity_and_tenant_claim(edge) -> None:
     assert claim is not None
     assert claim.tenant_id == "tenant-a"
     assert claim.issuer == ISSUER
-    assert claim.audience == "kj-atlas"
+    assert claim.audience == "sui-sensemaking"
     assert claim.subject == "subject-1"
     assert claim.identity_provider_id == "idp-1"
 

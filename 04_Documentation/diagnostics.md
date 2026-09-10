@@ -78,8 +78,8 @@ curl -fsS http://127.0.0.1:8000/healthz
 | `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` が成功するか。標準サンプル `doc_phase1_canvas` は初回ブラウザ表示時に作成されるため、初回表示前の `/api/docs/doc_phase1_canvas` は 404 が正常（5xx の場合のみ backend を調査） |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | `Database driver for backend '...' is not available`でbackendまたはmigrationが停止する | [installation.mdのVerified DB別pip extra表](installation.md#sqlite以外のverified-dbを直接使う場合)を確認し、同じ仮想環境へ対象extraを導入する。URLやpasswordを診断ログへ貼らない |
-| `password authentication failed for user "kj_atlas"` が backend logs に出る | まず `env \| grep -i kj_atlas`（export 済み変数が compose を上書きし `down -v` でも直らない）と `docker compose config`（db 側パスワードと `KJ_ATLAS_DATABASE_URL` 内パスワードの一致）。次に古い `kj_atlas_pgdata` volume の残存（`pg_isready` は認証未検証のため db は healthy に見える）。詳細と復旧手順は installation.md の同名項目を参照 |
-| AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
+| `password authentication failed for user "sui_sensemaking"` が backend logs に出る | まず `env \| grep -i sui_sensemaking`（export 済み変数が compose を上書きし `down -v` でも直らない）と `docker compose config`（db 側パスワードと `SUI_DATABASE_URL` 内パスワードの一致）。次に古い `sui_sensemaking_pgdata` volume の残存（`pg_isready` は認証未検証のため db は healthy に見える）。詳細と復旧手順は installation.md の同名項目を参照 |
+| AI 提案が出ない | `SUI_LLM_PROVIDER`、provider endpoint、SafeMode |
 | 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |
 | worker が落ちる | 入力データ、worker console、該当 worker の単体テスト |
 
@@ -157,7 +157,7 @@ API status:
 - 生成後は必ず全文プレビューが表示されます。コピーまたはダウンロード（`diag-bundle.v1` 形式の JSON）は、内容を確認したあとにのみ行えます。
 - 自動送信は一切行いません。生成・プレビュー・コピー・ダウンロードはすべてローカルの操作です。
 - 含まれるのは、アプリ revision（検証できない場合は `unknown`）、正規化済みブラウザ family/major・OS family、選択した障害分類・任意の HTTP status、SafeMode 状態、provider 種別、対象文書の version/updatedAt とカード/島/エッジの**件数のみ**です。
-- カード・島・narrative 等の本文、文書 ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の ON/OFF に関わらず一切含まれません。許可リストの詳細は [ADR-0053](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。
+- カード・島・narrative 等の本文、文書 ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の ON/OFF に関わらず一切含まれません。許可リストの詳細は [ADR-0053](https://github.com/hat47x/sui-sensemaking/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。
 - パネルを閉じる（Escape・×・キャンセル）と、生成済みの内容はメモリから破棄されます。
 
 ## 障害分類と一次切り分け
@@ -197,7 +197,7 @@ secretsや未マスク本文の共有、SafeMode緩和、不可逆なデータ�
 1. 変更直後なら、直前の設定差分を確認します。
 2. DB 接続や migration エラーなら backend logs を確認します。
 3. frontend の表示だけ壊れている場合は cache を無効化して再読み込みします。
-4. LLM や audit HTTP 連携が関係する場合は、一度 `KJ_ATLAS_LLM_PROVIDER=none`、`KJ_ATLAS_AUDIT_EXPORT_ENABLED=false` に戻して再確認します。
+4. LLM や audit HTTP 連携が関係する場合は、一度 `SUI_LLM_PROVIDER=none`、`SUI_AUDIT_EXPORT_ENABLED=false` に戻して再確認します。
 
 復旧を急ぐ場合でも、秘密情報を含むログをそのまま共有しないでください。共有前に API key、token、個人情報、生の顧客データを除去します。
 

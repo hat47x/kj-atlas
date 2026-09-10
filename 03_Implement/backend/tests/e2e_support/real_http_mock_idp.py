@@ -7,7 +7,7 @@ import os
 from tests.level2 import mock_idp
 
 mock_idp._MOCK_BASE = os.environ.get(
-    "KJ_ATLAS_MOCK_IDP_BASE", "http://localhost:9100"
+    "SUI_MOCK_IDP_BASE", "http://localhost:9100"
 ).rstrip("/")
 
 app = mock_idp.app

@@ -24,7 +24,7 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 - Compose優先経路:
   - `docker compose version` -> 未実施（環境に docker コマンドが存在しない）
 - SQLite代替経路:
-  - backend: `uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000`
+  - backend: `uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000`
   - frontend: `npm run dev -- --host 127.0.0.1 --port 4173`
   - health:
     - `curl -fsS http://127.0.0.1:8000/healthz` -> pass

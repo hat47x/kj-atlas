@@ -1,6 +1,6 @@
 # Installation
 
-対象読者: kj-atlas を初めてローカルまたは検証環境で起動する利用者、運用担当者。
+対象読者: sui-sensemaking を初めてローカルまたは検証環境で起動する利用者、運用担当者。
 
 目的: Docker Compose を使った標準起動手順と、Docker が使えない場合の最小代替手順を示します。
 
@@ -32,8 +32,8 @@ Docker Compose は、必要な `web`、`api`、`db` をまとめて起動しま�
 1. リポジトリを取得します。
 
 ```bash
-git clone https://github.com/hat47x/kj-atlas.git
-cd kj-atlas
+git clone https://github.com/hat47x/sui-sensemaking.git
+cd sui-sensemaking
 ```
 
 2. デプロイ用ディレクトリへ移動します。
@@ -104,18 +104,18 @@ python -m venv .venv
 . .venv/bin/activate
 pip install -e ".[test]"
 pip install alembic uvicorn
-export KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
-export KJ_ATLAS_LLM_PROVIDER="none"
+export SUI_DATABASE_URL="sqlite:///./sui_sensemaking.db"
+export SUI_LLM_PROVIDER="none"
 alembic upgrade head
-python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000
 ```
 
 Windows PowerShell では、仮想環境の有効化と環境変数の設定を次のように行います（`. .venv/bin/activate` と `export` の代わり）。
 
 ```powershell
 .venv\Scripts\Activate.ps1
-$env:KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
-$env:KJ_ATLAS_LLM_PROVIDER="none"
+$env:SUI_DATABASE_URL="sqlite:///./sui_sensemaking.db"
+$env:SUI_LLM_PROVIDER="none"
 ```
 
 `Activate.ps1` の実行が PowerShell の実行ポリシーで拒否される場合は、`.venv\Scripts\activate.bat`（コマンドプロンプト）を使うか、現在のセッションだけ `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` を実行してから有効化します。
@@ -136,7 +136,7 @@ $env:KJ_ATLAS_LLM_PROVIDER="none"
 | `cockroachdb` | `cockroachdb` | `cockroachdb+psycopg` |
 | `oracle` | `oracle` | `oracle+oracledb` |
 
-たとえばMySQLなら`pip install -e ".[test,mysql]"`を実行してから`KJ_ATLAS_DATABASE_URL`を設定します。製品version、single-tenant／shared-schema SaaSの範囲、昇格条件は[DB対応表](../02_Architecture/database_portability.md)を確認してください。未検証driverを明示したURLは、別driverが偶然導入済みでも起動前に拒否されます。
+たとえばMySQLなら`pip install -e ".[test,mysql]"`を実行してから`SUI_DATABASE_URL`を設定します。製品version、single-tenant／shared-schema SaaSの範囲、昇格条件は[DB対応表](../02_Architecture/database_portability.md)を確認してください。未検証driverを明示したURLは、別driverが偶然導入済みでも起動前に拒否されます。
 
 ### Frontend
 
@@ -161,7 +161,7 @@ http://127.0.0.1:4173
 - 画面が表示される。
 - `curl -fsS http://localhost:8080/api/healthz` または `curl -fsS http://127.0.0.1:8000/healthz` が成功する。
 - 新規ドキュメントを作成し、再読み込み後も内容が残る。
-- 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM とデータを共有しない。
+- 既定では `SUI_LLM_PROVIDER=none` のため、外部 LLM とデータを共有しない。
 
 画面が正常に開くと、まず「作業を開始」パネルで、新しい文書、サンプル、手元の `document.json`、レビューパックの入口を選べます。ここで SafeMode が ON であることも確認します。
 
@@ -192,13 +192,13 @@ Docker Engine と Docker Compose v2 をインストールしてください。Do
 
   追加後はログインし直すか、`newgrp docker` を実行してから再試行します。デーモンが停止している場合は `sudo systemctl start docker` で起動します。一時的に確認するだけであれば `sudo docker compose up --build -d` でも実行できます。
 
-### `password authentication failed for user "kj_atlas"`
+### `password authentication failed for user "sui_sensemaking"`
 
 `docker compose logs api` に次のようなエラーが出て、API が起動できず、`alembic upgrade head` や DB 接続の段階で失敗する状態です。
 
 ```text
 sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed:
-connection to server at "172.19.0.2", port 5432 failed: FATAL:  password authentication failed for user "kj_atlas"
+connection to server at "172.19.0.2", port 5432 failed: FATAL:  password authentication failed for user "sui_sensemaking"
 ```
 
 `db` サービスは起動して `docker compose ps` 上は healthy に見えることがあります。これは `db` の healthcheck が `pg_isready` を使っており、サーバーが接続を受け付けるかだけを確認し、パスワード認証までは検証しないためです。そのため `db` が healthy でも API からの認証だけが失敗します。
@@ -206,37 +206,37 @@ connection to server at "172.19.0.2", port 5432 failed: FATAL:  password authent
 この症状には主に2つの原因があります。まず次のコマンドで切り分けます。
 
 ```bash
-# シェルに KJ_ATLAS_* が export されていないか（compose の既定値を上書きします）
-env | grep -i kj_atlas
+# シェルに SUI_* が export されていないか（compose の既定値を上書きします）
+env | grep -i sui_sensemaking
 
 # compose が実際に解決している値（db 側パスワードと、API 側 URL 内のパスワードが一致するか）
 cd 03_Implement/deploy
-docker compose config | grep -iE 'POSTGRES_PASSWORD|POSTGRES_USER|KJ_ATLAS_DATABASE_URL'
+docker compose config | grep -iE 'POSTGRES_PASSWORD|POSTGRES_USER|SUI_DATABASE_URL'
 ```
 
-**原因A: シェルに残った `KJ_ATLAS_*` 環境変数が compose の既定値を上書きしている**
+**原因A: シェルに残った `SUI_*` 環境変数が compose の既定値を上書きしている**
 
-`KJ_ATLAS_POSTGRES_PASSWORD` や `KJ_ATLAS_DATABASE_URL` がシェルに export されていると、`db` の初期化パスワードと API が送るパスワードが食い違い、この認証失敗が起きます。よくあるのは、同じシェルで「Docker を使わない最小起動」の `export KJ_ATLAS_...` を実行したまま `docker compose` を起動した場合です。この場合は **`docker compose down -v` では解消しません**（環境変数が残っているため、volume を作り直しても同じ食い違いが再発します）。`env | grep -i kj_atlas` で出た変数を解除してから起動し直します。
+`SUI_POSTGRES_PASSWORD` や `SUI_DATABASE_URL` がシェルに export されていると、`db` の初期化パスワードと API が送るパスワードが食い違い、この認証失敗が起きます。よくあるのは、同じシェルで「Docker を使わない最小起動」の `export SUI_...` を実行したまま `docker compose` を起動した場合です。この場合は **`docker compose down -v` では解消しません**（環境変数が残っているため、volume を作り直しても同じ食い違いが再発します）。`env | grep -i sui_sensemaking` で出た変数を解除してから起動し直します。
 
 ```bash
-unset KJ_ATLAS_DATABASE_URL KJ_ATLAS_POSTGRES_PASSWORD KJ_ATLAS_POSTGRES_USER KJ_ATLAS_POSTGRES_DB
+unset SUI_DATABASE_URL SUI_POSTGRES_PASSWORD SUI_POSTGRES_USER SUI_POSTGRES_DB
 cd 03_Implement/deploy
 docker compose down -v
 docker compose up --build -d
 ```
 
-独自の認証情報を使いたい場合は、解除する代わりに `db` 側の `KJ_ATLAS_POSTGRES_PASSWORD` と API 側の `KJ_ATLAS_DATABASE_URL` のパスワードを一致させてください（本リポジトリの compose は、`KJ_ATLAS_POSTGRES_PASSWORD` だけを設定すれば既定値どうしが一致するよう構成済みです。ただし `KJ_ATLAS_DATABASE_URL` を別値で設定するとそちらが優先されます）。
+独自の認証情報を使いたい場合は、解除する代わりに `db` 側の `SUI_POSTGRES_PASSWORD` と API 側の `SUI_DATABASE_URL` のパスワードを一致させてください（本リポジトリの compose は、`SUI_POSTGRES_PASSWORD` だけを設定すれば既定値どうしが一致するよう構成済みです。ただし `SUI_DATABASE_URL` を別値で設定するとそちらが優先されます）。
 
-**原因B: 過去に別の認証情報で初期化された volume `kj_atlas_pgdata` が残っている**
+**原因B: 過去に別の認証情報で初期化された volume `sui_sensemaking_pgdata` が残っている**
 
 PostgreSQL は volume が空のときの初回起動でのみ `POSTGRES_USER` / `POSTGRES_PASSWORD` を反映します。一度初期化された volume が残っていると、設定を変えても既存の認証情報は更新されません。`docker compose config` 上は db と API のパスワードが一致して見えても、volume 内に古い認証情報が残っていればこの症状が出ます。
 
-注意: `docker compose down -v` でも volume を削除できますが、コンテナが使用中などの理由で削除されず、`down -v` 後も `docker volume ls` に volume が残ることがあります。確実に消すため、明示的に削除して確認してから起動し直します（volume 名は `<project>_kj_atlas_pgdata`。標準手順では project 名が `deploy` のため `deploy_kj_atlas_pgdata`。実際の名前は `docker volume ls` で確認）。
+注意: `docker compose down -v` でも volume を削除できますが、コンテナが使用中などの理由で削除されず、`down -v` 後も `docker volume ls` に volume が残ることがあります。確実に消すため、明示的に削除して確認してから起動し直します（volume 名は `<project>_sui_sensemaking_pgdata`。標準手順では project 名が `deploy` のため `deploy_sui_sensemaking_pgdata`。実際の名前は `docker volume ls` で確認）。
 
 ```bash
 cd 03_Implement/deploy
 docker compose down                       # コンテナを止めて volume を解放
-docker volume rm deploy_kj_atlas_pgdata   # volume を明示的に削除
+docker volume rm deploy_sui_sensemaking_pgdata   # volume を明示的に削除
 docker volume ls | grep pgdata            # 何も表示されない（消えた）ことを確認してから次へ
 docker compose up --build -d
 ```
@@ -255,17 +255,17 @@ volume を削除すると保存済みのドキュメントもすべて消えま�
 
 ### `port is already allocated`
 
-`KJ_ATLAS_WEB_PORT` を変えて起動します。
+`SUI_WEB_PORT` を変えて起動します。
 
 ```bash
-KJ_ATLAS_WEB_PORT=8081 docker compose up --build -d
+SUI_WEB_PORT=8081 docker compose up --build -d
 ```
 
 ### API が 401 を返す
 
-`KJ_ATLAS_API_KEY` を設定している環境では、`/healthz` 以外の API に `X-API-Key` ヘッダーが必要です。詳しくは [configuration.md](configuration.md) を参照してください。
+`SUI_API_KEY` を設定している環境では、`/healthz` 以外の API に `X-API-Key` ヘッダーが必要です。詳しくは [configuration.md](configuration.md) を参照してください。
 
-なお、ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `KJ_ATLAS_API_KEY` を設定すると、画面からの読み込み・保存はすべて 401 になります。ブラウザでの動作検証では `KJ_ATLAS_API_KEY` を未設定（既定）にしてください。API キーは `curl` などのプログラムからのアクセス保護を想定しており、ブラウザ配信を保護する場合は前段に認証 proxy を置きます（[security.md](security.md) 参照）。
+なお、ブラウザで動く同梱の画面（SPA）は `X-API-Key` を付与しません。そのため `SUI_API_KEY` を設定すると、画面からの読み込み・保存はすべて 401 になります。ブラウザでの動作検証では `SUI_API_KEY` を未設定（既定）にしてください。API キーは `curl` などのプログラムからのアクセス保護を想定しており、ブラウザ配信を保護する場合は前段に認証 proxy を置きます（[security.md](security.md) 参照）。
 
 ### 画面は開くが保存できない
 
@@ -278,7 +278,7 @@ docker compose logs api --tail=100
 docker compose logs db --tail=100
 ```
 
-`KJ_ATLAS_API_KEY` を設定している場合は注意が必要です。ブラウザの同梱画面（SPA）は `X-API-Key` を送れないため、キーを設定すると画面からの保存・読み込みが 401 になります。ブラウザでの動作検証中は `KJ_ATLAS_API_KEY` を未設定（既定）にしてください。
+`SUI_API_KEY` を設定している場合は注意が必要です。ブラウザの同梱画面（SPA）は `X-API-Key` を送れないため、キーを設定すると画面からの保存・読み込みが 401 になります。ブラウザでの動作検証中は `SUI_API_KEY` を未設定（既定）にしてください。
 
 ## 関連文書
 

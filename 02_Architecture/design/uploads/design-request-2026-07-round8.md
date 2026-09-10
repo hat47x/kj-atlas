@@ -1,4 +1,4 @@
-# kj-atlas デザイン設計要求（Round 8・マスタ系設定データとSaaS tenant scope）
+# sui-sensemaking デザイン設計要求（Round 8・マスタ系設定データとSaaS tenant scope）
 
 対象: Claude Designセッションへの貼り付け用プロンプト。今回は、一般利用者の文書入口、文書内の保存範囲が異なる2種のプリセット、通常Workspaceから分離したAdmin管理面に加え、将来SaaS化した場合のtenant scope表示を先行検討してください。
 
@@ -6,7 +6,7 @@
 
 ## 貼り付け用プロンプト
 
-kj-atlasの既存UIを前提に、**マスタ系設定データを安全に設定・維持するための情報設計と画面レッドライン**を提案してください。白紙からの全面刷新ではなく、既存のStartPanel、Fileメニュー、Recent documents dialog、View controls、Patch workspaceを置換・包含して整えます。
+sui-sensemakingの既存UIを前提に、**マスタ系設定データを安全に設定・維持するための情報設計と画面レッドライン**を提案してください。白紙からの全面刷新ではなく、既存のStartPanel、Fileメニュー、Recent documents dialog、View controls、Patch workspaceを置換・包含して整えます。
 
 ### 1. 今回の目的
 
@@ -42,7 +42,7 @@ kj-atlasの既存UIを前提に、**マスタ系設定データを安全に設�
 
 ### 2.1 SaaS tenant境界（先行検討・未採択）
 
-現行kj-atlasは単一デプロイ／単一テナント相当で、SaaS multi-tenantは未対応です。次は`01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）の設計入力です。ただし、同ADRのImplementation gateを満たした後にのみ実装できます。Claude Designはセキュリティ方式を変更せず、確定済み境界のUI表現を検討してください。
+現行sui-sensemakingは単一デプロイ／単一テナント相当で、SaaS multi-tenantは未対応です。次は`01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`（Accepted）の設計入力です。ただし、同ADRのImplementation gateを満たした後にのみ実装できます。Claude Designはセキュリティ方式を変更せず、確定済み境界のUI表現を検討してください。
 
 - TenantContextはverified claimまたはtrusted host mappingでbackendが解決する。tenantId自由入力は不可。
 - 主体tenantと資源tenantの不一致、tenant不明、membership失効、PDP不達はreadを含めてdenyする。Emptyやread-only fallbackに見せない。

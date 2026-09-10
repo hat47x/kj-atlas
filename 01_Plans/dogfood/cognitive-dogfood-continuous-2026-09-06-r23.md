@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: R22で追加したpre-merge stale-state診断は、その後の実開発で使われ続けたか。また、恒久required checkへ昇格させるだけの証拠は得られたか。
-- Canvas: `doc_kj_atlas_dogfood_r23.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r23.json`
 - Observation baseline: `main@a1474b5645c353c0ccbab748cbedddac5347c99c`
 - Result class: 継続dogfoodの運用観察。formal Caseの結果、第三者価値実証、製品価値の証明には数えない。
 

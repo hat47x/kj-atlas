@@ -16,13 +16,13 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.active_tenant_session import (
+from sui_sensemaking_api.active_tenant_session import (
     persist_active_tenant_selection,
     resolve_active_tenant_session_version,
 )
-from kj_atlas_api.models import Base, SaasAuthSessionRow, TenantRow
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.models import Base, SaasAuthSessionRow, TenantRow
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.tenant_context import TenantContext
 
 _ISSUER = "https://idp.example.test"
 
@@ -238,7 +238,7 @@ class TestPrincipalKeyedDispatchIsUnaffected:
     must still route to the existing principal-keyed persister, unchanged."""
 
     def test_resolve_without_a_session_hash_uses_the_persister(self) -> None:
-        from kj_atlas_api.active_tenant_session import InMemoryActiveTenantSessionPersister
+        from sui_sensemaking_api.active_tenant_session import InMemoryActiveTenantSessionPersister
 
         persister = InMemoryActiveTenantSessionPersister()
         request = _FakeRequest(

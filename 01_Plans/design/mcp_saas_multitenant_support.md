@@ -11,9 +11,9 @@ OAuth 2.1 Resource Server として Bearer token 検証を行う。しかし `sa
 起動時に `resolve_tenant_session_bootstrap_mode` が `tenant-session-required` を返すと起動拒否される。
 
 現在の MCP は single-tenant 想定で：
-- `KJ_ATLAS_MCP_TRUSTED_ISSUER`（単一 issuer）
-- `KJ_ATLAS_MCP_JWKS_URI`（単一 JWKS エンドポイント）
-- `KJ_ATLAS_MCP_RESOURCE_URL`（保護リソース URL）
+- `SUI_MCP_TRUSTED_ISSUER`（単一 issuer）
+- `SUI_MCP_JWKS_URI`（単一 JWKS エンドポイント）
+- `SUI_MCP_RESOURCE_URL`（保護リソース URL）
 
 テナント識別や `tenantSessionVersion` precondition は実装されていない。
 

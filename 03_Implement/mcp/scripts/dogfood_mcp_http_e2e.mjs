@@ -11,7 +11,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 const TRUSTED_ISSUER = "https://dogfood-idp.example/";
-const RESOURCE = "https://mcp.kj-atlas.example/";
+const RESOURCE = "https://mcp.sui-sensemaking.example/";
 const KID = "dogfood-key-1";
 const DOC_ID = process.argv[2] || "dogfood_probe";
 
@@ -63,14 +63,14 @@ const mcp = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "src/index
   cwd: new URL("..", import.meta.url).pathname,
   env: {
     ...process.env,
-    KJ_ATLAS_MCP_TRANSPORT: "http",
-    KJ_ATLAS_MCP_HTTP_HOST: "127.0.0.1",
-    KJ_ATLAS_MCP_HTTP_PORT: String(MCP_PORT),
-    KJ_ATLAS_MCP_RESOURCE_URL: RESOURCE,
-    KJ_ATLAS_MCP_TRUSTED_ISSUER: TRUSTED_ISSUER,
-    KJ_ATLAS_MCP_JWKS_URI: JWKS_URI,
-    KJ_ATLAS_MCP_AUTHORIZATION_SERVERS: TRUSTED_ISSUER,
-    KJ_ATLAS_MCP_API_BASE_URL: process.env.KJ_ATLAS_MCP_API_BASE_URL || "http://127.0.0.1:8000",
+    SUI_MCP_TRANSPORT: "http",
+    SUI_MCP_HTTP_HOST: "127.0.0.1",
+    SUI_MCP_HTTP_PORT: String(MCP_PORT),
+    SUI_MCP_RESOURCE_URL: RESOURCE,
+    SUI_MCP_TRUSTED_ISSUER: TRUSTED_ISSUER,
+    SUI_MCP_JWKS_URI: JWKS_URI,
+    SUI_MCP_AUTHORIZATION_SERVERS: TRUSTED_ISSUER,
+    SUI_MCP_API_BASE_URL: process.env.SUI_MCP_API_BASE_URL || "http://127.0.0.1:8000",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

@@ -87,6 +87,6 @@ curl -fsS http://localhost:8080/api/healthz
 
 ## 関連文書
 
-- [開発者向け E2E Testing](https://github.com/hat47x/kj-atlas/blob/main/03_Implement/frontend/docs/e2e_testing.md)
-- [release.md](https://github.com/hat47x/kj-atlas/blob/main/04_Documentation/release.md)
-- [security.md](https://github.com/hat47x/kj-atlas/blob/main/04_Documentation/security.md)
+- [開発者向け E2E Testing](https://github.com/hat47x/sui-sensemaking/blob/main/03_Implement/frontend/docs/e2e_testing.md)
+- [release.md](https://github.com/hat47x/sui-sensemaking/blob/main/04_Documentation/release.md)
+- [security.md](https://github.com/hat47x/sui-sensemaking/blob/main/04_Documentation/security.md)

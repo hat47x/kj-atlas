@@ -1,7 +1,7 @@
 # 第三者価値検証 — Session記録テンプレート
 
 > `VALUE-REALNESS-01` / `PRACTICE-CULTURE-01` の第三者実利用を、価値についての感想だけでなく、実資料、操作、停止理由へ戻れる形で記録する。
-> このテンプレートは、KJ Atlasの価値語彙を参加者へ先に教えるための質問票ではない。
+> このテンプレートは、SUI Sensemakingの価値語彙を参加者へ先に教えるための質問票ではない。
 
 ## 0. Session情報
 
@@ -11,7 +11,7 @@
 - 参加者alias:
 - 参加形態: volunteer / collaborator / other
 - 実践文脈の要約:
-- KJ Atlas version / commit:
+- SUI Sensemaking version / commit:
 - Session開始前チェックリスト参照:
 - 開始判定: GO / GO-WITH-REDUCTION / STOP-DATA-BOUNDARY / STOP-PARTICIPANT / STOP-OTHER
 - Data handlingの合意内容:
@@ -23,12 +23,12 @@
 - Execution mode: local / self-hosted / hosted / other / unknown
 - AI enabled: yes / no
 - AI provider / endpoint actually used: N/A / <record>
-- KJ Atlasのprocess / device外へ資料が送られたか: yes / no / partial / unknown
+- SUI Sensemakingのprocess / device外へ資料が送られたか: yes / no / partial / unknown
 - 外部へ送られた内容: none / raw material / selected cards / derived text / metadata / other / unknown
 - Provider-side retention / loggingを確認できていたか: yes / no / N/A
 - 操作者側のrequest / response logging: yes / no / unknown / N/A
 - Raw materialをsession後も保持したか: yes / no / partial
-- KJ Atlas document / exportを保持したか: yes / no / partial
+- SUI Sensemaking document / exportを保持したか: yes / no / partial
 - Audio / video / screen captureを使用したか: yes / no / partial
 - 保存場所の区分: participant-controlled / operator-private / organization-controlled / other / none
 - 保持期間または削除予定時点:
@@ -48,7 +48,7 @@
 
 Deviation / limitation:
 
-## 2. Baseline — KJ Atlasの価値語彙を提示する前
+## 2. Baseline — SUI Sensemakingの価値語彙を提示する前
 
 ### 2.1 今回の仕事
 
@@ -70,7 +70,7 @@ Deviation / limitation:
 - 参加者が「現在のworkflowで十分」と考える条件:
 - どのような変化があれば、別の方法を使う価値があると考えるか:
 
-> 操作者の推論は別に記録する。ここで参加者の説明をKJ Atlasの価値語彙へ書き換えない。
+> 操作者の推論は別に記録する。ここで参加者の説明をSUI Sensemakingの価値語彙へ書き換えない。
 
 ## 3. 資料の文脈
 
@@ -117,7 +117,7 @@ sessionの終盤または終了後に、raw Obs IDへ戻りながら記入する
 
 ### S1 — 資料の受け入れ
 
-- KJ Atlasへ持ち込むのが難しかったもの:
+- SUI Sensemakingへ持ち込むのが難しかったもの:
 - 製品の外に残した方がよいもの:
 - data-control条件によってsession内容が変わったか:
 - AI / provider / network / storage条件により縮小したworkflowへ切り替えたか:
@@ -159,7 +159,7 @@ sessionの終盤または終了後に、raw Obs IDへ戻りながら記入する
 - 何が余計だったか:
 - 現在のworkflowの方が良かったところ:
 - 次に同じ種類の仕事をするとき何を使うか、その理由:
-- どのような条件ではKJ Atlasを使わないか:
+- どのような条件ではSUI Sensemakingを使わないか:
 - どのような人や仕事には合わないと思うか:
 
 ## 8. 停止・撤回
@@ -177,7 +177,7 @@ sessionの終盤または終了後に、raw Obs IDへ戻りながら記入する
 
 ## 9. Artifact参照
 
-- KJ Atlas document / InquiryJourney:
+- SUI Sensemaking document / InquiryJourney:
 - 同意されたbefore / after screenshotまたはexport:
 - 匿名化したevidence:
 - 現在のworkflowとの比較artifact:
@@ -195,12 +195,12 @@ raw observationを記録し終えた後にだけ行う。
 
 ### 10.2 Reuse reason
 
-- 同じ種類の仕事でKJ Atlasを再利用する理由があるか: yes / no / conditional / unresolved
+- 同じ種類の仕事でSUI Sensemakingを再利用する理由があるか: yes / no / conditional / unresolved
 - Evidence / condition:
 
 ### 10.3 No-use reason
 
-- KJ Atlasを使わない最も強い理由:
+- SUI Sensemakingを使わない最も強い理由:
 - 参加者の文脈では合理的な理由か:
 - 主にworkflow / value、runtime data boundary、practice fit、accessibility、その他のどれに関係するか:
 
@@ -245,7 +245,7 @@ raw observationを記録し終えた後にだけ行う。
 
 ## 14. Sessionの有効性
 
-- KJ Atlasの価値語彙を提示する前に独立したbaselineを取得した: yes / no / N/A if stopped before baseline
+- SUI Sensemakingの価値語彙を提示する前に独立したbaselineを取得した: yes / no / N/A if stopped before baseline
 - Raw observationsを保持した: yes / no
 - Counterevidence / no-useを許容した: yes / no
 - 参加者は停止できた: yes / no

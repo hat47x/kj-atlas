@@ -11,15 +11,15 @@
 ## Intended payload summary
 
 ### base_pack.zip
-- `kj-atlas-review-pack-20260221-000000/document.json`
+- `sui-sensemaking-review-pack-20260221-000000/document.json`
   - cards:
     - `c1` text=`Alpha`, claimType=`unknown`
     - `c2` text=`Beta`, claimType=`fact`
   - island `i1` with `[c1,c2]`
   - evidenceLinks: empty
-- `kj-atlas-review-pack-20260221-000000/view.json`
+- `sui-sensemaking-review-pack-20260221-000000/view.json`
   - perspectiveMode: `default`
-- `kj-atlas-review-pack-20260221-000000/diagnostics.md`
+- `sui-sensemaking-review-pack-20260221-000000/diagnostics.md`
   - harmless string `<script>alert(1)</script>` for sanitization checks
 
 ### incoming_pack.zip

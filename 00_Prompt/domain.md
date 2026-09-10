@@ -94,7 +94,7 @@
 
 検査（品質確認）そのものは方法論が要求します。禁じるのは検査ではなく、
 **検査結果を点数へ畳んで提示すること**です。報告は件数と種別で行います
-（`00_Prompt/kj_technique.md` 第5章「報告は件数で」）。
+（`00_Prompt/sensemaking_technique.md` 第5章「報告は件数で」）。
 
 ---
 
@@ -140,7 +140,7 @@
 
 表札は分類名ではありません。その束（クラスタ・島）が何を訴えているかの代弁です。ある表札を別の束の上に置いても違和感なく成立してしまうなら、それは代弁ではなく分類名であり、書き直しが必要です。
 
-要件（転写検査を含む）の正本は `00_Prompt/kj_technique.md` 第3章、AI支援としての扱いは `00_Prompt/qualitative_card_quality_requirements.md` 第5章とします。
+要件（転写検査を含む）の正本は `00_Prompt/sensemaking_technique.md` 第3章、AI支援としての扱いは `00_Prompt/qualitative_card_quality_requirements.md` 第5章とします。
 
 ---
 

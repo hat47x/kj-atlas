@@ -15,7 +15,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["SUI_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
@@ -63,8 +63,8 @@ def test_portable_text_migration_downgrade_restores_unbounded_types(tmp_path: Pa
 
 @pytest.mark.postgres
 def test_postgres_portable_text_roundtrip_preserves_rls_policies() -> None:
-    database_url = os.getenv("KJ_ATLAS_DATABASE_URL", "")
-    if os.getenv("KJ_ATLAS_RUN_PG_TESTS") != "1" or not database_url.startswith("postgresql"):
+    database_url = os.getenv("SUI_DATABASE_URL", "")
+    if os.getenv("SUI_RUN_PG_TESTS") != "1" or not database_url.startswith("postgresql"):
         pytest.skip("PostgreSQL migration matrix is not configured")
 
     def run_alembic(*args: str) -> subprocess.CompletedProcess[str]:

@@ -5,8 +5,8 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-MAIN = ROOT / '03_Implement/backend/src/kj_atlas_api/main.py'
-RUNTIME = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py'
+MAIN = ROOT / '03_Implement/backend/src/sui_sensemaking_api/main.py'
+RUNTIME = ROOT / '03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 
 class SaasProviderStartupSemanticsContractTest(unittest.TestCase):

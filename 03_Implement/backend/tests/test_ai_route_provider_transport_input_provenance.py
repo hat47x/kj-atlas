@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from kj_atlas_api.llm.provider import (
+from sui_sensemaking_api.llm.provider import (
     LLMCallMetadata,
     LLMRequest,
     LLMResponse,

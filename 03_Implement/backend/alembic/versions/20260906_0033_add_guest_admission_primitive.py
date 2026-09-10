@@ -28,8 +28,8 @@ def _enable_rls(table_name: str, policy_name: str) -> None:
     op.execute(
         sa.text(
             f'CREATE POLICY "{policy_name}" ON "{table_name}" '
-            "USING (tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')) "
-            "WITH CHECK (tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), ''))"
+            "USING (tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')) "
+            "WITH CHECK (tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), ''))"
         )
     )
 

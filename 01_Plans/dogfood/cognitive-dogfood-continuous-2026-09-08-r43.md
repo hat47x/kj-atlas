@@ -1,7 +1,7 @@
 # 継続dogfood R43 — 単一keyの妥当性とcross-key relational invariantを分ける
 
 Date: 2026-09-08
-Canvas: `doc_kj_atlas_dogfood_r43.json`
+Canvas: `doc_sui_sensemaking_dogfood_r43.json`
 
 ## 1. Trigger
 
@@ -9,7 +9,7 @@ R42以後の Lane B2 public-config監査で、個々の設定値のformatやeffe
 
 ### PR #3104 — business/admin API keyの分離
 
-`KJ_ATLAS_API_KEY` と `KJ_ATLAS_ADMIN_API_KEY` は、それぞれ単体ではcanonicalな秘密値として受理され得る。
+`SUI_API_KEY` と `SUI_ADMIN_API_KEY` は、それぞれ単体ではcanonicalな秘密値として受理され得る。
 
 しかし両方へ**同じ秘密値**を設定したconfigurationはSettings validationで起動時拒否される。
 
@@ -34,7 +34,7 @@ Document policy binding / tenant capability resolverでは、`resolver=none` 自
 
 ### PR #3107 — access-control integration無効化時のleftover設定
 
-`KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` も有効な値である。
+`SUI_ACCESS_CONTROL_ADAPTER=noop` も有効な値である。
 
 endpoint / fixed bearerも `external_http` 選択時には有効である。
 
@@ -253,4 +253,4 @@ R43を恒久required checkへ単独昇格しない。
 
 R43はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、第三者product-value validation、AI-IR named-provider evidenceを代替しない。
 
-formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

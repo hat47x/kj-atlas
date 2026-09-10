@@ -7,13 +7,13 @@
 
 ## 1. 目的
 
-4Armを比較するとき、reviewerが「KJ Atlasを使った」「cultural-substrate-weavingを使った」と知ること自体によって、期待、反感、方法論への先入観を持ち込む可能性をできるだけ減らす。
+4Armを比較するとき、reviewerが「SUI Sensemakingを使った」「cultural-substrate-weavingを使った」と知ること自体によって、期待、反感、方法論への先入観を持ち込む可能性をできるだけ減らす。
 
 ここでいうブラインドレビューは、臨床試験のような完全なblindを意味しない。成果物の文体や構造から、用いた方法を推測できる場合がある。そのため本手順の目的は、**Arm identityとmethod metadataを直接知らせないこと**、そして**成果物の根拠、反証、訂正可能性を方法名より先に読むこと**に置く。
 
 ## 2. 公開repositoryにおける情報漏洩の境界
 
-KJ Atlas repositoryは公開されている。A/B/C/Dを明記したraw record、canvas、InquiryJourney参照、skill execution recordをblind verdict確定前に同じ公開branchへcommitすると、reviewerがrepositoryを探索するだけでunblindできてしまう。
+SUI Sensemaking repositoryは公開されている。A/B/C/Dを明記したraw record、canvas、InquiryJourney参照、skill execution recordをblind verdict確定前に同じ公開branchへcommitすると、reviewerがrepositoryを探索するだけでunblindできてしまう。
 
 そのため、Case 001〜003のRound 1では次を守る。
 
@@ -54,7 +54,7 @@ packageは、そのCaseに共通するrequired outputを比較するために必
 原則として含めないもの:
 
 - Arm A/B/C/D。
-- KJ Atlas canvasを使用したかどうかというtreatment metadata。
+- SUI Sensemaking canvasを使用したかどうかというtreatment metadata。
 - cultural-substrate-weavingを使用したかどうか、framework名、activation判定。
 - model / provider名。Arm間でmodelが異なるdeviationがある場合は、blind packageで説明して帳尻を合わせるのではなく、blind review前のrun validityで処理する。
 - KJカード数、島数、操作回数。
@@ -140,7 +140,7 @@ unblind後に行うこと:
 
 - BR2で見えた差をA/B/C/Dへ対応付ける。
 - M1〜M9のrun recordと照合する。
-- KJ Atlas increment、skill increment、D interaction、method-induced harmの候補を分類する。
+- SUI Sensemaking increment、skill increment、D interaction、method-induced harmの候補を分類する。
 - C/DのM9 / T9を、この時点で初めて成果差と併読する。
 - findingをF0 / F1 / F2 / F3へ振り分ける。
 
@@ -161,6 +161,6 @@ unblindした後で、BR1 / BR2の元verdictを書き換えない。追加の解
 
 ## 10. この手順では直接測らないもの
 
-blind reviewは、KJ AtlasのUI操作性、cultural-substrate-weavingを実行する負担、InquiryJourneyの認知摩擦を直接評価するものではない。これらはrun recordのM9 / T9と、product findingの振り分けで扱う。
+blind reviewは、SUI SensemakingのUI操作性、cultural-substrate-weavingを実行する負担、InquiryJourneyの認知摩擦を直接評価するものではない。これらはrun recordのM9 / T9と、product findingの振り分けで扱う。
 
 また、blind reviewerの好みを「認知能力」の単一スコアへ変換しない。このレビューは、成果物が対象となる証拠へどの程度耐えられるかを確認するための一層である。

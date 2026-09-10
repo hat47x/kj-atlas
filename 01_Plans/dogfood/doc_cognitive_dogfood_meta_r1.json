@@ -14,10 +14,10 @@
       "id": "c01",
       "x": 80,
       "y": 40,
-      "text": "R1〜R5はKJ Atlas自身の開発課題を時間をまたいで外部化し、問題提起から具体策まで状態を残している",
+      "text": "R1〜R5はSUI Sensemaking自身の開発課題を時間をまたいで外部化し、問題提起から具体策まで状態を残している",
       "claimType": "fact",
       "textReviewed": true,
-      "meta": {"source": "01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json〜r5.json"}
+      "meta": {"source": "01_Plans/dogfood/doc_sui_sensemaking_dogfood_r1.json〜r5.json"}
     },
     {
       "id": "c02",
@@ -26,13 +26,13 @@
       "text": "R3で問題化された三要素整合欄の不足は、現在のissueテンプレートではADR-0067参照欄として反映されている",
       "claimType": "fact",
       "textReviewed": true,
-      "meta": {"source": "doc_kj_atlas_dogfood_r3.json + 01_Plans/issues/TEMPLATE.md"}
+      "meta": {"source": "doc_sui_sensemaking_dogfood_r3.json + 01_Plans/issues/TEMPLATE.md"}
     },
     {
       "id": "c03",
       "x": 650,
       "y": 45,
-      "text": "R1〜R5には同じ問いを通常チャットや別の外部表象で扱った対照条件がないため、発見をKJ Atlas固有の増分へ帰属できない",
+      "text": "R1〜R5には同じ問いを通常チャットや別の外部表象で扱った対照条件がないため、発見をSUI Sensemaking固有の増分へ帰属できない",
       "claimType": "fact",
       "textReviewed": true,
       "meta": {"source": "cognitive-dogfood-case-000-r1-r5-audit.md"}
@@ -95,7 +95,7 @@
       "id": "c10",
       "x": 80,
       "y": 690,
-      "text": "KJ AtlasをKJ Atlasで分析して改善する循環は内部問題の発見と修正を促す一方、循環そのものを強くする方向へ自己強化し得る",
+      "text": "SUI SensemakingをSUI Sensemakingで分析して改善する循環は内部問題の発見と修正を促す一方、循環そのものを強くする方向へ自己強化し得る",
       "claimType": "claim",
       "textReviewed": true,
       "meta": {"source": "R1〜R5 + cognitive-dogfood-experimenter-framework-notes.md G1"}
@@ -104,7 +104,7 @@
       "id": "c11",
       "x": 360,
       "y": 680,
-      "text": "第三者が自分の題材を持ち込んだときにKJ Atlasを使い続ける理由が生じるかは、内部dogfoodの成熟に比べてまだ実証されていない",
+      "text": "第三者が自分の題材を持ち込んだときにSUI Sensemakingを使い続ける理由が生じるかは、内部dogfoodの成熟に比べてまだ実証されていない",
       "claimType": "fact",
       "textReviewed": true,
       "meta": {"source": "ADR-0042 + VALUE-MEASURE-01 + VALUE-REALNESS-01"}
@@ -122,16 +122,16 @@
       "id": "c13",
       "x": 80,
       "y": 910,
-      "text": "KJ AtlasのKJ技法は荘子の渾沌を明示的な認識論として既に取り込んでいるため、同系統の体系を再投入しても独立した外部増分とは限らない",
+      "text": "SUI SensemakingのKJ技法は荘子の渾沌を明示的な認識論として既に取り込んでいるため、同系統の体系を再投入しても独立した外部増分とは限らない",
       "claimType": "fact",
       "textReviewed": true,
-      "meta": {"source": "00_Prompt/kj_technique.md + cultural-substrate-weaving baseline rule"}
+      "meta": {"source": "00_Prompt/sensemaking_technique.md + cultural-substrate-weaving baseline rule"}
     },
     {
       "id": "c14",
       "x": 360,
       "y": 900,
-      "text": "五行はKJ Atlasの要素を五相へ分類する根拠にはならないが、生成と抑制という関係動詞から自己強化と過剰制御を問う探索には限定利用できる",
+      "text": "五行はSUI Sensemakingの要素を五相へ分類する根拠にはならないが、生成と抑制という関係動詞から自己強化と過剰制御を問う探索には限定利用できる",
       "claimType": "claim",
       "textReviewed": true,
       "meta": {"source": "cultural-substrate-weaving system-selection.md + framework notes"}
@@ -149,7 +149,7 @@
       "id": "c16",
       "x": 280,
       "y": 1120,
-      "text": "KJ Atlasはhuman final authorityやproposal-onlyやADR saturationなど過剰を抑える機構を多く持つが、それらが探索や導入を抑える摩擦になるかは実利用で分けて測る必要がある",
+      "text": "SUI Sensemakingはhuman final authorityやproposal-onlyやADR saturationなど過剰を抑える機構を多く持つが、それらが探索や導入を抑える摩擦になるかは実利用で分けて測る必要がある",
       "claimType": "claim",
       "textReviewed": true,
       "meta": {"source": "ADR-0010/0047 + COGNITIVE-EVAL-01 M9 + framework notes G2/G3"}
@@ -225,7 +225,7 @@
     {"id": "ev01", "cardId": "c02", "type": "supports", "url": "01_Plans/issues/TEMPLATE.md"},
     {"id": "ev02", "cardId": "c08", "type": "supports", "url": "01_Plans/issues/done/issue-DOGFOOD-32-one-line-heading-hierarchy-missing-for-large-canvases.md"},
     {"id": "ev03", "cardId": "c09", "type": "supports", "url": "01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md"},
-    {"id": "ev04", "cardId": "c13", "type": "supports", "url": "00_Prompt/kj_technique.md"},
+    {"id": "ev04", "cardId": "c13", "type": "supports", "url": "00_Prompt/sensemaking_technique.md"},
     {"id": "ev05", "cardId": "c11", "type": "supports", "url": "01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md"}
   ],
   "readingOrder": ["i1", "i2", "i3", "i4", "i5", "i6"],
@@ -233,7 +233,7 @@
     {
       "id": "n1",
       "title": "内部で賢くなるほど、外へ開く検証が必要になる",
-      "body": "KJ Atlasの既存R1〜R5は、プロジェクト自身の問題を時間をまたいで外部化し、一部を後続の開発契約へ変換してきた。しかし対照条件がなく、固定された問い段階や棄却提案ログの不足もあるため、その成果をKJ Atlas固有の認知増分とはまだ呼べない。むしろ、訂正済みの古い主張が同じ資料群に残っていることは、時点と根拠を読む能力を試す自然な評価資源になる。さらに、自己dogfoodが自己改善能力を高める循環が強くなるほど、第三者が自分の題材を持ち込み、使わない理由まで含めて返す外部入力が重要になる。文化体系はこの構造を分類するためではなく、生成と抑制の関係を問い直すために限定利用する。対象が既に持つ荘子的/KJ的原理を再投入して同じ結論を強めるだけなら、独立した増分とは数えない。したがって次の段階では、内部dogfoodを続けながら、比較実験の汚染を防ぎ、第三者価値検証を外部現実への接地として実行する必要がある。"
+      "body": "SUI Sensemakingの既存R1〜R5は、プロジェクト自身の問題を時間をまたいで外部化し、一部を後続の開発契約へ変換してきた。しかし対照条件がなく、固定された問い段階や棄却提案ログの不足もあるため、その成果をSUI Sensemaking固有の認知増分とはまだ呼べない。むしろ、訂正済みの古い主張が同じ資料群に残っていることは、時点と根拠を読む能力を試す自然な評価資源になる。さらに、自己dogfoodが自己改善能力を高める循環が強くなるほど、第三者が自分の題材を持ち込み、使わない理由まで含めて返す外部入力が重要になる。文化体系はこの構造を分類するためではなく、生成と抑制の関係を問い直すために限定利用する。対象が既に持つ荘子的/KJ的原理を再投入して同じ結論を強めるだけなら、独立した増分とは数えない。したがって次の段階では、内部dogfoodを続けながら、比較実験の汚染を防ぎ、第三者価値検証を外部現実への接地として実行する必要がある。"
     }
   ]
 }

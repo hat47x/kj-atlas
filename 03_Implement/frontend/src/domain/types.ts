@@ -255,7 +255,7 @@ export type NarrativeCheckReference = {
   kind: "card" | "island";
 };
 
-// kj_technique.md §5: A/B cross-check direction — a narrative claim with no
+// sensemaking_technique.md §5: A/B cross-check direction — a narrative claim with no
 // diagram counterpart (b_missing_in_a) or a diagram island the narrative never
 // mentions (a_missing_in_b).
 export type NarrativeCheckDirection = "b_missing_in_a" | "a_missing_in_b";
@@ -345,13 +345,13 @@ export type DocumentV1 = {
   shelf?: ShelfEntry[];
   /** DOMAIN-EXPR-04 (schemas.md §16): human review decisions on analyzeContradictions() signals. */
   contradictionSignalDecisions?: ContradictionSignalDecision[];
-  /** KJ-PROMPT-ALIGN / kj_technique.md §4 (優先3-1): enumerated structural gaps
+  /** KJ-PROMPT-ALIGN / sensemaking_technique.md §4 (優先3-1): enumerated structural gaps
    * that become next-stage material. Optional; stored only when the user runs
    * void detection. */
   voids?: VoidEntry[];
 };
 
-// kj_technique.md §4 (優先3-1): a "空白" — a place where a bundle that should
+// sensemaking_technique.md §4 (優先3-1): a "空白" — a place where a bundle that should
 // be there is missing. Stored so the gap can be tracked and resolved.
 export type VoidKind =
   | "unintegrated_card"

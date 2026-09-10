@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from kj_atlas_api.models import UserIdentityRow
+from sui_sensemaking_api.models import UserIdentityRow
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -27,7 +27,7 @@ def test_user_identity_model_declares_case_insensitive_lookup_index() -> None:
 
 def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["SUI_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,

@@ -11,10 +11,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
 
-const host = process.env.KJ_ATLAS_SCREENSHOT_HOST ?? "127.0.0.1";
-const port = Number(process.env.KJ_ATLAS_SCREENSHOT_PORT ?? "4173");
-const baseUrl = process.env.KJ_ATLAS_SCREENSHOT_BASE_URL ?? `http://${host}:${port}/?locale=ja`;
-const outputDir = process.env.KJ_ATLAS_SCREENSHOT_OUTPUT_DIR ?? path.resolve(frontendDir, ".tmp-menu-conformance");
+const host = process.env.SUI_SCREENSHOT_HOST ?? "127.0.0.1";
+const port = Number(process.env.SUI_SCREENSHOT_PORT ?? "4173");
+const baseUrl = process.env.SUI_SCREENSHOT_BASE_URL ?? `http://${host}:${port}/?locale=ja`;
+const outputDir = process.env.SUI_SCREENSHOT_OUTPUT_DIR ?? path.resolve(frontendDir, ".tmp-menu-conformance");
 
 const ts = "2026-07-09T00:00:00.000Z";
 

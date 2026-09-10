@@ -75,7 +75,7 @@ python 01_Plans/docs_check.py   # 期待: "docs-check passed"
 |--------|------|-------------|
 | `03_Implement/backend/scripts/verify_business_flow_e2e.sh` | 業務フローE2E（シナリオ1〜170・1026 checks） | §2.1 |
 | `03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh` | 管理者CLI/API運用フロー（シナリオ4・20 checks・自前スクリプト＋CLIモデルレジストリ運用を含む） | §2.2 |
-| `03_Implement/backend/scripts/verify_kj_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
+| `03_Implement/backend/scripts/verify_sui_multi_round.sh` | 人間×AI多ラウンド協調（7 checks） | §2.2 |
 | `03_Implement/backend/scripts/verify_mcp_ce4_audit_e2e.py` | MCP read→CE-4監査（channel=mcp）→HTTPシンク到達の自己完結E2E（16 checks・外部提案登録＋MCP側でもproposed→decided決定反映を確認） | §2.2 |
 | `03_Implement/backend/scripts/verify_cli_ce4_audit_e2e.py` | `kj` CLI→CE-4監査（channel=cli）→HTTPシンク到達の自己完結E2E（15 checks・全CE4ライフサイクル＋resolve-bundle） | §2.2 |
 | `03_Implement/backend/verify_all.sh` | CIハーネス（check 10 配線） | §2.2 |

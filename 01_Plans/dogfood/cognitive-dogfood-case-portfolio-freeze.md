@@ -14,7 +14,7 @@ Case 001の結果を見た後で、Case 002/003の問い、資料、方法条件
 
 ## 2. 3Case共通の不変条件
 
-- Case 001〜003は、同じKJ Atlas product commitを使用する。
+- Case 001〜003は、同じSUI Sensemaking product commitを使用する。
 - B/Dは3Caseとも、同じcultural-substrate-weaving commitとcanonical `src/ja-JP` sourceを使用する。
 - A/Cにはskill sourceを渡さない。
 - Round 1では、特定のArmだけが外部Web検索を行わない。
@@ -68,7 +68,7 @@ fixed questionに応じてCaseごとの境界を評価する。Case 001のprimar
 `validate_cognitive_launch_packets.py`を使用する。
 
 - 同一Caseの4Armでfixed question / required output / product snapshot / evidence bundleが一致することを確認する。
-- cultural-substrate-weavingはB/Dだけ、KJ Atlas starterはC/Dだけに含まれることを検査する。
+- cultural-substrate-weavingはB/Dだけ、SUI Sensemaking starterはC/Dだけに含まれることを検査する。
 
 ### 凍結時に使用した専用workflow（現在mainでは停止）
 
@@ -186,7 +186,7 @@ B/Dへ渡すskill sourceもrepository全体ではなく、共通の操作者専�
 - 同一Caseの4Armでrequired outputが完全一致する。
 - product snapshot / evidence bundleが4Armで一致する。
 - skill treatmentはB/Dだけに入り、A/Cへ混入しない。
-- KJ Atlas starterはC/Dだけに入り、A/Bへ混入しない。
+- SUI Sensemaking starterはC/Dだけに入り、A/Bへ混入しない。
 - 全Armが追加資料を一方的に取り込まず、Candidate source requestへ送る経路を持つ。
 - Case 001〜003のproduct bundleをfrozen commitから再生成できる。
 - 共通skill bundleをfrozen cultural-substrate-weaving commitから再生成できる。

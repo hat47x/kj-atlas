@@ -88,7 +88,7 @@ def validate_case(case_number: str) -> list[str]:
             )
         if has_starter != treatment["atlas"]:
             expectation = "must include" if treatment["atlas"] else "must not include"
-            issues.append(f"{label} {mode}: {expectation} KJ Atlas starter document")
+            issues.append(f"{label} {mode}: {expectation} SUI Sensemaking starter document")
 
         # The preregistered source manifest remains Case-001-scoped for operator use,
         # but arm-visible skill bundles are intentionally case-neutral. A stale

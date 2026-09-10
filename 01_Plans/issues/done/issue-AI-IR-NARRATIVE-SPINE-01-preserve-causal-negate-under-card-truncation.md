@@ -7,7 +7,7 @@
 - Source Issue: `AI-IR-SCALE-01`, `AI-IR-PROJECTION-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_route_required_meaning_scale.py`, `03_Implement/backend/tests/test_ai_generate_narrative_ir_scale.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/tests/test_ai_route_required_meaning_scale.py`, `03_Implement/backend/tests/test_ai_generate_narrative_ir_scale.py`
 - Related ADR/Spec: `ADR-0069`, `02_Architecture/llm_input_ir_spec.md` §2.3 / §5.2.1, `AI-IR-PROJECTION-01` AC-3, `AI-IR-SCALE-01`
 - Expected verification level: integration
 
@@ -78,7 +78,7 @@ GitHub Actionsは現在リポジトリ側で無効化されているため、CI�
 
 ## 対応記録（2026-09-04・Done）
 
-`fix/r20-narrative-spine-preservation-20260903` の実装（`_narrative_required_card_ids()` および `_generate_narrative_ir()` への配線、`03_Implement/backend/src/kj_atlas_api/routes/ai.py:605-666`）は、その後の一連のPRを通じてすでに `main` へ統合済みだった（`git merge-base --is-ancestor` で確認、ブランチ自体はmainの祖先）。本issueのAC欄だけが未更新のまま残っていたため、実装内容をAC全項目と突き合わせて確認し、下記の回帰を実行して整合を確認した。
+`fix/r20-narrative-spine-preservation-20260903` の実装（`_narrative_required_card_ids()` および `_generate_narrative_ir()` への配線、`03_Implement/backend/src/sui_sensemaking_api/routes/ai.py:605-666`）は、その後の一連のPRを通じてすでに `main` へ統合済みだった（`git merge-base --is-ancestor` で確認、ブランチ自体はmainの祖先）。本issueのAC欄だけが未更新のまま残っていたため、実装内容をAC全項目と突き合わせて確認し、下記の回帰を実行して整合を確認した。
 
 ```
 .venv\Scripts\python.exe -m pytest tests/test_ai_route_required_meaning_scale.py tests/test_ai_generate_narrative_ir_scale.py -q

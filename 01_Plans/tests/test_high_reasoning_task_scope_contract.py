@@ -8,8 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "04_Documentation/configuration.md"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-PROVIDER = ROOT / "03_Implement/backend/src/kj_atlas_api/llm/provider.py"
-KEY = "KJ_ATLAS_LLM_HIGH_REASONING_MODEL"
+PROVIDER = ROOT / "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py"
+KEY = "SUI_LLM_HIGH_REASONING_MODEL"
 
 
 def _row(text: str, key: str) -> str:

@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CLIENT_PATH = ROOT / "03_Implement/frontend/src/api/client.ts"
 ADMIN_CLIENT_PATH = ROOT / "03_Implement/frontend/src/admin/model_allowlist_api.ts"
 HELPER_IMPORT = "resolveFrontendApiBase"
-ENV_KEY = "import.meta.env.KJ_ATLAS_FRONTEND_API_BASE"
+ENV_KEY = "import.meta.env.SUI_FRONTEND_API_BASE"
 
 
 class FrontendApiBasePathContractTests(unittest.TestCase):

@@ -3,7 +3,7 @@
 - Status: Proposed
 - Date: 2026-09-07
 - Deciders: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/audit.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Norms: `ADR-0035`（高権限データライフサイクル境界）, `GENAI-GOV-01`（`02_Architecture/value_traceability.md` §2.9）
 
 ## Context

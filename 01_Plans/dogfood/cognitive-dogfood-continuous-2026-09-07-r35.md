@@ -1,15 +1,15 @@
 # 継続dogfood R35 — 実行可能な文書契約では意味比較の前に表現が読めなければならない
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r35.json`
+Canvas: `doc_sui_sensemaking_dogfood_r35.json`
 
 ## 1. Trigger
 
 R34統合直後のmainで、PR #3035〜#3037が公開設定文書の追加driftを修正した。
 
-- #3035は `KJ_ATLAS_LLM_TASK_MODEL_MAP` のdefaultがBackend Settingsでは空文字、runtime registryでも「未設定（空文字）」なのに、利用者向けconfigurationだけ「未設定」となっていた。これはR29/R34で既に整理したscalar/default contractの再発である。
+- #3035は `SUI_LLM_TASK_MODEL_MAP` のdefaultがBackend Settingsでは空文字、runtime registryでも「未設定（空文字）」なのに、利用者向けconfigurationだけ「未設定」となっていた。これはR29/R34で既に整理したscalar/default contractの再発である。
 - #3037はfrontend/runtime registryが `saas-multitenant` を「予約中」と残していた一方、現行Backend/Frontendは4 named profileを正式処理していた。これはR34で整理したcurrent profile/state contractの再発である。
-- 一方 #3036 は異なる。`KJ_ATLAS_DEEPSEEK_THINKING_MODE` の意味上の許容集合は実装と文書意図の双方で `{disabled, enabled}` と一致していた。それでもruntime registryのMarkdown表では `` `disabled|enabled` `` と1つのcode span内へraw `|` を置いたため、表の列区切りとして解釈され得て、enum監査でもPurpose cellが ``DeepSeek ... `disabled`` までで切断された。
+- 一方 #3036 は異なる。`SUI_DEEPSEEK_THINKING_MODE` の意味上の許容集合は実装と文書意図の双方で `{disabled, enabled}` と一致していた。それでもruntime registryのMarkdown表では `` `disabled|enabled` `` と1つのcode span内へraw `|` を置いたため、表の列区切りとして解釈され得て、enum監査でもPurpose cellが ``DeepSeek ... `disabled`` までで切断された。
 
 つまり#3036では、値の意味がdriftしていたのではなく、**意味を運ぶ文書表現そのものが構造的に読めなくなっていた**。
 
@@ -78,4 +78,4 @@ R34が「何をどう比較するか」を分けたのに対し、R35は「比�
 
 R35はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

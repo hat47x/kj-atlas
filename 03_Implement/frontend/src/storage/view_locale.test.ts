@@ -75,14 +75,14 @@ describe("parseViewLocaleByDoc", () => {
 
   it("ignores unknown locale and keeps existing mapping", () => {
     const storage = createLocalStorageMock({
-      "kj-atlas/view-locale-by-doc-view": JSON.stringify({ docA: { explore: "en" } }),
+      "sui-sensemaking/view-locale-by-doc-view": JSON.stringify({ docA: { explore: "en" } }),
     });
     vi.stubGlobal("window", { localStorage: storage });
 
     saveViewLocaleForDocumentView("docA", "explore", "fr");
 
     expect(loadViewLocaleForDocumentView("docA", "explore")).toBe("en");
-    expect(storage.dump()["kj-atlas/view-locale-by-doc-view"]).toBe(JSON.stringify({ docA: { explore: "en" } }));
+    expect(storage.dump()["sui-sensemaking/view-locale-by-doc-view"]).toBe(JSON.stringify({ docA: { explore: "en" } }));
   });
 
   it("separates the same document and view by tenant scope", () => {

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from kj_atlas_api.database_support import (
+from sui_sensemaking_api.database_support import (
     registered_database_support,
     verified_database_backends,
 )
@@ -137,7 +137,7 @@ def test_public_configuration_delegates_database_support_to_canonical_matrix() -
     database_url_row = next(
         line
         for line in configuration.splitlines()
-        if line.startswith("| `KJ_ATLAS_DATABASE_URL` |")
+        if line.startswith("| `SUI_DATABASE_URL` |")
     )
 
     assert "../02_Architecture/database_portability.md" in database_url_row

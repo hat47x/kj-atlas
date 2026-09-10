@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
+from sui_sensemaking_api.main import app
 
 # Email addresses and provider-prefixed identifiers are rejected by the
 # opaque-id validator on ReviewAttribution.reviewerRef / ownerRef.

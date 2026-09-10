@@ -22,18 +22,18 @@ describe("loadDocumentClientConfigFromEnv", () => {
     expect(config).toEqual({ baseUrl: "http://127.0.0.1:8000", apiKey: undefined });
   });
 
-  it("reads KJ_ATLAS_MCP_API_BASE_URL and KJ_ATLAS_API_KEY, stripping a trailing slash", () => {
+  it("reads SUI_MCP_API_BASE_URL and SUI_API_KEY, stripping a trailing slash", () => {
     const config = loadDocumentClientConfigFromEnv({
-      KJ_ATLAS_MCP_API_BASE_URL: "https://kj-atlas.example.internal/",
-      KJ_ATLAS_API_KEY: "secret-key",
+      SUI_MCP_API_BASE_URL: "https://sui-sensemaking.example.internal/",
+      SUI_API_KEY: "secret-key",
     });
-    expect(config).toEqual({ baseUrl: "https://kj-atlas.example.internal", apiKey: "secret-key" });
+    expect(config).toEqual({ baseUrl: "https://sui-sensemaking.example.internal", apiKey: "secret-key" });
   });
 
   it.each(["local-dev", "evaluation", "enterprise-production"])(
     "accepts the single-tenant runtime profile %s",
     (runtimeProfile) => {
-      expect(validateMcpRuntimeProfile({ KJ_ATLAS_RUNTIME_PROFILE: ` ${runtimeProfile.toUpperCase()} ` })).toBe(
+      expect(validateMcpRuntimeProfile({ SUI_RUNTIME_PROFILE: ` ${runtimeProfile.toUpperCase()} ` })).toBe(
         runtimeProfile,
       );
     },
@@ -41,13 +41,13 @@ describe("loadDocumentClientConfigFromEnv", () => {
 
   it("fails closed for the unfinished SaaS runtime profile", () => {
     expect(() =>
-      loadDocumentClientConfigFromEnv({ KJ_ATLAS_RUNTIME_PROFILE: "saas-multitenant" }),
+      loadDocumentClientConfigFromEnv({ SUI_RUNTIME_PROFILE: "saas-multitenant" }),
     ).toThrow("tenant-bound MCP credentials");
   });
 
   it("rejects unknown runtime profiles", () => {
-    expect(() => loadDocumentClientConfigFromEnv({ KJ_ATLAS_RUNTIME_PROFILE: "production" })).toThrow(
-      "Unsupported KJ_ATLAS_RUNTIME_PROFILE",
+    expect(() => loadDocumentClientConfigFromEnv({ SUI_RUNTIME_PROFILE: "production" })).toThrow(
+      "Unsupported SUI_RUNTIME_PROFILE",
     );
   });
 });

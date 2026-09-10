@@ -49,7 +49,7 @@
 | V3 人間レビュー | AI提案を比較、部分採用、保留、破棄できる | auto-applyやAIによる `human_reviewed` 昇格がある | `PRODUCT-VALUE-02`, `CE-*` |
 | V4 レビュー可能な成果物 | 確定点、保留点、根拠への戻り方が共有物で分かる | 読みやすさと引き換えに根拠や未確定点が失われる | `PRODUCT-VALUE-03` |
 | V4a メタデータ境界 | 出典と主体メタを区別し、主体メタを既定共有しない | 起票者等が出典トグルだけで共有物へ混入する | `DOMAIN-TRACE-01`, `CARD-META-UI-01` |
-| LLM任意性 | `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する | LLM接続なしでは基本操作を完了できない | `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02` |
+| LLM任意性 | `SUI_LLM_PROVIDER=none` でも主要価値が成立する | LLM接続なしでは基本操作を完了できない | `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02` |
 
 ## 判定方法
 

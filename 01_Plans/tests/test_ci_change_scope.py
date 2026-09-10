@@ -23,7 +23,7 @@ class ChangeScopeTest(unittest.TestCase):
 
     def test_frontend_and_backend_changes_are_independent(self):
         frontend = MODULE.classify_changes(["03_Implement/frontend/src/App.tsx"])
-        backend = MODULE.classify_changes(["03_Implement/backend/src/kj_atlas_api/main.py"])
+        backend = MODULE.classify_changes(["03_Implement/backend/src/sui_sensemaking_api/main.py"])
 
         self.assertEqual(frontend, MODULE.ChangeScope(frontend=True, backend=False, mcp=False))
         self.assertEqual(backend, MODULE.ChangeScope(frontend=False, backend=True, mcp=False))

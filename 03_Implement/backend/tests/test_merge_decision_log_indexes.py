@@ -7,7 +7,7 @@ from pathlib import Path
 
 from sqlalchemy import create_engine, inspect
 
-from kj_atlas_api.models import Base
+from sui_sensemaking_api.models import Base
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -39,7 +39,7 @@ def test_merge_decision_log_indexes_defined_in_sqlalchemy_metadata(tmp_path) -> 
 def test_merge_decision_log_indexes_created_by_alembic_upgrade_head(tmp_path) -> None:
     db_path = tmp_path / "migration_indexes.sqlite3"
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["SUI_DATABASE_URL"] = f"sqlite:///{db_path}"
 
     subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
@@ -48,6 +48,6 @@ def test_merge_decision_log_indexes_created_by_alembic_upgrade_head(tmp_path) ->
         env=env,
     )
 
-    index_names = _index_names(env["KJ_ATLAS_DATABASE_URL"])
+    index_names = _index_names(env["SUI_DATABASE_URL"])
     assert "ix_merge_decision_logs_doc_group_id" in index_names
     assert "ix_merge_decision_logs_doc_snapshot_id" in index_names

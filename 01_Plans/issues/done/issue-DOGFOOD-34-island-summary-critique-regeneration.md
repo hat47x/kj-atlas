@@ -5,8 +5,8 @@
 - Source Issue: W型KJ法探求（2026-08-17〜18）の第5ラウンド「壁打ち具体策」および第6ラウンド Phase 2。凝縮（核融合法）の「志」を対話的に収束する導線の第一歩（ADR-0077 の後続）。
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`（`SuggestIslandSummaryRequest`/`ProposeIslandSummaryRequest`）, `routes/ai.py`（prompt）, `03_Implement/deploy/tools/mock_local_llm.py`, `02_Architecture/api.md`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`, 関連テスト
-- Related ADR/Spec: `01_Plans/adr/ADR-0077-island-summary-condensation-multiple-candidates.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`（DOMAIN-EXPR-03 違和感→再提案）, `02_Architecture/schemas.md`（`CritiqueInput`/`ReproposalDiff`）, `00_Prompt/kj_technique.md` §3（戻し検査）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`（`SuggestIslandSummaryRequest`/`ProposeIslandSummaryRequest`）, `routes/ai.py`（prompt）, `03_Implement/deploy/tools/mock_local_llm.py`, `02_Architecture/api.md`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`, 関連テスト
+- Related ADR/Spec: `01_Plans/adr/ADR-0077-island-summary-condensation-multiple-candidates.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`（DOMAIN-EXPR-03 違和感→再提案）, `02_Architecture/schemas.md`（`CritiqueInput`/`ReproposalDiff`）, `00_Prompt/sensemaking_technique.md` §3（戻し検査）
 - Expected verification level: `unit` + `e2e`
 
 ## 課題

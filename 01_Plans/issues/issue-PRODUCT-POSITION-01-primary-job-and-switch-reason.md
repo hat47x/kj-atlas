@@ -8,13 +8,13 @@
 - Priority: P0
 - Owner: Maintainer
 - Scope: `README.md`, `04_Documentation/`, `03_Implement/frontend/public/packs/`, `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/App.tsx`, `01_Plans/issues/`
-- Related ADR/Spec: `ADR-0010`, `ADR-0032`, `ADR-0042`, `ADR-0047`, `00_Prompt/kj_technique.md`
+- Related ADR/Spec: `ADR-0010`, `ADR-0032`, `ADR-0042`, `ADR-0047`, `00_Prompt/sensemaking_technique.md`
 - Expected verification level: docs-check + frontend unit
 
 ## 課題
 
 - 現在の問題:
-  - KJ Atlasは「曖昧さを消さない」「人間が決める」「可逆性」「安全」「offline/self-host」などの価値原則を明確に持つが、初見利用者が「自分のどの仕事で、何から乗り換えるときに、なぜこれを選ぶのか」を一読で判断できる定義はまだ弱い。
+  - SUI Sensemakingは「曖昧さを消さない」「人間が決める」「可逆性」「安全」「offline/self-host」などの価値原則を明確に持つが、初見利用者が「自分のどの仕事で、何から乗り換えるときに、なぜこれを選ぶのか」を一読で判断できる定義はまだ弱い。
   - 機能・価値・社会普及の文書が豊富なため、プロダクトの核が「KJ法支援」「AI付きホワイトボード」「質的分析」「熟議支援」「local-first knowledge tool」のどれなのか、外部からは広く見えすぎる可能性がある。
 - 利用者または開発への影響:
   - 導入理由が曖昧だと、機能追加の優先順位が「できることの広さ」に引かれやすく、READMEやgetting startedも価値の一仕事ではなく機能紹介へ流れやすい。
@@ -27,7 +27,7 @@
 
 ### 切替理由
 
-次のどれかが既存手段で痛みになったときにKJ Atlasを選ぶ。
+次のどれかが既存手段で痛みになったときにSUI Sensemakingを選ぶ。
 
 - 付箋/ホワイトボードでは、なぜその束・結論になったかを後から根拠へ戻りにくい。
 - 一般的なAI要約/クラスタリングでは、少数意見・違和感・保留がきれいな結論へ吸収されやすい。
@@ -35,7 +35,7 @@
 - 文書やスプレッドシートでは、距離・配置・関係・空白を使った構造発見が弱い。
 - クラウド前提の共同ツールでは、機微な定性資料をlocal-first/offlineで扱いたい場面に適合しにくい。
 
-### KJ Atlasが競わない軸
+### SUI Sensemakingが競わない軸
 
 - 最速の自動要約。
 - 自動での正解・合意・意思決定。
@@ -45,7 +45,7 @@
 
 ## 2026-09-02 継続dogfoodから得た初回体験の観察
 
-KJ Atlas自身を題材にした継続dogfoodで、現在のP0課題と初回導線を同じKJキャンバスへ置いて検討した。その結果、getting startedの操作経路そのものより、初回サンプルの題材と暫定一次利用仕事の間にずれがあることが分かった。
+SUI Sensemaking自身を題材にした継続dogfoodで、現在のP0課題と初回導線を同じKJキャンバスへ置いて検討した。その結果、getting startedの操作経路そのものより、初回サンプルの題材と暫定一次利用仕事の間にずれがあることが分かった。
 
 従来の初回サンプルは、`App.tsx` の `createDefaultDocument` で次の3枚として定義されていた。
 
@@ -89,7 +89,7 @@ R8では、この既存の公開pack契約を利用し、初回教程の正本�
 
 関連するdogfood記録:
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r8.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r8.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02-r2.md`
 
 ## 2026-09-03 継続dogfoodから得た優先順位付けの観察
@@ -118,11 +118,11 @@ KJ統合では、これらを単に「未完成なもの」として並べるの
 
 これは、一次価値を「便利そうだから作る」「未完成だから直す」という圧力に対して優先順位をつける根拠として使えた内部dogfoodの例である。
 
-ただし、この判断は第三者がKJ Atlasへ切り替える理由を実証したものではない。`VALUE-REALNESS-01` の第三者観察は引き続き別のP0として必要である。
+ただし、この判断は第三者がSUI Sensemakingへ切り替える理由を実証したものではない。`VALUE-REALNESS-01` の第三者観察は引き続き別のP0として必要である。
 
 関連するdogfood記録:
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r12.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r12.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-03-r6.md`
 
 ## 対応方針
@@ -152,7 +152,7 @@ KJ統合では、これらを単に「未完成なもの」として並べるの
 ## 受入条件
 
 - [x] 一次利用仕事を1〜2文で説明できる。
-- [x] 少なくとも5種の代替手段について「何が優れているか」ではなく「どの損失/制約がKJ Atlasへの切替理由になるか」を記録できる。
+- [x] 少なくとも5種の代替手段について「何が優れているか」ではなく「どの損失/制約がSUI Sensemakingへの切替理由になるか」を記録できる。
 - [ ] `VALUE-REALNESS-01` の第三者観察から、支持・修正・棄却のいずれかを判断できる。
 - [x] README/getting startedの文言が一次利用仕事と矛盾しない。
 - [ ] 通常の初回サンプルとgetting startedが同じ題材を使い、初見利用者が「なぜ2枚をまとめ、なぜ1枚を残したか」を説明できる。題材同期の自動検査までは実装済みで、第三者による説明確認は未実施。

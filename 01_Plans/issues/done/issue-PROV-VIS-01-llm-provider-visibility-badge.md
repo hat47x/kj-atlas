@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Claude Code
-- Scope: `03_Implement/frontend/src/ui/ViewControlsPanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/backend/src/kj_atlas_api/routes/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
+- Scope: `03_Implement/frontend/src/ui/ViewControlsPanel.tsx`, `03_Implement/frontend/src/App.tsx`, `03_Implement/backend/src/sui_sensemaking_api/routes/`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/e2e/`
 - Related Backlog: `PROV-VIS-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D1）, `02_Architecture/llm_provider_spec.md`
 - Expected verification level: `e2e`
@@ -14,12 +14,12 @@
 
 - RequirementID: PROV-VIS-01
 - RequirementStatement: 現在有効な LLM provider（none/local/large-scale/fixture）と直近の呼び出し結果（成功／`provider_unavailable`／`provider_timeout`／`provider_validation`／未使用）を、View パネル内に読み取り専用で表示する。ランタイムでの provider 切替 UI は提供しない。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`KJ_ATLAS_LLM_PROVIDER=none`（既定） / 操作=View パネルを開く / 期待結果=「AI: 無効（none）」等が表示され、切替ボタンは存在しない。AI提案を実行し接続エラーが起きた場合、パネルの状態ラベルが `provider_unavailable` 等へ変わる（PROV-ERROR-01 の構造化エラーに依存） / 除外=provider のランタイム変更 UI、％・スコア・信頼度の表示。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`SUI_LLM_PROVIDER=none`（既定） / 操作=View パネルを開く / 期待結果=「AI: 無効（none）」等が表示され、切替ボタンは存在しない。AI提案を実行し接続エラーが起きた場合、パネルの状態ラベルが `provider_unavailable` 等へ変わる（PROV-ERROR-01 の構造化エラーに依存） / 除外=provider のランタイム変更 UI、％・スコア・信頼度の表示。
 - SecurityGateImpact: N/A（表示のみ・ガバナンス境界は不変＝運用者設定のまま）
 
 ## 1) 課題 / Problem statement
 
-- `KJ_ATLAS_LLM_PROVIDER` はデプロイ時の環境変数のみで、アプリ内に「今 AI が有効か、有効なら何が動いているか」を示す手段が一切ない。運用者・利用者とも、AI提案が失敗したときに「意図的に無効」なのか「設定ミス/接続断」なのか画面から判断できない。
+- `SUI_LLM_PROVIDER` はデプロイ時の環境変数のみで、アプリ内に「今 AI が有効か、有効なら何が動いているか」を示す手段が一切ない。運用者・利用者とも、AI提案が失敗したときに「意図的に無効」なのか「設定ミス/接続断」なのか画面から判断できない。
 
 ## 2) 背景 / Context
 

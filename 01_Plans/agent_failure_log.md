@@ -48,8 +48,8 @@ Updated: 2026-08-03
 
 - 事象: `git add 03_Implement/frontend/...` が `warning: could not open directory '03_Implement/frontend/03_Implement/frontend/'` で失敗。作業ディレクトリが `03_Implement/frontend/` にある状態でリポジトリルート基準のパスを渡した。
 - 原因: 前のコマンドで `cd` したディレクトリが残っており、相対パスが二重化した。
-- 対応: `git -C /mnt/d/GIT/kj-atlas` でリポジトリルートを明示するか、ルート基準の相対パスを使う。
-- 再発防止: git操作は `git -C /mnt/d/GIT/kj-atlas` 形式で統一する。cd後の相対パスgitコマンドは避ける。
+- 対応: `git -C /mnt/d/GIT/sui-sensemaking` でリポジトリルートを明示するか、ルート基準の相対パスを使う。
+- 再発防止: git操作は `git -C /mnt/d/GIT/sui-sensemaking` 形式で統一する。cd後の相対パスgitコマンドは避ける。
 
 ## 2026-07-30: 手動マージ後のtest-results/ が未追跡で残る
 
@@ -430,7 +430,7 @@ Updated: 2026-08-03
 - 再発防止: 新規issueは`issue_memo_status.py`のcanonical statusを確認し、作成直後にtriageを通す。
 ## 2026-08-11: backend venv形式と既知pytest capture制約の確認漏れ
 
-- 事象: `/mnt/d/GIT/kj-atlas`で`./.venv/Scripts/python.exe`を実行して実行体なしで失敗し、WSL venvへ直した再実行もpytest capture一時file消失でtest開始前に停止した。
+- 事象: `/mnt/d/GIT/sui-sensemaking`で`./.venv/Scripts/python.exe`を実行して実行体なしで失敗し、WSL venvへ直した再実行もpytest capture一時file消失でtest開始前に停止した。
 - 原因: 過去の別checkoutのWindows venv構成を確認なしに当てはめ、失敗ログ検索も実行体名だけに狭めたため、既記録のcapture制約を見落とした。
 - 対応: `.venv`の実体を確認し、`03_Implement/backend/.venv/bin/python`、専用`TMPDIR`、capture無効の`-s`で再実行した。
 - 再発防止: checkoutごとにvenv実体を確認し、pytest失敗時は例外文字列でも失敗ログを再検索する。この環境ではproject venv＋専用`TMPDIR`＋`-s`を既定にする。
@@ -723,7 +723,7 @@ Updated: 2026-08-03
 
 - 事象: MCP stdio・HTTP協調試験がtop-level await等の構文エラーとなり、5項目が失敗した。
 - 原因: packageはNode 20を要求する一方、package-local tsxのshebangとHTTP harnessがPATH上のNode.js v12を暗黙選択した。
-- 対応: verifierへ`KJ_ATLAS_NODE_BIN`選択を追加し、tsxもHTTP harnessも選択済みNodeから直接起動するよう統一した。
+- 対応: verifierへ`SUI_NODE_BIN`選択を追加し、tsxもHTTP harnessも選択済みNodeから直接起動するよう統一した。
 - 再発防止: MCP E2EはPATHの偶然へ依存せず、CI・Codex・WSLで適合Node runtimeを明示できる契約にする。
 ## 2026-08-17: 適合Nodeを選んでもMCP子processがPATHを再探索
 
@@ -737,7 +737,7 @@ Updated: 2026-08-03
 - 事象: Codex同梱Windows NodeでWSL側MCP依存を実行すると、esbuildのplatform mismatchで停止した。
 - 原因: Windows runtimeとLinux用に導入済みのnode_modulesを混在させた。
 - 対応: 公式checksumを確認した一時Linux Node 20へ切り替え、runtimeと依存物のOSを一致させた。
-- 再発防止: `KJ_ATLAS_NODE_BIN`にはnode_modulesを導入したOSと同じplatformのruntimeを指定する。
+- 再発防止: `SUI_NODE_BIN`にはnode_modulesを導入したOSと同じplatformのruntimeを指定する。
 
 ## 2026-08-17: npxによる一時Node取得を試みたがcommand不在
 
@@ -756,15 +756,15 @@ Updated: 2026-08-03
 ## 2026-08-22: 共有 `.git/config` の `core.worktree` が `/mnt/...` へ汚染され、worktree内の全git操作が失敗
 
 - 事象: worktree（`.claude/worktrees/agent-a86af82074b4143b1`）内で `git rev-parse --show-toplevel` を含む全git操作（Windows Git Bash側も含む）が `fatal: Invalid path '/mnt': No such file or directory` で失敗した。セッション開始直後の `git status`/`git log` は成功していたため、途中で発生した。`git config --unset core.worktree`（`--file` 明示指定含む）も、repository discoveryが先に失敗するため実行できなかった。
-- 原因: 共有される本体 `.git/config`（`C:\GIT\kj-atlas\.git\config`）の `[core]` セクションに `worktree = /mnt/c/GIT/kj-atlas/.claude/worktrees/agent-a86af82074b4143b1` という不正な行が混入していた。Windows git が書くべき値ではなく、WSL側のgit操作（本セッションまたは並行する別セッション）が書き込んだとみられる。`extensions.worktreeConfig=true` のため、本来この設定は per-worktree の `config.worktree` に置くべきだが、共有ファイルに書かれたため全worktreeに影響した。
+- 原因: 共有される本体 `.git/config`（`C:\GIT\sui-sensemaking\.git\config`）の `[core]` セクションに `worktree = /mnt/c/GIT/sui-sensemaking/.claude/worktrees/agent-a86af82074b4143b1` という不正な行が混入していた。Windows git が書くべき値ではなく、WSL側のgit操作（本セッションまたは並行する別セッション）が書き込んだとみられる。`extensions.worktreeConfig=true` のため、本来この設定は per-worktree の `config.worktree` に置くべきだが、共有ファイルに書かれたため全worktreeに影響した。
 - 対応: `git`/Edit経由では本体 `.git/config`（worktree外パス）への書き込みがサンドボックスにより拒否されたため、PowerShellの`Get-Content`/`Set-Content`で該当行のみを直接除去した（`git config`系コマンドは前述の理由で使えない）。除去後は本worktreeも含め全git操作が復旧した。
 - 再発防止: worktree配下で`git config`書き込みを伴うWSL操作（`git worktree`系サブコマンドの再実行等）を行わない。git操作が`Invalid path '/mnt'`で失敗した場合は、まず共有`.git/config`の`core.worktree`を確認する。
 
 ## 2026-08-22: WSL側pythonツール（`01_Plans/docs_check.py`等）をWindows git worktreeに対して実行できない
 
-- 事象: 上記の共有config汚染を修復した後も、`wsl.exe -e bash -c "cd /mnt/c/.../worktrees/<id> && git status"`（および同ディレクトリでの`python3 01_Plans/docs_check.py`）が `fatal: not a git repository: .../<id>/C:/GIT/kj-atlas/.git/worktrees/<id>` で失敗した。worktreeの`.git`ポインタファイルは `gitdir: C:/GIT/kj-atlas/.git/worktrees/<id>`（Windows git が作成した絶対パス表記）であり、WSL側のLinux gitはこれを絶対パスとして認識できず、cwdへの相対パスとして連結してしまう。
+- 事象: 上記の共有config汚染を修復した後も、`wsl.exe -e bash -c "cd /mnt/c/.../worktrees/<id> && git status"`（および同ディレクトリでの`python3 01_Plans/docs_check.py`）が `fatal: not a git repository: .../<id>/C:/GIT/sui-sensemaking/.git/worktrees/<id>` で失敗した。worktreeの`.git`ポインタファイルは `gitdir: C:/GIT/sui-sensemaking/.git/worktrees/<id>`（Windows git が作成した絶対パス表記）であり、WSL側のLinux gitはこれを絶対パスとして認識できず、cwdへの相対パスとして連結してしまう。
 - 誤った対処（一度試して失敗）: `export GIT_DIR=/mnt/c/.../.git/worktrees/<id> GIT_WORK_TREE=/mnt/c/.../worktrees/<id>` をシェル全体に対して設定してから`docs_check.py`を実行すると、discoveryは通るが、**`docs_check.py`が内部で起動する`01_Plans/tests`のpytestスイートが `git -C /tmp/tmpXXXX ...` の形で独立したフィクスチャ用一時リポジトリを操作するsubprocessを多数生成し、それらが親プロセスの`GIT_DIR`/`GIT_WORK_TREE`を継承してしまい、`-C`の対象を無視して本worktreeを操作しようとして失敗する**（`pathspec 'tracked.md' did not match any files`等、無関係な5件のテスト失敗が発生した）。
-- 正しい対処: worktree自身の`.git`ポインタファイル（worktree内にあるため編集許可の対象）を、WSL実行の直前だけ `gitdir: /mnt/c/GIT/kj-atlas/.git/worktrees/<id>`（WSLパス表記）へ書き換え、WSL側コマンドを実行し、**完了を待ってから**（`pgrep -f docs_check.py`等でプロセス終了を確認してから）`gitdir: C:/GIT/kj-atlas/.git/worktrees/<id>`（Windowsパス表記）へ書き戻す。この方式はプロセス環境変数を汚染しないため、内部で生成されるsubprocessの`-C`指定を阻害しない。書き戻しを忘れるとWindows Git Bash側の`git`が同じ理由で全滅するため、必ずtry/finally相当（完了確認 → 書き戻し）で運用する。
+- 正しい対処: worktree自身の`.git`ポインタファイル（worktree内にあるため編集許可の対象）を、WSL実行の直前だけ `gitdir: /mnt/c/GIT/sui-sensemaking/.git/worktrees/<id>`（WSLパス表記）へ書き換え、WSL側コマンドを実行し、**完了を待ってから**（`pgrep -f docs_check.py`等でプロセス終了を確認してから）`gitdir: C:/GIT/sui-sensemaking/.git/worktrees/<id>`（Windowsパス表記）へ書き戻す。この方式はプロセス環境変数を汚染しないため、内部で生成されるsubprocessの`-C`指定を阻害しない。書き戻しを忘れるとWindows Git Bash側の`git`が同じ理由で全滅するため、必ずtry/finally相当（完了確認 → 書き戻し）で運用する。
 - 再発防止: WindowsホストでWSL側のPythonツール（docs_check.py等）を実行する必要がある場合、環境変数によるGIT_DIR/GIT_WORK_TREEのグローバル上書きではなく、worktree自身の`.git`ポインタファイルを一時的に書き換える方式を使う。実行後は必ずWindows形式へ戻し、`git status`（Windows側）で復旧を確認する。
 - 追記（2026-08-26）: worktreeの`.git`ポインタファイルを書き換えず済ませる、より単純な代替策を確認した。`rsync -a --exclude .git --exclude node_modules ...`でworktree全体（除外: `.git`/`node_modules`/`dist`等の重量ディレクトリ）をWSL側の使い捨てディレクトリへコピーし、そこで`git init && git add -A && git commit`して独立した一時repoを作る。`docs_check.py`はこの一時repo内で実行すれば、worktree本体のポインタファイルには一切触れない。手元の未commit変更も反映したい場合はcommit前にrsyncし直せばよい。ポインタファイルの書き換え/復旧が不要なため、finally忘れによる復旧漏れのリスクがない分、こちらを優先してよい。
 
@@ -868,7 +868,7 @@ Updated: 2026-08-03
 ## 2026-09-09: `docs_check.py`（DC-ACT-001）が`test_stale_merge_reintroduction_tree_noop.py`で2件失敗（実装バグではなくこのWSL2環境のgitが古い）
 
 - 事象: 48ブランチをmainへ統合した後の最終検証で`python3 01_Plans/docs_check.py`が`test_already_applied_divergent_delta_is_reported_as_tree_noop`と`test_net_new_branch_delta_is_not_tree_noop`（両方とも`01_Plans/check_stale_merge_reintroduction.py`のテスト）で失敗し、`report.prospectiveMergeTree`が`None`になった。
-- 原因: **実装のバグではない。** 両testは`tempfile.TemporaryDirectory()`で作った完全に独立した使い捨てgitリポジトリに対して動作し、kj-atlas本体のgit状態には一切依存しない。`check_stale_merge_reintroduction.py`の`_prospective_merge_tree()`が呼ぶ`git merge-tree --write-tree <base> <head>`は**Git 2.38以降で追加された構文**で、このWSL2環境（Ubuntu-22.04既定）のgitは`2.34.1`しかなく`--write-tree`を認識せず`fatal: known rev --write-tree`（exit 128）で失敗し、関数はこれを「conflict/error」として`None`を返す（docstring通りの意図した動作）。使い捨てリポジトリで直接`git merge-tree --write-tree main feat`を実行して再現・確認済み。GitHub Actions想定のCI環境は通常より新しいgitを持つため、CIでは再現しない可能性が高い（未検証）。
+- 原因: **実装のバグではない。** 両testは`tempfile.TemporaryDirectory()`で作った完全に独立した使い捨てgitリポジトリに対して動作し、sui-sensemaking本体のgit状態には一切依存しない。`check_stale_merge_reintroduction.py`の`_prospective_merge_tree()`が呼ぶ`git merge-tree --write-tree <base> <head>`は**Git 2.38以降で追加された構文**で、このWSL2環境（Ubuntu-22.04既定）のgitは`2.34.1`しかなく`--write-tree`を認識せず`fatal: known rev --write-tree`（exit 128）で失敗し、関数はこれを「conflict/error」として`None`を返す（docstring通りの意図した動作）。使い捨てリポジトリで直接`git merge-tree --write-tree main feat`を実行して再現・確認済み。GitHub Actions想定のCI環境は通常より新しいgitを持つため、CIでは再現しない可能性が高い（未検証）。
 - 対応: `check_stale_merge_reintroduction.py`・testのいずれも変更しなかった（ローカルgitバージョンに合わせてロジックを変えるのは誤った対応であり、CI環境のgitバージョンを推測で下げる理由にもならない）。この失敗は48ブランチ統合作業とは無関係（統合前のmainに対しても同じ使い捨てリポジトリテストで同じ結果になるはず）と判断し、統合作業のブロッカーとして扱わなかった。
 - 再発防止: このWSL2環境で`check_stale_merge_reintroduction`関連のtestが`prospectiveMergeTree`関連で失敗した場合、まず`git --version`を確認し、2.38未満なら`git merge-tree --write-tree`非対応が原因と判断してよい（`git merge-tree --write-tree <base> <head>`を手動実行し`fatal: known rev --write-tree`が出ることで再現確認できる）。ローカルgitのアップグレードは単独セッションの判断で行わない（ユーザー環境全体への変更のため）。
 

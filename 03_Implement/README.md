@@ -25,7 +25,7 @@ mkdir -p ~/.config/nix && printf 'experimental-features = nix-command flakes\n' 
 2. リポジトリ直下から開発シェルに入ります（カレントはリポジトリ直下のまま。以降の表のコマンドが `cd 03_Implement/...` 前提のため）。`npm` / `python` / `ruff` はこのシェル内で実行します。
 
 ```bash
-cd /path/to/kj-atlas
+cd /path/to/sui-sensemaking
 nix develop ./03_Implement
 ```
 
@@ -80,15 +80,15 @@ Open `http://localhost:8080`.
 
 Set values in shell env vars or `.env` in `03_Implement/deploy`.
 
-- `KJ_ATLAS_WEB_PORT` (default: `8080`)
-- `KJ_ATLAS_DATABASE_URL` (default: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`)
-- `KJ_ATLAS_LLM_PROVIDER` (default: `none`)
-- `KJ_ATLAS_POSTGRES_DB` (default: `kj_atlas`)
-- `KJ_ATLAS_POSTGRES_USER` (default: `kj_atlas`)
-- `KJ_ATLAS_POSTGRES_PASSWORD` (default: `kj_atlas`)
-- `KJ_ATLAS_FRONTEND_API_BASE` (default: `/api`)
+- `SUI_WEB_PORT` (default: `8080`)
+- `SUI_DATABASE_URL` (default: `postgresql+asyncpg://sui_sensemaking:sui_sensemaking@db:5432/sui_sensemaking`)
+- `SUI_LLM_PROVIDER` (default: `none`)
+- `SUI_POSTGRES_DB` (default: `sui_sensemaking`)
+- `SUI_POSTGRES_USER` (default: `sui_sensemaking`)
+- `SUI_POSTGRES_PASSWORD` (default: `sui_sensemaking`)
+- `SUI_FRONTEND_API_BASE` (default: `/api`)
 
-All public kj-atlas environment variables use the `KJ_ATLAS_` prefix. Docker Compose maps these values to any internal container-specific names that are needed.
+All public sui-sensemaking environment variables use the `SUI_` prefix. Docker Compose maps these values to any internal container-specific names that are needed.
 
 ## Manual frontend build (optional)
 

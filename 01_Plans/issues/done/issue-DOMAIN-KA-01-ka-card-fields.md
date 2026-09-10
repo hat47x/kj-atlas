@@ -19,7 +19,7 @@
 
 ## 1) 課題 / Problem statement
 
-- UXリサーチ実務で普及した KA法は「出来事・心の声・価値」の3観点でカードを書く。kj-atlas には該当構造が無く（Card は text 単一）、KA 流のカード作成を行うと3観点が本文に混在し、価値でのグルーピング（KA法の核心）が構造化できない。
+- UXリサーチ実務で普及した KA法は「出来事・心の声・価値」の3観点でカードを書く。sui-sensemaking には該当構造が無く（Card は text 単一）、KA 流のカード作成を行うと3観点が本文に混在し、価値でのグルーピング（KA法の核心）が構造化できない。
 - 壁打ち成果（拡張提案・仕様精査）で「核と整合する追加推奨」と判定され、プロトタイプで選択コンテキスト内の3欄表示が検証済み。
 
 ## 2) 背景 / Context
@@ -75,7 +75,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Related: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 A）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`（選択コンテキスト3欄）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（仕様精査 A）, `02_Architecture/design/sui-sensemaking プロトタイプ.dc.html`（選択コンテキスト3欄）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 完了記録 2026-07-09（Claude Code）
