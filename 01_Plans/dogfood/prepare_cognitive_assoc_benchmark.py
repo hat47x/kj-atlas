@@ -35,7 +35,7 @@ class PreparedSource:
     document_id: str
     cards: tuple[dict[str, str], ...]
     positive_sets: tuple[tuple[str, ...], ...]
-    residuals: tuple[str, ...]
+    singleton_islands: tuple[str, ...]
 
 
 def git_blob_sha(data: bytes) -> str:
@@ -121,12 +121,12 @@ def prepare_source(repo_root: Path, spec: dict[str, Any]) -> PreparedSource:
     source_card_count = len(document.get("cards", []))
     if not isinstance(expected_count, int) or expected_count != source_card_count:
         raise ValueError(
-            f"reviewedCardCount must describe the frozen source before explicit exclusions: "
+            "reviewedCardCount must describe the frozen source before explicit exclusions: "
             f"expected {expected_count!r}, source has {source_card_count} cards"
         )
 
     positive_sets: list[tuple[str, ...]] = []
-    seen_positive_cards: set[str] = set()
+    seen_grouped_cards: set[str] = set()
     for positive in spec.get("observedPositiveSets", []):
         card_ids = tuple(positive.get("cardIds", ()))
         if len(card_ids) < 2:
@@ -137,22 +137,36 @@ def prepare_source(repo_root: Path, spec: dict[str, Any]) -> PreparedSource:
                 f"observedPositiveSet references excluded/unknown cards in {spec['documentId']}: "
                 f"{sorted(unknown)}"
             )
-        overlap = seen_positive_cards.intersection(card_ids)
+        overlap = seen_grouped_cards.intersection(card_ids)
         if overlap:
             raise ValueError(
                 f"v0 expects disjoint observed source islands; duplicated cards: {sorted(overlap)}"
             )
-        seen_positive_cards.update(card_ids)
+        seen_grouped_cards.update(card_ids)
         positive_sets.append(card_ids)
 
-    residuals = tuple(spec.get("observedResiduals", ()))
-    unknown_residuals = set(residuals) - reviewed_ids
-    if unknown_residuals:
+    singleton_islands: list[str] = []
+    for singleton in spec.get("observedSingletonIslands", []):
+        card_id = singleton.get("cardId")
+        if not isinstance(card_id, str) or not card_id:
+            raise ValueError("observedSingletonIslands entry is missing cardId")
+        if card_id not in reviewed_ids:
+            raise ValueError(
+                f"observedSingletonIsland references excluded/unknown card: {card_id}"
+            )
+        if card_id in seen_grouped_cards or card_id in singleton_islands:
+            raise ValueError(
+                f"card appears in more than one observed source island: {card_id}"
+            )
+        singleton_islands.append(card_id)
+
+    labelled_ids = seen_grouped_cards.union(singleton_islands)
+    unlabelled_ids = reviewed_ids - labelled_ids
+    if unlabelled_ids:
         raise ValueError(
-            f"observedResiduals reference excluded/unknown cards: {sorted(unknown_residuals)}"
+            f"eligible cards lack observed island membership in {spec['documentId']}: "
+            f"{sorted(unlabelled_ids)}"
         )
-    if set(residuals).intersection(seen_positive_cards):
-        raise ValueError("a card cannot be both observedPositive and observedResidual")
 
     challenge_sets = spec.get("challengePositiveSets", [])
     positive_memberships = [set(group) for group in positive_sets]
@@ -167,17 +181,17 @@ def prepare_source(repo_root: Path, spec: dict[str, Any]) -> PreparedSource:
         document_id=spec["documentId"],
         cards=tuple(sorted(cards, key=lambda card: card["cardId"])),
         positive_sets=tuple(positive_sets),
-        residuals=residuals,
+        singleton_islands=tuple(singleton_islands),
     )
 
 
-def island_index(source: PreparedSource) -> dict[str, str | None]:
-    result: dict[str, str | None] = {card["cardId"]: None for card in source.cards}
+def island_index(source: PreparedSource) -> dict[str, str]:
+    result: dict[str, str] = {}
     for index, group in enumerate(source.positive_sets, start=1):
         for card_id in group:
-            result[card_id] = f"observed-{index}"
-    for card_id in source.residuals:
-        result[card_id] = "residual"
+            result[card_id] = f"observed-multi-{index}"
+    for index, card_id in enumerate(source.singleton_islands, start=1):
+        result[card_id] = f"observed-singleton-{index}"
     return result
 
 
@@ -186,9 +200,7 @@ def derive_pair_pool(source: PreparedSource) -> list[dict[str, Any]]:
     ids = [card["cardId"] for card in source.cards]
     result: list[dict[str, Any]] = []
     for left, right in itertools.combinations(ids, 2):
-        left_group = membership[left]
-        right_group = membership[right]
-        if left_group is not None and left_group == right_group:
+        if membership[left] == membership[right]:
             continue
         result.append(
             {
