@@ -6,13 +6,25 @@
 - Source manifest: `cognitive-assoc-benchmark-v0-source-manifest.json`
 - Rule: **この文書とsource manifestを凍結した後、contrast labelの人間判定が完了するまでsemantic baselineを実行しない。**
 
+## 0. 文書の位置づけ
+
+この文書は研究の根幹を説明する上位文書ではなく、`COGNITIVE-ASSOC-01`で定めた検証方針を**評価データへ落とす下位の実施仕様**である。
+
+研究の目的・守るべき原則・必要な認知能力・方式比較の意味は、先に次を読む。
+
+1. `01_Plans/issues/issue-COGNITIVE-ASSOC-01-affinity-semantic-field-poc.md`
+2. `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
+3. 本文書
+4. `cognitive-assoc-benchmark-v0-adjudication-selection.md`
+5. preparer / selector / adjudication packetの各実装
+
+この順序により、benchmarkの件数やlabel定義といった詳細が研究目的そのものに見えないようにする。
+
 ## 1. 目的
 
-親和図法における束ね・島形成で必要な「訴えの近さ」を、Fly-inspired sparse representation、一般的なlocal sentence encoder、将来のaffinity-specific association layerで比較する。
+親和図法における束ね・島形成で必要な「訴えの近さ」を、Fly-inspired sparse representation、一般的なlocal sentence encoder、将来のaffinity-specific association layerで比較するため、**モデル結果を見る前に評価条件を固定する**。
 
 ここで測るのは自動クラスタリング精度ではない。人間が意味を立ち上げる前に、**一緒に置いて読んでみる価値のある2〜3枚を候補として回収できるか**を測る。
-
-モデル結果を見てからbenchmarkを有利な形へ調整することを防ぐため、入力source・観測済みpositive・単独島・challenge subset・contrast pool生成規則を先に固定する。
 
 ## 2. retrospective observational benchmarkとする理由
 
