@@ -1,4 +1,4 @@
-# ハエ脳由来の疎連想認知と親和図法の深層意味近接 — 調査・仮説整理
+# 親和図法の深層意味近接を支える非LLM認知層 — 調査・仮説整理
 
 - Status: Research / Non-normative
 - Date: 2026-09-10
@@ -7,91 +7,137 @@
 
 > Relatedに含まれる`kj_*`は既存ファイルの参照識別子であり、本書の一般名称ではない。
 
-## 1. 結論
+## 1. 研究の起点
 
-現時点では、**FlyHashそのものを親和図の島作りへ用いても要求水準には届かない**。FlyHashは、与えられた特徴空間の近傍を疎な高次元表現へ写して類似検索を効率化する技術であり、入力特徴に存在しない深層意味を新たに獲得する機構ではない。
+kj-atlasが支援したいのは、カードを意味カテゴリへ高速に分類することではない。
 
-一方、ハエのmushroom bodyに着想を得た研究はFlyHashからBioHash、FlyVec、Complyへ進み、固定ランダム射影だけでなく、データからの局所学習、単語・文脈の意味表現、文系列の疎な意味表現まで射程を広げている。したがって「ハエ脳型では深層意味を扱えない」とも結論しない。
+人間がまだ名前を付けていない関係を見つけ、複数カードを並べたときに初めて立ち上がる共通の訴えを感じ取り、必要に応じて離し、保留し、残余を残しながら探究を進めることである。
 
-検証すべき仮説は次である。
+この営みでは、語彙類似が高いカードを近く置くだけでは不十分である。逆に、高性能なLLMへ全てを任せればよいとも限らない。常時localでの軽量動作、同一入力に対する再現性、LLMとは異なる探索経路、人間の判断を確定しないproposal-only性も同時に必要になる。
 
-> **一般言語から獲得した疎な意味表現と、親和図作業で人間が行う束ね・分離・違和感・保留の履歴を局所的に統合すれば、表層語彙が異なっていても「一緒に置いて読んでみる価値がある」2〜3枚の候補を、LLMなしまたはLLMより軽量な経路で再現性をもって浮上させられるか。**
+したがって本研究の中心的な問いは、次である。
 
-この研究仮説を、本書では仮に **Affinity Semantic Field** と呼ぶ。製品名称でも採用済みアーキテクチャでもない。
+> **人間の親和図作業を置き換えず、その前段で「一緒に読んでみる価値のある組合せ」を軽量かつ再現可能に浮上させる、LLMとは異なる認知層を構成できるか。**
 
-## 2. 親和図法が要求する「近さ」は通常の文章類似より深い
+ハエ脳由来の疎表現は、この問いに対する候補技術の一つとして検討する。研究の出発点そのものではない。
 
-既存の実行手順では、束ねを分類ではなく**訴えの類似性**で行い、初期の束を2〜3枚程度とする。したがってSemantic Textual Similarityや言い換え検出と同一視しない。
+## 2. 親和図法から導かれる認知要件
 
-必要な性質は少なくとも次の通りである。
+親和図法における「近さ」は通常の文章類似より深い。少なくとも次の性質を必要とする。
 
-1. **表層を越えた近接** — 語彙や具体例が違っても、背後の問題構造・経験上の訴えを近く読める。
-2. **高表層類似の拒否** — 同じ語彙でも、話者・時点・因果方向・肯否・役割が違えば安易に一束へしない。
-3. **文脈依存性** — 探究テーマや周囲のカードによって距離感が変わり得る。
-4. **集合としての立ち上がり** — pairwise similarityの推移だけで島を決めず、2〜3枚を一緒に読んだときに立ち上がる共通の訴えを扱う。
-5. **残余の保持** — どこにも入らないカード、混ぜたくない感覚、まだ言語化できない違和感を誤差として消さない。
+1. **表層を越えた近接**  
+   使用語彙や具体例が異なっても、背後にある問題構造・経験上の訴えを近く読めること。
+2. **高表層類似の拒否**  
+   同じ語彙でも、話者・時点・因果方向・肯否・役割が異なれば安易に一束へしないこと。
+3. **文脈依存性**  
+   二枚だけなら近く見えても、探究テーマや周囲のカードによって距離感が変わり得ること。
+4. **集合としての立ち上がり**  
+   pairwise similarityの推移律だけで島を決めず、2〜3枚を同時に読んだときに初めて見える共通の訴えを扱えること。
+5. **残余の保持**  
+   どこにも入らないカード、混ぜたくない感覚、まだ言語化できない違和感を誤差として消さないこと。
+6. **人間確定の維持**  
+   候補提示は行っても、島・表札・関係そのものを機械が確定しないこと。
+7. **継続利用可能な軽量性**  
+   local/offlineで常時利用し得る計算量・memory・更新コストに収まること。
+8. **再現性**  
+   seed、algorithm version、parameter set、必要ならlearned stateを残し、候補変化を追跡できること。
 
-PoCの目的は正しい自動クラスタを作ることではなく、**人間の親和図作業前に探索空間を閉じず、読むべき組合せを増やせるか**である。
+PoCの目的は「正しい自動クラスタを作ること」ではなく、**人間の探索空間を閉じずに、読むべき組合せを増やせるか**である。
 
-## 3. 関連研究
+## 3. 認知層を分解して考える
 
-### 3.1 FlyHash
+根幹要件を一つのモデルへ押し込まず、次の三層へ分けて考える。
+
+### 3.1 一般意味表現
+
+「言葉として何が近いか」を扱う。小型sentence encoder、学習済み疎意味表現などが候補になる。
+
+### 3.2 親和図作業固有の連想
+
+「この探究で何を一緒に読んだか／読まなかったか」を扱う。将来的には、grouped / separated / critique / held / too_close / too_far / not_the_same等の履歴が候補になる。
+
+### 3.3 構造文脈
+
+relation graph、空間配置、provenance/time、現在のinquiry、周辺カード等を扱う。
+
+重要なのは、これらを最初から混ぜないことである。一般意味表現だけで足りないのか、親和図作業固有の情報に独立増分があるのかを分離して検証する。
+
+## 4. 候補技術としてハエ脳由来の疎表現を見る理由
+
+必要としているのは、生物学的忠実再現ではない。候補として興味があるのは、次の計算motifである。
+
+- sparse expansive representation
+- winner-take-all / local competition
+- local plasticity
+- novelty / familiarityを分離可能な状態表現
+- 複数compartment相当の独立した連想空間
+
+これらは、軽量な常時local処理、局所競合、個別探究への適応という要件と部分的に接続し得る。
+
+一方で「ハエ脳型 = 非LLM」「軽量 = 高品質」とはみなさない。深層意味を得るには一般言語経験が必要であり、学習・更新・配布まで含めた総コストを見る。
+
+## 5. 関連研究から分かること
+
+### 5.1 FlyHash: 近傍保存はできるが意味獲得そのものではない
 
 Dasgupta, Stevens, Navlakha (Science, 2017) はショウジョウバエ嗅覚回路を類似検索として形式化し、疎な高次元表現によるFlyHashへつなげた。
 
-直接支持されるのは、既に有意味な入力空間が与えられたとき、その局所近傍を軽量に保持・検索する能力である。文字列特徴だけから語彙を越えた「訴え」を自発的に獲得するとは言えない。
+ここから直接言えるのは、既に有意味な入力空間が与えられたとき、その局所近傍を軽量に保持・検索する能力である。文字列特徴だけから語彙を越えた「訴え」を自発的に獲得するとは言えない。
 
 Reference: https://pubmed.ncbi.nlm.nih.gov/29123069/
 
-### 3.2 BioHash
+### 5.2 BioHash: ランダム射影からデータ駆動へ
 
 Ryali et al. (ICML 2020) はFlyHashのrandom projectionを拡張し、局所的な可塑性則で疎な高次元codeをデータから学ぶBioHashを提案した。
 
-将来、人間が明示的に行った束ね・分離を局所教師信号として使う可能性を示すが、BioHash自体はunsupervised similarity searchであり、親和図法の「訴え」理解を実証したものではない。
+将来、人間が明示的に行った束ね・分離を局所教師信号として使う可能性を示す。ただし、BioHash自体はunsupervised similarity searchであり、親和図法の「訴え」理解を実証したものではない。
 
 Reference: https://proceedings.mlr.press/v119/ryali20a.html
 
-### 3.3 FlyVec
+### 5.3 FlyVec: 疎な回路motifでも意味表現を学べる
 
 Liang et al. (ICLR 2021) はmushroom bodyに着想を得た数理モデルをword-context相関の学習へ適用し、疎なbinary codeで意味表現を学習した。
 
-この結果は、疎な高次元回路motifが単なる表層hashに限定されず、言語コーパスから意味構造を学習し得ることを支持する。
+これは、疎な高次元回路motifが単なる表層hashに限定されず、言語コーパスから意味構造を学習し得ることを支持する。
 
 Reference: https://research.ibm.com/publications/can-a-fruit-fly-learn-word-embeddings
 
-### 3.4 Comply
+### 5.4 Comply: 文系列の疎なcontextual representation
 
-Figueroa et al. (2025) のComplyはFlyVecへ位置情報を組み込み、single-layer networkでsequence representationを学習する。短文カードへの適用可能性は高まるが、**親和図の島形成に必要なlatent advocacy / set-level coherenceを直接評価した研究ではない**。日本語の親和図カードに対する実証もない。
+Figueroa et al. (2025) のComplyはFlyVecへ位置情報を組み込み、single-layer networkでsequence representationを学習する。
+
+短文カードへの適用可能性は高まるが、親和図の島形成に必要なlatent advocacy / set-level coherenceを直接評価した研究ではない。日本語の親和図カードに対する実証もない。
 
 Reference: https://arxiv.org/abs/2502.01706
 
-### 3.5 APLの局所抑制
+### 5.5 APLの局所抑制: global rankingではなく局所競合
 
 Amin et al. (eLife, 2020) は、APL neuronからKenyon cellへのfeedback inhibitionが空間的に局所化されることを示した。
 
-設計motifとしては、文書全体で一つのglobal Top-Nを作るより、現在のカード・島・viewport・探究文脈ごとに候補を競合させる仮説につながる。
+製品へ直接模倣する必要はないが、設計motifとしては文書全体で一つのglobal Top-Nを作るより、現在のカード・島・viewport・探究文脈ごとに候補を競合させる方が少数テーマを押し流しにくいという仮説につながる。
 
 Reference: https://elifesciences.org/articles/56954
 
-## 4. 研究上の境界
+## 6. ここまでから導く研究仮説
 
-生物学的な忠実再現は目的にしない。候補とするのは、sparse expansive representation、winner-take-all/local competition、local plasticity、novelty/familiarityを分離可能な状態、複数の独立した連想空間といった計算motifである。
+FlyHashそのものを親和図の島作りへ用いても、要求水準には届かない可能性が高い。FlyHashは既存特徴空間の近傍を保存する技術であり、入力にない深層意味を生成する機構ではない。
 
-また「ハエ脳型 = 非LLM」「軽量 = 高品質」とはみなさない。深層意味の獲得には一般言語経験が必要で、学習・更新・配布まで含めた総コストを評価する。
+一方、BioHash / FlyVec / Complyまで含めれば、疎表現が意味学習へ広がる余地はある。そこで検証すべき仮説を次のように置く。
 
-目的は親和図法による認知を支援することであり、Fly-inspired方式の採用自体ではない。小型Transformer系sentence encoder等が同じlocal/offline条件で明らかに優れるなら、それを比較結果として受け入れる。
+> **一般言語から獲得した意味表現と、親和図作業で人間が行う束ね・分離・違和感・保留の履歴を局所的に統合すれば、表層語彙が異なっていても「一緒に置いて読んでみる価値がある」2〜3枚の候補を、LLMなしまたはLLMより軽量な経路で再現性をもって浮上させられるか。**
 
-## 5. Affinity Semantic Field 仮説
+この仮説を、本書では仮に **Affinity Semantic Field** と呼ぶ。製品名称でも採用済みアーキテクチャでもない。
+
+概念上は次の二段構造を想定する。
 
 ```text
 General language experience
         |
         v
-Sparse semantic encoder
-(FlyVec / Comply inspired)
+semantic representation
         |
         v
-Sparse card representation
+card representation
         |
         +-------------------------+
         |                         |
@@ -111,21 +157,11 @@ affinity-local association     structural channels
        2-3 card read-together candidates
 ```
 
-一般意味表現と親和図作業固有の学習を分ける。前者は「言葉として何が近いか」、後者は「この探究で何を一緒に読んだ／読まなかったか」を扱う。
+Phase 1では固定表現・固定seedとし、利用者操作を学習へ即時反映せずledgerとして収集する。Phase 2でoffline再生し、適応型表現の独立増分を比較する。
 
-Phase 1では固定表現・固定seedとし、`grouped / separated / critique / held`を学習せずledgerとして収集する。Phase 2でそのledgerをoffline再生し、適応型表現の独立増分を比較する。
+## 7. 比較系
 
-## 6. pairではなく2〜3枚の集合を評価する
-
-A≈B、B≈CからA/B/Cを同一島と推移的に決めない。pair retrievalに加えてsmall-set coherenceを独立評価する。
-
-- **hard positive**: 表層語彙の重なりは小さいが、一緒に読んでみる価値がある2〜3枚。
-- **hard negative**: 語彙・固有名詞・主題は似るが、訴え・因果方向・時点・立場が異なり一緒にしない2〜3枚。
-- **held / ambiguous**: 人間自身もまだ束ねを確定しない組合せ。
-
-正解を自動的な「同じ島」と定義せず、candidateとして再提示する価値を評価する。
-
-## 7. PoC比較系
+最低限、同じカード集合に対して次を比較する。
 
 | 系 | 役割 |
 |---|---|
@@ -139,18 +175,30 @@ A≈B、B≈CからA/B/Cを同一島と推移的に決めない。pair retrieval
 
 EやGに勝つこと自体を採用条件にしない。重要なのは、常時localに動かせる負荷で親和図上のhard positiveを増やし、hard negative・単独島・残余を壊さないかである。
 
-## 8. 評価軸
+## 8. 評価方法
 
-- **R1 deep-semantic candidate recall**: hard positiveを候補へ回収できるか。
-- **R2 surface-decoy rejection**: 高表層類似のhard negativeを近いというだけで提示し続けないか。
-- **R3 singleton/residual survival**: 孤立・少数・heldカードを強制回収しないか。
-- **R4 set-level coherence**: 2〜3枚として成立する候補と異質カード混入を区別できるか。
-- **R5 wording stability**: 軽微な言い換えで候補が崩れすぎないか。
-- **R6 affinity-feedback increment**: 束ね・分離・Critique等の履歴に独立増分があるか。
-- **R7 continuous-local budget**: CPU/memory/index更新が常時local運用に収まるか。
-- **R8 cognitive-control increment**: 発見、残余保持、早期収束耐性、注意再配分に実利用上の増分があるか。
+pairだけではなく2〜3枚のsmall-set coherenceを評価する。
+
+- **hard positive**: 表層語彙の重なりは小さいが、一緒に読んでみる価値がある2〜3枚。
+- **hard negative**: 語彙・固有名詞・主題は似るが、訴え・因果方向・時点・立場が異なり一緒にしない2〜3枚。
+- **held / ambiguous**: 人間自身もまだ束ねを確定しない組合せ。
+
+正解を自動的な「同じ島」と定義せず、candidateとして再提示する価値を見る。
+
+評価軸は次とする。
+
+- R1 deep-semantic candidate recall
+- R2 surface-decoy rejection
+- R3 singleton / residual survival
+- R4 set-level coherence
+- R5 wording stability
+- R6 affinity-feedback increment
+- R7 continuous-local budget
+- R8 cognitive-control increment
 
 ## 9. 反証条件
+
+以下のいずれかが観測された場合、Fly-inspired方式の製品導入を止める、または役割を縮小する。
 
 - **F1**: hard positive回収がTF-IDF等の表層基準線から実質的に改善しない。
 - **F2**: 意味回収を上げるほどhard negativeも増え、親和的な束ねに必要な分離が保てない。
@@ -163,26 +211,22 @@ EやGに勝つこと自体を採用条件にしない。重要なのは、常時
 
 ## 10. 製品境界
 
-PoCが成功しても、Island / Cluster、表札、relationを自動確定しない。内部距離やactivationを利用者向けimportance/confidence scoreへ変換しない。`held / pending / shelved / Critique`を解消対象としない。戻し検査、空白列挙、A/B照合等のverification scopeを候補kernelだけで削らない。
+PoCが成功しても、次は自動化しない。
 
-製品出力は原則として「この2〜3枚を一緒に読んでみる」候補、または`too_close / too_far / not_the_same / novelty`の検討契機に留める。
+- Island / Clusterを自動確定しない。
+- 表札を自動確定しない。
+- relationをこのkernelだけで確定しない。
+- 内部距離やactivationを利用者向けimportance / confidence scoreとして表示しない。
+- `held / pending / shelved / Critique`を解消対象として扱わない。
+- 戻し検査、空白列挙、A/B照合等のverification scopeを候補kernelだけで削らない。
 
-## 11. 三要素牽制による研究段階の境界
+製品に入れる場合の出力は、原則として「この2〜3枚を一緒に読んでみる」候補、または`too_close / too_far / not_the_same / novelty`の検討契機に留める。
 
-| 次元 | 研究段階で固定すること | まだ固定しないこと |
-|---|---|---|
-| 業務設計 | 人間が意味を立ち上げる候補生成であり、自動島形成ではない | UI導線・常時表示 |
-| データ設計 | benchmark/derived signature/実験ledgerはCanonical Graphとは別物 | 永続schema・同期方式・tenant境界 |
-| 機能設計 | offline PoCで同一snapshotを比較する | 本番API、worker、provider設定 |
+## 11. 次の実行単位
 
-本研究だけを根拠にproduction schema/API/Canonical Graphへ新規型を追加しない。
-
-## 12. 次の実行単位
-
-1. `COGNITIVE-ASSOC-01`のPoC Issueで研究を管理する。
-2. 既存dogfoodからsmall-set benchmarkをモデル出力を見る前に固定する。
-3. hard positive / hard negative / heldを人間判断と元カードへ戻れる形で保持する。
-4. まずA/C/Eを最小baselineとして比較する。
-5. D/Fは、一般意味表現と親和図作業固有feedbackの不足を分離してから実装する。
-6. 結果を`COGNITIVE-EVAL-01`の既存測定軸へ接続する。
-7. 既存性能・安全・データ境界で覆えない判断が生じた場合だけ`ADR-0047` R-1..R-4へ戻る。
+1. 既存dogfoodからsmall-set benchmarkをモデル出力を見る前に固定する。
+2. hard positive / hard negative / heldを人間判断と元カードへ戻れる形で保持する。
+3. まずA/C/Eを最小baselineとして比較する。
+4. D/Fは、一般意味表現と親和図作業固有feedbackの不足を分離してから実装する。
+5. 結果を`COGNITIVE-EVAL-01`の既存測定軸へ接続する。
+6. 既存性能・安全・データ境界で覆えない判断が生じた場合だけ`ADR-0047` R-1..R-4へ戻る。
