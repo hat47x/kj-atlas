@@ -34,7 +34,9 @@
         {"sourceIslandId": "i4", "cardIds": ["c10", "c11", "c12"]},
         {"sourceIslandId": "i5", "cardIds": ["c13", "c14", "c15"]}
       ],
-      "observedResiduals": ["c16"],
+      "observedSingletonIslands": [
+        {"sourceIslandId": "i6", "cardId": "c16"}
+      ],
       "challengePositiveSets": [
         ["c01", "c03", "c04"],
         ["c10", "c11", "c12"],
@@ -52,11 +54,8 @@
         {"sourceIslandId": "i3", "cardIds": ["c07", "c08", "c09"]},
         {"sourceIslandId": "i4", "cardIds": ["c10", "c11"]}
       ],
-      "excludedFromV0": [
-        {
-          "cardId": "c12",
-          "reason": "The currently captured source excerpt does not establish its complete island/residual status. Keep it out of v0 labels rather than infer the missing structure."
-        }
+      "observedSingletonIslands": [
+        {"sourceIslandId": "i5", "cardId": "c12"}
       ],
       "challengePositiveSets": [
         ["c01", "c02", "c03"],
@@ -66,13 +65,13 @@
     }
   ],
   "labelSemantics": {
-    "observedPositiveSet": "Cards were already placed in the same island in a pre-existing reviewed dogfood document. This is an observational label, not universal semantic ground truth.",
+    "observedPositiveSet": "Cards were already placed in the same multi-card island in a pre-existing reviewed dogfood document. This is an observational label, not universal semantic ground truth.",
     "challengePositiveSet": "A preregistered subset of observedPositiveSet chosen before model execution because its cards are useful for testing latent advocacy or structurally shared meaning beyond exact lexical overlap. It remains observational rather than normative ground truth.",
-    "observedResidual": "A reviewed card existed as a singleton island/residual in the frozen source. Retrieval systems must not treat singleton status as an error to repair.",
+    "observedSingletonIsland": "A reviewed card already formed a one-card island in the frozen source. Singleton island is not the same as pending/held/shelved residual state, but the retrieval system must not assume that every card should be absorbed into a multi-card group.",
     "crossIslandCandidate": "Any reviewed pair or 2+1 triple spanning source islands. This is only an adjudication pool. It MUST NOT be treated as a hard negative until human adjudication records that decision."
   },
   "contrastPoolDerivation": {
-    "pairRule": "All unordered reviewed-card pairs within one document whose members do not share a source island.",
+    "pairRule": "All unordered reviewed-card pairs within one document whose members do not share a source island. Singleton islands are distinct islands, not one shared residual bucket.",
     "twoPlusOneRule": "For each observedPositiveSet with at least two cards, pair every within-island card pair with each reviewed card outside that island.",
     "labelBeforeModel": ["hard_negative", "related_but_separate", "ambiguous_or_held", "exclude"],
     "requiredAdjudicator": "Maintainer",
@@ -81,7 +80,8 @@
   "evaluationNotes": [
     "Coordinates and island labels are hidden because they would leak the observed grouping into text-only semantic baselines.",
     "R36/R37/R42/R43 are not model inputs in v0 because their cards have textReviewed=false, even though their existing structures informed research design.",
-    "The benchmark must preserve residual/singleton observations and must not optimize for putting every card into a group.",
+    "The benchmark preserves one-card islands without relabeling them as hold/pending/shelved residuals.",
+    "The benchmark must not optimize for putting every card into a multi-card group.",
     "Any future benchmark expansion requires a new version; do not mutate v0 after seeing model results."
   ]
 }
