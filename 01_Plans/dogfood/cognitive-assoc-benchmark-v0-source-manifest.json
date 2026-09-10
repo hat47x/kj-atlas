@@ -21,6 +21,11 @@
     "candidateScope": "Within-document retrieval first; cross-document evaluation is a later secondary analysis.",
     "noModelRunBeforeAdjudication": true
   },
+  "expectedPreparedCounts": {
+    "modelInputCards": 29,
+    "crossIslandPairs": 173,
+    "twoPlusOneCandidates": 346
+  },
   "sources": [
     {
       "documentId": "doc_cognitive_dogfood_meta_r1",
