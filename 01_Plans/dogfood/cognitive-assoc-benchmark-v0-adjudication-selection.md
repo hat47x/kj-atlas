@@ -6,6 +6,17 @@
 - Source manifest: `cognitive-assoc-benchmark-v0-source-manifest.json`
 - Rule: 本文書の抽出規則を固定した後も、semantic baseline / embedding / FlyHash候補を見るまで変更しない。
 
+## 0. 文書の位置づけ
+
+この文書は、親和図法の認知要件や方式選定を説明するものではない。上位のIssue・研究記録・benchmark事前登録で決めた方針を受けて、**人間判定対象をモデル非依存にどう抽出するかだけを固定する下位仕様**である。
+
+したがって、根幹の趣旨を確認する場合は先に次を読む。
+
+1. `01_Plans/issues/issue-COGNITIVE-ASSOC-01-affinity-semantic-field-poc.md`
+2. `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
+3. `cognitive-assoc-benchmark-v0-preregistration.md`
+4. 本文書
+
 ## 1. なぜ519件を全件判定しないか
 
 v0の完全なcontrast母集団は、cross-island pair 173件と2+1 candidate 346件、計519件である。
