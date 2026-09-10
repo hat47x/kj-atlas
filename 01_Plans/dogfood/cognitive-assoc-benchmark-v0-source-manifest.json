@@ -25,7 +25,7 @@
     {
       "documentId": "doc_cognitive_dogfood_meta_r1",
       "path": "01_Plans/dogfood/doc_cognitive_dogfood_meta_r1.json",
-      "blobSha": "a1e5fc49a0123f4f2c4c7f6b5b53b6ff96df8d43",
+      "blobSha": "c37066bf989289ea1e2bc642f0206513db8380b1",
       "reviewedCardCount": 17,
       "observedPositiveSets": [
         {"sourceIslandId": "i1", "cardIds": ["c01", "c02", "c03", "c04"]},
