@@ -8,7 +8,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `01_Plans/research/`, `01_Plans/dogfood/`, `01_Plans/issues/`, PoC用の非製品コード
-- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
+- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/sensemaking_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_sensemaking_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
 - Norms: `DOM-CORE-01`, `DOM-CORE-02`, `DOM-CORE-03`, `DOM-CORE-04`
 - Expected verification level: docs-check + reproducible offline benchmark
 - Working branch: `research/cognitive-assoc-01-kj-semantic-field-20260910`
@@ -20,7 +20,7 @@
 
 ## 1. 根幹の趣旨
 
-kj-atlasが支援したいのは、カードを機械的に分類することではない。
+sui-sensemakingが支援したいのは、カードを機械的に分類することではない。
 
 人間がまだ名前を与えていない関係を見つけ、複数のカードを一緒に眺めたときに立ち上がる「訴え」を感じ取り、必要なら離し、保留し、残余を残しながら意味を組み上げていく探索を支援することである。
 

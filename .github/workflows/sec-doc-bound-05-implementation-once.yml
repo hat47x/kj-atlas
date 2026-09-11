@@ -25,7 +25,7 @@ jobs:
           from pathlib import Path
 
           # 1) DatabaseAppendOnlyLogContentStore: keyset by autoincrement row id.
-          path = Path("03_Implement/backend/src/kj_atlas_api/database_content_store.py")
+          path = Path("03_Implement/backend/src/sui_sensemaking_api/database_content_store.py")
           text = path.read_text(encoding="utf-8")
           old = '''    def list_by_group(
         self, *, tenant: TenantContext, doc_id: str, group_id: str
@@ -154,7 +154,7 @@ jobs:
           path.write_text(text.replace(old, new), encoding="utf-8")
 
           # 2) Repository preserves the row id needed by the route's next cursor.
-          path = Path("03_Implement/backend/src/kj_atlas_api/document_repository.py")
+          path = Path("03_Implement/backend/src/sui_sensemaking_api/document_repository.py")
           text = path.read_text(encoding="utf-8")
           old = '''def list_merge_decision_logs_by_group(
     db: Session,
@@ -230,7 +230,7 @@ def list_merge_decision_logs_by_snapshot(
           path.write_text(text.replace(old, new), encoding="utf-8")
 
           # 3) Routes expose the already-established 100/500 keyset contract.
-          path = Path("03_Implement/backend/src/kj_atlas_api/routes/docs.py")
+          path = Path("03_Implement/backend/src/sui_sensemaking_api/routes/docs.py")
           text = path.read_text(encoding="utf-8")
           old_group = '''def list_merge_decision_logs_by_group(
     doc_id: str,
@@ -333,9 +333,9 @@ def list_merge_decision_logs_by_snapshot(
           from sqlalchemy import create_engine
           from sqlalchemy.orm import sessionmaker
 
-          from kj_atlas_api.db import get_db
-          from kj_atlas_api.main import app
-          from kj_atlas_api.models import Base
+          from sui_sensemaking_api.db import get_db
+          from sui_sensemaking_api.main import app
+          from sui_sensemaking_api.models import Base
 
 
           @pytest.fixture()
@@ -491,9 +491,9 @@ def list_merge_decision_logs_by_snapshot(
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 03_Implement/backend/src/kj_atlas_api/database_content_store.py \
-            03_Implement/backend/src/kj_atlas_api/document_repository.py \
-            03_Implement/backend/src/kj_atlas_api/routes/docs.py
+          git add 03_Implement/backend/src/sui_sensemaking_api/database_content_store.py \
+            03_Implement/backend/src/sui_sensemaking_api/document_repository.py \
+            03_Implement/backend/src/sui_sensemaking_api/routes/docs.py
           git commit -m "fix(security): paginate merge decision log reads"
       - name: Commit regression coverage
         if: success()

@@ -8,7 +8,7 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
-store = Path("03_Implement/backend/src/kj_atlas_api/database_content_store.py")
+store = Path("03_Implement/backend/src/sui_sensemaking_api/database_content_store.py")
 replace_once(
     store,
     '''    def list_by_group(
@@ -137,7 +137,7 @@ replace_once(
     "append-only store",
 )
 
-repo = Path("03_Implement/backend/src/kj_atlas_api/document_repository.py")
+repo = Path("03_Implement/backend/src/sui_sensemaking_api/document_repository.py")
 replace_once(
     repo,
     '''def list_merge_decision_logs_by_group(
@@ -213,7 +213,7 @@ def list_merge_decision_logs_by_snapshot(
     "document repository",
 )
 
-routes = Path("03_Implement/backend/src/kj_atlas_api/routes/docs.py")
+routes = Path("03_Implement/backend/src/sui_sensemaking_api/routes/docs.py")
 replace_once(
     routes,
     '''def list_merge_decision_logs_by_group(
@@ -319,9 +319,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
 
 
 @pytest.fixture()

@@ -3,13 +3,13 @@
 - Status: Research / Non-normative
 - Date: 2026-09-10
 - Scope: 親和図法における束ね・島形成に必要な「訴えの近さ」を、LLMとは異なる認知機構でどこまで支援できるか
-- Related: `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `01_Plans/issues/issue-COGNITIVE-EVAL-01-factorial-human-ai-cognitive-control-evaluation.md`, `01_Plans/issues/issue-COGNITIVE-DOGFOOD-01-product-development-cognitive-workbench.md`
+- Related: `00_Prompt/sensemaking_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_sensemaking_execution_procedures.md`, `01_Plans/issues/issue-COGNITIVE-EVAL-01-factorial-human-ai-cognitive-control-evaluation.md`, `01_Plans/issues/issue-COGNITIVE-DOGFOOD-01-product-development-cognitive-workbench.md`
 
 > Relatedに含まれる`kj_*`は既存ファイルの参照識別子であり、本書の一般名称ではない。
 
 ## 1. 研究の起点
 
-kj-atlasが支援したいのは、カードを意味カテゴリへ高速に分類することではない。
+sui-sensemakingが支援したいのは、カードを意味カテゴリへ高速に分類することではない。
 
 人間がまだ名前を付けていない関係を見つけ、複数カードを並べたときに初めて立ち上がる共通の訴えを感じ取り、必要に応じて離し、保留し、残余を残しながら探究を進めることである。
 

@@ -3,7 +3,7 @@
   "status": "pre_adjudication_frozen",
   "frozenAt": "2026-09-10T19:22:00+09:00",
   "purpose": "Freeze model-blind affinity-grouping observations before running any semantic baseline for COGNITIVE-ASSOC-01.",
-  "sourceRepository": "hat47x/kj-atlas",
+  "sourceRepository": "hat47x/sui-sensemaking",
   "inputContract": {
     "modelVisibleFields": ["documentId", "cardId", "text"],
     "hiddenFromModels": ["x", "y", "islandId", "islandTitle", "edges", "readingOrder", "narratives", "claimType", "meta.source"],
@@ -34,7 +34,7 @@
     },
     {
       "documentId": "doc_kj_atlas_dogfood_r3",
-      "path": "01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json",
+      "path": "01_Plans/dogfood/doc_sui_sensemaking_dogfood_r3.json",
       "blobSha": "edb83ab819984f20052b644898613e1457a8a1f1",
       "reviewedCardCount": 12,
       "observedPositiveSets": [
