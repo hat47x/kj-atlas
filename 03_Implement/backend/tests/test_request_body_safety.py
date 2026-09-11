@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.request_body_safety import MAX_JSON_BODY_NESTING_DEPTH
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.request_body_safety import MAX_JSON_BODY_NESTING_DEPTH
+from sui_sensemaking_api.settings import settings
 
 
 def _nested_json(depth: int) -> str:

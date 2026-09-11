@@ -5,8 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
-KEY = "KJ_ATLAS_DATABASE_URL"
+MAIN = ROOT / "03_Implement/backend/src/sui_sensemaking_api/main.py"
+KEY = "SUI_DATABASE_URL"
 
 
 def _backend_row(text: str, key: str) -> str:

@@ -471,7 +471,7 @@ export function InquiryJourneyPrototypePanel({
       }
       const scopeSuffix = effectiveExportRoundId ? `-${fileStem(effectiveExportRoundId)}` : "";
       downloadTextFile(
-        `${fileStem(bundle.journey.title)}${scopeSuffix}.kj-atlas-inquiry.json`,
+        `${fileStem(bundle.journey.title)}${scopeSuffix}.sui-sensemaking-inquiry.json`,
         "application/json",
         serialized.json
       );
@@ -550,7 +550,7 @@ export function InquiryJourneyPrototypePanel({
       }
       const scopeSuffix = effectiveExportRoundId ? `-${fileStem(effectiveExportRoundId)}` : "";
       downloadTextFile(
-        `${fileStem(bundle.journey.title)}${scopeSuffix}.safe-share.kj-atlas-inquiry.json`,
+        `${fileStem(bundle.journey.title)}${scopeSuffix}.safe-share.sui-sensemaking-inquiry.json`,
         "application/json",
         shared.json,
       );

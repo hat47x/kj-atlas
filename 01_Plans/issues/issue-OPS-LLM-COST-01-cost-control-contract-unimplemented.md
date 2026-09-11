@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `02_Architecture/llm_escalation_policy.html`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `04_Documentation/operations.md`
+- Scope: `02_Architecture/llm_escalation_policy.html`, `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/settings.py`, `04_Documentation/operations.md`
 - Related ADR/Spec: `02_Architecture/llm_escalation_policy.html`, `01_Plans/adr/ADR-0009-local-llm-integration.md`, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（Proposed）
 - Expected verification level: `unit`
 
@@ -26,7 +26,7 @@
 
 ## 影響
 
-- **予算統制**: 外部LLM（`KJ_ATLAS_LLM_PROVIDER=large-scale`）は従量課金である。上限が無いため、暴走クライアント・ループ・意図的濫用のいずれでもコストが青天井になる。企業・行政の調達では、コスト上限が技術的に担保されていることが要件になる場合がある。
+- **予算統制**: 外部LLM（`SUI_LLM_PROVIDER=large-scale`）は従量課金である。上限が無いため、暴走クライアント・ループ・意図的濫用のいずれでもコストが青天井になる。企業・行政の調達では、コスト上限が技術的に担保されていることが要件になる場合がある。
 - **文書の信頼性**: 「上限到達時は自動でローカル専用モードに降格する」と読んだ運用担当者は、そのガードが働くと期待して外部LLMを有効化する。実際には働かない。
 
 ## 対応方針（実装者向け）
@@ -44,7 +44,7 @@
 
 ### 段階3: 上限と降格
 
-- 上限値の設定キー（`KJ_ATLAS_*` 命名規約に従う）を定義し、`02_Architecture/runtime_parameter_registry.md` へ登録する。
+- 上限値の設定キー（`SUI_*` 命名規約に従う）を定義し、`02_Architecture/runtime_parameter_registry.md` へ登録する。
 - 上限到達時の挙動を決める。「ローカル専用へ降格」は `llm_fallback_to_none` / provider 切替との関係整理が要る。降格が SafeMode や proposal-only の境界を弱めないこと。
 
 段階2は`ADR-0050` D3が未配線としているprovider `usage`契約の採択を待つ。段階3は集計scope、共有store、hard/soft limit、fallback semanticsという別の設計判断を含むため、段階2の実測を得てから補足ADRの要否を判断する。

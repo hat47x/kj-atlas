@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from kj_atlas_api.persistence_shapes import PERSISTENT_TEXT_SPECS
+from sui_sensemaking_api.persistence_shapes import PERSISTENT_TEXT_SPECS
 
 revision: str = "20260810_0020"
 down_revision: str | None = "20260810_0019"

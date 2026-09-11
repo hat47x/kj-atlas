@@ -21,7 +21,7 @@
 - 提案は proposal-only で、`human_reviewed` を自動昇格しない（`value_traceability.md` §2.5 共通不変条件）。
 - 根拠不足として保留する提案は、既存の hold / 保留 状態へ非破壊に接続する。
 - 提案が島タイトル等の確定フィールドに触れる場合は、書き直し案を示すだけで確定しない（`qualitative_card_quality_requirements.md` §5）。
-- `KJ_ATLAS_LLM_PROVIDER=none` でも中核操作（保留・矛盾の記録）が成立する。
+- `SUI_LLM_PROVIDER=none` でも中核操作（保留・矛盾の記録）が成立する。
 
 ## 受入条件
 

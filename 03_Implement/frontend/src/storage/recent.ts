@@ -7,7 +7,7 @@
  */
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const RECENT_DOC_IDS_STORAGE_KEY = "kj-atlas/recent-doc-ids";
+const RECENT_DOC_IDS_STORAGE_KEY = "sui-sensemaking/recent-doc-ids";
 const MAX_RECENT_DOC_IDS = 10;
 
 function isStorageAvailable(): boolean {

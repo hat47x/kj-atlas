@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
+from sui_sensemaking_api.access_control import AuthContext
+from sui_sensemaking_api.auth_assurance import build_auth_assurance_metadata
 
 
 def _ctx(*, amr: str | None = None, acr: str | None = None, aal: str | None = None, auth_time: str | None = None) -> AuthContext:

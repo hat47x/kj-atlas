@@ -1,6 +1,6 @@
 # Narratives
 
-対象読者: kj-atlas のカード、島、関係性から説明文や要約を作る利用者、レビュー担当者。
+対象読者: sui-sensemaking のカード、島、関係性から説明文や要約を作る利用者、レビュー担当者。
 
 目的: ナラティブ生成・確認の基本的な使い方と、安全なレビュー観点を示します。
 
@@ -50,7 +50,7 @@ AI 出力をそのまま貼り付ける前に、必ず根拠となるカード�
 
 ## LLM が無効な場合
 
-既定の `KJ_ATLAS_LLM_PROVIDER=none` では、AI 生成は disabled として失敗します。これは安全な既定値です。
+既定の `SUI_LLM_PROVIDER=none` では、AI 生成は disabled として失敗します。これは安全な既定値です。
 
 LLM を使う場合は、[local_llm_ops_guide.md](local_llm_ops_guide.md) と [security.md](security.md) を確認し、外部サービスとの共有、秘密情報、review 状態の扱いを先に決めてください。
 

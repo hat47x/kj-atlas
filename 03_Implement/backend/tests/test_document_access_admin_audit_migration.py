@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     LOCAL_DEFAULT_TENANT_ID,
     DocumentAccessAdminAuditEventRow,
 )
@@ -20,7 +20,7 @@ TIMESTAMP = "2026-07-17T00:00:00Z"
 
 def _run_alembic(db_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["SUI_DATABASE_URL"] = f"sqlite:///{db_path}"
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,

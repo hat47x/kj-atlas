@@ -7,16 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.content_store import ContentBlob
-from kj_atlas_api.database_content_store import DatabaseDocumentContentStore
-from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation
-from kj_atlas_api.generation_repository import (
+from sui_sensemaking_api.content_store import ContentBlob
+from sui_sensemaking_api.database_content_store import DatabaseDocumentContentStore
+from sui_sensemaking_api.generation_codec import canonical_json_bytes, encode_generation
+from sui_sensemaking_api.generation_repository import (
     RevisionHeadConflict,
     advance_revision_head,
     load_database_generation_blob,
     save_database_generation_blob,
 )
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     AiGenerationRunRow,
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
@@ -26,7 +26,7 @@ from kj_atlas_api.models import (
     DocumentRow,
     TenantRow,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 TIMESTAMP = "2026-08-10T00:00:00Z"

@@ -7,9 +7,9 @@ from sqlalchemy import create_engine, event, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.guest_admission_repository import GuestAdmissionError, GuestAdmissionRepository
-from kj_atlas_api.models import Base, DocumentRow, TenantMembershipRow, TenantRow
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.guest_admission_repository import GuestAdmissionError, GuestAdmissionRepository
+from sui_sensemaking_api.models import Base, DocumentRow, TenantMembershipRow, TenantRow
 
 NOW = datetime(2026, 9, 6, 12, 0, 0, tzinfo=timezone.utc)
 CREATED_AT = "2026-09-06T12:00:00Z"

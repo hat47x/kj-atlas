@@ -5,15 +5,15 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/main.py`
 - Related ADR/Spec: `THREAT_MODEL.md`
 - Expected verification level: `integration`
 
 ## 課題
 
 - 現在の問題:
-  - `main.py:96` の `app = FastAPI(title="kj-atlas API", lifespan=lifespan)` は `docs_url`/`redoc_url`/`openapi_url` を無効化していないため、FastAPI標準の `GET /docs`（Swagger UI）・`GET /redoc`・`GET /openapi.json` が `settings.runtime_profile` に関わらず常に有効。
-  - `THREAT_MODEL.md` §7 は、標準の `docker-compose.yml` デプロイでは `KJ_ATLAS_API_KEY` が既定で必須ではなく、同梱SPAは `X-API-Key` を送らないことを明記している。つまりこの既定構成では、`/docs`・`/redoc`・`/openapi.json` はAPIキー相当の保護を実質的に期待できない状態で到達可能。
+  - `main.py:96` の `app = FastAPI(title="sui-sensemaking API", lifespan=lifespan)` は `docs_url`/`redoc_url`/`openapi_url` を無効化していないため、FastAPI標準の `GET /docs`（Swagger UI）・`GET /redoc`・`GET /openapi.json` が `settings.runtime_profile` に関わらず常に有効。
+  - `THREAT_MODEL.md` §7 は、標準の `docker-compose.yml` デプロイでは `SUI_API_KEY` が既定で必須ではなく、同梱SPAは `X-API-Key` を送らないことを明記している。つまりこの既定構成では、`/docs`・`/redoc`・`/openapi.json` はAPIキー相当の保護を実質的に期待できない状態で到達可能。
   - `/docs`・`/redoc` はCDN（`cdn.jsdelivr.net`）からJSをロードするHTMLページであり、このバックエンドが生成する唯一のHTMLレスポンス。`/openapi.json` は全ルート・全ペイロード形状のスキーマダンプであり、偵察（recon）価値がある。
 - 利用者または開発への影響:
   - 本番相当のデプロイでも、これらのエンドポイントを無効化する設定経路が存在しない。

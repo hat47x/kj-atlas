@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: frozen manifestのimmutability guardがplatform固有の改行表現までidentityとして扱ったとき、正しいrepository内容を破損と誤認しないために何を正本とすべきか。
-- Canvas: `doc_kj_atlas_dogfood_r32.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r32.json`
 - Observation baseline: PR #3022 / merge commit `00f24fc2e6b74d97da72b3537d1b81564198ab99`
 - Guard origin: R25 / `test_frozen_dogfood_manifest_identity.py`
 - Result class: Windows working treeで実際に観測されたfrozen-manifest guardのfalse positiveを、repository canonicalization後のidentityへ戻す修正。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
@@ -102,4 +102,4 @@ R32はcurrent repositoryのcross-platform test false positiveから得た内部�
 
 frozen manifestの内容、固定OID、formal product commit、Arm条件は変更しない。この修正を理由に新しいpreflight、KPI、実験スキーマも追加しない。
 
-新しい具体的な陽性が出なければ、formal mainlineは既知仮説から隔離したfresh contextとfrozen KJ Atlas UIでのCase 001 Arm C実走へ戻る。
+新しい具体的な陽性が出なければ、formal mainlineは既知仮説から隔離したfresh contextとfrozen SUI Sensemaking UIでのCase 001 Arm C実走へ戻る。

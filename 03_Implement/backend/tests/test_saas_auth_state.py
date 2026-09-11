@@ -5,8 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.models import Base
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthStateStore
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthStateStore
 
 
 def _stores(tmp_path) -> tuple[DatabaseSaasAuthStateStore, DatabaseSaasAuthStateStore]:

@@ -4,7 +4,7 @@
 - 対象: `issue-DOGFOOD-02` 〜 `issue-DOGFOOD-05`（＋ DOGFOOD-01 の検証経路拡張）
 - 目的: 個別 issue の起票（計画起票）だけに留めず、**5件を横断して構造的な根本原因**を抽出する。
   W型R3（本質追求）の観点をドッグフーディング結果分析へ適用したもの。
-- 関連: `01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json`, `adopting-org-patterns.md`
+- 関連: `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r3.json`, `adopting-org-patterns.md`
 
 ## 1. 対象5件の要約
 

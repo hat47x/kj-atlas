@@ -60,7 +60,7 @@ export type ProjectedCard = {
 export type ProjectedRelation = { from: string; to: string; type: string };
 export type ProjectedLink = { from: string; to: string };
 
-// kj_technique.md §4 (優先3-1): structural void state — SafeMode-safe (only
+// sensemaking_technique.md §4 (優先3-1): structural void state — SafeMode-safe (only
 // kind/refs/resolved, never the title/detail which can quote card text).
 export type ProjectedVoid = {
   id: string;
@@ -70,7 +70,7 @@ export type ProjectedVoid = {
   islandIds?: string[];
 };
 
-// Narrative A/B cross-check state (kj_technique.md §5, 優先3): per-check counts
+// Narrative A/B cross-check state (sensemaking_technique.md §5, 優先3): per-check counts
 // and the directions present. Structural only — no issue messages.
 export type ProjectedNarrativeCheck = {
   id: string;

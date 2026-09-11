@@ -26,10 +26,10 @@
 | 文書 | Status | 定めるもの | 識別子 |
 |---|---|---|---|
 | [domain.md](domain.md) | Normative | **概念の憲法。** 保留・違和感・可逆性・非序列化、AIの役割、共有要件 | `DOM-CORE-*` `DOM-AI-*` `DOM-AIOK-*` `DOM-CRIT-*` `DOM-SHARE-*` |
-| [kj_technique.md](kj_technique.md) | Normative | KJ法の手順と**検査**、失敗の徴候 | `KJT-INSPECT-*` `KJT-SIGN-*` |
+| [sensemaking_technique.md](sensemaking_technique.md) | Normative | KJ法の手順と**検査**、失敗の徴候 | `SUI-INSPECT-*` `SUI-SIGN-*` |
 | [cognitive_frame_and_evolution_criteria.md](cognitive_frame_and_evolution_criteria.md) | Normative | **存在理由と進化の判断基準。** 提案が適応か価値創出か逸脱かを判定する | — |
 | [ai_cognitive_externalization_requirements.md](ai_cognitive_externalization_requirements.md) | Normative | 認知外在化の原則とIR要件 | 部分的（`MMR-*` 等） |
-| [ai_kj_execution_procedures.md](ai_kj_execution_procedures.md) | Normative | KJ操作のAI実行手順と停止条件 | — |
+| [ai_sensemaking_execution_procedures.md](ai_sensemaking_execution_procedures.md) | Normative | KJ操作のAI実行手順と停止条件 | — |
 | [qualitative_card_quality_requirements.md](qualitative_card_quality_requirements.md) | Normative | カードの定性情報品質 | 部分的 |
 | [representative_visual_cue_requirements.md](representative_visual_cue_requirements.md) | Normative | 代表視覚手掛かりの要件と非目標 | 部分的 |
 | [w_type_iterative_inquiry_requirements.md](w_type_iterative_inquiry_requirements.md) | Normative | W型累積KJ法の反復探究 | `WIR-01`〜`WIR-09` |
@@ -71,7 +71,7 @@
 
 ```
 ✅ `DOM-CORE-02`（違和感は説明責任を伴わない）
-✅ `KJT-INSPECT-02` 戻し検査
+✅ `SUI-INSPECT-02` 戻し検査
 ❌ `00_Prompt/domain.md`（どの規範か分からない）
 ❌ ファイル名にコロンと行番号を続ける形式（編集で腐る。DC-NORM-003 が禁止）
 ```
@@ -122,4 +122,4 @@ python 01_Plans/norm_impact.py DOM-CORE-04
 
 - **`DC-VOCAB-001` の検査範囲は `domain.md` §5 の主張より狭い。** §5 は層を限定せずに旧称の再導入を禁じているが、検査は `02_Architecture` に限る。旧称はリポジトリ全体に約110箇所あり、大半は改名作業そのものの実行記録（`issue-CE0-core-graph-repositioning.md` 単独で80箇所超）で、そこでは旧称が正しい。**「主張した保護範囲 > 実際の保護範囲」がここでも残っている**（`issue-DOC-VOCAB-01` に範囲と理由を記録）。是正済みの契約文9箇所は `02_Architecture` と `ADR-0028` にあった。
 - **識別子が部分的な文書が3件ある。** `ai_cognitive_externalization_requirements` / `representative_visual_cue_requirements` / `qualitative_card_quality_requirements`。体系が揃っていない。
-- **逆引きの遡及配線を実施した（2026-08-18）。** 憲法層の定義56件のうち、実際に既存計画へ読み進めて依拠関係を確認したうえで配線したのは**48件**。残り8件（`DOM-AIOK-03/04/05`・`DOM-SHARE-01`・`KJT-SIGN-02/07/08/10`）には**依拠する計画が現時点で存在しない**ことを確認した——`DOM-AIOK-03/04/05` は `WorkingGraph`/`ContextProjectionGraph` が未実装であることの帰結であり、他は該当する失敗様態にまだ専用の設計判断が無い。**56件に配線するのが目的ではない。** 配線は「その識別子を変更したら、この計画のこの決定が変わる」という実際の依存を確認できた場合のみ行った。無理に埋めると `ADR-0075` の「基準達成 ≠ 実質達成」と同じ形の見せかけ達成になる。
+- **逆引きの遡及配線を実施した（2026-08-18）。** 憲法層の定義56件のうち、実際に既存計画へ読み進めて依拠関係を確認したうえで配線したのは**48件**。残り8件（`DOM-AIOK-03/04/05`・`DOM-SHARE-01`・`SUI-SIGN-02/07/08/10`）には**依拠する計画が現時点で存在しない**ことを確認した——`DOM-AIOK-03/04/05` は `WorkingGraph`/`ContextProjectionGraph` が未実装であることの帰結であり、他は該当する失敗様態にまだ専用の設計判断が無い。**56件に配線するのが目的ではない。** 配線は「その識別子を変更したら、この計画のこの決定が変わる」という実際の依存を確認できた場合のみ行った。無理に埋めると `ADR-0075` の「基準達成 ≠ 実質達成」と同じ形の見せかけ達成になる。

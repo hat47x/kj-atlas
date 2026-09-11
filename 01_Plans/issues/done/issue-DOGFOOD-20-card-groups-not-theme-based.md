@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ115）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §2（束ねは「訴えの類似性」に基づく）, `00_Prompt/ai_kj_execution_procedures.md` §2, `02_Architecture/api.md`（suggest-card-groups 契約）, `01_Plans/issues/done/issue-DOGFOOD-19-merge-suggestions-lack-deterministic-positive-path.md`（同カテゴリのマージ提案と同型）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §2（束ねは「訴えの類似性」に基づく）, `00_Prompt/ai_sensemaking_execution_procedures.md` §2, `02_Architecture/api.md`（suggest-card-groups 契約）, `01_Plans/issues/done/issue-DOGFOOD-19-merge-suggestions-lack-deterministic-positive-path.md`（同カテゴリのマージ提案と同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -27,7 +27,7 @@ if task == "suggest_card_groups":
 
 したがって:
 
-- **束ねが「訴えの類似性」（kj_technique.md §2）に基づくことを E2E で一切検証できない**。位置ベースの分割はテーマと無関係で、同じテーマのカードが別グループに分かれる。
+- **束ねが「訴えの類似性」（sensemaking_technique.md §2）に基づくことを E2E で一切検証できない**。位置ベースの分割はテーマと無関係で、同じテーマのカードが別グループに分かれる。
 - バックエンドが束ねを位置ベース/無意味に劣化させる回帰が起きても、業務フローE2E は全部 pass する。
 - カテゴリ交互配置（c1/c3=オペレーション・c2/c4=商品戦略）の場合、位置分割は c1+c2 / c3+c4 という**誤グループ化**を返す。
 

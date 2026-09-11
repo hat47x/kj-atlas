@@ -8,7 +8,7 @@
 - Priority: P1
 - Owner: Maintainer
 - Scope: `01_Plans/issues/`, `04_Documentation/`, `00_Prompt/`
-- Related ADR/Spec: `ADR-0010`, `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/kj_technique.md`
+- Related ADR/Spec: `ADR-0010`, `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/sensemaking_technique.md`
 - Expected verification level: docs-check
 
 ## 課題
@@ -16,10 +16,10 @@
 - 現在の問題:
   - 広い社会利用では、同じ「定性情報を整理する」仕事でも、誰が発言できるか、誰が意味を決めるか、合意を求めるか、異論を残すか、匿名性をどう扱うか、根拠をどこまで公開できるか、同期/非同期のどちらで進めるか等の実践規範が異なる。
   - I18N/翻訳やアクセシビリティは重要だが、それだけでは実践文化への適合性を扱えない。
-  - 逆に文化差を先回りして「文化別モード」として固定すると、利用者を外から作った分類へ押し込み、KJ Atlas自身の「早すぎる分類を避ける」原則と矛盾する。
+  - 逆に文化差を先回りして「文化別モード」として固定すると、利用者を外から作った分類へ押し込み、SUI Sensemaking自身の「早すぎる分類を避ける」原則と矛盾する。
 - 利用者または開発への影響:
   - 特定の会議文化、研究文化、組織文化を暗黙の標準としてUI/AI提案へ埋め込むと、少数意見、保留、匿名性、資料の統制権が失われる可能性がある。
-  - 一方ですべてを可変にすると、KJ Atlasの価値核まで相対化され、単なる汎用ホワイトボードへ近づく。
+  - 一方ですべてを可変にすると、SUI Sensemakingの価値核まで相対化され、単なる汎用ホワイトボードへ近づく。
 
 ## 用語
 
@@ -102,4 +102,4 @@
   - Design Justice Network Principles: 影響を受ける人の声、設計者をファシリテータとして捉える視点、community-led outcomes。
   - CARE Principles for Indigenous Data Governance: データ共有だけでなく、権力差・歴史的文脈・collective benefit・authority to controlを扱う視点。
   - Local-first software: collaborationと同時にデータ所有・offline・privacy・long-term preservation・user controlを守る視点。
-- これらは調査対象の遺漏防止に使い、KJ Atlasの分類体系や文化類型にはしない。
+- これらは調査対象の遺漏防止に使い、SUI Sensemakingの分類体系や文化類型にはしない。

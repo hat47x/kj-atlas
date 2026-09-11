@@ -6,7 +6,7 @@
 - Priority: P3
 - Owner: Maintainer
 - Scope: `02_Architecture/api.md`, `02_Architecture/schemas.md`, `01_Plans/docs_contract_checks.py`
-- Related ADR/Spec: `03_Implement/backend/src/kj_atlas_api/routes/admin.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
+- Related ADR/Spec: `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`
 - Expected verification level: `docs-check` and adjacent backend route tests
 
 ## 課題

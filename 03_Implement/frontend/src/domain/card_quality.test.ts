@@ -115,7 +115,7 @@ describe("openCardQualityAssist / answerCardQualityQuestion", () => {
     expect(reopenedAfterEdit.queue).toContain("unit");
   });
 
-  it("is a pure data-flow module with no LLM provider dependency (KJ_ATLAS_LLM_PROVIDER=none equivalence)", () => {
+  it("is a pure data-flow module with no LLM provider dependency (SUI_LLM_PROVIDER=none equivalence)", () => {
     // The whole flow must work with nothing but the fixture + these exports —
     // no provider, network, or async call is reachable from this module.
     const card = findCardQualityFixture("unknown_source").card;
@@ -199,7 +199,7 @@ describe("card_quality.ts source boundary (T6: SafeMode / provider-none)", () =>
     }
   });
 
-  it("never references an LLM/AI provider, network call, or storage API (KJ_ATLAS_LLM_PROVIDER=none holds trivially)", () => {
+  it("never references an LLM/AI provider, network call, or storage API (SUI_LLM_PROVIDER=none holds trivially)", () => {
     const forbidden = ["Provider", "fetch(", "XMLHttpRequest", "localStorage", "sessionStorage", "axios", "worker"];
     for (const word of forbidden) {
       expect(source).not.toContain(word);

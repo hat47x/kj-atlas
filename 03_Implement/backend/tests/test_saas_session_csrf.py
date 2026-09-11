@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.session_csrf import (
+from sui_sensemaking_api.session_csrf import (
     AUTH_SESSION_COOKIE,
     CSRF_COOKIE,
     CSRF_HEADER,
@@ -100,7 +100,7 @@ def test_bearer_priority_path_does_not_require_cookie_csrf() -> None:
     client = _cookie_client()
     response = client.post(
         "/resource",
-        headers={"X-Kj-Atlas-Authorization": "Bearer malformed-but-present"},
+        headers={"X-Sui-Sensemaking-Authorization": "Bearer malformed-but-present"},
     )
     assert response.status_code == 204
 

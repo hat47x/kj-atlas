@@ -43,7 +43,7 @@
 - SafeMode 既定ON と share/export の漏えい防止。
 - AI は proposal-only（auto-apply 禁止、Consensus Graph 直接更新禁止）。
 - `human_reviewed` は人手のみ昇格（AI/worker/API 自動昇格禁止）。
-- `KJ_ATLAS_LLM_PROVIDER=none` 既定でも主要価値が成立。
+- `SUI_LLM_PROVIDER=none` 既定でも主要価値が成立。
 - import sanitize / zip hardening。
 
 ### ADR-0000 への適用（amendment）

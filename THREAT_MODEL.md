@@ -99,7 +99,7 @@
 
 ### 6-1) HTTP transport / OAuth 2.1 resource server（Subslice C, ADR-0054）
 
-stdio段階では listen port を開かず外部到達不可だったが、streamable-HTTP transport（`KJ_ATLAS_MCP_TRANSPORT=http`）は本リポジトリ初の公開ネットワークリスナーであり、リスクの質が変わる。
+stdio段階では listen port を開かず外部到達不可だったが、streamable-HTTP transport（`SUI_MCP_TRANSPORT=http`）は本リポジトリ初の公開ネットワークリスナーであり、リスクの質が変わる。
 
 - 未認証／偽造／期限切れbearer tokenによる `POST/GET/DELETE /mcp` への到達
 - 他リソース向けに発行されたtoken（audience違い）や、信頼していないissuerが発行したtokenの受理（confused deputy）
@@ -112,7 +112,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 **想定対策**
 
 - ADR-0054/ADR-0020方針どおり、本サーバーは OAuth 2.1 **resource serverのみ**として実装し、token発行・client登録・authorization endpointは一切持たない（そのコードパス自体が存在しない）
-- `jose`の`jwtVerify`でtoken署名・`iss`（`KJ_ATLAS_MCP_TRUSTED_ISSUER`と厳密一致、prefix/wildcard一致は行わない）・`aud`（`KJ_ATLAS_MCP_RESOURCE_URL`）・`exp`を検証し、失敗経路はすべて`InvalidTokenError`にfail-closedで正規化（未知の失敗が既定で通過することはない）
+- `jose`の`jwtVerify`でtoken署名・`iss`（`SUI_MCP_TRUSTED_ISSUER`と厳密一致、prefix/wildcard一致は行わない）・`aud`（`SUI_MCP_RESOURCE_URL`）・`exp`を検証し、失敗経路はすべて`InvalidTokenError`にfail-closedで正規化（未知の失敗が既定で通過することはない）
 - SDKの`requireBearerAuth`で`read:context` scopeを必須化する。認証失敗は401、正規tokenのscope不足は403 `insufficient_scope`とし、`WWW-Authenticate`で必要scopeを示す。いずれも文書存在確認へ到達させない
 - `/.well-known/oauth-protected-resource`（RFC 9728）は仕様上未認証公開が前提のdiscovery文書であり、`resource`/`authorization_servers`/`bearer_methods_supported`/`scopes_supported`など非秘匿情報のみを返す。`/mcp`自体の認証要件は変えない
 - 全route（metadata含む）に60 req/min/IPのrate limitを適用し、単純な洪水要求を早期にthrottleする
@@ -135,16 +135,16 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 
 ### 7) 標準Composeのネットワーク公開境界（DEPLOY-NET-01）
 
-`http://localhost:8080` という案内は、サービスがloopbackだけでlistenすることを意味しない。host IPを省略したDockerのport公開（`"${KJ_ATLAS_WEB_PORT:-8080}:80"`）はホストの全interfaceを対象にし、同一LANや誤設定されたport forwardingから到達できる未認証主体に、評価環境そのものを公開してしまう。
+`http://localhost:8080` という案内は、サービスがloopbackだけでlistenすることを意味しない。host IPを省略したDockerのport公開（`"${SUI_WEB_PORT:-8080}:80"`）はホストの全interfaceを対象にし、同一LANや誤設定されたport forwardingから到達できる未認証主体に、評価環境そのものを公開してしまう。
 
 - 保護資産: document本文、レビュー情報、設定・診断情報
 - 攻撃者: 同一LAN、共有ホスト、誤設定されたport forwardingから到達する未認証主体
 - 入口: nginx配信面（`web`サービス）と、そこから転送される`/api`
-- 誤解しやすい非対策: SafeMode（share/exportの漏洩抑制であり、ネットワーク経由の到達を認証しない）、`KJ_ATLAS_API_KEY`（同梱SPAが`X-API-Key`を送らないため、通常のブラウザ利用を保ったまま既定露出を補う認証にはならない）、URLに`localhost`と表示すること
+- 誤解しやすい非対策: SafeMode（share/exportの漏洩抑制であり、ネットワーク経由の到達を認証しない）、`SUI_API_KEY`（同梱SPAが`X-API-Key`を送らないため、通常のブラウザ利用を保ったまま既定露出を補う認証にはならない）、URLに`localhost`と表示すること
 
 **想定対策**
 
-- 標準`docker-compose.yml`の`web.ports`をloopback（`127.0.0.1:${KJ_ATLAS_WEB_PORT:-8080}:80`）へ明示bindし、`KJ_ATLAS_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする
+- 標準`docker-compose.yml`の`web.ports`をloopback（`127.0.0.1:${SUI_WEB_PORT:-8080}:80`）へ明示bindし、`SUI_WEB_PORT`はport番号だけを変え、bind範囲を拡張しない契約にする
 - 別端末・LAN・Internetからの利用が必要な場合は、TLS終端・SPAとAPIの双方を覆う認証proxy・接続元制限・secret管理を伴う明示的な別deployment profileとして分離し、base Composeの直接書き換えでは対応しない
 - READMEとinstallation/deployment文書で、標準Composeを「同一ホストからだけ使う評価構成」と明記する
 - contract testで、標準Composeのweb port mappingがhost IP省略・`0.0.0.0`・loopback以外へ戻らないことを検証する
@@ -185,10 +185,10 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - active tenantは認証セッション単位で1つとし、trusted auth/session adapterが発行する`tenantSessionVersion`をconditional tenant switchと全tenant-scoped requestのpreconditionにする。古いversionはresource lookup前に本文を返さず拒否し、新contextへ自動再送しない。cross-tab通知は早期blockの補助に限り、通知欠落時もserver guardで停止する
 - `pageshow.persisted`、長時間非表示からの復帰、遅延response/worker完了ではsessionを再確認し、旧本文を背景へ残さないblocked stateへ移す。旧contextのresponse、object URL、optimistic updateを新DOMへcommitしない
 - trusted SaaS identity resolver、tenant resolver、active tenant session persisterはapplication起動前の単一bundleとしてのみ注入する。profile・runtime safety policy・bundle・started-stateを状態変更なしでpreflightし、部分設定、欠損、不正型、single-tenantへの注入、起動後差し替えをDB初期化前とadapter有効化前に拒否する。bundle有効化時はDocument resource resolverもserver-owned metadata＋trusted binding resolverへ切り替え、公開visibility／policy headerを無視する。bundle非注入時とshutdown時はidentity/persisterをunavailable、tenant resolverとDocument resource resolverをsingle-tenant互換に戻し、session APIをfail-closedに保つ
-- 管理面（`/admin/provision/**`）は業務面と分離した資格情報を要求する。`POST /admin/provision/identity-providers`は信頼するJWT発行者とJWKS URIを登録するため、ここへ到達できる主体は自作トークンで任意利用者・任意テナントとして認証できる。したがって業務面の`KJ_ATLAS_API_KEY`では到達させない。認可は二段——ブートストラップ専用の制御プレーンbearer（`KJ_ATLAS_ADMIN_API_KEY`、`X-Admin-Api-Key`。IdP未登録状態で使える唯一の経路であり主体を特定しない）と、通常運用の`tenant.provision` capability（主体を特定し監査に載る）。拒否応答は未設定と誤りを区別せず、提示値も設定値も反射しない（ADR-0072 D1=A+B）
-- `enterprise-production`／`saas-multitenant`は認証手段が未設定なら`Settings()`構築時にfail-fastする。`enterprise-production`は業務面の識別を前段proxyのheaderに依存するため`KJ_ATLAS_API_KEY`と`KJ_ATLAS_ADMIN_API_KEY`の両方、`saas-multitenant`は業務面をtrusted auth edgeが担うため`KJ_ATLAS_ADMIN_API_KEY`を必須とする。以前は`enterprise-production`が既定で完全に無認証のまま起動でき、構築ミスがそのまま全面公開になった（ADR-0072 D3=A、`ADR-0062`のfail-fast方針を認証へ一貫適用）
+- 管理面（`/admin/provision/**`）は業務面と分離した資格情報を要求する。`POST /admin/provision/identity-providers`は信頼するJWT発行者とJWKS URIを登録するため、ここへ到達できる主体は自作トークンで任意利用者・任意テナントとして認証できる。したがって業務面の`SUI_API_KEY`では到達させない。認可は二段——ブートストラップ専用の制御プレーンbearer（`SUI_ADMIN_API_KEY`、`X-Admin-Api-Key`。IdP未登録状態で使える唯一の経路であり主体を特定しない）と、通常運用の`tenant.provision` capability（主体を特定し監査に載る）。拒否応答は未設定と誤りを区別せず、提示値も設定値も反射しない（ADR-0072 D1=A+B）
+- `enterprise-production`／`saas-multitenant`は認証手段が未設定なら`Settings()`構築時にfail-fastする。`enterprise-production`は業務面の識別を前段proxyのheaderに依存するため`SUI_API_KEY`と`SUI_ADMIN_API_KEY`の両方、`saas-multitenant`は業務面をtrusted auth edgeが担うため`SUI_ADMIN_API_KEY`を必須とする。以前は`enterprise-production`が既定で完全に無認証のまま起動でき、構築ミスがそのまま全面公開になった（ADR-0072 D3=A、`ADR-0062`のfail-fast方針を認証へ一貫適用）
 - 管理面のネットワーク分離（別port／別ホスト／IAP配下）はdeployment側の推奨構成であり、アプリ側の資格情報を代替しない。前段で閉じている構成でもアプリ側の認可は外さず、前段の設定ミスが直接公開になる状態を作らない
-- SaaSでの管理面到達性と、テナント発行の業務的正当性を区別する。共有基盤では最初の管理者が「申込組織の代表者」であることを静的資格情報だけでは担保できないため、組織の実在とドメイン所有の確認を伴う別工程を前段に置く。kj-atlasはその工程を実装せず、制御プレーン資格情報を知る者が任意の組織名でテナントを作れる状態を正規手順にしない
+- SaaSでの管理面到達性と、テナント発行の業務的正当性を区別する。共有基盤では最初の管理者が「申込組織の代表者」であることを静的資格情報だけでは担保できないため、組織の実在とドメイン所有の確認を伴う別工程を前段に置く。sui-sensemakingはその工程を実装せず、制御プレーン資格情報を知る者が任意の組織名でテナントを作れる状態を正規手順にしない
 - SaaS membership provisioningへ暗黙fallbackせず、verified IdP・active tenant・capability契約を必須にする
 - tenant-scoped Appはsession responseの再検証とstorage scope構築が成功するまでmountせず、認証・認可・解決障害・不正responseを旧本文のないblocked stateへ分離する。error detailやprincipal/tenant値を表示せず、abort済みbootstrap結果を再利用しない
 - tenant switcherはserver検証済みmembershipが複数ある場合だけallowlist selectとして表示し、自由入力・tenant検索・role/group解釈を提供しない。active tenant自身、allowlist外ID、invalid sessionから変更要求を発火しない
@@ -198,7 +198,7 @@ stdio段階では listen port を開かず外部到達不可だったが、strea
 - LLM HTTP provider応答を1MiB以下のclosed-world `text` objectへ限定し、不正応答は値を反射せずprovider validationで停止する
 - LLM HTTP requestを1MiB以下、canonical task、finite temperature、bounded max tokensへ限定し、過大prompt・不正数値はtransport前に値を反射せず停止する。validation失敗をfallbackで隠さない
 - LLM base URLをtrusted HTTPSまたはloopback HTTPへ限定し、large-scaleは完全なmodel/host allowlist設定と宛先一致を起動時に検証してlocal-first・opt-in境界の設定迂回を防ぐ
-- **SafeMode の未レビュー本文保護を API 境界で強制する（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う `/ai/*` は未レビューカード（`textReviewed ≠ true`）を含む場合に 422 `unreviewed_text_not_allowed` で拒否し、`allowUnreviewedText=true` は profile の `KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT=true` を必要とする（fail-closed）。これにより、API 直接呼び出し（curl・別クライアント・将来の MCP/エージェント連携）による SafeMode 迂回で未レビュー本文が外部 LLM へ送出される経路を塞ぐ
+- **SafeMode の未レビュー本文保護を API 境界で強制する（SEC-AI-SAFEMODE-01 / ADR-0068）**: 文書を伴う `/ai/*` は未レビューカード（`textReviewed ≠ true`）を含む場合に 422 `unreviewed_text_not_allowed` で拒否し、`allowUnreviewedText=true` は profile の `SUI_ALLOW_UNREVIEWED_AI_TEXT=true` を必要とする（fail-closed）。これにより、API 直接呼び出し（curl・別クライアント・将来の MCP/エージェント連携）による SafeMode 迂回で未レビュー本文が外部 LLM へ送出される経路を塞ぐ
 - SPAの短命access tokenはmodule memoryだけに保持し、browser storageへ保存しない。SPA clientにはrefresh tokenを発行せず、token応答に`refresh_token`が混入した場合はaccess tokenも採用しない。reload後はbrokerで再認証する
 - tenant-session cookieはHttpOnly・SameSite=Strict・Path=/を明示し、`local-dev`以外はSecureを必須にする。ログアウトはJWT期限切れ時にもcookieを同じscopeで失効できるようにする
 - recent/QueryPreset等のApp永続状態をmount時に検証・snapshotしたdeployment origin + tenantId + userId scopeへbindingし、同一mount内のscope変更を拒否する。App unmountはrequest abort、task cancel、worker disposeを失敗分離して実行し、切替時はmemory/DOM/cacheを破棄してhard replacementする

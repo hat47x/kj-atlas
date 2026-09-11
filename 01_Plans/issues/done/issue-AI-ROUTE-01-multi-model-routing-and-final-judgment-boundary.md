@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/kj_atlas_api/`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
+- Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/sui_sensemaking_api/`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a（MMR-01〜06）, `02_Architecture/value_traceability.md` §2.1（V3）, `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`, `AI-ROUTE-HELD-LINKAGE-01`
 - Expected verification level: `integration`
 
@@ -34,7 +34,7 @@
 
 - [x] intermediate と final_judgement の責務分離が契約（api.md/schemas.md）で固定される。— `routing_stage_for_task()`（provider.py）で分類
 - [x] intermediate の許可タスク・禁止タスクが強制される（MMR-02/03）。— 分類で構造的に強制（変換系タスクのallowlist）
-- [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `KJ_ATLAS_LLM_HIGH_REASONING_MODEL`
+- [x] final_judgement が high-reasoning tier へルーティングされる（MMR-04）。— `resolve_model_for_task()` + `SUI_LLM_HIGH_REASONING_MODEL`
 - [x] 監査ログに MMR-05 の4項目が記録される。— 通常LLM audit・runtime system-hold・governance system-holdが共通のtyped proposal-linkage fields (`proposalId` / `sourceBundleHash`) を保持する。standalone/intermediate auditにはlinkage fieldを捏造しない。PR #3000 / `6428cb39361b8d2e0358bd50e5f51e8dabb74296` でmain統合済み。
 - [x] final_judgement 利用不能時に held へ遷移し、auto-publish しない（MMR-06）。— R1 proposal linkage、R2 runtime availability hold、R3 tenant model-governance boundaryをmainへ統合済み（R3: #2998）。state transitionはexplicitly linked external proposalに限定し、standalone callはstate-neutral、auto-publish fallbackは導入しない。
 - [x] `provider=none` で中核操作が成立する。

@@ -37,7 +37,7 @@ Phase 0 の目的は「機能を作ること」ではありません。
 
 を確認することがゴールです。
 
-この段階では、**kj-atlas 固有の機能（KJ法・Canvas・AI）には踏み込みません**。
+この段階では、**sui-sensemaking 固有の機能（KJ法・Canvas・AI）には踏み込みません**。
 
 ---
 
@@ -48,7 +48,7 @@ Phase 0 は、以下をすべて満たした時点で完了とします。
 - [x] バックエンドが `uvicorn` で起動する
 - [x] `GET /healthz` が HTTP 200 を返す
 - [x] フロントエンドが `npm run dev` で起動する
-- [x] ブラウザに kj-atlas の最小UI（ヘッダ等）が表示される
+- [x] ブラウザに sui-sensemaking の最小UI（ヘッダ等）が表示される
 - [x] （任意）`docker compose up` で API + DB が起動する
 
 ### 2.1 進捗記入（2026-02-23 確認）
@@ -93,7 +93,7 @@ Phase 0 は、以下をすべて満たした時点で完了とします。
   ├── pyproject.toml
   ├── Dockerfile
   ├── src/
-  │   └── kj_atlas_api/
+  │   └── sui_sensemaking_api/
   │       ├── __init__.py
   │       ├── main.py        # FastAPI app
   │       ├── settings.py    # 環境変数ロード
@@ -105,7 +105,7 @@ Phase 0 は、以下をすべて満たした時点で完了とします。
 
 - `FastAPI()` アプリケーションが起動すること
 - `GET /healthz` が常に 200 を返すこと
-- `KJ_ATLAS_DATABASE_URL` / `KJ_ATLAS_LLM_PROVIDER` を設定ファイル経由で読めること
+- `SUI_DATABASE_URL` / `SUI_LLM_PROVIDER` を設定ファイル経由で読めること
 - DB未接続でも起動できること
 
 > **注意**：CRUD・ORM・マイグレーションは Phase 1 以降
@@ -138,7 +138,7 @@ Phase 0 は、以下をすべて満たした時点で完了とします。
 
 ### 5.3 最小実装要件
 
-- 画面に "kj-atlas" のタイトルが表示されること
+- 画面に "sui-sensemaking" のタイトルが表示されること
 - ローカル開発時に `GET /healthz` を叩けること（表示のみで可）
 
 > **注意**：Canvas・カード・状態管理は Phase 1 以降

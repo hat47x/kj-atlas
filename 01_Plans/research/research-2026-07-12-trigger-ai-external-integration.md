@@ -1,9 +1,9 @@
-# リサーチ: トリガー型AI時代における kj-atlas の外部接続の役割と独自性
+# リサーチ: トリガー型AI時代における sui-sensemaking の外部接続の役割と独自性
 
 - Date: 2026-07-12
 - Author: Claude Code（maintainer 委任による調査）
 - Status: 調査文書（ADRではない。方向の採否は ADR-0047 の再起票基準 R-1..4 に従い別途判断）
-- 位置づけ: maintainer 提示の「トリガー型AI」仮説を外部証拠で検証し、kj-atlas の外部ツール・インフラ接続戦略の上流入力とする。`00_Prompt/ai_cognitive_externalization_requirements.md`（認知外在化フレームワーク）および ADR-0028 Phase D（CLI/API連携）の延長線上に位置する。
+- 位置づけ: maintainer 提示の「トリガー型AI」仮説を外部証拠で検証し、sui-sensemaking の外部ツール・インフラ接続戦略の上流入力とする。`00_Prompt/ai_cognitive_externalization_requirements.md`（認知外在化フレームワーク）および ADR-0028 Phase D（CLI/API連携）の延長線上に位置する。
 
 ## 0. 検討の起点（maintainer 提示仮説）
 
@@ -35,7 +35,7 @@
 - **[検証済]** ChatGPT Pulse は発表から約9ヶ月で引退し Scheduled Tasks へ統合された。移行は自動ではなく、ユーザーは14日以内に手動で再設定（[digit.in](https://www.digit.in/news/general/openai-is-retiring-chatgpt-pulse-and-replacing-it-with-scheduled-tasks-here-is-why.html), [techjacksolutions](https://techjacksolutions.com/ai-brief/agentic-ai-news-openai-launches-scheduled-tasks-in-chatgpt-a/)）。
 - **[検証済]** AIキャンバス Cove（元Google Mapsチーム、Sequoia出資$6M、「AI応答もテキストもPDFも全てカードとして無限キャンバスに置き人間とAIの共有文脈にする」設計）は 2026-03 に Microsoft へ acqui-hire され、**製品は2026-04-01終了、ユーザーデータは削除**（エクスポート提供・3月分返金あり）（[TechCrunch](https://techcrunch.com/2026/03/18/microsoft-hires-the-team-of-sequioa-backed-ai-collaboration-platform-cove/)）。
 
-→ 教訓は二重: (i) トリガー面・キャンバス面ともに大手の吸収と統廃合が速い。小規模OSSがここで正面から戦うのは筋が悪い。(ii) Cove のデータ削除は、**可搬性・ラウンドトリップ非損失（kj-atlas の根幹価値）こそがこのレイヤーの信頼の土台**であることを図らずも証明した。
+→ 教訓は二重: (i) トリガー面・キャンバス面ともに大手の吸収と統廃合が速い。小規模OSSがここで正面から戦うのは筋が悪い。(ii) Cove のデータ削除は、**可搬性・ラウンドトリップ非損失（sui-sensemaking の根幹価値）こそがこのレイヤーの信頼の土台**であることを図らずも証明した。
 
 ### 1.3 条件2 — 「勝手にやるAI」には実証された心理的・信頼的コストがある
 
@@ -43,7 +43,7 @@
 - **[中確度]** 頼んでいないAI支援は「能力不足のシグナル」として自己観を脅かし受容を損なう（help backfires）。提案のみ→信頼形成に応じ段階的に主導性を上げる設計が示唆される（[arXiv:2509.09309](https://arxiv.org/abs/2509.09309)）。
 - **[知識/中確度]** Horvitz の mixed-initiative 12原則（CHI 1999, [doi](https://dl.acm.org/doi/10.1145/302979.303030)）は誤推測コストの最小化・ユーザー修正からの学習・タイミング考慮を一級要件とし、Lee & See（2004, [Human Factors](https://journals.sagepub.com/doi/10.1518/hfes.46.1.50_30392)）は信頼の校正に「自動化の目的・過程・実績の可視性」を要求する。
 
-→ 「勝手にやる」を成立させる鍵は、**誤りの訂正が効くこと・根拠が見えること・割り込まないこと**。これはトリガー型AIの実装側ではなく、**その背後の文脈・監査・訂正の基盤**の問題であり、まさに kj-atlas の領分である。
+→ 「勝手にやる」を成立させる鍵は、**誤りの訂正が効くこと・根拠が見えること・割り込まないこと**。これはトリガー型AIの実装側ではなく、**その背後の文脈・監査・訂正の基盤**の問題であり、まさに sui-sensemaking の領分である。
 
 ---
 
@@ -59,18 +59,18 @@
 - **KJ法はこの問題を「解決」する側の方法論である**。川喜田二郎がヒマラヤのフィールドワークで、演繹の通用しない未構造データから仮説を立ち上げるために開発した「渾沌をして語らしめる」技法そのもの（[Roosen論考, 中確度]）。言語化できないもの（違和感・近さの感覚・保留）を空間操作として扱い、そこから言葉（表札・仮説）を立ち上げる。
 - **[中確度]** HCI最前線もこの方向を正当化しつつある: DesignerlyLoop（DIS 2026, [doi](https://dl.acm.org/doi/10.1145/3800645.3812885)）は、キャンバス上で未構造の意図（問題フレーミング・制約・評価基準）を外化・キュレーションしてから human-LLM アラインメントを形成する。
 
-→ **kj-atlas は「お題を立てられない問題」の根治側を担い、トリガー型AI（対症側）と補完関係に立つ**。トリガー型の観察が kj-atlas に堆積し、人間がそこからお題を立ち上げ、立ち上がったお題（構造化された文脈）が以後のエージェントの前提になる——この循環が接続戦略の骨格である。
+→ **sui-sensemaking は「お題を立てられない問題」の根治側を担い、トリガー型AI（対症側）と補完関係に立つ**。トリガー型の観察が sui-sensemaking に堆積し、人間がそこからお題を立ち上げ、立ち上がったお題（構造化された文脈）が以後のエージェントの前提になる——この循環が接続戦略の骨格である。
 
 ---
 
-## 3. エージェント記憶・文脈基盤の空白は、kj-atlas の根幹価値の形をしている
+## 3. エージェント記憶・文脈基盤の空白は、sui-sensemaking の根幹価値の形をしている
 
 - **[中確度]** mem0 / Zep(Graphiti) / Letta / LangMem 等の記憶フレームワーク横断比較は、全てに共通するガバナンス空白を指摘する: 「**全ての記憶が認識論的に等価——品質階層も承認機構も『権威ある知識 vs 未検証知識』の概念も存在しない**」、監査証跡・出所(lineage)・削除ポリシーの不在（[Atlan比較](https://atlan.com/know/best-ai-agent-memory-frameworks-2026/)。ただしAtlan自身が同領域を狙う点にバイアス留意）。
 - **[中確度]** Letta の Agent Development Environment はメモリブロックを可視化し人間が編集できる「ガラス箱」に最も近いが、対象は**エージェント開発者のデバッグ**であり、知識労働者の意味形成の場ではない（[Letta Blog](https://www.letta.com/blog/introducing-the-agent-development-environment/)）。
 - **[中確度]** knowledgeplane（[GitHub](https://github.com/camplight/knowledgeplane)）は「エージェントとチームの共有記憶」を掲げるMCPサーバーで、監査証跡・ダッシュボードを持つ直接競合（要注視）。ただしグラフ+ダッシュボード型であり、空間配置キャンバス・保留/違和感タグ・双方向の意味形成は持たない。
 - **[知識]** ChatGPT / Claude のメモリ機能はユーザー可視性・可搬性が限定的で、ベンダーに縛られる。
 
-→ 記憶基盤競合は「保存と検索の最適化」を競っており、**「この記憶はレビュー済みか・保留中か・根拠は何か・誰が承認したか」という認識論的ガバナンスの層が丸ごと空いている**。kj-atlas のドメインモデル（claimType / holdState / critique / evidenceLink / contradictionState / reviewed / review attribution / safeMode）は、偶然ではなくこの空白の形をしている。
+→ 記憶基盤競合は「保存と検索の最適化」を競っており、**「この記憶はレビュー済みか・保留中か・根拠は何か・誰が承認したか」という認識論的ガバナンスの層が丸ごと空いている**。sui-sensemaking のドメインモデル（claimType / holdState / critique / evidenceLink / contradictionState / reviewed / review attribution / safeMode）は、偶然ではなくこの空白の形をしている。
 
 ---
 
@@ -86,18 +86,18 @@
 
 ---
 
-## 5. 考察: kj-atlas が外部接続で果たすべき4つの役割
+## 5. 考察: sui-sensemaking が外部接続で果たすべき4つの役割
 
-前提となる構図: **前面（トリガー・配信）はプラットフォーマーが握り、churnする。kj-atlas は前面を取りに行かず、日常ツールの背後に立つ文脈基盤になる。**
+前提となる構図: **前面（トリガー・配信）はプラットフォーマーが握り、churnする。sui-sensemaking は前面を取りに行かず、日常ツールの背後に立つ文脈基盤になる。**
 
 ### 役割A — エージェントが読み書きする「ガラス箱の共有記憶の正本」
 `ContextQuery → ContextBundle` 投影（ADR-0028 / CE0契約で設計済み）を **MCP サーバーとして外部エージェントに公開**する。エージェントは reviewed-only / contradiction subset / evidence subset 等の制約付き投影を読む。書き込みは既存原則どおり **proposal（patch）のみ**で、Consensus Graph へは human approval を経てのみ入る。会議前ブリーフを作るトリガー型AIは、闇雲にWebを漁るのではなく「この相手について、チームがレビュー済みの文脈」を読んでから動ける。
 
 ### 役割B — プロアクティブ出力の「監査・根拠層」
-トリガー型AIの構造的弱点は、ブリーフの根拠が見えず、誤りの出所を辿れないこと（Lee & See の信頼校正要件を満たせない）。kj-atlas の evidenceLink / review attribution / contradictionState / safeMode は、**「このブリーフはどのレビュー済みカードに基づくか」を辿れる監査層**を提供する。配信されるブリーフに「なぜ？」リンクを埋め、根拠を見に来る動線を作る——これが「行き先アプリ」の再定義（毎日開く場所ではなく、信頼を確かめに時々見に行く機械室/庭）。
+トリガー型AIの構造的弱点は、ブリーフの根拠が見えず、誤りの出所を辿れないこと（Lee & See の信頼校正要件を満たせない）。sui-sensemaking の evidenceLink / review attribution / contradictionState / safeMode は、**「このブリーフはどのレビュー済みカードに基づくか」を辿れる監査層**を提供する。配信されるブリーフに「なぜ？」リンクを埋め、根拠を見に来る動線を作る——これが「行き先アプリ」の再定義（毎日開く場所ではなく、信頼を確かめに時々見に行く機械室/庭）。
 
 ### 役割C — 人間の訂正が蓄積され、エージェント挙動に反映される場
-kj-atlas には既に critique（違和感）→ constraint（再配置条件）の設計がある。これを外部エージェントへ輸出する: エージェントの書き込みに人間が違和感タグ/保留で応答すると、それが**次回以降のエージェントの制約として機械可読に渡る**（TRACE の知見と接続）。「同じ誤りを繰り返すAI」問題への、説明責任を人間に課さない（違和感は理由不要＝domain.md）訂正チャネル。
+sui-sensemaking には既に critique（違和感）→ constraint（再配置条件）の設計がある。これを外部エージェントへ輸出する: エージェントの書き込みに人間が違和感タグ/保留で応答すると、それが**次回以降のエージェントの制約として機械可読に渡る**（TRACE の知見と接続）。「同じ誤りを繰り返すAI」問題への、説明責任を人間に課さない（違和感は理由不要＝domain.md）訂正チャネル。
 
 ### 役割D — 使い捨てブリーフの「堆積場」と意味形成
 トリガー型出力は ephemeral で、流れて消える。webhook ingest で**ブリーフや観察を「提案カード」として堆積**させ（WorkingGraph 着地・未レビュー明示・自動確定なし）、人間が後から KJ 法的に問題を立ち上げる素材にする。これが §2 の循環（観察の堆積→お題の形成→エージェントの文脈）を閉じる。
@@ -149,10 +149,10 @@ kj-atlas には既に critique（違和感）→ constraint（再配置条件）
 - [knowledgeplane](https://github.com/camplight/knowledgeplane)（[公式](https://knowledgeplane.io/)）: 知識グラフ＋ベクトル検索＋自動統合（auto-consolidation）のMCPサーバー。全ファクトに出所・所有者・タイムスタンプの監査証跡。REST APIも併設。
 - ただし確認された設計は「エージェントが**直接CRUDで読み書き**する共有記憶」であり、(i) proposal-only の承認ゲートなし、(ii) 保留/違和感/矛盾/レビュー済みの認識論的状態なし、(iii) 空間配置による意味形成なし、(iv) **自動統合はむしろ人間の承認を経ない書き換え**を含意する。初版§3の空白判定（認識論的ガバナンス層の不在）はそのまま成立。競合ではなく対照例に近い。
 
-### A5. LangChain HITL 3パターンと kj-atlas の位置 **[検証済]**
+### A5. LangChain HITL 3パターンと sui-sensemaking の位置 **[検証済]**
 
 - ambient agents の human-in-the-loop は **notify / question / review** の3パターン＋「Agent Inbox」（メール型の未処理キューUI）として整理されている（[LangChain Docs](https://docs.langchain.com/oss/python/langchain/frontend/human-in-the-loop), [Blog](https://www.langchain.com/blog/introducing-ambient-agents)）。
-- 含意: kj-atlas の critique（違和感・理由不要・事後・非ブロッキング）は、この分類に**存在しない第4パターン**にあたる。notify/question/review はいずれも「人間が処理すべきキュー」を作るが、critique は処理義務を作らない（余白の設計原理と一致）。Agent Inbox が「受信箱」なら kj-atlas は「庭」であり、この対比は設計語彙としてそのまま外部発信に使える。
+- 含意: sui-sensemaking の critique（違和感・理由不要・事後・非ブロッキング）は、この分類に**存在しない第4パターン**にあたる。notify/question/review はいずれも「人間が処理すべきキュー」を作るが、critique は処理義務を作らない（余白の設計原理と一致）。Agent Inbox が「受信箱」なら sui-sensemaking は「庭」であり、この対比は設計語彙としてそのまま外部発信に使える。
 
 ### 補記（2026-07-12・ADR-0054 Accepted 時）
 

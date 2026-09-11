@@ -1,4 +1,4 @@
-// DOMAIN-EXPR-03 remaining slice: provider-enabled (KJ_ATLAS_LLM_PROVIDER=local)
+// DOMAIN-EXPR-03 remaining slice: provider-enabled (SUI_LLM_PROVIDER=local)
 // success-path evidence in the release-candidate compose environment.
 //
 // Prerequisite:
@@ -21,7 +21,7 @@
 //      provider -> stub's deterministic candidate appears (proposal-only).
 import { chromium } from "@playwright/test";
 
-const BASE_URL = process.env.KJ_ATLAS_DOGFOOD_URL ?? "http://127.0.0.1:8080/?locale=en";
+const BASE_URL = process.env.SUI_DOGFOOD_URL ?? "http://127.0.0.1:8080/?locale=en";
 
 function log(step, message) {
   console.log(`\n[${step}] ${message}`);

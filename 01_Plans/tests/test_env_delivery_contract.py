@@ -3,21 +3,21 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api" / "settings.py"
+SETTINGS_PATH = REPO_ROOT / "03_Implement" / "backend" / "src" / "sui_sensemaking_api" / "settings.py"
 REGISTRY_PATH = REPO_ROOT / "02_Architecture" / "runtime_parameter_registry.md"
 COMPOSE_PATH = REPO_ROOT / "03_Implement" / "deploy" / "docker-compose.yml"
 COMPOSE_OVERLAY_PATH = REPO_ROOT / "03_Implement" / "deploy" / "docker-compose.llm-stub.yml"
 FRONTEND_DOCKERFILE_PATH = REPO_ROOT / "03_Implement" / "frontend" / "Dockerfile"
 
-VALIDATION_ALIAS_RE = re.compile(r'validation_alias="(KJ_ATLAS_[A-Z0-9_]+)"')
+VALIDATION_ALIAS_RE = re.compile(r'validation_alias="(SUI_[A-Z0-9_]+)"')
 # Key | Default | Purpose | Delivery surface | Secret | Probe -- captures the
 # first 4 cells; Secret/Probe aren't needed for this drift check.
 BACKEND_SETTINGS_ROW_RE = re.compile(
-    r"^\|\s*`(KJ_ATLAS_[A-Z0-9_]+)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|",
+    r"^\|\s*`(SUI_[A-Z0-9_]+)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|",
     re.MULTILINE,
 )
-COMPOSE_ENV_LIST_ITEM_RE = re.compile(r"^\s{6}-\s*(KJ_ATLAS_[A-Z0-9_]+)(?:=.*)?\s*$")
-COMPOSE_ENV_MAP_ITEM_RE = re.compile(r"^\s{6}(KJ_ATLAS_[A-Z0-9_]+):\s*.*$")
+COMPOSE_ENV_LIST_ITEM_RE = re.compile(r"^\s{6}-\s*(SUI_[A-Z0-9_]+)(?:=.*)?\s*$")
+COMPOSE_ENV_MAP_ITEM_RE = re.compile(r"^\s{6}(SUI_[A-Z0-9_]+):\s*.*$")
 
 
 def _settings_validation_alias_keys() -> set[str]:
@@ -59,7 +59,7 @@ def _service_environment_block(compose_text: str, service_name: str) -> str:
 
 
 def _environment_keys_from_service_block(service_block: str) -> set[str]:
-    """Return KJ_ATLAS_* keys from a service block's `environment:` list or map form."""
+    """Return SUI_* keys from a service block's `environment:` list or map form."""
     keys: set[str] = set()
     in_env = False
     for line in service_block.splitlines():
@@ -83,7 +83,7 @@ def _environment_keys_from_service_block(service_block: str) -> set[str]:
 
 class EnvDeliveryContractTest(unittest.TestCase):
     """ENV-COMPOSE-01: settings.py, the runtime parameter registry, and the
-    Compose files must agree on which KJ_ATLAS_* keys exist and which
+    Compose files must agree on which SUI_* keys exist and which
     delivery surface actually forwards them. A drift here is exactly the
     class of bug this issue exists to prevent: a document/registry claim
     about delivery that the real Compose file doesn't back up.
@@ -126,21 +126,21 @@ class EnvDeliveryContractTest(unittest.TestCase):
         compose_text = COMPOSE_PATH.read_text(encoding="utf-8")
         api_block = _service_environment_block(compose_text, "api")
         web_block = _service_environment_block(compose_text, "web")
-        profile_expression = "${KJ_ATLAS_RUNTIME_PROFILE:-evaluation}"
+        profile_expression = "${SUI_RUNTIME_PROFILE:-evaluation}"
 
         self.assertIn(
-            f"KJ_ATLAS_RUNTIME_PROFILE={profile_expression}",
+            f"SUI_RUNTIME_PROFILE={profile_expression}",
             api_block,
         )
         self.assertIn(
-            f"KJ_ATLAS_RUNTIME_PROFILE: {profile_expression}",
+            f"SUI_RUNTIME_PROFILE: {profile_expression}",
             web_block,
         )
 
         frontend_dockerfile = FRONTEND_DOCKERFILE_PATH.read_text(encoding="utf-8")
-        self.assertIn("ARG KJ_ATLAS_RUNTIME_PROFILE=local-dev", frontend_dockerfile)
+        self.assertIn("ARG SUI_RUNTIME_PROFILE=local-dev", frontend_dockerfile)
         self.assertIn(
-            "ENV KJ_ATLAS_RUNTIME_PROFILE=${KJ_ATLAS_RUNTIME_PROFILE}",
+            "ENV SUI_RUNTIME_PROFILE=${SUI_RUNTIME_PROFILE}",
             frontend_dockerfile,
         )
 

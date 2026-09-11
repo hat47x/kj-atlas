@@ -23,7 +23,7 @@ import argparse
 import json
 from typing import Any
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     IRSource,
     SourceCard,
     SourceIsland,

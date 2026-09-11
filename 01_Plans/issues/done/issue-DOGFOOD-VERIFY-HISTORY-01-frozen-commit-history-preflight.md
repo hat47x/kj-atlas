@@ -37,7 +37,7 @@ run `33829493679` ではtriage unit、issue validator、docs-checkは成功し�
 ## 非目標
 
 - frozen product commitやmanifest内容の変更。
-- cultural-substrate-weaving側commitをkj-atlasのローカルGit履歴から照合すること。
+- cultural-substrate-weaving側commitをsui-sensemakingのローカルGit履歴から照合すること。
 - 永続GitHub Actions workflowの追加。
 
 ## 対応結果（2026-09-04）

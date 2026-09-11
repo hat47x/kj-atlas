@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-MAIN = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
-KEY = "KJ_ATLAS_API_KEY"
+MAIN = ROOT / "03_Implement/backend/src/sui_sensemaking_api/main.py"
+KEY = "SUI_API_KEY"
 
 
 def _row(text: str, key: str) -> str:
@@ -57,9 +57,9 @@ class ApiKeyEffectScopeContractTests(unittest.TestCase):
 
 
     def test_business_api_key_profile_requirement_matches_settings(self) -> None:
-        settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
+        settings = (ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py").read_text(encoding="utf-8")
         self.assertIn('profile == "enterprise-production" and self.api_key is None', settings)
-        self.assertIn('missing.append("KJ_ATLAS_API_KEY")', settings)
+        self.assertIn('missing.append("SUI_API_KEY")', settings)
 
         for surface in (self.registry, self.configuration):
             row = _row(surface, KEY)

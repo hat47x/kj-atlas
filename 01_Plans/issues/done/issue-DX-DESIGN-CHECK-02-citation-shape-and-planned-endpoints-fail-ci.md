@@ -60,7 +60,7 @@
 - `01_Plans/issues/*` からの参照を `check_design_consistency.py` の除外対象に追加（コメントで本issueを明示的に参照）。
 - `schemas.md` の `PUT /docs` を `PUT /docs/{doc_id}` へ揃えた。
 - `GET /ai/available-models` を `api.md` へ記載。
-- モックIdPの管理面（`/admin/register-*`, `/admin/trigger-backchannel-*`）を除外（kj-atlas自体のAPIではない）。
+- モックIdPの管理面（`/admin/register-*`, `/admin/trigger-backchannel-*`）を除外（sui-sensemaking自体のAPIではない）。
 - ベースラインを 4 → 0 へ引き直した。
 
 **受入条件を1件ずつ再検証した**（メンテナのverifiedメモを鵜呑みにせず、自分で再現）。

@@ -42,7 +42,7 @@ function getFocusableElements(root: HTMLElement): HTMLElement[] {
 
 function readAppRevision(): string | undefined {
   const env = import.meta.env as unknown as Record<string, string | undefined>;
-  return env.KJ_ATLAS_APP_REVISION;
+  return env.SUI_APP_REVISION;
 }
 
 const fieldLabelStyle = { fontSize: 12, fontWeight: 600, color: "#334155" } as const;
@@ -156,7 +156,7 @@ export function DiagnosticsBundlePanel({
     const objectUrl = URL.createObjectURL(blob);
     const downloadLink = document.createElement("a");
     downloadLink.href = objectUrl;
-    downloadLink.download = `kj-atlas-diag-bundle-${Date.now()}.json`;
+    downloadLink.download = `sui-sensemaking-diag-bundle-${Date.now()}.json`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();

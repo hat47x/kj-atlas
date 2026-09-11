@@ -5,7 +5,7 @@
 - Source Issue: `SAAS-TENANT-SURFACE-01`（`issue-SAAS-TENANT-SURFACE-01-unclassified-frontend-caller-gap.md`の分類調査で発見）
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`
 - Related ADR/Spec: `issue-DX-CLEANUP-04-unreferenced-canvas-shell-and-client-helpers.md`
 - Expected verification level: `integration`
 

@@ -5,7 +5,7 @@
 - Source Issue: `DX-CONTRACT-DRIFT-01`, `AI-IMPORTANCE-SCORING-01`
 - Priority: P1
 - Owner: Maintainer
-- Scope: `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/kj_atlas_api/llm/provider.py`, `03_Implement/backend/tests/test_ai_anti_scoring_contract.py`, `03_Implement/backend/scripts/check_contract_drift.py`
+- Scope: `02_Architecture/api.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`, `03_Implement/backend/tests/test_ai_anti_scoring_contract.py`, `03_Implement/backend/scripts/check_contract_drift.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0041-core-value-invariants-single-guard.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`
 - Expected verification level: `unit`
 
@@ -40,7 +40,7 @@
 |---|---|---|
 | `llm/provider.py` `_FINAL_JUDGEMENT_TASKS` | `assess_card_importance` が MMR-04 ルーティング表に残存。存在しないタスクに対し `routing_stage_for_task()` が `final_judgement` を返し続けていた | 対象外 |
 | `02_Architecture/api.md` | request/response スキーマを含む実装可能な契約が丸ごと残存 | 対象外 |
-| `02_Architecture/runtime_parameter_registry.md` | `KJ_ATLAS_LLM_HIGH_REASONING_MODEL` の説明が final_judgement 系タスクとして列挙 | 対象外 |
+| `02_Architecture/runtime_parameter_registry.md` | `SUI_LLM_HIGH_REASONING_MODEL` の説明が final_judgement 系タスクとして列挙 | 対象外 |
 
 つまり `AI-IMPORTANCE-SCORING-01` の AC-5a「関連する型が削除されていることを確認する」は、**確認範囲がテストの走査範囲に暗黙に限定されていた**。これは `DX-DESIGN-CHECK-01` / `DX-CONTRACT-DRIFT-01` と同型の「保護の主張と保護の実効範囲の乖離」である。3件目。
 

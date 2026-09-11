@@ -47,7 +47,7 @@
   <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
       <span style="width:8px; height:8px; border-radius:2px; background:#be123c; display:inline-block;"></span>
-      kj-atlas ・ Architecture ・ 分析（2026-08-06）
+      sui-sensemaking ・ Architecture ・ 分析（2026-08-06）
     </div>
     <h1 style="font-size:29px; line-height:1.36; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">関数従属性から見た<br>DocumentV1 の構造的整合性</h1>
     <p style="font-size:15px; line-height:1.75; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
@@ -190,7 +190,7 @@ flowchart TB
       <p style="font-size:13px; line-height:1.8; color:#78350f; margin:0;">
         <strong>挙動差は保持すべき仕様である。</strong>
         <code>applyCanonicalization()</code> が元カードを島に残すのは、
-        「代表カードと出典カードを両方たどれる」という kj-atlas 固有の設計
+        「代表カードと出典カードを両方たどれる」という sui-sensemaking 固有の設計
         （<code>isSourceCard()</code>、出典カードの開示UI）に基づく。
         したがって是正の方向は<strong>2つの挙動を1つに統合することではなく、
         関係の重複だけを解消して挙動差を明示的な属性にすること</strong>である。
@@ -282,7 +282,7 @@ flowchart TB
       <span class="tag struct">構造</span>
     </div>
     <p style="font-size:13.5px; line-height:1.8; color:#3e4c59; margin:12px 0 0;">
-      kj-atlas には統合判断のイベント記録が既に存在する ──
+      sui-sensemaking には統合判断のイベント記録が既に存在する ──
       <code>DocumentV1.mergeSuggestionDecisions[]</code> と物理テーブル <code>merge_decision_logs</code>。
       ところが <code>domain/merge_decision_audit.ts</code> は、監査イベントを作るために
       <code>resolveDecisionOriginTrace()</code> を呼び、<strong>カード側に散らばった状態から
@@ -319,7 +319,7 @@ flowchart LR
       <figcaption style="font-size:12.5px; color:#6b7280; margin-top:10px; line-height:1.7;">
         追記のみの記録を正本とし、可変な状態をそこから導出する構成は、簿記のデータモデル
         （仕訳は追記のみ・訂正は赤黒で相殺、残高サマリは導出）と同型である。
-        kj-atlas の <code>merge_decision_logs</code> は既に追記型として設計されており、
+        sui-sensemaking の <code>merge_decision_logs</code> は既に追記型として設計されており、
         <strong>正本化に必要な器はある</strong>。
       </figcaption>
     </figure>
@@ -645,7 +645,7 @@ flowchart LR
       情報システム学会メールマガジン 2022.10.28 No.17-07「『データ・ファースト』な設計スタイルを身につけよう」、
       三要素分析法）を参照した。<br><br>
       ただし当該体系は<strong>業務システムの物理DB設計</strong>を前提とする。
-      kj-atlas はローカルファーストの単一JSON永続化を目標に持つため、
+      sui-sensemaking はローカルファーストの単一JSON永続化を目標に持つため、
       物理正規化・複合主キーの主張はそのまま適用せず、
       <strong>論理不変条件の設計としてのみ採用</strong>した（§07 冒頭）。
       またカード本文・空間配置・見立てへは適用しない（§1.1）。

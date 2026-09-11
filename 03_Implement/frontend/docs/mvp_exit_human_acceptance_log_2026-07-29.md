@@ -57,7 +57,7 @@
 
 | ID | 確認内容 | 結果 | 証跡 |
 | --- | --- | --- | --- |
-| S1 | 見出しジャンプでプロダクト名の `h1` へ到達できる | pass | `h1 = "kj-atlas Canvas"`（文書内の `h1` は1件） |
+| S1 | 見出しジャンプでプロダクト名の `h1` へ到達できる | pass | `h1 = "sui-sensemaking Canvas"`（文書内の `h1` は1件） |
 | S2 | カード追加直後の本文入力欄が読み上げられる | **初回fail → 修正後pass** | 下記参照 |
 | S3 | 選択時に「現在の選択」が自動的に読み上げられる | pass | `aria-live="polite"` / `aria-label="現在の選択"`、読み上げ順は「カードを選択中 → 対象 → レビュー状態」 |
 | S4 | 作業モードがtabとして認識され矢印/Home/Endで移動する | pass | `tablist` 1件・`tab` 7件、ArrowRight/Home/Endが機能、`aria-selected` は常に1件 |

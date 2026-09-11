@@ -1,6 +1,6 @@
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const EMPTY_CANVAS_HINT_COMPLETED_STORAGE_KEY = "kj-atlas/empty-canvas-hint-completed";
+const EMPTY_CANVAS_HINT_COMPLETED_STORAGE_KEY = "sui-sensemaking/empty-canvas-hint-completed";
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";

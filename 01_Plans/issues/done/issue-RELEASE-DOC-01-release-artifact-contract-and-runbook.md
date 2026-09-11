@@ -24,7 +24,7 @@
 `04_Documentation/release.md`は品質確認を説明する一方、実際にタグを作った後の成果物契約を説明していない。現行`.github/workflows/release.yml`との照合で、少なくとも次の欠落がある。
 
 1. workflowは`v*.*.*`タグのpushで起動するが、手順書にタグ形式、作成位置、事前確認、再タグ禁止がない。
-2. backendは`kj-atlas-api:<tag>`としてbuildするだけで`push: false`であり、image archive、registry、GitHub Releaseのいずれにも配布しない。
+2. backendは`sui-sensemaking-api:<tag>`としてbuildするだけで`push: false`であり、image archive、registry、GitHub Releaseのいずれにも配布しない。
 3. frontendだけが`frontend-dist-<tag>`というGitHub Actions artifactになるが、取得場所、保持期間、対象SHA、検証方法を手順書が示さない。
 4. workflowはfrontend test、backend test、docs check、E2Eを再実行しない。`PRODUCT-QA-01`は候補commitの証跡を要求するが、タグ対象SHAと成功したCIを結び付ける手順がない。
 5. checksum、provenance、SBOM、署名、version manifestは生成しない。この状態で一時artifactを正式な公開配布物と呼ぶと、利用者が完全性と再取得可能性を過大評価する。

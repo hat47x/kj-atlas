@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Auth Architecture Lead（Security/Identity）
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/`, `02_Architecture/api.md`, `04_Documentation/security.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/`, `02_Architecture/api.md`, `04_Documentation/security.md`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0020`, `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`, `02_Architecture/api.md`, `02_Architecture/review_attribution.md`
 - Dependencies: N/A
@@ -72,7 +72,7 @@
   - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`
   - `curl -fsS http://localhost:8000/healthz`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
-  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/kj_atlas_api`
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/sui_sensemaking_api`
 - 期待結果:
   - strict拒否契約と管理導線が docs/API実装/テストで一致する。
 - 未実施時の理由・代替検証:
@@ -113,7 +113,7 @@
 - 実行コマンド:
   - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`（auth_level2 の外部SP未起動ケースを除き契約テストは通過）
   - `python 01_Plans/issues/validate_active_issue_memos.py`
-  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/kj_atlas_api`
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/sui_sensemaking_api`
 - 判定:
   - strict境界は維持され、運用回避手段として `ALLOW_JIT_PROVISIONING` フラグが残存。
   - docs / 実装 / テストの契約差分はなし。
@@ -163,7 +163,7 @@
 - Plan: Stream E の固定順序に従い、SCHEMA確定後の API/IMPL 契約（strict 403 + admin provisioning）のみを再確認対象に限定。
 - Execute: `Status=Done` と AC 全件達成状態を維持し、未承認仕様（新規エラーコードやCLI独自分岐）の追加を禁止。
 - Verify:
-  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING|status|code|provisioned" 01_Plans/issues/issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md 03_Implement/backend/src/kj_atlas_api`
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING|status|code|provisioned" 01_Plans/issues/issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md 03_Implement/backend/src/sui_sensemaking_api`
   - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`
 - Proceed:
   - 判定: **Go**（migration競合・データ前提崩壊・契約逸脱なし）。
@@ -228,7 +228,7 @@
 
 ### Execute
 - AuthContext/JIT の契約固定点を「入力境界・出力境界・監査境界・責務分離」の4観点で再記述。
-- strict provisioning（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）時の拒否契約を `403 + code=identity_not_provisioned` に固定し、Admin API正本・CLIラッパの責務分離を維持。
+- strict provisioning（`SUI_ALLOW_JIT_PROVISIONING=false`）時の拒否契約を `403 + code=identity_not_provisioned` に固定し、Admin API正本・CLIラッパの責務分離を維持。
 - identity schema の移行は expand → dual-write/read → backfill → contract の順序を不変条件として保持。
 
 ### Verify

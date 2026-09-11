@@ -43,7 +43,7 @@ from pydantic import BaseModel
 
 from .jwt_signer import EphemeralSigningKey
 
-app = FastAPI(title="kj-atlas mock idp")
+app = FastAPI(title="sui-sensemaking mock idp")
 
 _SIGNING_KEY = EphemeralSigningKey(kid="mock-idp-level2")
 _MOCK_BASE = "http://mock-idp.local"
@@ -86,7 +86,7 @@ def _issue_jwt(*, provider: str, claims: dict[str, object]) -> dict[str, object]
     now = int(time.time())
     c = dict(claims)
     issuer = c.pop("iss", f"{_MOCK_BASE}/{provider}")
-    audience = c.pop("aud", "kj-atlas")
+    audience = c.pop("aud", "sui-sensemaking")
     subject = c.pop("sub", c.get("email", "mock-subject"))
     tenant_ref = c.pop("tenant_ref", c.get("tenant_ref", "mock-org"))
 
@@ -484,7 +484,7 @@ def logout(
 # register a target URI and a client_secret explicitly via the /admin
 # endpoints below, then call /admin/trigger-backchannel-logout to have the
 # mock build a spec-shaped Logout Token and (best-effort) POST it -- mirroring
-# how a Broker like Keycloak would notify kj-atlas's BFF.
+# how a Broker like Keycloak would notify sui-sensemaking's BFF.
 # ---------------------------------------------------------------------------
 
 

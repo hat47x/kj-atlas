@@ -2,11 +2,11 @@
 
 - Type: Feature / Requirement gap（W型探求・第2ラウンド現状把握で検出）
 - Status: Done
-- Source Issue: W型KJ法探求（2026-08-17）の第2ラウンド（現状把握）で、インターネットリサーチ（川喜田・KJ法実践知）と257枚の実測から検出。`kj_technique.md` と外部知見は「1000枚規模では『一行見出し』へ集約・縮約して扱う」とし、kj-atlas には schema（`parentIslandId`）はあるが UI/ワークフローが未実装。
+- Source Issue: W型KJ法探求（2026-08-17）の第2ラウンド（現状把握）で、インターネットリサーチ（川喜田・KJ法実践知）と257枚の実測から検出。`sensemaking_technique.md` と外部知見は「1000枚規模では『一行見出し』へ集約・縮約して扱う」とし、sui-sensemaking には schema（`parentIslandId`）はあるが UI/ワークフローが未実装。
 - Priority: P1
 - Owner: Maintainer
-- Scope: `02_Architecture/schemas.md` §9（階層島）, `03_Implement/frontend/src/`（キャンバス・階層UI）, `03_Implement/backend/src/kj_atlas_api/`（島の親子関係のCRUD）, `01_Plans/dogfood/advanced-dogfooding-scenarios-2026-08-17.md`（A-2階層化）
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（多層図解・一行見出し）, `02_Architecture/schemas.md` §9（Island hierarchy compatibility contract）, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0071-document-database-derived-projection-boundary.md`
+- Scope: `02_Architecture/schemas.md` §9（階層島）, `03_Implement/frontend/src/`（キャンバス・階層UI）, `03_Implement/backend/src/sui_sensemaking_api/`（島の親子関係のCRUD）, `01_Plans/dogfood/advanced-dogfooding-scenarios-2026-08-17.md`（A-2階層化）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §3（多層図解・一行見出し）, `02_Architecture/schemas.md` §9（Island hierarchy compatibility contract）, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0071-document-database-derived-projection-boundary.md`
 - Expected verification level: `e2e`
 
 ## 課題
@@ -18,7 +18,7 @@
 3. **多層図解**: 全体を1枚のインデックス図解にし、各束ごとに細部の図解を別に持つ。
 4. **グループは約3枚・最大10グループ以内**に収束する。
 
-一方、kj-atlas の現状（第2ラウンド実測・257枚）:
+一方、sui-sensemaking の現状（第2ラウンド実測・257枚）:
 
 - `parentIslandId`（階層島）は schema（`schemas.md` §9）にあるが、**E2Eで未固定・UI/ワークフロー未実装**。
 - **大量カードを「一行見出し」へ集約する導線がない**。257枚を束ねても、それを上位の島・インデックス図解へ畳む手段がない。

@@ -4,7 +4,7 @@ import { InvalidTokenError } from "@modelcontextprotocol/sdk/server/auth/errors.
 import { createBearerTokenVerifier } from "./oauth_verifier.js";
 
 const TRUSTED_ISSUER = "https://idp.example/";
-const RESOURCE = "https://mcp.kj-atlas.example/";
+const RESOURCE = "https://mcp.sui-sensemaking.example/";
 const KID = "test-key-1";
 
 type PrivateKey = Awaited<ReturnType<typeof generateKeyPair>>["privateKey"];

@@ -33,7 +33,7 @@ export function authorizationHeader(): Record<string, string> {
   if (!token) {
     return {};
   }
-  return { "X-Kj-Atlas-Authorization": `Bearer ${token}` };
+  return { "X-Sui-Sensemaking-Authorization": `Bearer ${token}` };
 }
 
 /** True if the user has a stored access token. */

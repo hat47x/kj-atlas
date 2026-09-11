@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
+AUTH_CONTEXT = ROOT / '03_Implement/backend/src/sui_sensemaking_api/auth_context.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 
@@ -40,7 +40,7 @@ class TrustedProxySourceGateContractTest(unittest.TestCase):
             text = path.read_text(encoding='utf-8')
             row = next(
                 line for line in text.splitlines()
-                if line.startswith('| `KJ_ATLAS_TRUSTED_PROXIES` |')
+                if line.startswith('| `SUI_TRUSTED_PROXIES` |')
             )
             self.assertIn('single-tenant', row)
             self.assertIn('request.client.host', row)

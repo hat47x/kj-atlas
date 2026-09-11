@@ -35,7 +35,7 @@ async function routeFixture(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }) => {
   await routeFixture(page);
-  await page.addInitScript(() => window.localStorage.removeItem("kj-atlas.advanced-ui-enabled"));
+  await page.addInitScript(() => window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled"));
   await page.goto("/?locale=ja");
   await page.getByRole("button", { name: "サンプルを開く" }).click();
 });
@@ -128,7 +128,7 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
   expect(imageRef).toMatch(/^visual-cue:[0-9a-f-]+$/);
   const storedAsset = await page.evaluate(async (ref) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -137,7 +137,7 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
         const request = database
           .transaction("assets-v2", "readonly")
           .objectStore("assets-v2")
-          .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
+          .get(JSON.stringify(["sui-sensemaking/local-scope/v1/", ref]));
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
@@ -145,7 +145,7 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
       database.close();
     }
   }, imageRef);
-  expect(storedAsset.scopeKey).toBe("kj-atlas/local-scope/v1/");
+  expect(storedAsset.scopeKey).toBe("sui-sensemaking/local-scope/v1/");
   expect(new TextEncoder().encode(storedAsset.assetJson).byteLength).toBeLessThanOrEqual(4096);
   await expect(cueDetails.getByLabel("代替テキスト")).toHaveValue("手描きの印");
 
@@ -194,7 +194,7 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
   await expect.poll(async () =>
     page.evaluate(async (ref) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+        const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
@@ -203,7 +203,7 @@ test("hand-drawn cue persists in scoped IndexedDB, supports keyboard drawing and
           const request = database
             .transaction("assets-v2", "readonly")
             .objectStore("assets-v2")
-            .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
+            .get(JSON.stringify(["sui-sensemaking/local-scope/v1/", ref]));
           request.onsuccess = () => resolve(request.result === undefined);
           request.onerror = () => reject(request.error);
         });
@@ -258,7 +258,7 @@ test("user image is cropped locally to a bounded 48x48 PNG without retaining or 
   expect(imageRef).toMatch(/^visual-cue:[0-9a-f-]+$/);
   const storedAsset = await page.evaluate(async (ref) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -267,7 +267,7 @@ test("user image is cropped locally to a bounded 48x48 PNG without retaining or 
         const request = database
           .transaction("assets-v2", "readonly")
           .objectStore("assets-v2")
-          .get(JSON.stringify(["kj-atlas/local-scope/v1/", ref]));
+          .get(JSON.stringify(["sui-sensemaking/local-scope/v1/", ref]));
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });

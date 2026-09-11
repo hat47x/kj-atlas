@@ -20,7 +20,7 @@ mock SP health path も `/health` と `/healthz` でずれていたため、統�
 
 - [x] 両Level2モジュールが登録済み `auth_level2` markerへ統一される。
 - [x] pytest は `--strict-markers` で未知markerを拒否する。
-- [x] 通常pytestは診断を書かず、`KJ_ATLAS_LEVEL2_DIAG_DIR` 明示時だけJSONを出力する。
+- [x] 通常pytestは診断を書かず、`SUI_LEVEL2_DIAG_DIR` 明示時だけJSONを出力する。
 - [x] 両Level2 scripts は `.artifacts/auth-level2/legacy-federation` を既定の診断先として設定する。
 - [x] 統合ハーネスが両モジュールを実行し、skipなしで完走する。
 

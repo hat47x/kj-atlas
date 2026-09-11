@@ -194,7 +194,7 @@ export function parsePatchOp(item: unknown): PatchOp | null {
 }
 
 export function parsePatchDocument(value: unknown): PatchDocument | null {
-  if (!isRecord(value) || value.kind !== "kj-atlas-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
+  if (!isRecord(value) || value.kind !== "sui-sensemaking-patch" || value.version !== 1 || !Array.isArray(value.ops)) {
     return null;
   }
 
@@ -213,7 +213,7 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
   }
 
   return {
-    kind: "kj-atlas-patch",
+    kind: "sui-sensemaking-patch",
     version: 1,
     baseDocSignature: typeof value.baseDocSignature === "string" ? value.baseDocSignature : undefined,
     author: typeof value.author === "string" ? value.author : undefined,

@@ -15,12 +15,12 @@
 
 - RequirementID: ENV-PROFILE-01
 - RequirementStatement: 実行環境ごとの推奨設定プロファイルを明示し、既定値と本番推奨値の見え方を分離する。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=公開環境変数はすべて `KJ_ATLAS_` で始まる; 操作=runtime registry と deployment/enterprise docs を読む; 期待結果=local-dev/evaluation/enterprise-production の違いを判断できる; 除外=実装既定値の変更。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=公開環境変数はすべて `SUI_` で始まる; 操作=runtime registry と deployment/enterprise docs を読む; 期待結果=local-dev/evaluation/enterprise-production の違いを判断できる; 除外=実装既定値の変更。
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / public-exposure
 
 ## 1) 課題 / Problem statement
 
-`KJ_ATLAS_ALLOW_JIT_PROVISIONING` は実装既定値として `true` だが、企業・行政運用では strict profile として `false` が推奨される。この関係は矛盾ではないが、初見では「本番でも true が推奨なのか」と誤読される可能性がある。
+`SUI_ALLOW_JIT_PROVISIONING` は実装既定値として `true` だが、企業・行政運用では strict profile として `false` が推奨される。この関係は矛盾ではないが、初見では「本番でも true が推奨なのか」と誤読される可能性がある。
 
 また、LLM provider、audit HTTP、access control などの設定は、local-dev / evaluation / enterprise-production で推奨値が異なる。既定値、評価用設定、本番推奨を分けて示すことで、運用判断の負荷を下げられる。
 
@@ -47,33 +47,33 @@
 Non-goals:
 
 - 実装既定値を変更しない。
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の既定値変更は本issueでは扱わない。
+- `SUI_ALLOW_JIT_PROVISIONING` の既定値変更は本issueでは扱わない。
 - サードパーティコンテナ内部環境変数の設計判断は ADR-0029 に委ねる。
 
 ## 5) 受入条件 / Acceptance criteria
 
 - [x] `runtime_parameter_registry.md` に実行プロファイル表が追加される。
-- [x] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` の実装既定と enterprise production の `false` 推奨が区別される。
+- [x] `SUI_ALLOW_JIT_PROVISIONING=true` の実装既定と enterprise production の `false` 推奨が区別される。
 - [x] `deployment.md` と `02_Architecture/enterprise_architecture.html` からプロファイル表へ辿れる。
-- [x] 公開設定キーはすべて `KJ_ATLAS_` で始まる方針を維持する。
+- [x] 公開設定キーはすべて `SUI_` で始まる方針を維持する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: `runtime_parameter_registry.md` に profile guidance を追加する。
 - [x] T2: `deployment.md` に評価/本番プロファイル参照を追加する。
 - [x] T3: `02_Architecture/enterprise_architecture.html` に strict profile 参照を追加する。
-- [x] T4: 00/02の環境変数例に非 `KJ_ATLAS_` が混入していないことを確認する。
+- [x] T4: 00/02の環境変数例に非 `SUI_` が混入していないことを確認する。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `git diff --check`
-  - `rg --pcre2 -n 'export (?!KJ_ATLAS_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
-  - `rg --pcre2 -n '\\$env:(?!KJ_ATLAS_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
-  - `rg -n "Runtime profile|KJ_ATLAS_ALLOW_JIT_PROVISIONING|enterprise-production" 02_Architecture`
+  - `rg --pcre2 -n 'export (?!SUI_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
+  - `rg --pcre2 -n '\\$env:(?!SUI_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
+  - `rg -n "Runtime profile|SUI_ALLOW_JIT_PROVISIONING|enterprise-production" 02_Architecture`
 - 期待結果:
   - 実行プロファイルと導線が確認できる。
-  - 公開環境変数例は `KJ_ATLAS_` 接頭辞に揃う。
+  - 公開環境変数例は `SUI_` 接頭辞に揃う。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -97,7 +97,7 @@ Non-goals:
 
 - Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
 - Result: `runtime_parameter_registry.md` に `local-dev` / `evaluation` / `enterprise-production` の profile guidance を追加し、`deployment.md` と `02_Architecture/enterprise_architecture.html` から導線を張った。
-- Validation: `git diff --check`, active issue memo validator, validator unit tests, 非 `KJ_ATLAS_` 公開環境変数例の `rg` 確認。
+- Validation: `git diff --check`, active issue memo validator, validator unit tests, 非 `SUI_` 公開環境変数例の `rg` 確認。
 
 
 ## Stream D update (2026-05-20)
@@ -109,13 +109,13 @@ Non-goals:
 
 ### Phase 2) Context / Decision / Consequences
 
-- Context: backendは `KJ_ATLAS_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
-- Decision: 公開契約は `KJ_ATLAS_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
+- Context: backendは `SUI_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
+- Decision: 公開契約は `SUI_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
 - Consequences: 旧キー再導入や prefix例外は本streamで実施しない。必要時は新規ADRでGo/No-Goを先行確定する。
 
 ### Phase 3) グローバルprefix移行と互換レイヤ設計
 
-- Public layer: 利用者入力は `KJ_ATLAS_*` のみ受理。
+- Public layer: 利用者入力は `SUI_*` のみ受理。
 - Private layer: `POSTGRES_*` は third-party container内部名、`VITE_API_BASE` は非公開互換shimとして限定運用。
 - Exit条件: 命名/既定値/境界/profile の4観点が同時に満たされること。
 
@@ -134,5 +134,5 @@ Non-goals:
 ## Stream F note (2026-05-20)
 
 - Profile guidance の運用明確化として、`runtime_parameter_registry.md` に既定値/推奨値対比表を追加した。
-- `configuration.md` と `security_operational_guidelines.md` の profile 節を同時同期し、`KJ_ATLAS_ALLOW_JIT_PROVISIONING` と `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の判断点を一致させた。
-- 命名規約（`KJ_ATLAS_*`）・既定値・互換方針（旧キー再導入なし）に変更はない。
+- `configuration.md` と `security_operational_guidelines.md` の profile 節を同時同期し、`SUI_ALLOW_JIT_PROVISIONING` と `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE` の判断点を一致させた。
+- 命名規約（`SUI_*`）・既定値・互換方針（旧キー再導入なし）に変更はない。

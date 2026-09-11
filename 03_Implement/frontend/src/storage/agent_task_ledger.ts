@@ -1,7 +1,7 @@
 import type { AgentTaskCorrelation } from "../export/agent_task_export";
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const STORAGE_KEY = "kj-atlas/agent-task-ledger-v1";
+const STORAGE_KEY = "sui-sensemaking/agent-task-ledger-v1";
 const MAX_ENTRIES = 100;
 
 export type AgentTaskLedgerEntry = AgentTaskCorrelation & { exportedAt: string };

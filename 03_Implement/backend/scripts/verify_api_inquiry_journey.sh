@@ -30,8 +30,8 @@ check() {
 }
 
 auth_header=()
-if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+if [ -n "${SUI_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${SUI_API_KEY}")
 fi
 
 # Representative W-type bundle: a journey with two rounds (R2 situation-grasp,
@@ -88,7 +88,7 @@ payload='{
   ]
 }'
 
-echo "=== kj-atlas W-type inquiry journey verification (base: $BASE_URL, journey: $JOURNEY_ID) ==="
+echo "=== sui-sensemaking W-type inquiry journey verification (base: $BASE_URL, journey: $JOURNEY_ID) ==="
 
 # 1. Create with If-None-Match: * → 201 + ETag "1"
 resp=$(curl -s -D /tmp/kj_journey_headers.txt -o /tmp/kj_journey_body.json -w '%{http_code}' \

@@ -3,7 +3,7 @@
 This single-file test demonstrates the complete coordinated auth flow
 that ADR-0064 requires:
 
-  SAML IdP ──→ Broker (SAML→OIDC) ──→ kj-atlas Backend
+  SAML IdP ──→ Broker (SAML→OIDC) ──→ sui-sensemaking Backend
   (mock)       (mock OAuth 2.0)       (JWT verify)
 
 The test covers:
@@ -30,11 +30,11 @@ from unittest.mock import patch
 import jwt as pyjwt
 from starlette.requests import Request
 
-from kj_atlas_api.active_tenant_session import InMemoryActiveTenantSessionPersister
-from kj_atlas_api.db import get_db
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.main import app as backend_app
-from kj_atlas_api.models import (
+from sui_sensemaking_api.active_tenant_session import InMemoryActiveTenantSessionPersister
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.main import app as backend_app
+from sui_sensemaking_api.models import (
     Base,
     DocumentRow,
     IdentityProviderRow,
@@ -44,7 +44,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.tenant_context import (
     ClaimBasedTenantContextResolver,
     SingleTenantContextResolver,
     TenantContext,
@@ -53,7 +53,7 @@ from kj_atlas_api.tenant_context import (
 from tests.conftest import TIMESTAMP, StubCapabilityResolver
 from tests.level2.mock_idp import app as mock_idp_app
 ISSUER = "http://mock-idp.local/mock-client"
-AUDIENCE = "kj-atlas"
+AUDIENCE = "sui-sensemaking"
 
 
 # ============================================================================
@@ -174,7 +174,7 @@ def _seed_backend(db) -> None:
 
 @contextmanager
 def _saas_backend(tmp_path, jwk: dict) -> Iterator:
-    from kj_atlas_api.trusted_auth_edge import JwtSaasIdentityContextResolver
+    from sui_sensemaking_api.trusted_auth_edge import JwtSaasIdentityContextResolver
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
@@ -198,7 +198,7 @@ def _saas_backend(tmp_path, jwk: dict) -> Iterator:
     persister = InMemoryActiveTenantSessionPersister()
 
     backend_app.dependency_overrides[get_db] = _gdb
-    with patch("kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk]):
+    with patch("sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk]):
         try:
             from fastapi.testclient import TestClient
             with TestClient(backend_app) as client:
@@ -259,22 +259,22 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             sv = self._session_version(persister)
 
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_a}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token_a}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 200, f"Alice: {r.json()}"
             assert r.json()["title"] == "Tenant A Document"
 
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_b}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token_b}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 200, f"Bob: {r.json()}"
             assert r.json()["title"] == "Tenant B Document"
 
             r = backend.get("/docs/tenant-b-only", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_a}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token_a}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 404
 
@@ -298,21 +298,21 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             sv = self._session_version(persister)
 
             r = backend.get("/docs/doc-1", headers={
-                "kj-atlas-tenant-session-version": sv,
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 401
             assert r.json()["detail"]["code"] == "missing_token"
 
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_unknown}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token_unknown}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 401
             assert r.json()["detail"]["code"] == "unknown_tenant"
 
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token_alice}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token_alice}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 200
 
@@ -332,20 +332,20 @@ class TestCoordinatedSAMLBrokerJWTFlow:
             sv = self._session_version(persister)
 
             r1 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r1.status_code == 200
 
             r2 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r2.status_code == 200
 
             r3 = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token}",
-                "kj-atlas-tenant-session-version": "wrong-version",
+                "x-sui-sensemaking-authorization": f"Bearer {token}",
+                "sui-sensemaking-tenant-session-version": "wrong-version",
             })
             assert r3.status_code == 409
             assert r3.json()["detail"]["code"] == "tenant_session_changed"
@@ -377,8 +377,8 @@ class TestCoordinatedSAMLBrokerJWTFlow:
         with _saas_backend(tmp_path, jwk) as (backend, persister):
             sv = self._session_version(persister)
             r = backend.get("/docs/doc-1", headers={
-                "x-kj-atlas-authorization": f"Bearer {token}",
-                "kj-atlas-tenant-session-version": sv,
+                "x-sui-sensemaking-authorization": f"Bearer {token}",
+                "sui-sensemaking-tenant-session-version": sv,
             })
             assert r.status_code == 200
 

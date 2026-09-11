@@ -25,7 +25,7 @@ export type TenantSessionCoherenceBoundary = Readonly<{
   dispose: () => void;
 }>;
 
-const CHANNEL_NAME = "kj-atlas-tenant-session-v1";
+const CHANNEL_NAME = "sui-sensemaking-tenant-session-v1";
 const DEFAULT_HIDDEN_REVALIDATION_MS = 5 * 60 * 1000;
 
 function defaultChannelFactory(name: string): BroadcastChannelLike | undefined {

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-このファイルは、生成AIが kj-atlas で作業を始めるための最小入口です。リポジトリ全体を先読みせず、現在のタスクに必要な正本とコードだけを参照してください。
+このファイルは、生成AIが sui-sensemaking で作業を始めるための最小入口です。リポジトリ全体を先読みせず、現在のタスクに必要な正本とコードだけを参照してください。
 
 ## 1. 必須ルール
 
@@ -37,7 +37,7 @@ KJ法の各操作には異なる推論深度が必要である。費用対効果
 | 文書タイトル提案 | 低〜中 | DeepSeek | 低品質許容・人間が編集前提 |
 | 三要素整合チェック | 中 | DeepSeek / Sonnet | 構造化判断記録の検証 |
 
-環境変数 `KJ_ATLAS_MODEL_LEVEL_LOW` / `_MEDIUM` / `_HIGH` で操作別にモデルを上書き可能。provider=`none` 時は全操作でAI呼び出しをスキップ。
+環境変数 `SUI_MODEL_LEVEL_LOW` / `_MEDIUM` / `_HIGH` で操作別にモデルを上書き可能。provider=`none` 時は全操作でAI呼び出しをスキップ。
 
 ### 1.3 自律性レベル
 
@@ -71,8 +71,8 @@ AIが自律的に判断できる範囲を4段階で定義する。現在のセ�
 |---|---|
 | 価値・要件判断 | `01_Plans/adr/ADR-0001-value-to-requirements.md` |
 | 用語・KJ法の概念 | `00_Prompt/domain.md` |
-| KJ法の実行（束ね・表札・空白・検査） | `00_Prompt/kj_technique.md` |
-| KJ操作のAI実行手順（入出力・判断基準・停止条件） | `00_Prompt/ai_kj_execution_procedures.md` |
+| KJ法の実行（束ね・表札・空白・検査） | `00_Prompt/sensemaking_technique.md` |
+| KJ操作のAI実行手順（入出力・判断基準・停止条件） | `00_Prompt/ai_sensemaking_execution_procedures.md` |
 | カード品質 | `00_Prompt/qualitative_card_quality_requirements.md` |
 | W型反復 | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `02_Architecture/inquiry_journey_model.html` |
 | 設計方法論（三要素牽制） | `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md` |
@@ -144,7 +144,7 @@ AIが自律的に判断できる範囲を4段階で定義する。現在のセ�
 
 - Document契約変更: `ADR-0058`、`schemas.md`、`api.md`、frontend/backend/MCPの契約と関連テストを確認する。
 - API変更: `api.md`、client/server、契約テストを確認する。
-- 環境変数変更: `KJ_ATLAS_*` 命名を守り、`runtime_parameter_registry.md` と設定例を同期する。
+- 環境変数変更: `SUI_*` 命名を守り、`runtime_parameter_registry.md` と設定例を同期する。
 - UI視覚変更: 対象画面を実ブラウザで確認する。スクリーンショットは公開文書または視覚回帰の根拠として必要な場合だけ更新する。
 - SafeMode・共有・import変更: fail-closed、proposal-only、人手レビュー境界を対象テストで確認する。
 - `DocumentV1`へ新しいoptionalフィールドを追加する前（R5、`02_Architecture/functional-dependency-integrity-2026-08-06.html` §08）: (1) 表現しようとしている関係を、既存のフィールドが既にカバーしていないか確認する — 同一関係を複数フィールドで表さない。(2) その関係が確定事実（統合・所属・帰属など）か利用者の現在の見立て（`claimType`/`holdState`等）かを判定し、後者なら正規化・不変条件の対象にしない。(3) 追加する型に対応するPydanticモデルのフィールドも同時に追加し、`test_ts_python_contract_drift.py`の対象型リストに含める。(4) SafeMode向けのredact/preserve/omitポリシー（`inquiry_bundle_safe_mode.ts`）を判断する。
@@ -170,7 +170,7 @@ AIが自律的に判断できる範囲を4段階で定義する。現在のセ�
 - SafeModeは既定ON。
 - AI出力はproposal-onlyで、自動適用しない。
 - `human_reviewed` は人間だけが設定する。
-- `KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する。
+- `SUI_LLM_PROVIDER=none` でも主要価値が成立する。
 - share/exportで未レビュー情報や秘密情報を意図せず共有しない。
 - import/zip/markdownは不正入力を安全側で拒否または無害化する。
 

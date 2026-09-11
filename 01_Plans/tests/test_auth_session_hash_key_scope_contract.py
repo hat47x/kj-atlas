@@ -4,10 +4,10 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-MAIN = ROOT / '03_Implement/backend/src/kj_atlas_api/main.py'
-GUEST_ROUTE = ROOT / '03_Implement/backend/src/kj_atlas_api/routes/guest_session.py'
-GUEST_AUTH = ROOT / '03_Implement/backend/src/kj_atlas_api/guest_request_auth.py'
-GUEST_REDEEM = ROOT / '03_Implement/backend/src/kj_atlas_api/guest_redeem.py'
+MAIN = ROOT / '03_Implement/backend/src/sui_sensemaking_api/main.py'
+GUEST_ROUTE = ROOT / '03_Implement/backend/src/sui_sensemaking_api/routes/guest_session.py'
+GUEST_AUTH = ROOT / '03_Implement/backend/src/sui_sensemaking_api/guest_request_auth.py'
+GUEST_REDEEM = ROOT / '03_Implement/backend/src/sui_sensemaking_api/guest_redeem.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 
@@ -36,7 +36,7 @@ class AuthSessionHashKeyScopeContractTest(unittest.TestCase):
             text = path.read_text(encoding='utf-8')
             row = next(
                 line for line in text.splitlines()
-                if line.startswith('| `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` |')
+                if line.startswith('| `SUI_SAAS_AUTH_SESSION_HASH_KEY` |')
             )
             self.assertIn('member', row)
             self.assertIn('guest auth session', row)

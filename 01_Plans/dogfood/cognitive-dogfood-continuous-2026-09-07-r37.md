@@ -1,15 +1,15 @@
 # 継続dogfood R37 — 設定の受理と実効制御・作用範囲・運用条件を分ける
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r37.json`
+Canvas: `doc_sui_sensemaking_dogfood_r37.json`
 
 ## 1. Trigger
 
 R36統合後のmainで、Lane B2のpublic-config監査から4件の実陽性が続いた。
 
-- PR #3048: `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` はSettingsで `false` を読み込めたが、値をruntime behaviorへ結ぶconsumer / trigger contractが存在しない **dead toggle** だった。未確定CE4契約をどのrequestで501 stubへ分岐させるか自体が未定義なので、`false` の挙動を実装することは新しいsemanticsの発明になる。#3048は未確定trigger contractが実装されるまで `true` 固定とし、`false` を起動時fail-fastで拒否した。
-- PR #3049: `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` には実runtime consumerがあるが、作用範囲はdocs CE4の `POST /docs/{doc_id}/context-audit` に限られる。一方公開表はCE4全体へ効くようにも読め、proposal / CE4 resolveが対象外であることを落としていた。
-- PR #3050: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` はlocal-dev / evaluationでは明示的に利用できる有効値だが、Enterprise recommendationではない。runtime registryの推奨欄だけが `false または true` となり、enterprise-production / saas-multitenant profileと `TrustedSaasRuntimePolicy` の `false` 要求と矛盾していた。
+- PR #3048: `SUI_CE4_STUB_UNRESOLVED_CONTRACTS` はSettingsで `false` を読み込めたが、値をruntime behaviorへ結ぶconsumer / trigger contractが存在しない **dead toggle** だった。未確定CE4契約をどのrequestで501 stubへ分岐させるか自体が未定義なので、`false` の挙動を実装することは新しいsemanticsの発明になる。#3048は未確定trigger contractが実装されるまで `true` 固定とし、`false` を起動時fail-fastで拒否した。
+- PR #3049: `SUI_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` には実runtime consumerがあるが、作用範囲はdocs CE4の `POST /docs/{doc_id}/context-audit` に限られる。一方公開表はCE4全体へ効くようにも読め、proposal / CE4 resolveが対象外であることを落としていた。
+- PR #3050: `SUI_ALLOW_JIT_PROVISIONING=true` はlocal-dev / evaluationでは明示的に利用できる有効値だが、Enterprise recommendationではない。runtime registryの推奨欄だけが `false または true` となり、enterprise-production / saas-multitenant profileと `TrustedSaasRuntimePolicy` の `false` 要求と矛盾していた。
 - PR #3052: さらにlocal-dev profileの `Required settings` だけがJIT=`true` を起動必須条件として扱っていたが、現行Settingsもconfigurationの最小起動例もそれを要求していなかった。`true` は未登録header identityをJIT作成するときだけ必要な **条件付き設定** であり、requiredではなかった。
 
 これらはR36のacceptance predicateとは別である。値が構文・validator上は受理可能でも、**何を変えるのか・どこまで効くのか・どのprofileでrequired / recommended / conditionalなのか** は別の意味軸としてずれ得る。
@@ -28,7 +28,7 @@ PR #3047のQA gate current-state同期はR34で扱ったcurrent-state/wiring sha
 
 ### B. consumerがあっても作用範囲は別契約である
 
-#3049はdead toggleではない。`KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` はdocs context-audit routeで実際に参照され、`false` 時には `422 mock_source_bundle_hash_disabled` を返す。
+#3049はdead toggleではない。`SUI_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` はdocs context-audit routeで実際に参照され、`false` 時には `422 mock_source_bundle_hash_disabled` を返す。
 
 問題は「効く / 効かない」の二値ではなく、**どのboundaryにだけ効くか** がpublic surfaceで曖昧だったことにある。proposal APIとCE4 resolveは別の契約へ従い、このtoggleの対象外だった。
 
@@ -93,4 +93,4 @@ R37は「すべての設定keyに直接consumerが必要」という主張では
 
 R37はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

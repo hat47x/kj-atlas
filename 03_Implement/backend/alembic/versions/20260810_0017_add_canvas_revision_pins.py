@@ -15,8 +15,8 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 _TABLE = "canvas_revision_pins"
-_POLICY = "kj_atlas_canvas_revision_pins_tenant_isolation"
-_TENANT_USING = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+_POLICY = "sui_sensemaking_canvas_revision_pins_tenant_isolation"
+_TENANT_USING = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 
 
 def upgrade() -> None:

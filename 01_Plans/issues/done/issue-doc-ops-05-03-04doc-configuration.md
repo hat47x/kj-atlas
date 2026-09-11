@@ -1345,7 +1345,7 @@
 - 既存の分類・検証レベル（docs-check）を変更せず保持。
 
 ### Phase 5 Verify（docs-check）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/sui-sensemaking`
 - 実行: `git diff --check`
 - 自己修復回数: 0/3（失敗なし）。
 
@@ -1532,7 +1532,7 @@
 
 ### Execute
 - RequirementID `DOC-OPS-05-03` の公開境界を再確認。
-- Decision: configuration は既存の `KJ_ATLAS_*` 公開設定と既定値のみを扱い、Runtime Streamの具体変更を先取りしない方針で同期した。
+- Decision: configuration は既存の `SUI_*` 公開設定と既定値のみを扱い、Runtime Streamの具体変更を先取りしない方針で同期した。
 
 ### Verify
 - docs-check 対象として issue memo metadata、Markdown整形、リンク導線、公開不可情報の混入有無を確認する。

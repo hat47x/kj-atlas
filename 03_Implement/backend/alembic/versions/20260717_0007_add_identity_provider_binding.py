@@ -17,7 +17,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 LOCAL_DEFAULT_TENANT_ID = "local-default"
-LEGACY_IDENTITY_PROVIDER_AUDIENCE = "kj-atlas-single-tenant"
+LEGACY_IDENTITY_PROVIDER_AUDIENCE = "sui-sensemaking-single-tenant"
 MIGRATION_TIMESTAMP = "2026-07-17T00:00:00Z"
 NEW_UNIQUE_NAME = "uq_user_identities_identity_provider_subject"
 NEW_FOREIGN_KEY_NAME = "fk_user_identities_identity_provider_id"
@@ -46,7 +46,7 @@ def _legacy_binding(provider: str) -> tuple[str, str]:
     if not normalized_provider:
         raise RuntimeError("user_identities.provider must be non-empty before identity binding")
     digest = sha256(normalized_provider.encode("utf-8")).hexdigest()[:24]
-    return f"idp-legacy-{digest}", f"urn:kj-atlas:legacy-provider:{digest}"
+    return f"idp-legacy-{digest}", f"urn:sui-sensemaking:legacy-provider:{digest}"
 
 
 def _backfill_identity_bindings(bind: sa.Connection) -> None:

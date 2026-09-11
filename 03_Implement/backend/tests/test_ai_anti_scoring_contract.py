@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from kj_atlas_api.main import app
+from sui_sensemaking_api.main import app
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -12,9 +12,9 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 #: so `routing_stage_for_task("assess_card_importance")` still answered
 #: "final_judgement" for a task that no longer exists.
 _GUARDED_SOURCES = (
-    "03_Implement/backend/src/kj_atlas_api/models_ai.py",
-    "03_Implement/backend/src/kj_atlas_api/routes/ai.py",
-    "03_Implement/backend/src/kj_atlas_api/llm/provider.py",
+    "03_Implement/backend/src/sui_sensemaking_api/models_ai.py",
+    "03_Implement/backend/src/sui_sensemaking_api/routes/ai.py",
+    "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py",
     "03_Implement/deploy/tools/kj_canvas_demo.py",
 )
 

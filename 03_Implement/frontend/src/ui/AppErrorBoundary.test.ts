@@ -49,7 +49,7 @@ describe("AppErrorBoundary", () => {
     const doc = { version: 1, id: "doc-1", title: "unsaved" };
 
     // Boundary eviction path is exercised by saving through the same helpers.
-    window.localStorage.setItem("kj-atlas/evicted-doc", JSON.stringify(doc));
+    window.localStorage.setItem("sui-sensemaking/evicted-doc", JSON.stringify(doc));
     expect(loadEvictedDocument()).toEqual(doc);
 
     clearEvictedDocument();
@@ -71,7 +71,7 @@ describe("AppErrorBoundary", () => {
     const doc = { version: 1, id: "doc-1", title: "tenant-a confidential draft" };
 
     window.localStorage.setItem(
-      buildTenantStorageKey("kj-atlas/evicted-doc", tenantA),
+      buildTenantStorageKey("sui-sensemaking/evicted-doc", tenantA),
       JSON.stringify(doc),
     );
 
@@ -90,7 +90,7 @@ describe("AppErrorBoundary", () => {
     const scope = { deployment: "evaluation", tenantId: "tenant-a", principalId: "user-1" };
     const doc = { version: 1, id: "doc-1" };
 
-    window.localStorage.setItem(buildTenantStorageKey("kj-atlas/evicted-doc", scope), JSON.stringify(doc));
+    window.localStorage.setItem(buildTenantStorageKey("sui-sensemaking/evicted-doc", scope), JSON.stringify(doc));
 
     // loadEvictedDocument must read the exact key buildTenantStorageKey produces,
     // not a hand-rolled prefix that happens to look similar.

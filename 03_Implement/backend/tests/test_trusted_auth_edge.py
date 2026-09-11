@@ -18,8 +18,8 @@ from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.jwks_store import JwksStore
-from kj_atlas_api.models import (
+from sui_sensemaking_api.jwks_store import JwksStore
+from sui_sensemaking_api.models import (
     Base,
     IdentityProviderRow,
     TenantIdentityProviderRow,
@@ -28,7 +28,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.trusted_auth_edge import (
+from sui_sensemaking_api.trusted_auth_edge import (
     JwtIdentityError,
     JwtSaasIdentityContextResolver,
 )
@@ -71,7 +71,7 @@ def _build_token(
     *,
     private_key: rsa.RSAPrivateKey,
     issuer: str = "https://broker.invalid/issuer",
-    audience: str = "kj-atlas",
+    audience: str = "sui-sensemaking",
     subject: str = "subject-1",
     tenant_ref: str = "org-123",
     kid: str = "test-key-1",
@@ -122,7 +122,7 @@ def _seed(db: Session) -> None:
             IdentityProviderRow(
                 id="idp-1",
                 issuer="https://broker.invalid/issuer",
-                audience="kj-atlas",
+                audience="sui-sensemaking",
                 protocol="oidc",
                 jwks_uri="https://broker.invalid/jwks.json",
                 lifecycle_state="active",
@@ -181,7 +181,7 @@ def _request_with_token(token: str | None) -> Request:
     }
     if token is not None:
         scope["headers"].append(
-            (b"x-kj-atlas-authorization", f"Bearer {token}".encode())
+            (b"x-sui-sensemaking-authorization", f"Bearer {token}".encode())
         )
     return Request(scope=scope)
 
@@ -197,7 +197,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -230,7 +230,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -265,7 +265,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -284,7 +284,7 @@ class TestJwtSaasIdentityContextResolver:
         now = int(time.time())
         payload: dict[str, object] = {
             "iss": "https://broker.invalid/issuer",
-            "aud": "kj-atlas",
+            "aud": "sui-sensemaking",
             "sub": "subject-1",
             "iat": now - 60,
             "exp": now + 3600,
@@ -301,7 +301,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -320,7 +320,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -342,7 +342,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [other_jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[other_jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -361,7 +361,7 @@ class TestJwtSaasIdentityContextResolver:
         store.set("idp-1", [jwk])
 
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -390,7 +390,7 @@ class TestBearerTokenJtiHandling:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             identity = resolver.resolve(
@@ -407,7 +407,7 @@ class TestBearerTokenJtiHandling:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             first = resolver.resolve(db=db, request=_request_with_token(token))
@@ -421,7 +421,7 @@ class TestBearerTokenJtiHandling:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             for i in range(5):
@@ -443,7 +443,7 @@ class TestBearerTokenJtiHandling:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             identity = resolver.resolve(db=db, request=_request_with_token(token))
@@ -460,12 +460,12 @@ class TestAudArraySupport:
         self, db: Session, key_pair: tuple,
     ) -> None:
         private_key, jwk = key_pair
-        token = _build_token(private_key=private_key, audience="kj-atlas")
+        token = _build_token(private_key=private_key, audience="sui-sensemaking")
 
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             identity = resolver.resolve(
@@ -478,13 +478,13 @@ class TestAudArraySupport:
     ) -> None:
         private_key, jwk = key_pair
         token = _build_token_with_aud_array(
-            private_key, audience=["other-app", "kj-atlas"],
+            private_key, audience=["other-app", "sui-sensemaking"],
         )
 
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             identity = resolver.resolve(
@@ -503,7 +503,7 @@ class TestAudArraySupport:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             with pytest.raises(JwtIdentityError) as exc:
@@ -528,7 +528,7 @@ class TestKidLessTokens:
         store = JwksStore()
         store.set("idp-1", [jwk_no_kid])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk_no_kid],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -547,7 +547,7 @@ class TestKidLessTokens:
         store = JwksStore()
         store.set("idp-1", [jwk, other_jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks",
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks",
             return_value=[jwk, other_jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
@@ -573,7 +573,7 @@ class TestTimeVerification:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             with pytest.raises(JwtIdentityError) as exc:
@@ -591,7 +591,7 @@ class TestTimeVerification:
         store = JwksStore()
         store.set("idp-1", [jwk])
         with patch(
-            "kj_atlas_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
+            "sui_sensemaking_api.trusted_auth_edge._fetch_jwks", return_value=[jwk],
         ):
             resolver = JwtSaasIdentityContextResolver(jwks_store=store)
             identity = resolver.resolve(
@@ -611,7 +611,7 @@ def _build_token_with_custom_time(
     now = int(_time_module.time())
     payload: dict[str, object] = {
         "iss": "https://broker.invalid/issuer",
-        "aud": "kj-atlas", "sub": "subject-1",
+        "aud": "sui-sensemaking", "sub": "subject-1",
         "tenant_ref": "org-123",
         "iat": now + iat_offset,
         "exp": now + 7200,
@@ -632,7 +632,7 @@ def _build_token_with_jti(
     *,
     jti: str,
     issuer: str = "https://broker.invalid/issuer",
-    audience: str = "kj-atlas",
+    audience: str = "sui-sensemaking",
 ) -> str:
     now = int(_time_module.time())
     payload: dict[str, object] = {
@@ -672,7 +672,7 @@ def _build_token_without_kid(private_key) -> str:
     now = int(_time_module.time())
     payload: dict[str, object] = {
         "iss": "https://broker.invalid/issuer",
-        "aud": "kj-atlas", "sub": "subject-1",
+        "aud": "sui-sensemaking", "sub": "subject-1",
         "tenant_ref": "org-123", "iat": now - 60, "exp": now + 3600,
         "jti": str(uuid4()),
     }

@@ -1,7 +1,7 @@
 # ドッグフーディングのパターン多様化 — 導入組織の具体的イメージに基づく分析
 
 - 区分: 分析 / 更新: 2026-08-12
-- 目的: 現在のドッグフーディングが「開発者自身による自己言及（kj-atlasでkj-atlasを管理）」の単一パターンに偏っていることの是正。
+- 目的: 現在のドッグフーディングが「開発者自身による自己言及（sui-sensemakingでsui-sensemakingを管理）」の単一パターンに偏っていることの是正。
   導入組織の具体的なイメージを複数固定し、それぞれのドッグフーディングパターンを具体化する。
 - 関連: `01_Plans/dogfood/README.md`（W型サイクル）, `02_Architecture/dogfooding-ai-collaboration-plan.html`, `ADR-0042`
 - 背景: README の想定利用者は「複雑な問題の初期探索 / 定性情報の整理 / チーム・個人の思考可視化 / 研究・企画・設計・政策・プロダクト検討の前段整理」。
@@ -114,7 +114,7 @@ Org-Bの「保留・違和感を残したまま週跨ぎで開き直す」パタ
 
 ### 実地確認（2026-08-12）: saas-multitenant の起動ゲートは fail-fast で機能する
 
-`KJ_ATLAS_RUNTIME_PROFILE=saas-multitenant` で backend を起動すると、必須アダプタ欠損時に
+`SUI_RUNTIME_PROFILE=saas-multitenant` で backend を起動すると、必須アダプタ欠損時に
 起動拒否されることを実地確認した:
 
 ```

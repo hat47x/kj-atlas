@@ -29,8 +29,8 @@
 
 ## Potential conflict file candidates（列挙のみ・本Streamでは未編集）
 - `03_Implement/frontend/src/domain/**`
-- `03_Implement/backend/src/kj_atlas_api/routes/**`
-- `03_Implement/backend/src/kj_atlas_api/models*.py`
+- `03_Implement/backend/src/sui_sensemaking_api/routes/**`
+- `03_Implement/backend/src/sui_sensemaking_api/models*.py`
 - `03_Implement/frontend/tests/**`
 - `03_Implement/backend/tests/**`
 

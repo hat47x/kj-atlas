@@ -1,14 +1,14 @@
 # 継続dogfood R36 — 公開入力契約では値名だけでなく受理predicateを保持する
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r36.json`
+Canvas: `doc_sui_sensemaking_dogfood_r36.json`
 
 ## 1. Trigger
 
 R35統合後のmainで、Lane B2のsecurity-format監査から2件の実陽性が続いた。
 
-- PR #3043: `KJ_ATLAS_SAAS_AUTH_SESSION_HASH_KEY` は実装 `_HEX_KEY_PATTERN = ^[0-9a-f]{64}$` により **64文字・lowercase hex** だけを受理し、利用者向けconfigurationも同じ制約を記していた。一方runtime registryは「64桁16進=32バイト」とだけ書き、uppercaseも受理されるように読めた。
-- PR #3044: `KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` はtrusted HTTP endpointであるだけでなく、実装が `urlsplit(...).path == "/session/callback"` を必須とし、それ以外を起動時に拒否する。一方runtime registry / configurationは「OAuth callbackのredirect URI」とだけ記し、固定path制約を公開していなかった。
+- PR #3043: `SUI_SAAS_AUTH_SESSION_HASH_KEY` は実装 `_HEX_KEY_PATTERN = ^[0-9a-f]{64}$` により **64文字・lowercase hex** だけを受理し、利用者向けconfigurationも同じ制約を記していた。一方runtime registryは「64桁16進=32バイト」とだけ書き、uppercaseも受理されるように読めた。
+- PR #3044: `SUI_SAAS_OAUTH_BROKER_HTTP_REDIRECT_URI` はtrusted HTTP endpointであるだけでなく、実装が `urlsplit(...).path == "/session/callback"` を必須とし、それ以外を起動時に拒否する。一方runtime registry / configurationは「OAuth callbackのredirect URI」とだけ記し、固定path制約を公開していなかった。
 
 どちらもkey存在、default値、finite enum集合のdriftではない。実装が入力を受理するために評価する **predicate** の一部が、公開contractから欠落していた。
 
@@ -79,4 +79,4 @@ R36は「すべてのvalidatorを文書へ転写する」という主張では�
 
 R36はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

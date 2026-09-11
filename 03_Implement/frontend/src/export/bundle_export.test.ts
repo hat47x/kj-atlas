@@ -80,7 +80,7 @@ const docWithHandDrawnCue: DocumentV1 = {
 
 function buildBasicContext(overrides: Partial<BundleExportContext> = {}): BundleExportContext {
   return {
-    rootFolderPath: "kj-atlas-export-20260101-010203",
+    rootFolderPath: "sui-sensemaking-export-20260101-010203",
     safeMode: true,
     includeOutline: false,
     includeDiagnostics: false,
@@ -111,7 +111,7 @@ async function sha256Hex(input: string): Promise<string> {
 
 async function documentJsonHashFromBundle(doc: DocumentV1, viewState: unknown): Promise<string> {
   const files = buildExportBundle(doc, viewState, {
-    rootFolderPath: "kj-atlas-export-20260101-010203",
+    rootFolderPath: "sui-sensemaking-export-20260101-010203",
     safeMode: true,
     includeOutline: false,
     includeDiagnostics: false,
@@ -160,7 +160,7 @@ describe("buildExportBundle", () => {
     expect(jaHash).toBe(enHash);
 
     const files = buildExportBundle(baseDoc, enViewState, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -202,7 +202,7 @@ describe("buildExportBundle", () => {
 
   test("writes bundle manifest with selected export granularity", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -267,7 +267,7 @@ describe("buildExportBundle", () => {
     });
     const integrity = JSON.parse(String(integrityFile?.content)) as { files: Array<{ path: string }> };
     expect(integrity.files.map((entry) => entry.path)).toContain(
-      "kj-atlas-export-20260101-010203/representative_visual_cue_assets.json",
+      "sui-sensemaking-export-20260101-010203/representative_visual_cue_assets.json",
     );
   });
 
@@ -296,7 +296,7 @@ describe("buildExportBundle", () => {
 
   test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -316,10 +316,10 @@ describe("buildExportBundle", () => {
     });
 
     expect(files.map((file) => file.path)).toEqual([
-      "kj-atlas-export-20260101-010203/bundle_manifest.json",
-      "kj-atlas-export-20260101-010203/document.json",
-      "kj-atlas-export-20260101-010203/merge_decision_audit.json",
-      "kj-atlas-export-20260101-010203/view.json",
+      "sui-sensemaking-export-20260101-010203/bundle_manifest.json",
+      "sui-sensemaking-export-20260101-010203/document.json",
+      "sui-sensemaking-export-20260101-010203/merge_decision_audit.json",
+      "sui-sensemaking-export-20260101-010203/view.json",
     ]);
   });
 
@@ -333,7 +333,7 @@ describe("buildExportBundle", () => {
       ],
     };
     const files = buildExportBundle(docWithRepresentative, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -373,7 +373,7 @@ describe("buildExportBundle", () => {
 
   test("includes optional markdown files when requested", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: true,
       includeDiagnostics: true,
@@ -392,16 +392,16 @@ describe("buildExportBundle", () => {
       },
     });
 
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/outline.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/diagnostics.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/outline.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/diagnostics.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/evidence_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/trace_analytics_c2.md");
   });
 
   test("overview granularity suppresses selected-card traces", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: true,
       includeDiagnostics: true,
@@ -421,13 +421,13 @@ describe("buildExportBundle", () => {
       },
     });
 
-    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
-    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
-    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
+    expect(files.map((file) => file.path)).not.toContain("sui-sensemaking-export-20260101-010203/evidence_trace_c2.md");
+    expect(files.map((file) => file.path)).not.toContain("sui-sensemaking-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).not.toContain("sui-sensemaking-export-20260101-010203/trace_analytics_c2.md");
   });
   test("creates a readable zip archive", async () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: true,
       includeDiagnostics: true,
@@ -459,7 +459,7 @@ describe("buildExportBundle", () => {
     };
 
     const files = buildExportBundle(docWithUnreviewed, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: true,
       includeDiagnostics: true,
@@ -514,7 +514,7 @@ describe("buildExportBundle", () => {
     const sourceBefore = structuredClone(docWithSecret);
 
     const files = buildExportBundle(docWithSecret, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       includeOutline: true,
       includeDiagnostics: true,
       includeSelectedCardTraces: true,
@@ -547,7 +547,7 @@ describe("buildExportBundle", () => {
     const zipBlob = await buildBundleZipBlob(files);
     const imported = await readZipFiles(new File(
       [zipBlob],
-      "kj-atlas-export-20260101-010203.zip",
+      "sui-sensemaking-export-20260101-010203.zip",
       { type: "application/zip" },
     ));
     const documentPath = detectReviewPackFiles(imported.entries).documentPath;
@@ -572,7 +572,7 @@ describe("buildExportBundle", () => {
     };
 
     const files = await buildExportBundleWithWorkers(docWithSecret, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: true,
       includeDiagnostics: true,
@@ -617,7 +617,7 @@ describe("buildExportBundle", () => {
     };
 
     const files = buildExportBundle(docWithSecret, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: false,
       includeOutline: false,
       includeDiagnostics: false,
@@ -650,7 +650,7 @@ describe("buildExportBundle", () => {
     };
 
     const files = buildExportBundle(docWithMeta, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: false,
       includeOutline: false,
       includeDiagnostics: false,
@@ -685,7 +685,7 @@ describe("buildExportBundle", () => {
     };
 
     const files = buildExportBundle(docWithMeta, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -742,7 +742,7 @@ describe("buildExportBundle", () => {
     const sourceBefore = structuredClone(docWithMeta);
 
     const files = await buildExportBundleWithWorkers(docWithMeta, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: false,
@@ -780,7 +780,7 @@ describe("buildExportBundle", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const files = await buildExportBundleWithWorkers(baseDoc, { camera: { zoom: 1 } }, {
-      rootFolderPath: "kj-atlas-export-20260101-010203",
+      rootFolderPath: "sui-sensemaking-export-20260101-010203",
       safeMode: true,
       includeOutline: false,
       includeDiagnostics: true,
@@ -799,10 +799,10 @@ describe("buildExportBundle", () => {
       },
     });
 
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/diagnostics.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
-    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/diagnostics.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/evidence_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("sui-sensemaking-export-20260101-010203/trace_analytics_c2.md");
     expect(warn).toHaveBeenCalled();
   });
 

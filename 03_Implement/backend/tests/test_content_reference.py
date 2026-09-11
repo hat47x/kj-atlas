@@ -2,7 +2,7 @@ from hashlib import sha256
 
 import pytest
 
-from kj_atlas_api.content_reference import (
+from sui_sensemaking_api.content_reference import (
     ContentObjectReference,
     ContentStorageBackend,
     ContentStorageState,

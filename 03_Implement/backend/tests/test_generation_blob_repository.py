@@ -4,15 +4,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.generation_codec import canonical_json_bytes, encode_generation
-from kj_atlas_api.generation_repository import (
+from sui_sensemaking_api.generation_codec import canonical_json_bytes, encode_generation
+from sui_sensemaking_api.generation_repository import (
     GenerationBlobConflict,
     GenerationBlobUnavailable,
     load_database_generation_blob,
     save_database_generation_blob,
 )
-from kj_atlas_api.models import Base, ContentBlobRow, TenantRow
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.models import Base, ContentBlobRow, TenantRow
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 TIMESTAMP = "2026-08-11T00:00:00Z"

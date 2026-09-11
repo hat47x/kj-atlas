@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Run the KJ-operation quality evaluation for issue-AI-EVAL-01 (L2 criterion ③).
 
-Executes the DeepSeek real-API evaluation once KJ_ATLAS_DEEPSEEK_API_KEY
+Executes the DeepSeek real-API evaluation once SUI_DEEPSEEK_API_KEY
 is set. With --dry-run it uses a stub provider to verify the pipeline.
 
 Usage:
   # Pipeline check without API key (stub provider)
   python run_ai_eval.py --dry-run
 
-  # Real-API evaluation (requires KJ_ATLAS_DEEPSEEK_API_KEY)
-  export KJ_ATLAS_LLM_PROVIDER=deepseek
-  export KJ_ATLAS_DEEPSEEK_API_KEY=<key>
+  # Real-API evaluation (requires SUI_DEEPSEEK_API_KEY)
+  export SUI_LLM_PROVIDER=deepseek
+  export SUI_DEEPSEEK_API_KEY=<key>
   python run_ai_eval.py
 
 Output: results printed to stdout in the ai_eval_results.md table format.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm.provider import (
+from sui_sensemaking_api.llm.provider import (
     LLMCallMetadata,
     LLMRequest,
     LLMResponse,
@@ -33,8 +33,8 @@ from kj_atlas_api.llm.provider import (
     ProviderRequestError,
     generate_with_fallback,
 )
-from kj_atlas_api.main import app
-from kj_atlas_api.models import DocumentV1
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import DocumentV1
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 FIXTURE = REPO_ROOT / "03_Implement" / "backend" / "tests" / "fixtures" / "ai_eval_kj_document.json"
@@ -104,7 +104,7 @@ def main() -> int:
     # real endpoint flow is exercised without calling the API.
     original_generate = None
     if args.dry_run:
-        from kj_atlas_api.routes import ai
+        from sui_sensemaking_api.routes import ai
 
         original_generate = ai.generate_with_fallback
         ai.generate_with_fallback = _stub_generate
@@ -113,7 +113,7 @@ def main() -> int:
         _run_eval(client_app=app, doc=doc, refine_count=args.refine_count)
     finally:
         if original_generate is not None:
-            from kj_atlas_api.routes import ai
+            from sui_sensemaking_api.routes import ai
 
             ai.generate_with_fallback = original_generate
     return 0

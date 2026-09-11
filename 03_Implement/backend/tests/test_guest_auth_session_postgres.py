@@ -12,16 +12,16 @@ from sqlalchemy import create_engine, delete, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.db import _normalize_database_url
-from kj_atlas_api.guest_admission_models import GuestPrincipalRow
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
-from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore
-from kj_atlas_api.models import TenantRow
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_id
+from sui_sensemaking_api.db import _normalize_database_url
+from sui_sensemaking_api.guest_admission_models import GuestPrincipalRow
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow
+from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore
+from sui_sensemaking_api.models import TenantRow
+from sui_sensemaking_api.tenant_db_guard import apply_database_tenant_id
 
-RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
-ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+RUN_RLS_TESTS_ENV = "SUI_RUN_PG_RLS_TESTS"
+ADMIN_DATABASE_URL_ENV = "SUI_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "SUI_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TS = "2026-09-06T12:00:00Z"
 ISSUER = "https://guest-idp.example.test"

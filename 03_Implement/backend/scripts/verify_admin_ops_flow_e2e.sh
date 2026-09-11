@@ -50,22 +50,22 @@ check() {
   fi
 }
 
-echo "=== kj-atlas admin CLI/API ops flow (iteration 45) ==="
+echo "=== sui-sensemaking admin CLI/API ops flow (iteration 45) ==="
 echo "  backend: $BASE_URL"
 
 # 1. Fresh migrated DB (deterministic run).
 TMP_DB="$(mktemp /tmp/kj_admin_ops_XXXXXX.sqlite3)"
-(cd "$BACKEND_DIR" && KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+(cd "$BACKEND_DIR" && SUI_DATABASE_URL="sqlite:///$TMP_DB" \
   "$VENV_PYTHON" -m alembic upgrade head > /tmp/kj_admin_ops_migrate.log 2>&1)
 
 # 2. Start the backend with BOTH keys configured (business + control plane).
-KJ_ATLAS_API_KEY="$BIZ_KEY" \
-KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" \
-KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
-KJ_ATLAS_LLM_PROVIDER="local" \
-KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:65534/v1" \
-KJ_ATLAS_LOCAL_LLM_MODEL="seed-local-model" \
-  "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
+SUI_API_KEY="$BIZ_KEY" \
+SUI_ADMIN_API_KEY="$ADM_KEY" \
+SUI_DATABASE_URL="sqlite:///$TMP_DB" \
+SUI_LLM_PROVIDER="local" \
+SUI_LOCAL_LLM_BASE_URL="http://127.0.0.1:65534/v1" \
+SUI_LOCAL_LLM_MODEL="seed-local-model" \
+  "$VENV_PYTHON" -m uvicorn sui_sensemaking_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_admin_ops_backend.log 2>&1 &
 BACKEND_PID=$!
 
@@ -135,9 +135,9 @@ check "GET audit with wrong admin key (401)" "401" "$audit_wrong_code"
 #    scripts/examples/admin_lifecycle.py は内部で 10 個のアサーションを自己検証し、
 #    失敗時は非ゼロで exit する。これを E2E の 1 チェックとして固定する。
 ADMIN_SCRIPT="$SCRIPT_DIR/examples/admin_lifecycle.py"
-if KJ_ATLAS_API_BASE_URL="$BASE_URL" \
-   KJ_ATLAS_API_KEY="$BIZ_KEY" \
-   KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" \
+if SUI_API_BASE_URL="$BASE_URL" \
+   SUI_API_KEY="$BIZ_KEY" \
+   SUI_ADMIN_API_KEY="$ADM_KEY" \
    "$VENV_PYTHON" "$ADMIN_SCRIPT" "admin-self-script-doc" > /tmp/kj_admin_self_script.log 2>&1; then
   echo "  PASS: admin self-script (lifecycle + audit + key separation, exit 0)"
   PASS=$((PASS+1))
@@ -149,9 +149,9 @@ fi
 
 # 6. 正式管理CLIでmodel registryとtenant allowlistを変更し、その結果が
 #    business-planeの利用可能model APIへ反映されることを一気通貫で確認する。
-CLI=("$VENV_PYTHON" -m kj_atlas_api.cli --api-base-url "$BASE_URL")
+CLI=("$VENV_PYTHON" -m sui_sensemaking_api.cli --api-base-url "$BASE_URL")
 run_admin_cli() {
-  KJ_ATLAS_ADMIN_API_KEY="$ADM_KEY" "${CLI[@]}" "$@"
+  SUI_ADMIN_API_KEY="$ADM_KEY" "${CLI[@]}" "$@"
 }
 
 if run_admin_cli admin providers register \
@@ -221,7 +221,7 @@ stale_error_code=$("$VENV_PYTHON" -c \
 check "stale update returns stable conflict code" "model_allowlist_conflict" "$stale_error_code"
 
 # Business-plane key cannot be repurposed by the CLI for control-plane calls.
-if env -u KJ_ATLAS_ADMIN_API_KEY KJ_ATLAS_API_KEY="$BIZ_KEY" \
+if env -u SUI_ADMIN_API_KEY SUI_API_KEY="$BIZ_KEY" \
   "${CLI[@]}" admin models list >/tmp/kj_admin_cli_denied.out 2>/tmp/kj_admin_cli_denied.err; then
   echo "  FAIL: admin CLI rejected business-plane-only credential"
   FAIL=$((FAIL+1))

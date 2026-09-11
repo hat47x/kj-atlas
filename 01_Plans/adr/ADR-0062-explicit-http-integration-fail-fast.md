@@ -7,7 +7,7 @@
 
 ## Context
 
-kj-atlasは、外部PDPを使わない `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` と、監査HTTPを使わない `KJ_ATLAS_AUDIT_TRANSPORT=noop` を安全な既定値として持つ。一方、運用者が `external_http` または `http` を明示的に選んでもendpointを設定しなかった場合、従来実装は設定を受理し、実行時に `NoopAccessControlAdapter` / `NoopAuditTransport` へ縮退していた。
+sui-sensemakingは、外部PDPを使わない `SUI_ACCESS_CONTROL_ADAPTER=noop` と、監査HTTPを使わない `SUI_AUDIT_TRANSPORT=noop` を安全な既定値として持つ。一方、運用者が `external_http` または `http` を明示的に選んでもendpointを設定しなかった場合、従来実装は設定を受理し、実行時に `NoopAccessControlAdapter` / `NoopAuditTransport` へ縮退していた。
 
 特にaccess-controlのnoop adapterは全要求を許可する。運用者が外部PDPを有効化したつもりでも、設定漏れだけで認可が無警告の全許可へ変わるため、実行時障害に対する `read_only` / `deny` fail-safeより前に安全境界が失われる。監査側には警告があったが、明示した連携が成立していない状態でアプリを継続する点は同じである。
 
@@ -19,8 +19,8 @@ kj-atlasは、外部PDPを使わない `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` �
 
 ### D1: 連携方式の選択とendpointを原子的な設定として検証する
 
-- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` では `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` を必須とする。
-- `KJ_ATLAS_AUDIT_TRANSPORT=http` では `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` を必須とする。
+- `SUI_ACCESS_CONTROL_ADAPTER=external_http` では `SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` を必須とする。
+- `SUI_AUDIT_TRANSPORT=http` では `SUI_AUDIT_HTTP_ENDPOINT` を必須とする。
 - 欠損時はSettings構築を `ValueError` で停止し、DB初期化、外部通信、request受付より前に起動を拒否する。
 - エラーは欠損した設定キーだけを示し、endpoint、bearer、issuerその他の入力値を反射しない。
 
@@ -33,7 +33,7 @@ kj-atlasは、外部PDPを使わない `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=noop` �
 ### D3: 明示的なnoopと実行時障害の既存契約は維持する
 
 - 未設定時の既定値 `access-control=noop` / `audit=noop` は変更しない。外部連携を使わない構成は従来どおり起動できる。
-- endpoint設定済みのPDPが実行時に不達・timeout・不正応答となった場合は、既存の `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny` を適用する。
+- endpoint設定済みのPDPが実行時に不達・timeout・不正応答となった場合は、既存の `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny` を適用する。
 - 監査HTTPの送信失敗は、既存のfail-open dispatcher方針を維持する。今回拒否するのは「HTTPを選択したのに接続先がない」という静的な構成不備である。
 - 起動時のendpoint到達性probeは行わない。構成完全性と一時的な外部サービス可用性を混同しない。
 

@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 
 
 def _normalize_documented_default(raw: str) -> object:
@@ -46,7 +46,7 @@ def _table_defaults(
     defaults: dict[str, object] = {}
     duplicates: list[str] = []
     for line in section.splitlines():
-        if not line.lstrip().startswith("| `KJ_ATLAS_"):
+        if not line.lstrip().startswith("| `SUI_"):
             continue
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) < 2:
@@ -107,7 +107,7 @@ def _settings_static_defaults(settings_text: str) -> dict[str, object]:
         except (ValueError, TypeError):
             # Arithmetic expressions and default_factory-like computed values stay outside this static gate.
             continue
-        if isinstance(alias, str) and alias.startswith("KJ_ATLAS_"):
+        if isinstance(alias, str) and alias.startswith("SUI_"):
             defaults[alias] = default
     return defaults
 
@@ -158,10 +158,10 @@ class RuntimeParameterBackendRegistryContractTests(unittest.TestCase):
     def test_regression_keys_are_covered_by_both_public_tables(self) -> None:
         # These keys exposed gaps after narrower default guards landed.
         for key in {
-            "KJ_ATLAS_APP_REVISION",
-            "KJ_ATLAS_MAX_DOCUMENT_CARDS",
-            "KJ_ATLAS_LLM_TASK_MODEL_MAP",
-            "KJ_ATLAS_TRUSTED_PROXIES",
+            "SUI_APP_REVISION",
+            "SUI_MAX_DOCUMENT_CARDS",
+            "SUI_LLM_TASK_MODEL_MAP",
+            "SUI_TRUSTED_PROXIES",
         }:
             self.assertIn(key, self.registry_defaults)
             self.assertIn(key, self.configuration_defaults)

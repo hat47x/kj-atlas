@@ -5,7 +5,7 @@
 - Source Issue: `QA-TENANT-ISOLATION-01` の周辺観測（別issue化推奨）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`（`_authorize_request`）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`（`_authorize_request`）
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `THREAT_MODEL.md`
 - Expected verification level: `integration`
 

@@ -1,5 +1,5 @@
-export const CSRF_COOKIE = "Kj-Atlas-Csrf";
-export const CSRF_HEADER = "X-Kj-Atlas-Csrf";
+export const CSRF_COOKIE = "Sui-Sensemaking-Csrf";
+export const CSRF_HEADER = "X-Sui-Sensemaking-Csrf";
 const CSRF_TOKEN_PATTERN = /^[0-9a-f]{64}$/;
 
 export function csrfTokenFromCookie(cookieSource: string): string | undefined {

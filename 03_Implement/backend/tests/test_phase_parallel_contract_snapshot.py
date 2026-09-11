@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
 
 
 # Stream B mock contract snapshot for parallel work.
@@ -33,7 +33,7 @@ def test_api_signature_snapshot_keeps_minimum_paths_and_methods() -> None:
 
     assert response.status_code == 200
     spec = response.json()
-    assert spec["info"]["title"] == "kj-atlas API"
+    assert spec["info"]["title"] == "sui-sensemaking API"
 
     for path, methods in expected_paths.items():
         assert path in spec["paths"], f"{CONTRACT_SNAPSHOT_ID}: missing path {path}"

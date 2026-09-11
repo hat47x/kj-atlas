@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api.island_summary_ir import (
+from sui_sensemaking_api.island_summary_ir import (
     build_island_summary_ir_context,
     island_summary_ir_prompt_lines,
 )
-from kj_atlas_api.llm_input_ir import IRGenerationError, IR_VERSION, MAX_CARDS
-from kj_atlas_api.models_ai import SuggestIslandSummaryRequest
+from sui_sensemaking_api.llm_input_ir import IRGenerationError, IR_VERSION, MAX_CARDS
+from sui_sensemaking_api.models_ai import SuggestIslandSummaryRequest
 
 
 def _request(*, member_texts: list[str] | None = None) -> SuggestIslandSummaryRequest:

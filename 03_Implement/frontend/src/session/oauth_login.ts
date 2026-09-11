@@ -17,14 +17,14 @@ import { t } from "../i18n/translate";
 function resolveBrokerBaseUrl(): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const env = (import.meta as any).env as Record<string, string> | undefined;
-  return env?.KJ_ATLAS_BROKER_BASE_URL?.trim() || "http://localhost:18081";
+  return env?.SUI_BROKER_BASE_URL?.trim() || "http://localhost:18081";
 }
 
 /** OAuth 2.0 client ID registered with the broker. */
 function resolveClientId(): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const env = (import.meta as any).env as Record<string, string> | undefined;
-  return env?.KJ_ATLAS_BROKER_CLIENT_ID?.trim() || "mock-client";
+  return env?.SUI_BROKER_CLIENT_ID?.trim() || "mock-client";
 }
 
 // ---------------------------------------------------------------------------
@@ -68,8 +68,8 @@ function generateState(): string {
 // Storage keys
 // ---------------------------------------------------------------------------
 
-const PKCE_VERIFIER_KEY = "kj_atlas_pkce_verifier";
-const OAUTH_STATE_KEY = "kj_atlas_oauth_state";
+const PKCE_VERIFIER_KEY = "sui_sensemaking_pkce_verifier";
+const OAUTH_STATE_KEY = "sui_sensemaking_oauth_state";
 
 // ---------------------------------------------------------------------------
 // Public API

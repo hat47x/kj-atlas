@@ -1,0 +1,96 @@
+# NOTICE — 商標・出典・帰属について
+
+本ファイルは、`LICENSE`（MIT License）が扱わない**商標**と、本プロジェクトが
+依拠した**方法論の出典**を明示するためのものです。
+
+MIT License が許諾するのは著作権であり、**商標権は許諾しません**。
+本リポジトリを fork・再配布・商用利用する場合も、以下の商標の扱いは
+利用者自身の責任で確認してください。
+
+---
+
+## 1. 「KJ法」は第三者の登録商標です
+
+**「KJ法」は株式会社川喜田研究所の登録商標です（商標登録第4867036号）。**
+
+- 本プロジェクトは、株式会社川喜田研究所、川喜田二郎氏、およびその関係者から
+  **公認・後援・推奨を受けていません**。提携関係もありません。
+- 本プロジェクトは KJ法の**実装・公式版・認定ツールではありません**。
+- 文書中に現れる「KJ法」は、方法論の**出典を示す説明的言及**であり、
+  本プロジェクトの出所を表示するものではありません。
+
+登録内容・指定区分・現在の権利状態は、特許情報プラットフォーム
+（[J-PlatPat](https://www.j-platpat.inpit.go.jp/)）で確認できます。
+
+## 2. 本プロジェクトが用いる一般名称
+
+本プロジェクトが扱う手法群の中立な一般名称は **親和図法（affinity diagram）**
+です。新QC七つ道具および UX・品質管理の分野で広く用いられる非商標の呼称であり、
+本プロジェクトの文書ではこちらを一次語彙として使用します。
+
+## 3. 出典への敬意
+
+本プロジェクトの設計は、以下の知的系譜から着想を得ています。
+いずれも敬意をもって参照するものであり、その権利を主張するものではありません。
+
+### 川喜田二郎（1920–2009）
+
+『発想法』（1967, 中公新書）ほかの著作で示された、
+断片的な質的情報をボトムアップに統合し、
+**早すぎる収束を避けながら意味を立ち上げる**という方法論は、
+本プロジェクトの中核的な設計思想に直接の影響を与えています。
+
+**川喜田氏の著作物は著作権保護期間中です（2079年末まで）。**
+本プロジェクトの文書は、氏の著作の表現・図表・例題を複製・翻案するものではなく、
+一般に知られた原理から独自に再構成した手順を記述しています。
+原典にあたる場合は、氏の著作を直接参照してください。
+
+### 南方熊楠（1867–1941）
+
+「南方曼陀羅」における**萃点（すいてん）**——諸理が交わる一点を掴むことで
+背後の理へ到達しうるという着想は、本プロジェクトの
+「断片の統合」「空白の探索」という目的に深く対応しています。
+（同氏の著作は保護期間満了によりパブリックドメインです。）
+
+### 易経
+
+本プロジェクトの名称 **SUI** は、易経第45卦「澤地萃（すい）」に由来します。
+「群れ集まる／集めて一つにする」を意味し、散在する断片が群れをなすという
+本プロジェクトの動作に対応します。関連プロジェクト群（`SOZA(綜座)` / `TEI(鼎)`）も
+同じく易経の卦に由来します。
+
+---
+
+## 4. 本プロジェクトの名称
+
+本プロジェクトの名称は **SUI Sensemaking** です（旧称 `kj-atlas`。2026-09、
+`01_Plans/adr/ADR-0083-product-naming-and-trademark-boundary.md` により改称）。
+
+- **SUI（萃）** — 上記「易経」の由来による。
+- **Sensemaking** — 「曖昧・断片的な情報から意味を立ち上げる」という
+  本プロジェクトのカテゴリを示す中立・非商標の英語一般名。
+  「KJ法」という商標語をカテゴリ名として用いることを避けるための選択です。
+
+改称の背景・完全な影響範囲は `ADR-0083` を参照してください。
+
+---
+
+# NOTICE — Trademarks and Attribution (English summary)
+
+The MIT License in `LICENSE` grants copyright permissions only and does **not**
+grant any trademark rights.
+
+**"KJ法" (the KJ Method) is a registered trademark of Kawakita Research Institute,
+Inc. (Japanese trademark registration No. 4867036).** This project is **not**
+affiliated with, endorsed by, or sponsored by Kawakita Research Institute, the
+estate of Jiro Kawakita, or any related party. It is not an official or certified
+implementation of the KJ Method. References to "KJ法" in this repository are
+descriptive references to the source methodology, not indications of origin.
+
+The neutral, non-trademarked term for the technique family this project works
+with is **affinity diagramming (親和図法)**, which this project uses as its
+primary vocabulary.
+
+This project gratefully acknowledges the intellectual lineage of Jiro Kawakita
+(1920–2009), whose works remain under copyright in Japan until the end of 2079,
+and Kumagusu Minakata (1867–1941), whose works are in the public domain.

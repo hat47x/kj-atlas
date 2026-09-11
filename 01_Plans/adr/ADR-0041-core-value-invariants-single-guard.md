@@ -36,7 +36,7 @@
 - **CVI-3 人手レビュー昇格のみ**: `unreviewed → human_reviewed` は人手のみ。AI/worker/API 自動昇格禁止。
 - **CVI-4 Consensus 直接更新禁止**: `patch + approval` 以外で Consensus Graph を更新しない。
 - **CVI-5 dryRun 無副作用**: `dryRun=true` は DB 永続化・外部共有・review 昇格を起こさない。
-- **CVI-6 provider=none 既定で価値成立**: `KJ_ATLAS_LLM_PROVIDER=none` でも保留・違和感・構造化・共有前確認の主要価値が成立。
+- **CVI-6 provider=none 既定で価値成立**: `SUI_LLM_PROVIDER=none` でも保留・違和感・構造化・共有前確認の主要価値が成立。
 - **CVI-7 保留・違和感の非破壊**: AI は保留（Hold）を勝手に解消せず、違和感（Critique）を無視・正当化しない。表示制御（hidden/collapse）は内容削除と分離。
 
 ### 単一の砦

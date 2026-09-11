@@ -4,7 +4,7 @@ import { registerProposalStatusTool } from "./proposal_status_tool.js";
 import type { DocumentClientConfig } from "./document_client.js";
 
 export function createServer(documentClientConfig: DocumentClientConfig): McpServer {
-  const server = new McpServer({ name: "kj-atlas-mcp", version: "0.1.0" });
+  const server = new McpServer({ name: "sui-sensemaking-mcp", version: "0.1.0" });
   registerContextProjectionTool(server, documentClientConfig);
   registerProposalStatusTool(server, documentClientConfig);
   return server;

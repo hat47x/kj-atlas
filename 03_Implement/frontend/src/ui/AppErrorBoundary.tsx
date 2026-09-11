@@ -13,7 +13,7 @@ import { buildTenantStorageKey, type TenantBrowserStorageScope } from "../storag
 // a document evicted during Tenant A's session would be offered for recovery
 // to Tenant B after an active-tenant switch on the same browser profile.
 
-const EVICTED_DOC_KEY = "kj-atlas/evicted-doc";
+const EVICTED_DOC_KEY = "sui-sensemaking/evicted-doc";
 
 function key(scope?: TenantBrowserStorageScope): string {
   return scope ? buildTenantStorageKey(EVICTED_DOC_KEY, scope) : EVICTED_DOC_KEY;

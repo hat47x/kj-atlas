@@ -35,8 +35,8 @@ import json
 from collections import defaultdict
 from typing import Any
 
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.routes.ai import _build_prompt
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.routes.ai import _build_prompt
 
 try:
     from scripts.measure_ai_route_projection_candidates import (

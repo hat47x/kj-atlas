@@ -3,7 +3,7 @@
 - Date: 2026-09-04
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: R18でremote提案と決定論fallbackの契約を分離した後も、利用者が統合候補を判断し、後からその判断へ戻るために必要な意味が途中で失われていないか。
-- Canvas: `doc_kj_atlas_dogfood_r19.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r19.json`
 - Result class: 継続dogfoodの内部所見。第三者価値実証や認知比較結果の代替証拠ではない。
 - External LLM: 使用していない。
 

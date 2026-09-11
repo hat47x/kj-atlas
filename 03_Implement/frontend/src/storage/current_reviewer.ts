@@ -1,6 +1,6 @@
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const CURRENT_REVIEWER_STORAGE_KEY = "kj-atlas/current-reviewer-ref";
+const CURRENT_REVIEWER_STORAGE_KEY = "sui-sensemaking/current-reviewer-ref";
 
 export type ReviewerRefSource = "local" | "sso" | "unknown";
 

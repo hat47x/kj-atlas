@@ -4,12 +4,12 @@ executed against a real PostgreSQL server.
 `20260717_0007` through `20260720_0012` each carry dialect-specific downgrade
 code (RLS policy management, "constraint-ddl" strategy DDL, named foreign-key
 drops), but every existing downgrade test for these six migrations hardcodes
-`_run_alembic()`'s `KJ_ATLAS_DATABASE_URL` to `sqlite:///...`. Sibling database
+`_run_alembic()`'s `SUI_DATABASE_URL` to `sqlite:///...`. Sibling database
 engines (Oracle, MySQL family, MSSQL, CockroachDB) each have a dedicated
 portability test that runs a real downgrade; PostgreSQL -- the flagship
 database, with a service already running in CI -- did not.
 
-This test runs on an isolated, throwaway database (never the shared `kj_atlas`
+This test runs on an isolated, throwaway database (never the shared `sui_sensemaking`
 database other `@pytest.mark.postgres` tests in the same CI job depend on
 being at head) so a mid-run downgrade here cannot disturb them.
 """
@@ -34,15 +34,15 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 def _configured() -> bool:
     return (
-        os.getenv("KJ_ATLAS_RUN_PG_TESTS") == "1"
-        and bool(os.getenv("KJ_ATLAS_DATABASE_URL"))
-        and bool(os.getenv("KJ_ATLAS_TEST_POSTGRES_CONTAINER"))
+        os.getenv("SUI_RUN_PG_TESTS") == "1"
+        and bool(os.getenv("SUI_DATABASE_URL"))
+        and bool(os.getenv("SUI_TEST_POSTGRES_CONTAINER"))
     )
 
 
 def _run_alembic(database_url: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = database_url
+    env["SUI_DATABASE_URL"] = database_url
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
@@ -59,9 +59,9 @@ def test_postgres_downgrade_matrix_runs_the_rls_and_constraint_ddl_branches() ->
     """A single `downgrade 20260716_0006` runs 0012 through 0007's downgrade()
     in sequence, so one hop exercises all six migrations' PostgreSQL-specific
     code without six separate test functions."""
-    base_url = os.environ["KJ_ATLAS_DATABASE_URL"]
+    base_url = os.environ["SUI_DATABASE_URL"]
     url = make_url(base_url)
-    isolated_name = f"kj_atlas_dxcipg02_{uuid4().hex[:16]}"
+    isolated_name = f"sui_sensemaking_dxcipg02_{uuid4().hex[:16]}"
     if not re.fullmatch(r"[a-z0-9_]+", isolated_name):
         raise ValueError("isolated database name must be a simple identifier")
     admin_url = url.set(database="postgres")

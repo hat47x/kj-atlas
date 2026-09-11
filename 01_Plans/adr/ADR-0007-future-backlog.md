@@ -78,7 +78,7 @@
 
 | ID | テーマ | 優先度 | 状態 | 具体アクション | DoD（完了条件） | 参照 |
 |---|---|---|---|---|---|---|
-| FB-RM-UX-01 | 視座プリセット | P0 | Done (2026-02-26) | Explore / Review / Summary を view mode として定義し、ヘッダーのモードトグルと `⌘/Ctrl+1..3` ショートカットで共通導線化。document単位のlocalStorage保存（`kj-atlas/view-mode-by-doc`）を導入し、再読込時に既存modeを復元する。`view_mode.ts` / `view_mode.test.ts` / `storage/view_mode.test.ts` を追加し、mode↔preset対応・保存値パースを回帰固定。 | 同一Document再読込時に mode が再現され、UIトグルとショートカットの双方で同一presetへ到達できる | `RQ-V-01` 系 |
+| FB-RM-UX-01 | 視座プリセット | P0 | Done (2026-02-26) | Explore / Review / Summary を view mode として定義し、ヘッダーのモードトグルと `⌘/Ctrl+1..3` ショートカットで共通導線化。document単位のlocalStorage保存（`sui-sensemaking/view-mode-by-doc`）を導入し、再読込時に既存modeを復元する。`view_mode.ts` / `view_mode.test.ts` / `storage/view_mode.test.ts` を追加し、mode↔preset対応・保存値パースを回帰固定。 | 同一Document再読込時に mode が再現され、UIトグルとショートカットの双方で同一presetへ到達できる | `RQ-V-01` 系 |
 | FB-RM-UX-02 | 島の折りたたみ | P0 | Done (2026-02-26) | 階層Islandの collapse/expand と hit-test 制御を実装。collapse状態を island.collapsed と viewState の双方で保持し、descendant連鎖を共通ヘルパーへ統合。Collapse/Expand all を永続値へ同期。 | collapse時に配下要素が描画・選択対象から外れ、expandと再読込で復帰する | `FB-P2A-02` |
 | FB-RM-UX-03 | Polygon islands | P1 | Done (2026-02-26) | polygon shape の保存・再読込・互換読込を統合実装。`validateAndUpgradeImportedDocument` で自己交差polygonを自動破棄して card-bounds フォールバックへ退避し、`validateDocumentV2Strict` では自己交差を検証エラーとして拒否。polygon自己交差判定ユーティリティと回帰テストを追加。 | 欠損shapeで `rect` フォールバックしつつ編集継続でき、自己交差polygonが保存・厳格検証で受理されない | `FB-P2C-01..03` |
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Done (2026-02-26) | ヘッダー常設のSafeMode状態バッジ（ON/OFF）を追加し、クリックでShareパネルを開いて詳細を確認できる導線へ統一。Share & Reproduce内でSafeMode説明・export警告・「Share/Review Packでは赤字化が解除不可」の文言を共通ヘルパーで集約。`safe_mode_status.ts` / `safe_mode_status.test.ts` / `SharePanel.test.tsx` を追加し、文言と状態分岐を回帰固定。 | 閲覧者がヘッダーからSafeMode状態を即時確認でき、Share/export警告と解除不可モード表記が矛盾なく統一される | `03_Implement/frontend/src/ui/safe_mode_status.ts` |
@@ -98,7 +98,7 @@
 | FB-RM-MID-03 | 統合ログ監査 | P2 | Done (2026-02-28) | bundle export に `merge_decision_audit.json` を追加し、decisionId/groupId/decisionType/actorType/decidedAt と representative-source 追跡情報を決定論で出力。 | 同一入力で同一監査ログを出力でき、representative と source の追跡が可能 | `FB-P2B-03..04` |
 | FB-RM-MID-04 | 階層質的統合 | P1 | Done (2026-03-01) | sub-island（`parentIslandId`）+ 表札（`placardCardId`）+ レベル切替UI（overview/mid/detail）を最小垂直スライスとして導入。missing field fallback を維持しつつ、overviewでは表札カードのみ表示、mid/detailでは全カード表示の制御を実装。collapse/hit-test/selection 回帰テストを維持し、backend roundtrip でも parent/placard 永続化を固定。 | level切替で表示粒度のみ変化し、sub-island/表札カードが保存・再読込で欠落しない | `FB-P2A-*` |
 | FB-RM-MID-05 | 構造レベル別export | P2 | Done (2026-03-01) | bundle export に `overview/detail` 粒度を追加。`bundle_manifest.json` へ粒度を記録し、overview時は selected-card trace を抑止。SharePanel で粒度選択ラジオを提供。 | 同一Documentから粒度別bundleを再現可能に生成でき、overviewではtraceを含めず俯瞰用途に固定される | `01_Plans/issues/done/issue-FB-RM-MID-05-structural-granularity-export.md` |
-| FB-RM-MID-06 | 共通LLM adapter | P1 | Done (2026-03-01) | provider abstraction（none/local/large-scale）の共通I/Fを固定し、none既定・large-scale明示opt-in（`KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` + `KJ_ATLAS_LLM_ESCALATION_ENABLED`）・timeout/error/fallback契約を統一。監査最小フィールド（provider/model/transport/requested_at/trace_id/execution_path/fallback_to_none）を切替非依存で固定し、decision確定API非提供を回帰テストで検証。 | provider切替でUI/監査契約が変化せず、外部providerは明示opt-in時のみ利用される | `P-07`, `AI-07-*` |
+| FB-RM-MID-06 | 共通LLM adapter | P1 | Done (2026-03-01) | provider abstraction（none/local/large-scale）の共通I/Fを固定し、none既定・large-scale明示opt-in（`SUI_LLM_LARGE_SCALE_OPT_IN` + `SUI_LLM_ESCALATION_ENABLED`）・timeout/error/fallback契約を統一。監査最小フィールド（provider/model/transport/requested_at/trace_id/execution_path/fallback_to_none）を切替非依存で固定し、decision確定API非提供を回帰テストで検証。 | provider切替でUI/監査契約が変化せず、外部providerは明示opt-in時のみ利用される | `P-07`, `AI-07-*` |
 | FB-RM-MID-07 | 定額/オフラインAI補完（プロンプト+文脈書き出し / 構造化変更指示の適用） | P2 | Planned | キャンバス文脈（カード/島/関係）と生成AI向けプロンプトを一体エクスポートし、外部の定額AI/エージェントの思考結果を (a) ローカルLLMで反映、または (b) スキーマ化された構造化変更指示（パッチ/操作列）を出力させ専用適用ロジックで反映する。SafeMode/HIL を維持し自動確定しない。MVP で API 従量課金が困難な場合への回答。 | 文脈付きプロンプトを書き出せ、外部AIの構造化変更指示を検証のうえ人間承認下でキャンバスへ適用でき、自動確定しないことがテストで固定される。 | ROADMAP 中期D, `FB-RM-MID-06`, `ADR-0049`（2026-07-05 仕様化） |
 
 ### Localization Strategy（統合）
@@ -154,7 +154,7 @@
 - [x] Explore / Review / Summary を `ViewMode` として型定義し、default preset との対応を固定。
 - [x] ヘッダーに view mode トグル（3分割）を追加。
 - [x] `⌘/Ctrl+1..3` で mode 切替ショートカットを実装。
-- [x] `kj-atlas/view-mode-by-doc` に document単位で mode を保存。
+- [x] `sui-sensemaking/view-mode-by-doc` に document単位で mode を保存。
 - [x] document読込時に保存済み mode を復元。
 - [x] `view_mode.test.ts` / `storage/view_mode.test.ts` で mode変換・保存値検証を追加。
 

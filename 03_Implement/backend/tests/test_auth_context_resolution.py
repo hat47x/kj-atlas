@@ -6,14 +6,14 @@ from starlette.requests import Request
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.auth_context import (
+from sui_sensemaking_api.auth_context import (
     _check_trusted_proxy,
     _header,
     _normalize_provider,
     resolve_identity_context,
 )
-from kj_atlas_api.models import Base, UserIdentityRow, UserRow
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.models import Base, UserIdentityRow, UserRow
+from sui_sensemaking_api.settings import settings
 
 
 def _request(headers: dict[str, str], *, client_host: str | None = None) -> Request:

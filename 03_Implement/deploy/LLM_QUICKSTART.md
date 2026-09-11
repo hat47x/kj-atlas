@@ -1,10 +1,10 @@
-# kj-atlas LLM クイックスタート
+# sui-sensemaking LLM クイックスタート
 
 AI 支援機能（レイアウト提案、マージ候補、ナラティブ生成など）をローカルで動作させる手順です。
 
 ## 前提
 
-kj-atlas の LLM プロバイダは独自の `/generate` 契約を使用します（OpenAI API 非互換）。
+sui-sensemaking の LLM プロバイダは独自の `/generate` 契約を使用します（OpenAI API 非互換）。
 実際の LLM 推論サーバがなくても、付属の mock サーバで全 AI 機能の動作を確認できます。
 
 ## 方法 1: Mock LLM（GPU不要、全6タスク対応）
@@ -18,11 +18,11 @@ python3 tools/mock_local_llm.py --host 127.0.0.1 --port 8001
 
 # 2. 別のターミナルでバックエンドを起動
 cd 03_Implement/backend
-KJ_ATLAS_LLM_PROVIDER=local \
-KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001 \
-KJ_ATLAS_LOCAL_LLM_MODEL=mock \
-KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db \
-.venv/bin/uvicorn kj_atlas_api.main:app --reload
+SUI_LLM_PROVIDER=local \
+SUI_LOCAL_LLM_BASE_URL=http://localhost:8001 \
+SUI_LOCAL_LLM_MODEL=mock \
+SUI_DATABASE_URL=sqlite:///./sui_sensemaking.db \
+.venv/bin/uvicorn sui_sensemaking_api.main:app --reload
 
 # 3. 動作確認
 curl http://localhost:8000/ai/provider-status
@@ -66,10 +66,10 @@ python3 deploy/tools/openai_compatible_adapter.py --port 8001 \
   --base-url https://api.groq.com/openai/v1 --model llama-3.3-70b
 
 # バックエンドに接続
-KJ_ATLAS_LLM_PROVIDER=local \
-KJ_ATLAS_LOCAL_LLM_BASE_URL=http://localhost:8001 \
-KJ_ATLAS_LOCAL_LLM_MODEL=<model-name> \
-.venv/bin/uvicorn kj_atlas_api.main:app
+SUI_LLM_PROVIDER=local \
+SUI_LOCAL_LLM_BASE_URL=http://localhost:8001 \
+SUI_LOCAL_LLM_MODEL=<model-name> \
+.venv/bin/uvicorn sui_sensemaking_api.main:app
 
 # テスト
 pytest tests/test_llm_integration.py -v -m external_llm
@@ -85,14 +85,14 @@ pytest tests/test_kj_session_e2e.py -v -m external_llm
 
 ## タスク別モデル選択
 
-`KJ_ATLAS_LLM_TASK_MODEL_MAP` でタスクごとに異なるモデルを指定できます（ADR-0065）。
+`SUI_LLM_TASK_MODEL_MAP` でタスクごとに異なるモデルを指定できます（ADR-0065）。
 
 ```bash
 # 例: 軽量タスクはflash、高度な推論はpro
-export KJ_ATLAS_LLM_TASK_MODEL_MAP="re_layout=deepseek-v4-flash,suggest_merges=deepseek-v4-flash,generate_narrative=deepseek-v4-pro,detect_contradiction=deepseek-v4-pro"
+export SUI_LLM_TASK_MODEL_MAP="re_layout=deepseek-v4-flash,suggest_merges=deepseek-v4-flash,generate_narrative=deepseek-v4-pro,detect_contradiction=deepseek-v4-pro"
 
 # 1M トークンコンテキストウィンドウが必要な場合
-export KJ_ATLAS_LLM_TASK_MODEL_MAP="generate_narrative=deepseek-v4-pro[1m]"
+export SUI_LLM_TASK_MODEL_MAP="generate_narrative=deepseek-v4-pro[1m]"
 ```
 
 > **DeepSeek モデル名** (2026年8月現在):
@@ -118,13 +118,13 @@ export KJ_ATLAS_LLM_TASK_MODEL_MAP="generate_narrative=deepseek-v4-pro[1m]"
 
 | 環境変数 | 既定値 | 説明 |
 |---|---|---|
-| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none` / `local` / `large-scale` |
-| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | — | local プロバイダの `/generate` エンドポイント |
-| `KJ_ATLAS_LOCAL_LLM_MODEL` | — | モデル識別子（任意の文字列） |
-| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale に必須 |
-| `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale に必須 |
+| `SUI_LLM_PROVIDER` | `none` | `none` / `local` / `large-scale` |
+| `SUI_LOCAL_LLM_BASE_URL` | — | local プロバイダの `/generate` エンドポイント |
+| `SUI_LOCAL_LLM_MODEL` | — | モデル識別子（任意の文字列） |
+| `SUI_LLM_ESCALATION_ENABLED` | `false` | large-scale に必須 |
+| `SUI_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale に必須 |
 
-`KJ_ATLAS_LLM_PROVIDER=none`（既定）では、全 AI エンドポイントが `503 provider_unavailable` を返します。
+`SUI_LLM_PROVIDER=none`（既定）では、全 AI エンドポイントが `503 provider_unavailable` を返します。
 これは安全な既定値であり、AI を使わない運用を妨げません。
 
 ## トラブルシューティング

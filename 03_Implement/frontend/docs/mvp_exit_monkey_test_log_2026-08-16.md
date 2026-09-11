@@ -1,4 +1,4 @@
-# kj-atlas アドホック・モンキーテスト記録（2026-08-16）
+# sui-sensemaking アドホック・モンキーテスト記録（2026-08-16）
 
 対象読者: maintainer / QA contributor。開発者向けの再現・回帰記録であり、公開文書ではない。
 
@@ -85,13 +85,13 @@ QA-MONKEY-27〜30では各500 loopへ拡張した。修正前はseed 505（ja/32
 cd 03_Implement/frontend
 node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173
 
-KJ_ATLAS_MONKEY_SEED=404 \
-KJ_ATLAS_MONKEY_ACTIONS=400 \
-KJ_ATLAS_MONKEY_VIEWPORT=1440 \
-KJ_ATLAS_BASE_URL='http://127.0.0.1:4173/?locale=en' \
+SUI_MONKEY_SEED=404 \
+SUI_MONKEY_ACTIONS=400 \
+SUI_MONKEY_VIEWPORT=1440 \
+SUI_BASE_URL='http://127.0.0.1:4173/?locale=en' \
 node ./scripts/monkey_ui_sweep.mjs
 
-KJ_ATLAS_MONKEY_ONLY=A1,A2,A15,A16,A17,A18,A19 node ./scripts/monkey_adversarial_probes.mjs
+SUI_MONKEY_ONLY=A1,A2,A15,A16,A17,A18,A19 node ./scripts/monkey_adversarial_probes.mjs
 ```
 
-Windows側のEdgeを明示して実行する環境では、`KJ_ATLAS_SCREENSHOT_BROWSER_PATH`に実行ファイルを設定する。`SUSPECT`やfindingは自動的に製品欠陥とはみなさず、固定プローブまたは同seed再実行で再現してから課題化する。
+Windows側のEdgeを明示して実行する環境では、`SUI_SCREENSHOT_BROWSER_PATH`に実行ファイルを設定する。`SUSPECT`やfindingは自動的に製品欠陥とはみなさず、固定プローブまたは同seed再実行で再現してから課題化する。

@@ -8,7 +8,7 @@
 
 ## Context
 
-`README.md`、`00_Prompt/domain.md`、`00_Prompt/ai_cognitive_externalization_requirements.md` は、kj-atlas の存在意義を次のように定義している。
+`README.md`、`00_Prompt/domain.md`、`00_Prompt/ai_cognitive_externalization_requirements.md` は、sui-sensemaking の存在意義を次のように定義している。
 
 - 意味を急いで確定せず、違和感・保留・揺らぎを健全な状態として扱う（`domain.md`）。
 - 生成AI時代に起きやすい「早すぎる収束」「もっともらしい誤り」「反対仮説の消失」「レビュー不能な要約の流通」を防ぐ、人間とAIの共有認知足場を提供する（`ai_cognitive_externalization_requirements.md` §1）。
@@ -49,7 +49,7 @@
 1. 順序は `VR0 -> VR1 -> VR2 -> VR3` を直列固定。`VR4` は VR1–VR3 の各完了点を観測対象として並行進行してよいが、Program Gate最終判定は対象フェーズ完了後に行う。`VR5` は `VR3` Exit と `VR4` 観測の双方を前提とする。
 2. 本ADRは既存フェーズ体系（`ADR-0028` CE / `ADR-0007` FB / `ADR-0031` PRODUCT-UX）を**置換せず、価値軸で再配置する索引**として機能する。各VRは既存issueを正担当として再利用し、重複起票しない。
 3. 新規に必要なのは VR4（観測の運用化）と VR5（社会的普及）のみであり、それぞれ `ADR-0037` / `ADR-0038` と新規issueへ委譲する。
-4. 全VR共通の非後退不変条件: SafeMode既定ON、未レビュー保護、`human_reviewed` 人手昇格、patch+approval、`KJ_ATLAS_LLM_PROVIDER=none` 既定でも主要価値が成立。
+4. 全VR共通の非後退不変条件: SafeMode既定ON、未レビュー保護、`human_reviewed` 人手昇格、patch+approval、`SUI_LLM_PROVIDER=none` 既定でも主要価値が成立。
 5. 非目標: 自動結論生成、自動合意、正解/採点UI、個人追跡・行動スコアリング・監視目的テレメトリ、SNS型公開プラットフォーム化。
 6. 本ADRは `Accepted`（`ADR-0039` の段階適正化を反映）。VR0–VR3 は既存issueで進行可能。VR4/VR5 は実ユーザー/協力者が現れる milestone まで activation を延期し、新規issueは `Draft`（deferred backlog）として保持する。各VRのExit判定は Maintainer が記録する。
 

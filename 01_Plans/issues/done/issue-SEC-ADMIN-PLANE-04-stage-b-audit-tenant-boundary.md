@@ -5,7 +5,7 @@
 - Source Issue: 管理UI・CLI・API・MCP協調モンキーテスト（2026-08-17）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/control_plane_auth.py`, `03_Implement/backend/src/kj_atlas_api/main.py`, `03_Implement/backend/src/kj_atlas_api/admin_audit_repository.py`, `03_Implement/backend/src/kj_atlas_api/routes/admin.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/control_plane_auth.py`, `03_Implement/backend/src/sui_sensemaking_api/main.py`, `03_Implement/backend/src/sui_sensemaking_api/admin_audit_repository.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/admin.py`
 - Related ADR/Spec: `ADR-0072`, `SEC-ADMIN-PLANE-03`, `ADR-0059`
 - Expected verification level: `integration`
 

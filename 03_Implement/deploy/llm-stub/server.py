@@ -2,7 +2,7 @@
 
 Implements the exact HTTP contract LocalProvider speaks (POST {base_url}/generate
 with {task, prompt, temperature, max_tokens, model} -> {"text": <string>}), so
-KJ_ATLAS_LLM_PROVIDER=local can be exercised end-to-end through the real
+SUI_LLM_PROVIDER=local can be exercised end-to-end through the real
 provider transport, request audit, and response parsing code paths without a
 real inference server. Responses are deterministic and derived only from the
 request prompt (card ids are extracted from the prompt's `- id="..."` lines),

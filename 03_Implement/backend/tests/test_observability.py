@@ -22,16 +22,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 
-from kj_atlas_api.access_control import AuthContext
-from kj_atlas_api.auth_context import ResolvedIdentity, resolve_identity_context
-from kj_atlas_api.control_plane_auth import (
+from sui_sensemaking_api.access_control import AuthContext
+from sui_sensemaking_api.auth_context import ResolvedIdentity, resolve_identity_context
+from sui_sensemaking_api.control_plane_auth import (
     ADMIN_API_KEY_HEADER,
     require_control_plane_authorization,
 )
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, TenantMembershipRow, TenantRow, UserRow
-from kj_atlas_api.observability import (
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, TenantMembershipRow, TenantRow, UserRow
+from sui_sensemaking_api.observability import (
     ACTOR_REF_HASH_LENGTH,
     REQUEST_ID_HEADER,
     JsonLogFormatter,
@@ -43,10 +43,10 @@ from kj_atlas_api.observability import (
     request_id_var,
     resolve_inbound_request_id,
 )
-from kj_atlas_api.session_context import CapabilitySnapshot
-from kj_atlas_api.settings import Settings, settings
-from kj_atlas_api.tenant_context import select_active_tenant_context
-from kj_atlas_api.tenant_session_precondition import require_tenant_scoped_api_precondition
+from sui_sensemaking_api.session_context import CapabilitySnapshot
+from sui_sensemaking_api.settings import Settings, settings
+from sui_sensemaking_api.tenant_context import select_active_tenant_context
+from sui_sensemaking_api.tenant_session_precondition import require_tenant_scoped_api_precondition
 
 _SEED_TIMESTAMP = "2026-08-26T00:00:00Z"
 
@@ -76,7 +76,7 @@ def _client(tmp_path) -> Iterator[TestClient]:
 
 def _format(record_kwargs: dict) -> dict:
     record = logging.LogRecord(
-        name="kj_atlas_api.test",
+        name="sui_sensemaking_api.test",
         level=logging.INFO,
         pathname=__file__,
         lineno=1,
@@ -109,7 +109,7 @@ def test_standard_record_fields_are_not_duplicated_as_extra() -> None:
     assert "args" not in payload
     assert "pathname" not in payload
     assert payload["level"] == "INFO"
-    assert payload["logger"] == "kj_atlas_api.test"
+    assert payload["logger"] == "sui_sensemaking_api.test"
 
 
 def test_secret_like_extra_fields_are_redacted() -> None:
@@ -508,7 +508,7 @@ def test_saas_trusted_session_precondition_binds_actor_ref_hash_for_the_endpoint
         with TestClient(app_under_test) as client:
             response = client.get(
                 "/guarded",
-                headers={"KJ-Atlas-Tenant-Session-Version": "session-v1"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v1"},
             )
     finally:
         Base.metadata.drop_all(bind=engine)
@@ -612,7 +612,7 @@ def test_readyz_is_unauthenticated(tmp_path, monkeypatch) -> None:
 
 
 def test_readyz_reports_unreachable_database_without_leaking_the_url(tmp_path, monkeypatch) -> None:
-    from kj_atlas_api import main as main_module
+    from sui_sensemaking_api import main as main_module
 
     class _BrokenSession:
         def execute(self, *_args, **_kwargs):
@@ -669,11 +669,11 @@ def test_version_does_not_leak_the_profile_name_verbatim_for_saas(tmp_path) -> N
 
 
 def test_log_settings_have_observable_defaults(monkeypatch) -> None:
-    for key in ("KJ_ATLAS_LOG_LEVEL", "KJ_ATLAS_LOG_JSON", "KJ_ATLAS_APP_REVISION"):
+    for key in ("SUI_LOG_LEVEL", "SUI_LOG_JSON", "SUI_APP_REVISION"):
         monkeypatch.delenv(key, raising=False)
-    monkeypatch.setenv("KJ_ATLAS_RUNTIME_PROFILE", "local-dev")
-    monkeypatch.setenv("KJ_ATLAS_DATABASE_URL", "sqlite:///./kj_atlas.db")
-    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "none")
+    monkeypatch.setenv("SUI_RUNTIME_PROFILE", "local-dev")
+    monkeypatch.setenv("SUI_DATABASE_URL", "sqlite:///./sui_sensemaking.db")
+    monkeypatch.setenv("SUI_LLM_PROVIDER", "none")
 
     built = Settings()
     assert built.log_level == "INFO"
@@ -694,4 +694,4 @@ def test_backend_readme_structured_log_claim_is_now_true() -> None:
     backend_readme = Path(__file__).resolve().parents[1] / "README.md"
     text = backend_readme.read_text(encoding="utf-8")
     if "構造化ログ" in text:
-        assert "KJ_ATLAS_LOG_LEVEL" in text or "observability" in text.lower()
+        assert "SUI_LOG_LEVEL" in text or "observability" in text.lower()

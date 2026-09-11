@@ -65,7 +65,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   const serialized = await serializeInquiryBundle(second.bundle);
   expect(serialized.ok).toBe(true);
   if (!serialized.ok) return;
-  const inquiryPath = testInfo.outputPath("round-comparison.kj-atlas-inquiry.json");
+  const inquiryPath = testInfo.outputPath("round-comparison.sui-sensemaking-inquiry.json");
   await writeFile(inquiryPath, serialized.json, "utf8");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -162,7 +162,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   const downloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
   const download = await downloadPromise;
-  const savedPath = testInfo.outputPath("branched-inquiry.kj-atlas-inquiry.json");
+  const savedPath = testInfo.outputPath("branched-inquiry.sui-sensemaking-inquiry.json");
   await download.saveAs(savedPath);
   const parsed = await parseInquiryBundleJson(await readFile(savedPath, "utf8"));
   expect(parsed.ok).toBe(true);
@@ -190,7 +190,7 @@ test("DOMAIN-W-ITERATION-01 compares rounds and branches from a past result with
   const undoneDownloadPromise = page.waitForEvent("download");
   await panel.getByRole("button", { name: "Save inquiry file" }).click();
   const undoneDownload = await undoneDownloadPromise;
-  const undonePath = testInfo.outputPath("branch-undone.kj-atlas-inquiry.json");
+  const undonePath = testInfo.outputPath("branch-undone.sui-sensemaking-inquiry.json");
   await undoneDownload.saveAs(undonePath);
   const undone = await parseInquiryBundleJson(await readFile(undonePath, "utf8"));
   expect(undone.ok).toBe(true);

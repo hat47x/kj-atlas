@@ -8,9 +8,9 @@ ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
 OBSERVABILITY_DOC = ROOT / "04_Documentation/observability.md"
-OBSERVABILITY_SOURCE = ROOT / "03_Implement/backend/src/kj_atlas_api/observability.py"
-KEY = "KJ_ATLAS_LOG_JSON"
-LOG_LEVEL_KEY = "KJ_ATLAS_LOG_LEVEL"
+OBSERVABILITY_SOURCE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/observability.py"
+KEY = "SUI_LOG_JSON"
+LOG_LEVEL_KEY = "SUI_LOG_LEVEL"
 
 
 def _row(text: str, key: str) -> str:

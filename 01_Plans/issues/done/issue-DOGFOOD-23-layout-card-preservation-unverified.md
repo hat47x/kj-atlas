@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ118）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc.cards）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ11/50/60が layout を固定）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §3（島形成・空間配置）, `02_Architecture/api.md`（suggest-layout 契約・suggestedDoc.cards）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ11/50/60が layout を固定）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -21,7 +21,7 @@ case "$layout" in *'"transform"'*'"cards"'*) ...
 
 - **配置提案が全カードを座標付きで保持しているか（カードを落とさないか）を E2E で一切検証できない**。
 - バックエンドが配置中にカードを落とす（`suggestedDoc.cards` から一部が欠落する）回帰が起きても、業務フローE2E は全部 pass する。
-- 配置（レイアウト）は島形成の前段として「全カードを失わずに空間へ置く」ことが核心（kj_technique.md §3）だが、その保全が未固定。
+- 配置（レイアウト）は島形成の前段として「全カードを失わずに空間へ置く」ことが核心（sensemaking_technique.md §3）だが、その保全が未固定。
 
 実機再現（iteration 188）:
 

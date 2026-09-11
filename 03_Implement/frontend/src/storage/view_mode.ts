@@ -1,7 +1,7 @@
 import { isViewMode, type ViewMode } from "../domain/view/view_mode";
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const VIEW_MODE_STORAGE_KEY = "kj-atlas/view-mode-by-doc";
+const VIEW_MODE_STORAGE_KEY = "sui-sensemaking/view-mode-by-doc";
 
 type ViewModeByDoc = Record<string, ViewMode>;
 

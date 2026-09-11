@@ -93,7 +93,7 @@ const CPU_SLOWDOWN_MULTIPLIER = 4;
 // that only a catastrophic regression (e.g. a hang) would ever trip it.
 const SANITY_CEILING_MS = 45_000;
 
-const TRIALS = Number(process.env.KJ_ATLAS_UX_PERF_01_TRIALS ?? "5");
+const TRIALS = Number(process.env.SUI_UX_PERF_01_TRIALS ?? "5");
 
 type Trial = {
   readyMs: number;

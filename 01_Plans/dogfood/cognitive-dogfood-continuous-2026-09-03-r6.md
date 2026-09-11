@@ -2,13 +2,13 @@
 
 - Date: 2026-09-03
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
-- Question: KJ Atlasの一次利用仕事は、現在の未完事項について「何を先に進め、何を待つか」を分ける判定軸として実際に使えるか。
-- Canvas: `doc_kj_atlas_dogfood_r12.json`
+- Question: SUI Sensemakingの一次利用仕事は、現在の未完事項について「何を先に進め、何を待つか」を分ける判定軸として実際に使えるか。
+- Canvas: `doc_sui_sensemaking_dogfood_r12.json`
 - Result class: 継続dogfoodの内部所見。第三者価値実証や認知比較結果の代替証拠ではない。
 
 ## 1. このラウンドを始めた理由
 
-R10では、認知比較実験を前へ進めるために不足しているのは追加の実験ハーネスではなく、比較設計に関する既知情報から隔離された新規コンテキストと、C/DでKJ AtlasのUIを実際に操作する実行環境だと確認した。
+R10では、認知比較実験を前へ進めるために不足しているのは追加の実験ハーネスではなく、比較設計に関する既知情報から隔離された新規コンテキストと、C/DでSUI SensemakingのUIを実際に操作する実行環境だと確認した。
 
 続くR11では、公開 `ROADMAP.md` に実装済み項目が将来予定として残っていた時点ずれを修正し、現在の焦点を「機能追加」より「認知比較評価と第三者価値実証」へ戻した。
 
@@ -21,16 +21,16 @@ R12では、その整理をさらに一段進める。`PRODUCT-POSITION-01` に�
 - `01_Plans/issues/issue-PRODUCT-POSITION-01-primary-job-and-switch-reason.md`
 - `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`
 - `01_Plans/issues/issue-EXT-CONN-02-webhook-proposal-ingest.md`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r8.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r8.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02-r2.md`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r11.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r11.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-03-r5.md`
 
 ## 3. KJキャンバス
 
 正規データは次のDocumentV1に残した。
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r12.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r12.json`
 
 今回のカードも生成AIが作成した提案段階の材料なので、`textReviewed: false` としている。
 
@@ -48,7 +48,7 @@ R12では、その整理をさらに一段進める。`PRODUCT-POSITION-01` に�
 
 IR未移行の経路では、人間がすでに残した関係、根拠リンク、保留、島階層などをAI入力へ十分に渡せない。そのため、AIが生成する提案が、キャンバス上で積み上げられた人間の判断から切り離される余地が残る。
 
-これは単に「AIの回答をもっと高品質にしたい」という改善とは異なる。KJ Atlasが一次価値として守ろうとしている根拠・異論・保留・人間の判断が、AI支援へ入る時点で欠落する問題だからである。
+これは単に「AIの回答をもっと高品質にしたい」という改善とは異なる。SUI Sensemakingが一次価値として守ろうとしている根拠・異論・保留・人間の判断が、AI支援へ入る時点で欠落する問題だからである。
 
 このため、残るIR移行は現在のP1を維持するだけの直接的な価値根拠を持つ。
 

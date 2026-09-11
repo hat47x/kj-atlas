@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/document_repository.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/document_repository.py`
 - Related ADR/Spec: `issue-SEC-DOC-BOUND-04-document-access-admin-list-no-pagination.md`
 - Expected verification level: `integration`
 

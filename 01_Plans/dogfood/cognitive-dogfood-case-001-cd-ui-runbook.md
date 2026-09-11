@@ -8,7 +8,7 @@
 
 ## 1. 目的
 
-Arm C/Dの実行者がKJ Atlasの操作場所を探すために費やした時間を、KJ Atlasそのものの認知摩擦（M9）やInquiryJourneyの手動摩擦（T9）へ誤計上しないためのoperator-only runbookである。
+Arm C/Dの実行者がSUI Sensemakingの操作場所を探すために費やした時間を、SUI Sensemakingそのものの認知摩擦（M9）やInquiryJourneyの手動摩擦（T9）へ誤計上しないためのoperator-only runbookである。
 
 この文書はCase 001の問いへの答え、カード、束、表札、価値仮説、反証候補を一切与えない。方法treatmentの操作入口だけを固定する。
 
@@ -64,7 +64,7 @@ Undo this branch
 3. Arm Cではcultural-substrate-weavingがcontextへ入っていないことを確認する。
 4. Arm Dでは指定skill snapshotだけが追加されていることを確認する。
 5. `doc_cognitive_case_001_starter.json` は空documentであり、結論やカードが事前投入されていないことを確認する。
-6. starterをKJ Atlasへ読み込む。初回start panelから読む場合も、Share & Reproduce経由で読む場合も、validation後に現在documentを置換する。
+6. starterをSUI Sensemakingへ読み込む。初回start panelから読む場合も、Share & Reproduce経由で読む場合も、validation後に現在documentを置換する。
 7. この時点までのUI探索・ファイル選択・locale確認は **operator setup** として記録し、M9/T9へ算入しない。
 
 ### 3.2 生カード化
@@ -74,7 +74,7 @@ Undo this branch
 3. カード本文へ結論を先取りしたカテゴリ名を付けない。
 4. source / 時点 / fact-inference-uncertaintyを可能な範囲で残す。
 5. model提案を人間が修正・棄却・保留した場合はproposal ledgerへ残す。
-6. 生カードをKJ Atlasへ入れた後に、InquiryJourneyを現在documentから開始する。
+6. 生カードをSUI Sensemakingへ入れた後に、InquiryJourneyを現在documentから開始する。
 
 `Start from the current document` は「この瞬間から分析を始める」という意味ではなく、現在の意味状態を探究のoriginとして固定する操作である。生カード化前に開始しても契約違反ではないが、Case 001では比較可能性のため **最初の生カード集合を一度人間確認した直後** を標準originとする。
 
@@ -150,7 +150,7 @@ M6およびT9実使用証拠を得るため、自然な中断点がある場合�
 - AIでできたら便利そう、という発想だけ。
 - 一回だけ迷った操作。
 - UI locatorを知らなかったための探索。
-- KJ Atlas一般のカード編集/配置摩擦。
+- SUI Sensemaking一般のカード編集/配置摩擦。
 - experiment管理上だけ必要な作業。
 
 ## 8. finding triage

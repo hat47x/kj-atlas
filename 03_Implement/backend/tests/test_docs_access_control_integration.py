@@ -9,16 +9,16 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AccessControlInvalidPolicyError,
     AccessControlUnreachableError,
     AccessDecision,
     AuthContext,
 )
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import LOCAL_DEFAULT_TENANT_ID, Base
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import LOCAL_DEFAULT_TENANT_ID, Base
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 class DenyAllAdapter:
@@ -113,7 +113,7 @@ def test_tenant_scoped_profile_denies_read_when_adapter_is_missing(
     # the caller's own tenant -- so a 404 or a tenant-boundary reason cannot be
     # mistaken for the denial under test. Only the runtime profile differs.
     monkeypatch.setattr(
-        "kj_atlas_api.routes.docs.resolve_trusted_saas_request_session",
+        "sui_sensemaking_api.routes.docs.resolve_trusted_saas_request_session",
         lambda **_: SimpleNamespace(
             identity=SimpleNamespace(
                 auth_context=AuthContext(actor_ref="user-1", user_id="user-1"),
@@ -140,12 +140,12 @@ def test_tenant_scoped_profile_denies_read_when_adapter_is_missing(
             client.app.state.runtime_profile = "saas-multitenant"
             read_resp = client.get(
                 "/docs/doc-adapter-missing",
-                headers={"KJ-Atlas-Tenant-Session-Version": "session-v2"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v2"},
             )
             write_resp = client.put(
                 "/docs/doc-adapter-missing",
                 json=_sample_payload("doc-adapter-missing"),
-                headers={"KJ-Atlas-Tenant-Session-Version": "session-v2"},
+                headers={"Sui-Sensemaking-Tenant-Session-Version": "session-v2"},
             )
         finally:
             client.app.state.runtime_profile = original_runtime_profile
@@ -408,7 +408,7 @@ def _insert_access_metadata(tmp_path, *, doc_id: str, visibility: str) -> None:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    from kj_atlas_api.models import DocumentAccessMetadataRow
+    from sui_sensemaking_api.models import DocumentAccessMetadataRow
 
     engine = create_engine(f"sqlite:///{tmp_path / 'docs_access_control.sqlite3'}")
     session_local = sessionmaker(bind=engine)

@@ -3,7 +3,7 @@
 - Status: Accepted（2026-08-29、D1=B・D3=A・D4=A 仮承認。D2は2026-08-13に別途採択済み。2026-09-03にD5=Aを追補し、generic Document IRとtask-local structured inputの適用境界を明確化）
 - Date: 2026-08-09
 - Deciders: Project Maintainers
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/models_context.py`, `03_Implement/frontend/src/domain/island_edge_aggregate.ts`, `03_Implement/frontend/src/export/abstract_map_export.ts`, `02_Architecture/llm_input_ir_spec.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/models_context.py`, `03_Implement/frontend/src/domain/island_edge_aggregate.ts`, `03_Implement/frontend/src/export/abstract_map_export.ts`, `02_Architecture/llm_input_ir_spec.md`
 
 ## Context
 

@@ -13,13 +13,13 @@
 ## 課題
 
 CI が旧 `DATABASE_URL` / `RUN_PG_TESTS` を設定する一方、backend は正規の
-`KJ_ATLAS_DATABASE_URL` / `KJ_ATLAS_RUN_PG_TESTS` だけを読む。修正前のCI相当実行は
+`SUI_DATABASE_URL` / `SUI_RUN_PG_TESTS` だけを読む。修正前のCI相当実行は
 PostgreSQL 18件をすべて skip して成功し、migration も既定SQLiteへ流れる偽陽性だった。
 
 ## 受入条件
 
-- [x] SQLite、Auth Level1/2、PostgreSQL migration/test のCI入力が `KJ_ATLAS_*` のみである。
-- [x] PostgreSQL test step が `KJ_ATLAS_RUN_PG_TESTS=1` とPostgreSQL URLを同時に渡す。
+- [x] SQLite、Auth Level1/2、PostgreSQL migration/test のCI入力が `SUI_*` のみである。
+- [x] PostgreSQL test step が `SUI_RUN_PG_TESTS=1` とPostgreSQL URLを同時に渡す。
 - [x] 旧キー再導入を focused regression test で拒否する。
 - [x] SafeMode、LLM、share/export の挙動は変更しない。
 

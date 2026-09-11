@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from kj_atlas_api.models import PolygonHandoffContractVerificationResponse
+from sui_sensemaking_api.models import PolygonHandoffContractVerificationResponse
 
 
 def test_polygon_handoff_response_accepts_consistent_ok_payload() -> None:

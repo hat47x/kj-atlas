@@ -6,7 +6,7 @@ import {
 } from "../domain/policy/publish_visibility";
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const VIEW_VISIBILITY_STORAGE_KEY = "kj-atlas/view-visibility-by-doc";
+const VIEW_VISIBILITY_STORAGE_KEY = "sui-sensemaking/view-visibility-by-doc";
 
 type PersistedVisibilityByDoc = Record<string, {
   viewVisibility?: PublishVisibility;

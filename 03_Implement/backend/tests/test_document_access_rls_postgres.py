@@ -13,13 +13,13 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.db import _normalize_database_url
+from sui_sensemaking_api.db import _normalize_database_url
 # These late-defined ORM modules must be imported explicitly so Base.metadata
 # is complete even when this contract test is run in isolation.
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow  # noqa: F401
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401
-from kj_atlas_api.guest_redeem_state_models import GuestRedeemStateRow  # noqa: F401
-from kj_atlas_api.models import (
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow  # noqa: F401
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow  # noqa: F401
+from sui_sensemaking_api.guest_redeem_state_models import GuestRedeemStateRow  # noqa: F401
+from sui_sensemaking_api.models import (
     Base,
     DocumentAccessAdminAuditEventRow,
     DocumentAccessMetadataRow,
@@ -27,14 +27,14 @@ from kj_atlas_api.models import (
     MergeDecisionLogRow,
     TenantRow,
 )
-from kj_atlas_api.tenant_context import TenantContext
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_context
+from sui_sensemaking_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_db_guard import apply_database_tenant_context
 from tests.database_portability_contracts import verify_revision_dag_contract
 
 
-RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
-ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+RUN_RLS_TESTS_ENV = "SUI_RUN_PG_RLS_TESTS"
+ADMIN_DATABASE_URL_ENV = "SUI_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "SUI_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 RLS_EXEMPT_TENANT_TABLES = {
     # Control-plane mappings are resolved before a workspace tenant context
@@ -183,8 +183,8 @@ def test_every_tenant_data_plane_table_has_forced_write_checked_rls(
         assert policy.permissive == "PERMISSIVE", policy.policyname
         assert policy.roles == ["public"], policy.policyname
         assert policy.cmd == "ALL", policy.policyname
-        assert "current_setting('kj_atlas.tenant_id'" in policy.qual, policy.policyname
-        assert "current_setting('kj_atlas.tenant_id'" in policy.with_check, policy.policyname
+        assert "current_setting('sui_sensemaking.tenant_id'" in policy.qual, policy.policyname
+        assert "current_setting('sui_sensemaking.tenant_id'" in policy.with_check, policy.policyname
 
     # A missing tenant context must fail closed for every protected table,
     # including newly introduced storage and revision-lineage tables.

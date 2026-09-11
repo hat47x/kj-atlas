@@ -52,7 +52,7 @@ export type CardQualityAssistState = {
 /**
  * Opens (or reopens) the quality-assist flow for a card. Only `id`/`text` are
  * read — no other Card field is inspected or required, keeping this usable
- * standalone from KJ_ATLAS_LLM_PROVIDER=none through Phase C.
+ * standalone from SUI_LLM_PROVIDER=none through Phase C.
  *
  * QUX-HUMAN-01: a question the user answered "keep_as_is" is not re-surfaced
  * in the same editing session unless the card text changed since.

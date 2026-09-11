@@ -61,7 +61,7 @@ fixed questionへの回答を、機能一覧ではなく、条件を伴う製品
 
 Caseごとの着眼点は次の範囲に留め、特定の結論を「正解」として与えない。
 
-- Case 001: 利用者の一次仕事と、KJ Atlasが必要・不要になる製品境界。
+- Case 001: 利用者の一次仕事と、SUI Sensemakingが必要・不要になる製品境界。
 - Case 002: AIの自律実行、proposal、human confirmation、useful frictionの境界。
 - Case 003: local / offline / self-host / data-control と server / collaboration の境界。
 
@@ -188,7 +188,7 @@ BR2でだけ記入する。Arm mappingを見ない状態で行う。
 blind verdictを凍結した後でのみ記入する。
 
 - Alias → Arm mapping:
-- KJ Atlas incrementのcandidate:
+- SUI Sensemaking incrementのcandidate:
 - cultural-substrate-weaving incrementのcandidate:
 - Arm D interactionのcandidate:
 - Method-induced harmのcandidate:

@@ -1,6 +1,6 @@
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const MINIMAP_COLLAPSED_STORAGE_KEY = "kj-atlas/minimap-collapsed";
+const MINIMAP_COLLAPSED_STORAGE_KEY = "sui-sensemaking/minimap-collapsed";
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";

@@ -13,9 +13,9 @@ COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 
 ENV PYTHONPATH=/app/src
-ENV KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
-ENV KJ_ATLAS_LLM_PROVIDER=none
+ENV SUI_DATABASE_URL=postgresql+asyncpg://sui_sensemaking:sui_sensemaking@db:5432/sui_sensemaking
+ENV SUI_LLM_PROVIDER=none
 
 EXPOSE 8000
 
-CMD ["uvicorn", "kj_atlas_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "sui_sensemaking_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

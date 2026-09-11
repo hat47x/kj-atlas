@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""OpenAI-compatible API adapter for kj-atlas — multi-LLM routing.
+"""OpenAI-compatible API adapter for sui-sensemaking — multi-LLM routing.
 
-Routes kj-atlas /generate requests to different LLM backends based on
+Routes sui-sensemaking /generate requests to different LLM backends based on
 the ``model`` field in the request body. Supports simultaneous use of
 multiple providers with different models, API keys, and endpoints.
 
@@ -208,7 +208,7 @@ class MultiBackendAdapter(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Multi-backend OpenAI-compatible adapter for kj-atlas")
+        description="Multi-backend OpenAI-compatible adapter for sui-sensemaking")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--backends", default=os.environ.get("LLM_BACKENDS", ""),

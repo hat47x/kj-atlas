@@ -93,7 +93,7 @@ Claude Design Round 6 回答で命名矛盾が解消され、確定版6分類は
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D2）
 - Related: `01_Plans/issues/done/issue-UX-CMDK-01-command-palette.md`, `issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`, `issue-UX-COMPLEXITY-01-core-value-foregrounding.md`
-- Related: `02_Architecture/design/kj-atlas UI改善提案.dc.html`（3-1）, `02_Architecture/design/kj-atlas 拡張提案.dc.html`（§依頼1・確定版6分類＝図GG、2026-07-04 Round 6）
+- Related: `02_Architecture/design/sui-sensemaking UI改善提案.dc.html`（3-1）, `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（§依頼1・確定版6分類＝図GG、2026-07-04 Round 6）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 完了記録 2026-07-07（Claude Code）
@@ -101,7 +101,7 @@ Claude Design Round 6 回答で命名矛盾が解消され、確定版6分類は
 ### 実装
 
 - `src/ui/MenuBar.tsx`（新規）: WAI-ARIA メニューバーパターン（`role="menubar"`/`"menu"`/`"menuitem"`/`"menuitemcheckbox"`）。矢印巡回・Home/End・Esc閉じ＋フォーカス復帰・768px未満での単一「メニュー」トリガへの集約を実装。全項目は既存ハンドラへの参照のみ（新規ビジネスロジックなし）。
-- `src/ui/Shell.tsx`: `menuBar` スロットを追加（`<header>` 内の2行目として `flexBasis:100%` で折り返し、既存の `--kj-atlas-header-panel-top` ResizeObserver 計測に含める）。
+- `src/ui/Shell.tsx`: `menuBar` スロットを追加（`<header>` 内の2行目として `flexBasis:100%` で折り返し、既存の `--sui-sensemaking-header-panel-top` ResizeObserver 計測に含める）。
 - `src/App.tsx`: `menuCategories`（6分類・全項目）を構築。`handleToggleViewControls`/`handleToggleWorkMode`/`handleToggleSharePanel` を抽出し、既存の平置きトリガボタンとメニュー項目が**同一のトグル関数**を呼ぶよう統一（AC-5 の非回帰を構造的に保証）。新規文書・複製・取込・旧式JSON書き出し・最近のドキュメント（select+開く）を常時表示ツールバーから除去し File/Edit メニューへ移設（`data-ui-core-action=` の7件＝保留・元に戻す・やり直す・新規カード・島を作成・削除・保存は無変更）。
 
 ### スコープ判断（実装しなかった項目とその理由）

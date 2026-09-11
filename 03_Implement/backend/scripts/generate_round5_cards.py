@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the W-type round-5 (具体策) cards for kj-atlas self-improvement.
+"""Generate the W-type round-5 (具体策) cards for sui-sensemaking self-improvement.
 
 Round 5 posture (具体策) turns the 構想 (conception) into SPECIFIC measures:
 concrete API contracts, fields, UI elements, and E2E tests grounded in the

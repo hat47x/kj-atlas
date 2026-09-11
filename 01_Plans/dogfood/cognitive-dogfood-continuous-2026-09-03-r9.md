@@ -3,7 +3,7 @@
 - Date: 2026-09-03
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: LLM入力IRに保持できた根拠・矛盾の関係は、移行済みrouteでproviderへ実際に届いているか。
-- Canvas: `doc_kj_atlas_dogfood_r15.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r15.json`
 - Result class: 継続dogfoodの内部所見。第三者価値実証や認知比較結果の代替証拠ではない。
 
 ## 1. このラウンドを始めた理由
@@ -24,7 +24,7 @@ R15では、その結果をKJ上で分け直す。とくに、共有IRの規模�
 - `03_Implement/backend/tests/test_llm_input_ir_scale.py`
 - `03_Implement/backend/scripts/measure_ai_route_prompt_coverage.py`
 - `03_Implement/backend/tests/test_ai_route_prompt_coverage.py`
-- `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
+- `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`
 - PR #2817
 - PR #2820
 - R12/R13で得た一次価値・IR被覆の判断
@@ -35,7 +35,7 @@ R15では、その結果をKJ上で分け直す。とくに、共有IRの規模�
 
 正規データは次のDocumentV1に残した。
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r15.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r15.json`
 
 今回のカードも生成AIが作成した提案段階の材料なので、`textReviewed: false` としている。
 
@@ -84,7 +84,7 @@ R15では、その結果をKJ上で分け直す。とくに、共有IRの規模�
 
 ## 6. 島3 — 本文だけ届いても、人間が与えた意味のつながりが落ちれば一次価値は守れない
 
-KJ Atlasの一次利用仕事は、カード本文をAIへ大量に送ることではない。まとまりきらない観察を、根拠・異論・保留・人間の判断権を残したまま構造化し、後から根拠へ戻れる理解へ育てることにある。
+SUI Sensemakingの一次利用仕事は、カード本文をAIへ大量に送ることではない。まとまりきらない観察を、根拠・異論・保留・人間の判断権を残したまま構造化し、後から根拠へ戻れる理解へ育てることにある。
 
 そのため、人間が記録した `evidenceLinks` がIRまで来ているのにprovider promptの手前で消えることは、単なるprompt改善ではない。人間がキャンバス上で与えた意味の一部がAI支援へ伝わらない問題である。
 

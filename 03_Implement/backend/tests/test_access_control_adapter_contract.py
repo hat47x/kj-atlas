@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AccessRequest,
     AccessResource,
     AuthContext,

@@ -5,14 +5,14 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.main import app
-from kj_atlas_api.models_context import (
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models_context import (
     MAX_CONTEXT_CONSTRAINT_BYTES,
     MAX_CONTEXT_CONSTRAINT_DEPTH,
     MAX_CONTEXT_CONSTRAINT_NODES,
     build_bundle as real_build_bundle,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 
 def _query_payload() -> dict:
@@ -320,7 +320,7 @@ def test_context_resolve_route_contract_paths_are_unique() -> None:
 
 
 def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeypatch) -> None:
-    from kj_atlas_api import routes as routes_pkg
+    from sui_sensemaking_api import routes as routes_pkg
 
     def _tampered_build_bundle(request):
         response = real_build_bundle(request)
@@ -350,7 +350,7 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
 
 
 def test_context_bundle_uses_mock_provider_contract(monkeypatch) -> None:
-    from kj_atlas_api import routes as routes_pkg
+    from sui_sensemaking_api import routes as routes_pkg
 
     provider_calls = {"count": 0}
 

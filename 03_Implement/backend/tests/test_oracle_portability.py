@@ -12,7 +12,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import DocumentRow
+from sui_sensemaking_api.models import DocumentRow
 from tests.database_portability_contracts import verify_revision_dag_contract
 
 
@@ -21,14 +21,14 @@ TIMESTAMP = "2026-08-10T00:00:00Z"
 
 
 def _configured_url(name: str) -> str | None:
-    if os.getenv("KJ_ATLAS_RUN_ORACLE_TESTS") != "1":
+    if os.getenv("SUI_RUN_ORACLE_TESTS") != "1":
         return None
     return os.getenv(name)
 
 
 def _run_alembic(url: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["KJ_ATLAS_DATABASE_URL"] = url
+    env["SUI_DATABASE_URL"] = url
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
@@ -82,14 +82,14 @@ def _expect_integrity_error(database_url: str, statement: str) -> None:
 
 
 def _verify_data_pump_restore(database_url: str, admin_url: str) -> None:
-    container = os.environ["KJ_ATLAS_TEST_ORACLE_CONTAINER"]
+    container = os.environ["SUI_TEST_ORACLE_CONTAINER"]
     source = (make_url(database_url).username or "").upper()
     restored = f"{source}_RESTORE"
     admin = make_url(admin_url)
     admin_user = admin.username or ""
     admin_password = admin.password or ""
     service = admin.query.get("service_name", "FREEPDB1")
-    dump_name = "kj_atlas_portability.dmp"
+    dump_name = "sui_sensemaking_portability.dmp"
 
     export = subprocess.run(
         [
@@ -101,7 +101,7 @@ def _verify_data_pump_restore(database_url: str, admin_url: str) -> None:
             f"schemas={source}",
             "directory=DATA_PUMP_DIR",
             f"dumpfile={dump_name}",
-            "logfile=kj_atlas_portability_exp.log",
+            "logfile=sui_sensemaking_portability_exp.log",
             "reuse_dumpfiles=yes",
         ],
         check=False,
@@ -121,7 +121,7 @@ def _verify_data_pump_restore(database_url: str, admin_url: str) -> None:
             f"{admin_user}/{admin_password}@{service}",
             "directory=DATA_PUMP_DIR",
             f"dumpfile={dump_name}",
-            "logfile=kj_atlas_portability_imp.log",
+            "logfile=sui_sensemaking_portability_imp.log",
             f"remap_schema={source}:{restored}",
         ],
         check=False,
@@ -142,12 +142,12 @@ def _verify_data_pump_restore(database_url: str, admin_url: str) -> None:
 
 @pytest.mark.oracle
 @pytest.mark.skipif(
-    _configured_url("KJ_ATLAS_TEST_ORACLE_URL") is None,
+    _configured_url("SUI_TEST_ORACLE_URL") is None,
     reason="Oracle matrix is not configured",
 )
 def test_oracle_promotion_matrix() -> None:
-    database_url = _configured_url("KJ_ATLAS_TEST_ORACLE_URL")
-    admin_url = _configured_url("KJ_ATLAS_TEST_ORACLE_ADMIN_URL")
+    database_url = _configured_url("SUI_TEST_ORACLE_URL")
+    admin_url = _configured_url("SUI_TEST_ORACLE_ADMIN_URL")
     assert database_url is not None
     assert admin_url is not None
     assert make_url(database_url).get_backend_name() == "oracle"

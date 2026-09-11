@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Unassigned
-- Scope: `02_Architecture/llm_input_ir_spec.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/backend/src/kj_atlas_api/models.py`
+- Scope: `02_Architecture/llm_input_ir_spec.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/backend/src/sui_sensemaking_api/models.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`（D2）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3）, `02_Architecture/llm_input_ir_spec.md`
 - Expected verification level: `unit`
 
@@ -16,7 +16,7 @@
 | 契約 | 列挙値 | 出典 |
 |---|---|---|
 | キャンバス（TS） | `related` / `negate` / `causal` / `mutual` / `equivalence` | `03_Implement/frontend/src/domain/types.ts:78`（`KNOWN_EDGE_TYPES`）、`ADR-0048` D3 |
-| バックエンド（Py） | 同上 ＋ `unknown` | `03_Implement/backend/src/kj_atlas_api/models.py:605`（`relationType`） |
+| バックエンド（Py） | 同上 ＋ `unknown` | `03_Implement/backend/src/sui_sensemaking_api/models.py:605`（`relationType`） |
 | **LLM投入IR** | `related` / `arrow` / `negation` | `02_Architecture/llm_input_ir_spec.md` §2.3 / §4.2 |
 
 差分の内訳:

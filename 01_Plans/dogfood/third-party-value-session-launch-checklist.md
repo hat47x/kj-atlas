@@ -10,14 +10,14 @@
 
 `public Gitへcommitしない`だけでは、資料がどこを通り、どこに残るかの説明として十分ではない。実行時にAI機能、外部provider、network endpoint、ログ、保存先等を使う場合、資料の一部が参加者または操作者の管理する端末・processの外へ送られる可能性がある。
 
-このチェックリストは、**最初の実資料をKJ Atlasへ入力する前に、そのsessionで実際に使うデータ経路を確認し、参加者が理解・許容できる範囲でのみ続行する**ための操作者用gateである。
+このチェックリストは、**最初の実資料をSUI Sensemakingへ入力する前に、そのsessionで実際に使うデータ経路を確認し、参加者が理解・許容できる範囲でのみ続行する**ための操作者用gateである。
 
-KJ Atlas製品全体について新しいprivacy保証を定義するものではない。sessionで実際に確認できた事実だけを記録し、分からないことは`unknown`のまま扱う。
+SUI Sensemaking製品全体について新しいprivacy保証を定義するものではない。sessionで実際に確認できた事実だけを記録し、分からないことは`unknown`のまま扱う。
 
 ## 2. 実行環境
 
 - Session ID: `<record at execution>`
-- KJ Atlas version / commit: `<record at execution>`
+- SUI Sensemaking version / commit: `<record at execution>`
 - Execution mode: local / self-hosted / hosted / other / unknown
 - 参加者または操作者が管理するdevice / host上で動くか: yes / no / mixed / unknown
 - 予定するworkflowでnetwork接続が必要か: yes / no / conditional / unknown
@@ -30,7 +30,7 @@ version、実行mode、data pathのいずれかを確認できない場合は、
 
 - AI enabled for this session: yes / no
 - AI provider / endpoint actually used: `<name / endpoint class / N/A / unknown>`
-- KJ Atlasのprocess / device外へ資料が送られるか: yes / no / partial / unknown
+- SUI Sensemakingのprocess / device外へ資料が送られるか: yes / no / partial / unknown
 - 外部へ送られ得る内容: `<raw material / selected cards / derived text / metadata / none / unknown>`
 - 送信先を確認できているか: yes / no / N/A
 - provider側のretention / loggingを確認できているか: yes / no / N/A
@@ -44,7 +44,7 @@ version、実行mode、data pathのいずれかを確認できない場合は、
 ## 4. 保存・記録の経路
 
 - Raw materialをsession後も保持するか: yes / no / partial
-- KJ Atlas document / exportを保持するか: yes / no / partial
+- SUI Sensemaking document / exportを保持するか: yes / no / partial
 - 操作者メモを保持するか: yes / no / partial
 - Audio recording: yes / no
 - Video / screen recording: yes / no
@@ -87,7 +87,7 @@ sessionへの参加とpublic Gitへの公開を同じ同意として扱わない
 - public Gitへ何を置かないか。
 - 不明点が残る場合は、続行せず停止できること。
 
-この説明のためにKJ Atlasの価値仮説を教える必要はない。S0 baselineの中立性を守る。
+この説明のためにSUI Sensemakingの価値仮説を教える必要はない。S0 baselineの中立性を守る。
 
 ## 8. 開始判定
 
@@ -103,7 +103,7 @@ Launch verdict: `<record at execution>`
 
 Reason / reduction applied: `<record at execution>`
 
-`STOP-*`は無効sessionを意味しない。資料統制やruntime境界によってKJ Atlasの利用が成立しなかった、という第三者価値の証拠になり得る。
+`STOP-*`は無効sessionを意味しない。資料統制やruntime境界によってSUI Sensemakingの利用が成立しなかった、という第三者価値の証拠になり得る。
 
 ## 9. 操作者の最終確認
 

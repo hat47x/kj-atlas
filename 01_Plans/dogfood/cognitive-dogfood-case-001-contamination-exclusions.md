@@ -11,7 +11,7 @@ Case 001は、同じ問いと同じproduct source snapshotを複数Armへ与え�
 
 そのため、実験設計後に作成された「問いへの答えに近い監査・仮説・評価」をArmのコンテキストへ混ぜない。本書は操作者・評価者だけが使用する除外一覧であり、分析を行うArmへ本文を渡さない。
 
-## 2. Round 1のArmへ渡さないKJ Atlas側資料
+## 2. Round 1のArmへ渡さないSUI Sensemaking側資料
 
 少なくとも次を、A/B/C/Dの分析コンテキストへ入れない。
 
@@ -37,7 +37,7 @@ B/Dには、指定commitのcanonical skillをmethod treatmentとして与えて�
 
 ```text
 cultural-substrate-weaving PR #5 のdiscussion/comment
-KJ Atlas Case 0 attribution checkpoint
+SUI Sensemaking Case 0 attribution checkpoint
 Case 001の4Arm比較結果（発生後）
 blind review結果（発生後）
 ```
@@ -50,7 +50,7 @@ Round 1で全Armへ渡すproduct evidenceは、`cognitive-dogfood-case-001-opera
 
 B/Dだけに加えるmethod treatmentは、同operator packで固定した`cultural-substrate-weaving` snapshotとArm固有の指示に限る。
 
-C/DのKJ Atlas UI runbookは、操作者が操作入口を確認するために使用してよい。ただし、そこへ分析上の結論や価値仮説を追加しない。
+C/DのSUI Sensemaking UI runbookは、操作者が操作入口を確認するために使用してよい。ただし、そこへ分析上の結論や価値仮説を追加しない。
 
 ## 5. 実行中に新しい資料が必要になった場合
 

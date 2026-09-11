@@ -2,13 +2,13 @@ from dataclasses import replace
 
 import pytest
 
-from kj_atlas_api.generation_codec import (
+from sui_sensemaking_api.generation_codec import (
     GenerationCodecError,
     canonical_json_bytes,
     encode_generation,
     restore_generation,
 )
-from kj_atlas_api.generation_policy import GenerationRetentionPolicy
+from sui_sensemaking_api.generation_policy import GenerationRetentionPolicy
 
 
 def test_canonical_json_is_order_independent_and_rejects_nan() -> None:

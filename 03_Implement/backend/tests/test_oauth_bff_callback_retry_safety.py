@@ -4,7 +4,7 @@ AC-6 asks whether an ambiguous/timed-out retry of a mutating request fails
 closed instead of silently double-applying. The BFF login mutation
 (GET /session/callback) is exactly this shape: a browser that never saw the
 first response (network timeout, tab closed mid-redirect) resubmits the same
-`code`/`state` against the same still-present `Kj-Atlas-Oauth-Pending`
+`code`/`state` against the same still-present `Sui-Sensemaking-Oauth-Pending`
 cookie. OAuth 2.0 authorization codes are single-use by construction (both
 the mock IdP in tests/level2/mock_idp.py and any real broker delete/consume
 the code on first exchange), so the retry's `exchange_code_for_tokens` call
@@ -42,15 +42,15 @@ from fastapi import Request
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api import oauth_bff
-from kj_atlas_api.models import Base, SaasAuthSessionRow, TenantRow
-from kj_atlas_api.oauth_broker_client import (
+from sui_sensemaking_api import oauth_bff
+from sui_sensemaking_api.models import Base, SaasAuthSessionRow, TenantRow
+from sui_sensemaking_api.oauth_broker_client import (
     BrokerTokenResponse,
     ExternalOauthBrokerConfig,
     OauthBrokerInvalidResponseError,
 )
-from kj_atlas_api.saas_auth_state import DatabaseSaasAuthSessionStore
-from kj_atlas_api.tenant_context import VerifiedTenantClaim
+from sui_sensemaking_api.saas_auth_state import DatabaseSaasAuthSessionStore
+from sui_sensemaking_api.tenant_context import VerifiedTenantClaim
 
 _FAKE_ACCESS_TOKEN = "atk-should-never-reach-the-browser"
 _HASH_KEY = b"callback-retry-safety-test-key-0123"
@@ -88,7 +88,7 @@ def _request(*, store, factory) -> Request:
             runtime_profile="saas-multitenant",
             saas_oauth_broker_config=ExternalOauthBrokerConfig(
                 token_endpoint="https://broker.invalid/token",
-                client_id="kj-atlas-bff",
+                client_id="sui-sensemaking-bff",
                 client_secret="broker-secret",
                 redirect_uri="https://app.invalid/session/callback",
             ),
@@ -97,7 +97,7 @@ def _request(*, store, factory) -> Request:
         )
     )
     pending = json.dumps({"state": "state-1", "code_verifier": "verifier-1", "next": "/docs/doc-1"})
-    headers = [(b"cookie", f"Kj-Atlas-Oauth-Pending={pending}".encode())]
+    headers = [(b"cookie", f"Sui-Sensemaking-Oauth-Pending={pending}".encode())]
     return Request(
         scope={
             "type": "http",
@@ -131,7 +131,7 @@ def test_retrying_the_same_code_after_success_does_not_create_a_second_session(
                 tenant_id="tenant-a",
                 identity_provider_id="idp-1",
                 issuer="https://idp.example.test",
-                audience="kj-atlas",
+                audience="sui-sensemaking",
                 subject="subject-1",
             ),
         ),

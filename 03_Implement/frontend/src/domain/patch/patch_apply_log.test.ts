@@ -21,7 +21,7 @@ function makeDoc(): DocumentV1 {
 describe("appendPatchApplyLog", () => {
   it("appends exactly one persistent log entry", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op-1", kind: "upsert_card", card: { id: "c1", text: "x", x: 0, y: 0 } }],
     };
@@ -52,7 +52,7 @@ describe("appendPatchApplyLog", () => {
 
   it("survives save/reload roundtrip via strict validation", () => {
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [],
     };

@@ -1,6 +1,6 @@
 # Contributing Guide / コントリビューションガイド
 
-この文書は、`kj-atlas` への変更提案・実装・レビューの最小ルールを定義します。
+この文書は、`sui-sensemaking` への変更提案・実装・レビューの最小ルールを定義します。
 
 ## リポジトリ構成 / Repository Structure
 

@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/identity_binding.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/identity_binding.py`
 - Related ADR/Spec: `issue-SAAS-TENANT-FK-02-identity-model-missing-case-insensitive-index.md`, `03_Implement/backend/alembic/versions/20260314_0005_enforce_identity_lookup_uniqueness.py`
 - Expected verification level: `unit`
 

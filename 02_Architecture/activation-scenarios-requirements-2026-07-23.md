@@ -1,4 +1,4 @@
-# kj-atlas 活用の到達像 4例 — 機能要件の考察とローカル小規模試行（受入条件）
+# sui-sensemaking 活用の到達像 4例 — 機能要件の考察とローカル小規模試行（受入条件）
 
 作成: 2026-07-23 / 対象コミット: `main`（origin と同期）
 成果物種別: **設計・定義のみ（コード・既存 issue/ADR は不改変）**。本書は 4 つの活用具体例を、既存の価値→要件フレームワーク（VR 系列 / GENAI-GOV レーン / CVI / EXT-CONN 段階導入）へ接地・トレースし、各例に「開発機で走らせられる小規模試行」を受入条件として提案する。**試行は定義のみで実行しない**。
@@ -68,7 +68,7 @@
 ### 1-3. 受入条件＝ローカル小規模試行
 
 **T1-A: MMI 住み分けループ（AI 提案 → 人手レビュー → 可逆）**
-- 前提/セットアップ: WSL frontend チェックアウト。`KJ_ATLAS_LLM_PROVIDER=none`（CVI-6）。SafeMode 既定 ON。fixture は `product_value_fixtures.ts` の `buildDomainExpressionDocument()`（既存）で 5〜8 枚のカード・1〜2 島。
+- 前提/セットアップ: WSL frontend チェックアウト。`SUI_LLM_PROVIDER=none`（CVI-6）。SafeMode 既定 ON。fixture は `product_value_fixtures.ts` の `buildDomainExpressionDocument()`（既存）で 5〜8 枚のカード・1〜2 島。
 - 操作: (1) 作業モードを開き「AI提案」タブへ（`ADR-0055` の manual activation、左右矢印で移動・Enter で確定）。(2) 島タイトル候補を要求（provider=none のため `ce2_suggestion_candidates` の決定論フォールバックが proposal-only 候補を返す）。(3) 候補を 1 件「採用」。(4) `⌘Z` で取り消す。
 - 観測可能な期待結果（機械判定可能）: 候補は必ず `reviewState=unreviewed` の提案として出現し、採用しても `human_reviewed` へ**自動昇格しない**（CVI-3）。Consensus への直接書き込みが発生しない（CVI-4）。採用は 1 履歴ステップで `⌘Z` により完全復元（CVI-5 の可逆性思想）。番兵として「AIが確定した」旨のバッジ・自動公開が**存在しない**ことを DOM で確認。→ 既存 `core_value_guard.test.ts` の CVI-2/3/4 索引と、新規 e2e 1 本（AI提案タブ経由の採用→undo）で判定。
 
@@ -87,7 +87,7 @@
 
 **既に在るもの**:
 - **効果的クエリの決定論基盤（CE-1）**: `ContextQuery`（goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode）と決定論 `bundleHash`（`ADR-0028:56` CE0-CTX-IF）。実装は frontend `query_preview.ts:47-65`（canonical hash）と backend `context.py`（`/context/query:39-46`, `/context/bundle:49-72`、決定論違反は 409 `nondeterministic_bundle` `context.py:60-61`）。
-- **外部頭脳への「読み取りクエリ」= EXT-CONN-01 read-only MCP が実装済み・Done**（`EXT-CONN-01` close-out `:119-125`, `PR #2602` merge）。外部エージェント（Claude Code/ChatGPT/Copilot）が `get_context_projection({docId, constraint, safeMode?})` で kj-atlas を知識源として問い合わせできる。制約は `reviewed-only | evidence | contradiction | summary`（`mcp/README.md:16-19`）。書き込みツールはゼロ（`context_projection_tool.test.ts:53-77`）。
+- **外部頭脳への「読み取りクエリ」= EXT-CONN-01 read-only MCP が実装済み・Done**（`EXT-CONN-01` close-out `:119-125`, `PR #2602` merge）。外部エージェント（Claude Code/ChatGPT/Copilot）が `get_context_projection({docId, constraint, safeMode?})` で sui-sensemaking を知識源として問い合わせできる。制約は `reviewed-only | evidence | contradiction | summary`（`mcp/README.md:16-19`）。書き込みツールはゼロ（`context_projection_tool.test.ts:53-77`）。
 - **蓄積の中核（W型累積）**: `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAG + `CardLineageEdgeV1`（`ADR-0057:96-102`）。現場との往復・前段階分岐・停止再開を非破壊で保持（`ADR-0057:116-118`）。
 - **provider=none で蓄積・構造化・共有前確認が成立**（CVI-6, `value_traceability.md:179`）。外部頭脳は「LLM 無し」でも一次的に成立。
 
@@ -107,7 +107,7 @@
 ### 2-3. 受入条件＝ローカル小規模試行
 
 **T2-A: 外部頭脳への reviewed-only クエリ（MCP ライブ試行）— 最重要**
-- 前提/セットアップ: WSL で backend 起動（`KJ_ATLAS_LLM_PROVIDER=none`、SQLite）。小文書を 1 件保存: reviewed カード N=2（`textReviewed:true`）＋ unreviewed カード M=2（`textReviewed:false`）（`context_projection_tool.test.ts:20-32` の fixture 形状に準拠）。`03_Implement/mcp/` を stdio で起動（`KJ_ATLAS_MCP_TRANSPORT=stdio`、`KJ_ATLAS_MCP_API_BASE_URL` を backend へ）。
+- 前提/セットアップ: WSL で backend 起動（`SUI_LLM_PROVIDER=none`、SQLite）。小文書を 1 件保存: reviewed カード N=2（`textReviewed:true`）＋ unreviewed カード M=2（`textReviewed:false`）（`context_projection_tool.test.ts:20-32` の fixture 形状に準拠）。`03_Implement/mcp/` を stdio で起動（`SUI_MCP_TRANSPORT=stdio`、`SUI_MCP_API_BASE_URL` を backend へ）。
 - 操作: MCP クライアントから `get_context_projection({docId, constraint:"reviewed-only"})` を `safeMode` 省略で呼ぶ。
 - 観測可能な期待結果（機械判定）: (1) 返るカード id は reviewed のみ（unreviewed の id が**いかなる形でも現れない**）。(2) `safeMode` 省略時 true が既定で、reviewed カードの本文も redact される（`redacted:true`、共有境界扱い、`context_projection_tool.test.ts:97-100`）。(3) 出力に `score|rank|confidence|priority` が現れない（`:127`）。(4) 監査行が stderr に `mcp-context-read.v1` として出て `bundleHash`/`queryCanonicalHash` が 64hex（`:157-160`）。stdout には監査行が混入しない（`:163`）。→ **不変条件（SafeMode 境界・未レビュー除外・反スコアリング・監査）を一度に検証**。既存 `context_projection_tool.test.ts` をライブ経路で再現する形。
 
@@ -130,7 +130,7 @@
 VR3「レビュー可能成果物」〜 VR4「価値観測」（`value_traceability.md:108-109`）、Lane C（外部エージェント成果物連携, `value_traceability.md:238`）。単体の正本 ADR は無く、`ADR-0032`（価値ループ）＋ `ADR-0049`/`02_Architecture/external_agent_collaboration_spec.html`（外部エージェント）＋ EXT-CONN-02/03 の合成。
 
 **既に在るもの**:
-- **外部エージェントへの思考委任（Tier 0）**: 組織が定額契約した AI（Copilot/ChatGPT Enterprise 等）へ依頼パッケージを渡し、応答を import 境界で取り込む（`02_Architecture/external_agent_collaboration_spec.html` §01 原則）。kj-atlas は文脈供給・検証・レビュー・可逆適用に徹する。
+- **外部エージェントへの思考委任（Tier 0）**: 組織が定額契約した AI（Copilot/ChatGPT Enterprise 等）へ依頼パッケージを渡し、応答を import 境界で取り込む（`02_Architecture/external_agent_collaboration_spec.html` §01 原則）。sui-sensemaking は文脈供給・検証・レビュー・可逆適用に徹する。
 - **応答の proposal-only 着地**: `AgentResponse v1` は種別ごとに未レビュー提案として着地（`02_Architecture/external_agent_collaboration_spec.html` §04 取り込み経路）。実装は `agent_response_import.ts`。禁止フィールド（score/rank/confidence/priority）は破棄/拒否（同 §04 制約）。
 - **AI 補助の構造化候補（CE-2）**: 島タイトル候補・merge 候補・矛盾/根拠由来の論点候補（`ADR-0028:78-81`）、すべて proposal-only。
 - **「最小人的整理」の成果物化（V4）**: 確定点/保留点/未レビュー/根拠導線/SafeMode 結果を束ねた review pack / narrative（`PRODUCT-VALUE-03` 受入条件 `:30-35`、証跡 `review_pack_trace_export.spec.ts`）。これが「戦略・アクションの読み手向け入力」。

@@ -15,7 +15,7 @@ async function measure(records: DurationRecord[], label: string, action: () => P
 async function installLongTaskProbe(page: Page) {
   await page.addInitScript(() => {
     const longTasks: Array<{ duration: number; name: string }> = [];
-    (window as unknown as { __kjAtlasLongTasks: typeof longTasks }).__kjAtlasLongTasks = longTasks;
+    (window as unknown as { __suiSensemakingLongTasks: typeof longTasks }).__suiSensemakingLongTasks = longTasks;
     if (!("PerformanceObserver" in window)) return;
     try {
       const observer = new PerformanceObserver((list) => {
@@ -90,7 +90,7 @@ test("PERF-BUDGET-01 representative document keeps core operations responsive", 
   expect(byLabel["share-panel-open"]).toBeLessThan(2_500);
 
   const maxLongTaskMs = await page.evaluate(() => {
-    const tasks = (window as unknown as { __kjAtlasLongTasks?: Array<{ duration: number }> }).__kjAtlasLongTasks ?? [];
+    const tasks = (window as unknown as { __suiSensemakingLongTasks?: Array<{ duration: number }> }).__suiSensemakingLongTasks ?? [];
     return tasks.reduce((max, task) => Math.max(max, task.duration), 0);
   });
   expect(maxLongTaskMs).toBeLessThan(2_500);

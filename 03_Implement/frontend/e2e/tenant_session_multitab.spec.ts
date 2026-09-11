@@ -8,7 +8,7 @@ import {
 import JSZip from "jszip";
 import { openAdvancedWorkMode, selectWorkModeTab } from "./helpers/i18n";
 
-const TENANT_SESSION_HEADER = "kj-atlas-tenant-session-version";
+const TENANT_SESSION_HEADER = "sui-sensemaking-tenant-session-version";
 const START_PANEL = '[data-panel="start-document-entry"]';
 
 type TenantId = "tenant-a" | "tenant-b";
@@ -327,7 +327,7 @@ async function staleGenerationGuardRejectionCount(page: Page): Promise<number> {
 }
 
 test.skip(
-  process.env.KJ_ATLAS_E2E_SAAS !== "1",
+  process.env.SUI_E2E_SAAS !== "1",
   "Runs only with playwright.saas.config.ts and the SaaS runtime profile.",
 );
 
@@ -610,33 +610,33 @@ test("tenant switch reloads recent documents and query presets from the new tena
   const state = createServerState();
   const context = await browser.newContext();
   await context.addInitScript(() => {
-    const seedMarker = "kj-atlas-e2e-tenant-storage-ui-seeded";
+    const seedMarker = "sui-sensemaking-e2e-tenant-storage-ui-seeded";
     if (window.sessionStorage.getItem(seedMarker) === "1") {
       return;
     }
 
     const principalId = "principal-1";
     const prefixFor = (tenantId: "tenant-a" | "tenant-b") => (
-      `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
+      `sui-sensemaking/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
     );
     const scopedKey = (tenantId: "tenant-a" | "tenant-b", baseKey: string) => (
       `${prefixFor(tenantId)}${encodeURIComponent(baseKey)}`
     );
 
     window.localStorage.setItem(
-      scopedKey("tenant-a", "kj-atlas/recent-doc-ids"),
+      scopedKey("tenant-a", "sui-sensemaking/recent-doc-ids"),
       JSON.stringify(["doc_tenant_a_recent"]),
     );
     window.localStorage.setItem(
-      scopedKey("tenant-b", "kj-atlas/recent-doc-ids"),
+      scopedKey("tenant-b", "sui-sensemaking/recent-doc-ids"),
       JSON.stringify(["doc_tenant_b_recent"]),
     );
     window.localStorage.setItem(
-      scopedKey("tenant-a", "kj-atlas:ce3:patch-workspace-presets:v1"),
+      scopedKey("tenant-a", "sui-sensemaking:ce3:patch-workspace-presets:v1"),
       JSON.stringify([{ id: "preset-tenant-a", name: "Tenant A preset", scope: "all", depth: 1, filters: ["alpha"] }]),
     );
     window.localStorage.setItem(
-      scopedKey("tenant-b", "kj-atlas:ce3:patch-workspace-presets:v1"),
+      scopedKey("tenant-b", "sui-sensemaking:ce3:patch-workspace-presets:v1"),
       JSON.stringify([{ id: "preset-tenant-b", name: "Tenant B preset", scope: "all", depth: 1, filters: ["beta"] }]),
     );
     window.sessionStorage.setItem(seedMarker, "1");
@@ -695,7 +695,7 @@ test("tenant switch reloads recent documents and query presets from the new tena
   await expect(workspace.getByRole("button", { name: "Run Tenant A preset" })).toHaveCount(0);
 
   const tenantAStorageKeys = await page.evaluate(() => {
-    const tenantPrefix = `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent("tenant-a")}/${encodeURIComponent("principal-1")}/`;
+    const tenantPrefix = `sui-sensemaking/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent("tenant-a")}/${encodeURIComponent("principal-1")}/`;
     return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
       .filter((key): key is string => typeof key === "string" && key.startsWith(tenantPrefix));
   });

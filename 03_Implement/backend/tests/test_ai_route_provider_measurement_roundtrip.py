@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from kj_atlas_api.llm.provider import LLMCallMetadata, LLMRequest, LLMResponse
+from sui_sensemaking_api.llm.provider import LLMCallMetadata, LLMRequest, LLMResponse
 from scripts import analyze_ai_route_provider_measurement as analysis
 from scripts import measure_ai_route_provider_tokens as token_measure
 

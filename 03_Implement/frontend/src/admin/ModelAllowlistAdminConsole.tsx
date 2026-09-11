@@ -140,7 +140,7 @@ export function ModelAllowlistAdminConsole() {
   return (
     <main style={{ maxWidth: 880, margin: "0 auto", padding: "2rem", fontFamily: "system-ui, sans-serif", lineHeight: 1.6 }}>
       <header>
-        <p style={{ margin: 0, fontSize: "0.9rem" }}>KJ Atlas control plane</p>
+        <p style={{ margin: 0, fontSize: "0.9rem" }}>SUI Sensemaking control plane</p>
         <h1 style={{ marginTop: "0.2rem" }}>Tenant model allowlist 管理</h1>
         <p>
           主キャンバスとは独立した管理画面です。保存は読み込んだrevisionに対してのみ行い、

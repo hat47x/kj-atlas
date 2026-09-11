@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a sanitized frozen product-source bundle for a cognitive dogfood case.
 
-This is experiment tooling, not a KJ Atlas product feature. It reads one
+This is experiment tooling, not a SUI Sensemaking product feature. It reads one
 machine-readable Round 1 source manifest, extracts only ``commonSources`` from
 the frozen product commit, verifies each Git blob SHA, and writes an isolated
 read-only evidence directory.

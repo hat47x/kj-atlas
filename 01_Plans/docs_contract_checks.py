@@ -149,7 +149,7 @@ AGENT_SAFETY_REQUIRED_TERMS = (
     "SafeModeは既定ON",
     "AI出力はproposal-only",
     "`human_reviewed` は人間だけが設定する",
-    "`KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する",
+    "`SUI_LLM_PROVIDER=none` でも主要価値が成立する",
     "share/exportで未レビュー情報や秘密情報を意図せず共有しない",
     "import/zip/markdownは不正入力を安全側で拒否または無害化する",
 )
@@ -162,7 +162,7 @@ PUBLIC_SAFETY_ROUTES = {
     "data_handling.md": ("SafeMode", "未レビュー", "共有"),
     "security.md": ("SafeMode", "共有"),
     "ce2_low_risk_ai_assist.md": ("proposal-only", "human_reviewed"),
-    "configuration.md": ("KJ_ATLAS_LLM_PROVIDER=none",),
+    "configuration.md": ("SUI_LLM_PROVIDER=none",),
 }
 NPM_SCRIPT_RE = re.compile(r"npm run\s+([\w:-]+)")
 FRONTEND_PACKAGE_JSON_PATH = Path("03_Implement/frontend/package.json")
@@ -183,9 +183,9 @@ COMPOSE_SERVICE_COMMAND_RE = re.compile(
     r"docker compose\s+(" + "|".join(COMPOSE_SERVICE_SUBCOMMANDS) + r")\s+(?:-\S+\s+)*([\w-]+)"
 )
 COMPOSE_FILE_PATH = Path("03_Implement/deploy/docker-compose.yml")
-RUNTIME_PARAMETER_KEY_RE = re.compile(r"KJ_ATLAS_[A-Z0-9_]+")
+RUNTIME_PARAMETER_KEY_RE = re.compile(r"SUI_[A-Z0-9_]+")
 RUNTIME_PARAMETER_REGISTRY_PATH = Path("02_Architecture/runtime_parameter_registry.md")
-RUNTIME_PARAMETER_REGISTRY_ROW_RE = re.compile(r"^\|\s*`(KJ_ATLAS_[A-Z0-9_]+)`[^|]*\|", re.MULTILINE)
+RUNTIME_PARAMETER_REGISTRY_ROW_RE = re.compile(r"^\|\s*`(SUI_[A-Z0-9_]+)`[^|]*\|", re.MULTILINE)
 REPOSITORY_PATH_PREFIX_RE = re.compile(r"^(00_Prompt|01_Plans|02_Architecture|03_Implement|04_Documentation|\.github)/")
 REPOSITORY_PATH_FORBIDDEN_CHARS = frozenset(" <>*{|")
 BACKTICK_TOKEN_RE = re.compile(r"`([^`\r\n]+)`")
@@ -1500,7 +1500,7 @@ def check_npm_script_commands(
 def _extract_compose_services(compose_text: str) -> set[str]:
     """Return the top-level `services:` child keys from a Compose file's text.
 
-    Deliberately not a full YAML parser -- kj-atlas's own compose files use a
+    Deliberately not a full YAML parser -- sui-sensemaking's own compose files use a
     flat, consistently 2-space-indented `services:` block, so a line-based
     scan is enough and avoids adding a YAML dependency for one deterministic
     check.
@@ -1573,11 +1573,11 @@ def check_compose_service_commands(
 
 
 def _extract_registry_keys(registry_text: str) -> set[str]:
-    """Return every `KJ_ATLAS_*` key documented as a table row's first cell.
+    """Return every `SUI_*` key documented as a table row's first cell.
 
     A single regex over the whole file (rather than per-table parsing) is
     enough: the Private adapter boundary table's first-cell values (e.g.
-    `POSTGRES_DB`) don't start with `KJ_ATLAS_`, so they're excluded by the
+    `POSTGRES_DB`) don't start with `SUI_`, so they're excluded by the
     pattern itself without needing to track which section a row is in.
     """
     return set(RUNTIME_PARAMETER_REGISTRY_ROW_RE.findall(registry_text))
@@ -1613,7 +1613,7 @@ def _extract_profile_implementation_defaults(registry_text: str) -> dict[str, tu
     first_line = prefix.count("\n") + 1
     defaults: dict[str, tuple[object, int]] = {}
     for offset, line in enumerate(section.splitlines(), start=1):
-        if not line.lstrip().startswith("| `KJ_ATLAS_"):
+        if not line.lstrip().startswith("| `SUI_"):
             continue
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) < 2:
@@ -1660,7 +1660,7 @@ def _extract_settings_literal_defaults(settings_text: str) -> dict[str, object]:
 def check_runtime_parameter_default_values(
     root: Path,
     registry_path: Path = RUNTIME_PARAMETER_REGISTRY_PATH,
-    settings_path: Path = Path("03_Implement/backend/src/kj_atlas_api/settings.py"),
+    settings_path: Path = Path("03_Implement/backend/src/sui_sensemaking_api/settings.py"),
 ) -> list[DocsCheckFinding]:
     """Reject static Settings defaults that drift from the registry's implementation-default table."""
     repository_root = root.resolve()
@@ -1673,7 +1673,7 @@ def check_runtime_parameter_default_values(
     implemented = _extract_settings_literal_defaults(settings_file.read_text(encoding="utf-8"))
     findings: list[DocsCheckFinding] = []
     for key, (documented_default, line) in sorted(documented.items()):
-        field_name = key.removeprefix("KJ_ATLAS_").lower()
+        field_name = key.removeprefix("SUI_").lower()
         if field_name not in implemented:
             continue
         implementation_default = implemented[field_name]
@@ -1699,11 +1699,11 @@ def check_runtime_parameter_key_commands(
     markdown_paths: list[Path],
     registry_path: Path = RUNTIME_PARAMETER_REGISTRY_PATH,
 ) -> list[DocsCheckFinding]:
-    """Return DC-CMD-001 findings for `KJ_ATLAS_*` keys absent from the registry.
+    """Return DC-CMD-001 findings for `SUI_*` keys absent from the registry.
 
-    Excludes prefix mentions (e.g. `KJ_ATLAS_AUDIT_*`), which the greedy
-    `KJ_ATLAS_[A-Z0-9_]+` match reduces to a trailing-underscore token (e.g.
-    `KJ_ATLAS_AUDIT_`) since `*` isn't in the character class -- those are
+    Excludes prefix mentions (e.g. `SUI_AUDIT_*`), which the greedy
+    `SUI_[A-Z0-9_]+` match reduces to a trailing-underscore token (e.g.
+    `SUI_AUDIT_`) since `*` isn't in the character class -- those are
     documentation shorthand for "this key family", not a single copyable key,
     so they're skipped rather than treated as an unknown key.
     Scoped to current/public documentation only -- see CURRENT_PUBLIC_DOC_ROOTS.

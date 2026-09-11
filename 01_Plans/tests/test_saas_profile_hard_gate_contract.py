@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
+RUNTIME_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -58,13 +58,13 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
         )[1].split("### Drift check gates", 1)[0]
         self.assertIn("SaaS OAuth broker authorize endpoint", implementation_gate)
         self.assertIn("auth-session hash key", implementation_gate)
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", implementation_gate)
+        self.assertIn("`SUI_ADMIN_API_KEY`", implementation_gate)
 
     def test_enterprise_profile_requires_both_auth_keys_across_public_profile_docs(self) -> None:
-        settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
+        settings = (ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py").read_text(encoding="utf-8")
         self.assertIn('if profile == "enterprise-production" and self.api_key is None:', settings)
-        self.assertIn('missing.append("KJ_ATLAS_API_KEY")', settings)
-        self.assertIn('missing.append("KJ_ATLAS_ADMIN_API_KEY")', settings)
+        self.assertIn('missing.append("SUI_API_KEY")', settings)
+        self.assertIn('missing.append("SUI_ADMIN_API_KEY")', settings)
 
         registry_profile = REGISTRY_PATH.read_text(encoding="utf-8").split(
             "## Profile selection criteria", 1
@@ -73,13 +73,13 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
             "## Runtime profiles（推奨プロファイル）", 1
         )[1].split("## 最小設定", 1)[0]
         for surface in (registry_profile, config_profile):
-            self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", surface)
-            self.assertIn("`KJ_ATLAS_API_KEY`", surface)
+            self.assertIn("`SUI_ADMIN_API_KEY`", surface)
+            self.assertIn("`SUI_API_KEY`", surface)
 
     def test_saas_profile_requires_admin_api_key_across_public_profile_docs(self) -> None:
-        settings = (ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py").read_text(encoding="utf-8")
+        settings = (ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py").read_text(encoding="utf-8")
         self.assertIn("if self.admin_api_key is None:", settings)
-        self.assertIn('missing.append("KJ_ATLAS_ADMIN_API_KEY")', settings)
+        self.assertIn('missing.append("SUI_ADMIN_API_KEY")', settings)
         self.assertIn('_AUTH_REQUIRED_PROFILES = ("enterprise-production", "saas-multitenant")', settings)
 
         registry_profile = REGISTRY_PATH.read_text(encoding="utf-8").split(
@@ -88,8 +88,8 @@ class SaasProfileHardGateContractTests(unittest.TestCase):
         config_profile = CONFIG_PATH.read_text(encoding="utf-8").split(
             "## Runtime profiles（推奨プロファイル）", 1
         )[1].split("## 最小設定", 1)[0]
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", registry_profile)
-        self.assertIn("`KJ_ATLAS_ADMIN_API_KEY`", config_profile)
+        self.assertIn("`SUI_ADMIN_API_KEY`", registry_profile)
+        self.assertIn("`SUI_ADMIN_API_KEY`", config_profile)
 
     def test_request_time_oauth_completeness_is_not_promoted_to_startup_gate(self) -> None:
         source = _policy_validate_source()

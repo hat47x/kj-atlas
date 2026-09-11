@@ -6,17 +6,17 @@ from fastapi import HTTPException, Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.document_access_resource import (
+from sui_sensemaking_api.document_access_resource import (
     ServerOwnedDocumentResourceResolver,
     SingleTenantHeaderResourceResolver,
 )
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     DocumentAccessMetadataRow,
     DocumentRow,
     TenantRow,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 TIMESTAMP = "2026-07-17T00:00:00Z"

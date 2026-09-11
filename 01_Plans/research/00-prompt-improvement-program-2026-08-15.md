@@ -18,7 +18,7 @@
 |---|---|
 | `domain.md` | 64 |
 | `ai_cognitive_externalization_requirements.md` | 34 |
-| `kj_technique.md` | 18 |
+| `sensemaking_technique.md` | 18 |
 | `representative_visual_cue_requirements.md` | 14 |
 | `qualitative_card_quality_requirements.md` | 12 |
 
@@ -35,8 +35,8 @@
 | `representative_visual_cue_requirements.md` | 5個（部分的） | **なし** |
 | `qualitative_card_quality_requirements.md` | 4個（部分的） | Normative |
 | **`domain.md`** | **0** | **なし** |
-| **`kj_technique.md`** | **0** | Normative |
-| **`ai_kj_execution_procedures.md`** | **0** | Normative |
+| **`sensemaking_technique.md`** | **0** | Normative |
+| **`ai_sensemaking_execution_procedures.md`** | **0** | Normative |
 
 **最も参照される `domain.md` に識別子が1つもない。** 不変条件——保留・違和感・可逆性・AIの禁止事項——はすべて散文の中にあり、指し示す手段がない。
 
@@ -56,7 +56,7 @@
 
 | 種別 | 文書 | 読者 | 変更頻度 |
 |---|---|---|---|
-| **製品憲法** | domain, kj_technique, qualitative_card_quality, representative_visual_cue, w_type, ai_cognitive_externalization, cognitive_frame_and_evolution_criteria | 人間＋AI（製品を作る者） | 低い（変えてはならない） |
+| **製品憲法** | domain, sensemaking_technique, qualitative_card_quality, representative_visual_cue, w_type, ai_cognitive_externalization, cognitive_frame_and_evolution_criteria | 人間＋AI（製品を作る者） | 低い（変えてはならない） |
 | **エージェント運用** | system_prompt, agent_collaboration, agent_handover, handoff, codex_skill_operations | AIエージェント | 高い（道具の変化に追随） |
 
 **両者は権威も変更頻度も異なるのに、同じ階層に平置きされている。** 「00_Prompt は憲法層」という説明が、実際には半分しか当たっていない。
@@ -117,9 +117,9 @@
 
 ### P2: 識別子体系を憲法層全体へ広げる
 
-**内容**: `kj_technique.md`（検査手順に `KJT-` を付す。特に §3 表札検査・§4 空白の列挙・§5 A/B照合・§6 失敗の徴候12項目）、`ai_kj_execution_procedures.md`（`AKP-`）、および部分的にしか持たない3文書の体系を揃える。
+**内容**: `sensemaking_technique.md`（検査手順に `SUI-` を付す。特に §3 表札検査・§4 空白の列挙・§5 A/B照合・§6 失敗の徴候12項目）、`ai_sensemaking_execution_procedures.md`（`AKP-`）、および部分的にしか持たない3文書の体系を揃える。
 
-**なぜ kj_technique が重要か**: `direction-review` が「製品の中核は検査であり、それが最も薄い」と結論した。**検査に識別子が無い限り、どの検査が未実装かを計画側から追跡できない。** 現に §6 の失敗の徴候12項目のうち機械化されているのは1項目だけだが、この事実は識別子が無いため一覧化できていない。
+**なぜ sensemaking_technique が重要か**: `direction-review` が「製品の中核は検査であり、それが最も薄い」と結論した。**検査に識別子が無い限り、どの検査が未実装かを計画側から追跡できない。** 現に §6 の失敗の徴候12項目のうち機械化されているのは1項目だけだが、この事実は識別子が無いため一覧化できていない。
 
 **コスト**: 中。5文書。
 
@@ -131,7 +131,7 @@
 
 1. **Status 語彙の統制** — `Normative / Informative / On-demand / Superseded` を定義し、全文書に必須化。issue memo の `issue_memo_status.py` と同じ形。括弧書きの補足は別フィールド（`Tracked-by:` 等）へ分離する。
 2. **識別子の一意性** — `00_Prompt` 全体で識別子が重複しないことを検証。ADR の `DC-ADR-001` と同じ性質の規則。
-3. **参照の解決** — issue・ADR・設計文書から `DOM-*` / `KJT-*` 等を参照したとき、その識別子が実在することを検証。**これが接続の要である。**
+3. **参照の解決** — issue・ADR・設計文書から `DOM-*` / `SUI-*` 等を参照したとき、その識別子が実在することを検証。**これが接続の要である。**
 4. **行番号参照の禁止** — 憲法層のファイル名にコロンと行番号を続ける形式を検出して落とす。腐る参照を新たに作らせない。
 
 **なぜ P3 が決定的か**: P1・P2 は識別子を**作る**だけであり、使われる保証がない。P3 は**使われた識別子が正しいことを保証する**。`DOGFOOD-METRIC-01` の能力カナリアと同じ考え方——主張と実効範囲を一致させる機構である。
@@ -226,7 +226,7 @@ P5（実装詳細の分離）        ← P1〜P4 の後
 - **ディレクトリ分割**（P4 注記）— 参照64件超が壊れ、利得に見合わない。
 - **既存の散文の書き換え** — P1・P2 は識別子の付与に限る。`domain.md §9` は実装都合での変更を禁じており、識別子付与はその例外ではなく**意味を変えない操作**として実施する。
 - **`00_Prompt` の網羅的な再構成** — 憲法層は安定していることに価値がある。接続の欠落を埋める最小の変更に留める。
-- **識別子体系の事前完全設計** — `DOM-` / `KJT-` の粒度は、P1 の実施中に実物を見て決める。机上で完全な体系を作ろうとしない。
+- **識別子体系の事前完全設計** — `DOM-` / `SUI-` の粒度は、P1 の実施中に実物を見て決める。机上で完全な体系を作ろうとしない。
 
 ---
 

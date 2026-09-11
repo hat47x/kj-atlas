@@ -8,7 +8,7 @@
 プロバイダー自身が返した `usage` の値だけである。
 
 既定ではドライランとして動作し、プロバイダーの生成もネットワークへの接続も行わない。
-外部へ実際に送信するには、`--execute` と `KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN=1` の
+外部へ実際に送信するには、`--execute` と `SUI_TOKEN_MEASUREMENT_OPT_IN=1` の
 両方を指定する必要がある。送信対象は `representative_document()` が生成する
 合成データだけであり、利用者の実データは使用しない。
 
@@ -34,20 +34,20 @@ import json
 import os
 from typing import Any, Protocol
 
-from kj_atlas_api.llm.provider import (
+from sui_sensemaking_api.llm.provider import (
     LLMRequest,
     LLMResponse,
     ProviderError,
     _openai_chat_messages,
     get_provider,
 )
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import (
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import (
     CheckNarrativeRequest,
     GenerateNarrativeRequest,
     SuggestCardGroupsRequest,
 )
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.routes.ai import (
     _build_generate_narrative_prompt,
     _build_narrative_check_prompt,
     _build_prompt,
@@ -57,7 +57,7 @@ from kj_atlas_api.routes.ai import (
     _suggest_card_groups_ir,
     _suggest_layout_ir,
 )
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.settings import settings
 
 # `python -m scripts.measure_ai_route_provider_tokens` と、Issue本文で案内している
 # `python scripts/measure_ai_route_provider_tokens.py` の両方を正式に動かす。
@@ -91,7 +91,7 @@ except ModuleNotFoundError as exc:
         _layout_candidate_context,
     )
 
-OPT_IN_ENV = "KJ_ATLAS_TOKEN_MEASUREMENT_OPT_IN"
+OPT_IN_ENV = "SUI_TOKEN_MEASUREMENT_OPT_IN"
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 _DEEPSEEK_THINKING_MODES = frozenset({"disabled", "enabled"})
 PROVIDER_GENERATION_PROVENANCE = {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the kj-atlas AI routes' fail-closed behavior over the HTTP API from an
+# Verify the sui-sensemaking AI routes' fail-closed behavior over the HTTP API from an
 # external script (admin/CI path).
 #
 # These are the safety contracts an admin script must be able to rely on:
@@ -37,14 +37,14 @@ check() {
 # X-API-Key header (the fail-closed 422/503 boundaries are provider-agnostic
 # but the request still needs to pass HTTP auth on a keyed backend).
 auth_header=()
-if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+if [ -n "${SUI_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${SUI_API_KEY}")
 fi
 
 reviewed_payload='{"islandId":"i1","doc":{"version":1,"id":"ai-probe","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"reviewed card","x":0,"y":0,"textReviewed":true}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"title":"T","summaryText":"s","summaryReviewed":true}]}}'
 unreviewed_payload='{"islandId":"i1","doc":{"version":1,"id":"ai-probe","createdAt":"2026-08-15T00:00:00Z","updatedAt":"2026-08-15T00:00:00Z","transform":{"panX":0,"panY":0,"zoom":1},"cards":[{"id":"c1","text":"unreviewed secret","x":0,"y":0}],"edges":[],"islands":[{"id":"i1","cardIds":["c1"],"title":"T","summaryText":"","summaryReviewed":false}]}}'
 
-echo "=== kj-atlas AI fail-closed verification (base: $BASE_URL) ==="
+echo "=== sui-sensemaking AI fail-closed verification (base: $BASE_URL) ==="
 
 # 1. Unreviewed card text must be rejected 422 before any provider call
 #    (SEC-AI-SAFEMODE-01). This holds regardless of provider configuration.

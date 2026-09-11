@@ -72,7 +72,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/issues/done/issue-PRODUCT-UX-01-first-run-document-entry.md`（スコープ境界）, `issue-PRODUCT-VALUE-01-first-meaningful-map-activation.md`（連携先）
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（観点1・図C）
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（観点1・図C）
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04）

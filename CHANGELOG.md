@@ -1,6 +1,6 @@
 # Changelog
 
-このファイルは kj-atlas の変更履歴を記録します。
+このファイルは sui-sensemaking の変更履歴を記録します。
 
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) を参考にし、
 バージョンは [Semantic Versioning](https://semver.org/lang/ja/)（SemVer）に従います。
@@ -17,9 +17,9 @@
 - GPU 非搭載でも AI 連携の動作イメージを確認できるモック `/generate` アダプタ（`03_Implement/deploy/tools/mock_local_llm.py`）。
 
 ### Changed
-- 環境変数契約を `KJ_ATLAS_*` 専用へ統一し、旧キー（`DATABASE_URL` 等）の受理を停止。
+- 環境変数契約を `SUI_*` 専用へ統一し、旧キー（`DATABASE_URL` 等）の受理を停止。
 - 初回MVP向けに AI 系UI（レイアウト提案・統合候補・ナラティブ・島/関係サマリ）を「詳細」トグル配下へ集約。
-- Docker スタックの初回起動を堅牢化（fastapi のバージョン上限を image でも固定、`KJ_ATLAS_DATABASE_URL` 既定を `POSTGRES_*` から導出、api ヘルスチェック追加、dev プロキシを IPv4 へ）。
+- Docker スタックの初回起動を堅牢化（fastapi のバージョン上限を image でも固定、`SUI_DATABASE_URL` 既定を `POSTGRES_*` から導出、api ヘルスチェック追加、dev プロキシを IPv4 へ）。
 
 ### Fixed
 - strict mode例外Runbook（AUTH-OPS-03）のQ1〜Q10を確定し、停止条件/復旧条件の文書整合を修正。

@@ -18,7 +18,7 @@
 
 - RequirementID: DATA-MAINT-01
 - RequirementStatement: 想定ステークホルダーが組織運用で必要とする、ドキュメント一覧、アーカイブ/削除、バックアップ、復旧、ユーザー棚卸し、データ検証の最小運用を設計・実装できるようにする。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが小規模組織でkj-atlasを運用する / 操作=文書一覧、利用停止ユーザー確認、バックアップ、復旧演習を行う / 期待結果=標準手順で安全に状況確認と復旧ができる / 除外=大規模マルチテナント管理、法務上の保持期限自動判定。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが小規模組織でsui-sensemakingを運用する / 操作=文書一覧、利用停止ユーザー確認、バックアップ、復旧演習を行う / 期待結果=標準手順で安全に状況確認と復旧ができる / 除外=大規模マルチテナント管理、法務上の保持期限自動判定。
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
 
 ## Dependency graph（Stream I）

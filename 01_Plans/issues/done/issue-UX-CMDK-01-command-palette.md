@@ -75,12 +75,12 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 - Related: `01_Plans/issues/done/issue-UX-SHORTCUT-01-keyboard-shortcut-system.md`（表記・バインド共通化）
-- Related: `02_Architecture/design/kj-atlas UI改善提案.dc.html`（3-3）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
+- Related: `02_Architecture/design/sui-sensemaking UI改善提案.dc.html`（3-3）, `02_Architecture/design/sui-sensemaking プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04 Round 5）
 
-- レッドライン確定（`02_Architecture/design/kj-atlas 拡張提案.dc.html` §段階2）: 中央モーダル 幅min(560,92vw)・角丸12、検索入力44h/13px、候補行36h（アイコン16＋ラベル13＋右にOS別キー表記）、保持系コマンド上位固定、空クエリ=最近/推奨・0件=該当なし、`aria-activedescendant`。プロトタイプ実装済み。
+- レッドライン確定（`02_Architecture/design/sui-sensemaking 拡張提案.dc.html` §段階2）: 中央モーダル 幅min(560,92vw)・角丸12、検索入力44h/13px、候補行36h（アイコン16＋ラベル13＋右にOS別キー表記）、保持系コマンド上位固定、空クエリ=最近/推奨・0件=該当なし、`aria-activedescendant`。プロトタイプ実装済み。
 
 ## 完了記録 2026-07-06（Claude Code）
 

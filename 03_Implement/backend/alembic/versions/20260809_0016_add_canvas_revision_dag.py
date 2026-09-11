@@ -20,11 +20,11 @@ _RLS_TABLES = (
     "canvas_revision_parents",
     "canvas_revision_heads",
 )
-_TENANT_USING = "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+_TENANT_USING = "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 
 
 def _policy_name(table_name: str) -> str:
-    return f"kj_atlas_{table_name}_tenant_isolation"
+    return f"sui_sensemaking_{table_name}_tenant_isolation"
 
 
 def upgrade() -> None:

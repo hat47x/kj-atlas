@@ -11,7 +11,7 @@
 
 ## 課題
 
-- 現在の問題: `03_Implement/backend/alembic/versions/`配下の13件のmigrationのうち、`20260717_0007`〜`20260717_0012`の6件（tenant identity provider binding・tenant document key repointing・document access metadata・document access admin audit・RLS enablement群）は、`downgrade()`内にSQLite/PostgreSQLで分岐する専用コード（FK削除順序・`DROP POLICY`/`NO FORCE`/`DISABLE ROW LEVEL SECURITY`等）を持つ。これらを実際に検証する`downgrade`実行テストは6ファイル存在するが、いずれも`_run_alembic`ヘルパー内で`env["KJ_ATLAS_DATABASE_URL"]`を`sqlite:///...`へ無条件に上書きしており、**PostgreSQL側のdowngrade分岐は一度も実行されたことがない**。`.github/workflows/ci.yml`のPostgreSQLジョブ相当ステップは`alembic upgrade head`を実PostgreSQLサービスに対して実行するが、`downgrade`という文字列は`ci.yml`・`release.yml`のどちらにも一度も現れない。
+- 現在の問題: `03_Implement/backend/alembic/versions/`配下の13件のmigrationのうち、`20260717_0007`〜`20260717_0012`の6件（tenant identity provider binding・tenant document key repointing・document access metadata・document access admin audit・RLS enablement群）は、`downgrade()`内にSQLite/PostgreSQLで分岐する専用コード（FK削除順序・`DROP POLICY`/`NO FORCE`/`DISABLE ROW LEVEL SECURITY`等）を持つ。これらを実際に検証する`downgrade`実行テストは6ファイル存在するが、いずれも`_run_alembic`ヘルパー内で`env["SUI_DATABASE_URL"]`を`sqlite:///...`へ無条件に上書きしており、**PostgreSQL側のdowngrade分岐は一度も実行されたことがない**。`.github/workflows/ci.yml`のPostgreSQLジョブ相当ステップは`alembic upgrade head`を実PostgreSQLサービスに対して実行するが、`downgrade`という文字列は`ci.yml`・`release.yml`のどちらにも一度も現れない。
 - 利用者または開発への影響: 手動で読んだ限り現在のdowngradeコードは正しいが、将来の変更でPostgreSQL専用分岐（ポリシー名・制約名等）にtypoが入っても、CIは一切検知できない。「めったに実行されないdowngrade経路が静かに劣化する」典型的なリスク。
 - 判断が必要な理由: 対応方法が複数あり（(a) 既存6テストの`_run_alembic`ヘルパーをパラメータ化し、CIで既に起動済みのPostgreSQLサービスに対しても実行する、(b) 別途「`alembic downgrade base && alembic upgrade head`」という往復テストをPostgreSQL CIステップへ追加する）、CI実行時間への影響とテスト設計をどちらの方針にするかはMaintainerの判断が必要。
 
@@ -44,9 +44,9 @@
   `head`から`20260716_0006`への**1ホップ**で0012→0011→0010→0009→0008→0007の6件すべての
   postgres専用分岐を実行できる。6テストへの個別パラメータ化（a）は不要だった。
 - `.github/workflows/ci.yml`は変更不要——postgres serviceと`pytest -m postgres`ステップは既に存在し、
-  新規テストは既存の`KJ_ATLAS_RUN_PG_TESTS`/`KJ_ATLAS_DATABASE_URL`/`KJ_ATLAS_TEST_POSTGRES_CONTAINER`
+  新規テストは既存の`SUI_RUN_PG_TESTS`/`SUI_DATABASE_URL`/`SUI_TEST_POSTGRES_CONTAINER`
   契約にそのまま乗る。CI実行時間への追加影響は新規テスト1件の実行時間（ローカル実測 約75秒）のみ。
-- 共有`kj_atlas` DB（同一CI jobの他のpostgres-markedテストが前提とするスキーマ）を乱さないため、
+- 共有`sui_sensemaking` DB（同一CI jobの他のpostgres-markedテストが前提とするスキーマ）を乱さないため、
   `test_postgres_backup_restore.py`と同じ「`postgres`メンテナンスDBへの管理接続からisolatedな
   databaseを作成・破棄する」パターンを踏襲した。
 

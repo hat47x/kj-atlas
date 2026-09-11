@@ -3714,7 +3714,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     const downloadLink = window.document.createElement("a");
 
     downloadLink.href = objectUrl;
-    downloadLink.download = `kj-atlas-doc-${document.id}.json`;
+    downloadLink.download = `sui-sensemaking-doc-${document.id}.json`;
     window.document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
@@ -4667,7 +4667,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     const exportedPatch = await runTenantScopedOptionalTask(() => buildPatchForExport(pendingPatchImport.patch, {
       author: patchExportAuthor,
       authorNote: patchExportAuthorNote,
-      sourceApp: "kj-atlas",
+      sourceApp: "sui-sensemaking",
     }));
     if (exportedPatch === undefined) {
       return;
@@ -8221,7 +8221,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           createdAt: new Date().toISOString(),
           kind: "consistency" as const,
           issues: result.issues,
-          // A/B cross-check totals (kj_technique.md §5 優先3). Undefined when the
+          // A/B cross-check totals (sensemaking_technique.md §5 優先3). Undefined when the
           // provider did not return them; a 0/0 is a valid, reportable value.
           ...("counts" in result && result.counts ? { counts: result.counts } : {}),
         };
@@ -8592,7 +8592,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
       withUpdatedTimestamp({ ...document, voids: result.voids }),
       t("app.status.voids.detected", { count: result.voids.length }),
     );
-    // Zero-void is itself a signal (kj_technique.md §4/§6): 探索が足りない.
+    // Zero-void is itself a signal (sensemaking_technique.md §4/§6): 探索が足りない.
     if (result.warning) {
       setStatusMessage(result.warning);
     }
@@ -10003,7 +10003,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const getViewMetadataFilename = useCallback((mode: "viewport" | "bounds", generatedAt: string) => {
     const date = generatedAt.slice(0, 10);
-    return `kj-atlas-${date}-${mode}.view.json`;
+    return `sui-sensemaking-${date}-${mode}.view.json`;
   }, [abstractMapView, summaryView]);
 
   const downloadViewMetadata = useCallback(
@@ -10119,7 +10119,7 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
     try {
       setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
-      const rootFolderPath = `kj-atlas-export-${exportTimestamp}`;
+      const rootFolderPath = `sui-sensemaking-export-${exportTimestamp}`;
       const deterministicNowIso = document.updatedAt || document.createdAt;
       const exportCamera = canvasCamera ?? buildFallbackCanvasCamera(document);
       const viewMetadata = buildExportViewMetadata({
@@ -10448,14 +10448,14 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
 
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
     const date = new Date().toISOString().slice(0, 10);
-    return `kj-atlas-${date}-${mode}.svg`;
+    return `sui-sensemaking-${date}-${mode}.svg`;
   }, [abstractMapView, summaryView]);
 
   const getPngExportFilename = useCallback(
     (mode: "viewport" | "visible-bounds", scale: PngExportScale) => {
       const date = new Date().toISOString().slice(0, 10);
       const scaleSuffix = scale === 2 ? "@2x" : "";
-      return `kj-atlas-${date}-${mode}${scaleSuffix}.png`;
+      return `sui-sensemaking-${date}-${mode}${scaleSuffix}.png`;
     },
     []
   );
@@ -11116,10 +11116,10 @@ export default function App({ storageScope, tenantSessionContext }: AppProps = {
           }}
           style={{
             position: "fixed",
-            top: "var(--kj-atlas-header-panel-top, 72px)",
+            top: "var(--sui-sensemaking-header-panel-top, 72px)",
             left: 16,
             zIndex: 50,
-            maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
+            maxHeight: "calc(100vh - var(--sui-sensemaking-header-panel-top, 72px) - 16px)",
             overflowY: "auto",
           }}
         >

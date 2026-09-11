@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from kj_atlas_api.llm_input_ir import MAX_CARDS, MAX_RELATIONS, MAX_TEXT_CHARS
+from sui_sensemaking_api.llm_input_ir import MAX_CARDS, MAX_RELATIONS, MAX_TEXT_CHARS
 
 REPRESENTATIVE_CARD_CHARS = 46
 

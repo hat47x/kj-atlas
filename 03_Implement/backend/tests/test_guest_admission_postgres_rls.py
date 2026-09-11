@@ -13,14 +13,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.db import _normalize_database_url
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.models import DocumentRow, TenantRow
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_id
+from sui_sensemaking_api.db import _normalize_database_url
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.models import DocumentRow, TenantRow
+from sui_sensemaking_api.tenant_db_guard import apply_database_tenant_id
 
-RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
-ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+RUN_RLS_TESTS_ENV = "SUI_RUN_PG_RLS_TESTS"
+ADMIN_DATABASE_URL_ENV = "SUI_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "SUI_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TS = "2026-09-06T12:00:00Z"
 
@@ -93,8 +93,8 @@ def test_guest_tables_are_forced_rls_and_fail_closed_without_context(
     assert all(enabled and forced for enabled, forced in posture.values())
     assert set(policies) == expected
     for qual, with_check in policies.values():
-        assert "current_setting('kj_atlas.tenant_id'" in qual
-        assert "current_setting('kj_atlas.tenant_id'" in with_check
+        assert "current_setting('sui_sensemaking.tenant_id'" in qual
+        assert "current_setting('sui_sensemaking.tenant_id'" in with_check
 
     with runtime_engine.connect() as connection:
         assert connection.execute(text("SELECT count(*) FROM guest_principals")).scalar_one() == 0

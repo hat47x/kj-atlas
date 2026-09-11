@@ -7,7 +7,7 @@
 
 ## Context
 
-kj-atlasはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと、製品がschema migration・制約・transaction・tenant分離まで保証できるDBは同義ではない。現行migrationにはSQLiteのtable rebuild、PostgreSQLのconstraint DDLとRLSがあり、無制限`TEXT`を主キー・索引へ利用している箇所はMySQL/MariaDB、SQL Server、Oracle等へそのまま移植できない。
+sui-sensemakingはSQLAlchemy ORMを利用しているが、ORMが接続可能なDBと、製品がschema migration・制約・transaction・tenant分離まで保証できるDBは同義ではない。現行migrationにはSQLiteのtable rebuild、PostgreSQLのconstraint DDLとRLSがあり、無制限`TEXT`を主キー・索引へ利用している箇所はMySQL/MariaDB、SQL Server、Oracle等へそのまま移植できない。
 
 接続URLの種類ごとに場当たり的な条件分岐を追加すると、runtime、migration、CI、文書の対応表が乖離し、将来DBを追加するほど複雑性と誤認が増える。一方でSQLite/PostgreSQLだけへ永久固定する必要はなく、個人OSSとして需要に応じて優先順位を変更できる拡張点は先に用意したい。
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     MAX_CARDS,
     MAX_TEXT_CHARS,
     TRUNCATED_TEXT_CHARS,

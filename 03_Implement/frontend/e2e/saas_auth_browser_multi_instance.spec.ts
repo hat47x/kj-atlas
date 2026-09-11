@@ -12,7 +12,7 @@ test("BFF login survives routing from worker 1 to worker 2 through shared Postgr
   );
   await signIn.click();
   const loginResponse = await loginResponsePromise;
-  expect(loginResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-1");
+  expect(loginResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-1");
 
   await expect(page).toHaveURL(/localhost:9100\/oauth\/authorize/);
   await expect(page.getByRole("heading", { name: "Authorize Application" })).toBeVisible();
@@ -29,10 +29,10 @@ test("BFF login survives routing from worker 1 to worker 2 through shared Postgr
 
   const callbackResponse = await callbackResponsePromise;
   expect(callbackResponse.status()).toBe(302);
-  expect(callbackResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-1");
+  expect(callbackResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-1");
 
   const sessionResponse = await authenticatedContextPromise;
-  expect(sessionResponse.headers()["x-kj-atlas-e2e-upstream"]).toBe("worker-2");
+  expect(sessionResponse.headers()["x-sui-sensemaking-e2e-upstream"]).toBe("worker-2");
   expect(sessionResponse.request().headers()["authorization"]).toBeUndefined();
   await expect(sessionResponse.json()).resolves.toMatchObject({
     principalId: "user-1",
@@ -41,7 +41,7 @@ test("BFF login survives routing from worker 1 to worker 2 through shared Postgr
   });
 
   const authCookie = (await page.context().cookies()).find(
-    (cookie) => cookie.name === "Kj-Atlas-Auth-Session",
+    (cookie) => cookie.name === "Sui-Sensemaking-Auth-Session",
   );
   expect(authCookie).toBeDefined();
   expect(authCookie?.httpOnly).toBe(true);

@@ -804,7 +804,7 @@ class NpmScriptCommandCheckTest(unittest.TestCase):
         package_dir = root / "03_Implement" / "frontend"
         package_dir.mkdir(parents=True, exist_ok=True)
         (package_dir / "package.json").write_text(
-            f'{{"name": "kj-atlas-frontend", "scripts": {_scripts_json(scripts)}}}',
+            f'{{"name": "sui-sensemaking-frontend", "scripts": {_scripts_json(scripts)}}}',
             encoding="utf-8",
         )
 
@@ -863,7 +863,7 @@ class ComposeServiceCommandCheckTest(unittest.TestCase):
         deploy_dir = root / "03_Implement" / "deploy"
         deploy_dir.mkdir(parents=True, exist_ok=True)
         body = "services:\n" + "".join(f"  {name}:\n    image: placeholder\n" for name in services)
-        body += "\nvolumes:\n  kj_atlas_pgdata:\n"
+        body += "\nvolumes:\n  sui_sensemaking_pgdata:\n"
         (deploy_dir / "docker-compose.yml").write_text(body, encoding="utf-8")
 
     def test_accepts_existing_service_names_in_public_docs(self):
@@ -939,10 +939,10 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
     def test_accepts_existing_keys_in_public_docs(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER", "KJ_ATLAS_API_KEY"])
+            self._write_registry(root, ["SUI_LLM_PROVIDER", "SUI_API_KEY"])
             readme = root / "README.md"
             readme.write_text(
-                "```bash\nexport KJ_ATLAS_LLM_PROVIDER=none\nexport KJ_ATLAS_API_KEY=change-me\n```\n",
+                "```bash\nexport SUI_LLM_PROVIDER=none\nexport SUI_API_KEY=change-me\n```\n",
                 encoding="utf-8",
             )
 
@@ -952,7 +952,7 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
 
     def test_accepts_registry_row_with_a_trailing_annotation_marker(self):
         # Real registry rows mark known gaps with a trailing "⚠️" between the
-        # closing backtick and the next `|` (e.g. `` `KJ_ATLAS_API_KEY` ⚠️ ``);
+        # closing backtick and the next `|` (e.g. `` `SUI_API_KEY` ⚠️ ``);
         # the row-extraction regex must not require the backtick to be
         # immediately followed by whitespace-then-pipe.
         with tempfile.TemporaryDirectory() as td:
@@ -961,11 +961,11 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
             arch_dir.mkdir(parents=True)
             (arch_dir / "runtime_parameter_registry.md").write_text(
                 "| Key | Default | Purpose |\n| --- | --- | --- |\n"
-                "| `KJ_ATLAS_API_KEY` ⚠️ | 未設定 | protects the API |\n",
+                "| `SUI_API_KEY` ⚠️ | 未設定 | protects the API |\n",
                 encoding="utf-8",
             )
             readme = root / "README.md"
-            readme.write_text("```bash\nexport KJ_ATLAS_API_KEY=change-me\n```\n", encoding="utf-8")
+            readme.write_text("```bash\nexport SUI_API_KEY=change-me\n```\n", encoding="utf-8")
 
             findings = MODULE.check_runtime_parameter_key_commands(root, [Path("README.md")])
 
@@ -974,11 +974,11 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
     def test_reports_key_missing_from_registry(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            self._write_registry(root, ["SUI_LLM_PROVIDER"])
             doc_dir = root / "04_Documentation"
             doc_dir.mkdir()
             doc = doc_dir / "configuration.md"
-            doc.write_text("```bash\nexport KJ_ATLAS_NONEXISTENT_KEY=1\n```\n", encoding="utf-8")
+            doc.write_text("```bash\nexport SUI_NONEXISTENT_KEY=1\n```\n", encoding="utf-8")
 
             findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/configuration.md")])
 
@@ -987,17 +987,17 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
         self.assertEqual(finding.rule_id, "DC-CMD-001")
         self.assertEqual(finding.path, "04_Documentation/configuration.md")
         self.assertEqual(finding.line, 2)
-        self.assertEqual(finding.target, "KJ_ATLAS_NONEXISTENT_KEY")
+        self.assertEqual(finding.target, "SUI_NONEXISTENT_KEY")
         self.assertIn("does not exist", finding.message)
 
     def test_ignores_prefix_family_mentions(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            self._write_registry(root, ["KJ_ATLAS_AUDIT_EXPORT_ENABLED"])
+            self._write_registry(root, ["SUI_AUDIT_EXPORT_ENABLED"])
             doc_dir = root / "04_Documentation"
             doc_dir.mkdir()
             doc = doc_dir / "security.md"
-            doc.write_text("監査系設定は `KJ_ATLAS_AUDIT_*` を参照してください。\n", encoding="utf-8")
+            doc.write_text("監査系設定は `SUI_AUDIT_*` を参照してください。\n", encoding="utf-8")
 
             findings = MODULE.check_runtime_parameter_key_commands(root, [Path("04_Documentation/security.md")])
 
@@ -1006,11 +1006,11 @@ class RuntimeParameterKeyCheckTest(unittest.TestCase):
     def test_ignores_process_memos_outside_the_public_doc_scope(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            self._write_registry(root, ["KJ_ATLAS_LLM_PROVIDER"])
+            self._write_registry(root, ["SUI_LLM_PROVIDER"])
             issues_dir = root / "01_Plans" / "issues"
             issues_dir.mkdir(parents=True)
             memo = issues_dir / "issue-example.md"
-            memo.write_text("検証コマンド宣言: `KJ_ATLAS_NONEXISTENT_KEY=1`\n", encoding="utf-8")
+            memo.write_text("検証コマンド宣言: `SUI_NONEXISTENT_KEY=1`\n", encoding="utf-8")
 
             findings = MODULE.check_runtime_parameter_key_commands(root, [Path("01_Plans/issues/issue-example.md")])
 
@@ -1090,7 +1090,7 @@ class CodeSpanCitationCheckTest(unittest.TestCase):
             root = Path(td)
             paths = self._memo(
                 root,
-                "設定は `KJ_ATLAS_LLM_PROVIDER` と `01_Plans/issues/no-such-directory` を参照。\n",
+                "設定は `SUI_LLM_PROVIDER` と `01_Plans/issues/no-such-directory` を参照。\n",
             )
 
             findings = MODULE.check_code_span_citations(root, paths)

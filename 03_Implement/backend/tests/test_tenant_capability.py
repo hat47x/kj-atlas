@@ -5,9 +5,9 @@ from urllib import error as urllib_error
 
 import pytest
 
-from kj_atlas_api.session_context import KNOWN_EFFECTIVE_CAPABILITIES
-from kj_atlas_api.settings import Settings
-from kj_atlas_api.tenant_capability import (
+from sui_sensemaking_api.session_context import KNOWN_EFFECTIVE_CAPABILITIES
+from sui_sensemaking_api.settings import Settings
+from sui_sensemaking_api.tenant_capability import (
     MAX_CAPABILITY_RESPONSE_BYTES,
     ExternalHttpTenantCapabilityResolver,
     ExternalTenantCapabilityConfig,
@@ -16,7 +16,7 @@ from kj_atlas_api.tenant_capability import (
     UnavailableTenantCapabilityResolver,
     build_tenant_capability_resolver,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 class _Response:
@@ -82,7 +82,7 @@ def test_external_capability_resolver_sends_server_context_and_parses_snapshot(
         return response
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         _urlopen,
     )
 
@@ -156,7 +156,7 @@ def test_external_capability_resolver_rejects_invalid_snapshot_without_reflectio
     body: bytes,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
@@ -188,7 +188,7 @@ def test_external_capability_resolver_normalizes_transport_failure(
         raise failure
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         _raise,
     )
 
@@ -213,7 +213,7 @@ def test_external_capability_resolver_rejects_missing_membership_before_transpor
         return _Response(b"{}")
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         _urlopen,
     )
 
@@ -255,7 +255,7 @@ def test_external_capability_resolver_rejects_invalid_context_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         _unexpected_transport,
     )
 
@@ -274,11 +274,11 @@ def test_external_capability_resolver_rejects_oversized_request_before_transport
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.MAX_CAPABILITY_REQUEST_BYTES",
+        "sui_sensemaking_api.tenant_capability.MAX_CAPABILITY_REQUEST_BYTES",
         32,
     )
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
             AssertionError("transport must not be called")
         ),
@@ -305,7 +305,7 @@ def test_external_capability_resolver_maps_http_rejection_without_detail(
         )
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.open_trusted_http",
+        "sui_sensemaking_api.tenant_capability.open_trusted_http",
         _raise,
     )
 
@@ -323,7 +323,7 @@ def test_capability_builder_defaults_unavailable_and_builds_only_when_enabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.settings.tenant_capability_resolver",
+        "sui_sensemaking_api.tenant_capability.settings.tenant_capability_resolver",
         "none",
     )
     assert isinstance(
@@ -332,19 +332,19 @@ def test_capability_builder_defaults_unavailable_and_builds_only_when_enabled(
     )
 
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.settings.tenant_capability_resolver",
+        "sui_sensemaking_api.tenant_capability.settings.tenant_capability_resolver",
         "external_http",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.settings.tenant_capability_http_endpoint",
+        "sui_sensemaking_api.tenant_capability.settings.tenant_capability_http_endpoint",
         "https://capability.example.invalid/v1/resolve",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.settings.tenant_capability_http_api_key",
+        "sui_sensemaking_api.tenant_capability.settings.tenant_capability_http_api_key",
         "api-key",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.tenant_capability.settings.tenant_capability_http_timeout_seconds",
+        "sui_sensemaking_api.tenant_capability.settings.tenant_capability_http_timeout_seconds",
         0.5,
     )
     assert isinstance(
@@ -356,40 +356,40 @@ def test_capability_builder_defaults_unavailable_and_builds_only_when_enabled(
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "unknown"},
-        {"KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "external_http"},
+        {"SUI_TENANT_CAPABILITY_RESOLVER": "unknown"},
+        {"SUI_TENANT_CAPABILITY_RESOLVER": "external_http"},
         {
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "none",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT": (
+            "SUI_TENANT_CAPABILITY_RESOLVER": "none",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT": (
                 "https://capability.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "external_http",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT": (
+            "SUI_TENANT_CAPABILITY_RESOLVER": "external_http",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT": (
                 "http://capability.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "external_http",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT": (
+            "SUI_TENANT_CAPABILITY_RESOLVER": "external_http",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT": (
                 "https://user:pass@capability.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "external_http",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT": (
+            "SUI_TENANT_CAPABILITY_RESOLVER": "external_http",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT": (
                 "https://capability.example.invalid/resolve?token=secret"
             ),
         },
         {
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "external_http",
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT": (
+            "SUI_TENANT_CAPABILITY_RESOLVER": "external_http",
+            "SUI_TENANT_CAPABILITY_HTTP_ENDPOINT": (
                 "https://capability.example.invalid/resolve"
             ),
-            "KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY": "invalid key",
+            "SUI_TENANT_CAPABILITY_HTTP_API_KEY": "invalid key",
         },
-        {"KJ_ATLAS_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS": 31},
+        {"SUI_TENANT_CAPABILITY_HTTP_TIMEOUT_SECONDS": 31},
     ],
 )
 def test_capability_settings_reject_unsafe_configuration(
@@ -401,11 +401,11 @@ def test_capability_settings_reject_unsafe_configuration(
 
 def test_capability_settings_allow_https_and_hide_secret_input() -> None:
     configured = Settings(
-        KJ_ATLAS_TENANT_CAPABILITY_RESOLVER="external_http",
-        KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=(
+        SUI_TENANT_CAPABILITY_RESOLVER="external_http",
+        SUI_TENANT_CAPABILITY_HTTP_ENDPOINT=(
             "https://capability.example.invalid/resolve"
         ),
-        KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY="api-key",
+        SUI_TENANT_CAPABILITY_HTTP_API_KEY="api-key",
     )
     assert configured.tenant_capability_resolver == "external_http"
 
@@ -413,9 +413,9 @@ def test_capability_settings_allow_https_and_hide_secret_input() -> None:
     endpoint_with_secret = "https://capability.example.invalid/resolve?token=raw-secret"
     with pytest.raises(ValueError) as exc_info:
         Settings(
-            KJ_ATLAS_TENANT_CAPABILITY_RESOLVER="external_http",
-            KJ_ATLAS_TENANT_CAPABILITY_HTTP_ENDPOINT=endpoint_with_secret,
-            KJ_ATLAS_TENANT_CAPABILITY_HTTP_API_KEY=raw_secret,
+            SUI_TENANT_CAPABILITY_RESOLVER="external_http",
+            SUI_TENANT_CAPABILITY_HTTP_ENDPOINT=endpoint_with_secret,
+            SUI_TENANT_CAPABILITY_HTTP_API_KEY=raw_secret,
         )
     error_text = str(exc_info.value)
     assert raw_secret not in error_text

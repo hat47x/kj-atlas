@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ114）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §2（束ねは訴えの類似性）, `02_Architecture/api.md`（suggest-merges 契約・suggestions スキーマ）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ11/48/66等が `"suggestions"` キーのみ assert）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §2（束ねは訴えの類似性）, `02_Architecture/api.md`（suggest-merges 契約・suggestions スキーマ）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`（シナリオ11/48/66等が `"suggestions"` キーのみ assert）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -22,7 +22,7 @@ if task == "suggest_merges":
 
 - **統合提案（似たカードのマージ候補）が実際に生成されることを E2E で一切検証できない**（正パスなし）。
 - バックエンドが常に空提案を返す回帰（マージ検出が壊れる）が起きても、業務フローE2E は全部 pass する。
-- kj_technique.md §2 の「訴えの類似性による束ね」の延長である統合提案（類似カードの統合）が未固定。
+- sensemaking_technique.md §2 の「訴えの類似性による束ね」の延長である統合提案（類似カードの統合）が未固定。
 
 実機再現（iteration 184）:
 

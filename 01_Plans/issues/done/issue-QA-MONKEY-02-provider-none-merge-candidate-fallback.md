@@ -13,13 +13,13 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: QA-MONKEY-02
-- RequirementStatement: CE3 candidate collection must remain usable in the documented `KJ_ATLAS_LLM_PROVIDER=none` fallback environment.
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=API starts with `KJ_ATLAS_LLM_PROVIDER=none` / 操作=click `Collect candidates` / 期待結果=UI falls back to deterministic local collection without surfacing `Service Unavailable` / 除外=provider contract validation failures.
+- RequirementStatement: CE3 candidate collection must remain usable in the documented `SUI_LLM_PROVIDER=none` fallback environment.
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=API starts with `SUI_LLM_PROVIDER=none` / 操作=click `Collect candidates` / 期待結果=UI falls back to deterministic local collection without surfacing `Service Unavailable` / 除外=provider contract validation failures.
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
 
 ## 1) 課題 / Problem statement
 
-- Manual fallback startup uses `KJ_ATLAS_LLM_PROVIDER=none`.
+- Manual fallback startup uses `SUI_LLM_PROVIDER=none`.
 - Monkey test clicked CE3 `Collect candidates` and the UI showed `Service Unavailable`.
 - This blocked CE3 monkey coverage for candidate decisions, preset replay, and rollback paths.
 

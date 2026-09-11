@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify kj-atlas HTTP API endpoints from an external script (admin/CI path).
+# Verify sui-sensemaking HTTP API endpoints from an external script (admin/CI path).
 #
 # This is the "administrator writes their own script to use the CLI/API"
 # verification path — a plain curl-based client independent of the frontend.
@@ -7,9 +7,9 @@
 # Usage:
 #   ./verify_api.sh [BASE_URL]     # default http://127.0.0.1:8000
 #
-# Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000).
-# For local single-tenant dev, no API key is required. If KJ_ATLAS_API_KEY
-# is set, pass it via KJ_ATLAS_API_KEY env.
+# Requires a running backend (uvicorn sui_sensemaking_api.main:app --port 8000).
+# For local single-tenant dev, no API key is required. If SUI_API_KEY
+# is set, pass it via SUI_API_KEY env.
 
 set -u
 BASE_URL="${1:-http://127.0.0.1:8000}"
@@ -27,16 +27,16 @@ check() {
   fi
 }
 
-# auth_header is a bash ARRAY so a keyed backend (KJ_ATLAS_API_KEY set) sends a
+# auth_header is a bash ARRAY so a keyed backend (SUI_API_KEY set) sends a
 # well-formed X-API-Key header; the previous string form ('-H ...' with literal
 # quotes) word-split into a malformed curl header and failed with 401 against a
 # keyed backend (only validated keyless before).
 auth_header=()
-if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+if [ -n "${SUI_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${SUI_API_KEY}")
 fi
 
-echo "=== kj-atlas API verification (base: $BASE_URL) ==="
+echo "=== sui-sensemaking API verification (base: $BASE_URL) ==="
 
 # 1. /healthz — unauthenticated liveness
 code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/healthz")

@@ -39,7 +39,7 @@
 
 - 個人追跡、行動スコアリング、監視目的のテレメトリ拡張は行わない（`ADR-0032` 非目標を継承）。
 - KPIは診断・受入確認の補助に留め、利用者の評価・序列化へ転用しない。
-- 観測は `KJ_ATLAS_LLM_PROVIDER=none` 既定構成でも実行可能であること。
+- 観測は `SUI_LLM_PROVIDER=none` 既定構成でも実行可能であること。
 - 自動でGo/No-Goを確定しない。判定は人間がDecision Queueへ記録する。
 
 ## Three-Element Verification（ADR-0067 遡及適用）
@@ -48,7 +48,7 @@
 |------|----------------|---------------|
 | **業務設計** | 機能完了と価値実感の乖離を埋める観測がissue本文の宣言止まりになっている。価値観測ハーネス（再現可能シナリオ実行）と二軸スコアカード（価値KPI軸/統治軸）の運用をVR4の観測基盤として固定する | 機能: 各価値ループV0〜V4に`Hypothesis→Action→Evidence→Decision`を1つの再実行可能な観測単位として束ねる。データ: 判定は人間がDecision Queueへ記録し自動でGo/No-Goを確定しない |
 | **データ設計** | 証拠成果物は`evidenceId/取得手順/形式/保存先/再測定一致条件`を持ち版間比較可能な固定形式とする。判定記録には`candidate/date/reviewer/decision/artifactId/re-decision condition`を必須化 | 業務: 価値KPI軸は定義可能・再測定可能・比較可能の3条件を満たすKPIのみ採用。機能: 統治軸の後退検知（safeMode後退・human_reviewed自動昇格）は即No-Goで緩和不可 |
-| **機能設計** | 操作列はE2Eシナリオ名（または手動受入手順）で固定し同一手順で同一種類の証拠を再取得できることを要件とする。スコアカードはMVP-EXIT-01とPRODUCT-QA-01の入力とし判定式は既存のGo/Conditional Go/No-Goを再利用 | 業務: 個人追跡・行動スコアリング・監視目的のテレメトリ拡張は行わない。データ: 観測は`KJ_ATLAS_LLM_PROVIDER=none`既定構成でも実行可能 |
+| **機能設計** | 操作列はE2Eシナリオ名（または手動受入手順）で固定し同一手順で同一種類の証拠を再取得できることを要件とする。スコアカードはMVP-EXIT-01とPRODUCT-QA-01の入力とし判定式は既存のGo/Conditional Go/No-Goを再利用 | 業務: 個人追跡・行動スコアリング・監視目的のテレメトリ拡張は行わない。データ: 観測は`SUI_LLM_PROVIDER=none`既定構成でも実行可能 |
 
 ## Consequences
 
@@ -75,6 +75,6 @@
 ## Stream H deferred-backlog baseline（2026-06-13）
 
 - `VALUE-MEASURE-01` is **Hold / deferred-open-ready**: the measurement harness may define Value Hypothesis, Evidence Artifact, and Go/No-Go artifact shapes, but must stay a planning contract until a real-user/cooperator milestone or maintainer-approved surrogate-evidence milestone exists.
-- `VALUE-MEASURE-02` is **Hold / deferred-open-ready**: the two-axis scorecard may define value KPI × governance guardrail rows, but must not become a release blocker while kj-atlas remains solo OSS/pre-release.
+- `VALUE-MEASURE-02` is **Hold / deferred-open-ready**: the two-axis scorecard may define value KPI × governance guardrail rows, but must not become a release blocker while sui-sensemaking remains solo OSS/pre-release.
 - Minimal acceptable evidence while deferred is limited to issue text, mock/synthetic fixtures, command logs, and proposed evidence IDs; no frontend E2E implementation, telemetry expansion, or real-user KPI collection is required.
 - No-Go conditions are: surveillance-style telemetry, individual scoring, SafeMode/share-export weakening, heavyweight RACI beyond Maintainer ownership, or mandatory external-participant KPI before activation.

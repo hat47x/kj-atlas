@@ -3,11 +3,11 @@
 - Status: Proposed
 - Date: 2026-08-09
 - Deciders: Project Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/llm/`, settings, テスト
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/llm/`, settings, テスト
 
 ## Context
 
-現在の kj-atlas は全 AI タスク（10 tasks）に単一の LLM モデルを使用する。
+現在の sui-sensemaking は全 AI タスク（10 tasks）に単一の LLM モデルを使用する。
 しかし KJ 法のタスクは要求される思考レベルが大きく異なる：
 
 | タスク | 要求される能力 | 複雑度 |
@@ -31,7 +31,7 @@
 
 ```python
 # settings.py / 環境変数
-KJ_ATLAS_LLM_TASK_MODEL_MAP = "re_layout=deepseek-v4-flash,..."
+SUI_LLM_TASK_MODEL_MAP = "re_layout=deepseek-v4-flash,..."
 ```
 
 未設定タスクはデフォルトモデルにフォールバックする。
@@ -42,7 +42,7 @@ KJ_ATLAS_LLM_TASK_MODEL_MAP = "re_layout=deepseek-v4-flash,..."
 |---|---|---|---|
 | 1 (最高) | リクエスト | API リクエストボディの `model` フィールド | プロンプト単位の動的切替 |
 | 2 | テナント | `tenant_settings` テーブル（将来） | 組織単位のポリシー |
-| 3 (最低) | グローバル | `KJ_ATLAS_LOCAL_LLM_MODEL` + `KJ_ATLAS_LLM_TASK_MODEL_MAP` | デプロイ全体の既定値 |
+| 3 (最低) | グローバル | `SUI_LOCAL_LLM_MODEL` + `SUI_LLM_TASK_MODEL_MAP` | デプロイ全体の既定値 |
 
 v1 では優先度 1 と 3 を実装する。優先度 2 は Phase 2。
 
@@ -61,7 +61,7 @@ v1 では優先度 1 と 3 を実装する。優先度 2 は Phase 2。
 ### D4: 段階的実装計画
 
 **Phase 1 (今回)**: 設定ベースのタスク→モデルマッピング
-- `KJ_ATLAS_LLM_TASK_MODEL_MAP` 環境変数
+- `SUI_LLM_TASK_MODEL_MAP` 環境変数
 - リクエストレベルの `model` オーバーライド
 - テストでの検証
 
@@ -79,7 +79,7 @@ v1 では優先度 1 と 3 を実装する。優先度 2 は Phase 2。
 |------|----------------|---------------|
 | **業務設計** | KJ法のタスクは要求される思考レベルが大きく異なり（re_layout低〜generate_narrative最高）、軽量タスクに高性能モデルを使うとコストが無駄になる。タスク複雑度に応じたモデル選択でコストと品質のバランスを取る | 機能: タスク→モデルマッピングを環境変数で設定可能にし未設定タスクはデフォルトへフォールバック。データ: コスト追跡・使用量制限はPhase 3の将来範囲 |
 | **データ設計** | 3層のオーバーライド優先順位（リクエスト>テナント>グローバル）。v1ではリクエストとグローバルを実装し、テナントレベル設定は`tenant_settings`テーブルでPhase 2 | 業務: 設定の複雑性が増すためデフォルトで十分動作するよう設計。機能: テナント管理UI・パーソナライズ設定は将来実装 |
-| **機能設計** | `KJ_ATLAS_LLM_TASK_MODEL_MAP`環境変数＋リクエストレベルの`model`オーバーライドで実装。推奨マッピングは複雑度別（低/中→flash、高/最高→flashまたはpro） | 業務: リアルタイム性能監視・自動モデル選択・コスト上限自動強制は非目標。データ: DeepSeekはflashでも十分な品質のため全タスクflashから開始しマッピングは後から注入 |
+| **機能設計** | `SUI_LLM_TASK_MODEL_MAP`環境変数＋リクエストレベルの`model`オーバーライドで実装。推奨マッピングは複雑度別（低/中→flash、高/最高→flashまたはpro） | 業務: リアルタイム性能監視・自動モデル選択・コスト上限自動強制は非目標。データ: DeepSeekはflashでも十分な品質のため全タスクflashから開始しマッピングは後から注入 |
 
 ## Consequences
 

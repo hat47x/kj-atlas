@@ -42,11 +42,11 @@ artifactの保持期間である14日を過ぎた後、同じ固定入力から�
 
 ### 1.1 Product evidence bundle
 
-完全な`kj-atlas`のgit checkoutまたはworktreeから、全Arm共通のbundleを一度だけ生成する。Case 001専用の旧builderは使用せず、全cognitive-dogfood Case共通のsanitized frozen-source builderを使用する。
+完全な`sui-sensemaking`のgit checkoutまたはworktreeから、全Arm共通のbundleを一度だけ生成する。Case 001専用の旧builderは使用せず、全cognitive-dogfood Case共通のsanitized frozen-source builderを使用する。
 
 ```bash
 python 01_Plans/dogfood/prepare_cognitive_frozen_source_bundle.py \
-  --repo-root /path/to/kj-atlas \
+  --repo-root /path/to/sui-sensemaking \
   --manifest 01_Plans/dogfood/cognitive-dogfood-case-001-round1-source-manifest.json \
   --output /path/to/operator-workspace/case001-product
 ```
@@ -84,17 +84,17 @@ python 01_Plans/dogfood/prepare_cognitive_case001_skill_bundle.py \
 操作者専用skill manifestがCase 001に由来する事実は、Case 001の結果を見る前に固定した履歴として保持する。ただし、そのCase identityはB/DのArm側bundleへコピーしない。A/Cにはskill bundleもskill manifestも渡さない。
 
 
-### 1.3 Frozen KJ Atlas runtime — C/Dのみ
+### 1.3 Frozen SUI Sensemaking runtime — C/Dのみ
 
-C/Dで実際に操作するKJ Atlasは、formal product snapshotと同じ `2232b3bb26647e5c4a083f55bdbf83c161698649` のcheckout / worktreeから起動する。Actions artifactは分析入力を隔離するためのpackageであり、KJ Atlas runtimeそのものを含まない。
+C/Dで実際に操作するSUI Sensemakingは、formal product snapshotと同じ `2232b3bb26647e5c4a083f55bdbf83c161698649` のcheckout / worktreeから起動する。Actions artifactは分析入力を隔離するためのpackageであり、SUI Sensemaking runtimeそのものを含まない。
 
 run開始前に、操作者は固定commitでC/D共通runbookの必要UI経路を使用できることを確認する。現在mainや別commitしか起動できない場合、それを元のRound 1へ黙って代用しない。固定runtimeで実行不能なら`blocked / invalid / partial`として理由を保存し、別revisionとして扱う。
 
-A/BはKJ Atlas UIをtreatmentとして使用しないため、このruntime起動手順の対象外である。
+A/BはSUI Sensemaking UIをtreatmentとして使用しないため、このruntime起動手順の対象外である。
 
 ## 2. Armの実行順と入力
 
-| 実行順 | Arm | 新規コンテキストへ渡すもの | KJ Atlas UI | Skill bundle |
+| 実行順 | Arm | 新規コンテキストへ渡すもの | SUI Sensemaking UI | Skill bundle |
 |---:|---|---|---|---|
 | 1 | C | `cognitive-dogfood-case-001-arm-c` package | 使用する | なし |
 | 2 | D | `cognitive-dogfood-case-001-arm-d` package | 使用する | あり |
@@ -103,7 +103,7 @@ A/BはKJ Atlas UIをtreatmentとして使用しないため、このruntime起�
 
 新規コンテキストには、この表やArm名をあえて伝えない。artifact内の`launch.md`だけを実行指示として渡し、run recordを作成するときに操作者がArm metadataとartifact identityを補う。
 
-## 3. C/DでのKJ Atlas実行
+## 3. C/DでのSUI Sensemaking実行
 
 C/Dでは、操作者だけが`cognitive-dogfood-case-001-cd-ui-runbook.md`を参照する。分析を行うAIへrunbook全体を見せる必要はない。
 
@@ -111,7 +111,7 @@ C/Dでは、操作者だけが`cognitive-dogfood-case-001-cd-ui-runbook.md`を�
 
 1. artifact内の空の`starter.json`を起点にする。
 2. `launch.md`に従い、AIが生カード候補を作る。
-3. 人間が最初の生カード集合を確認し、KJ Atlasへ入れる。
+3. 人間が最初の生カード集合を確認し、SUI Sensemakingへ入れる。
 4. その後にInquiryJourneyの起点を作る。
 5. KJ統合、必要なproposal、人間による採否、意味上のsnapshot / handoffを進める。
 6. required outputを作成する。
@@ -175,7 +175,7 @@ blind reviewは`cognitive-dogfood-blind-review-protocol.md`に従い、BR1 → B
 次のいずれかが起きた場合、そのrunを無理に有効化しない。
 
 - 新規コンテキストが、操作者専用manifest、Case 0、PR #2805の評価議論、Round 2資料を読んだ。
-- 新規コンテキストが、bundle外のKJ Atlas repositoryを探索した。
+- 新規コンテキストが、bundle外のSUI Sensemaking repositoryを探索した。
 - B/Dが、skill bundle外のskill repository資料を探索した。
 - A/Cへ、skill bundleまたはskill評価情報が渡った。
 - 一部のArmだけが、外部Web検索や追加sourceを行った。
@@ -187,6 +187,6 @@ blind reviewは`cognitive-dogfood-blind-review-protocol.md`に従い、BR1 → B
 
 最初に実行する有効runは **C** である。
 
-操作者は、現在の比較設計を行ったコンテキストとは別に新規コンテキストを作り、そこへ`cognitive-dogfood-case-001-arm-c` artifactの内容だけを渡す。KJ Atlas UIは人間の操作者が実際に使用する。
+操作者は、現在の比較設計を行ったコンテキストとは別に新規コンテキストを作り、そこへ`cognitive-dogfood-case-001-arm-c` artifactの内容だけを渡す。SUI Sensemaking UIは人間の操作者が実際に使用する。
 
 起動時点では、Case 0 outcome、T1〜T3の評価意図、M1〜M9、他Arm、cultural-substrate-weaving、Round 2外部比較の情報を、新規の分析コンテキストへ与えない。

@@ -1,11 +1,11 @@
 # English Summary
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
-This document is the single source of truth for provider abstraction in kj-atlas. It standardizes provider enum, `KJ_ATLAS_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
+This document is the single source of truth for provider abstraction in sui-sensemaking. It standardizes provider enum, `SUI_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
 
 # llm_provider_spec — LLMプロバイダ抽象仕様（正本）
 
-本仕様は、kj-atlas における LLM 連携の唯一の正本である。
+本仕様は、sui-sensemaking における LLM 連携の唯一の正本である。
 `llm_provider.md` の内容は本仕様へ統合し、重複定義を持たない。
 
 ---
@@ -44,51 +44,51 @@ This document is the single source of truth for provider abstraction in kj-atlas
 2. `transport` は同一provider内で差し替え可能（例: local + ipc/local + http）であり、provider enumと役割が異なる。
 3. `fixture` は決定論回帰のための特別実行形態で、`none/local/external` と同列に独立管理する必要がある。
 
-> **実装ノート（PROV-CONTRACT-01・2026-07-06）**: `fixture` は概念上の分類であり、`KJ_ATLAS_LLM_PROVIDER` 環境変数の受理値（`none|local|local_http|large-scale|large_scale|external|deepseek`）には含まれない。Python テストコードから直接インスタンス化される test-only provider であり、実行時に `KJ_ATLAS_LLM_PROVIDER=fixture` を設定しても解決できない。
+> **実装ノート（PROV-CONTRACT-01・2026-07-06）**: `fixture` は概念上の分類であり、`SUI_LLM_PROVIDER` 環境変数の受理値（`none|local|local_http|large-scale|large_scale|external|deepseek`）には含まれない。Python テストコードから直接インスタンス化される test-only provider であり、実行時に `SUI_LLM_PROVIDER=fixture` を設定しても解決できない。
 
 ---
 
-## 3. 設定キー（`KJ_ATLAS_*` に完全統一）
+## 3. 設定キー（`SUI_*` に完全統一）
 
 互換aliasは持たない。接頭辞のない旧 LLM 設定キーは非対応とする。
 
 ```text
-KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external|deepseek
-KJ_ATLAS_LLM_ESCALATION_ENABLED=false
-KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=false
-KJ_ATLAS_LOCAL_LLM_BASE_URL=<url-or-socket>
-KJ_ATLAS_LOCAL_LLM_MODEL=<model_id>
-KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL=<allowlisted_endpoint>
-KJ_ATLAS_LARGE_SCALE_LLM_MODEL=<model_id>
-KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
-KJ_ATLAS_DEEPSEEK_API_KEY=<secret>
-KJ_ATLAS_DEEPSEEK_BASE_URL=https://api.deepseek.com
-KJ_ATLAS_DEEPSEEK_MODEL=deepseek-v4-flash
-KJ_ATLAS_DEEPSEEK_THINKING_MODE=disabled
+SUI_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external|deepseek
+SUI_LLM_ESCALATION_ENABLED=false
+SUI_LLM_LARGE_SCALE_OPT_IN=false
+SUI_LOCAL_LLM_BASE_URL=<url-or-socket>
+SUI_LOCAL_LLM_MODEL=<model_id>
+SUI_LARGE_SCALE_LLM_BASE_URL=<allowlisted_endpoint>
+SUI_LARGE_SCALE_LLM_MODEL=<model_id>
+SUI_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
+SUI_DEEPSEEK_API_KEY=<secret>
+SUI_DEEPSEEK_BASE_URL=https://api.deepseek.com
+SUI_DEEPSEEK_MODEL=deepseek-v4-flash
+SUI_DEEPSEEK_THINKING_MODE=disabled
 ```
 
-- `KJ_ATLAS_LLM_PROVIDER=none` を既定値とする。
-- `KJ_ATLAS_LLM_PROVIDER=external` は `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
-- `KJ_ATLAS_LLM_PROVIDER=deepseek` は `KJ_ATLAS_DEEPSEEK_API_KEY` を必須とし、未設定時は起動を拒否する。
-- `KJ_ATLAS_DEEPSEEK_THINKING_MODE` は `disabled|enabled`。既定 `disabled` は旧 `deepseek-chat` のnon-thinking semanticsを維持する。
+- `SUI_LLM_PROVIDER=none` を既定値とする。
+- `SUI_LLM_PROVIDER=external` は `SUI_LLM_ESCALATION_ENABLED=true` かつ `SUI_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
+- `SUI_LLM_PROVIDER=deepseek` は `SUI_DEEPSEEK_API_KEY` を必須とし、未設定時は起動を拒否する。
+- `SUI_DEEPSEEK_THINKING_MODE` は `disabled|enabled`。既定 `disabled` は旧 `deepseek-chat` のnon-thinking semanticsを維持する。
 
 ### 3.1 AI-MODEL-GOVERNANCE-03: per-model動的dispatch（2026-08-27追記）
 
-model registry（`LLMProviderRegistryRow`/`LLMModelRegistryRow`）は `providerId` から `providerKind` を独立に保持しており、`KJ_ATLAS_LLM_PROVIDER` はもはや「実行時に選ばれる唯一のprovider」ではない。
+model registry（`LLMProviderRegistryRow`/`LLMModelRegistryRow`）は `providerId` から `providerKind` を独立に保持しており、`SUI_LLM_PROVIDER` はもはや「実行時に選ばれる唯一のprovider」ではない。
 
-- `KJ_ATLAS_LLM_PROVIDER` の役割は次の2つに整理される。
+- `SUI_LLM_PROVIDER` の役割は次の2つに整理される。
   1. **起動時fail-fast対象**: `validate_llm_provider_guards()` はこの値が指す `providerKind` の設定完全性のみを起動時に検査する（本節冒頭の3箇条は不変）。
   2. **既定/フォールバックtransport**: `model` を指定しないAI呼び出し（suggest-layout / suggest-merges / check-narrative / detect-contradiction）はこの値をそのまま使う。
-- **model単位のdispatch**: `model` を指定するAI呼び出しは、その model の登録先 `providerId` → `providerKind` を解決し、`ProviderRegistry.resolve(providerKind)` で対応するtransport（`local`/`large-scale`/`deepseek`）へ直接dispatchする。判定は `KJ_ATLAS_LLM_PROVIDER` と一致するかではなく、その `providerKind` **自身**の設定完全性（`provider_kind_readiness_errors()`、起動時チェックと同一関数を共用）で行う。したがって `KJ_ATLAS_LLM_PROVIDER=local` のプロセスでも、`KJ_ATLAS_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelへ正しくdispatchできる。
-- **`none` は無条件のkill switch**: `KJ_ATLAS_LLM_PROVIDER=none` のときは、registryに他の `providerKind` が設定済みであっても動的dispatchを一切行わない。model単位の判定より先にこの条件を評価する（AGENTS.md安全不変条件「`KJ_ATLAS_LLM_PROVIDER=none` でも主要価値が成立する」を維持するための設計判断）。
+- **model単位のdispatch**: `model` を指定するAI呼び出しは、その model の登録先 `providerId` → `providerKind` を解決し、`ProviderRegistry.resolve(providerKind)` で対応するtransport（`local`/`large-scale`/`deepseek`）へ直接dispatchする。判定は `SUI_LLM_PROVIDER` と一致するかではなく、その `providerKind` **自身**の設定完全性（`provider_kind_readiness_errors()`、起動時チェックと同一関数を共用）で行う。したがって `SUI_LLM_PROVIDER=local` のプロセスでも、`SUI_DEEPSEEK_API_KEY` が設定済みなら `deepseek` 配下のmodelへ正しくdispatchできる。
+- **`none` は無条件のkill switch**: `SUI_LLM_PROVIDER=none` のときは、registryに他の `providerKind` が設定済みであっても動的dispatchを一切行わない。model単位の判定より先にこの条件を評価する（AGENTS.md安全不変条件「`SUI_LLM_PROVIDER=none` でも主要価値が成立する」を維持するための設計判断）。
 - **未設定providerの扱い**: 判定に失敗したmodel（`providerKind` 自身の設定不足、`none`、未対応kind）は、LLM呼び出し前に `503 model_provider_unavailable` で拒否する（`ProviderRequestError`由来の生例外を返さない）。
-- **apiKeyRef**: registry行の `apiKeyRef`（AC-4で参照形式のみ受理）は、dispatch先の資格情報として直接使わない。各transportは従来どおり `KJ_ATLAS_*_API_KEY` 環境変数を直接読む。dispatchはどのtransport factoryを呼ぶかだけを決め、資格情報の読み出し経路は変更しない。
+- **apiKeyRef**: registry行の `apiKeyRef`（AC-4で参照形式のみ受理）は、dispatch先の資格情報として直接使わない。各transportは従来どおり `SUI_*_API_KEY` 環境変数を直接読む。dispatchはどのtransport factoryを呼ぶかだけを決め、資格情報の読み出し経路は変更しない。
 
 ---
 
 ## 4. Interface 契約（`LLMRequest`/`LLMResponse`）
 
-> **PROV-CONTRACT-01（2026-07-06・ADR-0050 D3）で是正**: 本節はかつて `inputs`/`output_schema`/構造化`usage`/`provider_meta` 直接受け渡しを「正規形に固定」と記載していたが、これらは実装（`03_Implement/backend/src/kj_atlas_api/llm/provider.py`）に配線されていなかった。以下は**現在実装済みの最小契約**を正確に記述したものであり、未配線の拡張フィールドは §4.4「Phase-2（未配線）」に分離した。
+> **PROV-CONTRACT-01（2026-07-06・ADR-0050 D3）で是正**: 本節はかつて `inputs`/`output_schema`/構造化`usage`/`provider_meta` 直接受け渡しを「正規形に固定」と記載していたが、これらは実装（`03_Implement/backend/src/sui_sensemaking_api/llm/provider.py`）に配線されていなかった。以下は**現在実装済みの最小契約**を正確に記述したものであり、未配線の拡張フィールドは §4.4「Phase-2（未配線）」に分離した。
 
 ### 4.1 `LLMRequest`（実装済み・`provider.py` の `LLMRequest` dataclass 準拠）
 
@@ -123,7 +123,7 @@ model registry（`LLMProviderRegistryRow`/`LLMModelRegistryRow`）は `providerI
 }
 ```
 
-- `raw_text` は provider が返した生テキスト（構造化 `output` ではない）。呼び出し元ルート（`03_Implement/backend/src/kj_atlas_api/routes/ai.py`）がタスクごとに JSON としてパース・検証する。
+- `raw_text` は provider が返した生テキスト（構造化 `output` ではない）。呼び出し元ルート（`03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`）がタスクごとに JSON としてパース・検証する。
 - `usage`（トークン数）は未実装。
 
 ### 4.3 失敗時契約（実装済み）

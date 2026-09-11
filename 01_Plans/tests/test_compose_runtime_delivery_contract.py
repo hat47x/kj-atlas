@@ -46,7 +46,7 @@ def _nested_block(lines: list[str], *, marker: str, indent: int) -> list[str]:
 def _list_environment_keys(block: list[str]) -> list[str]:
     keys: list[str] = []
     for line in block:
-        match = re.match(r"^\s*-\s*(KJ_ATLAS_[A-Z0-9_]+)(?:=|\s*$)", line)
+        match = re.match(r"^\s*-\s*(SUI_[A-Z0-9_]+)(?:=|\s*$)", line)
         if match:
             keys.append(match.group(1))
     return keys
@@ -55,7 +55,7 @@ def _list_environment_keys(block: list[str]) -> list[str]:
 def _mapping_keys(block: list[str]) -> list[str]:
     keys: list[str] = []
     for line in block:
-        match = re.match(r"^\s*(KJ_ATLAS_[A-Z0-9_]+):", line)
+        match = re.match(r"^\s*(SUI_[A-Z0-9_]+):", line)
         if match:
             keys.append(match.group(1))
     return keys
@@ -82,8 +82,8 @@ class ComposeRuntimeDeliveryContractTests(unittest.TestCase):
         self.assertEqual(duplicates, [], f"duplicate api.environment public keys: {duplicates}")
 
     def test_app_revision_has_one_api_delivery_and_one_web_build_delivery(self) -> None:
-        self.assertEqual(self.api_environment_keys.count("KJ_ATLAS_APP_REVISION"), 1)
-        self.assertEqual(self.web_build_arg_keys.count("KJ_ATLAS_APP_REVISION"), 1)
+        self.assertEqual(self.api_environment_keys.count("SUI_APP_REVISION"), 1)
+        self.assertEqual(self.web_build_arg_keys.count("SUI_APP_REVISION"), 1)
 
     def test_web_build_public_args_are_unique(self) -> None:
         duplicates = sorted(

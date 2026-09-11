@@ -2,7 +2,7 @@
 
 - Type: Feature request
 - Status: Done
-- Progress: サブスライスA・B・C（実装・テスト・`THREAT_MODEL.md`追記）完了。サブスライスC（[PR #2602](https://github.com/hat47x/kj-atlas/pull/2602)）はセキュリティレビュー後、Maintainer（hat47x）により2026-07-16にマージ済み。受け入れ条件AC-1〜AC-5はすべて充足済み（下記「実装記録」参照）。
+- Progress: サブスライスA・B・C（実装・テスト・`THREAT_MODEL.md`追記）完了。サブスライスC（[PR #2602](https://github.com/hat47x/sui-sensemaking/pull/2602)）はセキュリティレビュー後、Maintainer（hat47x）により2026-07-16にマージ済み。受け入れ条件AC-1〜AC-5はすべて充足済み（下記「実装記録」参照）。
 
 ## Draft→Open 2026-07-12
 `ADR-0054` が maintainer により Accepted（受理時条件: 用語「庭」→「縁側」置換、ADR側で対応済み）。本Issueの唯一のゲートが解消したため Open 化。
@@ -17,7 +17,7 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: EXT-CONN-01
-- RequirementStatement: 外部エージェント（Claude Code / ChatGPT / Copilot Studio）が、レビュー済み等の制約付き投影として kj-atlas の文脈を読み取れる read-only MCP サーバーを提供する。書き込みツールは持たない。
+- RequirementStatement: 外部エージェント（Claude Code / ChatGPT / Copilot Studio）が、レビュー済み等の制約付き投影として sui-sensemaking の文脈を読み取れる read-only MCP サーバーを提供する。書き込みツールは持たない。
 - AcceptanceScenario: 前提=ADR-0054 Accepted / 操作=MCPクライアントから制約付き投影（reviewed-only 等）を読む / 期待結果=SafeMode境界どおりの内容だけが返り、監査相関（bundleHash等）が記録される / 除外=書き込み、トリガー実装、通知。
 - SecurityGateImpact: SafeMode / share-export / public-exposure
 
@@ -42,7 +42,7 @@
 ## 受け入れ条件（案）
 
 - [x] AC-1: MCPクライアントから reviewed-only 投影を取得でき、未レビュー本文・SafeMode対象が含まれない。→ reviewed-only constraintに加え、evidence/contradiction/summaryの全constraintで未レビューentity/refをlink単位（両端点reviewed必須）で除外し、SafeMode redactionから短縮hashを除去済み（2026-07-13、下記「実装記録」参照）。MCP経由の取得（実結線）はサブスライスBで行う。
-- [x] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ `kj-atlas-mcp`（`03_Implement/mcp/`）実装完了。`tools/list` は `get_context_projection` の1件のみ、`resources`capabilityは`initialize`応答に一切含まれない（登録ゼロのため`resources/list`はメソッド自体が存在しない）。固定snapshotテストで検証済み（下記「実装記録」参照）。
+- [x] AC-2: サーバーは書き込み系ツールを一切公開しない（tools/list で検証）。→ `sui-sensemaking-mcp`（`03_Implement/mcp/`）実装完了。`tools/list` は `get_context_projection` の1件のみ、`resources`capabilityは`initialize`応答に一切含まれない（登録ゼロのため`resources/list`はメソッド自体が存在しない）。固定snapshotテストで検証済み（下記「実装記録」参照）。
 - [x] AC-3: 読み取りごとに監査相関が記録され、CE-4 の監査導線から追跡できる。→ ローカル構造化監査ログ（stderr、`mcp-context-read.v1`）で`bundleHash`/`queryCanonicalHash`相当を全readで記録。**2026-08-16 に CE-4 バックエンド`POST /docs/{id}/context-audit`（`channel="mcp"`）への実結線を完了**（下記「実装記録（2026-08-16）」参照。それ以前は既知ギャップとしてローカルログのみ）。
 - [x] AC-4: `THREAT_MODEL.md` に公開面（認証・認可・レート・失敗時挙動）が追記され、PRODUCT-QA-01 ゲートで照合される。→ `THREAT_MODEL.md` §6-1 として追記完了（2026-07-16、下記「実装記録」参照）。
 - [x] AC-5: 投影IRは輸送非依存で、MCPアダプタ層の差し替えが契約変更なしに可能な構造になっている。→ `context_bundle_projection.ts` として実装。純粋関数・輸送非依存・`ContextProjectionV1` IR固定。
@@ -85,8 +85,8 @@ Maintainer代理裁可が課した「外部結線前の投影コア再検証」�
 
 `ADR-0054`/`ADR-0020`が定める「本サーバーはresource serverのみ、authorization server機能は一切持たない」方針に厳密に従い、外部トークン発行者（既に信頼済みの外部IdP）が発行したbearer tokenを検証する層のみを追加した。token発行・client登録・consent画面などの実装は行っていない（そのコードパス自体が存在しない）。
 
-- **輸送選択**: `KJ_ATLAS_MCP_TRANSPORT`環境変数（既定`stdio`）で`stdio`/`http`を選択（`src/index.ts`）。stdio経路は無改修。
-- **HTTP設定 (`src/oauth_config.ts`)**: `loadHttpTransportConfigFromEnv()`が`KJ_ATLAS_MCP_RESOURCE_URL`/`KJ_ATLAS_MCP_TRUSTED_ISSUER`/`KJ_ATLAS_MCP_JWKS_URI`を必須環境変数としてfail-closedで読み込む（未設定は起動時エラー、安全側デフォルトへのフォールバックはしない）。`KJ_ATLAS_MCP_AUTHORIZATION_SERVERS`（省略時は`KJ_ATLAS_MCP_TRUSTED_ISSUER`）・`KJ_ATLAS_MCP_HTTP_HOST`/`_PORT`（既定`127.0.0.1:8787`）は省略可。
+- **輸送選択**: `SUI_MCP_TRANSPORT`環境変数（既定`stdio`）で`stdio`/`http`を選択（`src/index.ts`）。stdio経路は無改修。
+- **HTTP設定 (`src/oauth_config.ts`)**: `loadHttpTransportConfigFromEnv()`が`SUI_MCP_RESOURCE_URL`/`SUI_MCP_TRUSTED_ISSUER`/`SUI_MCP_JWKS_URI`を必須環境変数としてfail-closedで読み込む（未設定は起動時エラー、安全側デフォルトへのフォールバックはしない）。`SUI_MCP_AUTHORIZATION_SERVERS`（省略時は`SUI_MCP_TRUSTED_ISSUER`）・`SUI_MCP_HTTP_HOST`/`_PORT`（既定`127.0.0.1:8787`）は省略可。
 - **Token検証 (`src/oauth_verifier.ts`)**: `jose`の`jwtVerify`で署名・`iss`（`trustedIssuer`と厳密一致）・`aud`（`resource`）・`exp`を検証。すべての失敗経路（署名不正・issuer不一致・audience不一致・期限切れ・claim欠落・不正形式token）を`InvalidTokenError`へ正規化し、SDKの`requireBearerAuth`が401として応答する（未知のErrorをthrowすると500になる既知の落とし穴を回避）。`client_id`→`azp`→`sub`の順でclient識別子を解決。CVI反スコアリング（`ADR-0041`）の防御的テストとして、token claimに`score`/`rank`/`confidence`/`priority`を含めても`AuthInfo`にその語彙が一切現れないことを固定。
 - **HTTP app (`src/http_server.ts`)**: `express`上に、`GET /.well-known/oauth-protected-resource`（RFC 9728、未認証で公開必須のdiscovery文書）と、認証必須の`POST/GET/DELETE /mcp`（`StreamableHTTPServerTransport`、`sessionIdGenerator: undefined`のstateless構成）を構築。全route共通で60 req/min/IPのrate limitとrequest body 1MB上限を適用。
   - **実装中に発見・修正した実欠陥**: SDKの`metadataHandler()`は内部に独自の`/`routeを持つExpress Routerを返す設計だが、当初`app.get(path, metadataHandler(...))`でマウントしていたためExpressがmount pathを`req.url`から剥がさず、Routerの`/`routeが常に不一致となって404を返す状態だった（`app.use(path, ...)`が必要）。`http_server.test.ts`の実HTTPリクエストによる統合テストで検出し、`app.use`へ修正して解消。
@@ -104,7 +104,7 @@ Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設�
 - **独立パッケージ**: 独自の `package.json`/`package-lock.json`/`tsconfig.json`。frontendとは依存もlockfileも共有しない。root workspace化なし。
 - **依存pin**: `@modelcontextprotocol/sdk@1.29.0`（決定時点の最新かつ承認値と一致を`npm view`で確認済み）、peer dependency `zod@4.4.3`（`^3.25 || ^4.0`要件を満たす最新4.x）。`npm audit` は当初 `vitest` UI serverの critical 脆弱性（devDependency、`vitest run`のみ使用のため無関係）を検出したため `vitest@4.1.10` へ修正pinし、`found 0 vulnerabilities` を確認。
 - **投影コアの共有**: コピーせず `../frontend/src/export/context_bundle_projection.ts` を相対パスでmonorepo source import。frontend側の拡張子省略import規約（Vite/bundler前提）と衝突したため、本パッケージの`tsconfig.json`は`moduleResolution: "NodeNext"`ではなく`"bundler"`を採用（実行も`tsx`＝esbuildベースのため実挙動と一致）。frontend側のファイルは無改修。
-- **実装**: `get_context_projection({docId, constraint, safeMode?})` の1ツールのみを登録（`src/context_projection_tool.ts`）。`safeMode`省略時は`true`（安全側既定）。`document_client.ts`が`GET /docs/{id}`から`DocumentV2`を取得（`KJ_ATLAS_MCP_API_BASE_URL`・`KJ_ATLAS_API_KEY`環境変数、後者はブラウザ側が送らない`X-API-Key`をこのプロセス自身が送信）。stdio輸送のみ（`StdioServerTransport`）、listen portなし。
+- **実装**: `get_context_projection({docId, constraint, safeMode?})` の1ツールのみを登録（`src/context_projection_tool.ts`）。`safeMode`省略時は`true`（安全側既定）。`document_client.ts`が`GET /docs/{id}`から`DocumentV2`を取得（`SUI_MCP_API_BASE_URL`・`SUI_API_KEY`環境変数、後者はブラウザ側が送らない`X-API-Key`をこのプロセス自身が送信）。stdio輸送のみ（`StdioServerTransport`）、listen portなし。
 - **AC-3の既知ギャップ**: `bundleHash`/`queryCanonicalHash`相当は全readで算出しているが、バックエンドの`POST /docs/{id}/context-audit`（CE-4）への実結線は**今回実施しなかった**。同エンドポイントの`channel`enumは`"api"|"cli"|"gui"`に固定され、`command`もbackend側whitelist制御（`agent_response_import.ts`の同種ギャップをApp.tsx自身のコメントが記録済み）で、MCP由来のreadを流す枠がない。これを追加するのはbackendの共有監査契約を変更することになり、本サブスライスの承認範囲（MCP SDK依存＋パッケージ新設のみ）を超える。暫定として、全readをローカル構造化ログ（stderr、`mcp-context-read.v1`スキーマ）に記録する方式を採用した。CE-4への実結線はサブスライスCまたは専用backend issueへ切り出す。
 - **capability allowlist検証**: `context_bundle_projection.test.ts`と対をなす形で、`InMemoryTransport.createLinkedPair()`で実際のClient⇔Serverペアをプロセス内接続し、`tools/list`が`get_context_projection`一件のみであること、`resources`capabilityが`initialize`応答に一切含まれないこと（`resources/list`はメソッド自体が存在せず`-32601`を返す＝空リストより強い「未登録」の証明）、write/ingest/apply/publish/create/update/delete/sampling/elicit名を持つツールが存在しないことを固定した。加えて、実際の`tsx src/index.ts`プロセスへ生JSON-RPC（initialize→initialized→tools/list）を送るスモーク検証で、stdoutにプロトコルメッセージ以外が一切混入しないことも確認した。
 - **テスト**: `document_client.test.ts`（8）・`audit_log.test.ts`（5）・`context_projection_tool.test.ts`（8、上記capability allowlist込み）、計21 tests、typecheck 0。
@@ -121,7 +121,7 @@ Maintainer代理裁可の固定条件に従い、`03_Implement/mcp/` を新設�
 
 `Close-out` で「既知の未実装」として切り出していた AC-3 の CE-4 実結線ギャップ（backend `channel` enum に `"mcp"` スロットが無い）を、専用 backend issue 相当の変更として解消した。
 
-- **backend**: `ContextAuditPayload.channel` を `Literal["api", "cli", "gui", "mcp"]` へ拡張（`03_Implement/backend/src/kj_atlas_api/routes/docs.py`）。`api.md` の channel enum・消費者境界注記を `"mcp"` 込みへ更新。
+- **backend**: `ContextAuditPayload.channel` を `Literal["api", "cli", "gui", "mcp"]` へ拡張（`03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`）。`api.md` の channel enum・消費者境界注記を `"mcp"` 込みへ更新。
 - **MCP**: 成功した投影読み取りごとに、`emitContextAuditEvent`（`src/audit_log.ts`）が `POST /docs/{id}/context-audit` へ `operation=query` / `command=context-query` / `channel="mcp"` / `equivalenceKey=queryCanonicalHash` / `bundleHash=projection.bundleHash` / `safeMode` / `dryRun=true` / `sideEffect=none` を送出（`src/context_projection_tool.ts`）。MCP由来の read が api/cli/gui と同じ監査トレイルに載る。
 - **best-effort 設計を明示**: CE-4 送出は追加の backend 可視シンクであり、読み取り自身の相関は従来どおり同期ローカル `mcp-context-read.v1`（stderr）エントリ。送出失敗は読み取りを失敗させず、構造化警告を stderr へ書く（`api.md` 消費者境界注記・MCP README runbook に明記）。
 - **テスト**: backend `test_context_audit_endpoint_accepts_mcp_channel`（channel=mcp の受容と監査イベント伝播）＋ MCP `audit_log.test.ts` の `emitContextAuditEvent` 3件（POST body・非2xx・ネットワーク失敗の best-effort）。backend 29 passed・MCP 61 tests pass・docs-check passed。

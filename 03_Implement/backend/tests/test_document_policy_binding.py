@@ -5,8 +5,8 @@ from urllib import error as urllib_error
 
 import pytest
 
-from kj_atlas_api.document_access_resource import UnavailableDocumentPolicyBindingResolver
-from kj_atlas_api.document_policy_binding import (
+from sui_sensemaking_api.document_access_resource import UnavailableDocumentPolicyBindingResolver
+from sui_sensemaking_api.document_policy_binding import (
     MAX_BINDING_RESPONSE_BYTES,
     DocumentPolicyBindingInvalidResponseError,
     DocumentPolicyBindingUnavailableError,
@@ -14,8 +14,8 @@ from kj_atlas_api.document_policy_binding import (
     ExternalHttpDocumentPolicyBindingResolver,
     build_document_policy_binding_resolver,
 )
-from kj_atlas_api.settings import Settings
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.settings import Settings
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 class _Response:
@@ -68,7 +68,7 @@ def test_external_resolver_sends_only_opaque_lookup_and_returns_transient_policy
         return response
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         _urlopen,
     )
 
@@ -123,7 +123,7 @@ def test_external_resolver_rejects_invalid_lookup_before_transport(
         raise AssertionError("transport must not be called")
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         _unexpected_transport,
     )
 
@@ -142,11 +142,11 @@ def test_external_resolver_rejects_oversized_lookup_before_transport(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.MAX_BINDING_REQUEST_BYTES",
+        "sui_sensemaking_api.document_policy_binding.MAX_BINDING_REQUEST_BYTES",
         32,
     )
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         lambda request, timeout_seconds: (_ for _ in ()).throw(  # noqa: ARG005
             AssertionError("transport must not be called")
         ),
@@ -188,7 +188,7 @@ def test_external_resolver_rejects_invalid_response_without_reflecting_value(
     body: bytes,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         lambda request, timeout_seconds: _Response(body),  # noqa: ARG005
     )
 
@@ -219,7 +219,7 @@ def test_external_resolver_normalizes_transport_failure_without_leaking_details(
         raise failure
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         _raise,
     )
 
@@ -246,7 +246,7 @@ def test_external_resolver_maps_rejected_lookup_to_invalid_response(
         )
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.open_trusted_http",
+        "sui_sensemaking_api.document_policy_binding.open_trusted_http",
         _raise,
     )
 
@@ -264,7 +264,7 @@ def test_binding_resolver_builder_defaults_unavailable_and_builds_only_when_enab
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.settings.document_policy_binding_resolver",
+        "sui_sensemaking_api.document_policy_binding.settings.document_policy_binding_resolver",
         "none",
     )
     assert isinstance(
@@ -273,19 +273,19 @@ def test_binding_resolver_builder_defaults_unavailable_and_builds_only_when_enab
     )
 
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.settings.document_policy_binding_resolver",
+        "sui_sensemaking_api.document_policy_binding.settings.document_policy_binding_resolver",
         "external_http",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.settings.document_policy_binding_http_endpoint",
+        "sui_sensemaking_api.document_policy_binding.settings.document_policy_binding_http_endpoint",
         "https://binding.example.invalid/v1/resolve",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.settings.document_policy_binding_http_api_key",
+        "sui_sensemaking_api.document_policy_binding.settings.document_policy_binding_http_api_key",
         "api-key",
     )
     monkeypatch.setattr(
-        "kj_atlas_api.document_policy_binding.settings.document_policy_binding_http_timeout_seconds",
+        "sui_sensemaking_api.document_policy_binding.settings.document_policy_binding_http_timeout_seconds",
         0.5,
     )
     assert isinstance(
@@ -297,40 +297,40 @@ def test_binding_resolver_builder_defaults_unavailable_and_builds_only_when_enab
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "unknown"},
-        {"KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http"},
+        {"SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "unknown"},
+        {"SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http"},
         {
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "none",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "none",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
                 "https://binding.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
                 "http://binding.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
                 "https://user:pass@binding.example.invalid/resolve"
             ),
         },
         {
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
                 "https://binding.example.invalid/resolve?token=secret"
             ),
         },
         {
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "external_http",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT": (
                 "https://binding.example.invalid/resolve"
             ),
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY": "invalid key",
+            "SUI_DOCUMENT_POLICY_BINDING_HTTP_API_KEY": "invalid key",
         },
-        {"KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS": 0},
+        {"SUI_DOCUMENT_POLICY_BINDING_HTTP_TIMEOUT_SECONDS": 0},
     ],
 )
 def test_binding_resolver_settings_reject_unsafe_configuration(
@@ -342,15 +342,15 @@ def test_binding_resolver_settings_reject_unsafe_configuration(
 
 def test_binding_resolver_settings_allow_https_and_loopback_http() -> None:
     https = Settings(
-        KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
-        KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=(
+        SUI_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
+        SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=(
             "https://binding.example.invalid/resolve"
         ),
-        KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY="api-key",
+        SUI_DOCUMENT_POLICY_BINDING_HTTP_API_KEY="api-key",
     )
     loopback = Settings(
-        KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
-        KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT="http://127.0.0.1:9000/resolve",
+        SUI_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
+        SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT="http://127.0.0.1:9000/resolve",
     )
 
     assert https.document_policy_binding_resolver == "external_http"
@@ -363,9 +363,9 @@ def test_binding_resolver_settings_error_does_not_reflect_secret_input() -> None
 
     with pytest.raises(ValueError) as exc_info:
         Settings(
-            KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
-            KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=endpoint_with_secret,
-            KJ_ATLAS_DOCUMENT_POLICY_BINDING_HTTP_API_KEY=raw_secret,
+            SUI_DOCUMENT_POLICY_BINDING_RESOLVER="external_http",
+            SUI_DOCUMENT_POLICY_BINDING_HTTP_ENDPOINT=endpoint_with_secret,
+            SUI_DOCUMENT_POLICY_BINDING_HTTP_API_KEY=raw_secret,
         )
 
     error_text = str(exc_info.value)

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/document_access_admin.py`, `03_Implement/backend/src/kj_atlas_api/document_access_metadata_repository.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/document_access_admin.py`, `03_Implement/backend/src/sui_sensemaking_api/document_access_metadata_repository.py`
 - Related ADR/Spec: `issue-SEC-DOC-BOUND-01-unbounded-document-and-identity-fields.md`, `issue-SEC-DOC-BOUND-02-unbounded-list-fields-in-llm-prompts.md`
 - Expected verification level: `integration`
 
@@ -23,7 +23,7 @@
     ).all()
     ```
   - `DocumentRow`はテナントが持つドキュメント本体のテーブルであり、件数の自然な上限が無い。テナントのドキュメント数が増えるほど、このエンドポイントは1回のレスポンスで全件（joinしたaccess-metadata含む）を返し続ける。
-  - `03_Implement/backend/src/kj_atlas_api`全体を`.limit(`でgrepしても既存のpagination規約が0件で、模倣できる「境界のある兄弟パターン」が存在しない。
+  - `03_Implement/backend/src/sui_sensemaking_api`全体を`.limit(`でgrepしても既存のpagination規約が0件で、模倣できる「境界のある兄弟パターン」が存在しない。
 - 利用者または開発への影響: テナントのドキュメント数が増加するにつれ、このエンドポイントへの毎回の呼び出しでDB負荷とレスポンスペイロードサイズが無制限に増加する。クライアント側が部分取得する手段も無い。
 
 ## 対応方針

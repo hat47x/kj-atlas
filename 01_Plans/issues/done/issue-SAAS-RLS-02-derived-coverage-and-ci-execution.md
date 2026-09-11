@@ -12,7 +12,7 @@
 ## 課題
 
 - 現在の問題1: 「migrationでRLSを有効化する全表」を検証する契約testが、migration source内の固定SQL文字列だけを正規表現で収集していた。helper、定数、loopでRLSを設定するinquiry bundle、content object、revision DAG、generation lineageの10表は検出対象外であり、手書きの4 modelとの一致だけでgreenになっていた。
-- 現在の問題2: CIのPostgreSQL jobは一般DB test用の`KJ_ATLAS_RUN_PG_TESTS`だけを設定し、RLS suiteが要求する`KJ_ATLAS_RUN_PG_RLS_TESTS`、分離runtime credential、非superuser roleを用意していなかった。このため実RLS testはPostgreSQL jobでもskipされていた。
+- 現在の問題2: CIのPostgreSQL jobは一般DB test用の`SUI_RUN_PG_TESTS`だけを設定し、RLS suiteが要求する`SUI_RUN_PG_RLS_TESTS`、分離runtime credential、非superuser roleを用意していなかった。このため実RLS testはPostgreSQL jobでもskipされていた。
 - 利用者または開発への影響: 新しいtenant data-plane表でRLS migrationを忘れても通常testと実DB CIが成功し得る。現時点のmigrationには対象14表のRLSが存在するため、直ちに実データ越境が確認されたものではないが、多層防御の最下層を継続的に証明できない状態だった。
 
 ## 対応方針

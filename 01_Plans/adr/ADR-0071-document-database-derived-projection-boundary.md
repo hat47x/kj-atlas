@@ -7,7 +7,7 @@
 
 ## Context
 
-KJキャンバスはJSON documentとして扱いやすく、FirestoreやDynamoDBには柔軟なdocument model、managed scaling、realtime/offline連携という採用価値がある。一方、kj-atlasの永続化はcanvas本文だけでなく、tenant認可、複合FK、identity一意性、監査、AI lineage、content-addressed revision DAG、保持pin、GCを同じ整合性境界で管理する。
+KJキャンバスはJSON documentとして扱いやすく、FirestoreやDynamoDBには柔軟なdocument model、managed scaling、realtime/offline連携という採用価値がある。一方、sui-sensemakingの永続化はcanvas本文だけでなく、tenant認可、複合FK、identity一意性、監査、AI lineage、content-addressed revision DAG、保持pin、GCを同じ整合性境界で管理する。
 
 現在の代表canvasは1 MiB超を実DBmatrixで検証している。Firestoreのdocument上限は1 MiB、DynamoDBのitem上限はattribute名を含め400 KiBであり、canvas全体を単一document/itemへ保存できない。Firestore transactionは競合時に再実行され、offlineでは失敗し、request上限10 MiB・lock期限20秒・全体270秒の制約を持つ。DynamoDB transactionは同一account/Region内の最大100 item・合計4 MiBで、Global Tablesへの反映はRegion間transactionではない。
 
@@ -29,7 +29,7 @@ KJキャンバスはJSON documentとして扱いやすく、FirestoreやDynamoDB
 
 ## Provider assessment
 
-| 観点 | Firestore | DynamoDB | kj-atlas判断 |
+| 観点 | Firestore | DynamoDB | sui-sensemaking判断 |
 | --- | --- | --- | --- |
 | 単一object上限 | document 1 MiB | item 400 KiB | canvas／revision blob正本には不適合 |
 | 複数object transaction | 競合時retry、10 MiB request、offline失敗 | 最大100 item・4 MiB・同一account/Region | 既存RDB transactionの置換理由にならない |

@@ -15,16 +15,16 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     _normalize_cards,
     _normalize_coordinates,
     _normalize_islands,
     _normalize_relations,
     source_from_document,
 )
-from kj_atlas_api.models import SuggestLayoutRequest
-from kj_atlas_api.models_ai import SuggestCardGroupsRequest
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.models import SuggestLayoutRequest
+from sui_sensemaking_api.models_ai import SuggestCardGroupsRequest
+from sui_sensemaking_api.routes.ai import (
     _build_prompt,
     _build_suggest_card_groups_prompt,
     _card_group_candidates,

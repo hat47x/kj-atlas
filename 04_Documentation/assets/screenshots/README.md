@@ -16,7 +16,7 @@
 
 ### 現行の検証済みセット
 
-共通条件: source revision `6757d855c3ef6c0f7b444020e18f5ecd62fa4ec9`、撮影日2026-08-02、locale `ja`、`KJ_ATLAS_LLM_PROVIDER=none`、秘密情報なし、Playwright 1.58.2、Playwright管理 Chromium 145.0.7632.6。
+共通条件: source revision `6757d855c3ef6c0f7b444020e18f5ecd62fa4ec9`、撮影日2026-08-02、locale `ja`、`SUI_LLM_PROVIDER=none`、秘密情報なし、Playwright 1.58.2、Playwright管理 Chromium 145.0.7632.6。
 
 | Capture ID | 対象 | fixture | viewport | 生成スクリプト | 検証結果 |
 | --- | --- | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ node .\scripts\capture_product_value_screenshots.mjs
 node .\scripts\capture_ui_catalog.mjs
 ```
 
-2026-08-02は `KJ_ATLAS_SCREENSHOT_BROWSER_PATH` を指定せず、Playwright管理 Chromium で撮影した。23件すべてを目視し、秘密情報・API key・顧客データがないこと、日本語ラベルと SafeMode / 未レビュー / readOnly の境界が意図どおりであること、390pxを含む対象viewportで主要操作が見切れないことを確認した。初回確認で `ui-selection-context-island.png` が島未選択の状態を撮っていたため、capture scriptへ状態確認を追加してから最終セットを再生成した。
+2026-08-02は `SUI_SCREENSHOT_BROWSER_PATH` を指定せず、Playwright管理 Chromium で撮影した。23件すべてを目視し、秘密情報・API key・顧客データがないこと、日本語ラベルと SafeMode / 未レビュー / readOnly の境界が意図どおりであること、390pxを含む対象viewportで主要操作が見切れないことを確認した。初回確認で `ui-selection-context-island.png` が島未選択の状態を撮っていたため、capture scriptへ状態確認を追加してから最終セットを再生成した。
 
 ### stale判定と公開Go条件
 
@@ -68,7 +68,7 @@ Stale triggers checked:
 - UI locale: `ja`
 - API: `http://127.0.0.1:8000`
 - frontend: `http://127.0.0.1:4173/?locale=ja`
-- LLM provider: `KJ_ATLAS_LLM_PROVIDER=none`
+- LLM provider: `SUI_LLM_PROVIDER=none`
 - 秘密情報、API key、組織固有の承認履歴、顧客データは含めない
 
 ファイル:
@@ -96,11 +96,11 @@ The script starts a temporary Vite server when port 4173 is free, uses determini
 
 Optional environment variables:
 
-- `KJ_ATLAS_SCREENSHOT_OUTPUT_DIR`: output directory. Defaults to `04_Documentation/assets/screenshots`.
-- `KJ_ATLAS_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
-- `KJ_ATLAS_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
-- `KJ_ATLAS_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
-- `KJ_ATLAS_SCREENSHOT_BROWSER_PATH`: Playwright管理browserを使えない場合のChromium/Chrome実行ファイル。未指定時はPlaywrightの既定browserを使う。
+- `SUI_SCREENSHOT_OUTPUT_DIR`: output directory. Defaults to `04_Documentation/assets/screenshots`.
+- `SUI_SCREENSHOT_BASE_URL`: target URL. Defaults to `http://127.0.0.1:4173/?locale=ja`.
+- `SUI_SCREENSHOT_HOST`: Vite host. Defaults to `127.0.0.1`.
+- `SUI_SCREENSHOT_PORT`: Vite port. Defaults to `4173`.
+- `SUI_SCREENSHOT_BROWSER_PATH`: Playwright管理browserを使えない場合のChromium/Chrome実行ファイル。未指定時はPlaywrightの既定browserを使う。
 
 ## Product Value Evidence Screenshots
 
@@ -122,11 +122,11 @@ cd 03_Implement/frontend
 node .\scripts\capture_product_value_screenshots.mjs
 ```
 
-The script starts a temporary Vite server when `KJ_ATLAS_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the six PNG files above, and stops the server when it started it.
+The script starts a temporary Vite server when `SUI_SCREENSHOT_PORT` is free, loads the app with `?locale=ja`, injects deterministic fixture data through Playwright routes, captures the six PNG files above, and stops the server when it started it.
 
 ## UI element catalog screenshots
 
-These images form a comprehensive catalog of current UI elements for the user-facing reference (`04_Documentation/ui_catalog.md`) and for design-review handoff. Deterministic fixture, `ja` locale, `KJ_ATLAS_LLM_PROVIDER=none`, no secrets.
+These images form a comprehensive catalog of current UI elements for the user-facing reference (`04_Documentation/ui_catalog.md`) and for design-review handoff. Deterministic fixture, `ja` locale, `SUI_LLM_PROVIDER=none`, no secrets.
 
 | File | Content |
 | --- | --- |
@@ -156,7 +156,7 @@ WSL/Nix 環境などローカルに Playwright のブラウザ依存が無い場
 docker run --rm --ipc=host \
   -v "$PWD/03_Implement/frontend:/app" \
   -v "$PWD/04_Documentation/assets/screenshots:/out" \
-  -w /app -e KJ_ATLAS_SCREENSHOT_OUTPUT_DIR=/out \
+  -w /app -e SUI_SCREENSHOT_OUTPUT_DIR=/out \
   mcr.microsoft.com/playwright:v1.58.2-jammy \
   bash -lc "node ./scripts/capture_ui_catalog.mjs"
 ```

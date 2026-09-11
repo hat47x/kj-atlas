@@ -97,7 +97,7 @@ describe("outline quality", () => {
     expect(report).not.toHaveProperty("health");
   });
 
-  it("warns when zero lone cards exist (kj_technique.md:195 forced-grouping signal)", () => {
+  it("warns when zero lone cards exist (sensemaking_technique.md:195 forced-grouping signal)", () => {
     const doc = buildDoc();
     // Place every card into an island so no card is ungrouped.
     doc.cards = [

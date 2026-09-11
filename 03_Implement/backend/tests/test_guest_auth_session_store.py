@@ -6,10 +6,10 @@ import pytest
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.guest_admission_models import GuestPrincipalRow
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
-from kj_atlas_api.guest_auth_state import DatabaseGuestAuthSessionStore, GuestAuthSessionError
-from kj_atlas_api.models import Base, TenantRow
+from sui_sensemaking_api.guest_admission_models import GuestPrincipalRow
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow
+from sui_sensemaking_api.guest_auth_state import DatabaseGuestAuthSessionStore, GuestAuthSessionError
+from sui_sensemaking_api.models import Base, TenantRow
 
 TIMESTAMP = "2026-09-06T00:00:00+00:00"
 SESSION_HASH = "a" * 64

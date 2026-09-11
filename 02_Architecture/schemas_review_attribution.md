@@ -199,7 +199,7 @@ ReviewerRef 推奨フォーマット（例）:
 - 正規キーは `AuthContext.userId`（内部 `users.id`）とする。
 - `reviewerRef` / `ownerRef` は派生値 `user:<users.id>` を採用する。
 - `provider` や `external_uid` は attribution payload へ直保存しない。
-- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
+- strict mode（`SUI_ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
 - `reviewerRef` / `ownerRef` の具体値は `ReviewerRefResolverAdapter` が決定し、schema側は「non-empty opaque string」のみを保証する。
 - adapterが `sso_subject` の場合は `user:sso:<provider>:<externalUid>` を許容し、入力不足時は `user_id` profile（`actorRef` → `null`）へフォールバックする。
 - source判定は UI補助情報であり schema必須項目にしない（`reviewerRef` 単体で互換維持）。
@@ -255,5 +255,5 @@ ReviewerRef 推奨フォーマット（例）:
 
 - Auth属性の正規化境界を再確認: `reviewerRef` / `ownerRef` は non-empty opaque string を維持し、Auth内部正本は `user:<users.id>` 派生参照とする。
 - `provider` / `external_uid` は review attribution 永続層に保存しない（逆引きは `user_identities` へ委譲）。
-- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）時は `users.id` 未解決の要求を fail-closed で拒否し、attribution event を新規生成しない。
+- strict mode（`SUI_ALLOW_JIT_PROVISIONING=false`）時は `users.id` 未解決の要求を fail-closed で拒否し、attribution event を新規生成しない。
 - mock IdP 回帰での差分吸収点は `AUTH_PROVIDER_PROFILE` と header mapping に限定し、schema key set は不変。

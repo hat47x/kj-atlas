@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the kj-atlas inquiry-bundle CAS lifecycle over the HTTP API from an
+# Verify the sui-sensemaking inquiry-bundle CAS lifecycle over the HTTP API from an
 # external script (admin/CI path, DATA-INQUIRY-CONCURRENCY-01 案A).
 #
 # This is the "administrator writes their own script to use the CLI/API"
@@ -12,10 +12,10 @@
 #     BASE_URL   default http://127.0.0.1:8000
 #     JOURNEY_ID default verify_inquiry_probe_<timestamp>
 #
-# Requires a running backend (uvicorn kj_atlas_api.main:app --port 8000).
+# Requires a running backend (uvicorn sui_sensemaking_api.main:app --port 8000).
 # The probe journey is deleted at the end (DELETE with the final revision), so
 # reruns are idempotent as long as a fresh JOURNEY_ID is supplied.
-# If KJ_ATLAS_API_KEY is set, it is passed via X-API-Key.
+# If SUI_API_KEY is set, it is passed via X-API-Key.
 #
 # DOGFOOD-06 rule: success cases AND abnormal cases are both asserted, so a
 # future change that weakens the CAS contract (missing precondition accepted,
@@ -39,15 +39,15 @@ check() {
 }
 
 auth_header=()
-if [ -n "${KJ_ATLAS_API_KEY:-}" ]; then
-  auth_header=(-H "X-API-Key: ${KJ_ATLAS_API_KEY}")
+if [ -n "${SUI_API_KEY:-}" ]; then
+  auth_header=(-H "X-API-Key: ${SUI_API_KEY}")
 fi
 
 # Opaque InquiryBundleV1 payload (any JSON value is legal for the backend).
 payload='{"title":"verify inquiry probe","rounds":[{"id":"r1","label":"first"}]}'
 updated_payload='{"title":"verify inquiry probe (updated)","rounds":[{"id":"r1","label":"first"},{"id":"r2","label":"second"}]}'
 
-echo "=== kj-atlas inquiry-bundle CAS verification (base: $BASE_URL, journey: $JOURNEY_ID) ==="
+echo "=== sui-sensemaking inquiry-bundle CAS verification (base: $BASE_URL, journey: $JOURNEY_ID) ==="
 
 # --- create -------------------------------------------------------------
 # 1. If-None-Match: *  → 201 + ETag "1"

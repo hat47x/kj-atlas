@@ -3,12 +3,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from kj_atlas_api.llm_input_ir import IRGenerationError
-from kj_atlas_api.merge_suggestion_ir import (
+from sui_sensemaking_api.llm_input_ir import IRGenerationError
+from sui_sensemaking_api.merge_suggestion_ir import (
     ROUTE_INPUT_VERSION,
     build_merge_suggestion_ir_context,
 )
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Card,
     CardMeta,
     DocumentV1,
@@ -18,7 +18,7 @@ from kj_atlas_api.models import (
     SuggestMergesRequest,
     Transform,
 )
-from kj_atlas_api.routes import ai
+from sui_sensemaking_api.routes import ai
 
 
 def _card(card_id: str, text: str, **updates) -> Card:

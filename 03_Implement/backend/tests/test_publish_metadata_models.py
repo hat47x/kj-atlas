@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from kj_atlas_api.models_publish import (
+from sui_sensemaking_api.models_publish import (
     PublicPackManifest,
     ViewMetadata,
     validate_public_pack_manifest,

@@ -5,7 +5,7 @@
 - Source Issue: `AI-ROUTE-01` MMR-06
 - Priority: P2
 - Owner: Maintainer
-- Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/proposal_decision_repository.py`, `03_Implement/backend/src/kj_atlas_api/models_ai.py`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
+- Scope: `00_Prompt/ai_cognitive_externalization_requirements.md` §7.1a, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/proposal_decision_repository.py`, `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `AI-ROUTE-01`, `00_Prompt/ai_cognitive_externalization_requirements.md` MMR-06
 - Expected verification level: `integration`
 
@@ -135,7 +135,7 @@ system/provider failureによるholdは、人間decision endpointとは別の意
 - `detect_contradiction` はhuman adjudication済みcontradictionを先にreturnし、LLM call自体が不要な場合にはgovernance gateやsystem holdを発火させない。
 - pre-provider governance failureは `model_not_allowed -> policy_rejected`、`model_not_registered` / `model_provider_unavailable -> provider_unavailable` としてsystem auditへ正規化する。外向きHTTP detailは既存contractのまま維持する。
 - provider dispatch前なので存在しないprovider/traceは監査へ捏造せず、`requestedModelId` / `governanceCode` / `failureCode` / `routingStage=final_judgement` を記録する。
-- verification: GitHub Actions run `34018370431` でfocused/adjacent regression **51 passed**、`python -m compileall -q src/kj_atlas_api`、non-test docs contract（`active_memos=43`, `tracked_markdown=787`）、Issue lifecycle **35 tests OK**、`git diff --check` がsuccess。one-shot patch/helper/workflowは同run内で自己削除済み。
+- verification: GitHub Actions run `34018370431` でfocused/adjacent regression **51 passed**、`python -m compileall -q src/sui_sensemaking_api`、non-test docs contract（`active_memos=43`, `tracked_markdown=787`）、Issue lifecycle **35 tests OK**、`git diff --check` がsuccess。one-shot patch/helper/workflowは同run内で自己削除済み。
 - R3はmodel-governance safety boundaryを閉じるが、親MMR-05のlinked telemetry completenessは別残差として扱う。R3の実装成功を理由に、未記録の `sourceBundleHash` / `proposalId` まで完了扱いしない。
 
 

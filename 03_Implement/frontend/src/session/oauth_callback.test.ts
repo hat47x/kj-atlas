@@ -5,8 +5,8 @@ import { clearTokens, getAccessToken } from "./token_store";
 
 function storageWithOAuthState(): Storage {
   const values = new Map([
-    ["kj_atlas_oauth_state", "expected-state"],
-    ["kj_atlas_pkce_verifier", "verifier"],
+    ["sui_sensemaking_oauth_state", "expected-state"],
+    ["sui_sensemaking_pkce_verifier", "verifier"],
   ]);
   return {
     get length() { return values.size; },

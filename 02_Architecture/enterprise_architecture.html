@@ -44,11 +44,11 @@
   <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
       <span style="width:8px; height:8px; border-radius:2px; background:#1d4ed8; display:inline-block;"></span>
-      kj-atlas ・ Architecture ・ Enterprise / Government
+      sui-sensemaking ・ Architecture ・ Enterprise / Government
     </div>
     <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">Enterprise / Government<br>Deployment Architecture</h1>
     <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
-      企業・行政環境で kj-atlas を配備するために OSS 側が備えるべき最小能力を定める。必要なのは<strong>アプリの肥大化ではなく、外部基盤との安全な接続点の整備</strong>である。認証・保存・統治はすべて外部責務とする。
+      企業・行政環境で sui-sensemaking を配備するために OSS 側が備えるべき最小能力を定める。必要なのは<strong>アプリの肥大化ではなく、外部基盤との安全な接続点の整備</strong>である。認証・保存・統治はすべて外部責務とする。
     </p>
     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
       <span class="badge" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">Integration readiness 中心</span>
@@ -69,7 +69,7 @@
       <h2 style="font-size:20px; font-weight:700; margin:0;">基本方針</h2>
     </div>
     <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:12px 0 0;">本アプリケーションは、OSSとしての軽量性・ローカルファースト設計・SafeMode既定ON・文書構造と表示状態の分離（<code>document.json</code> / <code>view.json</code>）を維持する。</p>
-    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:10px 0 0;">本番相当の推奨設定は <code>runtime_parameter_registry.md</code> の <code>enterprise-production</code> profile を参照する。特に <code>KJ_ATLAS_ALLOW_JIT_PROVISIONING=false</code>、SafeMode既定ON、AccessControlAdapter の fail-safe を同時に確認する。</p>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:10px 0 0;">本番相当の推奨設定は <code>runtime_parameter_registry.md</code> の <code>enterprise-production</code> profile を参照する。特に <code>SUI_ALLOW_JIT_PROVISIONING=false</code>、SafeMode既定ON、AccessControlAdapter の fail-safe を同時に確認する。</p>
   </section>
 
   <!-- 02 責務境界の全体像 -->
@@ -84,7 +84,7 @@ flowchart LR
     subgraph EXT1["外部: 認証"]
       IDP["IdP / IAP<br/>OIDC・SAML・LDAP"]
     end
-    subgraph APP["kj-atlas 本体（接続点のみ）"]
+    subgraph APP["sui-sensemaking 本体（接続点のみ）"]
       AC["AuthContext<br/>userId / roles / groups"]
       UI["UI制御<br/>SafeMode・readOnly・visibility"]
       ADP["AccessControlAdapter<br/>判定の運搬のみ"]
@@ -147,7 +147,7 @@ flowchart LR
     <figure style="margin:14px 0 0;">
       <pre class="mermaid">
 flowchart TD
-    DOC["kj-atlas 文書"] --> VIS{"visibility"}
+    DOC["sui-sensemaking 文書"] --> VIS{"visibility"}
     VIS -->|"Public / Unlisted"| A
     VIS -->|"Org / Restricted"| B
 
@@ -239,7 +239,7 @@ interface AccessControlAdapter {
 sequenceDiagram
     autonumber
     participant U as クライアント
-    participant API as kj-atlas API層
+    participant API as sui-sensemaking API層
     participant AD as AccessControlAdapter
     participant PDP as 外部 Policy Engine
     participant AUD as 監査基盤
@@ -276,7 +276,7 @@ sequenceDiagram
   "resource": {
     "docId": "doc_01JX6J6C2QW",
     "visibility": "Org",
-    "policyRef": "opa://kj-atlas/org-default/v3"
+    "policyRef": "opa://sui-sensemaking/org-default/v3"
   },
   "safeMode": true,
   "readOnly": false
@@ -291,7 +291,7 @@ sequenceDiagram
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">4.3 責務境界マトリクス</h3>
     <table class="grid">
-      <thead><tr><th style="width:20%;">領域</th><th style="width:40%;">アプリ内責務（KJ Atlas）</th><th>外部責務（IdP/Policy Engine/Audit基盤）</th></tr></thead>
+      <thead><tr><th style="width:20%;">領域</th><th style="width:40%;">アプリ内責務（SUI Sensemaking）</th><th>外部責務（IdP/Policy Engine/Audit基盤）</th></tr></thead>
       <tbody>
         <tr><td>判定入力の組み立て</td><td><code>action/subject/resource/safeMode/readOnly</code> を収集・正規化</td><td>なし</td></tr>
         <tr><td>認可判定</td><td><code>AccessDecision</code> を解釈して allow/deny/readOnly を反映</td><td>roles/groups/policyRef を評価して判定を返す</td></tr>
@@ -352,7 +352,7 @@ sequenceDiagram
       <li>監査イベントに PII（氏名/メール/本文/roles/groups生値）を残さない。</li>
       <li>監査送信失敗時に本体機能を停止しない（fail-open）一方、失敗件数は運用監視で観測できる。</li>
       <li><code>visibility</code> 追加によって readOnly/SafeMode の拒否強度が弱まらない。</li>
-      <li><code>KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE</code> の既定値が <code>read_only</code> である。</li>
+      <li><code>SUI_ACCESS_CONTROL_FAIL_SAFE_MODE</code> の既定値が <code>read_only</code> である。</li>
     </ul>
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">4.8 受入基準（DoD）</h3>
@@ -370,8 +370,8 @@ sequenceDiagram
     <table class="grid">
       <thead><tr><th style="width:22%;">項目</th><th>固定内容</th></tr></thead>
       <tbody>
-        <tr><td>接続面の最小実装</td><td><code>KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http</code> を追加し、PDP（policy decision point）へ HTTP POST 委譲。<code>auth_mode=oidc|saml</code> と <code>idp_issuer</code> をヘッダ運搬し、SSO運用情報を policy engine 側へ渡す</td></tr>
-        <tr><td>失敗時挙動の固定</td><td>4xx/不正JSON/契約違反は <code>policy_ref_invalid</code>。接続不可/timeout/5xx は <code>policy_ref_unreachable</code>。いずれも <code>KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE</code>（既定 <code>read_only</code>）へ委譲</td></tr>
+        <tr><td>接続面の最小実装</td><td><code>SUI_ACCESS_CONTROL_ADAPTER=external_http</code> を追加し、PDP（policy decision point）へ HTTP POST 委譲。<code>auth_mode=oidc|saml</code> と <code>idp_issuer</code> をヘッダ運搬し、SSO運用情報を policy engine 側へ渡す</td></tr>
+        <tr><td>失敗時挙動の固定</td><td>4xx/不正JSON/契約違反は <code>policy_ref_invalid</code>。接続不可/timeout/5xx は <code>policy_ref_unreachable</code>。いずれも <code>SUI_ACCESS_CONTROL_FAIL_SAFE_MODE</code>（既定 <code>read_only</code>）へ委譲</td></tr>
         <tr><td>監査連携の固定</td><td><code>view</code>/<code>export</code> イベントに <code>decision_*</code>, <code>policyRefPresent</code>, <code>adapterName</code>, <code>traceId</code> を保持。<code>roles/groups/policyRef</code> の生値非保存をテストで固定</td></tr>
         <tr><td>非目標（維持）</td><td>アプリ本体へ role/group 判定ロジックを追加しない。SafeMode/readOnly 優先順を変更しない</td></tr>
       </tbody>
@@ -387,7 +387,7 @@ sequenceDiagram
     </div>
     <p style="font-size:13px; line-height:1.7; color:#3e4c59; margin:10px 0 0; padding:10px 13px; background:#f8fafc; border-left:3px solid #cbd5e1;">詳細な承認フロー仕様（状態遷移・Q1〜Q10の選択肢・停止/復旧条件）は <code>02_Architecture/strict_mode_exception_approval_flow.html</code> を正本とする。運用手順は <code>04_Documentation/operations.md</code>、セキュリティ検証は <code>04_Documentation/security.md</code> を正本とする。</p>
 
-    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:14px 0 0;"><code>KJ_ATLAS_ALLOW_JIT_PROVISIONING</code> は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。企業・行政の本番相当では <code>enterprise-production</code> profile に従い、原則として <code>false</code> を選択する。</p>
+    <p style="font-size:13.5px; line-height:1.75; color:#3e4c59; margin:14px 0 0;"><code>SUI_ALLOW_JIT_PROVISIONING</code> は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。企業・行政の本番相当では <code>enterprise-production</code> profile に従い、原則として <code>false</code> を選択する。</p>
 
     <table class="grid">
       <thead><tr><th style="width:24%;">モード</th><th>境界</th></tr></thead>
@@ -399,7 +399,7 @@ sequenceDiagram
 
     <h3 style="font-size:15px; font-weight:700; margin:22px 0 0;">5.1 固定された責務境界</h3>
     <ul class="compact" style="font-size:13px; color:#3e4c59; padding-left:22px; margin:10px 0 0;">
-      <li>アプリ本体（KJ Atlas）はフラグ値の受領とガード適用のみを担当し、承認ワークフロー本体は実装しない。</li>
+      <li>アプリ本体（SUI Sensemaking）はフラグ値の受領とガード適用のみを担当し、承認ワークフロー本体は実装しない。</li>
       <li>例外の発行・失効・記録は外部運用基盤（IdP/運用台帳/監査基盤）責務とする。</li>
       <li>監査イベントは最小情報のみを記録し、PII最小化（氏名/メール/roles/groups生値非保存）を維持する。</li>
       <li>strict mode / 例外 mode いずれでも「SafeMode → read-only → AccessDecision」の優先順位は不変とする。</li>

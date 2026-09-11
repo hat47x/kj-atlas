@@ -14,13 +14,13 @@
 テナント分離は意図的に二層で設計されている。
 
 1. **アプリ層**: 全リポジトリ呼び出しが `TenantContext` を伴い `WHERE tenant_id = :tenant` を付与する（`document_repository.py:33-37` 他）。
-2. **DB層**: `apply_database_tenant_context` がトランザクションローカルなGUCを設定し（`tenant_db_guard.py:12-30`）、13〜14テーブルのPostgreSQL RLSポリシー `USING/WITH CHECK (tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), ''))` がこれを消費する。
+2. **DB層**: `apply_database_tenant_context` がトランザクションローカルなGUCを設定し（`tenant_db_guard.py:12-30`）、13〜14テーブルのPostgreSQL RLSポリシー `USING/WITH CHECK (tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), ''))` がこれを消費する。
 
 **両層はそれぞれ十分に検証されているが、一度も一緒には検証されていない。**
 
 | 検証 | 実際に通る経路 | 通らない経路 |
 |---|---|---|
-| HTTP分離テスト（約20件。`test_saas_e2e_tenant_isolation.py:278-345` で同一 `docId` の別テナント解決、テナントAからテナントBの文書へ404、実RS256 JWT・OAuthコードフロー・SAML→broker連鎖まで） | アプリ層のフィルタ | **DB層。SQLiteで走るため `apply_database_tenant_context` は no-op**（`tenant_db_guard.py:22-23` が非PostgreSQL方言で即return）。`test_saas_e2e_tenant_isolation.py:191-193`、CI既定 `KJ_ATLAS_DATABASE_URL: sqlite:///./kj_atlas.db`（`.github/workflows/ci.yml:318-320`） |
+| HTTP分離テスト（約20件。`test_saas_e2e_tenant_isolation.py:278-345` で同一 `docId` の別テナント解決、テナントAからテナントBの文書へ404、実RS256 JWT・OAuthコードフロー・SAML→broker連鎖まで） | アプリ層のフィルタ | **DB層。SQLiteで走るため `apply_database_tenant_context` は no-op**（`tenant_db_guard.py:22-23` が非PostgreSQL方言で即return）。`test_saas_e2e_tenant_isolation.py:191-193`、CI既定 `SUI_DATABASE_URL: sqlite:///./sui_sensemaking.db`（`.github/workflows/ci.yml:318-320`） |
 | RLSテスト（`test_document_access_rls_postgres.py`。非superuser・`NOBYPASSRLS` ロール、`pg_class`/`pg_policies` でFORCE RLSと`WITH CHECK`を要求、テナントコンテキスト無しで可視0行、越境write `rowcount == 0`、テナント付替え拒否、プール残留確認。SQLAlchemyメタデータから対象表集合を導出するメタテストまである） | DB層 | **HTTP経路。ルートを一切通らない** |
 
 したがって「**本番のリクエスト経路が、PostgreSQLに対してリクエストごとに `apply_database_tenant_context` を実際に呼んでいる**」ことを確かめるテストが存在しない。二層防御は、独立に検証された二つの半分として存在している。
@@ -60,7 +60,7 @@
 ## 検証
 
 ```bash
-KJ_ATLAS_DATABASE_URL=postgresql+psycopg://... python -m pytest 03_Implement/backend/tests/test_saas_e2e_tenant_isolation.py -v
+SUI_DATABASE_URL=postgresql+psycopg://... python -m pytest 03_Implement/backend/tests/test_saas_e2e_tenant_isolation.py -v
 python -m pytest 03_Implement/backend/tests/test_document_access_rls_postgres.py -v
 ```
 

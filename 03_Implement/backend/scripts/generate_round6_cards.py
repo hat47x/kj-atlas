@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the W-type round-6 (手順計画) cards for kj-atlas self-improvement.
+"""Generate the W-type round-6 (手順計画) cards for sui-sensemaking self-improvement.
 
 Round 6 posture (手順計画) turns the 具体策 (specific measures) into an ordered
 implementation procedure: phasing, dependencies, and E2E sequencing.

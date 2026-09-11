@@ -2,7 +2,7 @@
  * AI-TITLE-01: island-title universal-phrase inspection.
  *
  * A placard (island title) must be a one-sentence advocacy that only that
- * island's cards can bear (kj_technique.md §3). A universal phrase — one that
+ * island's cards can bear (sensemaking_technique.md §3). A universal phrase — one that
  * could be placed on any other island ("重要な論点", "今後の課題", …) — is a
  * classification label, not a placard, and raises rediscovery cost.
  *

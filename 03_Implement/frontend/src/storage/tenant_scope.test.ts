@@ -35,7 +35,7 @@ function createStorage(initial: Record<string, string>) {
 
 describe("tenant browser storage scope", () => {
   it("separates the same base key by deployment, tenant, and principal", () => {
-    const baseKey = "kj-atlas/recent-doc-ids";
+    const baseKey = "sui-sensemaking/recent-doc-ids";
 
     const keys = new Set([
       buildTenantStorageKey(baseKey, scope()),
@@ -48,8 +48,8 @@ describe("tenant browser storage scope", () => {
   });
 
   it("encodes delimiter-like values without namespace collision", () => {
-    const withSlash = buildTenantStorageKey("kj-atlas/example", scope({ tenantId: "tenant/a" }));
-    const withoutSlash = buildTenantStorageKey("kj-atlas/example", scope({ tenantId: "tenant%2Fa" }));
+    const withSlash = buildTenantStorageKey("sui-sensemaking/example", scope({ tenantId: "tenant/a" }));
+    const withoutSlash = buildTenantStorageKey("sui-sensemaking/example", scope({ tenantId: "tenant%2Fa" }));
 
     expect(withSlash).not.toBe(withoutSlash);
     expect(withSlash).toContain("tenant%2Fa");
@@ -64,24 +64,24 @@ describe("tenant browser storage scope", () => {
     ["principalId", { principalId: "user-1\n" }],
     ["principalId", { principalId: "x".repeat(257) }],
   ])("rejects a non-canonical %s", (_name, overrides) => {
-    expect(() => buildTenantStorageKey("kj-atlas/example", scope(overrides))).toThrow();
+    expect(() => buildTenantStorageKey("sui-sensemaking/example", scope(overrides))).toThrow();
   });
 
   it("clears only the selected deployment, tenant, and principal scope", () => {
-    const targetKey = buildTenantStorageKey("kj-atlas/recent-doc-ids", scope());
-    const targetSecondKey = buildTenantStorageKey("kj-atlas/view-visibility-by-doc", scope());
+    const targetKey = buildTenantStorageKey("sui-sensemaking/recent-doc-ids", scope());
+    const targetSecondKey = buildTenantStorageKey("sui-sensemaking/view-visibility-by-doc", scope());
     const otherTenantKey = buildTenantStorageKey(
-      "kj-atlas/recent-doc-ids",
+      "sui-sensemaking/recent-doc-ids",
       scope({ tenantId: "tenant-b" }),
     );
     const storage = createStorage({
       [targetKey]: "a",
       [targetSecondKey]: "b",
       [otherTenantKey]: "c",
-      "kj-atlas/legacy": "legacy",
+      "sui-sensemaking/legacy": "legacy",
     });
 
     expect(clearTenantScopedStorage(storage, scope())).toBe(2);
-    expect(storage.keys()).toEqual([otherTenantKey, "kj-atlas/legacy"]);
+    expect(storage.keys()).toEqual([otherTenantKey, "sui-sensemaking/legacy"]);
   });
 });

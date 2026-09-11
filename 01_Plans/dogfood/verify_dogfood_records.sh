@@ -100,7 +100,7 @@ done
 for entry in \
   "verify_business_flow_e2e.sh" \
   "verify_admin_ops_flow_e2e.sh" \
-  "verify_kj_multi_round.sh"; do
+  "verify_sui_multi_round.sh"; do
   if grep -q "$entry" "$ROOT/03_Implement/backend/verify_all.sh"; then
     check "check 10 配線: $entry" "wired" "wired"
   else

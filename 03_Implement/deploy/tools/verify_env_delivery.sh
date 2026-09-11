@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ENV-COMPOSE-01 Phase 2: functional probe for the two base-Compose
-# pass-through keys (KJ_ATLAS_API_KEY, KJ_ATLAS_ALLOW_JIT_PROVISIONING).
+# pass-through keys (SUI_API_KEY, SUI_ALLOW_JIT_PROVISIONING).
 #
 # Local, Docker-capable-host verification only -- this script is not run in
 # CI (it starts real containers and takes several minutes). It never prints
@@ -79,8 +79,8 @@ cleanup() {
 trap cleanup EXIT
 
 # --- P-1: API key protection -------------------------------------------
-log "P-1: starting stack with KJ_ATLAS_API_KEY set (value not shown)"
-KJ_ATLAS_API_KEY="probe-local-key-$$" compose up -d --build >/dev/null 2>&1
+log "P-1: starting stack with SUI_API_KEY set (value not shown)"
+SUI_API_KEY="probe-local-key-$$" compose up -d --build >/dev/null 2>&1
 
 if ! wait_for_healthy; then
   fail "P-1: stack did not become healthy"
@@ -110,8 +110,8 @@ fi
 compose down >/dev/null 2>&1
 
 # --- P-2: JIT provisioning denial ---------------------------------------
-log "P-2: starting stack with KJ_ATLAS_ALLOW_JIT_PROVISIONING=false"
-KJ_ATLAS_ALLOW_JIT_PROVISIONING=false compose up -d --build >/dev/null 2>&1
+log "P-2: starting stack with SUI_ALLOW_JIT_PROVISIONING=false"
+SUI_ALLOW_JIT_PROVISIONING=false compose up -d --build >/dev/null 2>&1
 
 if ! wait_for_healthy; then
   fail "P-2: stack did not become healthy"
@@ -128,7 +128,7 @@ compose down >/dev/null 2>&1
 
 # --- P-3: default preserved when unset ----------------------------------
 log "P-3: starting stack with both keys unset (implementation default)"
-unset KJ_ATLAS_API_KEY KJ_ATLAS_ALLOW_JIT_PROVISIONING
+unset SUI_API_KEY SUI_ALLOW_JIT_PROVISIONING
 compose up -d --build >/dev/null 2>&1
 
 if ! wait_for_healthy; then
@@ -136,7 +136,7 @@ if ! wait_for_healthy; then
 else
   status_default=$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/docs/${PROBE_DOC_ID_PREFIX}-p3")
   if [ "${status_default}" != "401" ]; then
-    log "P-3: no KJ_ATLAS_API_KEY set anywhere -> ${status_default}, not 401 (pass, protection stays off by default)"
+    log "P-3: no SUI_API_KEY set anywhere -> ${status_default}, not 401 (pass, protection stays off by default)"
   else
     fail "P-3: expected the unset-by-default state to NOT require a key, got 401"
   fi

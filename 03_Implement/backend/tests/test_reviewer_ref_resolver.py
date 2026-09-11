@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from kj_atlas_api.reviewer_ref import (
+from sui_sensemaking_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
 )

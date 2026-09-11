@@ -24,7 +24,7 @@
 ## 受入条件
 
 - [x] error boundaryの導入範囲（ルート全体 / パネル単位分割）が決定される。— **App 内部のルート render を1枚の `AppErrorBoundary` で包む**（App の state へ到達できる位置。分割境界は任意の強化として据え置き）。
-- [x] 捕捉時の状態退避方針（何を・どこへ・いつ）が決定される。— **`history.present`（現行文書）を例外捕捉時に `localStorage["kj-atlas/evicted-doc"]` へ退避**。マウント時に退避があれば復旧バナーを提示。
+- [x] 捕捉時の状態退避方針（何を・どこへ・いつ）が決定される。— **`history.present`（現行文書）を例外捕捉時に `localStorage["sui-sensemaking/evicted-doc"]` へ退避**。マウント時に退避があれば復旧バナーを提示。
 - [x] 決定に応じてboundaryが実装され、`domain/core_value_guard.test.ts`（CVI群）または同等の回帰テストに、描画例外からの復旧を検証する項目が追加される。— `src/ui/AppErrorBoundary.tsx` 実装＋`AppErrorBoundary.test.ts`（退避/破棄の roundtrip・正常render 3件）。※実DOMでの描画例外トリガーは jsdom 不在のため unit 化（helpers）で固定。
 
 ## 検証計画

@@ -3,12 +3,12 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.inquiry_bundle_repository import (
+from sui_sensemaking_api.inquiry_bundle_repository import (
     delete_inquiry_bundle,
     get_inquiry_bundle_row,
 )
-from kj_atlas_api.models import Base, InquiryBundleRow, TenantRow
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.models import Base, InquiryBundleRow, TenantRow
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 def _tenant(tenant_id: str) -> TenantContext:

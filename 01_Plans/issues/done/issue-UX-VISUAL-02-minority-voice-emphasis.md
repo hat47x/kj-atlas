@@ -72,7 +72,7 @@
 
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂・D1）
 - Related: `01_Plans/issues/done/issue-UX-VISUAL-01-card-meta-row-and-canvas-legend.md`
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 B）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（仕様精査 B）, `02_Architecture/design/sui-sensemaking プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04）

@@ -3,22 +3,22 @@
 - Status: Proposed
 - Date: 2026-07-06
 - Deciders: Maintainer（委譲された意思決定権限）
-- Scope: `03_Implement/frontend/src/`, `03_Implement/backend/src/kj_atlas_api/`, `02_Architecture/llm_provider_spec.md`, `01_Plans/issues/`
+- Scope: `03_Implement/frontend/src/`, `03_Implement/backend/src/sui_sensemaking_api/`, `02_Architecture/llm_provider_spec.md`, `01_Plans/issues/`
 
 ## Context
 
 - 「ローカルLLM・生成AIまわりで、ADR起票後に要件の詳細化やUI/UXデザインが未定の箇所が多い」という指摘を受け、実装コード（`provider.py`・`client.ts`・`App.tsx`・`SidePanel.tsx`）を直接読み、既存文書（`ADR-0009`・`llm_provider_spec.md`・`04_Documentation/local_llm_ops_guide.md`）と突き合わせて棚卸しした。
 - **既に十分に決定・文書化済みと確認できたもの**（本ADRの対象外・再決定しない）:
   - Provider抽象（`none|fixture|local|large-scale`）・設定キー・safeMode既定ON・ローカルファースト方針（`ADR-0009` Accepted、`llm_provider_spec.md` §1-3）。
-  - ローカルLLM `/generate` 契約が **意図的に kj-atlas 独自形状**（OpenAI/Ollama 非互換）であり、実運用には薄いアダプタ層が必要という判断（`04_Documentation/local_llm_ops_guide.md` に明記済み）。GPU無し確認用のモックアダプタ（`03_Implement/deploy/tools/mock_local_llm.py`）も実装済み。
+  - ローカルLLM `/generate` 契約が **意図的に sui-sensemaking 独自形状**（OpenAI/Ollama 非互換）であり、実運用には薄いアダプタ層が必要という判断（`04_Documentation/local_llm_ops_guide.md` に明記済み）。GPU無し確認用のモックアダプタ（`03_Implement/deploy/tools/mock_local_llm.py`）も実装済み。
   - エスカレーション方針・品質ゲート・HIL-RS A1契約（`02_Architecture/llm_escalation_policy.html`・`llm_quality_strategy.md`・`hil_rs_01_a1_minimum_interface_contract.md`）は凍結済み。
 - **確認された真のギャップ**（コード読解で実証済み・本ADRの対象）:
-  1. **プロバイダの可視性ゼロ**: `KJ_ATLAS_LLM_PROVIDER` は運用者が deploy 時に設定する環境変数のみで、アプリ内に「今どの provider が有効か」を示す UI が一切ない（grep で確認: 該当 UI 要素なし）。
+  1. **プロバイダの可視性ゼロ**: `SUI_LLM_PROVIDER` は運用者が deploy 時に設定する環境変数のみで、アプリ内に「今どの provider が有効か」を示す UI が一切ない（grep で確認: 該当 UI 要素なし）。
   2. **エラー分類がバックエンド→フロントエンドの経路で失われる**（3層すべてで確認）:
-     - バックエンド `provider.py` は `ProviderRequestError.unavailable/timeout/validation` と `ProviderDisabledError`（`disabled_reason` 付き）という構造化エラー種別を `to_contract()` で用意している（[provider.py:81-100](../../03_Implement/backend/src/kj_atlas_api/llm/provider.py)）。
+     - バックエンド `provider.py` は `ProviderRequestError.unavailable/timeout/validation` と `ProviderDisabledError`（`disabled_reason` 付き）という構造化エラー種別を `to_contract()` で用意している（[provider.py:81-100](../../03_Implement/backend/src/sui_sensemaking_api/llm/provider.py)）。
      - しかしフロントエンド `ApiError`（[client.ts:17-24](../../03_Implement/frontend/src/api/client.ts)）は `status: number` と平文 `message: string` のみを保持し、構造化フィールドを受け取る型を持たない。
      - `App.tsx:2510` の呼び出し元は、受け取った平文メッセージに対して **正規表現 `/AI is disabled|provider.*disabled/i` で文字列一致** させて「provider disabled」バナーの要否を判定している。この結果、`provider=local` が設定されているのに接続先が落ちている場合（実際には `"local request failed: Connection refused"` 等の**未翻訳の英語例外文がそのままステータス表示に漏れる**）と、`provider=none`（意図的無効）の場合を、ユーザーは画面上で区別できない。
-  3. **`llm_provider_spec.md` §4 の契約とバックエンド実装の乖離**: 仕様は `LLMRequest`（`inputs`・`output_schema`・`options.timeout_ms`/`seed`・`context.trace_id`/`safe_mode`）と `LLMResponse`（`usage`・`provider_meta`の構造化 `output`）を「正規形に固定」と記載するが、実装（[provider.py:16-20](../../03_Implement/backend/src/kj_atlas_api/llm/provider.py)）は `LLMRequest{task, prompt, temperature, max_tokens}` → `LLMResponse{raw_text, metadata}` という大幅に単純化された形のみで、`inputs`/`output_schema`/`usage`/構造化`output`は未配線。凍結文書である「正本」が実装済みでない内容を確定事項のように記載しており、これ自体が「詳細化未定」の一因になっている。
+  3. **`llm_provider_spec.md` §4 の契約とバックエンド実装の乖離**: 仕様は `LLMRequest`（`inputs`・`output_schema`・`options.timeout_ms`/`seed`・`context.trace_id`/`safe_mode`）と `LLMResponse`（`usage`・`provider_meta`の構造化 `output`）を「正規形に固定」と記載するが、実装（[provider.py:16-20](../../03_Implement/backend/src/sui_sensemaking_api/llm/provider.py)）は `LLMRequest{task, prompt, temperature, max_tokens}` → `LLMResponse{raw_text, metadata}` という大幅に単純化された形のみで、`inputs`/`output_schema`/`usage`/構造化`output`は未配線。凍結文書である「正本」が実装済みでない内容を確定事項のように記載しており、これ自体が「詳細化未定」の一因になっている。
 - ADR-0047 ゲート判定: 上記1・2は R-1（実使用の摩擦。コード監査で顕在化した実際の誤誘導・情報欠落）に該当し起票する。3は新規設計判断ではなく既存「正本」の記述是正（ドキュメントの事実整合）であり、本ADRに併記して一括処理する。
 
 ## Decision

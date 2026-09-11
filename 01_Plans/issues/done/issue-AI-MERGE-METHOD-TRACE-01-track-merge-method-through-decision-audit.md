@@ -7,7 +7,7 @@
 - Source Issue: `AI-MERGE-SEMANTICS-01`
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx`, `02_Architecture/api.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/domain/merge_suggestion_decisions.ts`, `03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx`, `02_Architecture/api.md`
 - Related ADR/Spec: `ADR-0069`, `AI-MERGE-SEMANTICS-01`, `AI-MERGE-PARTIAL-01`, `AI-MERGE-APPLY-01`, 継続dogfood R19/R20
 - Expected verification level: `integration`
 

@@ -7,9 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG = ROOT / "04_Documentation/configuration.md"
-DOCS_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/docs.py"
-CONTEXT_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/context.py"
-KEY = "KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK"
+DOCS_ROUTE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/docs.py"
+CONTEXT_ROUTE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/context.py"
+KEY = "SUI_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK"
 ATTR = "ce4_source_bundle_hash_allow_mock"
 
 

@@ -1,6 +1,6 @@
 # 現行UIカタログ / Current UI Catalog
 
-対象読者: kj-atlas の画面構成を一覧で把握したい利用者・運用者・評価担当者。
+対象読者: sui-sensemaking の画面構成を一覧で把握したい利用者・運用者・評価担当者。
 
 目的:
 
@@ -14,7 +14,7 @@
 | --- | --- |
 | 確認対象revision | `1367740d8d03cf53bc0ad1eb09ffc45684ff51e1` |
 | 最終確認日 | 2026-07-11 |
-| 表示条件 | 日本語、`KJ_ATLAS_LLM_PROVIDER=none`、SafeMode ON、秘密情報を含まない固定サンプル |
+| 表示条件 | 日本語、`SUI_LLM_PROVIDER=none`、SafeMode ON、秘密情報を含まない固定サンプル |
 | 画像検証 | 入口・全体5状態、価値状態6状態、UI要素12状態を再生成し、全23状態成功 |
 | 公開状態 | Go。下記の再確認条件に該当した場合は、再撮影が終わるまで要再確認へ戻す |
 
@@ -23,7 +23,7 @@
 ## 撮影条件
 
 - サンプル文書: `doc_phase1_canvas`（決定論的フィクスチャ。秘密情報・API key・顧客データを含まない）
-- UI locale: `ja` / LLM provider: `KJ_ATLAS_LLM_PROVIDER=none`（AI 無効・既定構成）
+- UI locale: `ja` / LLM provider: `SUI_LLM_PROVIDER=none`（AI 無効・既定構成）
 - 既定ビューポート: 1440×900（レスポンシブ節は 390 / 768 / 960px）
 - 再生成スクリプト（リポジトリ正本）:
   - `03_Implement/frontend/scripts/capture_release_screenshots.mjs`（入口・全体・選択・共有・モバイル）

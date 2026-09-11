@@ -1,4 +1,4 @@
-# Case 002 Launch Packet — KJ Atlas + cultural-substrate-weaving
+# Case 002 Launch Packet — SUI Sensemaking + cultural-substrate-weaving
 
 - Status: Frozen before first valid Case 001 arm run
 - Evidence bundle: `case-002-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649`
@@ -8,7 +8,7 @@
 
 ## Context boundary
 
-このtaskでは、与えられたsanitized evidence bundleだけをKJ Atlasについての共通証拠として使用する。
+このtaskでは、与えられたsanitized evidence bundleだけをSUI Sensemakingについての共通証拠として使用する。
 
 同じrepositoryの別ファイル、PR/issue discussion、他ケースの成果、評価メモ、外部Web資料を追加で読まない。方法としては、指定commitのcultural-substrate-weaving canonical `src/ja-JP` bundleだけを使用し、maintainer docs、evals、PR discussion等は読まない。
 
@@ -16,7 +16,7 @@
 
 ## Fixed question
 
-KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、または十分に一般的な安全境界か。
+SUI Sensemakingのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、または十分に一般的な安全境界か。
 
 ## Required output
 
@@ -24,7 +24,7 @@ KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置
 
 1. AI支援操作を、誤り方・可逆性・意味確定への影響で分けた境界案。
 2. 各操作でAIが自律実行してよい部分、proposalに留める部分、人間確認を必須にする部分。
-3. 現行KJ Atlasが既に実現している適切な境界と、過剰/不足の可能性。
+3. 現行SUI Sensemakingが既に実現している適切な境界と、過剰/不足の可能性。
 4. 「有益な摩擦」と「無駄な摩擦」を区別する判断基準。
 5. human final authorityが形式化し、automation biasを防げない条件。
 6. 最も強い反証。現在のproposal-only原則をほぼ維持すべき理由、または逆にもっと自律化すべき理由。
@@ -33,7 +33,7 @@ KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置
 9. 古い状態、後で修正された状態、未実装の契約を区別する。
 10. 判断保留と追加で必要な証拠。
 
-断定できない箇所は推測で埋めず保留する。KJ Atlasに好意的な結論を求めない。現在の原則が十分である、特定操作だけ自律化すべき、あるいはAI支援自体を減らすべきという結論も許容される。
+断定できない箇所は推測で埋めず保留する。SUI Sensemakingに好意的な結論を求めない。現在の原則が十分である、特定操作だけ自律化すべき、あるいはAI支援自体を減らすべきという結論も許容される。
 
 ## cultural-substrate-weaving boundary
 
@@ -43,14 +43,14 @@ KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置
 - framework語を除去しても成立する所見だけを最終成果へ残す。
 - baselineでも同じ所見が出る、または別体系へ置換して差がない場合は体系固有の増分と数えない。
 - 方法が増分を生まない場合は `no increment` を許容する。
-- frameworkがKJ Atlasの束・表札・配置を先に決めないようにする。
+- frameworkがSUI Sensemakingの束・表札・配置を先に決めないようにする。
 - 新しい対象側の意味単位・関係・問いが増えなくなったら停止する。
 
 実行中はactivation判定、framework候補、採用/不採用理由、removal/substitution結果、最終的に対象側へ残った所見を作業記録として保持する。
 
-## KJ Atlas collaboration mode
+## SUI Sensemaking collaboration mode
 
-KJ Atlasを完成後の清書ではなく、分析中の外部表象として使う。human operatorがUI操作と最終採否を行い、分析AIはproposalを出せるが意味確定の最終権限を持たない。
+SUI Sensemakingを完成後の清書ではなく、分析中の外部表象として使う。human operatorがUI操作と最終採否を行い、分析AIはproposalを出せるが意味確定の最終権限を持たない。
 
 ### 1. 生材料
 
@@ -61,7 +61,7 @@ KJ Atlasを完成後の清書ではなく、分析中の外部表象として使
 - framework由来の問いや仮説は、対象sourceへ戻すまでは確定カードへ昇格させない。
 - 古い設計・後で訂正された状態・未実装契約も時点を残して材料化する。
 
-human operatorが最初の生カード集合を確認しKJ Atlasへ入れた後、InquiryJourneyのoriginを作る。
+human operatorが最初の生カード集合を確認しSUI Sensemakingへ入れた後、InquiryJourneyのoriginを作る。
 
 ### 2. KJ統合
 

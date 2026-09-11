@@ -3,7 +3,7 @@
 - Date: 2026-09-04
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 急速な並行開発の中で、古いbranch状態がcurrent mainへ再流入する事象を、正当な並行変更まで止めずにどう早期発見するか。
-- Canvas: `doc_kj_atlas_dogfood_r22.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r22.json`
 - Result class: 継続dogfoodの実行改善記録。formal Caseの結果、第三者価値実証、製品価値の証明には数えない。
 
 ## 1. 出発点

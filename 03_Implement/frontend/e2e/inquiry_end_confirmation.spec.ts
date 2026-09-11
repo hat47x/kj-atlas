@@ -105,7 +105,7 @@ test("DOMAIN-W-ITERATION-01 save-and-end downloads the bundle before clearing th
   const downloadPromise = page.waitForEvent("download");
   await dialog.getByRole("button", { name: "Save and end" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toContain("kj-atlas-inquiry.json");
+  expect(download.suggestedFilename()).toContain("sui-sensemaking-inquiry.json");
 
   await expect(dialog).toBeHidden();
   await expect(panel.getByRole("button", { name: "Start from the current document" })).toBeVisible();

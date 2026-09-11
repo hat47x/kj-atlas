@@ -1,7 +1,7 @@
 # 継続dogfood R39 — test oracleのsemantic surfaceを偶発的一意性から分ける
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r39.json`
+Canvas: `doc_sui_sensemaking_dogfood_r39.json`
 
 ## 1. Trigger
 
@@ -96,4 +96,4 @@ strict-mode failureを避ける目的だけで `.first()` / `.last()` に逃げ�
 
 R39はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

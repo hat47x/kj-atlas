@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P0
 - Owner: Unassigned
-- Scope: `03_Implement/backend/src/kj_atlas_api/active_tenant_session.py`, `03_Implement/backend/tests/test_active_tenant_session_persister.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/active_tenant_session.py`, `03_Implement/backend/tests/test_active_tenant_session_persister.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md`, `01_Plans/adr/ADR-0064-saml-oidc-broker-jwt-coordinated-auth-flow.md`
 - Expected verification level: `unit`
 
@@ -37,7 +37,7 @@ _TENANT_SESSION_VERSION_PATTERN = re.compile(
 ```
 $ cd 03_Implement/backend && python3 -c "
 import secrets
-from kj_atlas_api.active_tenant_session import _TENANT_SESSION_VERSION_PATTERN
+from sui_sensemaking_api.active_tenant_session import _TENANT_SESSION_VERSION_PATTERN
 N=200000; bad=sum(1 for _ in range(N) if _TENANT_SESSION_VERSION_PATTERN.fullmatch(secrets.token_urlsafe(32)) is None)
 print(f'{bad}/{N} = {bad/N*100:.2f}%')"
 6210/200000 = 3.10%
@@ -73,7 +73,7 @@ except Exception:
 ```
 $ python3 -c "
 from unittest.mock import MagicMock
-from kj_atlas_api.active_tenant_session import InMemoryActiveTenantSessionPersister, canonical_tenant_session_version
+from sui_sensemaking_api.active_tenant_session import InMemoryActiveTenantSessionPersister, canonical_tenant_session_version
 p = InMemoryActiveTenantSessionPersister()
 p._sessions['user-1'] = '-9-dpSiWxtLta9mJ9ezzpnmur93TsnVJEomRKO2eyLk'
 req = MagicMock(); req.cookies = {}

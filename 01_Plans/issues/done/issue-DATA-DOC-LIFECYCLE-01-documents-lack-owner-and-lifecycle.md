@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/alembic/versions/`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/backend/alembic/versions/`, `02_Architecture/schemas.md`, `02_Architecture/data_model_operations_overview.html`
 - Related ADR/Spec: `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`, `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/post-mvp-business-scope-design-program.html`
 - Expected verification level: `unit`
 

@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/audit.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/audit.py`
 - Related ADR/Spec: `issue-DX-BACKEND-CE4-01-audit-tracker-unbounded-memory.md`, `issue-SEC-AUDIT-LOG-01-proposal-decision-reason-unmasked-in-server-log.md`
 - Expected verification level: `integration`
 
@@ -28,7 +28,7 @@
 
 ## 受入条件
 
-- [x] 修正方針（idempotencyキー追加／サーバー側dedup／at-least-onceを意図的仕様として受容）が決定される。→ **案b（サーバー側・短時間ウィンドウdedup）を採択**（2026-08-15・仮承認）。ウィンドウは `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）、キーは論理操作識別子。LRU上限4096で bounded（CE4無制限メモリ懸念と非干渉）。
+- [x] 修正方針（idempotencyキー追加／サーバー側dedup／at-least-onceを意図的仕様として受容）が決定される。→ **案b（サーバー側・短時間ウィンドウdedup）を採択**（2026-08-15・仮承認）。ウィンドウは `SUI_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）、キーは論理操作識別子。LRU上限4096で bounded（CE4無制限メモリ懸念と非干渉）。
 - [x] 実装する場合、同一の論理操作を2回送信しても外部シンクへは重複が送出されない（または明示的に許容されたものとして文書化される）ことを確認する。→ 統合テストで同一 export-audit 二重POST → シンク1件を固定。api.md に仕様を明記。
 - [x] 宣言した検証を実行するか、未実施理由を記録する。→ `test_audit.py` 18 pass・`test_docs_audit_integration.py` 26 pass・`test_ai_eval_pipeline.py` pass（AI LLM監査経路は dedup_key を渡さないため非干渉）。
 
@@ -38,7 +38,7 @@
 
 - `audit.py` の `AuditDispatcher` に **bounded dedup** を追加:
   - `emit(event, *, dedup_key)` — dedup_key は呼び出し元が論理的操作を特定するキー（context-audit: `tenant/doc/operation/equivalenceKey/bundleHash`、export-audit: `tenant/doc/exportKind`）。
-  - 直近の送信成功キーを `OrderedDict`（LRU・上限4096）＋ `KJ_ATLAS_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）で管理。ウィンドウ内の同一キーは `reason="duplicate"` で抑制。
+  - 直近の送信成功キーを `OrderedDict`（LRU・上限4096）＋ `SUI_AUDIT_DEDUP_WINDOW_SECONDS`（既定5秒）で管理。ウィンドウ内の同一キーは `reason="duplicate"` で抑制。
   - **送信成功時のみ**記録するため、失敗後の再送（fail-open flush経路）を誤って抑制しない。さらに `_queued_dedup_keys`（fail-openキューの未達キー）を追跡し、未達の再送は「flushで既存コピーを配送・新規送信しない」（`reason="queued_pending"`）ことで、失敗→再送でも重複送出されない。
   - キューの要素を `(event, dedup_key)` ペア化し、flush成功時・drop時にキーを整合管理（メモリは bounded のまま・DX-BACKEND-CE4-01 観点と整合）。
 - `routes/docs.py` の context-audit / export-audit が `dedup_key` を渡す。

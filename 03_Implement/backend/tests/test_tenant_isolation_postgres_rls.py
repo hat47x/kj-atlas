@@ -13,7 +13,7 @@ runtime role (NOSUPERUSER NOBYPASSRLS) so both layers must fire:
   other tenant — the second layer alone stops the leak (DOGFOOD-METRIC-01 案A
   capability canary: if RLS is disabled this fails).
 
-Skipped unless the PostgreSQL env contract (KJ_ATLAS_DATABASE_URL + the runtime
+Skipped unless the PostgreSQL env contract (SUI_DATABASE_URL + the runtime
 role URL) is present — same gating as test_document_access_rls_postgres.py.
 """
 
@@ -28,15 +28,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.tenant_context import TenantContext
 
 TIMESTAMP = "2026-08-14T00:00:00Z"
 
-ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+ADMIN_DATABASE_URL_ENV = "SUI_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "SUI_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 
 
 @dataclass
@@ -147,7 +147,7 @@ def test_rls_alone_blocks_cross_tenant_without_app_where(
 
     with admin_session() as db:
         db.execute(text('DELETE FROM "documents" WHERE id = :id'), {"id": probe_id})
-        db.execute(text("SET LOCAL kj_atlas.tenant_id = 'tenant-a'"))
+        db.execute(text("SET LOCAL sui_sensemaking.tenant_id = 'tenant-a'"))
         db.execute(
             text(
                 'INSERT INTO "documents" (id, tenant_id, version, payload_json, updated_at) '

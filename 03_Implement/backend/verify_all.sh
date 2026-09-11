@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# kj-atlas comprehensive verification script.
+# sui-sensemaking comprehensive verification script.
 # Runs: lint → unit tests → integration tests → doc checks
 # Exit code: 0 = all passed, 1 = at least one check failed.
 set -uo pipefail
@@ -50,28 +50,28 @@ run_e2e_snapshot() {
   return $rc
 }
 
-echo "=== kj-atlas Comprehensive Verification ==="
+echo "=== sui-sensemaking Comprehensive Verification ==="
 echo ""
 
 # ------------------------------------------------------------------
 # 1. Python syntax
 # ------------------------------------------------------------------
 check "Python syntax (all source files)" \
-  bash -c "find src/kj_atlas_api -name '*.py' | while read f; do $VENV_PYTHON -c 'import py_compile; py_compile.compile(\"'\"\$f\"'\", doraise=True)' 2>/dev/null || exit 1; done"
+  bash -c "find src/sui_sensemaking_api -name '*.py' | while read f; do $VENV_PYTHON -c 'import py_compile; py_compile.compile(\"'\"\$f\"'\", doraise=True)' 2>/dev/null || exit 1; done"
 
 # ------------------------------------------------------------------
 # 2. Ruff lint (core auth files)
 # ------------------------------------------------------------------
 check "Ruff lint (auth modules)" \
   $VENV_PYTHON -m ruff check \
-    src/kj_atlas_api/trusted_auth_edge.py \
-    src/kj_atlas_api/active_tenant_session.py \
-    src/kj_atlas_api/auth_context.py \
-    src/kj_atlas_api/tenant_context.py \
-    src/kj_atlas_api/saas_request_context.py \
-    src/kj_atlas_api/settings.py \
-    src/kj_atlas_api/main.py \
-    src/kj_atlas_api/routes/admin.py
+    src/sui_sensemaking_api/trusted_auth_edge.py \
+    src/sui_sensemaking_api/active_tenant_session.py \
+    src/sui_sensemaking_api/auth_context.py \
+    src/sui_sensemaking_api/tenant_context.py \
+    src/sui_sensemaking_api/saas_request_context.py \
+    src/sui_sensemaking_api/settings.py \
+    src/sui_sensemaking_api/main.py \
+    src/sui_sensemaking_api/routes/admin.py
 
 # ------------------------------------------------------------------
 # 3. Unit tests (auth core)
@@ -130,7 +130,7 @@ check "LLM integration tests (mock — all 6 AI tasks)" \
 # 8. Docs check
 # ------------------------------------------------------------------
 check "Documentation contract checks" \
-  $VENV_PYTHON "$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')/01_Plans/docs_check.py"
+  $VENV_PYTHON "$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/sui-sensemaking')/01_Plans/docs_check.py"
 
 # ------------------------------------------------------------------
 # 9. API/MCP verification (non-Web paths)
@@ -140,8 +140,8 @@ check "Documentation contract checks" \
 # (default :8000), a self-contained backend is started (fresh migrated DB +
 # business/admin keys + local mock LLM) so the checks run in CI without a
 # manually-started uvicorn. The pre-start is never a failure by itself.
-ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/kj-atlas')"
-API_BASE="${KJ_ATLAS_VERIFY_API_BASE:-http://127.0.0.1:8000}"
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo '/mnt/d/GIT/sui-sensemaking')"
+API_BASE="${SUI_VERIFY_API_BASE:-http://127.0.0.1:8000}"
 SELF_BACKEND_PID=""
 SELF_STUB_PID=""
 SELF_DB=""
@@ -152,18 +152,18 @@ if ! curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/
     SELF_ADM_KEY="adm-verify-api"
     STUB_PORT=$("$VENV_PYTHON" -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()")
     BK_PORT=$("$VENV_PYTHON" -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()")
-    if (cd "$ROOT_DIR/03_Implement/backend" && KJ_ATLAS_DATABASE_URL="sqlite:///$SELF_DB" "$VENV_PYTHON" -m alembic upgrade head >/dev/null 2>&1); then
+    if (cd "$ROOT_DIR/03_Implement/backend" && SUI_DATABASE_URL="sqlite:///$SELF_DB" "$VENV_PYTHON" -m alembic upgrade head >/dev/null 2>&1); then
       "$VENV_PYTHON" "$ROOT_DIR/03_Implement/deploy/tools/mock_local_llm.py" --host 127.0.0.1 --port "$STUB_PORT" >/tmp/kj_verify_stub.log 2>&1 &
       SELF_STUB_PID=$!
-      KJ_ATLAS_API_KEY="$SELF_API_KEY" KJ_ATLAS_ADMIN_API_KEY="$SELF_ADM_KEY" \
-      KJ_ATLAS_DATABASE_URL="sqlite:///$SELF_DB" \
-      KJ_ATLAS_LLM_PROVIDER=local KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:$STUB_PORT" \
-        "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BK_PORT" --host 127.0.0.1 >/tmp/kj_verify_backend.log 2>&1 &
+      SUI_API_KEY="$SELF_API_KEY" SUI_ADMIN_API_KEY="$SELF_ADM_KEY" \
+      SUI_DATABASE_URL="sqlite:///$SELF_DB" \
+      SUI_LLM_PROVIDER=local SUI_LOCAL_LLM_BASE_URL="http://127.0.0.1:$STUB_PORT" \
+        "$VENV_PYTHON" -m uvicorn sui_sensemaking_api.main:app --port "$BK_PORT" --host 127.0.0.1 >/tmp/kj_verify_backend.log 2>&1 &
       SELF_BACKEND_PID=$!
       API_BASE="http://127.0.0.1:$BK_PORT"
-      # The API scripts read KJ_ATLAS_API_KEY / KJ_ATLAS_ADMIN_API_KEY for their
+      # The API scripts read SUI_API_KEY / SUI_ADMIN_API_KEY for their
       # X-API-Key / X-Admin-Api-Key headers (keyed-backend path, fixed in 2d26a5eb).
-      export KJ_ATLAS_API_KEY="$SELF_API_KEY" KJ_ATLAS_ADMIN_API_KEY="$SELF_ADM_KEY"
+      export SUI_API_KEY="$SELF_API_KEY" SUI_ADMIN_API_KEY="$SELF_ADM_KEY"
       for _ in $(seq 1 40); do curl -s -o /dev/null "$API_BASE/healthz" && break; sleep 0.5; done
       echo "  (self-contained API backend started on $API_BASE — keyed + local mock)"
     else
@@ -208,19 +208,19 @@ if curl -s -o /dev/null -w '%{http_code}' --max-time 2 "$API_BASE/healthz" 2>/de
     # tsx runtime; a missing/empty doc reports not_found (exit 0, valid signal).
     if [ -x "$ROOT_DIR/03_Implement/mcp/node_modules/.bin/tsx" ]; then
       check "MCP client path (verify_mcp.ts)" \
-        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' npm run verify -- ${KJ_ATLAS_MCP_VERIFY_DOC:-doc_phase1_canvas} reviewed-only"
+        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && SUI_MCP_API_BASE_URL='$API_BASE' npm run verify -- ${SUI_MCP_VERIFY_DOC:-doc_phase1_canvas} reviewed-only"
       # MCP HTTP transport e2e (remote generative-AI path): mock IdP + real
       # signed JWT + real backend document over streamable HTTP. Uses ephemeral
       # ports so it is safe to run alongside other harness jobs. Defaults to the
       # document created by verify_api_write.sh above.
       check "MCP HTTP transport e2e (dogfood_mcp_http_e2e.mjs)" \
-        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && KJ_ATLAS_MCP_API_BASE_URL='$API_BASE' timeout 90 node ./node_modules/.bin/tsx scripts/dogfood_mcp_http_e2e.mjs ${KJ_ATLAS_MCP_VERIFY_DOC:-admin_write_probe}"
+        bash -c "cd '$ROOT_DIR/03_Implement/mcp' && SUI_MCP_API_BASE_URL='$API_BASE' timeout 90 node ./node_modules/.bin/tsx scripts/dogfood_mcp_http_e2e.mjs ${SUI_MCP_VERIFY_DOC:-admin_write_probe}"
     else
       echo "  SKIP: MCP client path — mcp package deps not installed (cd 03_Implement/mcp && npm install)"
     fi
   fi
 else
-  echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn kj_atlas_api.main:app --port 8000 to enable)"
+  echo "  SKIP: API/MCP verification — no backend at $API_BASE (start uvicorn sui_sensemaking_api.main:app --port 8000 to enable)"
 fi
 
 # Clean up the self-contained backend (if any) started for the API/MCP checks,
@@ -228,7 +228,7 @@ fi
 # and start keyed backends whose curls send no key (401).
 if [ -n "$SELF_BACKEND_PID" ]; then
   kill "$SELF_BACKEND_PID" 2>/dev/null
-  unset KJ_ATLAS_API_KEY KJ_ATLAS_ADMIN_API_KEY
+  unset SUI_API_KEY SUI_ADMIN_API_KEY
 fi
 if [ -n "$SELF_STUB_PID" ]; then kill "$SELF_STUB_PID" 2>/dev/null; fi
 if [ -n "$SELF_DB" ]; then rm -f "$SELF_DB"; fi
@@ -249,7 +249,7 @@ if [ -x "$VENV_PYTHON" ] && [ -f alembic.ini ]; then
   check "Admin CLI/API ops flow E2E (scenario 4)" \
     run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_admin_ops_flow_e2e.sh" 8006
   check "KJ multi-round collaboration E2E (mock LLM)" \
-    run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_kj_multi_round.sh" 8007
+    run_e2e_snapshot "$ROOT_DIR/03_Implement/backend/scripts/verify_sui_multi_round.sh" 8007
   # MCP read -> CE-4 audit (channel=mcp) -> HTTP sink. Self-contained: starts
   # its own audit sink + migrated backend on free ports; runs verify_mcp.ts.
   # Requires the mcp package's node_modules (npm install) — the script reports

@@ -7,7 +7,7 @@
 
 ## Context
 
-kj-atlas の設計文書には、MVPで実際に利用する最小スキーマと、AI連携・レビュー帰属・監査連携・将来拡張の契約が同じ `02_Architecture` 層に存在している。
+sui-sensemaking の設計文書には、MVPで実際に利用する最小スキーマと、AI連携・レビュー帰属・監査連携・将来拡張の契約が同じ `02_Architecture` 層に存在している。
 
 一方、現行MVPの永続化は、ドキュメント全体をJSONスナップショットとして保存し、補助的にユーザー/ID対応表とマージ判断ログを持つ構成である。Card、Edge、Island、Narrative、ReviewAttribution などは論理データとして重要だが、多くは `Document` 内の埋め込み構造であり、個別CRUDや管理画面を持たない。
 

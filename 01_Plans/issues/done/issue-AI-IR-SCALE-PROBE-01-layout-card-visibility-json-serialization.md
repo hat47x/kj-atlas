@@ -33,9 +33,9 @@
 
 ## 検証結果（2026-09-03）
 
-- 初回実行 `https://github.com/hat47x/kj-atlas/actions/runs/33722634825` で本false-negativeを再現した。
+- 初回実行 `https://github.com/hat47x/sui-sensemaking/actions/runs/33722634825` で本false-negativeを再現した。
 - 修正後、`python -m pytest tests/test_llm_input_ir_required_cards.py tests/test_ai_detect_contradiction_ir_scale.py tests/test_ai_route_required_meaning_scale.py -q` を再実行し成功した。
-- 修正後の実行記録: `https://github.com/hat47x/kj-atlas/actions/runs/33723114607`（run id `33723114607`）。
+- 修正後の実行記録: `https://github.com/hat47x/sui-sensemaking/actions/runs/33723114607`（run id `33723114607`）。
 - 外部LLMは使用していない。
 
 ## 文書品質の仕上げ

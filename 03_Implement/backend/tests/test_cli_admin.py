@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from kj_atlas_api import cli
+from sui_sensemaking_api import cli
 
 
 class _Response:
@@ -19,8 +19,8 @@ class _Response:
 
 
 def test_control_plane_headers_use_admin_secret_only(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", " admin-secret ")
-    monkeypatch.setenv("KJ_ATLAS_API_KEY", "business-secret")
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", " admin-secret ")
+    monkeypatch.setenv("SUI_API_KEY", "business-secret")
 
     assert cli._control_plane_headers(actor_ref="operator", trace_id="request-1") == {
         "x-admin-api-key": "admin-secret",
@@ -33,7 +33,7 @@ def test_admin_models_list_uses_control_plane_and_json_output(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     request_log: dict[str, Any] = {}
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", "admin-secret")
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", "admin-secret")
 
     def _request(method: str, url: str, **kwargs: object) -> _Response:
         request_log.update({"method": method, "url": url, **kwargs})
@@ -134,7 +134,7 @@ def test_admin_error_is_structured_and_never_echoes_secret(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     secret = "do-not-print-this-admin-secret"
-    monkeypatch.setenv("KJ_ATLAS_ADMIN_API_KEY", secret)
+    monkeypatch.setenv("SUI_ADMIN_API_KEY", secret)
     monkeypatch.setattr(
         cli.httpx,
         "request",

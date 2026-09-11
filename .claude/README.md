@@ -22,11 +22,11 @@
 
 ```json
 {
-  "env": { "KJ_ATLAS_LLM_PROVIDER": "none" }
+  "env": { "SUI_LLM_PROVIDER": "none" }
 }
 ```
 
-`KJ_ATLAS_LLM_PROVIDER=none` は `domain.md` / `ADR-0041`（CVI-6）の「provider=none 既定でも価値が成立」を、Claude Code セッションの既定としても明示するもの。
+`SUI_LLM_PROVIDER=none` は `domain.md` / `ADR-0041`（CVI-6）の「provider=none 既定でも価値が成立」を、Claude Code セッションの既定としても明示するもの。
 
 ---
 

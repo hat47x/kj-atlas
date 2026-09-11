@@ -11,8 +11,8 @@
 // doc, or clear it, to exercise the Org-A batch flow on the Web path.
 import { chromium } from "@playwright/test";
 
-const BASE_URL = process.env.KJ_ATLAS_DOGFOOD_URL ?? "http://127.0.0.1:4173/?locale=ja";
-const DOC_ID = process.env.KJ_ATLAS_DOGFOOD_DOC_ID ?? "dogfood_orga_batch_20260812";
+const BASE_URL = process.env.SUI_DOGFOOD_URL ?? "http://127.0.0.1:4173/?locale=ja";
+const DOC_ID = process.env.SUI_DOGFOOD_DOC_ID ?? "dogfood_orga_batch_20260812";
 
 function log(step, message) {
   console.log(`\n[${step}] ${message}`);

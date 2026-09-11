@@ -65,7 +65,7 @@
 
 ## 3. 製品としての最重要事項
 
-方法論の正本 `00_Prompt/kj_technique.md` は、この技法の核心を一文で述べている。
+方法論の正本 `00_Prompt/sensemaking_technique.md` は、この技法の核心を一文で述べている。
 
 > カードは「ちがう」と言えない。（`:66-71`）
 
@@ -82,11 +82,11 @@
 
 さらに、**実行時のAIプロンプトが方法論を運んでいない。**
 
-- `routes/ai.py:1060`: `"Group these KJ-method cards into thematic islands"` — **"thematic"（主題別分類）は、方法論が最大の失敗として名指ししている枠組みそのもの**（`kj_technique.md:21-33`）。1段目2〜3枚の制約も、孤立カードを残す指示も渡っていない。
+- `routes/ai.py:1060`: `"Group these KJ-method cards into thematic islands"` — **"thematic"（主題別分類）は、方法論が最大の失敗として名指ししている枠組みそのもの**（`sensemaking_technique.md:21-33`）。1段目2〜3枚の制約も、孤立カードを残す指示も渡っていない。
 - `routes/ai.py:1042`: `"clearer and more concise"` — 方法論はモデルの流暢さこそが素材を上書きする機構だと警告している。「簡潔に」はそれを積極的に招く。名詞止め禁止は渡っていない。
 - `routes/ai.py:281-295`（表札）: 転置検査も戻し検査も無く、`"Prefer the strongest supporting card ids"` という順位付け表現が入っている。
 
-`00_Prompt/ai_kj_execution_procedures.md` は Status: Normative であり、これらの制約を全て規定している。**規定は実装へ届いていない。**
+`00_Prompt/ai_sensemaking_execution_procedures.md` は Status: Normative であり、これらの制約を全て規定している。**規定は実装へ届いていない。**
 
 そして構造的に重要な点——**これはドッグフーディングでは見つからない。** `01_Plans/dogfood/adopting-org-patterns.md:9-15` が自ら記録している通り、題材が「本プロジェクト自身の設計判断・issue・ADR」である限り、**未分化な「違和感」「保留」「曖昧な意味」を扱う操作は起動しない**。設計判断は既に分化した対象だからである。`DOMAIN-SCORING-SURFACE-01`（出荷中の健全性%）がドッグフーディングを素通りしたのは、その予測が的中した実例にあたる。
 
@@ -115,7 +115,7 @@
 
 **active な計画在庫の3分の1以上が、実装能力ではなく1人の判断で止まっている。**
 
-そしてこの主張は、本レビュー実施中に**実証された**。調査開始時点で `ADR-0068`（SafeModeのAPI境界強制）は Proposed であり、`SEC-AI-SAFEMODE-01` は「ADRが Proposed の間は着手しない」と明記された **Draft P0** だった。レビュー作成中に `ADR-0068` が D1=C で **Accepted** となり、`SEC-AI-SAFEMODE-01` は数日で全AC達成の **Done** へ到達した（`KJ_ATLAS_ALLOW_UNREVIEWED_AI_TEXT` の追加、Web側AI提案のブロック、api.md と THREAT_MODEL の同期まで含む）。
+そしてこの主張は、本レビュー実施中に**実証された**。調査開始時点で `ADR-0068`（SafeModeのAPI境界強制）は Proposed であり、`SEC-AI-SAFEMODE-01` は「ADRが Proposed の間は着手しない」と明記された **Draft P0** だった。レビュー作成中に `ADR-0068` が D1=C で **Accepted** となり、`SEC-AI-SAFEMODE-01` は数日で全AC達成の **Done** へ到達した（`SUI_ALLOW_UNREVIEWED_AI_TEXT` の追加、Web側AI提案のブロック、api.md と THREAT_MODEL の同期まで含む）。
 
 **実装能力は不足していない。判断だけが不足していた。** 残る5本も同じ構造にある。
 
@@ -143,13 +143,13 @@
 
 **全ての運用手順が「ログを見る」で終わり、そのログに情報が無い。** 運用文書が良いだけに、この乖離が効いている。
 
-最初の4項目（ログ設定 / リクエストID / `/readyz` / `KJ_ATLAS_APP_REVISION` の配線）はいずれも小さく、**特にログ設定は既に計算して捨てている情報をコード変更なしで有効化する**。
+最初の4項目（ログ設定 / リクエストID / `/readyz` / `SUI_APP_REVISION` の配線）はいずれも小さく、**特にログ設定は既に計算して捨てている情報をコード変更なしで有効化する**。
 
 ### 優先2 — 出荷中の不変条件違反を閉じる（`DOMAIN-SCORING-SURFACE-01`）
 
 新機能ではなく、既に宣言している不変条件と実装の齟齬である。`AI-IMPORTANCE-SCORING-01` が同じ不変条件でバックエンドの採点を削除した一方、**画面の「健全性 N%」は誰も検査していない**。書き出し境界とMCP経路では `score`/`rank`/`confidence`/`priority` の混入を明示検査しているのに、利用者が最も長く見る面に検査が無い。**防御の周縁が中心より厚い。**
 
-方法論は既に正しい提示形式を指定している——`kj_technique.md:185`「報告は件数で」。点数を件数へ変えるだけで、検査ロジックを一切失わずに整合できる。
+方法論は既に正しい提示形式を指定している——`sensemaking_technique.md:185`「報告は件数で」。点数を件数へ変えるだけで、検査ロジックを一切失わずに整合できる。
 
 ### 優先3 — 検査の実装（三要素で見て最大の不均衡）
 
@@ -158,7 +158,7 @@
 1. **空白（voids）** — 業務✓✓ / データ✗ / 機能✗。追加型の `DocumentV1.voids?: VoidEntry[]`（`schemas.md` §14以降の追加オプション方式に一致）と、決定論的（provider=none可）な空白候補検出、ゼロ空白の注意喚起。これは `RoundHandoffV1.unresolvedQuestions` に文書レベルの供給源も与える。
 2. **A/B照合の方向と件数** — `NarrativeCheckIssue.direction` と `counts` の追加。プロンプトは既に双方向を要求しているのに応答が畳んでいるだけなので、**変更は小さい**。
 3. **表札の戻し検査** — カード→表札の異議記録（既存の `CRITIQUE_TAGS` の `not_the_same`/`feels_off` を再利用可能）。
-4. **実行時プロンプトを `ai_kj_execution_procedures.md` に一致させる** — "thematic" の除去、2〜3枚制約、名詞止め禁止、転置・戻し検査。**Normative文書が既にあるので設計は不要で、実装のみ。**
+4. **実行時プロンプトを `ai_sensemaking_execution_procedures.md` に一致させる** — "thematic" の除去、2〜3枚制約、名詞止め禁止、転置・戻し検査。**Normative文書が既にあるので設計は不要で、実装のみ。**
 
 ### 優先4 — プログラム第2反復以降を issue へ落とす
 
@@ -169,7 +169,7 @@
 ## 5. 明示的に決めるべきこと（現状どちらでもないもの）
 
 - **規模拡大は目標か非目標か。** 現状は在庫上も文書上もどちらでもない。代表規模は約300カード／30島で固定され、その先の要件・予算・測定が空白。監視の計画はゼロ。一方で複数テナントSaaSの実装は在庫最大の投資先になっている。「小規模自己ホストに徹する」も正当な判断であり、その場合は**非目標として明記する**ことで多くの issue が閉じられる。
-  なお 2026-08-13 に上限系が前進した——`KJ_ATLAS_MAX_DOCUMENT_BYTES`（20 MiB）と `KJ_ATLAS_MAX_DOCUMENT_CARDS`（10000）が `SEC-DOC-BOUND-01` で導入され、`KJ_ATLAS_ALLOW_JIT_PROVISIONING` の実装既定値が `true` → `false` へ変更された（`SEC-RATE-LIMIT-01`。既定でヘッダー1本から利用者を自動生成できる経路が閉じた）。個別の上限は入り始めたが、**レート制限は未実装のまま**（`SEC-RATE-LIMIT-01` は Draft）で、テナント単位の資源予算という概念は依然存在しない。同期プロセス40スレッド／DB接続15本に対しLLM呼び出しのtimeoutが60〜120秒であり、1テナントが全テナントを飽和させ得る構造は残っている。
+  なお 2026-08-13 に上限系が前進した——`SUI_MAX_DOCUMENT_BYTES`（20 MiB）と `SUI_MAX_DOCUMENT_CARDS`（10000）が `SEC-DOC-BOUND-01` で導入され、`SUI_ALLOW_JIT_PROVISIONING` の実装既定値が `true` → `false` へ変更された（`SEC-RATE-LIMIT-01`。既定でヘッダー1本から利用者を自動生成できる経路が閉じた）。個別の上限は入り始めたが、**レート制限は未実装のまま**（`SEC-RATE-LIMIT-01` は Draft）で、テナント単位の資源予算という概念は依然存在しない。同期プロセス40スレッド／DB接続15本に対しLLM呼び出しのtimeoutが60〜120秒であり、1テナントが全テナントを飽和させ得る構造は残っている。
 - **`ROADMAP.md` の陳腐化。** 「近接フェーズ（Next 1–2 Releases）」に挙がる島の折りたたみ・多角形島・視座プリセット・Trace Analytics は**いずれも既に Done**。非目標に `SaaS依存設計` とある一方、実際の最大投資先が `SAAS-TENANT-*` 13件＋ADR 6本。**公開している方向と実際の方向がずれている。** この Repo は設計正本と実装の乖離を検出する仕組みを何層も持つが、**「宣言した方向」と「実際の方向」の乖離を検出する仕組みだけが無い。**
 - **ドッグフーディングの題材。** 自己言及題材では核心価値が起動しない（本レビューで実例2件）。`adopting-org-patterns.md` の Org-A（自治体政策・50枚超）が未着手のまま。**外部題材を1つ通すことが、他のどの検証よりも多くを明らかにする。**
 - **`ai_eval_results.md` の正本。** 記入済み結果と空テンプレートが同一ファイルに併存し、どちらが正本か文面から判別できない。
@@ -207,6 +207,6 @@ L3昇格条件③は「週次ドッグフーディング運用3ヶ月継続」�
 - `01_Plans/issues/issue-OPS-OBSERV-01-*.md` — 本レビューで起票（優先1）
 - `01_Plans/issues/issue-QA-TENANT-ISOLATION-01-*.md` — 本レビューで起票
 - `01_Plans/issues/issue-DOMAIN-SCORING-SURFACE-01-*.md` — 本レビューで起票（優先2）
-- `00_Prompt/kj_technique.md` §3/§4/§5/§6 — 優先3の根拠
-- `00_Prompt/ai_kj_execution_procedures.md` — Normative。実装との乖離が優先3の主対象
+- `00_Prompt/sensemaking_technique.md` §3/§4/§5/§6 — 優先3の根拠
+- `00_Prompt/ai_sensemaking_execution_procedures.md` — Normative。実装との乖離が優先3の主対象
 - `01_Plans/dogfood/adopting-org-patterns.md` — 自己言及題材の限界を先に記録していた文書

@@ -6,13 +6,13 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `00_Prompt/qualitative_card_quality_requirements.md` §5, `00_Prompt/ai_cognitive_externalization_requirements.md`, `03_Implement/frontend/src/domain/`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §3, `02_Architecture/value_traceability.md` §2.1（V2 構造化）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
-- Norms: `KJT-SIGN-01, KJT-INSPECT-01`（`inspectIslandTitle()` は転写検査そのものの実装であり、普遍語表札という失敗の徴候を検出する）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §3, `02_Architecture/value_traceability.md` §2.1（V2 構造化）, `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
+- Norms: `SUI-SIGN-01, SUI-INSPECT-01`（`inspectIslandTitle()` は転写検査そのものの実装であり、普遍語表札という失敗の徴候を検出する）
 - Expected verification level: `e2e`
 
 ## 課題
 
-`00_Prompt/qualitative_card_quality_requirements.md` §5 は「島タイトル（表札）の候補が、その島のカードにしか書けない一文になっているかを検査し、他の島へ置いても成立してしまう（例:「重要な論点」「今後の課題」）場合は書き直し案を示す」ことを要件として定義している。`00_Prompt/kj_technique.md` §3 はこの検査の正本である。しかしこの能力を実装する専用issueが存在しない。
+`00_Prompt/qualitative_card_quality_requirements.md` §5 は「島タイトル（表札）の候補が、その島のカードにしか書けない一文になっているかを検査し、他の島へ置いても成立してしまう（例:「重要な論点」「今後の課題」）場合は書き直し案を示す」ことを要件として定義している。`00_Prompt/sensemaking_technique.md` §3 はこの検査の正本である。しかしこの能力を実装する専用issueが存在しない。
 
 この能力は `value_traceability.md` V2（構造化）の価値、すなわち「まとまり、関係、未整理を同時に扱える」ことを直接支援する。島タイトルが普遍語だと、俯瞰時に「どの島が何か」が分からず、再発見コストが上がる。プロダクト価値実現の高価値要件であり、単独issueとして要件を固定する必要がある。
 
@@ -20,7 +20,7 @@
 
 - 島タイトル候補が「どの束にも載る表現」（普遍語）であるかを検査する。
 - 普遍語と判定した場合は、書き直し案を proposal-only で示す。確定・自動適用しない。
-- 検査と提案は `KJ_ATLAS_LLM_PROVIDER=none` でも、検査ロジック部分が成立する（提案はAI有効時のみ）。
+- 検査と提案は `SUI_LLM_PROVIDER=none` でも、検査ロジック部分が成立する（提案はAI有効時のみ）。
 - 書き直し案は元カード本文から導出され、元の島にしか書けない表現へ寄せる。
 - 表札の確定は人間のみ（`human_reviewed` 自動昇格なし）。
 

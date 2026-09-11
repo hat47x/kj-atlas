@@ -104,7 +104,7 @@
 - expand → dual-read/write → backfill → contract を固定順で実施し、contract前は旧経路へ復帰可能なことを維持。
 - AC 対応表:
   - migration + rollback: `alembic/versions/20260303_0002_create_users_identities.py`
-  - backfill: `kj_atlas_api/backfill_identity_refs.py`
+  - backfill: `sui_sensemaking_api/backfill_identity_refs.py`
   - dual-read/write: `auth_context.py`（旧 `x-actor-ref` と新 identity 解決の併存）
   - integration: `test_auth_jit_provisioning.py` / `test_backfill_identity_refs.py`
 
@@ -228,7 +228,7 @@
 
 ### Execute
 - AuthContext/JIT の契約固定点を「入力境界・出力境界・監査境界・責務分離」の4観点で再記述。
-- strict provisioning（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）時の拒否契約を `403 + code=identity_not_provisioned` に固定し、Admin API正本・CLIラッパの責務分離を維持。
+- strict provisioning（`SUI_ALLOW_JIT_PROVISIONING=false`）時の拒否契約を `403 + code=identity_not_provisioned` に固定し、Admin API正本・CLIラッパの責務分離を維持。
 - identity schema の移行は expand → dual-write/read → backfill → contract の順序を不変条件として保持。
 
 ### Verify

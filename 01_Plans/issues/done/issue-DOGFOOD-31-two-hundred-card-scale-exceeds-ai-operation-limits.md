@@ -2,11 +2,11 @@
 
 - Type: Feature / Verification gap（高度ドッグフーディング観察）
 - Status: Done
-- Source Issue: 高度ドッグフーディング（2026-08-17）。`kj_technique.md` §1 は「数百枚は正常（川喜田自身は800枚超）」とし、第1ラウンドのカード化を200枚で行う実践規模で検証したところ、AI操作の2つの上限と衝突した。
+- Source Issue: 高度ドッグフーディング（2026-08-17）。`sensemaking_technique.md` §1 は「数百枚は正常（川喜田自身は800枚超）」とし、第1ラウンドのカード化を200枚で行う実践規模で検証したところ、AI操作の2つの上限と衝突した。
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models_ai.py`（`SuggestCardGroupsRequest.cards`）, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`（`groundingIds` 検証）, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ170）, `03_Implement/deploy/tools/mock_local_llm.py`
-- Related ADR/Spec: `00_Prompt/kj_technique.md` §1（カード化・枚数目安）, `02_Architecture/schemas.md` §9（階層島）, `01_Plans/dogfood/advanced-dogfooding-scenarios-2026-08-17.md`（A群）
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models_ai.py`（`SuggestCardGroupsRequest.cards`）, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`（`groundingIds` 検証）, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ170）, `03_Implement/deploy/tools/mock_local_llm.py`
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md` §1（カード化・枚数目安）, `02_Architecture/schemas.md` §9（階層島）, `01_Plans/dogfood/advanced-dogfooding-scenarios-2026-08-17.md`（A群）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -37,7 +37,7 @@
 
 ### なぜ問題か
 
-- **`kj_technique.md` の実践規模（数百枚は正常）と、AI操作の上限が乖離**。第1ラウンドで200枚のカードを作っても、束ね（100枚）・表札接地（10件）が成立しない。
+- **`sensemaking_technique.md` の実践規模（数百枚は正常）と、AI操作の上限が乖離**。第1ラウンドで200枚のカードを作っても、束ね（100枚）・表札接地（10件）が成立しない。
 - **DOGFOOD-13（接地の全メンバー化）と逆方向の制約**: 接地を全メンバーにした結果、10件超の島で 422 になる。実物大の島（数十〜百枚）で表札が接地できない。
 - **既存のE2E（4カード規模）では顕在化しない**。実物大シナリオ（A群）で初めて判明した。
 
@@ -69,7 +69,7 @@
 
 ## 補足
 
-- 本issueは高度ドッグフーディング（A群・第1ラウンド200枚）で発見した**実規模とAI操作上限の乖離**の記録。`kj_technique.md` の「数百枚は正常」という実践知と、実装の100枚/10件上限の整合が必要。
+- 本issueは高度ドッグフーディング（A群・第1ラウンド200枚）で発見した**実規模とAI操作上限の乖離**の記録。`sensemaking_technique.md` の「数百枚は正常」という実践知と、実装の100枚/10件上限の整合が必要。
 - 既存の小規模E2E（シナリオ1〜169・4カード規模）はこの上限に抵触せず、非後退。
 
 ## 対応（2026-08-17・iteration 240）

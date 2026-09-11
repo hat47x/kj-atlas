@@ -8,7 +8,7 @@
 - Priority: P0
 - Owner: Maintainer
 - Scope: `01_Plans/issues/`, `01_Plans/dogfood/`, `04_Documentation/`
-- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/kj_technique.md`, `COGNITIVE-DOGFOOD-01`
+- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/sensemaking_technique.md`, `COGNITIVE-DOGFOOD-01`
 - Execution protocol: `third-party-value-validation-execution-plan.md`, `third-party-value-participant-brief.md`, `third-party-value-session-launch-checklist.md`, `third-party-value-session-record-template.md`, `third-party-value-publication-boundary.md`, `third-party-value-analysis-plan.md`
 - Expected verification level: docs-check
 
@@ -16,8 +16,8 @@
 
 - 現在の問題:
   - `ADR-0032` で価値ループ、`ADR-0042` で価値実在の検証条件、`ADR-0057` で累積的なW型探求モデルまで定義されている一方、第三者が自分の題材を持ち込んだ実利用で「この道具を使い続けたい理由」が生じるかは未検証である。
-  - 現行のdogfood/E2Eは契約・回帰・実規模の成立性を強く検証できるが、既存手段からKJ Atlasへ切り替える理由、学習負荷、方法適合、成果物の説明可能性を第三者視点で観測するものではない。
-  - KJ Atlas自身をKJ Atlasで分析する認知dogfoodは、内部設計の改善には有力でも、`dogfood → issue/ADR/実装 → 次のdogfood` という自己参照的な改善循環を強め得る。外部利用者の現実入力が弱いまま内部整合性だけが高まる可能性は、現時点では**リスク仮説**として検証が必要である。
+  - 現行のdogfood/E2Eは契約・回帰・実規模の成立性を強く検証できるが、既存手段からSUI Sensemakingへ切り替える理由、学習負荷、方法適合、成果物の説明可能性を第三者視点で観測するものではない。
+  - SUI Sensemaking自身をSUI Sensemakingで分析する認知dogfoodは、内部設計の改善には有力でも、`dogfood → issue/ADR/実装 → 次のdogfood` という自己参照的な改善循環を強め得る。外部利用者の現実入力が弱いまま内部整合性だけが高まる可能性は、現時点では**リスク仮説**として検証が必要である。
   - 後続の `VALUE-MEASURE-01/02`、`VR-ROADMAP-01`、`SOCIAL-DIFFUSION-*` は real-user/cooperator milestone を待つ設計であり、本issueがその入口になる。
 - 利用者または開発への影響:
   - 価値論と実装が成熟しても、利用者が感じる便益の実在を確認しないままでは、README・初回導線・優先順位・社会普及仮説を確定できない。
@@ -25,7 +25,7 @@
 
 ## 仮説
 
-KJ Atlas の初期価値仮説を次のように置き、第三者利用で反証可能にする。
+SUI Sensemaking の初期価値仮説を次のように置き、第三者利用で反証可能にする。
 
 > インタビュー、観察、自由記述、議論メモなどの雑多な定性資料を、出典・異論・保留・人間の判断権・過去への戻り道を失わずに、共同で検証可能な構造と成果へ育てられることに価値がある。
 
@@ -82,7 +82,7 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 第三者協力者または外部評価機会が得られたら、次の順で開始する。
 
 1. operatorは `third-party-value-validation-execution-plan.md` を正本として確認する。
-2. 参加者には `third-party-value-participant-brief.md` の範囲を説明し、KJ Atlasの価値仮説を先に教えてbaselineを誘導しない。
+2. 参加者には `third-party-value-participant-brief.md` の範囲を説明し、SUI Sensemakingの価値仮説を先に教えてbaselineを誘導しない。
 3. 最初の実資料投入前に `third-party-value-session-launch-checklist.md` を埋め、実行時のデータ経路と保存範囲が不明なまま進めない。
 4. `GO` または妥当な `GO-WITH-REDUCTION` の場合だけセッションを進め、`third-party-value-session-record-template.md` に生の観察を記録する。
 5. セッション後の公開可否は参加同意と分け、`third-party-value-publication-boundary.md` に従う。
@@ -94,7 +94,7 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 
 - 実施すること:
   1. 第三者協力者が、自分の実資料または本人が妥当と認める匿名化資料を用いて、素材投入→カード化→束ね/表札→配置→保留/異論→叙述/共有確認までの一連を実施する。
-  2. 利用前に、同じ仕事を現在どの道具・手順で行っているか、何が負担かを記録する。KJ Atlasの価値語彙を先に教えて誘導しない。
+  2. 利用前に、同じ仕事を現在どの道具・手順で行っているか、何が負担かを記録する。SUI Sensemakingの価値語彙を先に教えて誘導しない。
   3. 利用中は、価値が立ち上がった瞬間だけでなく、混乱、違和感、余計な操作、既存手段の方が良い場面も生カードとして保存する。
   4. 利用後に「成果へ戻って根拠を辿れるか」「保留/異論が消えていないか」「再編成しやすいか」「次回も使う理由があるか」を、成果物と本人の説明の双方から確認する。
   5. 最初の候補文脈と、異なる実践文化の文脈を少なくとも1つ比較し、価値が特定文化の作法に依存していないかを確認する。
@@ -126,11 +126,11 @@ KJ Atlas の初期価値仮説を次のように置き、第三者利用で反�
 - 実行する確認:
   - `python 01_Plans/dogfood/validate_third_party_value_protocol.py` で検証手順の不変条件を確認する。
   - 実利用セッションごとに `Context / Existing workflow / Raw observations / Artifact evidence / Friction / Value moment / Reuse intent / Counterevidence / No-use reason` を記録する。
-  - 観察カードはあらかじめ用意した分類へ押し込まず、`00_Prompt/kj_technique.md` に従って訴えの類似性から束ねる。
+  - 観察カードはあらかじめ用意した分類へ押し込まず、`00_Prompt/sensemaking_technique.md` に従って訴えの類似性から束ねる。
   - 文化的体系はカード分類器ではなく、調べ落とし（権威、合意、匿名性、根拠、再現性、時間軸、アクセシビリティ等）を補う探索レンズとして使う。
   - 内部dogfood由来の価値仮説と第三者由来の観察を別provenanceで保持し、統合時にどちらから出たかを消さない。
 - 期待結果:
-  - KJ Atlasを使う実在の理由が少なくとも1つ具体的な利用仕事と結び付く、または価値仮説を縮小/修正すべき反証が得られる。
+  - SUI Sensemakingを使う実在の理由が少なくとも1つ具体的な利用仕事と結び付く、または価値仮説を縮小/修正すべき反証が得られる。
   - 内部自己改善循環に対して、第三者観察が実際に判断を変更し得る外部入力として機能するかを確認できる。
   - 成功・不成功のどちらでも、次に何を実装/文書化/停止すべきかをissueへ変換できる。ただし「何もしない/その市場を狙わない」も正当な結果として許容する。
 

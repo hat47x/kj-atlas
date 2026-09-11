@@ -2,7 +2,7 @@
 
 ## 位置づけ
 
-この記録は、KJ Atlas自身を日常的な開発対象としてKJ法で検討する継続dogfoodの第3ラウンドである。
+この記録は、SUI Sensemaking自身を日常的な開発対象としてKJ法で検討する継続dogfoodの第3ラウンドである。
 
 前ラウンドでは、初回サンプルとgetting startedを一次利用仕事へ近づけた。一方で、その改善だけでは第三者にとっての価値が実在することを証明できないため、次の重心を `VALUE-REALNESS-01` と `COGNITIVE-EVAL-01` に置いた。
 
@@ -34,7 +34,7 @@ Case 001〜003の統制比較とは目的が異なる。今回も既知の設計
 
 正規データは次のDocumentV1に残した。
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r9.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r9.json`
 
 今回のカードもAIが作成した提案段階の材料なので、`textReviewed: false` としている。
 
@@ -105,7 +105,7 @@ Issue単体を読んだ場合、次の二つを判別しにくい状態だった
 - `STOP-DATA-BOUNDARY`
 - `STOP-PARTICIPANT`
 - 既存手段で十分だった。
-- KJ Atlasを使う理由がなかった。
+- SUI Sensemakingを使う理由がなかった。
 - 操作負担が便益を上回った。
 
 これらも有効な外部現実である。
@@ -129,7 +129,7 @@ Issue単体を読んだ場合、次の二つを判別しにくい状態だった
 - `VALUE-REALNESS-01` に実行準備状態、外部入力、セッション開始手順を追記。
 - `validate_third_party_value_protocol.py` に正本Issueからの導線検査を追加。
 - `third-party-value-protocol.yml` のpathsへ `VALUE-REALNESS-01` を追加。
-- 本ラウンドのKJキャンバス `doc_kj_atlas_dogfood_r9.json` を作成。
+- 本ラウンドのKJキャンバス `doc_sui_sensemaking_dogfood_r9.json` を作成。
 
 ## 残る未完
 

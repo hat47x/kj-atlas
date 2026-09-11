@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIGURATION = ROOT / "04_Documentation/configuration.md"
-CONTROL_PLANE_AUTH = ROOT / "03_Implement/backend/src/kj_atlas_api/control_plane_auth.py"
-KEY = "KJ_ATLAS_ADMIN_API_KEY"
+CONTROL_PLANE_AUTH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/control_plane_auth.py"
+KEY = "SUI_ADMIN_API_KEY"
 
 
 def _row(text: str, key: str) -> str:
@@ -42,7 +42,7 @@ class AdminApiKeyStageScopeContractTests(unittest.TestCase):
             self.assertIn("X-Admin-Api-Key", row)
             self.assertIn("Stage B", row)
             self.assertIn("tenant.provision", row)
-            self.assertIn("KJ_ATLAS_API_KEY", row)
+            self.assertIn("SUI_API_KEY", row)
             self.assertIn("enterprise-production", row)
             self.assertIn("saas-multitenant", row)
             self.assertIn("local-dev", row)

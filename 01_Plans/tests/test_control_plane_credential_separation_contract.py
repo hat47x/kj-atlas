@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -52,15 +52,15 @@ class ControlPlaneCredentialSeparationContractTests(unittest.TestCase):
         validator = _settings_validator_source()
         self.assertIn("self.api_key == self.admin_api_key", validator)
         self.assertIn(
-            "KJ_ATLAS_API_KEY and KJ_ATLAS_ADMIN_API_KEY must be distinct",
+            "SUI_API_KEY and SUI_ADMIN_API_KEY must be distinct",
             validator,
         )
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_ADMIN_API_KEY"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_ADMIN_API_KEY"),
+            _public_row(REGISTRY_PATH, "SUI_ADMIN_API_KEY"),
+            _public_row(CONFIG_PATH, "SUI_ADMIN_API_KEY"),
         ):
-            self.assertIn("KJ_ATLAS_API_KEY", row)
+            self.assertIn("SUI_API_KEY", row)
             self.assertIn("同じ秘密値", row)
             self.assertIn("起動時に拒否", row)
 

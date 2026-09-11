@@ -3,7 +3,7 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: frozen dogfood source manifestが保持する旧Issue root pathと、legacy Done-root reference guardが禁じる現行参照は、同じ文字列だから同じ意味として扱ってよいか。
-- Canvas: `doc_kj_atlas_dogfood_r24.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r24.json`
 - Observation baseline: `main@45515d94c5ef9b93ec655fffdaae836504077a50`
 - Result class: 実際に現行mainのplanning unittest baseline failureとして露呈したguard契約回帰。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
 
@@ -77,7 +77,7 @@ pathを単なる文字列として正規化すると、lifecycle整合性を守�
 
 これは「例外を増やす」問題ではない。どの世界・どの時点を指しているpathなのかを、周囲の契約から判別する問題である。
 
-KJ Atlas自身が長期探究で時点差・訂正・系譜を重視している以上、開発guardでもcurrent stateとhistorical coordinateを同じ名前空間の一文字列へ潰さないことが重要になる。
+SUI Sensemaking自身が長期探究で時点差・訂正・系譜を重視している以上、開発guardでもcurrent stateとhistorical coordinateを同じ名前空間の一文字列へ潰さないことが重要になる。
 
 ## 6. Finding triage
 

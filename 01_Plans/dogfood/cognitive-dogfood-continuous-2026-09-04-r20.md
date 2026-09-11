@@ -3,7 +3,7 @@
 - Date: 2026-09-04
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: R19で確定した `mergeMethod` 契約を、provider応答、frontend、fallback、人間の採否、Document保存まで一度も意味を落とさず通せるか。
-- Canvas: `doc_kj_atlas_dogfood_r20.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r20.json`
 - Result class: 継続dogfoodの内部実装記録。第三者価値実証や認知比較結果の代替証拠ではない。
 - External LLM: 使用していない。
 - CI: mainには通常PR workflowがないため、branch-only validation Run #9（33840395373）で最新mainを一時mergeして検証。frontend 117 tests、TypeScript typecheck、backend 23 tests、active Issue 50件、dogfood文書構造、CRLF-aware diff checkが成功。

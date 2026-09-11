@@ -2,7 +2,7 @@ import JSZip from "jszip";
 
 export type ReviewPackFixtureName = "base_pack.zip" | "incoming_pack.zip" | "malicious_pack.zip";
 
-const ROOT = "kj-atlas-review-pack-20260221-000000";
+const ROOT = "sui-sensemaking-review-pack-20260221-000000";
 
 const diagnosticsText = "# Diagnostics\n\nPotential issue: <script>alert(1)</script>\n";
 

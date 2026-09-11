@@ -75,7 +75,7 @@ describe("tenant session coherence boundary", () => {
 
     expect(fixture.boundary.publishSessionChanged()).toBe(true);
     expect(fixture.channel.messages).toEqual([null]);
-    expect(fixture.channelName()).toBe("kj-atlas-tenant-session-v1");
+    expect(fixture.channelName()).toBe("sui-sensemaking-tenant-session-v1");
     expect(fixture.channelName()).not.toContain("tenant-a");
     expect(fixture.channelName()).not.toContain("user-1");
     expect(fixture.channelName()).not.toContain("opaque-version-777");

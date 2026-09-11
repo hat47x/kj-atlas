@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Validate structural integrity of kj-atlas dogfood documents and helpers.
+"""Validate structural integrity of sui-sensemaking dogfood documents and helpers.
 
-Checks each doc_kj_atlas_dogfood_r*.json:
+Checks each doc_sui_sensemaking_dogfood_r*.json:
 - parses as JSON with the expected top-level keys
 - island.cardIds all resolve to real cards
 - edge fromId/toId resolve to cards or islands
@@ -31,12 +31,12 @@ from pathlib import Path, PurePosixPath
 
 DOGFOOD_DIR = Path(__file__).parent
 ROOT = DOGFOOD_DIR.parent.parent
-GLOB = "doc_kj_atlas_dogfood_r*.json"
+GLOB = "doc_sui_sensemaking_dogfood_r*.json"
 CONTINUOUS_GLOB = "cognitive-dogfood-continuous-*.md"
 CONTINUOUS_INDEX = DOGFOOD_DIR / "cognitive-dogfood-index.md"
 CONTINUOUS_ROUND_HEADING = re.compile(r"^# 継続dogfood R(\d+)\b", re.MULTILINE)
 CONTINUOUS_CANVAS_REF = re.compile(
-    r"`(?:[^`\n]*/)?(doc_kj_atlas_dogfood_r\d+\.json)`"
+    r"`(?:[^`\n]*/)?(doc_sui_sensemaking_dogfood_r\d+\.json)`"
 )
 COGNITIVE_TOOL_FILES = (
     "validate_cognitive_run_records.py",
@@ -122,7 +122,7 @@ def validate_continuous_index() -> list[str]:
         refs = sorted(set(CONTINUOUS_CANVAS_REF.findall(report_text)))
         heading = CONTINUOUS_ROUND_HEADING.search(report_text)
         if heading:
-            expected_canvas = f"doc_kj_atlas_dogfood_r{heading.group(1)}.json"
+            expected_canvas = f"doc_sui_sensemaking_dogfood_r{heading.group(1)}.json"
         else:
             if len(refs) != 1:
                 issues.append(

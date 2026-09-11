@@ -2,8 +2,8 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, SuggestLayoutRequest, Transform
-from kj_atlas_api.models_ai import (
+from sui_sensemaking_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, SuggestLayoutRequest, Transform
+from sui_sensemaking_api.models_ai import (
     CheckNarrativeRequest,
     GenerateNarrativeRequest,
     RefineCardTextRequest,
@@ -11,7 +11,7 @@ from kj_atlas_api.models_ai import (
     SuggestIslandSummaryRequest,
     SummarizeIslandRelationRequest,
 )
-from kj_atlas_api.routes.ai import (
+from sui_sensemaking_api.routes.ai import (
     _build_generate_narrative_prompt,
     _build_island_summary_prompt,
     _build_narrative_check_prompt,
@@ -24,7 +24,7 @@ from kj_atlas_api.routes.ai import (
 )
 
 
-from kj_atlas_api.routes.ai_relations import (
+from sui_sensemaking_api.routes.ai_relations import (
     _build_relation_summary_prompt,
     _parse_relation_summary_response,
 )
@@ -104,7 +104,7 @@ def test_build_narrative_check_prompt_includes_required_checks() -> None:
 
 
 def test_build_narrative_check_prompt_requires_bidirectional_ab_cross_check() -> None:
-    """kj_technique.md §5 (優先3): the A/B cross-check must run in BOTH
+    """sensemaking_technique.md §5 (優先3): the A/B cross-check must run in BOTH
     directions and report per-direction counts (0 is a valid value)."""
     payload = CheckNarrativeRequest(
         doc=_sample_payload().doc,
@@ -222,7 +222,7 @@ def test_parse_generate_narrative_response_accepts_exact_reading_order() -> None
 
 
 def test_validate_check_narrative_input_rejects_blank_text() -> None:
-    from kj_atlas_api.routes.ai import _validate_check_narrative_input
+    from sui_sensemaking_api.routes.ai import _validate_check_narrative_input
 
     payload = CheckNarrativeRequest(
         doc=_sample_payload().doc,
@@ -240,7 +240,7 @@ def test_validate_check_narrative_input_rejects_blank_text() -> None:
 
 
 def test_validate_check_narrative_input_rejects_unknown_reading_order_id() -> None:
-    from kj_atlas_api.routes.ai import _validate_check_narrative_input
+    from sui_sensemaking_api.routes.ai import _validate_check_narrative_input
 
     payload = CheckNarrativeRequest(
         doc=_sample_payload().doc,
@@ -337,7 +337,7 @@ def test_parse_relation_summary_response_accepts_valid_payload() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 優先3-4: runtime prompts aligned with ai_kj_execution_procedures.md
+# 優先3-4: runtime prompts aligned with ai_sensemaking_execution_procedures.md
 # ---------------------------------------------------------------------------
 
 
@@ -350,7 +350,7 @@ def test_refine_card_text_prompt_prohibits_noun_stops() -> None:
 
 
 def test_suggest_card_groups_prompt_aligned_with_bundling_procedures() -> None:
-    from kj_atlas_api.models_ai import _CardRef
+    from sui_sensemaking_api.models_ai import _CardRef
 
     prompt = _build_suggest_card_groups_prompt(
         SuggestCardGroupsRequest(
@@ -372,7 +372,7 @@ def test_suggest_card_groups_prompt_aligned_with_bundling_procedures() -> None:
 def test_suggest_card_groups_card_cap_is_1000() -> None:
     """DOGFOOD-31: freeze the card-groups input cap at 1000 cards. Exactly 1000
     validate; 1001 is rejected by the Pydantic constraint."""
-    from kj_atlas_api.models_ai import _CardRef
+    from sui_sensemaking_api.models_ai import _CardRef
 
     cards = [_CardRef(id=f"c{i}", text=f"card {i}") for i in range(1000)]
     request = SuggestCardGroupsRequest(cards=cards)
@@ -391,7 +391,7 @@ def test_island_summary_prompt_includes_placard_checks() -> None:
 
     prompt = _build_island_summary_prompt(payload)
 
-    # ai_kj_execution_procedures.md §3: 表札検査 — transposition + return check,
+    # ai_sensemaking_execution_procedures.md §3: 表札検査 — transposition + return check,
     # advocacy not classification, no noun-stops.
     assert "Transposition" in prompt
     assert "Return check" in prompt
@@ -415,7 +415,7 @@ def test_generate_narrative_prompt_self_performs_ab_cross_check() -> None:
 
 
 def test_island_summary_prompt_includes_objecting_cards_from_return_check() -> None:
-    """kj_technique.md §3 (優先3-3): cards marked not_the_same/feels_off record a
+    """sensemaking_technique.md §3 (優先3-3): cards marked not_the_same/feels_off record a
     placard objection (戻し検査) that the re-suggestion must address."""
     doc = _sample_payload().doc
     doc.cards[0].critiqueTags = ["not_the_same"]  # type: ignore[attr-defined]

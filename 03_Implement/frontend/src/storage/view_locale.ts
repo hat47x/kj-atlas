@@ -2,7 +2,7 @@ import { isLocale, type Locale } from "../i18n/translate";
 import { isViewMode, type ViewMode } from "../domain/view/view_mode";
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const VIEW_LOCALE_STORAGE_KEY = "kj-atlas/view-locale-by-doc-view";
+const VIEW_LOCALE_STORAGE_KEY = "sui-sensemaking/view-locale-by-doc-view";
 
 type ViewLocaleByDoc = Record<string, Partial<Record<ViewMode, Locale>>>;
 

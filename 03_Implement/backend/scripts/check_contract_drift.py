@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-BACKEND_SRC = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api"
+BACKEND_SRC = REPO_ROOT / "03_Implement" / "backend" / "src" / "sui_sensemaking_api"
 FRONTEND_SRC = REPO_ROOT / "03_Implement" / "frontend" / "src"
 ARCH_DIR = REPO_ROOT / "02_Architecture"
 
@@ -144,11 +144,11 @@ print("\n=== 2. Environment variables vs runtime_parameter_registry.md ===")
 if RUNTIME_REGISTRY.exists():
     registry_content = RUNTIME_REGISTRY.read_text(encoding="utf-8")
 
-    # Find all KJ_ATLAS_* env vars in settings.py
+    # Find all SUI_* env vars in settings.py
     settings_py = BACKEND_SRC / "settings.py"
     if settings_py.exists():
         settings_content = settings_py.read_text(encoding="utf-8")
-        ENV_VAR_RE = re.compile(r'validation_alias="(KJ_ATLAS_\w+)"')
+        ENV_VAR_RE = re.compile(r'validation_alias="(SUI_\w+)"')
         code_env_vars: set[str] = set()
         for match in ENV_VAR_RE.finditer(settings_content):
             code_env_vars.add(match.group(1))
@@ -156,7 +156,7 @@ if RUNTIME_REGISTRY.exists():
         # Check registry coverage
         for var in sorted(code_env_vars):
             if var not in registry_content:
-                warn(f"KJ_ATLAS_* env var '{var}' not mentioned in runtime_parameter_registry.md")
+                warn(f"SUI_* env var '{var}' not mentioned in runtime_parameter_registry.md")
 
         print(f"  Code env vars: {len(code_env_vars)}")
 else:
@@ -235,7 +235,7 @@ if types_ts.exists() and models_py.exists():
 
 warning_categories = {
     "route_docs": sum(1 for w in warnings if "not found in api.md" in w),
-    "env_vars": sum(1 for w in warnings if "env var" in w or "KJ_ATLAS_" in w),
+    "env_vars": sum(1 for w in warnings if "env var" in w or "SUI_" in w),
     "pydantic_ts": sum(1 for w in warnings if "Pydantic" in w or "TS types" in w),
 }
 total_warnings = len(warnings)

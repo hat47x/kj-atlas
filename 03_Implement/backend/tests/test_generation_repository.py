@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.generation_repository import (
+from sui_sensemaking_api.generation_repository import (
     GenerationGcConflict,
     RevisionHeadConflict,
     advance_revision_head,
@@ -14,7 +14,7 @@ from kj_atlas_api.generation_repository import (
     list_unreferenced_blob_candidates,
     prune_ephemeral_history_by_reachability,
 )
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     CanvasRevisionHeadRow,
     CanvasRevisionParentRow,
@@ -25,7 +25,7 @@ from kj_atlas_api.models import (
     GenerationDeletionAuditEventRow,
     TenantRow,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 def _tenant(tenant_id: str) -> TenantContext:

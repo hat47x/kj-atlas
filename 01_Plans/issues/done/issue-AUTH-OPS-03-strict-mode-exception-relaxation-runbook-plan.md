@@ -13,7 +13,7 @@
 
 ## 1) 課題 / Problem statement
 
-- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）は本番標準だが、例外緩和（`true`）の運用統制を実務Runbookとして固定する手順が未整備。
+- strict mode（`SUI_ALLOW_JIT_PROVISIONING=false`）は本番標準だが、例外緩和（`true`）の運用統制を実務Runbookとして固定する手順が未整備。
 - 現行文書には2者承認責任と記録責任はあるが、例外起動条件・復旧条件・承認フロー境界が不足しており、監査時に判断が分散し得る。
 - 不明確な承認フローを推測で補完すると、既存ADR契約（SafeMode既定ON、PII最小化、監査最小化）と矛盾する恐れがある。
 
@@ -80,9 +80,9 @@
 
 ## 9) リスクとロールバック / Risks & rollback
 
-- 失敗モード: 承認不備またはQ1〜Q10固定値逸脱のまま `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` が適用される。
+- 失敗モード: 承認不備またはQ1〜Q10固定値逸脱のまま `SUI_ALLOW_JIT_PROVISIONING=true` が適用される。
 - 影響範囲: 認証境界、監査整合性、運用統制。
-- ロールバック手順: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ即時復旧し、未承認変更または固定値逸脱としてインシデント記録・再承認フローへ戻す。
+- ロールバック手順: `SUI_ALLOW_JIT_PROVISIONING=false` へ即時復旧し、未承認変更または固定値逸脱としてインシデント記録・再承認フローへ戻す。
 
 ## 10) Additional context
 

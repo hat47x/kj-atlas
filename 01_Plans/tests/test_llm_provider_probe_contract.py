@@ -5,9 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-AI_ROUTE = ROOT / "03_Implement/backend/src/kj_atlas_api/routes/ai.py"
-PROVIDER = ROOT / "03_Implement/backend/src/kj_atlas_api/llm/provider.py"
-KEY = "KJ_ATLAS_LLM_PROVIDER"
+AI_ROUTE = ROOT / "03_Implement/backend/src/sui_sensemaking_api/routes/ai.py"
+PROVIDER = ROOT / "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py"
+KEY = "SUI_LLM_PROVIDER"
 
 
 def _backend_row(text: str, key: str) -> str:

@@ -1,6 +1,6 @@
 # Observability
 
-対象読者: kj-atlas を運用し、障害の申告を受けて調査する管理者。
+対象読者: sui-sensemaking を運用し、障害の申告を受けて調査する管理者。
 
 目的: 実行時に何が観測できるか、利用者の申告をログ行へ突き合わせる手順、およびまだ観測できないことを示します。
 
@@ -61,15 +61,15 @@ docker compose logs api | grep '"requestId":"9f2c1d'
 
 ## ログの形式
 
-既定は1行1JSONです（`KJ_ATLAS_LOG_JSON=true`）。
+既定は1行1JSONです（`SUI_LOG_JSON=true`）。
 
 ```json
-{"timestamp":"2026-08-13T09:12:33+0000","level":"WARNING","logger":"kj_atlas_api.audit","message":"audit event send failed; keep fail-open","requestId":"9f2c1d...","tenantId":"tenant-a","docId":"doc-1","queueLength":3}
+{"timestamp":"2026-08-13T09:12:33+0000","level":"WARNING","logger":"sui_sensemaking_api.audit","message":"audit event send failed; keep fail-open","requestId":"9f2c1d...","tenantId":"tenant-a","docId":"doc-1","queueLength":3}
 ```
 
 `tenantId` / `docId` / `queueLength` のようなフィールドは、コード側が `extra={...}` で渡しているものです。**`OPS-OBSERV-01` 以前はログ設定が存在せず、これらは出力されていませんでした** — 監査送信の失敗すら「どのテナントの何が失われたか」が分からない状態でした。
 
-出力レベルは `KJ_ATLAS_LOG_LEVEL` で変更します。`KJ_ATLAS_LOG_JSON=false` にすると人間可読の1行書式になり、correlation metadata の `requestId` / `actorRefHash` / `appRevision` は残ります。一方、`tenantId` / `docId` / `queueLength` / LLM `trace_id` など caller-supplied `extra={...}` のfieldは人間可読formatterでは出力しません。これらの構造化fieldが必要な運用ではJSON出力を維持してください。
+出力レベルは `SUI_LOG_LEVEL` で変更します。`SUI_LOG_JSON=false` にすると人間可読の1行書式になり、correlation metadata の `requestId` / `actorRefHash` / `appRevision` は残ります。一方、`tenantId` / `docId` / `queueLength` / LLM `trace_id` など caller-supplied `extra={...}` のfieldは人間可読formatterでは出力しません。これらの構造化fieldが必要な運用ではJSON出力を維持してください。
 
 ### ログに出ないもの
 
@@ -80,7 +80,7 @@ docker compose logs api | grep '"requestId":"9f2c1d'
 上記の「主体識別子を出さない」方針は変えていません。変えたのは、方針を**完成**させたことです。リクエストの主体（single-tenant ヘッダー認証のユーザー、SaaS trusted session の principal、control-plane の stage-A/B いずれか）が解決できたとき、そのリクエスト中のログ行すべてに `actorRefHash` が付きます。管理面の監査イベント（`admin_audit_events`）が既に持つ `actorRefHash`（SHA-256 先頭16桁）と**同じ計算**を使っているため、両方の記録が同じ主体に対して同じ値になります。
 
 ```json
-{"timestamp":"2026-08-26T09:12:33+0000","level":"INFO","logger":"kj_atlas_api.ai","message":"llm_generate","requestId":"9f2c1d...","actorRefHash":"a1b2c3d4e5f6a7b8","task":"refine_card_text"}
+{"timestamp":"2026-08-26T09:12:33+0000","level":"INFO","logger":"sui_sensemaking_api.ai","message":"llm_generate","requestId":"9f2c1d...","actorRefHash":"a1b2c3d4e5f6a7b8","task":"refine_card_text"}
 ```
 
 - **一方向ハッシュです。** 元の識別子（ユーザーID、control-plane キー）へ戻すことはできません。`ADR-0079` が admin console の同じ概念を指す言葉のとおり、これは主体の実識別子ではなく「照合用fingerprint」です — 「このログ行とあのログ行は同じ actor だ」と突き合わせられますが、それが具体的に誰であるかはログだけからは分かりません。
@@ -92,7 +92,7 @@ docker compose logs api | grep '"requestId":"9f2c1d'
 運用上重要なので明示します。
 
 - **メトリクスがありません**（前述）。容量計画・スケールアウト判断の入力が存在しません。**2026-08-26決定: 導入しない**（`ADR-0039`の個人OSS運用規模との整合を優先）。したがって規模拡大・複数テナント並行運用でのスケールアウト判断は本プロジェクトの非目標である。障害検知は引き続き利用者からの申告のみに依存する。
-- **監査イベントは既定で捨てられます。** `KJ_ATLAS_AUDIT_EXPORT_ENABLED=false` かつ `KJ_ATLAS_AUDIT_TRANSPORT=noop` が既定です。有効化しても、SafeMode中のイベントは `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=false`（既定）では送信されません。`view` イベントは SafeMode 前提で発行されるため、**「監査を有効にした」だけでは文書の閲覧記録はほぼ残りません。** 詳細は `security.md` の Audit export 節。
+- **監査イベントは既定で捨てられます。** `SUI_AUDIT_EXPORT_ENABLED=false` かつ `SUI_AUDIT_TRANSPORT=noop` が既定です。有効化しても、SafeMode中のイベントは `SUI_AUDIT_ALLOW_IN_SAFE_MODE=false`（既定）では送信されません。`view` イベントは SafeMode 前提で発行されるため、**「監査を有効にした」だけでは文書の閲覧記録はほぼ残りません。** 詳細は `security.md` の Audit export 節。
 - **監査イベントのローカル保存と照会APIがありません。** 送信先は noop と外部HTTPの2つだけで、DBにもファイルにも残りません。「誰がこの文書を読んだか」に答える手段は現状ありません（`DATA-MAINT-05` / `DATA-MAINT-06` で方針決定待ち）。
 - **管理面の操作の監査は実装済みです**（`admin_audit_events` テーブル、`GET /admin/provision/audit`。`issue-SEC-ADMIN-PLANE-03`で完了）。この節はかつて「未着手」と記載していたが、事実に合わせて訂正した（2026-08-26）。
 - **ログの保存・ローテーションはDocker既定に委ねています。** 上限がないため、長期稼働ではホスト側で `json-file` のローテーション設定を行ってください。

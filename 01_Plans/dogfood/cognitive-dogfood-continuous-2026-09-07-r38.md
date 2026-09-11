@@ -1,7 +1,7 @@
 # 継続dogfood R38 — 受入不変条件とfixture / harness前提を分ける
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r38.json`
+Canvas: `doc_sui_sensemaking_dogfood_r38.json`
 
 ## 1. Trigger
 
@@ -90,4 +90,4 @@ R38は「すべてのE2E testは完全hermeticでなければならない」と�
 
 R38はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、AI-IR named-provider evidence、第三者product-value validationを代替しない。
 
-formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地は変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

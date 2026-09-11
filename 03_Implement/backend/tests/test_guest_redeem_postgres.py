@@ -13,18 +13,18 @@ from sqlalchemy import create_engine, delete, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.auth_session_hash import derive_session_key_hash
-from kj_atlas_api.db import _normalize_database_url
-from kj_atlas_api.guest_admission_models import GuestPrincipalRow
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
-from kj_atlas_api.guest_redeem import DatabaseGuestRedeemStateStore, VerifiedGuestIdentity
-from kj_atlas_api.guest_redeem_state_models import GuestRedeemStateRow
-from kj_atlas_api.models import TenantRow
-from kj_atlas_api.tenant_db_guard import apply_database_tenant_id
+from sui_sensemaking_api.auth_session_hash import derive_session_key_hash
+from sui_sensemaking_api.db import _normalize_database_url
+from sui_sensemaking_api.guest_admission_models import GuestPrincipalRow
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow
+from sui_sensemaking_api.guest_redeem import DatabaseGuestRedeemStateStore, VerifiedGuestIdentity
+from sui_sensemaking_api.guest_redeem_state_models import GuestRedeemStateRow
+from sui_sensemaking_api.models import TenantRow
+from sui_sensemaking_api.tenant_db_guard import apply_database_tenant_id
 
-RUN_RLS_TESTS_ENV = "KJ_ATLAS_RUN_PG_RLS_TESTS"
-ADMIN_DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
-RUNTIME_DATABASE_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_RUNTIME_DATABASE_URL"
+RUN_RLS_TESTS_ENV = "SUI_RUN_PG_RLS_TESTS"
+ADMIN_DATABASE_URL_ENV = "SUI_DATABASE_URL"
+RUNTIME_DATABASE_URL_ENV = "SUI_TEST_POSTGRES_RUNTIME_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 9, 7, 1, 0, tzinfo=timezone.utc)
 ISSUER = "https://personal-idp.example.test"

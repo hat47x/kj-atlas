@@ -39,7 +39,7 @@ CE1 defines the minimum contract for turning a reviewed query preview into a det
   - `02_Architecture/api.md`
   - `02_Architecture/schemas.md`
   - `02_Architecture/architecture.html`
-  - `03_Implement/backend/src/kj_atlas_api/routes/context.py`
+  - `03_Implement/backend/src/sui_sensemaking_api/routes/context.py`
   - `03_Implement/backend/tests/test_context_bundle_routes.py`
   - `03_Implement/frontend/src/domain/context/query_preview.ts`
   - `03_Implement/frontend/src/domain/context/query_preview.test.ts`

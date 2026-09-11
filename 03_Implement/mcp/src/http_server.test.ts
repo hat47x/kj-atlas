@@ -44,7 +44,7 @@ vi.mock("jose", async (importOriginal) => {
 const { buildHttpApp, MCP_READ_SCOPE } = await import("./http_server.js");
 
 const TRUSTED_ISSUER = "https://idp.example/";
-const RESOURCE = "https://mcp.kj-atlas.example/";
+const RESOURCE = "https://mcp.sui-sensemaking.example/";
 const KID = "test-key-1";
 
 type PrivateKey = Awaited<ReturnType<typeof generateKeyPair>>["privateKey"];

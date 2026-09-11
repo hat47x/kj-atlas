@@ -6,7 +6,7 @@
 // test -- kept for reproducibility, not wired into CI.
 import { chromium } from "@playwright/test";
 
-const BASE_URL = process.env.KJ_ATLAS_DOGFOOD_URL ?? "http://127.0.0.1:8080/?locale=ja";
+const BASE_URL = process.env.SUI_DOGFOOD_URL ?? "http://127.0.0.1:8080/?locale=ja";
 
 function log(step, message) {
   console.log(`\n[${step}] ${message}`);

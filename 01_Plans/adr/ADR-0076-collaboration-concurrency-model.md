@@ -21,9 +21,9 @@
 
 OT vs CRDT 論争（Sun et al. はOTキャンプのadvocacy・COI）は peer-review 済みだが advocacy 色が強く、Automerge（クライアント側merge・順序非依存）は P2P/E2EE に適合。
 
-### kj-atlas の現状との整合
+### sui-sensemaking の現状との整合
 
-kj-atlas は**サーバ権威・単一正本**のWebアプリである（backendがDocumentV1を保存・`ETag`/`If-Match` CAS で楽観的並行制御を既に実装。inquiry bundle も `revision` CAS で同型）。SafeMode の未レビュー非表示境界・tenant 境界 guard はサーバ側に集中している。
+sui-sensemaking は**サーバ権威・単一正本**のWebアプリである（backendがDocumentV1を保存・`ETag`/`If-Match` CAS で楽観的並行制御を既に実装。inquiry bundle も `revision` CAS で同型）。SafeMode の未レビュー非表示境界・tenant 境界 guard はサーバ側に集中している。
 
 ## 決定すべき論点（D1〜D3）
 
@@ -58,7 +58,7 @@ kj-atlas は**サーバ権威・単一正本**のWebアプリである（backend
 ## 決定（採択済み）
 
 D1=A（サーバ権威LWW＋既存CAS拡張）を**採択する**。理由:
-1. kj-atlas は既にサーバ権威・単一正本であり、Figma と同型の構成。
+1. sui-sensemaking は既にサーバ権威・単一正本であり、Figma と同型の構成。
 2. 既存の ETag/If-Match CAS（document・inquiry bundle）を共同編集へ拡張するだけで、新規並行制御機構を導入しない。
 3. SafeMode・tenant境界・未レビュー非表示はサーバ側に集中しており、クライアントCRDTを導入するとこの集中を崩す。
 4. Confluence式の保存時手動merge（C）は履歴破損リスクがあり不採用。

@@ -275,28 +275,28 @@ const purposeLinks = [
 ] as const;
 
 const sharePanelLayoutCss = `
-  .kj-atlas-share-panel,
-  .kj-atlas-share-panel * {
+  .sui-sensemaking-share-panel,
+  .sui-sensemaking-share-panel * {
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
     white-space: normal;
   }
 
-  .kj-atlas-share-panel button,
-  .kj-atlas-share-panel input,
-  .kj-atlas-share-panel select,
-  .kj-atlas-share-panel textarea {
+  .sui-sensemaking-share-panel button,
+  .sui-sensemaking-share-panel input,
+  .sui-sensemaking-share-panel select,
+  .sui-sensemaking-share-panel textarea {
     max-width: 100%;
   }
 
-  .kj-atlas-share-panel button,
-  .kj-atlas-share-panel label,
-  .kj-atlas-share-panel summary {
+  .sui-sensemaking-share-panel button,
+  .sui-sensemaking-share-panel label,
+  .sui-sensemaking-share-panel summary {
     overflow-wrap: anywhere;
   }
 
-  .kj-atlas-share-panel button {
+  .sui-sensemaking-share-panel button {
     white-space: normal;
   }
 `;
@@ -596,7 +596,7 @@ export function SharePanel({
           <section
             id="share-replay-panel"
             ref={panelRef}
-            className="kj-atlas-share-panel"
+            className="sui-sensemaking-share-panel"
             data-panel="share-replay"
             tabIndex={-1}
             role="dialog"
@@ -604,11 +604,11 @@ export function SharePanel({
             onKeyDown={handlePanelKeyDown}
             style={{
               position: "fixed",
-              top: "var(--kj-atlas-header-panel-top, 72px)",
+              top: "var(--sui-sensemaking-header-panel-top, 72px)",
               left: 16,
               zIndex: 50,
               width: "min(340px, calc(100vw - 32px))",
-              maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
+              maxHeight: "calc(100vh - var(--sui-sensemaking-header-panel-top, 72px) - 16px)",
               boxSizing: "border-box",
               overflowX: "hidden",
               overflowY: "auto",

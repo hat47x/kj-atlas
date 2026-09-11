@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-BACKEND_SRC = REPO_ROOT / "03_Implement" / "backend" / "src" / "kj_atlas_api"
+BACKEND_SRC = REPO_ROOT / "03_Implement" / "backend" / "src" / "sui_sensemaking_api"
 FRONTEND_SRC = REPO_ROOT / "03_Implement" / "frontend" / "src"
 
 # Template files used as patterns
@@ -220,7 +220,7 @@ def generate_import_lines(decision: dict[str, Any]) -> dict[str, str]:
     pascal = to_pascal_case(task_name)
 
     return {
-        "models_ai.py": f"from kj_atlas_api.models_ai import {pascal}Request, {pascal}Response",
+        "models_ai.py": f"from sui_sensemaking_api.models_ai import {pascal}Request, {pascal}Response",
         "routes/ai.py": f"    {pascal}Request,\n    {pascal}Response,",
     }
 
@@ -585,9 +585,9 @@ def _generate_ai_task_tests(design: dict) -> str:
     return f'''import pytest
 from fastapi.testclient import TestClient
 
-from kj_atlas_api.llm.provider import LLMCallMetadata, LLMResponse, ProviderDisabledError
-from kj_atlas_api.main import app
-from kj_atlas_api.routes import ai
+from sui_sensemaking_api.llm.provider import LLMCallMetadata, LLMResponse, ProviderDisabledError
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.routes import ai
 
 
 def _stub_metadata() -> LLMCallMetadata:
@@ -731,7 +731,7 @@ def test_{pascal}_{fname}_rejects_too_long() -> None:
     return f'''import pytest
 from pydantic import ValidationError
 
-from kj_atlas_api.models_ai import {pascal}
+from sui_sensemaking_api.models_ai import {pascal}
 
 
 def test_{pascal}_roundtrip() -> None:

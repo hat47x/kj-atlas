@@ -4,7 +4,7 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AccessRequest,
     AccessResource,
     AccessSubject,

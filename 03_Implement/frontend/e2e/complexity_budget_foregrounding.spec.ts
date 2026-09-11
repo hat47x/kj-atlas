@@ -31,7 +31,7 @@ async function routeDomainExpressionFixture(page: Page): Promise<{ enableSample:
 
 test("default workspace foregrounds core actions and keeps advanced content reversible", async ({ page }) => {
   await page.addInitScript(() => {
-    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+    window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled");
   });
   await page.goto("/?locale=en");
 
@@ -71,7 +71,7 @@ test("default workspace foregrounds core actions and keeps advanced content reve
 test("selection context keeps advanced panel extracted behind explicit disclosure", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => {
-    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+    window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled");
   });
   const fixture = await routeDomainExpressionFixture(page);
 
@@ -107,7 +107,7 @@ test("selection context keeps advanced panel extracted behind explicit disclosur
 test("work mode owns narrative and HIL surfaces outside selection context", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => {
-    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+    window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled");
   });
   const fixture = await routeDomainExpressionFixture(page);
 
@@ -143,7 +143,7 @@ test("work mode owns narrative and HIL surfaces outside selection context", asyn
 test("iterative inquiry prototype saves and resumes repeated stages without changing the normal entry path", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => {
-    window.localStorage.removeItem("kj-atlas.advanced-ui-enabled");
+    window.localStorage.removeItem("sui-sensemaking.advanced-ui-enabled");
   });
   const fixture = await routeDomainExpressionFixture(page);
 
@@ -181,7 +181,7 @@ test("iterative inquiry prototype saves and resumes repeated stages without chan
   const downloadPromise = page.waitForEvent("download");
   await prototype.getByRole("button", { name: "探究ファイルを保存" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/\.kj-atlas-inquiry\.json$/);
+  expect(download.suggestedFilename()).toMatch(/\.sui-sensemaking-inquiry\.json$/);
   const downloadedPath = testInfo.outputPath("saved-inquiry.json");
   await download.saveAs(downloadedPath);
   const downloadedBundle = await parseInquiryBundleJson(await readFile(downloadedPath, "utf8"));

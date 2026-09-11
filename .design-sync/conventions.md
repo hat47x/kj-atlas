@@ -1,4 +1,4 @@
-kj-atlas is a package-shape design system with no built dist/ — every sync
+sui-sensemaking is a package-shape design system with no built dist/ — every sync
 synthesizes its bundle entry directly from src/. componentSrcMap excludes
 the top-level App component (the whole-app composition, not a reusable
 piece); overrides/source-kit.mjs additionally excludes src/main.tsx, whose

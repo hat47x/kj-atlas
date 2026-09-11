@@ -10,7 +10,7 @@
 // not eliminated.
 import { chromium } from "@playwright/test";
 
-const baseUrl = process.env.KJ_ATLAS_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
+const baseUrl = process.env.SUI_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
 const results = [];
 const record = (id, title, ok, detail) =>
   results.push({ id, title, result: ok ? "pass" : "fail", detail });
@@ -39,7 +39,7 @@ function buildDocument(cardTexts) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  executablePath: process.env.SUI_SCREENSHOT_BROWSER_PATH || undefined,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const cdp = await page.context().newCDPSession(page);
@@ -88,7 +88,7 @@ try {
   record(
     "S1",
     "見出しジャンプでプロダクト名のh1へ到達できる",
-    Boolean(h1) && /kj-atlas/i.test(h1?.name ?? ""),
+    Boolean(h1) && /sui-sensemaking/i.test(h1?.name ?? ""),
     `h1="${h1?.name ?? "(なし)"}" / 検出見出し数=${headings.length}`
   );
 

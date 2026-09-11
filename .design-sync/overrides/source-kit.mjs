@@ -10,7 +10,7 @@
 // knob for component inclusion: non-null value = add/pin src path, null =
 // exclude a .d.ts-exported internal.
 //
-// FORK (kj-atlas, declared in cfg.libOverrides["source-kit.mjs"]):
+// FORK (sui-sensemaking, declared in cfg.libOverrides["source-kit.mjs"]):
 //
 // 1) EXCLUDE_APP_ENTRY — the upstream synth-entry sweep has no way to
 // exclude a non-component file from the bundle's module graph. src/main.tsx

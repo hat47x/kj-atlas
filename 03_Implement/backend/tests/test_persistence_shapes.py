@@ -2,10 +2,10 @@ from sqlalchemy import String, Text
 from sqlalchemy.dialects import mssql, mysql, oracle
 from sqlalchemy.schema import CreateTable
 
-from kj_atlas_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
-from kj_atlas_api.guest_auth_session_models import GuestAuthSessionRow
-from kj_atlas_api.models import Base
-from kj_atlas_api.persistence_shapes import (
+from sui_sensemaking_api.guest_admission_models import GuestDocumentGrantRow, GuestPrincipalRow
+from sui_sensemaking_api.guest_auth_session_models import GuestAuthSessionRow
+from sui_sensemaking_api.models import Base
+from sui_sensemaking_api.persistence_shapes import (
     OIDC_AUDIENCE_MAX_CHARS,
     OIDC_ISSUER_MAX_CHARS,
     DataShape,

@@ -49,7 +49,7 @@
 
 **案2のserver-owned BFF sessionを採用する。**
 
-1. kj-atlasまたは同一trust boundaryのgatewayをconfidential OAuth clientとし、access/refresh tokenをbrowserへ渡さない。
+1. sui-sensemakingまたは同一trust boundaryのgatewayをconfidential OAuth clientとし、access/refresh tokenをbrowserへ渡さない。
 2. browserには128-bit以上のentropyを持つopaque session IDをHttpOnly、Secure、SameSite=LaxまたはStrict cookieで発行する。DBには生cookie値ではなくkeyed hashを保存し、key rotation手順を持つ。
 3. session rowは`session_key_hash`を主キーとし、`principal_id`、`issuer`、`subject`、`active_tenant_id`、`tenant_session_version`、作成・最終利用・絶対失効時刻、失効状態を保持する。tenant membership/capabilityはrequestごとに正本を再確認し、session snapshotだけで許可しない。
 4. active tenant変更はsession rowの現在tenant/versionを条件に、membership再確認後にCAS更新する。同じsessionの全タブだけが新versionへ進み、同じprincipalの別sessionへ波及しない。
@@ -82,7 +82,7 @@
 
 本ADRをAcceptedへ変更する前に、次をMaintainerが確認する。
 
-- BFFをkj-atlas backendへ内蔵するか、同一trust boundaryのgateway責務にするか。
+- BFFをsui-sensemaking backendへ内蔵するか、同一trust boundaryのgateway責務にするか。
 - cookie domain/path、SameSite、CSRF方式、絶対／idle timeout、refresh token保管・暗号鍵管理。
 - Brokerごとのlogout連携範囲と、back-channel logout非対応時の全session失効手順。
 - SPA Bearer直接送信を前提とする既存E2E、CORS、運用手順の移行範囲。
@@ -97,7 +97,7 @@
 
 Maintainerの要請により以下4項目への回答案を作成し、個別確認なしで承認された（上記Deciders参照）。本節が「Acceptance Gate」の正式な充足内容である。
 
-### 回答案1: BFFの配置 — kj-atlas backend自身に内蔵する（別gatewayは新設しない）
+### 回答案1: BFFの配置 — sui-sensemaking backend自身に内蔵する（別gatewayは新設しない）
 
 根拠:
 - `main.py`に`CORSMiddleware`が存在しない。これは現状が同一origin／reverse proxy前提の構成であることを示す。BFFを内蔵すれば、OAuth callback・cookie発行・API呼び出しがすべて同一originのまま維持され、**新規CORS設定が不要**になる。
@@ -112,7 +112,7 @@ Maintainerの要請により以下4項目への回答案を作成し、個別確
 - **SameSite**: `Strict`（既存踏襲）。BFFが受けるOAuth callbackはBrokerからのGETリダイレクト応答であり、そこでの`Set-Cookie`はSameSite属性の影響を受けない（SameSiteが制限するのは「そのcookieを添えて送るか」であり「受け取れるか」ではない）。したがってStrictのままcallbackを処理できる。
 - **CSRF方式**: session cookieへ束縛したsynchronizer token（非HttpOnlyの別cookieまたはresponse bodyで払い出し、state変更requestではheader経由で送らせて一致検証）を提案する。SameSite=Strictを主防御、token検証を第二防御とする多層防御とする。
 - **絶対/idleタイムアウト（提案値・要確認）**: 絶対session寿命 **12時間**、idle失効 **60分**。既存`tenantSessionVersion`の`max_age=3600`（1時間）とidle 60分は整合する。絶対12時間は「1営業日単位で必ず再認証させる」運用を意図した値であり、コンプライアンス要件次第で調整可能な提案値である。
-- **refresh token保管・暗号鍵管理**: refresh tokenはBFFプロセスの外（browser）へは一切渡さない（本ADR決定1に整合）。DB保存時は対称鍵暗号（AES-GCM等）で暗号化し、鍵はプロセス起動時に既存の`KJ_ATLAS_*`環境変数規約に沿って注入する。鍵ローテーション手順は別途運用issueで定義する（本ADRのスコープ外とする）。
+- **refresh token保管・暗号鍵管理**: refresh tokenはBFFプロセスの外（browser）へは一切渡さない（本ADR決定1に整合）。DB保存時は対称鍵暗号（AES-GCM等）で暗号化し、鍵はプロセス起動時に既存の`SUI_*`環境変数規約に沿って注入する。鍵ローテーション手順は別途運用issueで定義する（本ADRのスコープ外とする）。
 
 ### 回答案3: Brokerごとのlogout連携範囲 — Keycloakのback-channel logoutを優先し、非対応Brokerには既存決定6のフォールバックを適用する
 
@@ -124,9 +124,9 @@ Maintainerの要請により以下4項目への回答案を作成し、個別確
 
 回答案1（BFF内蔵）を採る場合、**CORS設定の新規追加は不要**。影響を受ける既存資産は次の3点:
 
-- **SaaS向けE2E**（`playwright.saas.config.ts`、`tenant_session_multitab.spec.ts`等）: 現状は`KJ-Atlas-Tenant-Session-Version`ヘッダーとmock session objectを直接注入している。BFF移行後はOAuth callbackを経由したcookie発行を模擬する経路へ書き換えが必要。
-- **Level 1/2テストハーネス**（`tests/federation/mock_sp.py`、`tests/level2/mock_idp.py`）: 現状はJWTを`X-Kj-Atlas-Authorization`ヘッダーで直接転送する構成（`ADR-0064` D4-4）。BFF移行後は「BFFがtoken交換を代行し、browserにはcookieだけを返す」経路への拡張が必要。
-- **frontend `api/client.ts`**: 現状のBearerヘッダー送信から、cookie送信（`credentials`指定）への切替が必要。tenant session precondition headerの扱い（`KJ-Atlas-Tenant-Session-Version`）自体は維持可能。
+- **SaaS向けE2E**（`playwright.saas.config.ts`、`tenant_session_multitab.spec.ts`等）: 現状は`Sui-Sensemaking-Tenant-Session-Version`ヘッダーとmock session objectを直接注入している。BFF移行後はOAuth callbackを経由したcookie発行を模擬する経路へ書き換えが必要。
+- **Level 1/2テストハーネス**（`tests/federation/mock_sp.py`、`tests/level2/mock_idp.py`）: 現状はJWTを`X-Sui-Sensemaking-Authorization`ヘッダーで直接転送する構成（`ADR-0064` D4-4）。BFF移行後は「BFFがtoken交換を代行し、browserにはcookieだけを返す」経路への拡張が必要。
+- **frontend `api/client.ts`**: 現状のBearerヘッダー送信から、cookie送信（`credentials`指定）への切替が必要。tenant session precondition headerの扱い（`Sui-Sensemaking-Tenant-Session-Version`）自体は維持可能。
 
 ## Traceability
 

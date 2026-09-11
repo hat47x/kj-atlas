@@ -16,11 +16,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api import control_plane_auth
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base, AdminAuditEventRow
-from kj_atlas_api.settings import settings
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api import control_plane_auth
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base, AdminAuditEventRow
+from sui_sensemaking_api.settings import settings
 
 _ADMIN_KEY = "control-plane-bootstrap-key"
 _BUSINESS_KEY = "business-plane-key"

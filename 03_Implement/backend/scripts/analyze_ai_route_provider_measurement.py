@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from kj_atlas_api.llm.provider import LLMRequest
+from sui_sensemaking_api.llm.provider import LLMRequest
 
 try:
     from scripts.measure_ai_route_provider_tokens import (

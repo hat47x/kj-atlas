@@ -1,6 +1,6 @@
 # Security
 
-対象読者: kj-atlas を安全に評価・運用する管理者、セキュリティ担当者、開発者。
+対象読者: sui-sensemaking を安全に評価・運用する管理者、セキュリティ担当者、開発者。
 
 目的: SafeMode、外部サービスとの共有、API 保護、アクセス制御、データ取り扱いの基本境界を説明します。
 
@@ -17,7 +17,7 @@
 - [security.md](security.md)（本書）: SafeMode、share/export、外部接続の基本方針。
 - [security_operational_guidelines.md](security_operational_guidelines.md): 安全設定を変える前の判断例。
 
-設定値の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。本書では利用時に確認する境界だけを説明します。
+設定値の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。本書では利用時に確認する境界だけを説明します。
 
 ## 基本方針
 
@@ -40,31 +40,31 @@
 
 | 項目 | 既定 |
 | --- | --- |
-| LLM provider | `KJ_ATLAS_LLM_PROVIDER=none` |
+| LLM provider | `SUI_LLM_PROVIDER=none` |
 | large-scale LLM | opt-in なしでは無効 |
-| audit HTTP export | `KJ_ATLAS_AUDIT_EXPORT_ENABLED=false` |
-| SafeMode 中の audit HTTP 連携 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=false` |
-| API key 認証 | `KJ_ATLAS_API_KEY` 未設定時は無効 |
+| audit HTTP export | `SUI_AUDIT_EXPORT_ENABLED=false` |
+| SafeMode 中の audit HTTP 連携 | `SUI_AUDIT_ALLOW_IN_SAFE_MODE=false` |
+| API key 認証 | `SUI_API_KEY` 未設定時は無効 |
 
 ## API key
 
-`KJ_ATLAS_API_KEY` を設定すると、`/healthz` 以外の API は `X-API-Key` ヘッダーを要求します。
+`SUI_API_KEY` を設定すると、`/healthz` 以外の API は `X-API-Key` ヘッダーを要求します。
 
 ```bash
-export KJ_ATLAS_API_KEY='change-me'
+export SUI_API_KEY='change-me'
 ```
 
 ```bash
 curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 ```
 
-ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`KJ_ATLAS_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
+ブラウザで動く同梱の画面（SPA）は `X-API-Key` を送らないため、`SUI_API_KEY` を設定すると画面からの操作は 401 になります。API key は `curl` などプログラムからのアクセスを保護するための簡易保護です。ブラウザ配信を保護する場合は、画面に鍵を持たせるのではなく前段の認証 proxy で行います。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
-> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
+> 注意: 標準 Docker Compose はこのキーをホスト環境から pass-through 配送します（ホスト側で未設定の場合はコンテナ内でも未設定のままで、既定の無効状態を維持します。[runtime_parameter_registry.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings) 参照）。
 
 ## 管理面（Control Plane）の保護
 
-管理面（`/admin/provision/**`）は**業務面とは別の資格情報**で保護します。`KJ_ATLAS_API_KEY`（業務面）では到達できません。
+管理面（`/admin/provision/**`）は**業務面とは別の資格情報**で保護します。`SUI_API_KEY`（業務面）では到達できません。
 
 この分離は必須です。`POST /admin/provision/identity-providers` は**信頼するJWT発行者とJWKS URIを登録する**エンドポイントであり、ここへ到達できる主体は自分の鍵でIdPを登録し、それに一致するトークンを自作して**任意の利用者・任意のテナントとして認証できます**。文書を読めることと、信頼の起点を書き換えられることを、同じ資格情報で守ってはなりません。
 
@@ -72,13 +72,13 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 | 段 | 経路 | 使う場面 |
 | --- | --- | --- |
-| **A** | `KJ_ATLAS_ADMIN_API_KEY` を `X-Admin-Api-Key` ヘッダーで提示 | **ブートストラップ専用**。IdPが1件も登録されていない状態で使える唯一の経路。人物は特定できませんが、操作結果と資格情報の短いfingerprintは管理監査へ記録されます |
+| **A** | `SUI_ADMIN_API_KEY` を `X-Admin-Api-Key` ヘッダーで提示 | **ブートストラップ専用**。IdPが1件も登録されていない状態で使える唯一の経路。人物は特定できませんが、操作結果と資格情報の短いfingerprintは管理監査へ記録されます |
 | **B** | 検証済みセッションの `tenant.provision` capability | **通常運用**。主体が特定でき監査に載ります。IdP登録後はこちらを使います |
 
 ```bash
-curl -X POST -H "X-Admin-Api-Key: $KJ_ATLAS_ADMIN_API_KEY" \
+curl -X POST -H "X-Admin-Api-Key: $SUI_ADMIN_API_KEY" \
   -H 'Content-Type: application/json' \
-  -d '{"issuer":"https://idp.example.com","audience":"kj-atlas","jwksUri":"https://idp.example.com/jwks"}' \
+  -d '{"issuer":"https://idp.example.com","audience":"sui-sensemaking","jwksUri":"https://idp.example.com/jwks"}' \
   http://localhost:8080/api/admin/provision/identity-providers
 ```
 
@@ -86,8 +86,8 @@ curl -X POST -H "X-Admin-Api-Key: $KJ_ATLAS_ADMIN_API_KEY" \
 
 `enterprise-production` と `saas-multitenant` は、認証手段が未設定なら**起動しません**（`Settings()` 構築時に失敗します）。
 
-- `enterprise-production`: `KJ_ATLAS_ADMIN_API_KEY` と `KJ_ATLAS_API_KEY` の**両方**が必須です。業務面の識別を前段 proxy の header に依存するため、業務面キーが唯一の防御線になります。
-- `saas-multitenant`: `KJ_ATLAS_ADMIN_API_KEY` が必須です。業務面は trusted auth edge の検証済み JWT が担います。
+- `enterprise-production`: `SUI_ADMIN_API_KEY` と `SUI_API_KEY` の**両方**が必須です。業務面の識別を前段 proxy の header に依存するため、業務面キーが唯一の防御線になります。
+- `saas-multitenant`: `SUI_ADMIN_API_KEY` が必須です。業務面は trusted auth edge の検証済み JWT が担います。
 
 これは `ADR-0062` が外部連携に対して既に採っている「明示選択したのに設定が無ければ起動を止める」方針を、認証そのものへ一貫適用したものです。以前は `enterprise-production` が**既定で完全に無認証のまま起動でき**、構築ミスがそのまま全面公開になりました（`SEC-ADMIN-PLANE-01`）。
 
@@ -104,7 +104,7 @@ curl -X POST -H "X-Admin-Api-Key: $KJ_ATLAS_ADMIN_API_KEY" \
 - `enterprise-production`（自己ホスト）: 最初の管理者はそのインスタンスをデプロイした人物であり、サーバへの到達権が所有権を意味します。制御プレーン資格情報による bootstrap でここは閉じます。
 - `saas-multitenant`（共有基盤）: 最初の管理者は「テナントを申し込んだ組織の代表者」であり、これは自明ではありません。組織の実在とドメイン所有の確認が必要で、**静的な資格情報だけでは「申込者が本当にその組織の人か」を担保できません。**
 
-したがって共有基盤としてテナントを発行する運用では、申込・審査・ドメイン所有確認を伴う別工程を前段に置いてください。kj-atlas はその工程を実装しません。制御プレーン資格情報を知る者が任意の組織名でテナントを作れる状態を、正規手順にしないでください。
+したがって共有基盤としてテナントを発行する運用では、申込・審査・ドメイン所有確認を伴う別工程を前段に置いてください。sui-sensemaking はその工程を実装しません。制御プレーン資格情報を知る者が任意の組織名でテナントを作れる状態を、正規手順にしないでください。
 
 ## ブラウザ認証トークン
 
@@ -118,7 +118,7 @@ share/export の前は、「共有と再現」パネルの `共有前チェッ�
 
 ![SafeMode と共有前の確認画面](assets/screenshots/share-export-safe-mode.png)
 
-> 起動面の注意: 以下の `export KJ_ATLAS_*` 例は direct 起動時の設定例です。標準 Docker Compose は `KJ_ATLAS_LLM_PROVIDER` のみを `api` コンテナへ配送し、`KJ_ATLAS_LOCAL_LLM_BASE_URL` 等の接続情報キーは配送しません。配送範囲は [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）を参照してください。
+> 起動面の注意: 以下の `export SUI_*` 例は direct 起動時の設定例です。標準 Docker Compose は `SUI_LLM_PROVIDER` のみを `api` コンテナへ配送し、`SUI_LOCAL_LLM_BASE_URL` 等の接続情報キーは配送しません。配送範囲は [runtime_parameter_registry.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/runtime_parameter_registry.md#backend-settings)（`Delivery surface` 列）を参照してください。
 
 ## LLM provider の安全境界
 
@@ -133,25 +133,25 @@ share/export の前は、「共有と再現」パネルの `共有前チェッ�
 ローカルまたは組織内の HTTP 接続先（endpoint）を使います。
 
 ```bash
-export KJ_ATLAS_LLM_PROVIDER=local
-export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
+export SUI_LLM_PROVIDER=local
+export SUI_LOCAL_LLM_BASE_URL='http://localhost:8001'
 ```
 
 接続先は `<base_url>/generate` です。local と呼んでいても、実際の宛先が外部ネットワークでないことを運用側で確認してください。
 
 送信requestはUTF-8 JSONで1MiB以下に制限され、task、temperature、max token数を接続前に検証します。過大promptや`NaN`等の不正値は本文をerrorへ表示せず`provider_validation`で停止し、fallback設定があっても別の失敗分類へ置き換えません。
 
-> 注意: 標準 Docker Compose は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を配送しません。Compose 上で `local` provider を検証する場合は、検証専用の `docker-compose.llm-stub.yml` overlay を使ってください。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
+> 注意: 標準 Docker Compose は `SUI_LOCAL_LLM_BASE_URL` を配送しません。Compose 上で `local` provider を検証する場合は、検証専用の `docker-compose.llm-stub.yml` overlay を使ってください。また `api` コンテナ内から見た `http://localhost:8001` はホストではなく `api` コンテナ自身を指すため、Compose 環境ではこの例をそのまま転記しないでください。
 
 ### `large-scale`
 
 large-scale は、明示 opt-in、昇格許可、allowlist がすべて必要です。
 
 ```bash
-export KJ_ATLAS_LLM_PROVIDER=large-scale
-export KJ_ATLAS_LLM_ESCALATION_ENABLED=true
-export KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true
-export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
+export SUI_LLM_PROVIDER=large-scale
+export SUI_LLM_ESCALATION_ENABLED=true
+export SUI_LLM_LARGE_SCALE_OPT_IN=true
+export SUI_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
 
 allowlist に含まれない host との連携は失敗します。
@@ -161,16 +161,16 @@ allowlist に含まれない host との連携は失敗します。
 audit HTTP export を使う場合:
 
 ```bash
-export KJ_ATLAS_AUDIT_EXPORT_ENABLED=true
-export KJ_ATLAS_AUDIT_TRANSPORT=http
-export KJ_ATLAS_AUDIT_HTTP_ENDPOINT='https://audit.example.com/events'
+export SUI_AUDIT_EXPORT_ENABLED=true
+export SUI_AUDIT_TRANSPORT=http
+export SUI_AUDIT_HTTP_ENDPOINT='https://audit.example.com/events'
 ```
 
 注意:
 
 - 接続先（endpoint）と API key は秘密情報として扱います。
-- `KJ_ATLAS_AUDIT_TRANSPORT=http` を指定した場合、endpointは必須です。未設定ならnoopへ縮退せず、設定エラーとして起動を拒否します。
-- SafeMode 中に audit HTTP 連携を許可する場合は、`KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE=true` の理由を運用記録に残してください。
+- `SUI_AUDIT_TRANSPORT=http` を指定した場合、endpointは必須です。未設定ならnoopへ縮退せず、設定エラーとして起動を拒否します。
+- SafeMode 中に audit HTTP 連携を許可する場合は、`SUI_AUDIT_ALLOW_IN_SAFE_MODE=true` の理由を運用記録に残してください。
 - audit には必要最小限のメタ情報だけを含め、生の秘密情報を含めないでください。
 
 ## Access control
@@ -188,9 +188,9 @@ export KJ_ATLAS_AUDIT_HTTP_ENDPOINT='https://audit.example.com/events'
 外部 PDP を使う場合は、fail-safe 動作を先に決めます。
 
 ```bash
-export KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http
-export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
-export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
+export SUI_ACCESS_CONTROL_ADAPTER=external_http
+export SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
+export SUI_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
 障害時に読み取り専用へ落とす `read_only` を推奨します。より厳格に止めたい環境では `deny` を使います。
@@ -205,8 +205,8 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 
 次の2 resolverも、access-controlと監査HTTPと同じ完全設定の原則を使います。
 
-- `KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER`
-- `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`
+- `SUI_DOCUMENT_POLICY_BINDING_RESOLVER`
+- `SUI_TENANT_CAPABILITY_RESOLVER`
 
 どちらも `none` または `external_http` だけを受理します。`external_http` を選んだのにendpointがない場合、または `none` のままendpointやAPI keyだけを残した場合は、`noop` / `none` へ静かに後退せず、設定エラーとして起動を拒否します。不明なresolver名、安全でないURL、credential・query・fragmentを含むURLもfail-closedで拒否します。
 
@@ -278,4 +278,4 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [data_handling.md](data_handling.md)
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
-- [THREAT_MODEL.md](https://github.com/hat47x/kj-atlas/blob/main/THREAT_MODEL.md)
+- [THREAT_MODEL.md](https://github.com/hat47x/sui-sensemaking/blob/main/THREAT_MODEL.md)

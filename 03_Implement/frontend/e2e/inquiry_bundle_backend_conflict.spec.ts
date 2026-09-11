@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 // unconditional-bundle-replace-and-delete.md): prove, in a real browser
 // against a real backend, that a genuine 409 conflict response from
 // POST /inquiry-bundles/{journey_id} (backend: 03_Implement/backend/src/
-// kj_atlas_api/routes/inquiry_bundles.py put_inquiry_bundle()) surfaces as
+// sui_sensemaking_api/routes/inquiry_bundles.py put_inquiry_bundle()) surfaces as
 // the panel's conflict_backend message -- never a false "saved" state, and
 // never a silent auto-retry/auto-merge into the newer server revision
 // (InquiryJourneyPrototypePanel.tsx handleSaveToBackend(), AC-6 comment
@@ -16,7 +16,7 @@ import { expect, test, type Page } from "@playwright/test";
 // two independent HTTP clients hitting one real backend process and a real
 // row-level CAS. Follows the precedent set by
 // ai_model_ux_available_models_reason.spec.ts: gated behind
-// KJ_ATLAS_E2E_REAL_BACKEND (the SAME env var and startup convention -- there
+// SUI_E2E_REAL_BACKEND (the SAME env var and startup convention -- there
 // is no reason for this scenario to need its own gate) so a plain `npm run
 // e2e` is unaffected.
 //
@@ -25,15 +25,15 @@ import { expect, test, type Page } from "@playwright/test";
 // which proxies /api to 127.0.0.1:8000 per vite.config.ts):
 //
 //   cd 03_Implement/backend
-//   PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" \
+//   PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_inquiry_conflict_e2e.sqlite3" \
 //     python -m alembic upgrade head
-//   PYTHONPATH=src KJ_ATLAS_DATABASE_URL="sqlite:////tmp/kj_atlas_inquiry_conflict_e2e.sqlite3" \
-//     KJ_ATLAS_LLM_PROVIDER=none \
-//     python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
+//   PYTHONPATH=src SUI_DATABASE_URL="sqlite:////tmp/sui_sensemaking_inquiry_conflict_e2e.sqlite3" \
+//     SUI_LLM_PROVIDER=none \
+//     python -m uvicorn sui_sensemaking_api.main:app --host 127.0.0.1 --port 8000
 //
 // Then, from 03_Implement/frontend (WSL-native checkout on Windows):
 //
-//   KJ_ATLAS_E2E_REAL_BACKEND=1 npx playwright test \
+//   SUI_E2E_REAL_BACKEND=1 npx playwright test \
 //     e2e/inquiry_bundle_backend_conflict.spec.ts --reporter=line --workers=1
 //
 // No fresh-database requirement, unlike ai_model_ux_available_models_reason
@@ -53,7 +53,7 @@ import { expect, test, type Page } from "@playwright/test";
 // needed on either side -- the same property ai_model_ux_available_models_
 // reason.spec.ts's admin calls already rely on.
 
-const BACKEND_URL = process.env.KJ_ATLAS_E2E_BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.SUI_E2E_BACKEND_URL ?? "http://127.0.0.1:8000";
 const START_PANEL = '[data-panel="start-document-entry"]';
 const INQUIRY_PANEL = '[data-panel="inquiry-journey-prototype"]';
 
@@ -98,21 +98,21 @@ function extractJourneyId(requestUrl: string): string {
 
 test.beforeEach(() => {
   test.skip(
-    process.env.KJ_ATLAS_E2E_REAL_BACKEND !== "1",
+    process.env.SUI_E2E_REAL_BACKEND !== "1",
     "Requires a live backend -- see the file-header comment for setup, then "
-      + "set KJ_ATLAS_E2E_REAL_BACKEND=1 to run this spec.",
+      + "set SUI_E2E_REAL_BACKEND=1 to run this spec.",
   );
 });
 
 test.beforeAll(async ({ request }) => {
-  if (process.env.KJ_ATLAS_E2E_REAL_BACKEND !== "1") {
+  if (process.env.SUI_E2E_REAL_BACKEND !== "1") {
     return;
   }
   const health = await request.get(`${BACKEND_URL}/healthz`).catch(() => null);
   if (!health || !health.ok()) {
     throw new Error(
       `Backend not reachable at ${BACKEND_URL}/healthz. Start it per the `
-        + "file-header comment before running with KJ_ATLAS_E2E_REAL_BACKEND=1.",
+        + "file-header comment before running with SUI_E2E_REAL_BACKEND=1.",
     );
   }
 });

@@ -205,7 +205,7 @@ describe("parseAgentResponse", () => {
       content: {},
       rationale: "cleanup",
       patch: {
-        kind: "kj-atlas-patch",
+        kind: "sui-sensemaking-patch",
         version: 1,
         baseDocSignature: "doc1:2026-07-09T00:00:00.000Z",
         ops: [

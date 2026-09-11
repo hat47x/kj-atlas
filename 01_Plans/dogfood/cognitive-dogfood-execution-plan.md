@@ -67,8 +67,8 @@ P0の終了条件:
 
 実行順:
 
-1. Arm C — KJ Atlas + ordinary AI
-2. Arm D — KJ Atlas + cultural-substrate-weaving
+1. Arm C — SUI Sensemaking + ordinary AI
+2. Arm D — SUI Sensemaking + cultural-substrate-weaving
 3. Arm B — ordinary document + cultural-substrate-weaving
 4. Arm A — ordinary AI / ordinary document
 
@@ -81,7 +81,7 @@ P0の終了条件:
 - AI提案を用いた場合はproposal ledgerを残す。
 - M1〜M9について、観察内容または「測定できない」とその理由を記録する。
 - 訂正・時点差チェックはrun終了後に評価し、単なる検出フラグだけでなく解釈本文を残す。
-- C/DではKJ Atlas document / InquiryJourneyへの参照を保存する。
+- C/DではSUI Sensemaking document / InquiryJourneyへの参照を保存する。
 - C/DではT9に関係する手動摩擦を記録する。
 - contamination / deviationの有無と内容を明示する。
 - `validate_cognitive_run_records.py`のstatic intakeに合格する。
@@ -112,7 +112,7 @@ P2の終了条件は、少なくとも次を区別して記録できることで
 
 1. 通常AIだけでも十分に得られた所見。
 2. cultural-substrate-weaving単体で増えた所見。
-3. KJ Atlasの外部表象によって増えた所見。
+3. SUI Sensemakingの外部表象によって増えた所見。
 4. Dでのみ生じた相互作用。
 5. 方法を増やしたことで悪化した所見。
 6. どのArmでも証拠が不足していた点。
@@ -123,16 +123,16 @@ P2の終了条件は、少なくとも次を区別して記録できることで
 
 ### P3 — Case 001 / Round 2 外部反証
 
-目的は、Round 1でKJ Atlas固有だと思えた価値を、既存製品、研究、隣接実践との比較によって積極的に削り、残るものを確かめることである。
+目的は、Round 1でSUI Sensemaking固有だと思えた価値を、既存製品、研究、隣接実践との比較によって積極的に削り、残るものを確かめることである。
 
 - 事前登録済みmanifestに含まれる資料だけを、全Arm共通の追加資料として使用する。
-- Miro / ATLAS.ti / Dovetail等ですでに満たされる価値は、KJ Atlas固有の価値候補から外す。
+- Miro / ATLAS.ti / Dovetail等ですでに満たされる価値は、SUI Sensemaking固有の価値候補から外す。
 - local-first / Design Justice / CARE / human-AI cognition研究は、対象を分類する正解表としてではなく、反証や遺漏防止の資料として使う。
 - 追加資料が必要になった場合はcandidate source requestへ置き、一部のArmだけに追加しない。
 
 P3の終了条件:
 
-- 「KJ Atlasに固有である可能性が残る価値」と「業界ですでに一般化している価値」を分離できる。
+- 「SUI Sensemakingに固有である可能性が残る価値」と「業界ですでに一般化している価値」を分離できる。
 - primary job仮説を、維持・修正・棄却のいずれかへ更新できる。
 - `PRODUCT-POSITION-01` / `VALUE-REALNESS-01`へ戻せる具体的な証拠がある。
 
@@ -204,7 +204,7 @@ Case 001の結果にかかわらず、事前登録したCase順を維持する�
 
 3Caseが終了した後に初めて、次を横断的に判定する。
 
-- KJ Atlasによる増分の再現性。
+- SUI Sensemakingによる増分の再現性。
 - cultural-substrate-weavingによる増分の再現性。
 - Dにおける正または負の相互作用。
 - M1の増分に対するM9の負担。
@@ -225,7 +225,7 @@ Case 001の結果にかかわらず、事前登録したCase順を維持する�
 - 既存workflowへ戻る理由。
 - 実際に価値を感じた瞬間。
 - evidence / dissent / revisitのうち、実利用では不要だったもの。
-- KJ Atlas内部では重要だと考えていた価値が、外部では価値にならない反例。
+- SUI Sensemaking内部では重要だと考えていた価値が、外部では価値にならない反例。
 
 外部現実と内部dogfoodが衝突した場合、外部側を「理解不足」として退けない。その衝突自体を、次のKJ材料として扱う。
 

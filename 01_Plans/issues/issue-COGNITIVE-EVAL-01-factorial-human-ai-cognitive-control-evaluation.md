@@ -1,4 +1,4 @@
-# Issue: COGNITIVE-EVAL-01 KJ Atlasとcultural-substrate-weavingの認知上の増分を比較評価する
+# Issue: COGNITIVE-EVAL-01 SUI Sensemakingとcultural-substrate-weavingの認知上の増分を比較評価する
 
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
@@ -8,17 +8,17 @@
 - Priority: P0
 - Owner: Maintainer
 - Scope: `01_Plans/dogfood/`, `01_Plans/issues/`
-- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/kj_technique.md`, `COGNITIVE-DOGFOOD-01`, `DOMAIN-W-ITERATION-01`, `02_Architecture/api.md`
+- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/sensemaking_technique.md`, `COGNITIVE-DOGFOOD-01`, `DOMAIN-W-ITERATION-01`, `02_Architecture/api.md`
 - External method: `hat47x/cultural-substrate-weaving`
 - Expected verification level: docs-check
 
 ## 課題
 
 - 現在の問題:
-  - 「生成AIを使うと認知能力が上がる」「KJ Atlasを使うと深く考えられる」「文化的体系を併用すると視野が広がる」といった表現は、そのままでは検証できない。
+  - 「生成AIを使うと認知能力が上がる」「SUI Sensemakingを使うと深く考えられる」「文化的体系を併用すると視野が広がる」といった表現は、そのままでは検証できない。
   - AI出力の長さ、論点数、流暢さ、利用者の好感度は、認知成果の質とは一致しない。むしろ自動化バイアスや認知オフロードによって、見かけ上の生産性と判断品質が逆転する可能性がある。
-  - KJ Atlasと `cultural-substrate-weaving` を同時に導入すると、どちらに固有の効果があったのか、両者の相互作用があったのかを分離できない。
-  - 評価のためだけに新しい履歴やAI提案監査のスキーマを作ると、実験計測の都合が製品契約へ逆流し、本体を不必要に複雑化する。KJ Atlasにはすでに長期探究用のInquiryJourneyとAI提案監査があるため、製品状態と実験記録を分けたうえで既存機能を再利用する必要がある。
+  - SUI Sensemakingと `cultural-substrate-weaving` を同時に導入すると、どちらに固有の効果があったのか、両者の相互作用があったのかを分離できない。
+  - 評価のためだけに新しい履歴やAI提案監査のスキーマを作ると、実験計測の都合が製品契約へ逆流し、本体を不必要に複雑化する。SUI Sensemakingにはすでに長期探究用のInquiryJourneyとAI提案監査があるため、製品状態と実験記録を分けたうえで既存機能を再利用する必要がある。
 - 利用者または開発への影響:
   - 測定方法がなければ、dogfoodで得た成功体験が自己強化され、製品とスキルの双方を過大評価するおそれがある。
   - 実験専用のスキーマを製品へ混ぜると、認知dogfoodを続けるほど本体が研究装置化し、一般利用者にとっての複雑さを増やす逆効果が起こり得る。
@@ -39,8 +39,8 @@
 |---|---|---|---|
 | A | 通常チャット/文書 | なし | 基準線 |
 | B | 通常チャット/文書 | あり | スキル単体の増分 |
-| C | KJ Atlasキャンバス | なし | キャンバス/KJ外部表象の増分 |
-| D | KJ Atlasキャンバス | あり | 組合せと相互作用 |
+| C | SUI Sensemakingキャンバス | なし | キャンバス/KJ外部表象の増分 |
+| D | SUI Sensemakingキャンバス | あり | 組合せと相互作用 |
 
 代表性を確認したいケースでは、人間のみ、またはAIなしの参照条件を追加してもよい。ただし、常時必須とはしない。
 
@@ -64,7 +64,7 @@ A/Bでは同じ製品機能を使えないため、比較を再現するため�
 
 ### AI提案と人間判断
 
-KJ Atlasを用いるC/Dで正式なAI proposal APIを使用した場合は、製品側の既存契約を使う。
+SUI Sensemakingを用いるC/Dで正式なAI proposal APIを使用した場合は、製品側の既存契約を使う。
 
 - 提案生成: `proposalId`, `status="proposed"`, `reviewState="unreviewed"`
 - 人間判断: `/ai/proposals/audit` の `accepted | rejected | held`
@@ -108,7 +108,7 @@ KJ Atlasを用いるC/Dで正式なAI proposal APIを使用した場合は、製
 
 - AI提案が正しいときには有用に採用し、誤り、無関係、過剰一般化のときには棄却または修正できたか。
 - 採用率の高さ自体は評価しない。誤提案の見逃しと、有用な提案を使わなかったことを分けて扱う。
-- KJ Atlas内の正式proposalでは製品内の監査を証拠として使えるが、条件間比較は実験上の提案記録で揃える。
+- SUI Sensemaking内の正式proposalでは製品内の監査を証拠として使えるが、条件間比較は実験上の提案記録で揃える。
 - Case 001では人工的な偽情報を注入せず、R3/DOGFOOD-31/32に自然発生した「初期記述→後段訂正」を事前登録し、古い主張への過剰依存を測る。
 
 ### M6 再訪・訂正可能性（revisability）
@@ -160,7 +160,7 @@ R10の継続dogfoodで、比較実験の準備状態と未実行部分を再点�
 - 固定資料一式、スキル一式、各条件の実行パッケージ、実行記録、ブラインドレビュー用資料には、既存の検証スクリプトと契約テストがある。
 - `cognitive-dogfood-index.md` が示す現在地は「P1: Case 001 Arm C 実行可能 / 生の実行記録は未取得」であり、比較証拠そのものはまだ得られていない。
 - 有効な比較条件は、比較設計に関する既知情報から隔離された新規コンテキストで開始する。この設計者側の継続dogfoodコンテキストをA〜Dへ再利用しない。
-- C/DではKJ AtlasキャンバスとInquiryJourneyを実際の外部表象として操作する。チャット内でJSONを代理編集しても、C/Dを実走したことにはしない。
+- C/DではSUI SensemakingキャンバスとInquiryJourneyを実際の外部表象として操作する。チャット内でJSONを代理編集しても、C/Dを実走したことにはしない。
 - 製品スナップショットを固定するのは条件間比較の内的妥当性を守るためであり、その後の改善まで含む現在のmainに対する絶対評価とは区別して解釈する。
 
 次の実行入口は、`cognitive-dogfood-index.md`、`cognitive-dogfood-execution-plan.md`、Case 001の起動用入力、`cognitive-dogfood-cd-ui-runbook.md` である。
@@ -171,7 +171,7 @@ R10の継続dogfoodで、比較実験の準備状態と未実行部分を再点�
 
 実験で見つかった問題は、直ちにスキル修正へ入れず、まず次のどこに属するかを判定する。
 
-1. **KJ Atlas製品**: 外部表象、UI、API、保持、提案契約の問題。
+1. **SUI Sensemaking製品**: 外部表象、UI、API、保持、提案契約の問題。
 2. **cultural-substrate-weaving**: 文化体系探索またはKJ統合を実行・検証するために必要な方法規則の問題。
 3. **呼び出し側・領域文脈（caller/domain context）**: ソフトウェア設計の品質基準、問いの置き方、領域固有の判断。
 4. **モデル挙動（model behavior）**: 特定モデルの流暢さ、過剰要約、追従性などで、スキル固有ではないもの。
@@ -203,7 +203,7 @@ R10の継続dogfoodで、比較実験の準備状態と未実行部分を再点�
 - [ ] 3ケースすべてで4条件比較を実施する。
 - [ ] 各ケースでM1〜M9のうち測定可能・測定不能を明示し、測定不能な項目をゼロとして扱わない。
 - [ ] ブラインドレビュー、または条件名を隠したレビューを、少なくとも代表ケースで実施する。
-- [ ] KJ Atlas固有の増分、スキル固有の増分、組合せによる相互作用、負の相互作用を区別して記述する。
+- [ ] SUI Sensemaking固有の増分、スキル固有の増分、組合せによる相互作用、負の相互作用を区別して記述する。
 - [ ] 少なくとも1件、自然発生した誤りまたは古いAI・資料主張への依存校正を比較する。
 - [ ] C/Dで既存InquiryJourneyを使用し、M6/M9における実益と摩擦を記録する。
 - [ ] C/Dで正式なAI proposalを使用する場合は、既存の製品内監査と実験上の提案記録の対応を残し、新しい監査スキーマを作らない。
@@ -219,7 +219,7 @@ R10の継続dogfoodで、比較実験の準備状態と未実行部分を再点�
   - C/DではInquiryJourneyのsnapshot、handoff、lineageと正式proposal auditを、製品側にすでに存在する範囲で使用する。
   - 可能なケースでは、数日後の再訪または後続実装の結果を追跡する。
 - 期待結果:
-  - KJ Atlas、スキル、両者の組合せのどこに実在する認知上の増分があるのか、またはないのかを、反証可能な形で示せる。
+  - SUI Sensemaking、スキル、両者の組合せのどこに実在する認知上の増分があるのか、またはないのかを、反証可能な形で示せる。
   - 認知dogfood自体が、既存InquiryJourneyのT9におけるAI支援判断を前進させる、現実の利用証拠になる。
   - 実験にしか必要のない計測要件を製品契約へ混入させずに評価できる。
 

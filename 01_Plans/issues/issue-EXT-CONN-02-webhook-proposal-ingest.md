@@ -27,9 +27,9 @@
 
 ## 2026-09-02 継続dogfoodから得た実使用証拠
 
-KJ Atlas自身を外部AIと継続的に分析するdogfoodで、次の摩擦を実際に観察した。
+SUI Sensemaking自身を外部AIと継続的に分析するdogfoodで、次の摩擦を実際に観察した。
 
-- 外部AI側からカードや島を育てながら共同分析したい場面があったが、今回のChatGPT接続環境にはKJ AtlasのMCP自体が公開されていなかった。
+- 外部AI側からカードや島を育てながら共同分析したい場面があったが、今回のChatGPT接続環境にはSUI SensemakingのMCP自体が公開されていなかった。
 - 製品側のMCPも、設計どおり読み取り専用である。この二つは別の制約であり、混同しない。
 - `EXT-AGENT-02` により、貼り付け・ファイルから `agent-response.v1` を未レビュー提案へ安全に取り込む経路はすでに存在する。そのため、共同分析そのものが不可能なわけではない。
 - ただし、長く続く共同分析では、外部AIが成果を書き出し、人が手動で取り込む受け渡しが、思考の流れやカードの系譜を切る摩擦になり得る。
@@ -39,7 +39,7 @@ KJ Atlas自身を外部AIと継続的に分析するdogfoodで、次の摩擦を
 
 正規のdogfood記録:
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r7.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r7.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02.md`
 
 ## 提案する解決策
@@ -70,5 +70,5 @@ KJ Atlas自身を外部AIと継続的に分析するdogfoodで、次の摩擦を
 
 - Derived-from: `01_Plans/adr/ADR-0054-external-connection-layer-staged-introduction.md`
 - Related: `01_Plans/issues/done/issue-EXT-AGENT-02-agent-response-import.md`
-- Dogfood evidence: `01_Plans/dogfood/doc_kj_atlas_dogfood_r7.json`, `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02.md`
+- Dogfood evidence: `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r7.json`, `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02.md`
 - Related implementation: `03_Implement/frontend/src/import/agent_response_import.ts`

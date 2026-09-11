@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`, `03_Implement/backend/src/sui_sensemaking_api/access_control.py`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
 - Related ADR/Spec: `01_Plans/adr/ADR-0073-document-ownership-and-lifecycle-model.md`, `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `02_Architecture/post-mvp-business-scope-design-program.html` §8.2/§9
 - Norms: `DOM-AI-06`（本issueはAI経路ではなく人間の通常操作の欠落だが、同じ「承認なしに適用される」構造を持つ）
 - Expected verification level: `integration`
@@ -18,7 +18,7 @@
 
 ## 課題
 
-- 現在の問題: `03_Implement/backend/src/kj_atlas_api/routes/docs.py` の `list_documents()` と `_transition_lifecycle()`（`archive_document`/`unarchive_document` が呼ぶ）は、いずれも `_resolve_request_tenant()` のみでテナントを解決し、`get_document`/`put_document` が呼ぶ `_authorize_request()`（`document_access_resource_resolver` → `access_control_adapter` PDP照会）を経由しない。
+- 現在の問題: `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py` の `list_documents()` と `_transition_lifecycle()`（`archive_document`/`unarchive_document` が呼ぶ）は、いずれも `_resolve_request_tenant()` のみでテナントを解決し、`get_document`/`put_document` が呼ぶ `_authorize_request()`（`document_access_resource_resolver` → `access_control_adapter` PDP照会）を経由しない。
 
   結果として、同一テナント内であれば：
   1. 自分に read 権限の無い `Restricted`/`Org` 文書の `id`・`title`・`created_by`・`lifecycle_state` を一覧経由で知ることができる（本文カードは含まれないため被害は限定的だが、存在の秘匿としては破れている）。

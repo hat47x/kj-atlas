@@ -1,5 +1,5 @@
 {
-  description = "kj-atlas project toolchain (Node 20, Python 3.12, Ruff)";
+  description = "sui-sensemaking project toolchain (Node 20, Python 3.12, Ruff)";
 
   # Single pinned input. The exact nixpkgs revision is locked in flake.lock so every
   # contributor and CI gets identical tool versions.
@@ -33,7 +33,7 @@
             ];
 
             shellHook = ''
-              echo "kj-atlas dev shell"
+              echo "sui-sensemaking dev shell"
               echo "  node    $(node --version)"
               echo "  npm     $(npm --version)"
               echo "  python  $(python3 --version 2>&1)"

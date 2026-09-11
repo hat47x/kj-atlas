@@ -17,7 +17,7 @@
 - Model/provider:
 - Model/version if known:
 - Temperature/reasoning setting if configurable:
-- KJ Atlas version/commit:
+- SUI Sensemaking version/commit:
 - cultural-substrate-weaving version/commit: N/A or SHA
 - Source manifest ID:
 - Execution artifact name:
@@ -49,8 +49,8 @@
 
 - [ ] A/C: cultural-substrate-weavingを使用していない。
 - [ ] B/D: 指定commitのcanonical cultural-substrate-weaving bundleだけを方法として使用した。
-- [ ] C/D: KJ Atlas外部表象を分析中に使用した。
-- [ ] A/B: KJ Atlasキャンバスを分析用の外部表象として使用していない。
+- [ ] C/D: SUI Sensemaking外部表象を分析中に使用した。
+- [ ] A/B: SUI Sensemakingキャンバスを分析用の外部表象として使用していない。
 
 該当しないチェックは `N/A` と注記してよい。該当する条件が満たされない場合はrunを `valid` にしない。
 
@@ -76,7 +76,7 @@
 
 ### C/D
 
-- KJ Atlas document ID/file:
+- SUI Sensemaking document ID/file:
 - InquiryJourney/bundle reference:
 - Raw card count:
 - Islands/groups:

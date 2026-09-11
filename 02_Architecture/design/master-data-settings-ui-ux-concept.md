@@ -7,7 +7,7 @@
 
 ## 1. 結論
 
-kj-atlasの「マスタ系設定」を1つの汎用マスタ管理画面へ集約しない。データの正本、利用者、機密性、変更頻度が異なるため、次の4面へ分ける。
+sui-sensemakingの「マスタ系設定」を1つの汎用マスタ管理画面へ集約しない。データの正本、利用者、機密性、変更頻度が異なるため、次の4面へ分ける。
 
 1. **Workspace文書入口**: 一般利用者が認可済み文書を探して開く。タイトルを扱ってよい唯一の一覧面。
 2. **文書内の表示・道具設定**: View/PerspectiveとQueryPresetを、使う場所の近くで維持する。保存範囲を明示する。
@@ -38,7 +38,7 @@ kj-atlasの「マスタ系設定」を1つの汎用マスタ管理画面へ集�
 | 文書アクセス設定（future SaaS） | active tenantの`document_access_metadata`。visibility、非秘密policy binding ID/versionのみ | `document.policy.manage`を持つTenant Admin | docId単位の参照、visibility変更、binding ID/version更新、競合安全な保存receipt | 文書タイトル・本文、raw policyRef/token/URL、bulk変更、role/group編集、他tenant参照 |
 | エージェント登録 | 将来のサーバー正本。文書IDとtenantに束縛 | single-tenantではPlatform operator、future SaaSでは`agent.register/revoke`を持つactive Tenant Admin | 契約実装後に登録、メタデータ一覧、失効。tokenは作成直後の一度だけ表示 | 文書ownerやPlatform operator capabilityからの暗黙発行、平文token再表示、token検索、登録だけでの文書書込権限付与 |
 | Auditメタデータ | 外部監査基盤または将来のメタデータ限定API | Security / Audit operator | `DATA-MAINT-04`で解禁された場合だけ固定allowlistを表示 | タイトル、本文、カード、narrative、review pack、diff、未レビュー情報、横断本文検索 |
-| LLM provider・endpoint等 | `KJ_ATLAS_*`環境変数 | Platform operator | 秘密を含まない稼働状態の読み取り表示だけを将来検討 | アプリ内編集、秘密値表示、DBマスタ化 |
+| LLM provider・endpoint等 | `SUI_*`環境変数 | Platform operator | 秘密を含まない稼働状態の読み取り表示だけを将来検討 | アプリ内編集、秘密値表示、DBマスタ化 |
 | constraint輸出セット | `EXT-CONN-03`で契約先行 | 文書利用者 / Platform operator | 将来、共有・外部接続の文脈で明示opt-in | 汎用マスタへの先行追加、既定ON |
 
 SaaSではこの表に`Tenant`、`IdentityProvider`、`TenantMembership`が加わる。ただし、roles/groupsの編集画面は作らず外部IdP/PDPを正本とする。Tenant lifecycleはPlatform Control Plane、membership、document access metadata、agent registrationはTenant Adminへ分離する。現行single-tenantのstrict provisioning画面をSaaS membership画面として再利用しない。`document.policy.manage`、`membership.provision`、`agent.register/revoke`は相互にも、`document.write`やPlatform operator capabilityにも暗黙付与しない。

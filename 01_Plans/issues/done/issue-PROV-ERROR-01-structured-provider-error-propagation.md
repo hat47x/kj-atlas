@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Claude Code
-- Scope: `03_Implement/backend/src/kj_atlas_api/routes/`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/**/*.test.ts`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/routes/`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/i18n/locales/`, `03_Implement/frontend/src/**/*.test.ts`
 - Related Backlog: `PROV-ERROR-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0050-llm-provider-observability-and-contract-fidelity.md`（D2）
 - Expected verification level: `integration`
@@ -19,7 +19,7 @@
 
 ## 1) 課題 / Problem statement
 
-- バックエンド（`03_Implement/backend/src/kj_atlas_api/llm/provider.py:81-135`）は `provider_unavailable`/`provider_timeout`/`provider_validation`/`disabled_reason` という構造化エラー種別を用意しているが、フロントエンドの `ApiError`（`03_Implement/frontend/src/api/client.ts:17-42`）は `status: number` と平文 `message: string` のみを保持し、構造化フィールドを受け取れない。
+- バックエンド（`03_Implement/backend/src/sui_sensemaking_api/llm/provider.py:81-135`）は `provider_unavailable`/`provider_timeout`/`provider_validation`/`disabled_reason` という構造化エラー種別を用意しているが、フロントエンドの `ApiError`（`03_Implement/frontend/src/api/client.ts:17-42`）は `status: number` と平文 `message: string` のみを保持し、構造化フィールドを受け取れない。
 - `App.tsx:2510` は受け取った平文メッセージに対し正規表現 `/AI is disabled|provider.*disabled/i` で一致判定しており、`provider=local` が設定済みで単に接続先が落ちている場合（実際の例外文は `"local request failed: Connection refused"` 等）はこの正規表現に一致せず、**未翻訳の英語例外文がそのまま** `suggestionError`/`statusMessage` としてユーザーに表示される。
 
 ## 2) 背景 / Context
@@ -77,7 +77,7 @@
 
 ## 完了記録 2026-07-06（Claude Code）
 
-- **バックエンドは無変更**: 調査の結果、`03_Implement/backend/src/kj_atlas_api/routes/ai.py:_raise_llm_http_error` は既に `HTTPException(detail=exc.to_contract())` で構造化 dict を返していた（ADR-0050 起票時点の想定より健全）。欠落は**フロントエンドのみ**で発生していた。
+- **バックエンドは無変更**: 調査の結果、`03_Implement/backend/src/sui_sensemaking_api/routes/ai.py:_raise_llm_http_error` は既に `HTTPException(detail=exc.to_contract())` で構造化 dict を返していた（ADR-0050 起票時点の想定より健全）。欠落は**フロントエンドのみ**で発生していた。
 - `src/api/client.ts`: `ApiError` に `code?`/`disabledReason?` を追加。`parseErrorMessage`（`detail` が文字列の場合しか読めず dict は握りつぶして `response.statusText` にフォールバックしていた）を `parseErrorDetail` に置き換え、`detail` がオブジェクトの場合は `code`/`disabled_reason`/`message` を取り出す。10箇所の呼び出し元をすべて更新。
 - `src/domain/ai_provider_error.ts`（新規）: `classifyAiProviderError(error)` — `disabledReason` の有無と `code` から `disabled|timeout|validation|unavailable|unknown` を判定。正規表現を一切使わない。
 - `src/App.tsx`: `resolveAiProviderErrorMessage` ヘルパーを追加し、レイアウト提案・島サマリ提案・ナラティブ整合性チェック・ナラティブ生成の**4箇所すべて**で生 `error.message` の直接表示をやめ、`code` 別の i18n メッセージへ統一。`provider=none` 判定も正規表現 `/AI is disabled|provider.*disabled/i` から `classifyAiProviderError(error) === "disabled"` へ置き換え。

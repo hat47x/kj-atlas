@@ -104,7 +104,7 @@ class AuditSink:
 
 
 def _migrate(db_path: str) -> None:
-    env = dict(os.environ, KJ_ATLAS_DATABASE_URL=f"sqlite:///{db_path}")
+    env = dict(os.environ, SUI_DATABASE_URL=f"sqlite:///{db_path}")
     subprocess.run(
         [VENV_PYTHON, "-m", "alembic", "upgrade", "head"],
         cwd=BACKEND_DIR,
@@ -183,23 +183,23 @@ def main() -> int:
 
         backend_env = dict(
             os.environ,
-            KJ_ATLAS_DATABASE_URL=f"sqlite:///{db_path}",
-            KJ_ATLAS_API_KEY=BIZ_KEY,
-            KJ_ATLAS_ADMIN_API_KEY="adm-test-key-mcp-audit",
-            KJ_ATLAS_AUDIT_EXPORT_ENABLED="1",
-            KJ_ATLAS_AUDIT_TRANSPORT="http",
-            KJ_ATLAS_AUDIT_HTTP_ENDPOINT=f"http://127.0.0.1:{sink_port}/audit",
+            SUI_DATABASE_URL=f"sqlite:///{db_path}",
+            SUI_API_KEY=BIZ_KEY,
+            SUI_ADMIN_API_KEY="adm-test-key-mcp-audit",
+            SUI_AUDIT_EXPORT_ENABLED="1",
+            SUI_AUDIT_TRANSPORT="http",
+            SUI_AUDIT_HTTP_ENDPOINT=f"http://127.0.0.1:{sink_port}/audit",
             # MCP reads are safeMode=true by default; the audit dispatcher drops
             # safe-mode events unless this is set, so the audit-chain E2E enables
             # it to prove the channel=mcp event is actually delivered.
-            KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE="1",
+            SUI_AUDIT_ALLOW_IN_SAFE_MODE="1",
             # CE4 proposal decision requires an authenticated reviewer
             # (actor_ref), provided via x-forwarded-user; JIT-provision that
             # reviewer so the doc and the decision share one identity.
-            KJ_ATLAS_ALLOW_JIT_PROVISIONING="true",
+            SUI_ALLOW_JIT_PROVISIONING="true",
         )
         backend_proc = subprocess.Popen(
-            [VENV_PYTHON, "-m", "uvicorn", "kj_atlas_api.main:app", "--port", str(backend_port), "--host", "127.0.0.1"],
+            [VENV_PYTHON, "-m", "uvicorn", "sui_sensemaking_api.main:app", "--port", str(backend_port), "--host", "127.0.0.1"],
             cwd=BACKEND_DIR,
             env=backend_env,
             stdout=subprocess.DEVNULL,
@@ -263,15 +263,15 @@ def main() -> int:
         #    backend. It calls get_context_projection -> triggers the CE-4 emit.
         mcp_env = dict(
             os.environ,
-            KJ_ATLAS_MCP_API_BASE_URL=base_url,
-            KJ_ATLAS_API_KEY=BIZ_KEY,
+            SUI_MCP_API_BASE_URL=base_url,
+            SUI_API_KEY=BIZ_KEY,
         )
         if os.name != "nt" and os.path.isdir("/tmp"):
             # WSL may inherit Windows TEMP/TMP paths. tsx uses the selected
             # temp directory for an IPC socket, which is unsupported on drvfs.
             mcp_env["TMPDIR"] = "/tmp"
         node_cli = (
-            (os.environ.get("KJ_ATLAS_NODE_BIN") or "").strip()
+            (os.environ.get("SUI_NODE_BIN") or "").strip()
             or shutil.which("node")
         )
         if node_cli is None:
@@ -291,7 +291,7 @@ def main() -> int:
             return 2
         if node_major < 20:
             print(
-                "MCP e2e requires Node.js 20+; set KJ_ATLAS_NODE_BIN to a "
+                "MCP e2e requires Node.js 20+; set SUI_NODE_BIN to a "
                 f"compatible same-platform runtime (selected {node_version})"
             )
             return 2

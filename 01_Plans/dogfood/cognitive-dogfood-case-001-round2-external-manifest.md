@@ -7,12 +7,12 @@
 
 ## 目的
 
-Round 2では、KJ Atlas内部資料だけから立ち上がった価値仮説を、隣接する実践・製品・研究へ当てて維持/修正/棄却する。
+Round 2では、SUI Sensemaking内部資料だけから立ち上がった価値仮説を、隣接する実践・製品・研究へ当てて維持/修正/棄却する。
 
 競合の機能表を作ることが主目的ではない。次を検査する。
 
-1. KJ Atlasが独自価値だと思っているものが、既存製品ですでに一般化していないか。
-2. KJ Atlasが重視する「早く閉じない・根拠へ戻る・人間が決める」が、隣接実践ではどのような形で実装されているか。
+1. SUI Sensemakingが独自価値だと思っているものが、既存製品ですでに一般化していないか。
+2. SUI Sensemakingが重視する「早く閉じない・根拠へ戻る・人間が決める」が、隣接実践ではどのような形で実装されているか。
 3. local/offline/self-hostを単なる配備方式ではなく、data ownership/agencyとして考える必要があるか。
 4. AI支援が思考を助ける場合と、過剰依存・認知オフロードを起こす場合をどう分けるか。
 5. 「誰が意味を決めるか」「誰の資料か」「誰が影響を受けるか」という統治問題が、分析ツールの設計へどう関係するか。
@@ -26,11 +26,11 @@ Round 2では、KJ Atlas内部資料だけから立ち上がった価値仮説�
 
 ### Manifest reason
 
-Miroは付箋をkeywords/sentiment等でAIクラスタリングできる。KJ Atlasが「AIでカードを束ねること」自体を差別化と誤認していないかを検査するための直接隣接製品。
+Miroは付箋をkeywords/sentiment等でAIクラスタリングできる。SUI Sensemakingが「AIでカードを束ねること」自体を差別化と誤認していないかを検査するための直接隣接製品。
 
 ### Questions
 
-- KJ Atlasの束ねがMiroのkeyword clusteringと異なる価値を持つなら、その差は操作名ではなく何か。
+- SUI Sensemakingの束ねがMiroのkeyword clusteringと異なる価値を持つなら、その差は操作名ではなく何か。
 - uncategorized/孤立/異論の扱い、人間の再編成、根拠保持、KJ表札などに実質差があるか。
 
 ## S2 ATLAS.ti — quotation level / delayed coding / visual networks
@@ -42,13 +42,13 @@ Miroは付箋をkeywords/sentiment等でAIクラスタリングできる。KJ At
 
 ### Manifest reason
 
-ATLAS.tiはquotationを先に保持し、すぐcodeへ押し込まず後からconceptualiseでき、quotationをnetwork上で扱える。したがって「早い分類を避ける」「原資料へ戻る」「視覚空間で意味を扱う」はKJ Atlasだけの発想ではない。
+ATLAS.tiはquotationを先に保持し、すぐcodeへ押し込まず後からconceptualiseでき、quotationをnetwork上で扱える。したがって「早い分類を避ける」「原資料へ戻る」「視覚空間で意味を扱う」はSUI Sensemakingだけの発想ではない。
 
 ### Questions
 
-- KJ Atlasが既存CAQDASを超えるのはどの利用仕事か。
+- SUI Sensemakingが既存CAQDASを超えるのはどの利用仕事か。
 - カード/表札/空白/多層図解はquotation/code/networkと何が実務的に違うか。
-- 質的研究者にとってKJ Atlasへswitchする理由が本当にあるか。
+- 質的研究者にとってSUI Sensemakingへswitchする理由が本当にあるか。
 
 ## S3 Dovetail — evidence-backed AI for product research
 
@@ -59,13 +59,13 @@ ATLAS.tiはquotationを先に保持し、すぐcodeへ押し込まず後からco
 
 ### Manifest reason
 
-Dovetailは顧客証拠へtraceできるAI回答、theme/insight、PRD等への変換、人間によるtheme validationを製品価値としている。KJ Atlasの「根拠接地＋AI＋意思決定への変換」がどこまで差別化になるかを厳しく見る。
+Dovetailは顧客証拠へtraceできるAI回答、theme/insight、PRD等への変換、人間によるtheme validationを製品価値としている。SUI Sensemakingの「根拠接地＋AI＋意思決定への変換」がどこまで差別化になるかを厳しく見る。
 
 ### Questions
 
-- evidence-grounded AIはKJ Atlas固有か。
-- KJ Atlasの強みがあるなら、顧客インテリジェンスの自動化ではなく、未確定・対立・意味形成の過程にあるのか。
-- Dovetailのような強い自動化とKJ Atlasのproposal-onlyは、どのタスクでどちらが価値を持つか。
+- evidence-grounded AIはSUI Sensemaking固有か。
+- SUI Sensemakingの強みがあるなら、顧客インテリジェンスの自動化ではなく、未確定・対立・意味形成の過程にあるのか。
+- Dovetailのような強い自動化とSUI Sensemakingのproposal-onlyは、どのタスクでどちらが価値を持つか。
 
 ## S4 Dovetail — persistent evidence-grounded docs
 
@@ -76,11 +76,11 @@ Dovetailは顧客証拠へtraceできるAI回答、theme/insight、PRD等への�
 
 ### Manifest reason
 
-AIがraw feedbackからevidence-grounded deliverableを作り、元の顧客発話へtraceできる。KJ AtlasのB型叙述/共有成果物の価値を、現在の市場水準と比較する。
+AIがraw feedbackからevidence-grounded deliverableを作り、元の顧客発話へtraceできる。SUI SensemakingのB型叙述/共有成果物の価値を、現在の市場水準と比較する。
 
 ### Questions
 
-- KJ Atlasの叙述は単に証拠付きレポートを生成する以上の何を守るか。
+- SUI Sensemakingの叙述は単に証拠付きレポートを生成する以上の何を守るか。
 - 最終docへ変換した後も、対立・残差・構造変更可能性を保持することにswitch reasonがあるか。
 
 ## S5 Ink & Switch — local-first software
@@ -97,7 +97,7 @@ local-firstをoffline機能だけでなく、ownership、agency、privacy、long
 
 ### Questions
 
-- KJ Atlasのoffline/self-hostは利用仕事の中心価値か、導入条件か、安全境界か。
+- SUI Sensemakingのoffline/self-hostは利用仕事の中心価値か、導入条件か、安全境界か。
 - 分析途中の未成熟/機微情報を扱うためのuser controlと、共同分析の利便をどう両立するか。
 
 ## S6 Design Justice Network — directly impacted people and accountable process
@@ -109,12 +109,12 @@ local-firstをoffline機能だけでなく、ownership、agency、privacy、long
 
 ### Manifest reason
 
-影響を受ける人の声、designer intentよりcommunity impact、accountable/collaborative processを重視する。KJ Atlasの人間中心性を「操作の最終ボタンを人間が押す」だけで終わらせないための外部視点。
+影響を受ける人の声、designer intentよりcommunity impact、accountable/collaborative processを重視する。SUI Sensemakingの人間中心性を「操作の最終ボタンを人間が押す」だけで終わらせないための外部視点。
 
 ### Questions
 
 - 誰がカード/表札/共有範囲を決めるのか。
-- 分析対象となる人と分析者/組織の権力差をKJ Atlasはどこまで扱うべきか。
+- 分析対象となる人と分析者/組織の権力差をSUI Sensemakingはどこまで扱うべきか。
 - 「human final authority」のhumanは誰か。
 
 ## S7 Global Indigenous Data Alliance — CARE Principles
@@ -148,7 +148,7 @@ FAIR的な共有容易性だけではなく、collective benefit、authority to 
 
 ### Questions
 
-- KJ AtlasはAIに思考を委譲するのか、verification/integration/stewardshipを支えるのか。
+- SUI SensemakingはAIに思考を委譲するのか、verification/integration/stewardshipを支えるのか。
 - provenance、proposal-only、戻し検査、反対視点が本当に依存校正へ寄与するか。
 
 ## S9 Microsoft Research / CHI 2025 — support thinking rather than recommend
@@ -165,7 +165,7 @@ recommendation-centric AIと、利用者自身のrationaleを伸ばすExtendAI�
 
 ### Questions
 
-- KJ AtlasのAIは「答えを出すAI」と「人間の思考構造を伸ばすAI」のどちらへ寄せるべきか。
+- SUI SensemakingのAIは「答えを出すAI」と「人間の思考構造を伸ばすAI」のどちらへ寄せるべきか。
 - noveltyとhuman ownership/cognitive effortのtrade-offを一律に解消しようとしていないか。
 
 ## S10 Buçinca et al. — cognitive forcing and overreliance
@@ -178,7 +178,7 @@ recommendation-centric AIと、利用者自身のrationaleを伸ばすExtendAI�
 
 ### Manifest reason
 
-cognitive forcingがAIへのoverrelianceを減らし得る一方、主観的評価を下げるtrade-offを示す。KJ Atlasの「有益な摩擦」と「単なる使いにくさ」を分ける基準として使う。
+cognitive forcingがAIへのoverrelianceを減らし得る一方、主観的評価を下げるtrade-offを示す。SUI Sensemakingの「有益な摩擦」と「単なる使いにくさ」を分ける基準として使う。
 
 ### Questions
 
@@ -190,7 +190,7 @@ cognitive forcingがAIへのoverrelianceを減らし得る一方、主観的評�
 - 競合各社の価格表・網羅的機能一覧。
 - SEO比較記事や出典不明のランキング。
 - 「AIで生産性が何%上がる」だけを扱う一般的マーケティング資料。
-- KJ Atlasの価値仮説を支持する資料だけを後から追加すること。
+- SUI Sensemakingの価値仮説を支持する資料だけを後から追加すること。
 - 文化体系そのものを正しい社会モデルとして扱う資料。
 
 ## 各armへ要求するRound 2差分
@@ -201,7 +201,7 @@ Round 1成果を消さず、次を追記する。
 2. External sourceによって**狭くなった/条件付きになった**所見。
 3. **棄却**した所見。
 4. Round 1にはなかった新しい反証・switch barrier。
-5. 「KJ Atlas固有だと思ったが既存製品にもある」と判明した価値。
+5. 「SUI Sensemaking固有だと思ったが既存製品にもある」と判明した価値。
 6. それでも残る可能性のある一次利用仕事。
 7. 製品へ実装すべきでない外部知見。
 

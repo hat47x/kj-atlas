@@ -39,7 +39,7 @@
   <header style="padding:64px 0 28px; border-bottom:1px solid #e5e7eb;">
     <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; letter-spacing:0.14em; color:#6b7280; text-transform:uppercase; font-weight:500;">
       <span style="width:8px; height:8px; border-radius:2px; background:#059669; display:inline-block;"></span>
-      kj-atlas ・ Architecture Spec ・ ADR-0057
+      sui-sensemaking ・ Architecture Spec ・ ADR-0057
     </div>
     <h1 style="font-size:30px; line-height:1.34; font-weight:700; margin:18px 0 0; letter-spacing:0.01em; text-wrap:balance;">反復的探究のデータモデル</h1>
     <p style="font-size:15px; line-height:1.7; color:#52606d; margin:14px 0 0; max-width:38em; text-wrap:pretty;">
@@ -262,7 +262,7 @@ flowchart LR
       <li>R1からR6の順序や回数を品質点数にしない。</li>
       <li>ラウンド段階をカード固有属性、権限、事実確認、レビュー済みの根拠にしない。</li>
       <li>AI提案は人が採用するまでmanifest、成果、系譜、レビュー状態を変更しない。</li>
-      <li><code>KJ_ATLAS_LLM_PROVIDER=none</code> で作成、引継ぎ、停止・再開、分岐、比較が成立する。</li>
+      <li><code>SUI_LLM_PROVIDER=none</code> で作成、引継ぎ、停止・再開、分岐、比較が成立する。</li>
       <li>bundleの参照は内部で閉じ、外部サーバーがなくても検証・閲覧できる。</li>
       <li>個人情報・未レビュー本文の削除またはマスクを、不変性を理由に妨げない。</li>
       <li>SafeMode派生は元bundleを変更しない。マスク後snapshotの<code>canonicalDigest</code>は再計算される。</li>

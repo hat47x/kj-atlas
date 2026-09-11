@@ -1,6 +1,6 @@
 # Operations
 
-対象読者: kj-atlas の日常運用、検証環境管理、リリース後確認を担当する人。
+対象読者: sui-sensemaking の日常運用、検証環境管理、リリース後確認を担当する人。
 
 目的: 起動、停止、状態確認、更新、バックアップ、障害時の初動を再現できる手順としてまとめます。
 
@@ -22,7 +22,7 @@ Docker Compose の標準構成は次の3サービスです。
 
 ## 運用で見るもの
 
-kj-atlas の運用確認は、次の順で見ると切り分けやすくなります。
+sui-sensemaking の運用確認は、次の順で見ると切り分けやすくなります。
 
 1. 画面が開くか。
 2. API が `/api/healthz` に応答するか（liveness）。応答するのに動作がおかしい場合は `/api/readyz` でDBとスキーマを確認します。
@@ -44,7 +44,7 @@ kj-atlas の運用確認は、次の順で見ると切り分けやすくなり�
 ## Runtime profile の選択
 
 運用手順を開始する前に、対象環境の profile を固定します。
-profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。ここでは運用時の判断だけを示します。
+profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。ここでは運用時の判断だけを示します。
 
 - 開発再現や不具合切り分け: `local-dev`
 - Compose での評価・受入確認: `evaluation`
@@ -53,8 +53,8 @@ profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://githu
 
 `enterprise-production` では次を起動前チェックに追加します。
 
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
-- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
+- `SUI_ALLOW_JIT_PROVISIONING=false`
+- `SUI_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
 - 外部接続（LLM / audit / external_http）を有効化する場合、接続先・timeout・秘密管理の確認記録
 
 ### SaaSの複数API instance構成
@@ -76,7 +76,7 @@ BFF Cookie経路では、次を運用上の前提とします。
 
 - Bearer access tokenは短命にし、署名、issuer、audience、期限を検証します。`jti`は任意のtoken識別子であり、同じ有効tokenを通常の連続API要求へ使用できます。`jti`を一回使用nonceとして扱いません。
 - 現行Bearer方式はsender-constrained tokenではないため、窃取されたBearer tokenそのものの再利用を検出しません。より強いreplay防御の方式判断は`AUTH-ONE-TIME-JWT-01`を正本とします。
-- principal-keyed互換経路で使う`Kj-Atlas-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Kj-Atlas-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。
+- principal-keyed互換経路で使う`Sui-Sensemaking-Tenant-Session-Version` Cookieを、認証session ownershipやanti-forgeryの証拠として扱いません。BFF session-keyed経路ではこのversion Cookieを新たに発行せず、server-owned `Sui-Sensemaking-Auth-Session`と共有DB行を正本にします。unsafe requestのanti-forgeryは別途CSRF middlewareが担います。
 
 現行実装では、request処理用のDB sessionを保持している間に、認証session storeが別のDB sessionを開く経路があります。実PostgreSQLの複数app検証では、1 instanceあたり`pool_size=1`かつ`max_overflow=0`まで絞ると、共有sessionの解決前にconnection pool timeoutとなり503へfail-closedすることを確認しました。本番では「1 requestにつき常に1接続」と仮定せず、API replica数と同時request数に対して接続poolへ余力を持たせてください。pool timeoutが見えた場合は、DB停止だけでなくpool枯渇も切り分け対象です。
 
@@ -118,7 +118,7 @@ docker compose logs api --tail=100
 
 - `db` が healthy になっている。
 - `api` が migration 後に起動している。
-- `web` が `KJ_ATLAS_WEB_PORT` のポートで公開されている。
+- `web` が `SUI_WEB_PORT` のポートで公開されている。
 - `/api/healthz` が `{"status":"ok"}` を返す（**liveness のみ。DBの状態は見ていません**）。
 - `/api/readyz` が `{"status":"ready"}` を返す（DB到達性とスキーマ世代を検査します）。DBを失った状態でも `/api/healthz` は成功するため、依存の確認はこちらを使ってください。
 
@@ -163,7 +163,7 @@ docker compose logs api --tail=100
 
 ## バックアップと隔離復元
 
-取得先、保管期間、暗号化、外部保管の有無は組織ごとに決める運用事項です。kj-atlasでは、バックアップ取得だけを成功条件にせず、本番DBとは異なる名前・path・schemaへの隔離復元と内容確認までを一組の演習として扱います。
+取得先、保管期間、暗号化、外部保管の有無は組織ごとに決める運用事項です。sui-sensemakingでは、バックアップ取得だけを成功条件にせず、本番DBとは異なる名前・path・schemaへの隔離復元と内容確認までを一組の演習として扱います。
 
 実行前にDB製品とversion、アプリrevision、source、復元先、実行者を記録します。アプリruntimeの接続アカウントへDB作成・backup・restore権限を追加せず、運用者が別の管理資格情報で実行してください。以下は固定versionのpromotion matrixで確認した最小パターンであり、managed DBではprovider公式のbackup機能と権限モデルへ読み替えます。
 
@@ -188,8 +188,8 @@ docker compose logs api --tail=100
 APIを停止し、DBファイルを別pathへコピーします。復元演習では元ファイルを上書きせず、コピーしたDBを別の`sqlite:///...` URLで読み込みます。稼働中の単純なファイルコピーは未確定transactionやWALを欠落させ得るため使用しません。
 
 ```bash
-cp 03_Implement/backend/kj_atlas.db kj_atlas-backup.sqlite3
-cp kj_atlas-backup.sqlite3 kj_atlas-restore.sqlite3
+cp 03_Implement/backend/sui_sensemaking.db sui_sensemaking-backup.sqlite3
+cp sui_sensemaking-backup.sqlite3 sui_sensemaking-restore.sqlite3
 ```
 
 <a id="database-postgresql"></a>
@@ -199,14 +199,14 @@ cp kj_atlas-backup.sqlite3 kj_atlas-restore.sqlite3
 
 ```bash
 cd 03_Implement/deploy
-docker compose exec db pg_dump -Fc -U kj_atlas kj_atlas > kj_atlas_backup.dump
+docker compose exec db pg_dump -Fc -U sui_sensemaking sui_sensemaking > sui_sensemaking_backup.dump
 ```
 
 復元は既存データを上書きする可能性があります。まず本番DBではない検証用DBへ戻してください。
 
 ```bash
-docker compose exec db createdb -U kj_atlas kj_atlas_restore
-cat kj_atlas_backup.dump | docker compose exec -T db pg_restore -U kj_atlas -d kj_atlas_restore --clean --if-exists
+docker compose exec db createdb -U sui_sensemaking sui_sensemaking_restore
+cat sui_sensemaking_backup.dump | docker compose exec -T db pg_restore -U sui_sensemaking -d sui_sensemaking_restore --clean --if-exists
 ```
 
 <a id="database-mysql"></a>
@@ -216,11 +216,11 @@ cat kj_atlas_backup.dump | docker compose exec -T db pg_restore -U kj_atlas -d k
 
 ```bash
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mysqldump --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  --single-transaction --skip-lock-tables kj_atlas > kj_atlas_mysql.sql
+  --single-transaction --skip-lock-tables sui_sensemaking > sui_sensemaking_mysql.sql
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mysql --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  -e 'CREATE DATABASE kj_atlas_restore'
+  -e 'CREATE DATABASE sui_sensemaking_restore'
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mysql --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  kj_atlas_restore < kj_atlas_mysql.sql
+  sui_sensemaking_restore < sui_sensemaking_mysql.sql
 ```
 
 <a id="database-mariadb"></a>
@@ -230,11 +230,11 @@ MySQLと同じ分離方針で、MariaDB同梱clientを使用します。
 
 ```bash
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb-dump --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  --single-transaction --skip-lock-tables kj_atlas > kj_atlas_mariadb.sql
+  --single-transaction --skip-lock-tables sui_sensemaking > sui_sensemaking_mariadb.sql
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  -e 'CREATE DATABASE kj_atlas_restore'
+  -e 'CREATE DATABASE sui_sensemaking_restore'
 MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb --host="$DB_HOST" --user="$DB_ADMIN_USER" \
-  kj_atlas_restore < kj_atlas_mariadb.sql
+  sui_sensemaking_restore < sui_sensemaking_mariadb.sql
 ```
 
 <a id="database-mssql"></a>
@@ -243,15 +243,15 @@ MYSQL_PWD="$DB_ADMIN_PASSWORD" mariadb --host="$DB_HOST" --user="$DB_ADMIN_USER"
 database backup権限と、復元先を作成できる管理権限が必要です。backup fileはSQL Server processから見える管理pathへ置きます。復元前に`RESTORE FILELISTONLY`で実際のlogical file名を確認し、`MOVE`の値へ使います。
 
 ```sql
-BACKUP DATABASE [kj_atlas]
-  TO DISK = N'/var/opt/mssql/data/kj_atlas.bak'
+BACKUP DATABASE [sui_sensemaking]
+  TO DISK = N'/var/opt/mssql/data/sui_sensemaking.bak'
   WITH INIT, COPY_ONLY;
 RESTORE FILELISTONLY
-  FROM DISK = N'/var/opt/mssql/data/kj_atlas.bak';
-RESTORE DATABASE [kj_atlas_restore]
-  FROM DISK = N'/var/opt/mssql/data/kj_atlas.bak'
-  WITH MOVE N'<data-logical-name>' TO N'/var/opt/mssql/data/kj_atlas_restore.mdf',
-       MOVE N'<log-logical-name>' TO N'/var/opt/mssql/data/kj_atlas_restore_log.ldf';
+  FROM DISK = N'/var/opt/mssql/data/sui_sensemaking.bak';
+RESTORE DATABASE [sui_sensemaking_restore]
+  FROM DISK = N'/var/opt/mssql/data/sui_sensemaking.bak'
+  WITH MOVE N'<data-logical-name>' TO N'/var/opt/mssql/data/sui_sensemaking_restore.mdf',
+       MOVE N'<log-logical-name>' TO N'/var/opt/mssql/data/sui_sensemaking_restore_log.ldf';
 ```
 
 <a id="database-cockroachdb"></a>
@@ -260,9 +260,9 @@ RESTORE DATABASE [kj_atlas_restore]
 `BACKUP`権限と復元先作成権限が必要です。次はsingle-node検証で確認した`nodelocal`例です。multi-nodeやmanaged serviceでは共有object storage URIとKMS／IAMを組織側で定義します。
 
 ```sql
-BACKUP DATABASE "kj_atlas" INTO 'nodelocal://1/kj_atlas-backup';
-RESTORE DATABASE "kj_atlas" FROM LATEST IN 'nodelocal://1/kj_atlas-backup'
-  WITH new_db_name = 'kj_atlas_restore';
+BACKUP DATABASE "sui_sensemaking" INTO 'nodelocal://1/sui_sensemaking-backup';
+RESTORE DATABASE "sui_sensemaking" FROM LATEST IN 'nodelocal://1/sui_sensemaking-backup'
+  WITH new_db_name = 'sui_sensemaking_restore';
 ```
 
 <a id="database-oracle"></a>
@@ -271,11 +271,11 @@ RESTORE DATABASE "kj_atlas" FROM LATEST IN 'nodelocal://1/kj_atlas-backup'
 Data Pump directoryへのread/write権限、source schemaのexport権限、復元schemaの作成・quota設定が必要です。passwordを引数へ埋め込まず、walletまたは対話入力等の組織標準のsecret受渡しを使用します。復元先schemaを事前作成してから`REMAP_SCHEMA`で隔離します。
 
 ```bash
-expdp "$DB_ADMIN_USER@$ORACLE_SERVICE" SCHEMAS=KJ_ATLAS DIRECTORY=DATA_PUMP_DIR \
-  DUMPFILE=kj_atlas.dmp LOGFILE=kj_atlas_exp.log REUSE_DUMPFILES=YES
+expdp "$DB_ADMIN_USER@$ORACLE_SERVICE" SCHEMAS=sui_sensemaking DIRECTORY=DATA_PUMP_DIR \
+  DUMPFILE=sui_sensemaking.dmp LOGFILE=sui_sensemaking_exp.log REUSE_DUMPFILES=YES
 impdp "$DB_ADMIN_USER@$ORACLE_SERVICE" DIRECTORY=DATA_PUMP_DIR \
-  DUMPFILE=kj_atlas.dmp LOGFILE=kj_atlas_imp.log \
-  REMAP_SCHEMA=KJ_ATLAS:RESTORED_SCHEMA
+  DUMPFILE=sui_sensemaking.dmp LOGFILE=sui_sensemaking_imp.log \
+  REMAP_SCHEMA=sui_sensemaking:RESTORED_SCHEMA
 ```
 
 復元確認後は検証用database/schemaと一時backupを、組織の保持・監査方針に従って削除します。削除対象をsourceと照合し、名前が曖昧な状態では実行しません。
@@ -288,8 +288,8 @@ backfill前に上記の隔離復元を成功させ、対象tenant IDとDocument�
 
 ```bash
 cd 03_Implement/backend
-python -m kj_atlas_api.backfill_document_revisions \
-  --database-url "$KJ_ATLAS_DATABASE_URL" \
+python -m sui_sensemaking_api.backfill_document_revisions \
+  --database-url "$SUI_DATABASE_URL" \
   --tenant-id "$TARGET_TENANT_ID" \
   --limit 100
 ```
@@ -297,8 +297,8 @@ python -m kj_atlas_api.backfill_document_revisions \
 出力の`candidates`を確認後、同じtenantと接続先に対して`--apply`を付けます。1回のtransactionを小さく保つため、`remaining`が0になるまでbatch単位で再実行します。
 
 ```bash
-python -m kj_atlas_api.backfill_document_revisions \
-  --database-url "$KJ_ATLAS_DATABASE_URL" \
+python -m sui_sensemaking_api.backfill_document_revisions \
+  --database-url "$SUI_DATABASE_URL" \
   --tenant-id "$TARGET_TENANT_ID" \
   --limit 100 \
   --apply
@@ -339,10 +339,10 @@ docker compose logs api | grep '"requestId":"<利用者から聞いたID>'
 
 | 症状 | 確認 |
 | --- | --- |
-| 画面が開かない | `docker compose ps`、`web` の logs、`KJ_ATLAS_WEB_PORT` の競合 |
+| 画面が開かない | `docker compose ps`、`web` の logs、`SUI_WEB_PORT` の競合 |
 | API が 502/503 | `api` の logs、migration エラー、DB 接続 |
-| API が 401 | `KJ_ATLAS_API_KEY` と `X-API-Key` ヘッダー |
-| AI 機能が使えない | `KJ_ATLAS_LLM_PROVIDER`、local/large-scale provider の設定 |
+| API が 401 | `SUI_API_KEY` と `X-API-Key` ヘッダー |
+| AI 機能が使えない | `SUI_LLM_PROVIDER`、local/large-scale provider の設定 |
 | 保存できない | API logs、DB logs、ブラウザ developer tools の network |
 
 問い合わせや引き継ぎでは、次の形で共有すると調査が速くなります。
@@ -416,7 +416,7 @@ API status:
 
 ## SafeMode と外部サービスとの共有
 
-既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit HTTP 連携も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
+既定では `SUI_LLM_PROVIDER=none`、audit HTTP 連携も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
 
 ## 運用前チェックリスト
 

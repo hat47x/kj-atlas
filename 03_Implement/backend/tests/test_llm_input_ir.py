@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from kj_atlas_api.llm_input_ir import (
+from sui_sensemaking_api.llm_input_ir import (
     IR_VERSION,
     MAX_CARDS,
     MAX_RELATIONS,
@@ -30,7 +30,7 @@ from kj_atlas_api.llm_input_ir import (
     source_from_document,
     validate_llm_input_ir,
 )
-from kj_atlas_api.models import DocumentV1
+from sui_sensemaking_api.models import DocumentV1
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 DOCUMENT_FIXTURE = FIXTURE_DIR / "llm_input_ir_document.json"
@@ -430,7 +430,7 @@ def test_base64_pseudo_binary_is_rejected() -> None:
 
 def test_forbidden_key_names_are_rejected() -> None:
     ir = build_llm_input_ir(_source([_card("c1")]))
-    from kj_atlas_api.llm_input_ir import _enforce_structured_text_only
+    from sui_sensemaking_api.llm_input_ir import _enforce_structured_text_only
 
     for key in ("attachments", "binary", "image", "IMAGE"):
         poisoned = json.loads(canonical_ir_json(ir))

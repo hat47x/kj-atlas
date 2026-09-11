@@ -1,4 +1,4 @@
-# Issue: COGNITIVE-DOGFOOD-01 KJ Atlas自身の発展議論をキャンバス上で行い、認知環境としての価値を検証する
+# Issue: COGNITIVE-DOGFOOD-01 SUI Sensemaking自身の発展議論をキャンバス上で行い、認知環境としての価値を検証する
 
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
@@ -8,20 +8,20 @@
 - Priority: P0
 - Owner: Maintainer
 - Scope: `01_Plans/dogfood/`, `01_Plans/issues/`, `04_Documentation/`
-- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/kj_technique.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
+- Related ADR/Spec: `ADR-0032`, `ADR-0042`, `ADR-0047`, `ADR-0057`, `00_Prompt/sensemaking_technique.md`, `00_Prompt/w_type_iterative_inquiry_requirements.md`, `01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md`
 - Expected verification level: docs-check
 
 ## 課題
 
 - 現在の問題:
-  - 現行dogfoodは、KJ Atlasを実際に操作してAPI/UI/大規模データ/AI提案の不備を発見するデバッグ・実規模検証として大きな成果を上げている。
-  - 同時に、`doc_kj_atlas_dogfood_r1.json`〜`r5.json` では、**R1 問題提起 → R2 現状把握 → R3 本質追求 → R4 構想 → R5 具体策**として、KJ Atlas自身の開発プロセスをキャンバスで検討する試行が既に存在する。設計原理の硬直、文書ドリフト、AI協働、自律性など、単なるUIデバッグを超える題材も扱っている。
+  - 現行dogfoodは、SUI Sensemakingを実際に操作してAPI/UI/大規模データ/AI提案の不備を発見するデバッグ・実規模検証として大きな成果を上げている。
+  - 同時に、`doc_sui_sensemaking_dogfood_r1.json`〜`r5.json` では、**R1 問題提起 → R2 現状把握 → R3 本質追求 → R4 構想 → R5 具体策**として、SUI Sensemaking自身の開発プロセスをキャンバスで検討する試行が既に存在する。設計原理の硬直、文書ドリフト、AI協働、自律性など、単なるUIデバッグを超える題材も扱っている。
   - ただしR1〜R5は、通常チャット等との比較対照、認知制御の失敗指標、`cultural-substrate-weaving` との要因分離を持たないため、「キャンバスを使ったことが思考の質をどれだけ変えたか」は独立に評価できない。
   - 生成AIとの長いチャットだけでも大量の設計案は生成できるが、文脈の流れに引かれた早期収束、過去論点の埋没、もっともらしい分類、異論や少数カードの消失、根拠からの遊離を検出しにくい。
   - 一方、長期再訪・分岐・不変成果・カード系譜を支える基盤を本issueのために新設する必要はない。`DOMAIN-W-ITERATION-01` では `InquiryJourneyV1`、不変 `RoundSnapshotV1`、`RoundHandoffV1`、`CardLineageEdgeV1`、自己完結bundle、比較、分岐、再開、backend保存まで実装・検証が進み、2026-08-25時点でAC-1〜AC-13は全件完了している。
   - `DOMAIN-W-ITERATION-01` に残るT9は「Phase 2の実使用後にPhase 3 proposal-only AI支援を別issueへ分割するか判断する」であり、現時点の停止理由は実使用フィードバック不足である。認知dogfoodは、この判断へ実在する利用摩擦を供給できる候補である。
 - 利用者または開発への影響:
-  - KJ Atlasが自らの開発において継続的に有用なら、単なる「KJ法のデジタル実装」ではなく、人間と生成AIが長期に複雑な問題を考えるための認知環境として価値を持つ可能性がある。
+  - SUI Sensemakingが自らの開発において継続的に有用なら、単なる「KJ法のデジタル実装」ではなく、人間と生成AIが長期に複雑な問題を考えるための認知環境として価値を持つ可能性がある。
   - 逆に、通常チャットや文書・issue管理に対して実質的増分がないなら、その方向へプロダクト価値を過大拡張すべきではない。
   - InquiryJourneyの手動中核で実務を回せる/回せない箇所を観察できれば、T9を「AIがあると便利そう」という設計想像ではなく、現実の不足から判断できる。
 
@@ -39,7 +39,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 
 ## 検証仮説
 
-> KJ Atlasのキャンバスを、実在するソフトウェア開発課題の探索・統合・意思決定に用いると、通常の生成AIチャットだけの場合より、根拠接地、異論保持、探索範囲、再訪性、訂正可能性が改善し、早すぎる収束と文脈依存の忘却が減る。
+> SUI Sensemakingのキャンバスを、実在するソフトウェア開発課題の探索・統合・意思決定に用いると、通常の生成AIチャットだけの場合より、根拠接地、異論保持、探索範囲、再訪性、訂正可能性が改善し、早すぎる収束と文脈依存の忘却が減る。
 
 価値は「回答文が長い」「案の数が多い」ではなく、後から検証可能な認知成果で判定する。
 
@@ -47,7 +47,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 
 認知dogfoodは、長期履歴・分岐・系譜の別schemaを作らない。
 
-- **KJ Atlas製品上の長期探究状態**: `InquiryJourneyV1` / `RoundSnapshotV1` / `RoundHandoffV1` / `CardLineageEdgeV1` を使用する。
+- **SUI Sensemaking製品上の長期探究状態**: `InquiryJourneyV1` / `RoundSnapshotV1` / `RoundHandoffV1` / `CardLineageEdgeV1` を使用する。
 - **比較実験の再現条件**: `cognitive-dogfood-run-record-template.md` の source snapshot / model / arm / proposal ledger / blind review を使用する。
 
 この二つは目的が異なる。
@@ -61,7 +61,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 
 - 実施すること:
   1. R1〜R5を探索的ケース0として監査し、既存の認知dogfoodが何を既に達成/未検証か整理する。
-  2. KJ Atlas自身の未解決かつ開いた問題を新規dogfood題材にする。Case portfolioで、プロダクト価値、AI支援境界、local/offline/self-hostとcollaborationの3種類を事前登録する。
+  2. SUI Sensemaking自身の未解決かつ開いた問題を新規dogfood題材にする。Case portfolioで、プロダクト価値、AI支援境界、local/offline/self-hostとcollaborationの3種類を事前登録する。
   3. GitHub上のADR/issue/コード/dogfood観察/外部リサーチを生材料としてカード化し、出典を保持する。
   4. C/D armでは、現行InquiryJourneyの手動中核を可能な範囲で実際に使い、人が確認した意味上の節目をsnapshotとして残す。比較実験の便宜だけでstageを進めない。
   5. 生成AIはカード化、探索質問、束ね候補、表札候補、反対視点、空白探索、B型叙述などをproposalとして支援するが、人間の確定操作を置き換えない。
@@ -71,11 +71,11 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
   9. InquiryJourney手動中核で「AI支援がないため反復的に困った」場面を、T9用フィードバックとして別に記録する。AIがあれば便利そうという推測だけでは不足扱いしない。
   10. T9候補になった不足は、少なくとも `operation / manual burden / cognitive risk / existing non-AI workaround / proposal-only benefit / automation risk` を記録し、Phase 3の別issue化が必要か判断できる材料へする。
 - 実施しないこと:
-  - KJ Atlasを使ったという事実だけで方法の優位性を認定すること。
+  - SUI Sensemakingを使ったという事実だけで方法の優位性を認定すること。
   - R1〜R5を後知恵で実験成功例に作り替えること。
   - 認知dogfood専用の新しい履歴/provenance schemaを作ること。
   - Case 001のexperiment roundをW型stageへ自動対応させること。
-  - dogfood中に見つかった全論点をKJ Atlasの機能要求へ変換すること。
+  - dogfood中に見つかった全論点をSUI Sensemakingの機能要求へ変換すること。
   - AIが生成した分類・表札・意思決定を自動確定すること。
   - T9を満たすためにAI支援不足を探しに行くこと。手動中核で不足が出なければ「別issue不要」が正当な結果である。
   - T10の常設メニュー配置を認知dogfoodだけで確定すること。外部デザインレビュー待ちという元の境界を維持する。
@@ -91,7 +91,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 6. **節目確認**: C/Dでは意味上の節目ならInquiryJourney snapshot/handoffとして残す。単なる実験Round切替では節目とみなさない。
 7. **決定への変換**: issue/ADR/実装/保留へ変換する。
 8. **戻し検査**: 決定を元カードへ戻し、未説明・過剰一般化・消えた異論を検査する。
-9. **比較記録**: 通常文書との差分と、KJ Atlas固有の摩擦を記録する。
+9. **比較記録**: 通常文書との差分と、SUI Sensemaking固有の摩擦を記録する。
 10. **T9フィードバック抽出**: 手動中核のどの反復作業でproposal-only AIが実用上必要/不要だったかを抽出する。
 
 ## 受入条件
@@ -102,7 +102,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
 - [ ] C/Dの長期探究状態を、別履歴schemaを作らず既存InquiryJourneyで保持できるか実使用で確認する。
 - [ ] 各ラウンドで、最終決定または保留が元資料・カードへ追跡できる。
 - [ ] 各ラウンドで、最初の問題設定にはなかった新しい問い/関係/反証/空白のいずれかを記録し、それが対象側で生存するか確認する。
-- [ ] 4arm比較でKJ Atlasの増分と摩擦を両方記録する。
+- [ ] 4arm比較でSUI Sensemakingの増分と摩擦を両方記録する。
 - [ ] 「AIがもっともらしくまとめたため見落とした」事例があれば失敗として保存し、隠さない。
 - [ ] InquiryJourney手動中核について、T9の判断材料を `AI支援が必要 / 現行手動で十分 / 条件付き / 未判定` のいずれかとして、具体的摩擦とともに記録する。
 - [ ] T9でAI支援の不足が再現した場合だけPhase 3別issue候補へ変換し、再現しない場合は起票しない。
@@ -118,7 +118,7 @@ R1〜R5は新レーン以前の**探索的ケース0**として扱う。後か�
   - `COGNITIVE-EVAL-01` に定義する比較指標を使用する。
   - T9用には、AI不在が実際の障害になった操作だけを抽出し、現行の手動回避策とproposal-only化した場合のriskを併記する。
 - 期待結果:
-  - KJ Atlasが、少なくとも一部の開いたソフトウェア課題で通常文書より再現可能な認知上の増分を示す、または示さない領域を明確化できる。
+  - SUI Sensemakingが、少なくとも一部の開いたソフトウェア課題で通常文書より再現可能な認知上の増分を示す、または示さない領域を明確化できる。
   - 長期認知dogfoodが既存InquiryJourneyを重複設計なく利用できるか確認できる。
   - `DOMAIN-W-ITERATION-01` T9を、想像ではなく実使用フィードバックから前進または「現時点ではAI支援不要」と判断できる。
 

@@ -3,18 +3,18 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: runtime parameter registryと実装の対応を「同じkeyが存在する」だけで確認したとき、公開default値の意味driftをどこまで見逃し得るか。
-- Canvas: `doc_kj_atlas_dogfood_r29.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r29.json`
 - Observation baseline: PR #3003 / merge commit `bb173e57feb19dc395f0440534c0f987d561c04b`
 - Follow-up guard: PR #3014 / merge commit `8dedc1fba146f6bbc2ee1e07360293da70b71839`
 - Result class: current repositoryで実際に観測されたruntime defaultのdocs driftと、その再発経路を閉じた運用上の陽性。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
 
 ## 1. 実際に起きていたずれ
 
-`KJ_ATLAS_MAX_DOCUMENT_CARDS` の実装既定値は `50000` へ進んでいた一方、`02_Architecture/runtime_parameter_registry.md` と利用者向け `04_Documentation/configuration.md` は旧値 `10000` を公開defaultとして残していた。
+`SUI_MAX_DOCUMENT_CARDS` の実装既定値は `50000` へ進んでいた一方、`02_Architecture/runtime_parameter_registry.md` と利用者向け `04_Documentation/configuration.md` は旧値 `10000` を公開defaultとして残していた。
 
 PR #3003はruntime behaviorを戻さず、公開設定契約を現行実装へ同期した。設定正本とoperator-facing documentationを `50000` へ更新し、backend regressionも単なる `> 0` ではなく `== 50_000` へ固定した。
 
-ここで重要なのは、同じ `KJ_ATLAS_MAX_DOCUMENT_CARDS` というkey自体は実装にも文書にも存在していた点である。したがって「keyが両側に存在する」だけを確認するcontract testでは、この10,000 / 50,000の意味差を検出できなかった。
+ここで重要なのは、同じ `SUI_MAX_DOCUMENT_CARDS` というkey自体は実装にも文書にも存在していた点である。したがって「keyが両側に存在する」だけを確認するcontract testでは、この10,000 / 50,000の意味差を検出できなかった。
 
 ## 2. #3014で閉じた検査穴
 
@@ -76,4 +76,4 @@ computed default、環境依存値、factory経由の値まで静的に推測す
 
 R29はcurrent repositoryで実際に起きたconfiguration docs driftから得た内部所見であり、formal Case 001 Arm Cの結果ではない。第三者価値実証、AI-IR named-provider evidenceにも加算しない。
 
-この記録のために追加のpreflight、KPI、実験スキーマは作らない。formal mainlineは引き続き、既知仮説から隔離したfresh contextとfrozen KJ Atlas UIでのCase 001 Arm C実走である。
+この記録のために追加のpreflight、KPI、実験スキーマは作らない。formal mainlineは引き続き、既知仮説から隔離したfresh contextとfrozen SUI Sensemaking UIでのCase 001 Arm C実走である。

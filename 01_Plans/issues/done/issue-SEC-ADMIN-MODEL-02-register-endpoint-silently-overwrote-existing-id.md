@@ -5,7 +5,7 @@
 - Source Issue: 管理UI・CLI・API協調モンキーテスト（2026-08-17）
 - Priority: P1
 - Owner: Maintainer
-- Scope: `backend/src/kj_atlas_api/routes/model_registry.py`, `model_registry_repository.py`, management CLI/API tests
+- Scope: `backend/src/sui_sensemaking_api/routes/model_registry.py`, `model_registry_repository.py`, management CLI/API tests
 - Related ADR/Spec: `ADR-0072`, `AI-MODEL-GOVERNANCE-01`, `02_Architecture/api.md`
 - Expected verification level: `integration`
 

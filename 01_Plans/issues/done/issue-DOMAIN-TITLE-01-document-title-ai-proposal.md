@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/ui/SuggestionPanel.tsx`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`
+- Scope: `03_Implement/frontend/src/ui/SuggestionPanel.tsx`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`
 - Related ADR/Spec: `ADR-0049-external-flat-rate-agent-collaboration.md` (Proposed), `02_Architecture/design/admin-surface-metadata-display-correction.html`
 - Expected verification level: `e2e`
 
@@ -66,7 +66,7 @@
 
 ## 完了記録（2026-08-12）
 
-POST /ai/suggest-document-title + DocumentTitleEditor + e2e test実装済み。実機動作確認はKJ_ATLAS_DEEPSEEK_API_KEY投入後に実施
+POST /ai/suggest-document-title + DocumentTitleEditor + e2e test実装済み。実機動作確認はSUI_DEEPSEEK_API_KEY投入後に実施
 ## 補足
 
 - 依存: 既存SuggestionPanelの提案種別拡張が可能であること（構造確認要）

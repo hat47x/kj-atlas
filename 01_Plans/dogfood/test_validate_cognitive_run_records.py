@@ -95,7 +95,7 @@ def build_case001_arm_c_record(
 - Execution order position: 1/4
 - Operator: operator-test
 - Model/provider: synthetic/provider
-- KJ Atlas version/commit: {product_sha}
+- SUI Sensemaking version/commit: {product_sha}
 - cultural-substrate-weaving version/commit: N/A
 - Source manifest ID: case-001-r1-product@{product_sha}
 - Execution artifact name: {artifact_name}
@@ -120,7 +120,7 @@ No result known in advance.
 
 ## 4. Raw analysis artifacts
 
-- KJ Atlas document ID/file: synthetic-canvas.json
+- SUI Sensemaking document ID/file: synthetic-canvas.json
 - InquiryJourney/bundle reference: synthetic-inquiry.json
 - Raw card count: 1
 

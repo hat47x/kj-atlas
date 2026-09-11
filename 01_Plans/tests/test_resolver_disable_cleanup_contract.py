@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -34,8 +34,8 @@ class ResolverDisableCleanupContractTests(unittest.TestCase):
 
         validator = _function_source("validate_llm_provider_guards")
         for resolver_key in (
-            "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER",
-            "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER",
+            "SUI_DOCUMENT_POLICY_BINDING_RESOLVER",
+            "SUI_TENANT_CAPABILITY_RESOLVER",
         ):
             self.assertIn(f'resolver_key="{resolver_key}"', validator)
 
@@ -44,7 +44,7 @@ class ResolverDisableCleanupContractTests(unittest.TestCase):
         )[1].split("## Operating rule", 1)[0]
         self.assertIn('`none`でHTTP設定だけを残すことも拒否', registry_validation)
         self.assertIn(
-            '`KJ_ATLAS_TENANT_CAPABILITY_RESOLVER`も同じtrusted HTTP接続制約',
+            '`SUI_TENANT_CAPABILITY_RESOLVER`も同じtrusted HTTP接続制約',
             registry_validation,
         )
 

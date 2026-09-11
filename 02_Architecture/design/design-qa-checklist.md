@@ -1,6 +1,6 @@
 # 実装照合レビュー チェックリスト（設計⇔実装 QA 定型）
 
-出典: Claude Design Round 5 回答（`kj-atlas 拡張提案.dc.html` §依頼3、2026-07-04 受領）を運用用に md 化。
+出典: Claude Design Round 5 回答（`sui-sensemaking 拡張提案.dc.html` §依頼3、2026-07-04 受領）を運用用に md 化。
 用途: 実装が main に載るたび、実機スクリーンショットを Claude Design に渡して設計意図との乖離をレビューする際の定型。各項目は **✓（適合）/ △（軽微な乖離・所見つき）/ ✗（乖離・要修正）** で回答する。
 運用: 各実装 PR の本文にこのチェックリストの該当節を貼り、実装者が自己申告 → スクショとともに Claude Design へレビュー依頼 → 回答を issue/PR に記録する。
 
@@ -139,7 +139,7 @@ Claude Design 第2回照合（P32）が teal=検索一致を承認した際の2�
 
 ## 第9回 2026-07-21: P35/P36/P37（N-1・N-2 事後設計レビュー方針とF-1概念対応、視覚キュー第5チャネル問題の解法）― 予備所見・実機未照合
 
-依頼書 `02_Architecture/design/uploads/design-request-gaps-2026-07-20.md` に基づき、Round 6以降タブとして無審査出荷していた N-1（RepresentativeVisualCuePrototypePanel）・N-2（InquiryJourneyPrototypePanel）の事後設計レビュー方針、および F-1（tenant session制御群4点）の概念設計対応を、`02_Architecture/design/kj-atlas 拡張提案.dc.html` P35・P36・P37としてClaude Designより予備受領（2026-07-21）。**実機スクリーンショットは未取得、本チェックリストの✓/△/✗は本ラウンドでは未実施** ― 以下は設計側が自ら明記した暫定推奨（P35「推奨判定=△（正式化条件つき）」等）の転記であり、本レビューの確定結果ではない。P37はN-1の視覚キュー問題に対する具体的な再設計案で、`02_Architecture/design/kj-atlas プロトタイプ.dc.html`へcueフィールドと描画スロットの例示的な反映を含む（実装ではなく設計側の例示）。正式照合（P28チェックリスト自己申告＋実機スクショ）は次回ラウンドで実施予定。
+依頼書 `02_Architecture/design/uploads/design-request-gaps-2026-07-20.md` に基づき、Round 6以降タブとして無審査出荷していた N-1（RepresentativeVisualCuePrototypePanel）・N-2（InquiryJourneyPrototypePanel）の事後設計レビュー方針、および F-1（tenant session制御群4点）の概念設計対応を、`02_Architecture/design/sui-sensemaking 拡張提案.dc.html` P35・P36・P37としてClaude Designより予備受領（2026-07-21）。**実機スクリーンショットは未取得、本チェックリストの✓/△/✗は本ラウンドでは未実施** ― 以下は設計側が自ら明記した暫定推奨（P35「推奨判定=△（正式化条件つき）」等）の転記であり、本レビューの確定結果ではない。P37はN-1の視覚キュー問題に対する具体的な再設計案で、`02_Architecture/design/sui-sensemaking プロトタイプ.dc.html`へcueフィールドと描画スロットの例示的な反映を含む（実装ではなく設計側の例示）。正式照合（P28チェックリスト自己申告＋実機スクショ）は次回ラウンドで実施予定。
 
 | 節 | 結果 | 所見 |
 | --- | --- | --- |

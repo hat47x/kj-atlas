@@ -5,18 +5,18 @@
 - Source Issue: `01_Plans/research/direction-review-2026-08-13.md` 優先3-2
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `models_ai.py`, `routes/ai.py`, `03_Implement/frontend/src/domain/types.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `api/client.ts`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md`（§5 A/B照合・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
-- Norms: `KJT-INSPECT-04`, `KJT-SIGN-09`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `models_ai.py`, `routes/ai.py`, `03_Implement/frontend/src/domain/types.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `api/client.ts`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md`（§5 A/B照合・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `SUI-INSPECT-04`, `SUI-SIGN-09`
 - Expected verification level: `integration`
 
 ## 課題
 
 方法論の正本は A/B 照合を**双方向**で行い、結果を**件数で報告**することを要求している。
 
-> `KJT-INSPECT-04` A型とB型を突き合わせる（`00_Prompt/kj_technique.md` §5）
+> `SUI-INSPECT-04` A型とB型を突き合わせる（`00_Prompt/sensemaking_technique.md` §5）
 >
-> 方向と件数を持たないため `KJT-SIGN-09`（B型がA型より論理的に整いすぎている）を件数で報告できない。
+> 方向と件数を持たないため `SUI-SIGN-09`（B型がA型より論理的に整いすぎている）を件数で報告できない。
 > 必ず双方向に照合する。
 > - **B型にあってA型に無いもの** → 図に無いことを書いた。根拠がない。図に足すか、文から削る。
 > - **A型にあってB型で落ちたもの** → 語れなかった束がある。なぜ語れないのかを問う。
@@ -30,7 +30,7 @@
 
 - 実施すること（D-a）:
   1. `NarrativeCheckIssue.direction?: "b_missing_in_a" | "a_missing_in_b"` を追加（各 issue の A/B 照合方向）。
-  2. `NarrativeCheck.counts?: { bMissingInA: number; aMissingInB: number }` を追加（方向別件数。0 も有効な報告値 — `kj_technique.md:185` のゼロ=照合していない疑い）。
+  2. `NarrativeCheck.counts?: { bMissingInA: number; aMissingInB: number }` を追加（方向別件数。0 も有効な報告値 — `sensemaking_technique.md:185` のゼロ=照合していない疑い）。
   3. `_build_narrative_check_prompt` に A/B 双方向照合の要求と direction/counts の schema を追加。
   4. frontend `types.ts` / `validate.ts` / `inquiry_bundle_safe_mode.ts` / `App.tsx` / `client.ts` を同期（optional で後方互換）。
   5. `schemas.md` と `test_ts_python_contract_drift.py` の TYPE_MAP を更新。

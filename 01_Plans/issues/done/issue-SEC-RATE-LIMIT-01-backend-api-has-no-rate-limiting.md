@@ -5,13 +5,13 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/main.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/main.py`
 - Related ADR/Spec: `03_Implement/mcp/src/http_server.ts`, `THREAT_MODEL.md`
 - Expected verification level: `integration`
 
 ## 課題
 
-- 現在の問題: `03_Implement/mcp/src/http_server.ts`はTHREAT_MODEL.mdの記述通り（「全route（metadata含む）に60 req/min/IPのrate limitを適用」）、`express-rate-limit`を使い実際に60 req/min/IPのrate limitを実装している。一方、backend API（`03_Implement/backend/src/kj_atlas_api`）にはrate limit相当の仕組みが一切存在しない（`rate.?limit|slowapi|throttl|Retry-After|429`でrepository全体をgrepしても`pyproject.toml`含め0件）。`main.py`の唯一のmiddlewareは`require_api_key`（静的な共有シークレットheader確認）で、`settings.api_key`が未設定の場合は素通りする。
+- 現在の問題: `03_Implement/mcp/src/http_server.ts`はTHREAT_MODEL.mdの記述通り（「全route（metadata含む）に60 req/min/IPのrate limitを適用」）、`express-rate-limit`を使い実際に60 req/min/IPのrate limitを実装している。一方、backend API（`03_Implement/backend/src/sui_sensemaking_api`）にはrate limit相当の仕組みが一切存在しない（`rate.?limit|slowapi|throttl|Retry-After|429`でrepository全体をgrepしても`pyproject.toml`含め0件）。`main.py`の唯一のmiddlewareは`require_api_key`（静的な共有シークレットheader確認）で、`settings.api_key`が未設定の場合は素通りする。
 - 利用者または開発への影響: 特に`POST /admin/provision/users`（`Depends(get_db)`のみで認証依存なし）と、`auth_context.py`内のJIT provisioning（`settings.allow_jit_provisioning`の既定値`True`時、未知のprovider/external_uidヘッダーから新規`UserRow`/`UserIdentityRow`を作成）は、事前認証なしに到達可能かつ状態変更を伴う。`settings.api_key`の既定値は`None`（未設定）であるため、既定構成ではこれらのエンドポイントへのrequest数に上限が一切ない。`POST /session/active-tenant`も同様に未制限。
 
 ## 対応方針
@@ -22,7 +22,7 @@
 ## 受入条件
 
 - [x] backend APIのrate limit方針（採用する場合の方式、対象エンドポイント）が決定される。— **in-process・per-IP・固定窓（60 req/min、MCP と同値）を仮承認で採択**し、`/admin/provision/*`（users / identity-providers / tenant-identity-providers）へ適用（`rate_limit.py` + `routes/admin.py` の router 依存）。
-- [x] 導入する場合、少なくとも`/admin/provision/users`とJIT provisioning経路が対象に含まれる。— `/admin/provision/users` は rate limit 対象に含めた。**JIT provisioning 経路は前段で fail-closed 化（既定 `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`・2026-08-13）で濫用を防止済み**のため、単独のレート制限対象とはせず（防御の二重化は将来の全体 limiter 拡張で扱う）。
+- [x] 導入する場合、少なくとも`/admin/provision/users`とJIT provisioning経路が対象に含まれる。— `/admin/provision/users` は rate limit 対象に含めた。**JIT provisioning 経路は前段で fail-closed 化（既定 `SUI_ALLOW_JIT_PROVISIONING=false`・2026-08-13）で濫用を防止済み**のため、単独のレート制限対象とはせず（防御の二重化は将来の全体 limiter 拡張で扱う）。
 
 ## 検証計画
 
@@ -45,7 +45,7 @@
 - **追記（2026-08-12・検証）**: 本文の「`/admin/provision/users`は認証依存なし」は**部分的に古い**。現行は `require_single_tenant_provisioning_surface`（`routes/admin.py:78`）で**単一テナントモードに限定**され、SaaS ランタイムでは 404（曝露縮小）。ただし単一テナントでは未レート制限のまま。
 - **追記2（2026-08-12・JIT provisioning の現行ゲート確認）**: `allow_jit_provisioning` は **既定 True**（`settings.py:388`）で、`auth_context.py:194` のゲートは False 時のみ 403。つまり既定構成では**未知の provider/external_uid ヘッダーからユーザー行を自動作成する状態変更経路が有効で、レート制限なし**。受入条件の「JIT provisioning 経路を対象に含める」は妥当。
 - **追記3（2026-08-12・実動作確認）**: local-dev（既定構成）で `GET /docs/{id}` に未知の `x-forwarded-user` ヘッダーを付けて実行したところ、**`users` と `user_identities` にユーザー行が自動作成された**（DB で確認）。未知ヘッダー1回の API 呼び出しが無認証で状態変更（ユーザー作成）を引き起こすことを実証。レート制限なしの既定構成で、プロビジョニング経路が濫用可能であることが確定。
-- **追記4（2026-08-13・fail-closed 化の判断材料）**: 本番配布は **`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を推奨済み**（`deploy/broker/README.md:112`・`verify_env_delivery.sh`）。**既定値の `True` → `False` 化**は濫用（追記3）を直接防ぐが、local-dev の初回ユーザー自動作成が切れるため、開発体験の維持には `local-dev` 等の dev プロファイルか `.env` で明示 `true` が必要。既定変更はテスト影響（JIT テストは明示設定済み）と開発体験のトレードオフを伴うため維持者判断とする。
-- **追記5（2026-08-13・テスト影響の定量化）**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` で `test_ce2_proposal_api.py` / `test_external_agent_proposal_api.py` を実行したところ **16 errors**（ヘッダー由来のユーザー自動プロビジョニングに依存）。既定変更時はこれらを明示 `true` か事前プロビジョンへ修正する必要がある。対処コストの見積もり材料として記録。
-- **追記6（2026-08-13・事前対応）**: 上記2ファイルの fixture に `_settings.allow_jit_provisioning = True`（復元付き）を明示し、**既定非依存化**した。`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` でも 18 tests pass を確認。既定変更時のテスト修正コストはこの2件分は解消。
+- **追記4（2026-08-13・fail-closed 化の判断材料）**: 本番配布は **`SUI_ALLOW_JIT_PROVISIONING=false` を推奨済み**（`deploy/broker/README.md:112`・`verify_env_delivery.sh`）。**既定値の `True` → `False` 化**は濫用（追記3）を直接防ぐが、local-dev の初回ユーザー自動作成が切れるため、開発体験の維持には `local-dev` 等の dev プロファイルか `.env` で明示 `true` が必要。既定変更はテスト影響（JIT テストは明示設定済み）と開発体験のトレードオフを伴うため維持者判断とする。
+- **追記5（2026-08-13・テスト影響の定量化）**: `SUI_ALLOW_JIT_PROVISIONING=false` で `test_ce2_proposal_api.py` / `test_external_agent_proposal_api.py` を実行したところ **16 errors**（ヘッダー由来のユーザー自動プロビジョニングに依存）。既定変更時はこれらを明示 `true` か事前プロビジョンへ修正する必要がある。対処コストの見積もり材料として記録。
+- **追記6（2026-08-13・事前対応）**: 上記2ファイルの fixture に `_settings.allow_jit_provisioning = True`（復元付き）を明示し、**既定非依存化**した。`SUI_ALLOW_JIT_PROVISIONING=false` でも 18 tests pass を確認。既定変更時のテスト修正コストはこの2件分は解消。
 - **追記7（2026-08-13・実装）**: in-process・per-IP・60 req/min の固定窓 limiter を `rate_limit.py` で実装し、`/admin/provision/*` へ router 依存として適用（`0c035b7f`）。61件目で **429 + Retry-After** を実機確認。`conftest.py` に per-test リセットを追加（TestClient は単一 `testclient` ホストで集約されるため）。単体テスト3件追加。**残課題**: 全体 API・`/session/active-tenant` 等の他書き込み route への横展開と、将来の複数 worker 時の分散 store 化は未対応（issue の (b)(c) の範囲判断）。

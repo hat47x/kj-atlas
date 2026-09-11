@@ -357,7 +357,7 @@ describe("UX Operability regression contracts", () => {
     expect(minimapSource).toContain("AUTO_COLLAPSE_WIDTH_PX = 640");
     expect(minimapSource).toContain("loadMinimapCollapsed");
     expect(minimapSource).toContain("saveMinimapCollapsed");
-    expect(storageSource).toContain("kj-atlas/minimap-collapsed");
+    expect(storageSource).toContain("sui-sensemaking/minimap-collapsed");
 
     // Drag-to-pan delegates to the EXISTING camera-transform request API —
     // no new pan/zoom mutation logic.

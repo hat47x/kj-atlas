@@ -60,7 +60,7 @@ async function routeDocument(page: Page, card?: Card): Promise<void> {
       body: JSON.stringify(buildDocument(card)),
     });
   });
-  // KJ_ATLAS_LLM_PROVIDER=none equivalence: the assist must work identically
+  // SUI_LLM_PROVIDER=none equivalence: the assist must work identically
   // with no AI provider configured (it has no provider dependency at all).
   await page.route("**/ai/provider-status", async (route) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ providerKind: "none" }) });

@@ -7,7 +7,7 @@
 
 ## Context
 
-`domain.md` と `ai_cognitive_externalization_requirements.md` の判断基準は、機能の有無ではなく「これは人間の思考を雑にしないか」「早すぎる収束を与えないか」を第一に置く。kj-atlas の価値は **少ない操作で曖昧さを保持できること** にあり、機能の多さではない。
+`domain.md` と `ai_cognitive_externalization_requirements.md` の判断基準は、機能の有無ではなく「これは人間の思考を雑にしないか」「早すぎる収束を与えないか」を第一に置く。sui-sensemaking の価値は **少ない操作で曖昧さを保持できること** にあり、機能の多さではない。
 
 一方で現状、機能は急速に増えている。選択コンテキスト（SidePanel）は既に claimType・evidence・critique・review・diff・narrative・trace・metrics・diagnostics 等を抱え、DOMAIN-EXPR-01..04／PRODUCT-VALUE-01..03 がさらに UI 要素を追加しつつある。個々の機能は妥当でも、**総体としての認知負荷が根幹価値（思考を雑にしない）を侵す**閾値が定義されていない。
 

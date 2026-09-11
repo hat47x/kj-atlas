@@ -8,7 +8,7 @@
 - Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/domain/types.ts`, `03_Implement/frontend/src/domain/validate.ts`, `03_Implement/frontend/src/ui/SidePanel.tsx`, `03_Implement/backend/`
 - Related Backlog: `DOMAIN-TRACE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂 2026-07-03）, `02_Architecture/schemas.md`（§5 future item: `Card.meta`）, `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`, `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`
-- Norms: `KJT-SIGN-06`（`Card.meta.source` は「出所が追えなくなっている」失敗の徴候への対処）
+- Norms: `SUI-SIGN-06`（`Card.meta.source` は「出所が追えなくなっている」失敗の徴候への対処）
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）
@@ -20,7 +20,7 @@
 
 ## 1) 課題 / Problem statement
 
-- グラウンデッド・セオリー等の実務では「カード→原データ（発話・観察記録）への遡及」が監査可能性の要件だが、kj-atlas に出典参照の置き場が無い。
+- グラウンデッド・セオリー等の実務では「カード→原データ（発話・観察記録）への遡及」が監査可能性の要件だが、sui-sensemaking に出典参照の置き場が無い。
 - 既存 `Card.sources` は**統合元カード id** の意味で使用中（canonical 化）であり、外部出典に流用すると意味変更＝契約違反になる。専用の追加フィールドが必要。
 
 ## 2) 背景 / Context
@@ -78,7 +78,7 @@
 - Related: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`（D3 改訂）
 - Related: `02_Architecture/schemas.md`（§5 `Card.meta` 予約・`Card.sources` 現行意味）
 - Related: `01_Plans/issues/done/issue-CARD-META-UI-01-card-provenance-metadata-ui-boundary.md`（主体メタ/起票者UI境界）
-- Related: `02_Architecture/design/kj-atlas 拡張提案.dc.html`（仕様精査 C）, `02_Architecture/design/kj-atlas プロトタイプ.dc.html`
+- Related: `02_Architecture/design/sui-sensemaking 拡張提案.dc.html`（仕様精査 C）, `02_Architecture/design/sui-sensemaking プロトタイプ.dc.html`
 - Derived-from: `01_Plans/adr/ADR-0048-visual-language-command-reach-and-kj-vocabulary.md`
 
 ## 実装設計の到着（2026-07-04）

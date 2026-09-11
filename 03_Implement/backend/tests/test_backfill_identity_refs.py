@@ -5,8 +5,8 @@ import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.backfill_identity_refs import run_backfill
-from kj_atlas_api.models import (
+from sui_sensemaking_api.backfill_identity_refs import run_backfill
+from sui_sensemaking_api.models import (
     Base,
     DocumentRow,
     LOCAL_DEFAULT_TENANT_ID,

@@ -3,14 +3,14 @@
 - Date: 2026-09-06
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: 公開設定値がコンポーネント単体では有効でも、実際のdeployment topologyでは実現できない場合、どの層で契約を狭めるべきか。
-- Canvas: `doc_kj_atlas_dogfood_r31.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r31.json`
 - Observation baseline 1: PR #3019 / merge commit `e3a9938c3a6e7a7889859620ef37fdafddc694a9`
 - Observation baseline 2: PR #3021 / merge commit `16030ed3cedea717cc61aac626665ea40112a6d1`
 - Result class: frontend値境界と標準Compose配送面で実際に観測された2段の契約seamを修正した運用上の陽性。formal Case、第三者価値実証、AI-IR named-provider測定の結果には数えない。
 
 ## 1. 「slashで始まる」と「same-origin path」は同じではなかった
 
-`KJ_ATLAS_FRONTEND_API_BASE` は公開契約上pathとして扱われていたが、PR #3019以前のmain/admin両resolverは `startsWith("/")` を主な受理条件としていた。
+`SUI_FRONTEND_API_BASE` は公開契約上pathとして扱われていたが、PR #3019以前のmain/admin両resolverは `startsWith("/")` を主な受理条件としていた。
 
 この判定では `//example.invalid/api` のようなnetwork-path referenceも通る。ブラウザのURL解釈ではこれは別originを指し得るため、文字列の先頭形状はpathらしく見えても、設定が意図していたsame-origin pathという意味境界を越えられた。
 
@@ -29,7 +29,7 @@ PR #3019は共有 `resolveFrontendApiBase()` へ統合し、same-origin absolute
 
 #3019によってfrontend component自身は複数のsame-origin absolute pathを安全に扱えるようになった。しかし配送面を追ったPR #3021では、標準Composeに別のseamが残っていた。
 
-標準Composeはhostの `KJ_ATLAS_FRONTEND_API_BASE` をweb build argへ渡していた。一方、同梱Nginxがbackendへproxyするのは `location /api/` だけだった。
+標準Composeはhostの `SUI_FRONTEND_API_BASE` をweb build argへ渡していた。一方、同梱Nginxがbackendへproxyするのは `location /api/` だけだった。
 
 したがってhostで `/custom` を指定すると、値は#3019のcomponent contract上は有効でfrontendへも届くが、frontendは `/custom/...` へ要求する一方で標準Nginxはそこをbackendへ配送しない。**設定値はvalidでdeliveryにも成功するのに、packaged topologyでは機能しない**状態になる。
 
@@ -88,4 +88,4 @@ PR #3021は標準Composeのweb build argを `/api` に固定した。別pathを�
 
 R31はcurrent repositoryのfrontend/deployment contract監査から得た内部所見であり、formal Case 001 Arm Cの結果ではない。第三者価値実証、AI-IR named-provider evidenceにも加算しない。
 
-この記録を理由に新しいpreflight、KPI、実験スキーマは追加しない。新しい具体的な陽性が出なければ、formal mainlineは既知仮説から隔離したfresh contextとfrozen KJ Atlas UIでのCase 001 Arm C実走へ戻る。
+この記録を理由に新しいpreflight、KPI、実験スキーマは追加しない。新しい具体的な陽性が出なければ、formal mainlineは既知仮説から隔離したfresh contextとfrozen SUI Sensemaking UIでのCase 001 Arm C実走へ戻る。

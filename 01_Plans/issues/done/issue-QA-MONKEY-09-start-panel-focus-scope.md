@@ -14,7 +14,7 @@
 
 - RequirementID: QA-MONKEY-09
 - RequirementStatement: 起動直後の「作業を開始」パネル表示中は、キーボードフォーカスが背後のヘッダー、キャンバス、右側パネル操作へ抜けず、開始操作だけを順に選べるようにする。
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ブラウザでkj-atlasを初回起動し開始パネルが表示される / 操作=Tab と Shift+Tab でフォーカス移動する / 期待結果=フォーカスは開始パネル内の閉じる、新規作成、サンプル、読み込み、レビューパック、最近の文書操作に閉じる / 除外=開始パネルを閉じた後の通常ヘッダー/キャンバス操作。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=ブラウザでsui-sensemakingを初回起動し開始パネルが表示される / 操作=Tab と Shift+Tab でフォーカス移動する / 期待結果=フォーカスは開始パネル内の閉じる、新規作成、サンプル、読み込み、レビューパック、最近の文書操作に閉じる / 除外=開始パネルを閉じた後の通常ヘッダー/キャンバス操作。
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / import-sanitize
 
 ## 1) 課題 / Problem statement

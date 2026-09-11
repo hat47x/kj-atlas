@@ -2,7 +2,7 @@
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
-この文書は、`kj-atlas` のコードを **シンプル** かつ **セキュア** に保つための、実務向けルールとレビュー観点を定義します。
+この文書は、`sui-sensemaking` のコードを **シンプル** かつ **セキュア** に保つための、実務向けルールとレビュー観点を定義します。
 
 - 対象: `03_Implement/frontend` / `03_Implement/backend`
 - 優先順位: `00_Prompt` / `01_Plans` / `02_Architecture` に従う

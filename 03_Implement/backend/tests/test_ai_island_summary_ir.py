@@ -6,14 +6,14 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
-from kj_atlas_api.island_summary_ir import (
+from sui_sensemaking_api.island_summary_ir import (
     build_island_summary_ir_context,
     island_summary_ir_prompt_lines,
 )
-from kj_atlas_api.llm_input_ir import IRGenerationError
-from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, Transform
-from kj_atlas_api.models_ai import SuggestIslandSummaryRequest
-from kj_atlas_api.routes import ai as ai_route
+from sui_sensemaking_api.llm_input_ir import IRGenerationError
+from sui_sensemaking_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, Transform
+from sui_sensemaking_api.models_ai import SuggestIslandSummaryRequest
+from sui_sensemaking_api.routes import ai as ai_route
 
 
 def _payload() -> SuggestIslandSummaryRequest:

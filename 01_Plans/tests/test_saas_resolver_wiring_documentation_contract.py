@@ -8,8 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
-MAIN_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/main.py"
-RUNTIME_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
+MAIN_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/main.py"
+RUNTIME_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
 
 
 def _backend_registry_row(key: str) -> str:
@@ -95,10 +95,10 @@ class SaasResolverWiringDocumentationContractTests(unittest.TestCase):
 
     def test_public_docs_do_not_claim_resolvers_are_unwired(self) -> None:
         for row in (
-            _backend_registry_row("KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER"),
-            _backend_registry_row("KJ_ATLAS_TENANT_CAPABILITY_RESOLVER"),
-            _configuration_row("KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER"),
-            _configuration_row("KJ_ATLAS_TENANT_CAPABILITY_RESOLVER"),
+            _backend_registry_row("SUI_DOCUMENT_POLICY_BINDING_RESOLVER"),
+            _backend_registry_row("SUI_TENANT_CAPABILITY_RESOLVER"),
+            _configuration_row("SUI_DOCUMENT_POLICY_BINDING_RESOLVER"),
+            _configuration_row("SUI_TENANT_CAPABILITY_RESOLVER"),
         ):
             self.assertNotIn("SaaS runtime未配線", row)
             self.assertNotIn("auth edge未配線", row)

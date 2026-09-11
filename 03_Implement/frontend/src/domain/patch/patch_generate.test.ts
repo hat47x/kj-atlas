@@ -6,11 +6,11 @@ describe("patch_generate", () => {
   it("embeds patchFingerprint and metadata", async () => {
     const patch = await buildPatchForExport(
       {
-        kind: "kj-atlas-patch",
+        kind: "sui-sensemaking-patch",
         version: 1,
         ops: [{ id: "op-1", kind: "delete_card", cardId: "c1" }],
       },
-      { author: "A", authorNote: "note", sourceApp: "kj-atlas" }
+      { author: "A", authorNote: "note", sourceApp: "sui-sensemaking" }
     );
 
     expect(typeof patch.patchFingerprint).toBe("string");

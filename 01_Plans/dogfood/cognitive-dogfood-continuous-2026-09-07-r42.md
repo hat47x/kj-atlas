@@ -1,7 +1,7 @@
 # 継続dogfood R42 — 検査条件と失敗時の制御効果を分ける
 
 Date: 2026-09-07
-Canvas: `doc_kj_atlas_dogfood_r42.json`
+Canvas: `doc_sui_sensemaking_dogfood_r42.json`
 
 ## 1. Trigger
 
@@ -230,4 +230,4 @@ R42を恒久required checkへ単独昇格しない。今回の実陽性はfocuse
 
 R42はcontinuous/internal dogfoodであり、Case 001〜003のformal cognitive comparison、第三者product-value validation、AI-IR named-provider evidenceを代替しない。
 
-formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen KJ Atlas UIでのCase 001 Arm C実走である。
+formal P1の現在地も変わらない。次の正式工程はfresh isolated context + frozen SUI Sensemaking UIでのCase 001 Arm C実走である。

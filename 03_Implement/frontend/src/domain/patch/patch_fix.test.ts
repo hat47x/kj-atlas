@@ -26,7 +26,7 @@ describe("patch fix proposals", () => {
   it("proposes and applies safe fixes for P001/P002/P005", () => {
     const currentDoc = makeDoc();
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "op-delete-c2", kind: "delete_card", cardId: "c2" },
@@ -81,7 +81,7 @@ describe("patch fix proposals", () => {
   it("does not auto-propose unsupported P006/P007 fixes", () => {
     const currentDoc = makeDoc();
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       baseDocSignature: "mismatch:123",
       ops: [

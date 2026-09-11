@@ -21,7 +21,7 @@
 
 # 価値観→要求マッピング設計（価値整合ドキュメント）
 
-本ドキュメントは、kj-atlas の価値観（思想）を、Issue/Epicへ分解可能な要求に変換するための設計資料である。  
+本ドキュメントは、sui-sensemaking の価値観（思想）を、Issue/Epicへ分解可能な要求に変換するための設計資料である。  
 目的は次の2点。
 
 - 価値観と実装要求の対応を固定し、スコープドリフトを防ぐ。
@@ -137,7 +137,7 @@
   - `DATA-07-1`: Provider設定を保持しつつ既定値は無効（none）にする。
   - `DATA-07-2`: 最小限の利用監査情報を記録可能にする。
 - AI
-  - `AI-07-1`: 既定値は `KJ_ATLAS_LLM_PROVIDER=none` を維持する。
+  - `AI-07-1`: 既定値は `SUI_LLM_PROVIDER=none` を維持する。
   - `AI-07-2`: 外部Providerは明示設定時のみ利用する。
 
 ### P-08 定性情報への忠実性と再解釈可能性
@@ -169,7 +169,7 @@
 - AI
   - `AI-09-1`: AIは段階別の問い、引継ぎ、差分、反証をproposal-onlyで提示する。
   - `AI-09-2`: AIはラウンド移行、過去成果、系譜、レビュー状態、唯一の仮説を自動確定しない。
-  - `AI-09-3`: `KJ_ATLAS_LLM_PROVIDER=none` で作成、引継ぎ、停止・再開、分岐、比較を完了できる。
+  - `AI-09-3`: `SUI_LLM_PROVIDER=none` で作成、引継ぎ、停止・再開、分岐、比較を完了できる。
 
 詳細要件は `00_Prompt/w_type_iterative_inquiry_requirements.md`、データ境界は `02_Architecture/inquiry_journey_model.html`、設計判断は `ADR-0057` を正本とする。
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from kj_atlas_api.llm_input_ir import IRGenerationError, RELATION_TYPES
-from kj_atlas_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, Transform
-from kj_atlas_api.models_ai import ProposeOpposingViewpointRequest
-from kj_atlas_api.opposing_viewpoint_ir import (
+from sui_sensemaking_api.llm_input_ir import IRGenerationError, RELATION_TYPES
+from sui_sensemaking_api.models import Card, DocumentV1, Edge, EvidenceLink, Island, Transform
+from sui_sensemaking_api.models_ai import ProposeOpposingViewpointRequest
+from sui_sensemaking_api.opposing_viewpoint_ir import (
     build_opposing_viewpoint_ir_context,
     opposing_viewpoint_ir_prompt_lines,
 )

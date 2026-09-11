@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-OBSERVABILITY_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/observability.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+OBSERVABILITY_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/observability.py"
 
 
 def _rows_text(path: Path) -> str:
@@ -68,11 +68,11 @@ def _code_tokens(text: str) -> set[str]:
 
 def _configuration_provider_values() -> set[str]:
     # The user-facing provider purpose cell is deliberately only the accepted list.
-    return _code_tokens(_purpose_cell(CONFIG_PATH, "KJ_ATLAS_LLM_PROVIDER"))
+    return _code_tokens(_purpose_cell(CONFIG_PATH, "SUI_LLM_PROVIDER"))
 
 
 def _configuration_deepseek_thinking_values() -> set[str]:
-    purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_DEEPSEEK_THINKING_MODE")
+    purpose = _purpose_cell(CONFIG_PATH, "SUI_DEEPSEEK_THINKING_MODE")
     match = re.search(r"thinking mode（(?P<values>.*?)）", purpose)
     if match is None:
         raise AssertionError("configuration DeepSeek thinking enum clause is missing")
@@ -80,7 +80,7 @@ def _configuration_deepseek_thinking_values() -> set[str]:
 
 
 def _configuration_log_level_values() -> set[str]:
-    purpose = _purpose_cell(CONFIG_PATH, "KJ_ATLAS_LOG_LEVEL")
+    purpose = _purpose_cell(CONFIG_PATH, "SUI_LOG_LEVEL")
     match = re.search(r"OPS-OBSERV-01）。(?P<values>.*?)、未知値", purpose)
     if match is None:
         raise AssertionError("configuration LOG_LEVEL enum clause is missing")
@@ -105,7 +105,7 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             variable_name="provider",
         )
         self.assertEqual(_configuration_provider_values(), implementation)
-        _assert_registry_mentions_all(self, "KJ_ATLAS_LLM_PROVIDER", implementation)
+        _assert_registry_mentions_all(self, "SUI_LLM_PROVIDER", implementation)
 
     def test_deepseek_thinking_values_match_settings_and_registry(self) -> None:
         implementation = _literal_not_in_set(
@@ -115,7 +115,7 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
         )
         self.assertEqual(_configuration_deepseek_thinking_values(), implementation)
         _assert_registry_mentions_all(
-            self, "KJ_ATLAS_DEEPSEEK_THINKING_MODE", implementation
+            self, "SUI_DEEPSEEK_THINKING_MODE", implementation
         )
 
     def test_log_level_values_match_logging_implementation_and_registry(self) -> None:
@@ -125,7 +125,7 @@ class PublicConfigurationEnumContractTests(unittest.TestCase):
             variable_name="normalized_level",
         )
         self.assertEqual(_configuration_log_level_values(), implementation)
-        _assert_registry_mentions_all(self, "KJ_ATLAS_LOG_LEVEL", implementation)
+        _assert_registry_mentions_all(self, "SUI_LOG_LEVEL", implementation)
 
 
 if __name__ == "__main__":

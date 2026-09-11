@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Locator, type Page, type Route } from "@playwright/test";
 
-const TENANT_SESSION_HEADER = "kj-atlas-tenant-session-version";
+const TENANT_SESSION_HEADER = "sui-sensemaking-tenant-session-version";
 const START_PANEL = '[data-panel="start-document-entry"]';
 const SANITY_CEILING_MS = 45_000;
 
@@ -156,25 +156,25 @@ async function installSaasServer(context: BrowserContext, state: ServerState) {
 
 async function seedTenantCaches(context: BrowserContext) {
   await context.addInitScript(() => {
-    const seedMarker = "kj-atlas-e2e-round8-tenant-storage-seeded";
+    const seedMarker = "sui-sensemaking-e2e-round8-tenant-storage-seeded";
     if (window.sessionStorage.getItem(seedMarker) === "1") {
       return;
     }
 
     const principalId = "principal-1";
     const prefixFor = (tenantId: "tenant-a" | "tenant-b") => (
-      `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
+      `sui-sensemaking/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(tenantId)}/${encodeURIComponent(principalId)}/`
     );
     const scopedKey = (tenantId: "tenant-a" | "tenant-b", baseKey: string) => (
       `${prefixFor(tenantId)}${encodeURIComponent(baseKey)}`
     );
 
     window.localStorage.setItem(
-      scopedKey("tenant-a", "kj-atlas/recent-doc-ids"),
+      scopedKey("tenant-a", "sui-sensemaking/recent-doc-ids"),
       JSON.stringify(["doc_tenant_a_round8"]),
     );
     window.localStorage.setItem(
-      scopedKey("tenant-b", "kj-atlas/recent-doc-ids"),
+      scopedKey("tenant-b", "sui-sensemaking/recent-doc-ids"),
       JSON.stringify(["doc_tenant_b_round8"]),
     );
     window.sessionStorage.setItem(seedMarker, "1");
@@ -209,7 +209,7 @@ async function reachByTab(page: Page, target: Locator): Promise<number> {
 
 async function tenantScopedKeys(page: Page, tenantId: TenantId): Promise<string[]> {
   return page.evaluate(({ targetTenantId }) => {
-    const prefix = `kj-atlas/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(targetTenantId)}/${encodeURIComponent("principal-1")}/`;
+    const prefix = `sui-sensemaking/tenant-scope/v1/${encodeURIComponent(window.location.origin)}/${encodeURIComponent(targetTenantId)}/${encodeURIComponent("principal-1")}/`;
     return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
       .filter((key): key is string => typeof key === "string" && key.startsWith(prefix));
   }, { targetTenantId: tenantId });
@@ -225,7 +225,7 @@ const round8Cases: Array<{ locale: Locale; width: number; height: number }> = [
 ];
 
 test.skip(
-  process.env.KJ_ATLAS_E2E_SAAS !== "1",
+  process.env.SUI_E2E_SAAS !== "1",
   "Runs only with playwright.saas.config.ts and the SaaS runtime profile.",
 );
 
@@ -281,7 +281,7 @@ test("Round 8 R8-E/F validates SaaS tenant UI across viewport, locale, keyboard/
       const tenantAKeys = await tenantScopedKeys(page, "tenant-a");
       const tenantBKeys = await tenantScopedKeys(page, "tenant-b");
       expect(tenantAKeys).toEqual([]);
-      expect(tenantBKeys.some((key) => key.includes(encodeURIComponent("kj-atlas/recent-doc-ids")))).toBe(true);
+      expect(tenantBKeys.some((key) => key.includes(encodeURIComponent("sui-sensemaking/recent-doc-ids")))).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
       const screenshot = await page.screenshot({ fullPage: true });

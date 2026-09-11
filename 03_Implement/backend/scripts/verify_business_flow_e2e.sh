@@ -10,16 +10,16 @@
 # 注意事項: SafeMode で未レビュー文は LLM へ送られない(422)。カードはレビュー済み
 #          にしてからAIを使用する。
 #
-# LLM縮退（課金なし・決定的）: scripts/stub_local_llm.py が KJ_ATLAS_LLM_PROVIDER=
+# LLM縮退（課金なし・決定的）: scripts/stub_local_llm.py が SUI_LLM_PROVIDER=
 # local の /generate 契約に canned 応答を返す。DeepSeek 等の課金APIは不要。
-# 実ローカルLLM（例: Ollama）へ切り替えるには KJ_ATLAS_LOCAL_LLM_BASE_URL を
+# 実ローカルLLM（例: Ollama）へ切り替えるには SUI_LOCAL_LLM_BASE_URL を
 # 差し替えるだけでよい（/generate 契約は同一）。
 #
 # Usage:
 #   ./verify_business_flow_e2e.sh [PORT]
 #     PORT  default 8000 (backend). Stub LLM uses PORT+1 to avoid collisions.
 #
-# Requires the backend venv (KJ_ATLAS_DATABASE_URL default sqlite) and ports free.
+# Requires the backend venv (SUI_DATABASE_URL default sqlite) and ports free.
 
 set -u
 BACKEND_PORT="${1:-8000}"
@@ -52,7 +52,7 @@ check() {
 
 MOCK_LLM="$ROOT_DIR/03_Implement/deploy/tools/mock_local_llm.py"
 
-echo "=== kj-atlas standard business-flow E2E (local LLM mock) ==="
+echo "=== sui-sensemaking standard business-flow E2E (local LLM mock) ==="
 echo "  backend : $BASE_URL"
 echo "  mock LLM: http://127.0.0.1:${STUB_PORT} ($MOCK_LLM)"
 
@@ -63,19 +63,19 @@ sleep 2
 
 # 2. Fresh migrated DB (deterministic run, independent of local state).
 TMP_DB="$(mktemp /tmp/kj_biz_XXXXXX.sqlite3)"
-(cd "$BACKEND_DIR" && KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
+(cd "$BACKEND_DIR" && SUI_DATABASE_URL="sqlite:///$TMP_DB" \
   "$VENV_PYTHON" -m alembic upgrade head > /tmp/kj_biz_migrate.log 2>&1)
 
-# 3. Start the backend with KJ_ATLAS_LLM_PROVIDER=local pointed at the mock.
-#    KJ_ATLAS_ALLOW_JIT_PROVISIONING=true: scenario 9's CE4 proposal decision
+# 3. Start the backend with SUI_LLM_PROVIDER=local pointed at the mock.
+#    SUI_ALLOW_JIT_PROVISIONING=true: scenario 9's CE4 proposal decision
 #    needs an authenticated reviewer identity, provided via x-forwarded-user
 #    (JIT provisioning, same as test_ce2_proposal_api.py). Scenarios 1-8 send
 #    no such header, so they are unaffected.
-KJ_ATLAS_LLM_PROVIDER=local \
-KJ_ATLAS_LOCAL_LLM_BASE_URL="http://127.0.0.1:${STUB_PORT}" \
-KJ_ATLAS_DATABASE_URL="sqlite:///$TMP_DB" \
-KJ_ATLAS_ALLOW_JIT_PROVISIONING=true \
-  "$VENV_PYTHON" -m uvicorn kj_atlas_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
+SUI_LLM_PROVIDER=local \
+SUI_LOCAL_LLM_BASE_URL="http://127.0.0.1:${STUB_PORT}" \
+SUI_DATABASE_URL="sqlite:///$TMP_DB" \
+SUI_ALLOW_JIT_PROVISIONING=true \
+  "$VENV_PYTHON" -m uvicorn sui_sensemaking_api.main:app --port "$BACKEND_PORT" --host 127.0.0.1 \
   > /tmp/kj_biz_backend.log 2>&1 &
 BACKEND_PID=$!
 
@@ -7359,16 +7359,16 @@ check "CRUISE 読戻し (200)" "200" "$cruise_read"
 
 echo ""
 echo "--- シナリオ170: 高度ドッグフーディング・第1ラウンド200枚（実物大のカード化→束ね→島統合→叙述化） ---"
-# 業態: ソフトウェア開発組織（kj-atlas プロダクト改善）
-# 想定人物: プロダクトオーナー（kj-atlas自身の改善観察を200枚にカード化）
+# 業態: ソフトウェア開発組織（sui-sensemaking プロダクト改善）
+# 想定人物: プロダクトオーナー（sui-sensemaking自身の改善観察を200枚にカード化）
 # 業務領域: 第1ラウンドで200枚のカードを作り、実物大のキャンバスで束ね・島統合・叙述化・A/B照合まで行う
 # 操作内容: 文書作成(200枚・丁寧な実観察カード) -> 読戻し(200枚保持)
 #          -> card-groups(200枚→10領域) -> 島要約(接地10件キャップ) -> ナラティブ -> A/B照合
-# 注意事項: kj_technique.md §1「数百枚は正常」。card-groups は DOGFOOD-31 で100→1000枚へ緩和済み。
+# 注意事項: sensemaking_technique.md §1「数百枚は正常」。card-groups は DOGFOOD-31 で100→1000枚へ緩和済み。
 #          接地は10件上限（品質ガード）で、モックが代表10件へキャップする。
 BIG_ID="biz-flow-200cards"
-# 200枚の丁寧な実観察カードを生成スクリプトから読み込む（kj-atlas自身の改善機会・10領域×20枚）。
-BIG_DOC="$("$VENV_PYTHON" "$SCRIPT_DIR/generate_kj_atlas_improvement_cards.py")"
+# 200枚の丁寧な実観察カードを生成スクリプトから読み込む（sui-sensemaking自身の改善機会・10領域×20枚）。
+BIG_DOC="$("$VENV_PYTHON" "$SCRIPT_DIR/generate_sui_sensemaking_improvement_cards.py")"
 
 # ① 文書作成（200枚）
 big_put=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$BASE_URL/docs/$BIG_ID" \
@@ -7399,7 +7399,7 @@ case "$big_narr" in *'"basedOnReadingOrder":["all-i"]'*) echo "  PASS: BIG ⑤�
 
 # ⑥ A/B照合（200枚規模で島の取りこぼしを検出）
 big_ab=$(curl -s -X POST "$BASE_URL/ai/check-narrative" -H 'Content-Type: application/json' \
-  -d "{\"doc\":$BIG_DOC,\"narrativeText\":\"（草稿）200枚のカードを束ね、kj-atlasの改善を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"all-i\"]}")
+  -d "{\"doc\":$BIG_DOC,\"narrativeText\":\"（草稿）200枚のカードを束ね、sui-sensemakingの改善を検討する。ただし新施策には未検証の主張が含まれる。\",\"basedOnReadingOrder\":[\"all-i\"]}")
 case "$big_ab" in *'"direction":"a_missing_in_b"'*'"aMissingInB":1'*) echo "  PASS: BIG ⑥A/B照合（200枚規模・a_missing_in_b）"; PASS=$((PASS+1));; *) echo "  FAIL: BIG ⑥A/B照合（${big_ab:0:150}）"; FAIL=$((FAIL+1));; esac
 
 echo ""

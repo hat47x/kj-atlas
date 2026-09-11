@@ -8,13 +8,13 @@
 
 ## 1. 固定する問い
 
-> KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
+> SUI Sensemakingはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、安全境界、または特定利用ケース向け要件のどれとして扱うべきか。
 
 この問いは、Case 001 / 002の結果にかかわらず変更しない。
 
 ## 2. 主な不確実性
 
-- offline / self-hostは、利用者がKJ Atlasへ切り替える理由なのか。それとも、機微な資料を扱う一部環境の必要条件なのか。
+- offline / self-hostは、利用者がSUI Sensemakingへ切り替える理由なのか。それとも、機微な資料を扱う一部環境の必要条件なのか。
 - unfinished / sensitiveな定性資料を利用者が統制することと、複数人による共同作業・共有・組織管理をどう両立するか。
 - local-first / CRDT等の技術方向が、実利用要求より先に価値語として過大化していないか。
 - server-authoritative / SaaS / tenantモデルは利用者主体性と衝突するのか。それとも、データ統制を別の形で実現し得るのか。
@@ -69,12 +69,12 @@ local storageを利用者主体性、server storageを運営者支配と単純�
 
 全Armは少なくとも次を返す。
 
-1. KJ Atlasにとってのlocal / offline / self-host / data-controlを分解し、同義語として扱わない境界案。
+1. SUI Sensemakingにとってのlocal / offline / self-host / data-controlを分解し、同義語として扱わない境界案。
 2. 個人・小規模チーム・組織・相互に信頼しないSaaS tenant等、利用形態ごとの必要条件と不要条件。
 3. 現行server-authoritative / snapshot / tenant / ownership / sharing設計が既に解いている問題。
 4. 現行設計では満たせない可能性が高いoffline、network partition、P2P、E2EE、portable ownership等の要求。
 5. CRDT / local-first等へ進む前に、実利用で観測されるべきトリガー。
-6. self-host / localがKJ Atlasのswitch reasonではなく、deployment optionで十分かもしれないという最も強い反証。
+6. self-host / localがSUI Sensemakingのswitch reasonではなく、deployment optionで十分かもしれないという最も強い反証。
 7. 逆に、cloud / SaaS中心では失う可能性がある中核価値または利用ケース。
 8. collaborationを増やすことで、保留、違和感、少数意見、provenance、SafeModeが失われる失敗モード。
 9. 次に実施すべき検証/issue。技術方式の採択より、利用要求、運用摩擦、データ境界の観測を優先する。

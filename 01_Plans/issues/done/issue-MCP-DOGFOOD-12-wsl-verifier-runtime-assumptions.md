@@ -37,7 +37,7 @@ MCP→CE-4監査E2EはMCP packageの`node_modules`だけを前提として記述
 
 ## 追加対応（2026-08-17）
 
-PATH上のNode.js v12がpackage-local `tsx`のshebangから選択され、Node 20契約の構文を解釈できない再発を検出した。`KJ_ATLAS_NODE_BIN`で同一platformのruntimeを明示選択できるようにし、`.bin` shebangではなく選択済みNodeからtsxのJS entrypointを起動する。Node 20未満は構文エラーになる前に明示拒否し、stdio MCPとHTTP MCPを同じNode選択へ揃える。
+PATH上のNode.js v12がpackage-local `tsx`のshebangから選択され、Node 20契約の構文を解釈できない再発を検出した。`SUI_NODE_BIN`で同一platformのruntimeを明示選択できるようにし、`.bin` shebangではなく選択済みNodeからtsxのJS entrypointを起動する。Node 20未満は構文エラーになる前に明示拒否し、stdio MCPとHTTP MCPを同じNode選択へ揃える。
 
 子MCP serverも`npx`/`node`を再探索すると親だけruntimeを選んでも境界が破れるため、stdio verifierとHTTP harnessは`process.execPath`で親と同じruntimeを継承し、tsxのJS entrypointを直接起動する。
 

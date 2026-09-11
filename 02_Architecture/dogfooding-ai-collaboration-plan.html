@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ドッグフーディング・生成AI協働の全体計画 — kj-atlas</title>
+<title>ドッグフーディング・生成AI協働の全体計画 — sui-sensemaking</title>
 <style>
   :root {
     --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #cbd5e1;
@@ -49,7 +49,7 @@
 </p>
 
 <div class="note">
-  <strong>目的:</strong> 本プロジェクト自体をkj-atlasの題材として用い（ADR-0042 ドッグフーディング）、
+  <strong>目的:</strong> 本プロジェクト自体をsui-sensemakingの題材として用い（ADR-0042 ドッグフーディング）、
   三要素牽制設計法（ADR-0067）に基づく設計改善と、DeepSeek API を中心とした生成AI協働によって、
   開発の自律性を段階的に高める。最終目標は人間の関与がほぼゼロでの自律的開発である。
 </div>
@@ -66,7 +66,7 @@ flowchart TB
     F3["DeepSeek API 接続<br/>provider追加"]
   end
 
-  subgraph DOGFOOD["ドッグフーディング（kj-atlasでkj-atlasを管理）"]
+  subgraph DOGFOOD["ドッグフーディング（sui-sensemakingでsui-sensemakingを管理）"]
     D1["設計判断のKJ法マッピング<br/>ADR・issue・設計文書のカード化"]
     D2["プロジェクト構造の島形成<br/>ドメイン・レイヤー・関心の束ね"]
     D3["依存関係の関係線化<br/>ADR間・issue間・契約間"]
@@ -84,7 +84,7 @@ flowchart TB
   subgraph GOAL["目標状態"]
     G1["人間の関与: 方向指示と受入判定のみ"]
     G2["AIが設計→実装→テスト→文書化を自律実行"]
-    G3["kj-atlas上で全判断の系譜を追跡可能"]
+    G3["sui-sensemaking上で全判断の系譜を追跡可能"]
   end
 
   FOUNDATION --> DOGFOOD --> AI_COLLAB --> GOAL
@@ -124,15 +124,15 @@ flowchart TB
       <td>P3</td>
       <td>DeepSeek API provider追加</td>
       <td><span class="priority p1">P1</span></td>
-      <td>backendのllm/provider.pyにDeepSeek API対応を追加。環境変数 KJ_ATLAS_DEEPSEEK_API_KEY / KJ_ATLAS_DEEPSEEK_MODEL で設定可能にする</td>
+      <td>backendのllm/provider.pyにDeepSeek API対応を追加。環境変数 SUI_DEEPSEEK_API_KEY / SUI_DEEPSEEK_MODEL で設定可能にする</td>
       <td>PR（provider追加）</td>
     </tr>
     <tr>
       <td>P4</td>
       <td>ドッグフーディング開始</td>
       <td><span class="priority p1">P1</span></td>
-      <td>本プロジェクトのADR・issue・設計文書をカード化し、kj-atlas上で構造化する。最初の題材は現在の未解決設計課題とその相互関係</td>
-      <td>プロジェクト管理用 kj-atlas 文書</td>
+      <td>本プロジェクトのADR・issue・設計文書をカード化し、sui-sensemaking上で構造化する。最初の題材は現在の未解決設計課題とその相互関係</td>
+      <td>プロジェクト管理用 sui-sensemaking 文書</td>
     </tr>
     <tr>
       <td>P5</td>
@@ -203,7 +203,7 @@ flowchart TB
 </div>
 
 <!-- ============================================================ -->
-<h2>4. ドッグフーディング: kj-atlasでkj-atlasを管理する</h2>
+<h2>4. ドッグフーディング: sui-sensemakingでsui-sensemakingを管理する</h2>
 
 <h3>4.1 最初の題材</h3>
 
@@ -224,7 +224,7 @@ flowchart TB
 <h3>4.2 ドッグフーディングで得られるもの</h3>
 
 <ul>
-  <li><strong>kj-atlas自体の改善:</strong> 実際の開発管理に使うことで、不足する機能・UIの摩擦が可視化される</li>
+  <li><strong>sui-sensemaking自体の改善:</strong> 実際の開発管理に使うことで、不足する機能・UIの摩擦が可視化される</li>
   <li><strong>設計判断の系譜:</strong> ADR・issue・設計文書の間の依存関係が空間配置として表現され、判断の流れが追跡可能になる</li>
   <li><strong>違和感の早期発見:</strong> 設計上の緊張（例: 本文非表示 vs 識別必要性）がカードとして明示され、解決されないまま埋もれることを防ぐ</li>
   <li><strong>AIとの協働基盤:</strong> 構造化されたプロジェクト情報はAIが自律的に判断するための入力となる</li>
@@ -327,7 +327,7 @@ flowchart TB
   <li><code>02_Architecture/non-canvas-ui-flow-design.html</code> — 三者牽制モデルの初出</li>
   <li><code>02_Architecture/design/admin-surface-metadata-display-correction.html</code> — 三者牽制による補正の実例</li>
   <li><code>01_Plans/issues/done/issue-DOMAIN-TITLE-01-document-title-ai-proposal.md</code> — タイトル生成</li>
-  <li><code>00_Prompt/kj_technique.md</code> — KJ法の技法定義</li>
+  <li><code>00_Prompt/sensemaking_technique.md</code> — KJ法の技法定義</li>
   <li><code>00_Prompt/w_type_iterative_inquiry_requirements.md</code> — W型累積KJ法</li>
 </ul>
 

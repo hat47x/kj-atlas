@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-from kj_atlas_api.jwks_store import (
+from sui_sensemaking_api.jwks_store import (
     JwksStore,
 )
 

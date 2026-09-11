@@ -6,8 +6,8 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS = ROOT / '03_Implement/backend/src/kj_atlas_api/settings.py'
-REVIEWER_REF = ROOT / '03_Implement/backend/src/kj_atlas_api/reviewer_ref.py'
+SETTINGS = ROOT / '03_Implement/backend/src/sui_sensemaking_api/settings.py'
+REVIEWER_REF = ROOT / '03_Implement/backend/src/sui_sensemaking_api/reviewer_ref.py'
 API_DOC = ROOT / '02_Architecture/api.md'
 
 
@@ -40,7 +40,7 @@ class ReviewerRefPublicConfigContractTest(unittest.TestCase):
         self.assertEqual({'user_id', 'sso_subject'}, _settings_allowed_values())
         settings_text = SETTINGS.read_text(encoding='utf-8')
         self.assertIn(
-            'KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject',
+            'SUI_REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject',
             settings_text,
         )
 

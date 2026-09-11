@@ -31,9 +31,9 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 def _configured() -> bool:
     return (
-        os.getenv("KJ_ATLAS_RUN_PG_TESTS") == "1"
-        and bool(os.getenv("KJ_ATLAS_DATABASE_URL"))
-        and bool(os.getenv("KJ_ATLAS_TEST_POSTGRES_CONTAINER"))
+        os.getenv("SUI_RUN_PG_TESTS") == "1"
+        and bool(os.getenv("SUI_DATABASE_URL"))
+        and bool(os.getenv("SUI_TEST_POSTGRES_CONTAINER"))
     )
 
 
@@ -49,9 +49,9 @@ def test_two_overlapping_transactions_serialize_on_the_tenant_row_lock() -> None
     import subprocess
     import sys
 
-    base_url = os.environ["KJ_ATLAS_DATABASE_URL"]
+    base_url = os.environ["SUI_DATABASE_URL"]
     url = make_url(base_url)
-    isolated_name = f"kj_atlas_opsadmin01_{uuid4().hex[:16]}"
+    isolated_name = f"sui_sensemaking_opsadmin01_{uuid4().hex[:16]}"
     if not re.fullmatch(r"[a-z0-9_]+", isolated_name):
         raise ValueError("isolated database name must be a simple identifier")
     admin_url = url.set(database="postgres")
@@ -66,7 +66,7 @@ def test_two_overlapping_transactions_serialize_on_the_tenant_row_lock() -> None
     isolated_url = url.set(database=isolated_name).render_as_string(hide_password=False)
     try:
         env = os.environ.copy()
-        env["KJ_ATLAS_DATABASE_URL"] = isolated_url
+        env["SUI_DATABASE_URL"] = isolated_url
         migrate = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             cwd=BACKEND_DIR,
@@ -77,16 +77,16 @@ def test_two_overlapping_transactions_serialize_on_the_tenant_row_lock() -> None
         )
         assert migrate.returncode == 0, migrate.stderr
 
-        from kj_atlas_api.model_registry_repository import (
+        from sui_sensemaking_api.model_registry_repository import (
             list_tenant_allowed_model_ids,
             set_tenant_model_allowlist,
         )
-        from kj_atlas_api.models import (
+        from sui_sensemaking_api.models import (
             LLMModelRegistryRow,
             LLMProviderRegistryRow,
             TenantRow,
         )
-        from kj_atlas_api.routes.model_registry import (
+        from sui_sensemaking_api.routes.model_registry import (
             _allowlist_revision,
             _require_active_tenant,
         )

@@ -4,7 +4,7 @@ import {
 } from "../domain/patch/workspace/ce3_patch_workspace";
 import { buildTenantStorageKey, type TenantBrowserStorageScope } from "./tenant_scope";
 
-const PRESET_STORAGE_KEY = "kj-atlas:ce3:patch-workspace-presets:v1";
+const PRESET_STORAGE_KEY = "sui-sensemaking:ce3:patch-workspace-presets:v1";
 
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";

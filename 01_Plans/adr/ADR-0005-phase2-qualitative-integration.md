@@ -20,9 +20,9 @@
 
 # Phase 2 定性統合計画（phase2_qualitative_integration）
 
-本書は、Phase 1（Canvas MVP）後に導入する定性統合機能の要求仕様である。対象は **kj-atlas の A型図解** に限定し、B型文章化は対象外とする。
+本書は、Phase 1（Canvas MVP）後に導入する定性統合機能の要求仕様である。対象は **sui-sensemaking の A型図解** に限定し、B型文章化は対象外とする。
 
-- 対象スコープ: kj-atlas（単一 Document の編集体験）
+- 対象スコープ: sui-sensemaking（単一 Document の編集体験）
 - 文書種別: Plan（実装可能な要求 + 受け入れ判定 + 段階導入）
 - 上位整合の原則: `domain.md` / `value_to_requirements.md` / `02_Architecture/architecture.html` を優先
 

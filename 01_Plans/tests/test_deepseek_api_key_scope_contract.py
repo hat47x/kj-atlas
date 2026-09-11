@@ -7,9 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "04_Documentation/configuration.md"
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-SETTINGS = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
-PROVIDER = ROOT / "03_Implement/backend/src/kj_atlas_api/llm/provider.py"
-KEY = "KJ_ATLAS_DEEPSEEK_API_KEY"
+SETTINGS = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
+PROVIDER = ROOT / "03_Implement/backend/src/sui_sensemaking_api/llm/provider.py"
+KEY = "SUI_DEEPSEEK_API_KEY"
 
 
 def _row(text: str, key: str) -> str:
@@ -59,13 +59,13 @@ class DeepseekApiKeyScopeContractTests(unittest.TestCase):
         readiness = _function_source(self.settings, "provider_kind_readiness_errors")
         self.assertIn('if normalized == "deepseek":', readiness)
         self.assertIn('if not cfg.deepseek_api_key:', readiness)
-        self.assertIn('KJ_ATLAS_DEEPSEEK_API_KEY is not set', readiness)
+        self.assertIn('SUI_DEEPSEEK_API_KEY is not set', readiness)
         self.assertIn('provider_kind_readiness_errors("deepseek", self)', self.settings)
 
     def test_registered_deepseek_resolves_the_same_env_key_and_fails_closed(self) -> None:
         resolver = _function_source(self.provider, "_resolve_registered_api_key")
         builder = _function_source(self.provider, "build_registered_provider")
-        self.assertIn('KJ_ATLAS_DEEPSEEK_API_KEY', self.provider)
+        self.assertIn('SUI_DEEPSEEK_API_KEY', self.provider)
         self.assertIn('settings.deepseek_api_key', resolver)
         self.assertIn('if kind == "deepseek":', builder)
         self.assertIn('_resolve_registered_api_key(config.api_key_ref)', builder)
@@ -77,7 +77,7 @@ class DeepseekApiKeyScopeContractTests(unittest.TestCase):
         for row in (config_row, registry_row):
             self.assertIn("primary", row)
             self.assertIn("registered DeepSeek", row)
-            self.assertIn("api_key_ref=KJ_ATLAS_DEEPSEEK_API_KEY", row)
+            self.assertIn("api_key_ref=SUI_DEEPSEEK_API_KEY", row)
             self.assertIn("fail-closed", row)
         self.assertIn("起動readiness", config_row)
         self.assertIn("request-time", registry_row)

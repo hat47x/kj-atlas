@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from kj_atlas_api.models import DeterministicTieBreak, PolygonHandoffInputContract
+from sui_sensemaking_api.models import DeterministicTieBreak, PolygonHandoffInputContract
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]

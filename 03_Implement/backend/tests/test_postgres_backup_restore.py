@@ -9,22 +9,22 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
-from kj_atlas_api.database_support import normalize_sync_database_url
+from sui_sensemaking_api.database_support import normalize_sync_database_url
 
 
 def _configured() -> bool:
     return (
-        os.getenv("KJ_ATLAS_RUN_PG_TESTS") == "1"
-        and bool(os.getenv("KJ_ATLAS_DATABASE_URL"))
-        and bool(os.getenv("KJ_ATLAS_TEST_POSTGRES_CONTAINER"))
+        os.getenv("SUI_RUN_PG_TESTS") == "1"
+        and bool(os.getenv("SUI_DATABASE_URL"))
+        and bool(os.getenv("SUI_TEST_POSTGRES_CONTAINER"))
     )
 
 
 @pytest.mark.postgres
 @pytest.mark.skipif(not _configured(), reason="PostgreSQL backup container is not configured")
 def test_postgres_logical_backup_restores_into_isolated_database() -> None:
-    database_url = normalize_sync_database_url(os.environ["KJ_ATLAS_DATABASE_URL"])
-    container = os.environ["KJ_ATLAS_TEST_POSTGRES_CONTAINER"]
+    database_url = normalize_sync_database_url(os.environ["SUI_DATABASE_URL"])
+    container = os.environ["SUI_TEST_POSTGRES_CONTAINER"]
     url = make_url(database_url)
     source_database = url.database or ""
     if not re.fullmatch(r"[A-Za-z0-9_]+", source_database):

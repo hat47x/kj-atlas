@@ -6,7 +6,7 @@
 - Priority: P2
 - Owner: Maintainer
 - Scope: `03_Implement/deploy/tools/mock_local_llm.py`, `03_Implement/backend/scripts/verify_business_flow_e2e.sh`（シナリオ121）, `01_Plans/dogfood/business-flow-e2e-scenarios-2026-08-15.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/done/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md`（矛盾検出・違和感の言語化）, `02_Architecture/api.md`（detect-contradiction 契約・explanation）, `01_Plans/issues/done/issue-DOGFOOD-11-contradiction-detection-lacks-deterministic-positive-path.md`（正パス固定）, `01_Plans/issues/done/issue-DOGFOOD-21-narrative-text-not-grounded-in-reading-order.md`（テキスト接地の同型）
 - Expected verification level: `e2e`
 
 ## 課題
@@ -25,7 +25,7 @@ if "トレードオフ" in prompt:
 
 - **矛盾の説明がカード対（どのカードがなぜ矛盾するか）に接地しているか**を E2E で一切検証できない。
 - バックエンドが説明を無関係な/汎用的な文面に劣化させる回帰（矛盾の根拠を説明しない）が起きても、業務フローE2E は全部 pass する。
-- 説明文は矛盾検出の「違和感の言語化」（kj_technique.md）であり、カード対に接地していなければ判断の根拠にならない。
+- 説明文は矛盾検出の「違和感の言語化」（sensemaking_technique.md）であり、カード対に接地していなければ判断の根拠にならない。
 
 実機再現（iteration 191）:
 

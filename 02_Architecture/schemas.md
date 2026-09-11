@@ -1,4 +1,4 @@
-# schemas — kj-atlas MVP スキーマ（02_Architecture）
+# schemas — sui-sensemaking MVP スキーマ（02_Architecture）
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
@@ -6,7 +6,7 @@
 > MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.html` を参照する。
 > ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
 > `ADR-0057` は、反復的探究を独立 `InquiryJourneyV1` + 不変 `RoundSnapshotV1` DAGとして扱う設計を採択した。共有用派生bundleは任意の `InquiryExportInfoV1` でSafeMode適用と全体／選択ラウンド範囲を記録し、ローカル保存bundleはこのmetadataを省略する。詳細は `02_Architecture/inquiry_journey_model.html` を参照する。実装・移行・CRUDが揃うまでは `L0: Planned` であり、現行 `DocumentV1` の型、version gate、保存契約へ履歴キーを追加しない。
-本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
+本ドキュメントは、sui-sensemaking の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
 - `DocumentV1` では、出自情報（記録者・記録時間など）を保持しません
@@ -393,7 +393,7 @@ export type Edge = {
 
 ### 3.4 Document
 
-`DocumentV1`（`version: 1`）は、kj-atlas が唯一サポートする永続Document契約である（`ADR-0058`）。カード・エッジのMVPスナップショット保存に加え、島、文章化、根拠リンク、レビュー関連情報を含む現在の完全構造を、単一の型・単一のversion番号で表す。過去に存在した最小構造専用の別型、および`version: 2`を名乗る別契約は存在しない。
+`DocumentV1`（`version: 1`）は、sui-sensemaking が唯一サポートする永続Document契約である（`ADR-0058`）。カード・エッジのMVPスナップショット保存に加え、島、文章化、根拠リンク、レビュー関連情報を含む現在の完全構造を、単一の型・単一のversion番号で表す。過去に存在した最小構造専用の別型、および`version: 2`を名乗る別契約は存在しない。
 
 `DocumentV1` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.html` のCRUD表に従う。
 
@@ -419,7 +419,7 @@ export type EvidenceLink = {
 };
 
 export type NarrativeCheckReference = { id: string; kind: "card" | "island" };
-// kj_technique.md §5: A/B cross-check direction — a narrative claim with no
+// sensemaking_technique.md §5: A/B cross-check direction — a narrative claim with no
 // diagram counterpart (b_missing_in_a) or a diagram island the narrative never
 // mentions (a_missing_in_b).
 export type NarrativeCheckDirection = "b_missing_in_a" | "a_missing_in_b";
@@ -564,7 +564,7 @@ export type DocumentV1 = {
   deterministicTieBreak?: DeterministicTieBreak;
   shelf?: ShelfEntry[];
   contradictionSignalDecisions?: ContradictionSignalDecision[];
-  // kj_technique.md §4 (優先3-1): enumerated structural gaps. Optional; stored
+  // sensemaking_technique.md §4 (優先3-1): enumerated structural gaps. Optional; stored
   // only when the user runs void detection.
   voids?: VoidEntry[];
 };
@@ -890,8 +890,8 @@ export type Island = {
 
 運用モード:
 
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
+- `SUI_ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
+- `SUI_ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
 
 API I/F 整合用の最小型（実装依存を避ける境界）:
 
@@ -1068,7 +1068,7 @@ tenant切替・logoutでは選択scope prefixの全entryを列挙後に削除し
 | Document/判断ログ/backfillのtenant-scoped repository | 解決済みTenantContext必須で実装済み。認証済み利用者はUser/Tenant/Membershipのactive状態を各requestで確認し、repository・PDP payload・auditへ伝播 | auth edge（ADR-0063 D9）実装済み。PostgreSQL実地検証と全consumer伝播は未了 |
 | `user_identities`の`identityProviderId + subject`移行 | Expand・backfill・二重書き済み。lookupは新binding優先、旧行fallback成功時は自己補完、二重一致は拒否 | 互換IdPは既存。新規IdP登録API（ADR-0063/0064）により issuer/audience/jwks_uri の登録が可能。旧列contract は単一テナント互換で維持 |
 | Document複合PK/FK、全consumerのtenant必須化 | Document/判断ログの複合PK・unique・FKとrepository経路は実装済み | PostgreSQL実地検証とMCP/worker/cache/storage等のconsumer伝播が未完了のためSaaS blocker継続 |
-| PostgreSQL RLS等のDB側guard | Document／判断ログ／Document access metadata／管理監査のENABLE+FORCE RLS policy、repositoryごとのtransaction-local `kj_atlas.tenant_id`設定を実装。4表すべてのtenant A/B read・cross-tenant update・contextなしpool再利用に加え、自tenant行のtenantId再割当を`WITH CHECK`で拒否する条件付きPostgreSQL matrixを定義。migrationでRLSを有効化する全表の`USING`／`WITH CHECK`存在は常時contract testで検査する。SQLiteはno-op | 分離したmigration/runtime roleを使うPostgreSQL実地matrixが未実行のためSaaS blocker継続 |
+| PostgreSQL RLS等のDB側guard | Document／判断ログ／Document access metadata／管理監査のENABLE+FORCE RLS policy、repositoryごとのtransaction-local `sui_sensemaking.tenant_id`設定を実装。4表すべてのtenant A/B read・cross-tenant update・contextなしpool再利用に加え、自tenant行のtenantId再割当を`WITH CHECK`で拒否する条件付きPostgreSQL matrixを定義。migrationでRLSを有効化する全表の`USING`／`WITH CHECK`存在は常時contract testで検査する。SQLiteはno-op | 分離したmigration/runtime roleを使うPostgreSQL実地matrixが未実行のためSaaS blocker継続 |
 | verified TenantContext / capability API / negative matrix | single-tenant resolver、停止membership拒否、事前検証済みclaim再照合、membership allowlist内部service、resolverのmembership IDとDB再生成値の再一致、信頼済みrequest context共通境界、既知capabilityだけを返す`GET /session/context`、allowlist再照合後だけtrusted persisterへ渡す`POST /session/active-tenant`、identity/tenant/persisterを3点同時にだけ受ける起動前bundle、profile／policy／bundle／実componentのDB初期化前preflight、Document routeの同一docId GET/PUT tenant A/B HTTP-level negative matrixまで実装。ADR-0063 D9によりauth edge（`JwtSaasIdentityContextResolver`）とanti-forgery付きsession persister（`InMemoryActiveTenantSessionPersister`）の実接続は完了。ADR-0064 Phase 1によりmock OAuth 2.0 + PKCE login flowのE2Eテストも完了 | 実capability/PDP service、trusted host mapping、MCP/worker/browserを含む完全matrix、PostgreSQL実地検証は未実装のためblocker継続 |
 | server-owned Document access metadata | tenant/doc複合FK、visibility/binding/version制約、PostgreSQL RLS、tenant-scoped repository、strict external HTTP binding resolver、SaaS時のserver-owned resource resolver切替を実装。client policy headerはSaaS resolverで無視し、raw policyRefはrequest内だけで利用。preflight済みbinding/PDP/capability componentの同一instanceをruntimeへ配線する | auth edge（ADR-0063 D9）実装済み。実binding/PDP/capability service、PostgreSQL実地検証は未了 |
 | Document access metadata管理API・監査 | verified/trusted TenantContextと`document.policy.manage`専用のlist/detail/conditional PUT、秘密値を反射しないstrict入力、tenant-scoped transactional audit、strict external capability/binding resolver、PostgreSQL RLS migrationを実装 | trusted SaaS auth edge、実policy service/PDP接続、PostgreSQL実地検証、frontend配線が未完了のためruntimeではfail-closed無効 |
@@ -1394,7 +1394,7 @@ TRACE（arXiv:2606.13174）の知見「記憶への保存では選好違反の57
 - 各 entry は `critiqueTags` と `facts` の**少なくとも一方が非空**（空の制約は生成しない）。
 - **理由不要原則の保持**: `note` は任意。`no_articulable_reason` は一級のシグナルであり、理由の言語化を輸出の条件にしない（domain.md の違和感原則）。
 - **反スコアリング**: `score` / `rank` / `confidence` / `priority` / `weight` 等の数値評価語彙をトップレベル・entry・target のいずれにも**含めない**（契約禁止。テストは直列化文字列への正規表現で固定する）。制約間に順序的優先度は存在せず、`entries` の並びは決定論のためのソート順（§18.6）であって重要度ではない。
-- **エージェント側の遵守は受け手の責務**: kj-atlas は明示的に渡すところまで（issue 非目標）。遵守検証・自動学習・制約の自動生成は本契約のスコープ外。
+- **エージェント側の遵守は受け手の責務**: sui-sensemaking は明示的に渡すところまで（issue 非目標）。遵守検証・自動学習・制約の自動生成は本契約のスコープ外。
 
 ### 18.3 制約の源泉（すべて文書内・人間の判断のみ）
 

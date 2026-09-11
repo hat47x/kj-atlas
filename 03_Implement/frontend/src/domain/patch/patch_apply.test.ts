@@ -23,7 +23,7 @@ describe("applyPatchWithResolutions", () => {
     const baseline = makeDoc("base");
     const current = makeDoc("yours");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
     };
@@ -38,7 +38,7 @@ describe("applyPatchWithResolutions", () => {
   it("applies selected non-conflicting operations", () => {
     const current = makeDoc("base");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "op1", kind: "upsert_card", card: { id: "c1", text: "next", x: 0, y: 0 } },
@@ -54,7 +54,7 @@ describe("applyPatchWithResolutions", () => {
   it("falls back to H4 behavior without baseline", () => {
     const current = makeDoc("base");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
     };
@@ -67,7 +67,7 @@ describe("applyPatchWithResolutions", () => {
     const baseline = makeDoc("base");
     const current = makeDoc("yours");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [
         { id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } },
@@ -94,7 +94,7 @@ describe("applyPatchWithResolutions", () => {
     current.evidenceLinks = [{ id: "el-1", type: "supports", fromCardId: "c1", toCardId: "c2" }];
 
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "delete_card", cardId: "c1" }],
     };

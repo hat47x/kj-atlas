@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from kj_atlas_api.models import (
+from sui_sensemaking_api.models import (
     Base,
     IdentityProviderRow,
     TenantIdentityProviderRow,
@@ -14,7 +14,7 @@ from kj_atlas_api.models import (
     UserIdentityRow,
     UserRow,
 )
-from kj_atlas_api.tenant_context import (
+from sui_sensemaking_api.tenant_context import (
     VerifiedTenantClaim,
     list_active_tenant_summaries,
     resolve_verified_claim_tenant_context,
@@ -68,7 +68,7 @@ def _seed_verified_identity(db: Session) -> None:
             IdentityProviderRow(
                 id="idp-1",
                 issuer="https://issuer.example.test/",
-                audience="kj-atlas",
+                audience="sui-sensemaking",
                 lifecycle_state="active",
                 created_at=TIMESTAMP,
                 updated_at=TIMESTAMP,
@@ -124,7 +124,7 @@ def _claim(**overrides: str) -> VerifiedTenantClaim:
         "tenant_id": "tenant-a",
         "identity_provider_id": "idp-1",
         "issuer": "https://issuer.example.test/",
-        "audience": "kj-atlas",
+        "audience": "sui-sensemaking",
         "subject": "subject-1",
     }
     values.update(overrides)

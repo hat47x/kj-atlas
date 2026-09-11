@@ -31,7 +31,7 @@
 <p>対象: <strong>Slack Connect</strong>（別ワークスペース間の共有チャンネル）/ <strong>Microsoft Entra ID B2B collaboration</strong>（ゲストアクセス）/ <strong>Google Workspace 外部共有</strong>（Drive）/ <strong>Notion のゲスト・cross-workspace共有</strong>。<code>02_Architecture/collaboration-concurrency-comparison-2026-08-14.html</code>（PGM-ITER-03-01）は同一組織内の共同編集並行性モデルのみを対象とし、組織境界を越えた共有・連携は対象外だった。本調査はその欠落を補い、第5反復（テナント間連携）の認可プリミティブ設計（ADR化）の判断材料を供給する。本調査自体は新しい認可プリミティブを設計・実装しない（issue の「実施しないこと」）。</p>
 
 <h2>0. 結論（先に）</h2>
-<p>4製品のうち3製品（Slack・Microsoft・Google）は「組織（IdP/ドメイン）単位の信頼」と「個人単位の信頼」を<strong>別々のプリミティブ</strong>として持つ。Notionは組織単位の信頼という概念自体を持たず、常に個人単位のみ。<strong>kj-atlas の <code>resolve_verified_claim_tenant_context()</code> は、この4製品のいずれとも異なり、個人単位の信頼を組織（IdP）単位の信頼から独立に表現する経路を持たない</strong>（§3で詳述）。</p>
+<p>4製品のうち3製品（Slack・Microsoft・Google）は「組織（IdP/ドメイン）単位の信頼」と「個人単位の信頼」を<strong>別々のプリミティブ</strong>として持つ。Notionは組織単位の信頼という概念自体を持たず、常に個人単位のみ。<strong>sui-sensemaking の <code>resolve_verified_claim_tenant_context()</code> は、この4製品のいずれとも異なり、個人単位の信頼を組織（IdP）単位の信頼から独立に表現する経路を持たない</strong>（§3で詳述）。</p>
 
 <table>
 <thead><tr><th>製品</th><th>個人 vs 組織の信頼分離</th><th>招待・承認フロー</th><th>取り消し・失効</th><th>信頼度</th></tr></thead>
@@ -80,7 +80,7 @@
 <p class="src">出典: <a href="https://www.notion.com/help/add-members-admins-guests-and-groups" target="_blank" rel="noopener">Manage members, admins & guests in Notion (notion.com/help)</a> / <a href="https://www.notion.com/help/sharing-and-permissions" target="_blank" rel="noopener">Sharing & permissions settings in Notion (notion.com/help)</a></p>
 
 <h2>2. 比較の可視化</h2>
-<p>横軸に「組織（IdP）単位の信頼をどこまで要求するか」、縦軸に「個人単位の信頼をどこまで独立に表現できるか」を取ると、4製品とkj-atlasの現状は次のように位置づけられる。</p>
+<p>横軸に「組織（IdP）単位の信頼をどこまで要求するか」、縦軸に「個人単位の信頼をどこまで独立に表現できるか」を取ると、4製品とsui-sensemakingの現状は次のように位置づけられる。</p>
 <pre class="mermaid">
 quadrantChart
     title 組織単位の信頼 vs 個人単位の信頼の独立性
@@ -94,12 +94,12 @@ quadrantChart
     "Slack (Connect+Guest 併用)": [0.55, 0.55]
     "Google Workspace": [0.45, 0.6]
     "Notion": [0.05, 0.75]
-    "kj-atlas 現状": [0.75, 0.05]
+    "sui-sensemaking 現状": [0.75, 0.05]
 </pre>
 <p class="caveat"><strong>Caveat</strong>: この配置は4製品の公式ヘルプ記載から読み取れる機能の有無を定性的に位置づけたものであり、統一的な採点基準を外部から適用したものではない。相対的な位置関係を読むための図であり、座標の絶対値に意味はない。</p>
 
-<h2>3. kj-atlasの現状との対比</h2>
-<p>対象コード: <code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code> の <code>resolve_verified_claim_tenant_context()</code>、および <code>03_Implement/backend/src/kj_atlas_api/models.py</code> の <code>TenantIdentityProviderRow</code>。</p>
+<h2>3. sui-sensemakingの現状との対比</h2>
+<p>対象コード: <code>03_Implement/backend/src/sui_sensemaking_api/tenant_context.py</code> の <code>resolve_verified_claim_tenant_context()</code>、および <code>03_Implement/backend/src/sui_sensemaking_api/models.py</code> の <code>TenantIdentityProviderRow</code>。</p>
 
 <pre class="mermaid">
 flowchart TD
@@ -129,9 +129,9 @@ flowchart TD
 <div class="gap">
 <h3 style="margin-top:0;">識別したギャップ</h3>
 <ol>
-<li><strong>個人単位の認可レコードが、IdP登録と独立に存在しない。</strong> Entraの<code>#EXT#</code>ゲストオブジェクト、Googleのtrust rule個人ターゲット/visitorアカウント、Slackの個別ゲストアカウント、Notionのページ単位ゲスト招待——4製品はいずれも「相手のIdP registrationとは別に、この1個人だけを表すレコード」を持つ。kj-atlasの<code>UserIdentityRow</code>＋<code>TenantMembershipRow</code>は個人単位のレコードだが、その作成には<code>tenant_identity_providers</code>で当該IdPがテナントに対しactiveであることが前提になっており、「このIdPからの他の全員は拒否するが、この1人だけは通す」という経路がない。</li>
-<li><strong>「このIdPを発行者として信じるか」と「このテナントの人口全体を受け入れるか」が分離されていない。</strong> Entraのcross-tenant access settingsは、既定（全外部ユーザー）とは別に「特定の外部ユーザー/グループのみ」への絞り込みを組織別カスタム設定として提供する（ライセンス要件付き）。kj-atlasの<code>TenantIdentityProviderRow</code>にはこれに相当するsubject単位の絞り込み列がなく、行がactiveになった時点でそのIdPが発行する全subjectが（後続のUserIdentityRow/membership作成という運用手続きを経れば）対象になり得る。</li>
-<li><strong>ゲスト種別を表す構造がない。</strong> 4製品はいずれも「本来のメンバー」と「外部からのゲスト」を、監査・一覧・ライフサイクル管理の観点で区別できる（Slackの承認ダッシュボード、Entraのaccess review、Googleのtrust rule対象グループ、Notionのゲスト一覧）。kj-atlasの<code>TenantMembershipRow</code>は「通常メンバー」と「他テナントから来たゲスト」を区別する列を持たず、両者は同一の行として扱われる。</li>
+<li><strong>個人単位の認可レコードが、IdP登録と独立に存在しない。</strong> Entraの<code>#EXT#</code>ゲストオブジェクト、Googleのtrust rule個人ターゲット/visitorアカウント、Slackの個別ゲストアカウント、Notionのページ単位ゲスト招待——4製品はいずれも「相手のIdP registrationとは別に、この1個人だけを表すレコード」を持つ。sui-sensemakingの<code>UserIdentityRow</code>＋<code>TenantMembershipRow</code>は個人単位のレコードだが、その作成には<code>tenant_identity_providers</code>で当該IdPがテナントに対しactiveであることが前提になっており、「このIdPからの他の全員は拒否するが、この1人だけは通す」という経路がない。</li>
+<li><strong>「このIdPを発行者として信じるか」と「このテナントの人口全体を受け入れるか」が分離されていない。</strong> Entraのcross-tenant access settingsは、既定（全外部ユーザー）とは別に「特定の外部ユーザー/グループのみ」への絞り込みを組織別カスタム設定として提供する（ライセンス要件付き）。sui-sensemakingの<code>TenantIdentityProviderRow</code>にはこれに相当するsubject単位の絞り込み列がなく、行がactiveになった時点でそのIdPが発行する全subjectが（後続のUserIdentityRow/membership作成という運用手続きを経れば）対象になり得る。</li>
+<li><strong>ゲスト種別を表す構造がない。</strong> 4製品はいずれも「本来のメンバー」と「外部からのゲスト」を、監査・一覧・ライフサイクル管理の観点で区別できる（Slackの承認ダッシュボード、Entraのaccess review、Googleのtrust rule対象グループ、Notionのゲスト一覧）。sui-sensemakingの<code>TenantMembershipRow</code>は「通常メンバー」と「他テナントから来たゲスト」を区別する列を持たず、両者は同一の行として扱われる。</li>
 </ol>
 </div>
 
@@ -149,7 +149,7 @@ sequenceDiagram
     Note over R: 取り消しはここで単独実行可能
     R->>R: ゲストオブジェクトを無効化/削除<br/>（Hの状態に依存しない）
 </pre>
-<p class="caveat">この図はEntraの構造を示すためのものであり、kj-atlasにこの通りの仕組みを導入すべきという結論ではない。個人専用の認可レコードを、IdP全体の信頼登録から独立に持てるという<strong>構造上の可能性</strong>を示すための参照である。</p>
+<p class="caveat">この図はEntraの構造を示すためのものであり、sui-sensemakingにこの通りの仕組みを導入すべきという結論ではない。個人専用の認可レコードを、IdP全体の信頼登録から独立に持てるという<strong>構造上の可能性</strong>を示すための参照である。</p>
 
 <h2>4. 第5反復への示唆（判断材料。決定ではない）</h2>
 <div class="recommend">
@@ -158,8 +158,8 @@ sequenceDiagram
   <li>4製品の実装は、「IdPを発行者として信じるか」と「そのIdPの特定個人を受け入れるか」を別レイヤーの判断として持つ（Notionを除く。Notionはそもそも組織単位の判断を持たない）。第5反復の認可プリミティブが「個人単位のゲスト受け入れ」を目指すなら、この2レイヤー分離が実現可否の分岐点になる。</li>
   <li>Entraの「既定は全体、組織別カスタム設定でuser/group単位に絞り込める」という段階的な絞り込み構造は、既存の<code>tenant_identity_providers</code>を拡張する場合の参照点になり得る（採否はADR判断）。</li>
   <li>Google の visitor sharing / Slackのゲストアカウントが示すように、「相手にIdPが存在すること自体を要求しない」個人単位の信頼経路も実在の選択肢である。第5反復のスコープが「テナント間（IdPを持つ組織同士）」なのか、「IdPを持たない個人ゲストも含む」のかによって、参照すべき精度モデルが変わる。</li>
-  <li>取り消し（revocation）は、kj-atlasの<code>TenantMembershipRow.lifecycle_state</code>による個人単位の失効が既に構造的に可能——ギャップは「入る前」の許可経路にある。取り消し側の再設計は今回のギャップ分析の対象外。</li>
-  <li>Entraの「ホームテナント消失後も既発行トークンが残る」という残存リスクは、kj-atlasが今後どのような有効期限/再検証設計を採るにせよ、参考にすべき既知の落とし穴として記録する。</li>
+  <li>取り消し（revocation）は、sui-sensemakingの<code>TenantMembershipRow.lifecycle_state</code>による個人単位の失効が既に構造的に可能——ギャップは「入る前」の許可経路にある。取り消し側の再設計は今回のギャップ分析の対象外。</li>
+  <li>Entraの「ホームテナント消失後も既発行トークンが残る」という残存リスクは、sui-sensemakingが今後どのような有効期限/再検証設計を採るにせよ、参考にすべき既知の落とし穴として記録する。</li>
 </ul>
 </div>
 
@@ -175,8 +175,8 @@ sequenceDiagram
 <ul>
   <li><code>01_Plans/issues/done/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md</code> — 本調査のスコープissue</li>
   <li><code>02_Architecture/collaboration-concurrency-comparison-2026-08-14.html</code> — 対象外だった既存調査（同一組織内モデル）</li>
-  <li><code>03_Implement/backend/src/kj_atlas_api/tenant_context.py</code> — <code>resolve_verified_claim_tenant_context()</code></li>
-  <li><code>03_Implement/backend/src/kj_atlas_api/models.py</code> — <code>TenantIdentityProviderRow</code> / <code>UserIdentityRow</code> / <code>TenantMembershipRow</code></li>
+  <li><code>03_Implement/backend/src/sui_sensemaking_api/tenant_context.py</code> — <code>resolve_verified_claim_tenant_context()</code></li>
+  <li><code>03_Implement/backend/src/sui_sensemaking_api/models.py</code> — <code>TenantIdentityProviderRow</code> / <code>UserIdentityRow</code> / <code>TenantMembershipRow</code></li>
   <li><code>01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md</code> — テナント認可境界の既存ADR</li>
   <li><code>01_Plans/adr/ADR-0063-saas-multitenant-trusted-auth-edge.md</code> — 検証済みクレーム解決の既存ADR</li>
   <li><code>01_Plans/adr/ADR-0067-three-element-constraint-design-method.md</code> — 判断方法論</li>

@@ -5,13 +5,13 @@
 - Source Issue: AI-IR-PROJECTION-01
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/backend/tests/test_ai_llm_input_ir_coverage.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai.py`, `03_Implement/backend/src/kj_atlas_api/routes/ai_relations.py`
+- Scope: `03_Implement/backend/tests/test_ai_llm_input_ir_coverage.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/ai_relations.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0069-llm-input-ir-as-the-actual-ai-input-path.md`, `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`
 - Expected verification level: `unit`
 
 ## 課題
 
-`AI-IR-PROJECTION-01` は、KJ Atlas上で人間が残した関係、根拠リンク、保留、島階層などを、AI入力へ落とさず渡すためのP1課題である。
+`AI-IR-PROJECTION-01` は、SUI Sensemaking上で人間が残した関係、根拠リンク、保留、島階層などを、AI入力へ落とさず渡すためのP1課題である。
 
 このIssueの起票時には `routes/ai.py` のプロンプト構築経路を9件として数えていたが、その後の再実測では `routes/ai.py` 10件と `routes/ai_relations.py` 1件の計11件へ増えている。2026-08-31時点では、そのうち4件がLLM入力IRを使い、7件がStage 5の未移行経路として残っている。
 

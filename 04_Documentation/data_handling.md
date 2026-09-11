@@ -1,6 +1,6 @@
 # データ取り扱い
 
-対象読者: kj-atlas でドキュメント、export、share、AI 提案、監査ログ、障害調査ログを扱う管理者、運用担当者、レビュー担当者。
+対象読者: sui-sensemaking でドキュメント、export、share、AI 提案、監査ログ、障害調査ログを扱う管理者、運用担当者、レビュー担当者。
 
 目的: データがどこに保存され、どの場面で外部サービスと共有される可能性があり、共有前に何を確認するかを説明します。
 
@@ -12,7 +12,7 @@
 
 ## 最初に押さえること
 
-- ドキュメント本文、カード、島、レビュー状態は kj-atlas の通常データとして保存されます。
+- ドキュメント本文、カード、島、レビュー状態は sui-sensemaking の通常データとして保存されます。
 - ブラウザには保存領域（local storage）、キャッシュ、ダウンロードしたファイルなど、利用者端末側に残る情報があります。
 - LLM、監査ログの HTTP 連携（audit HTTP）、外部アクセス制御を有効にすると、設定したサービスに情報を連携する可能性があります。
 - export や share は、アプリ内の情報を取り出して共有できる操作です。実行前に出力範囲を確認します。
@@ -34,11 +34,11 @@
 | 場面 | 残る場所 | 共有・連携の可能性 | 確認すること |
 | --- | --- | --- | --- |
 | ドキュメント作成・保存 | backend DB、ブラウザ cache | 通常はアプリ内だけ | 秘密情報を本文やカードに入れていないか。 |
-| AI 提案 | backend、LLM provider | `KJ_ATLAS_LLM_PROVIDER` が `local` や `large-scale` の場合 | 利用する provider、明示的な利用許可（opt-in）、許可先（allowlist）、共有する情報。 |
+| AI 提案 | backend、LLM provider | `SUI_LLM_PROVIDER` が `local` や `large-scale` の場合 | 利用する provider、明示的な利用許可（opt-in）、許可先（allowlist）、共有する情報。 |
 | export | ダウンロードしたファイル、共有先 | 利用者が共有した先 | 内部メモ、秘密情報、不要な identity 情報がないか。 |
 | share | 共有 URL、共有先の閲覧者 | 共有先の範囲 | visibility、SafeMode、readOnly、共有相手。 |
-| audit HTTP | 監査ログ連携の接続先 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合 | 接続先（endpoint）、API key、SafeMode 中の許可理由。 |
-| access control | 外部 PDP | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` の場合 | PDP の接続先（endpoint）、失敗時の扱い（fail-safe）、連携する属性の最小化。 |
+| audit HTTP | 監査ログ連携の接続先 | `SUI_AUDIT_EXPORT_ENABLED=true` の場合 | 接続先（endpoint）、API key、SafeMode 中の許可理由。 |
+| access control | 外部 PDP | `SUI_ACCESS_CONTROL_ADAPTER=external_http` の場合 | PDP の接続先（endpoint）、失敗時の扱い（fail-safe）、連携する属性の最小化。 |
 | 障害調査 | ログ、スクリーンショット、調査メモ | 問い合わせ先やチーム内共有 | 再現手順と status を残し、秘密情報は削る。 |
 
 ## 外部サービスと共有する前の判断
@@ -51,7 +51,7 @@
 - 失敗時の動作が安全側に倒れる。
 - SafeMode 中に例外を許可する場合、理由を運用記録に残せる。
 
-説明できない項目がある場合は、設定を有効にせず、`KJ_ATLAS_LLM_PROVIDER=none` や audit HTTP 連携を無効にしたまま確認します。
+説明できない項目がある場合は、設定を有効にせず、`SUI_LLM_PROVIDER=none` や audit HTTP 連携を無効にしたまま確認します。
 
 ## Export と share 前チェック
 
@@ -95,15 +95,15 @@
 
 ### サポート診断バンドル
 
-画面から生成できる診断バンドル（`diag-bundle.v1`）は、上記「残してよい情報」よりさらに狭い固定の許可リストだけを含みます。対象ドキュメントの本文・ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の状態に関わらず常に除外されます。含まれる項目、除外項目、UI 契約の詳細は [diagnostics.md](diagnostics.md) と [ADR-0053](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。生成は明示操作のみで、自動送信は行いません。
+画面から生成できる診断バンドル（`diag-bundle.v1`）は、上記「残してよい情報」よりさらに狭い固定の許可リストだけを含みます。対象ドキュメントの本文・ID、entity id/ref、API key/token/password、内部URL、個人情報、生の UserAgent、error message/stack は SafeMode の状態に関わらず常に除外されます。含まれる項目、除外項目、UI 契約の詳細は [diagnostics.md](diagnostics.md) と [ADR-0053](https://github.com/hat47x/sui-sensemaking/blob/main/01_Plans/adr/ADR-0053-support-diagnostics-bundle-boundary.md) を参照してください。生成は明示操作のみで、自動送信は行いません。
 
 ## 詳細仕様を確認したい場合
 
 この文書は利用者向けの判断ガイドです。データ契約や実装上の詳細を確認する場合は、GitHub 上の設計文書を参照してください。
 
-- [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
-- [schemas_review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas_review_attribution.md)
-- [review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/review_attribution.md)
+- [schemas.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/schemas.md)
+- [schemas_review_attribution.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/schemas_review_attribution.md)
+- [review_attribution.md](https://github.com/hat47x/sui-sensemaking/blob/main/02_Architecture/review_attribution.md)
 
 運用時は、次の文書も合わせて確認します。
 

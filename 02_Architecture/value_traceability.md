@@ -1,6 +1,6 @@
 # Value Traceability
 
-この文書は、kj-atlas の価値判断が、設計要素、受入条件、検証観点へどのように接続するかを示す対応表です。
+この文書は、sui-sensemaking の価値判断が、設計要素、受入条件、検証観点へどのように接続するかを示す対応表です。
 
 `00_Prompt` は価値・用語・禁止事項の上流、`02_Architecture` は実装可能な構造と責務境界の層です。設計や実装が上流の価値からずれている場合は、文書だけで吸収せず、内部 issue または ADR で修正方針を起票します。
 
@@ -26,10 +26,10 @@
 | 人間の判断を優先する | AIは候補を出すが、採否やレビュー済み化は人間が決める | `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md` | proposal-only、`patch + approval`、`human_reviewed` の人手昇格 | auto-apply、AIによる `human_reviewed` 自動付与がない |
 | 可逆性を守る | 配置、分類、共有前確認をやり直せる | `00_Prompt/domain.md` | snapshot / diff / dry-run / readOnly 境界を維持する | `dryRun=true` で副作用が発生しない |
 | 安全に共有できる | export/share 時に未レビュー本文や意図しない情報が混ざらない | `THREAT_MODEL.md`, `02_Architecture/schemas.md` | SafeMode既定ON、share/export policy、`visibility` はラベル用途に限定 | SafeMode / readOnly / visibility の優先順位が崩れない |
-| Local-first で小さく始められる | LLMや外部サービスなしでも導入・検証できる | `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md` | `KJ_ATLAS_LLM_PROVIDER=none` を既定にし、SQLite / PostgreSQL を切替可能にする | 既定構成で外部 LLM にデータを渡さない |
+| Local-first で小さく始められる | LLMや外部サービスなしでも導入・検証できる | `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md` | `SUI_LLM_PROVIDER=none` を既定にし、SQLite / PostgreSQL を切替可能にする | 既定構成で外部 LLM にデータを渡さない |
 | 生成AI経路を混同しない | AIなし、LLMProvider、外部エージェント成果物連携を選べるが、それぞれのデータ境界と人間レビュー境界を誤解しない | `ADR-0009`, `ADR-0028`, `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.html` | Lane A（AI無効）/B（LLMProvider）/C（外部エージェント成果物連携）/D（将来の直接連携）を分け、proposal-only・SafeMode・監査・暗黙エスカレーション禁止を共通不変条件にする | 新規生成AIissueが対象Lane、データ境界、Go/No-Go、ADR要否を宣言している |
 | 企業・行政運用に接続できる | 組織の認証、認可、監査基盤へ安全に接続できる | `02_Architecture/enterprise_architecture.html` | AuthContext、AccessControlAdapter、audit transport をアプリ本体から分離する | アプリ本体に role/group 判定ロジックを持ち込まない |
-| 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `KJ_ATLAS_*` に統一する | 04文書、Compose、runbook が正本と同期している |
+| 環境変数の混乱を防ぐ | 利用者が設定すべきキーを迷わない | `02_Architecture/runtime_parameter_registry.md` | 公開設定キーは例外なく `SUI_*` に統一する | 04文書、Compose、runbook が正本と同期している |
 | データ運用境界を誤解させない | MVPで保守できるデータと将来契約を区別できる | `02_Architecture/data_model_operations_overview.html`, `ADR-0033` | 物理ER、論理ER、CRUD表、ステークホルダー別保守責任を分けて示す | 型の存在を標準CRUD対応と誤読させない |
 | 定性情報の意味を損なわない | 本文だけですぐ記録でき、後から一中心・文脈・出典・認識上の位置づけを任意に整えられる | `00_Prompt/qualitative_card_quality_requirements.md`, `ADR-0001` P-08 | `Card.text` を正本とし、品質支援を保存後のproposal-onlyにする。少数意見・矛盾は保持する | 必須追加入力、品質採点、自動書換え、自動削除がなく、元本文へ戻れる |
 | ラウンド間で思考を深める | 問題提起から手順化までを反復・分岐し、中間成果と問いの変化を失わず再開できる | `00_Prompt/w_type_iterative_inquiry_requirements.md`, `ADR-0057`（Accepted）, `02_Architecture/inquiry_journey_model.html` | 可変 `DocumentV1` と独立探究・不変成果DAGを分離し、明示的引継ぎ、現場への問い、カード系譜を任意の高度機能として扱う | 通常利用非回帰、同段階反復、前段階分岐、自己完結bundle、provider none、SafeModeを検証する |
@@ -176,7 +176,7 @@ VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価�
 | CVI-3 | `human_reviewed` 昇格は人手のみ（AI/worker/API 自動禁止） | `domain/ce2_suggestion_candidates.test.ts`, `hil_rs_contract.test.ts` |
 | CVI-4 | Consensus 直接更新禁止（`patch + approval` のみ） | CE0 契約テスト群（`ce0_core_graph_repositioning`） |
 | CVI-5 | `dryRun=true` 無副作用（永続化/共有/昇格なし） | backend `test_audit.py`, `routes/context.py` 契約 |
-| CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` 既定でも主要価値が成立 | provider `NoneProvider` + 既定構成E2E |
+| CVI-6 | `SUI_LLM_PROVIDER=none` 既定でも主要価値が成立 | provider `NoneProvider` + 既定構成E2E |
 | CVI-7 | 保留/違和感の非破壊・表示制御と内容削除の分離 | collapse/visibility テスト, `state_filter`（hidden≠delete） |
 
 ## 2.6 認知負荷を守る複雑性予算（`ADR-0043`）
@@ -233,9 +233,9 @@ UI/UX 品質を次元（UQ）で定義し、各次元の担保（既存テスト
 
 | Lane | 名前 | 主な正本 | 判断の要点 |
 |---|---|---|---|
-| A | 手動中核 / AI無効 | `ADR-0041`, 本書 CVI-6 | `KJ_ATLAS_LLM_PROVIDER=none` で開始、外在化、構造化、共有前確認の主要価値が成立することを守る。 |
-| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/llm_escalation_policy.html` | kj-atlas 内部の provider 抽象で生成補助を行う。opt-in、proposal-only、暗黙の外部provider遷移禁止を守る。 |
-| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.html` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む。kj-atlas は Tier 0/1 で外部エージェントを直接呼ばない。 |
+| A | 手動中核 / AI無効 | `ADR-0041`, 本書 CVI-6 | `SUI_LLM_PROVIDER=none` で開始、外在化、構造化、共有前確認の主要価値が成立することを守る。 |
+| B | LLMProvider 経路 | `ADR-0009`, `llm_provider_spec.md`, `02_Architecture/llm_escalation_policy.html` | sui-sensemaking 内部の provider 抽象で生成補助を行う。opt-in、proposal-only、暗黙の外部provider遷移禁止を守る。 |
+| C | 外部エージェント成果物連携 | `ADR-0049`, `02_Architecture/external_agent_collaboration_spec.html` | 人間が依頼パッケージを共有し、応答を import 境界で取り込む。sui-sensemaking は Tier 0/1 で外部エージェントを直接呼ばない。 |
 | D | 将来の直接API/Agent連携 | `ADR-0049` Tier 2 予約, AUTH-* 系 | 認証、到達性、tenant境界、監査、費用制御、失敗時動作を決める新ADRなしに実装しない。 |
 
 レーン横断で守る不変条件は次の通り。

@@ -6,7 +6,7 @@
 // Emits a JSON report to stdout. Exit code 1 if any check fails.
 import { chromium } from "@playwright/test";
 
-const baseUrl = process.env.KJ_ATLAS_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
+const baseUrl = process.env.SUI_BASE_URL ?? "http://127.0.0.1:4173/?locale=ja";
 const results = [];
 
 function record(id, title, ok, detail) {
@@ -68,7 +68,7 @@ async function tabUntil(page, predicate, maxTabs = 400) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.KJ_ATLAS_SCREENSHOT_BROWSER_PATH || undefined,
+  executablePath: process.env.SUI_SCREENSHOT_BROWSER_PATH || undefined,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const sample = { value: false };

@@ -129,7 +129,7 @@ test("download produces the exact previewed JSON", async ({ page }) => {
   const downloadPromise = page.waitForEvent("download");
   await page.getByTestId("diagnostics-bundle-download").click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/^kj-atlas-diag-bundle-\d+\.json$/);
+  expect(download.suggestedFilename()).toMatch(/^sui-sensemaking-diag-bundle-\d+\.json$/);
 
   const downloaded = await readDownloadText(download);
   expect(downloaded).toBe(previewText);

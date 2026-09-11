@@ -76,7 +76,7 @@ describe("tenant-scoped document request precondition", () => {
       unavailableReason: "tenant_policy_excludes_all",
     });
     expect(fetchMock).toHaveBeenCalledWith("/api/ai/available-models", {
-      headers: { "KJ-Atlas-Tenant-Session-Version": "session-v1" },
+      headers: { "Sui-Sensemaking-Tenant-Session-Version": "session-v1" },
     });
   });
 
@@ -91,7 +91,7 @@ describe("tenant-scoped document request precondition", () => {
     await getDocument("doc-1", { tenantSessionContext });
 
     expect(fetchMock).toHaveBeenCalledWith("/api/docs/doc-1", {
-      headers: { "KJ-Atlas-Tenant-Session-Version": "session-v1" },
+      headers: { "Sui-Sensemaking-Tenant-Session-Version": "session-v1" },
     });
   });
 
@@ -115,13 +115,13 @@ describe("tenant-scoped document request precondition", () => {
       headers: {
         "Content-Type": "application/json",
         "If-Match": '"etag-v1"',
-        "KJ-Atlas-Tenant-Session-Version": "session-v1",
+        "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
       },
     });
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
       headers: {
         "Content-Type": "application/json",
-        "KJ-Atlas-Tenant-Session-Version": "session-v1",
+        "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
       },
     });
   });
@@ -214,7 +214,7 @@ describe("tenant-scoped document request precondition", () => {
       expect(init).toMatchObject({
         headers: {
           "Content-Type": "application/json",
-          "KJ-Atlas-Tenant-Session-Version": "session-v1",
+          "Sui-Sensemaking-Tenant-Session-Version": "session-v1",
         },
       });
     }
@@ -595,13 +595,13 @@ describe("tenant session version client coverage contract", () => {
   it("keeps the version header name bound to the one shared helper", () => {
     const clientSource = readFrontendModule(CLIENT_MODULE_PATH);
 
-    expect(clientSource.match(/"KJ-Atlas-Tenant-Session-Version"/g)).toHaveLength(1);
+    expect(clientSource.match(/"Sui-Sensemaking-Tenant-Session-Version"/g)).toHaveLength(1);
     expect(clientSource.match(/TENANT_SESSION_VERSION_HEADER/g)).toHaveLength(2);
     expect(
       productionSourceModules(FRONTEND_SRC_ROOT).filter(
         (modulePath) =>
           modulePath !== CLIENT_MODULE_PATH
-          && /KJ-Atlas-Tenant-Session-Version|TENANT_SESSION_VERSION_HEADER/.test(
+          && /Sui-Sensemaking-Tenant-Session-Version|TENANT_SESSION_VERSION_HEADER/.test(
             readFrontendModule(modulePath),
           ),
       ),
@@ -1214,7 +1214,7 @@ describe("PROV-ERROR-01: structured provider error propagation", () => {
         JSON.stringify({
           detail: {
             code: "provider_unavailable",
-            message: "AI is disabled. Set KJ_ATLAS_LLM_PROVIDER to local or large-scale.",
+            message: "AI is disabled. Set SUI_LLM_PROVIDER to local or large-scale.",
             provider: "none",
             disabled_reason: "provider_disabled_or_none_default",
           },
@@ -1229,7 +1229,7 @@ describe("PROV-ERROR-01: structured provider error propagation", () => {
     expect((error as ApiError).status).toBe(503);
     expect((error as ApiError).code).toBe("provider_unavailable");
     expect((error as ApiError).disabledReason).toBe("provider_disabled_or_none_default");
-    expect((error as ApiError).message).toBe("AI is disabled. Set KJ_ATLAS_LLM_PROVIDER to local or large-scale.");
+    expect((error as ApiError).message).toBe("AI is disabled. Set SUI_LLM_PROVIDER to local or large-scale.");
   });
 
   it("carries code without disabledReason for a configured-but-unreachable provider", async () => {

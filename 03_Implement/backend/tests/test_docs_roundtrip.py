@@ -11,12 +11,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import _normalize_database_url, get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import Base
+from sui_sensemaking_api.db import _normalize_database_url, get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import Base
 
-RUN_PG_TESTS_ENV = "KJ_ATLAS_RUN_PG_TESTS"
-DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
+RUN_PG_TESTS_ENV = "SUI_RUN_PG_TESTS"
+DATABASE_URL_ENV = "SUI_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -1360,7 +1360,7 @@ def test_docs_creation_records_lifecycle_and_creator(
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    from kj_atlas_api.models import DocumentRow
+    from sui_sensemaking_api.models import DocumentRow
 
     engine = create_engine(f"sqlite:///{tmp_path / 'docs_roundtrip.sqlite3'}")
     session_local = sessionmaker(bind=engine)
@@ -1382,7 +1382,7 @@ def test_document_lifecycle_migration_roundtrip(tmp_path) -> None:
     import sys
 
     db_path = tmp_path / "doc-lifecycle-migration.sqlite3"
-    env = {**os.environ, "KJ_ATLAS_DATABASE_URL": f"sqlite:///{db_path}"}
+    env = {**os.environ, "SUI_DATABASE_URL": f"sqlite:///{db_path}"}
 
     def alembic(*args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -1546,7 +1546,7 @@ def test_docs_list_filters_by_creator(sqlite_client: TestClient, tmp_path) -> No
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    from kj_atlas_api.models import DocumentRow
+    from sui_sensemaking_api.models import DocumentRow
 
     engine = create_engine(f"sqlite:///{tmp_path / 'docs_roundtrip.sqlite3'}")
     session_local = sessionmaker(bind=engine)

@@ -12,11 +12,11 @@
 ### 実行前
 
 1. `cognitive-dogfood-case-001-product-purpose.md` のうち、armへ渡してよい範囲だけを確認する。
-2. KJ Atlas product snapshotを `2232b3bb26647e5c4a083f55bdbf83c161698649` へ固定する。
+2. SUI Sensemaking product snapshotを `2232b3bb26647e5c4a083f55bdbf83c161698649` へ固定する。
 3. B/Dでは cultural-substrate-weaving を `3988e12e5f7f316f377d3391e9486c8467a111d5` へ固定する。
 4. PR #2805 の価値仮説、Case 0 audit/outcome trace、framework notes、Round 2 manifestをRound 1モデルへ見せない。
 5. 各arm用に新しい会話/agent/sessionを用意する。
-6. C/Dでは、認知dogfood用の別履歴方式を作らず、KJ Atlasに実装済みのInquiryJourneyを利用できる実行環境を優先する。
+6. C/Dでは、認知dogfood用の別履歴方式を作らず、SUI Sensemakingに実装済みのInquiryJourneyを利用できる実行環境を優先する。
 7. 実行順はpreflightで事前登録した **C → D → B → A** を使う。実行開始時に再randomizeしない。
 
 ### 実行中
@@ -45,7 +45,7 @@
 ```text
 README.md
 ROADMAP.md
-00_Prompt/kj_technique.md
+00_Prompt/sensemaking_technique.md
 01_Plans/adr/ADR-0032-product-value-realization-model.md
 01_Plans/adr/ADR-0042-value-realness-validation-and-notice-exit.md
 01_Plans/adr/ADR-0047-design-decision-adr-saturation-and-execution-first.md
@@ -54,11 +54,11 @@ ROADMAP.md
 01_Plans/issues/issue-VALUE-MEASURE-01-measurement-harness-and-evidence-artifacts.md
 01_Plans/issues/issue-VR-ROADMAP-01-value-to-social-goal-phase-baseline.md
 01_Plans/issues/issue-DOMAIN-W-ITERATION-01-w-type-cumulative-inquiry-support.md
-01_Plans/dogfood/doc_kj_atlas_dogfood_r1.json
-01_Plans/dogfood/doc_kj_atlas_dogfood_r2.json
-01_Plans/dogfood/doc_kj_atlas_dogfood_r3.json
-01_Plans/dogfood/doc_kj_atlas_dogfood_r4.json
-01_Plans/dogfood/doc_kj_atlas_dogfood_r5.json
+01_Plans/dogfood/doc_sui_sensemaking_dogfood_r1.json
+01_Plans/dogfood/doc_sui_sensemaking_dogfood_r2.json
+01_Plans/dogfood/doc_sui_sensemaking_dogfood_r3.json
+01_Plans/dogfood/doc_sui_sensemaking_dogfood_r4.json
+01_Plans/dogfood/doc_sui_sensemaking_dogfood_r5.json
 01_Plans/issues/done/issue-DOGFOOD-17-opposing-viewpoint-ignores-target-claim.md
 01_Plans/issues/done/issue-DOGFOOD-20-card-groups-not-theme-based.md
 01_Plans/issues/done/issue-DOGFOOD-31-two-hundred-card-scale-exceeds-ai-operation-limits.md
@@ -78,7 +78,7 @@ case-001-r1-product@2232b3bb26647e5c4a083f55bdbf83c161698649
 全armで文字列を変えない。
 
 ```text
-KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
+SUI Sensemakingは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、何をまだ実証できていないか。
 ```
 
 ## 3. Common required output
@@ -90,11 +90,11 @@ KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツ�
 
 次を必ず含めてください。
 
-1. KJ Atlasが解こうとしている利用者の仕事。
+1. SUI Sensemakingが解こうとしている利用者の仕事。
 2. 既存手段で十分な領域と、不十分になり得る領域。
-3. 現在のKJ Atlasが既に実現している価値。
+3. 現在のSUI Sensemakingが既に実現している価値。
 4. 実証されていない価値仮説。
-5. 最重要の反証、またはKJ Atlasが不要かもしれない条件。
+5. 最重要の反証、またはSUI Sensemakingが不要かもしれない条件。
 6. 次に実施すべき検証/issue。
 7. 主要主張ごとの根拠と、その根拠が示す時点。
 8. 資料の中で、古い状態・後で訂正された状態・相互に緊張する記述を見つけた場合は、そのまま並べず現在状態との関係を示してください。
@@ -102,7 +102,7 @@ KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツ�
 
 資料外の一般知識を使う場合は、資料由来の主張と分けてください。
 与えられていない外部資料を新たに検索せず、必要なら候補だけを挙げてください。
-結論をKJ Atlasに好意的にする必要はありません。既存手段で十分、対象市場が狭い、価値仮説を棄却すべき、という結論も許容されます。
+結論をSUI Sensemakingに好意的にする必要はありません。既存手段で十分、対象市場が狭い、価値仮説を棄却すべき、という結論も許容されます。
 ```
 
 ## 4. Arm A prompt — ordinary AI / ordinary document
@@ -110,7 +110,7 @@ KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツ�
 Common question + common required outputに、次だけを追加する。
 
 ```text
-通常の分析として進めてください。KJ法、KJ Atlasキャンバス、cultural-substrate-weaving等の追加方法は使用しません。
+通常の分析として進めてください。KJ法、SUI Sensemakingキャンバス、cultural-substrate-weaving等の追加方法は使用しません。
 必要なメモや見出しは自由ですが、特定の方法論の手順を模倣する必要はありません。
 ```
 
@@ -125,7 +125,7 @@ Common question + common required outputに、次だけを追加する。
 Common question + common required outputに、次を追加する。
 
 ```text
-KJ Atlasキャンバスは使いません。
+SUI Sensemakingキャンバスは使いません。
 指定された cultural-substrate-weaving の方法を適用してください。
 領域固有のソフトウェア/プロダクト判断は与えられた資料と通常の領域知識で行い、文化体系由来の所見は来歴を保ち、対象へ戻して検証してください。
 体系語を除いた後も成立する所見だけを最終成果へ残してください。
@@ -142,9 +142,9 @@ run record §12へ次を記録する。
 - removal/substitution result
 - skill-specific surviving findings
 
-## 6. Arm C operator procedure — KJ Atlas + ordinary AI
+## 6. Arm C operator procedure — SUI Sensemaking + ordinary AI
 
-Common question + common required outputを分析AIへ渡す前後で、KJ Atlasを実際の外部表象として使用する。
+Common question + common required outputを分析AIへ渡す前後で、SUI Sensemakingを実際の外部表象として使用する。
 
 ### 最小手順
 
@@ -165,11 +165,11 @@ Common question + common required outputを分析AIへ渡す前後で、KJ Atlas
 
 - cultural-substrate-weavingを使用する。
 - 文化体系から探索方向を追加する。
-- KJ Atlasを単なる最終図の清書に使う。
+- SUI Sensemakingを単なる最終図の清書に使う。
 - experiment metadataをInquiryJourneyのdomain contractへ詰め込む。
 - 実験RoundをW型stageへ機械対応する。
 
-## 7. Arm D operator procedure — KJ Atlas + cultural-substrate-weaving
+## 7. Arm D operator procedure — SUI Sensemaking + cultural-substrate-weaving
 
 Arm Cの手順に加え、指定commitのcultural-substrate-weavingを使用する。
 
@@ -189,7 +189,7 @@ BとCの追加項目を両方残す。skill側はrun record §12へ記録する�
 
 - frameworkがキャンバス構造を先に決めなかったか。
 - framework名を消すと消える所見を成果扱いしていないか。
-- KJ Atlasとskillが同じ原理を二重に強化しただけではないか。
+- SUI Sensemakingとskillが同じ原理を二重に強化しただけではないか。
 - framework由来の追加探索がInquiryJourneyのstage/iterationを不必要に増やしていないか。
 
 ## 8. T9 feedback capture — InquiryJourney AI support
@@ -221,7 +221,7 @@ AI支援候補を思いついた回数ではなく、**手動中核で実際に�
 - [ ] A/Cにskill由来の探索規則を漏らしていない。
 - [ ] B/Dのskill versionは一致。
 - [ ] Round 2以前に外部競合/研究情報を混ぜていない。
-- [ ] C/DだけがInquiryJourneyを使うことは「KJ Atlas外部表象というtreatment」の一部として事前登録されている。
+- [ ] C/DだけがInquiryJourneyを使うことは「SUI Sensemaking外部表象というtreatment」の一部として事前登録されている。
 
 ## 10. Run artifact naming
 
@@ -286,7 +286,7 @@ validatorは次だけを静的に確認する。
 - Case 001 Round 1のproduct/skill snapshot一致。
 - fixed questionの完全一致。
 - required output / M1〜M9 / T1〜T3 / retention auditの存在。
-- C/DのKJ Atlas・InquiryJourney記録。
+- C/DのSUI Sensemaking・InquiryJourney記録。
 - B/Dのskill execution record。
 - 明白なplaceholderや未記入欄。
 

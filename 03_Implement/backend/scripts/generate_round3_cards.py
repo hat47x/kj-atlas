@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate the W-type round-3 (本質追求) cards for kj-atlas self-improvement.
+"""Generate the W-type round-3 (本質追求) cards for sui-sensemaking self-improvement.
 
-Round 3 posture (本質追求) pursues the ESSENCE: how kj-atlas realizes "insights
+Round 3 posture (本質追求) pursues the ESSENCE: how sui-sensemaking realizes "insights
 better than AI alone" via 凝縮（核融合法）— condensing AI-collected cards into
 one human-operable placard, multi-stage grouping (第2段・第3段), and the
 multi-layer canvas (human/AI separation).

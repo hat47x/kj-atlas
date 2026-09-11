@@ -3,28 +3,28 @@ import asyncio
 from fastapi import FastAPI
 import pytest
 
-import kj_atlas_api.main as main_module
-from kj_atlas_api.access_control import (
+import sui_sensemaking_api.main as main_module
+from sui_sensemaking_api.access_control import (
     ExternalPolicyAccessControlAdapter,
     ExternalPolicyAdapterConfig,
     NoopAccessControlAdapter,
 )
-from kj_atlas_api.document_access_resource import (
+from sui_sensemaking_api.document_access_resource import (
     ServerOwnedDocumentResourceResolver,
     SingleTenantHeaderResourceResolver,
     UnavailableDocumentPolicyBindingResolver,
 )
-from kj_atlas_api.document_policy_binding import (
+from sui_sensemaking_api.document_policy_binding import (
     ExternalDocumentPolicyBindingConfig,
     ExternalHttpDocumentPolicyBindingResolver,
 )
-from kj_atlas_api.tenant_capability import (
+from sui_sensemaking_api.tenant_capability import (
     ExternalHttpTenantCapabilityResolver,
     ExternalTenantCapabilityConfig,
     UnavailableTenantCapabilityResolver,
 )
-from kj_atlas_api.tenant_context import SingleTenantContextResolver
-from kj_atlas_api.trusted_saas_runtime import (
+from sui_sensemaking_api.tenant_context import SingleTenantContextResolver
+from sui_sensemaking_api.trusted_saas_runtime import (
     TrustedSaasRuntimeAdapters,
     TrustedSaasRuntimeComponents,
     TrustedSaasRuntimePolicy,
@@ -205,7 +205,7 @@ def test_complete_bundle_is_applied_atomically() -> None:
         app.state.document_access_resource_resolver,
         SingleTenantHeaderResourceResolver,
     )
-    assert not app.state._kj_atlas_runtime_started
+    assert not app.state._sui_sensemaking_runtime_started
 
     assert initialize_trusted_saas_runtime(
         app,
@@ -249,7 +249,7 @@ def test_released_bundle_can_only_be_reactivated_by_a_matching_profile() -> None
         app.state.document_access_resource_resolver,
         SingleTenantHeaderResourceResolver,
     )
-    assert not app.state._kj_atlas_runtime_started
+    assert not app.state._sui_sensemaking_runtime_started
 
 
 @pytest.mark.parametrize(
@@ -308,7 +308,7 @@ def test_single_tenant_profile_rejects_trusted_saas_bundle() -> None:
             runtime_components=_runtime_components(),
         )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
     assert not hasattr(app.state, "saas_identity_context_resolver")
 
 
@@ -323,7 +323,7 @@ def test_saas_profile_rejects_missing_trusted_bundle() -> None:
             runtime_components=_runtime_components(),
         )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
 
 
 def test_unknown_profile_fails_before_adapter_activation() -> None:
@@ -338,7 +338,7 @@ def test_unknown_profile_fails_before_adapter_activation() -> None:
             runtime_components=_runtime_components(),
         )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
     assert not hasattr(app.state, "saas_identity_context_resolver")
 
 
@@ -353,7 +353,7 @@ def test_corrupt_pre_start_state_fails_closed() -> None:
             runtime_policy=_runtime_policy(),
             runtime_components=_runtime_components(),
         )
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
 
 
 @pytest.mark.parametrize(
@@ -393,7 +393,7 @@ def test_initialize_rechecks_saas_policy_before_adapter_activation() -> None:
             runtime_components=_runtime_components(),
         )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
     assert not hasattr(app.state, "saas_identity_context_resolver")
 
 
@@ -437,7 +437,7 @@ def test_saas_preflight_rejects_mismatched_runtime_components(
             runtime_components=_runtime_components(**override),
         )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
     assert not hasattr(app.state, "saas_identity_context_resolver")
 
 
@@ -465,7 +465,7 @@ def test_preflight_does_not_activate_validated_saas_adapters() -> None:
         runtime_components=_runtime_components(),
     )
 
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
     assert not hasattr(app.state, "saas_identity_context_resolver")
 
 
@@ -505,7 +505,7 @@ def test_lifespan_rejects_missing_saas_bundle_before_database_initialization(
     monkeypatch.setattr(main_module, "init_db", record_init_db)
     _configure_main_saas_policy(
         monkeypatch,
-        database_url="postgresql+psycopg://db.invalid/kj_atlas",
+        database_url="postgresql+psycopg://db.invalid/sui_sensemaking",
     )
 
     async def start_lifespan() -> None:
@@ -538,7 +538,7 @@ def test_lifespan_rejects_mismatched_component_before_database_initialization(
     )
     _configure_main_saas_policy(
         monkeypatch,
-        database_url="postgresql+psycopg://db.invalid/kj_atlas",
+        database_url="postgresql+psycopg://db.invalid/sui_sensemaking",
     )
 
     async def start_lifespan() -> None:
@@ -549,7 +549,7 @@ def test_lifespan_rejects_mismatched_component_before_database_initialization(
         asyncio.run(start_lifespan())
 
     assert init_db_called is False
-    assert not getattr(app.state, "_kj_atlas_runtime_started", False)
+    assert not getattr(app.state, "_sui_sensemaking_runtime_started", False)
 
 
 def test_docs_endpoints_disabled_on_production_profiles() -> None:
@@ -572,19 +572,19 @@ def test_docs_endpoints_disabled_on_production_profiles() -> None:
             [
                 sys.executable,
                 "-c",
-                "from kj_atlas_api.main import app; print(app.docs_url, app.openapi_url)",
+                "from sui_sensemaking_api.main import app; print(app.docs_url, app.openapi_url)",
             ],
             capture_output=True,
             text=True,
             env={
                 **os.environ,
-                "KJ_ATLAS_RUNTIME_PROFILE": profile,
-                "KJ_ATLAS_LLM_PROVIDER": "none",
+                "SUI_RUNTIME_PROFILE": profile,
+                "SUI_LLM_PROVIDER": "none",
                 # ADR-0072 D3=A: production profiles refuse to start without an
                 # authentication means. This test is about docs/openapi exposure,
                 # so satisfy the requirement instead of relaxing it.
-                "KJ_ATLAS_ADMIN_API_KEY": "admin-key",
-                "KJ_ATLAS_API_KEY": "business-key",
+                "SUI_ADMIN_API_KEY": "admin-key",
+                "SUI_API_KEY": "business-key",
             },
             timeout=30,
         )

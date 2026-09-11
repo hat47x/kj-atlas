@@ -11,7 +11,7 @@ const TARGET_LONG_TASK_MS = 100;
 const MAX_LONG_TASK_MS = 150;
 const MAX_VISUAL_CUE_STORAGE_BYTES = 200 * 1024;
 const MAX_HEAP_GROWTH_BYTES = 64 * 1024 * 1024;
-const LOCAL_SCOPE_KEY = "kj-atlas/local-scope/v1/";
+const LOCAL_SCOPE_KEY = "sui-sensemaking/local-scope/v1/";
 
 function imageRef(index: number): string {
   return `visual-cue:00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
@@ -145,7 +145,7 @@ async function seedPortableAssets(page: Page, documentId: string): Promise<{
 }> {
   return page.evaluate(async ({ targetDocumentId, scopeKey }) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("kj-atlas-representative-visual-cues", 2);
+      const request = indexedDB.open("sui-sensemaking-representative-visual-cues", 2);
       request.onupgradeneeded = () => {
         const store = request.result.createObjectStore("assets-v2", { keyPath: "storageKey" });
         store.createIndex("scopeDocumentKey", "scopeDocumentKey", { unique: false });
@@ -227,11 +227,11 @@ test("representative visual cues stay within layout, storage, memory, and respon
   test.setTimeout(60_000);
   const document = buildRepresentativeDocument();
   await page.addInitScript(() => {
-    const target = window as Window & { __kjAtlasLongTasks?: number[] };
-    target.__kjAtlasLongTasks = [];
+    const target = window as Window & { __suiSensemakingLongTasks?: number[] };
+    target.__suiSensemakingLongTasks = [];
     if (PerformanceObserver.supportedEntryTypes.includes("longtask")) {
       new PerformanceObserver((list) => {
-        target.__kjAtlasLongTasks?.push(...list.getEntries().map((entry) => entry.duration));
+        target.__suiSensemakingLongTasks?.push(...list.getEntries().map((entry) => entry.duration));
       }).observe({ type: "longtask", buffered: true });
     }
   });
@@ -274,7 +274,7 @@ test("representative visual cues stay within layout, storage, memory, and respon
     loadedMetrics.metrics.find((metric) => metric.name === "JSHeapUsedSize")?.value ?? 0;
   const heapGrowthBytes = Math.max(0, loadedHeapBytes - baselineHeapBytes);
   const longTasks = await page.evaluate(() =>
-    (window as Window & { __kjAtlasLongTasks?: number[] }).__kjAtlasLongTasks ?? [],
+    (window as Window & { __suiSensemakingLongTasks?: number[] }).__suiSensemakingLongTasks ?? [],
   );
   const maxLongTaskMs = Math.max(0, ...longTasks);
 

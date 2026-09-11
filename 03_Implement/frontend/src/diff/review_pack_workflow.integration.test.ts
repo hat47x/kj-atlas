@@ -120,7 +120,7 @@ describe("review pack full workflow integration", () => {
       evidenceResult.document,
       parsedIncomingView.metadata,
       {
-        rootFolderPath: "kj-atlas-review-pack-20260221-020000",
+        rootFolderPath: "sui-sensemaking-review-pack-20260221-020000",
         safeMode: false,
         includeOutline: false,
         includeDiagnostics: false,

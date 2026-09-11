@@ -115,5 +115,5 @@
 - 公開 `ui_catalog.md` を利用者・運用者・評価担当者向けへ限定し、内部設計ブリーフを `02_Architecture/design/ui_design_handoff.md` へ物理分離した。
 - source revision、最終確認日、23状態の撮影結果、stale判定、公開Go条件を追加した。
 - release 5状態、Product Value 6状態、UI catalog 12状態を決定論的fixtureから再生成し、代表7画像を目視確認した。
-- 再撮影で発見したselector driftは、重複する`島を作成`のうちヘッダーを明示する既存E2Eと同じ修正で解消した。Playwright管理browserが無い環境向けに任意の `KJ_ATLAS_SCREENSHOT_BROWSER_PATH` を追加し、未指定時の挙動は維持した。
+- 再撮影で発見したselector driftは、重複する`島を作成`のうちヘッダーを明示する既存E2Eと同じ修正で解消した。Playwright管理browserが無い環境向けに任意の `SUI_SCREENSHOT_BROWSER_PATH` を追加し、未指定時の挙動は維持した。
 - 公開不可語0件、相対リンク/画像切れ0件、script syntax、撮影コマンド、Markdown体裁を確認した。新規ADRは不要。

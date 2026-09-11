@@ -161,10 +161,10 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 
 ### 区分3: runtime parameter key（優先度1・最小工数）
 
-- 抽出regex: `KJ_ATLAS_[A-Z0-9_]+`。ただし(a)マッチ直後の文字が`*`のもの、(b)マッチが`_`で終わるものは「接頭辞言及」（例: `KJ_ATLAS_AUDIT_*`系）であり検査対象外。2026-07-18の実機棚卸しでこのノイズは`KJ_ATLAS_AUDIT_`と`KJ_ATLAS_ACCESS_CONTROL_`の2件のみと確認済み。
-- 正本: `02_Architecture/runtime_parameter_registry.md`のMarkdown表行から第1セルがバッククォート付きキーの行（`| \`KJ_ATLAS_...\` |`で始まる行）を全表（Backend settings / Compose and frontend build keys / Verification harness keys）から収集した和集合。Private adapter表は`KJ_ATLAS_*`でないため自然に対象外。
+- 抽出regex: `SUI_[A-Z0-9_]+`。ただし(a)マッチ直後の文字が`*`のもの、(b)マッチが`_`で終わるものは「接頭辞言及」（例: `SUI_AUDIT_*`系）であり検査対象外。2026-07-18の実機棚卸しでこのノイズは`SUI_AUDIT_`と`SUI_ACCESS_CONTROL_`の2件のみと確認済み。
+- 正本: `02_Architecture/runtime_parameter_registry.md`のMarkdown表行から第1セルがバッククォート付きキーの行（`| \`SUI_...\` |`で始まる行）を全表（Backend settings / Compose and frontend build keys / Verification harness keys）から収集した和集合。Private adapter表は`SUI_*`でないため自然に対象外。
 - 2026-07-18棚卸し: 公開文書中の全43キー（ノイズ2件除く）はすべてregistryに存在 → **baseline是正なしで導入可能**。
-- テストクラス名: `RuntimeParameterKeyCheckTest`（正常/未掲載キー負例/`KJ_ATLAS_FOO_*`接頭辞言及の除外/スコープ外除外の4 test）。
+- テストクラス名: `RuntimeParameterKeyCheckTest`（正常/未掲載キー負例/`SUI_FOO_*`接頭辞言及の除外/スコープ外除外の4 test）。
 
 ### 区分4: repository path（優先度2）
 
@@ -204,10 +204,10 @@ npm script区分に続き、Compose service区分を実装した。残り3区分
 
 区分3（runtime parameter key）を実行計画どおり実装した。残り区分4〜6（repository path/CLI option/endpoint probe）は引き続き未実装のfollow-upとする。
 
-- `01_Plans/docs_contract_checks.py`に`_extract_registry_keys()`と`check_runtime_parameter_key_commands()`を追加した。抽出regex`KJ_ATLAS_[A-Z0-9_]+`のマッチが`_`で終わる場合（`KJ_ATLAS_AUDIT_*`等の接頭辞言及）は検査対象外とした。照合先は`02_Architecture/runtime_parameter_registry.md`の表行（第1セルがバッククォート付き`KJ_ATLAS_*`キーの行）全体。
+- `01_Plans/docs_contract_checks.py`に`_extract_registry_keys()`と`check_runtime_parameter_key_commands()`を追加した。抽出regex`SUI_[A-Z0-9_]+`のマッチが`_`で終わる場合（`SUI_AUDIT_*`等の接頭辞言及）は検査対象外とした。照合先は`02_Architecture/runtime_parameter_registry.md`の表行（第1セルがバッククォート付き`SUI_*`キーの行）全体。
 - **実装中に発見・修正した2件**:
-  1. 正本パースの自作バグ: 行抽出regexが`` `KEY` `` の直後に空白+`|`を要求しており、実際のregistryにある`` `KJ_ATLAS_API_KEY` ⚠️ ``（既知ギャップの注記マーカー付き行、`KJ_ATLAS_ALLOW_JIT_PROVISIONING`も同様）を拾えなかった。mainへ到達する前に、閉じバッククォートと`|`の間の任意非パイプ文字を許容するよう修正した（回帰テスト追加済み）。
-  2. registryの実在ギャップ: `04_Documentation/assets/screenshots/README.md`が使う`KJ_ATLAS_SCREENSHOT_HOST`/`_PORT`/`_BASE_URL`/`_OUTPUT_DIR`/`_BROWSER_PATH`の5キー（`capture_release_screenshots.mjs`等のscreenshot capture scriptが実際に読む環境変数）が、同種のAuth Level2 harness keyとは異なりregistryのどの表にも未登録だった。DX-DOC-04第1PRの`/api/health`typo修正と同じ「新規検査導入時に顕在化したbaselineの是正」として、Verification harness keys (non-public)表へ5行追加した。
+  1. 正本パースの自作バグ: 行抽出regexが`` `KEY` `` の直後に空白+`|`を要求しており、実際のregistryにある`` `SUI_API_KEY` ⚠️ ``（既知ギャップの注記マーカー付き行、`SUI_ALLOW_JIT_PROVISIONING`も同様）を拾えなかった。mainへ到達する前に、閉じバッククォートと`|`の間の任意非パイプ文字を許容するよう修正した（回帰テスト追加済み）。
+  2. registryの実在ギャップ: `04_Documentation/assets/screenshots/README.md`が使う`SUI_SCREENSHOT_HOST`/`_PORT`/`_BASE_URL`/`_OUTPUT_DIR`/`_BROWSER_PATH`の5キー（`capture_release_screenshots.mjs`等のscreenshot capture scriptが実際に読む環境変数）が、同種のAuth Level2 harness keyとは異なりregistryのどの表にも未登録だった。DX-DOC-04第1PRの`/api/health`typo修正と同じ「新規検査導入時に顕在化したbaselineの是正」として、Verification harness keys (non-public)表へ5行追加した。
 - `01_Plans/tests/test_docs_contract_checks.py`に`RuntimeParameterKeyCheckTest`（5 test: 正常例、⚠️マーカー付き行の許容、未掲載キー検出、接頭辞言及の除外、スコープ外文書の除外）を追加した。
 - `docs_check.py`へ`check_runtime_parameter_key_commands`を配線した。
 

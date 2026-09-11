@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SETTINGS_PATH = ROOT / "03_Implement/backend/src/kj_atlas_api/settings.py"
+SETTINGS_PATH = ROOT / "03_Implement/backend/src/sui_sensemaking_api/settings.py"
 REGISTRY_PATH = ROOT / "02_Architecture/runtime_parameter_registry.md"
 CONFIG_PATH = ROOT / "04_Documentation/configuration.md"
 
@@ -45,20 +45,20 @@ class OAuthClientFormatContractTests(unittest.TestCase):
         self.assertIn("any(character.isspace() for character in api_key)", bearer_helper)
         self.assertIn("any(not character.isprintable() for character in api_key)", bearer_helper)
         self.assertIn("value=self.saas_oauth_broker_http_client_id", validator)
-        self.assertIn('value_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"', validator)
+        self.assertIn('value_key="SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"', validator)
         self.assertIn("api_key=self.saas_oauth_broker_http_client_secret", validator)
-        self.assertIn('api_key_key="KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"', validator)
+        self.assertIn('api_key_key="SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"', validator)
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),
+            _public_row(REGISTRY_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),
+            _public_row(CONFIG_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_ID"),
         ):
             for term in ("2,048", "canonical", "空白", "制御文字"):
                 self.assertIn(term, row)
 
         for row in (
-            _public_row(REGISTRY_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),
-            _public_row(CONFIG_PATH, "KJ_ATLAS_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),
+            _public_row(REGISTRY_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),
+            _public_row(CONFIG_PATH, "SUI_SAAS_OAUTH_BROKER_HTTP_CLIENT_SECRET"),
         ):
             for term in ("非空", "canonical bearer", "空白", "制御文字"):
                 self.assertIn(term, row)

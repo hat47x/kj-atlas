@@ -5,14 +5,14 @@
 - Source Issue: N/A
 - Priority: P3
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/tenant_capability.py`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/tenant_capability.py`
 - Related ADR/Spec: `01_Plans/issues/done/issue-SAAS-TENANT-01-tenant-context-and-storage-foundation.md`
 - Expected verification level: `unit`
 
 ## 課題
 
 - 現在の問題: `TenantContext.membership_id`は`str | None`型であり、`LOCAL_DEFAULT_TENANT_CONTEXT`（`resolve_single_tenant_context`が`user_id is None`で呼ばれた場合に返るsingle-tenant既定context）では実際に`membership_id=None`になる。既存の`ExternalPolicyAccessControlAdapter`（`access_control.py`）は`_validate_policy_request_string(request.tenant.membership_id)`をデフォルト`optional=True`で呼び出しており、`None`を正しく許容する。しかし新設の`ExternalHttpTenantCapabilityResolver`（`tenant_capability.py`）の`_canonical_request_identifier(value: str | None)`は`optional`引数を持たず、`None`を渡すと無条件に例外を送出する。`tenant_capability.py`は`tenant.membership_id`をそのままこの関数へ渡している。
-- 利用者または開発への影響: `KJ_ATLAS_TENANT_CAPABILITY_RESOLVER=external_http`を設定した状態で、single-tenant既定contextから本resolverが呼び出されると、実際のHTTP呼び出しに至る前に必ず`TenantCapabilityUnavailableError`で失敗する。これがバグなのか、意図的な境界（single-tenant既定contextではtenant capability解決自体を想定しない設計）なのかは、呼び出し経路の全体設計を把握していないと判断できない。
+- 利用者または開発への影響: `SUI_TENANT_CAPABILITY_RESOLVER=external_http`を設定した状態で、single-tenant既定contextから本resolverが呼び出されると、実際のHTTP呼び出しに至る前に必ず`TenantCapabilityUnavailableError`で失敗する。これがバグなのか、意図的な境界（single-tenant既定contextではtenant capability解決自体を想定しない設計）なのかは、呼び出し経路の全体設計を把握していないと判断できない。
 
 ## 対応方針
 

@@ -2,7 +2,7 @@
 
 ## 位置づけ
 
-この記録は、KJ Atlas自身を日常的な開発対象としてKJ法で検討する継続dogfoodの第5ラウンドである。
+この記録は、SUI Sensemaking自身を日常的な開発対象としてKJ法で検討する継続dogfoodの第5ラウンドである。
 
 前ラウンドでは `COGNITIVE-EVAL-01` を対象とし、比較設計や実験ハーネスをさらに増やすより、隔離された新規コンテキストとC/Dでの実際のUI操作から、有効な生の実行記録を得ることが次の前進条件だと確認した。
 
@@ -12,7 +12,7 @@
 
 ## 今回の問い
 
-> KJ Atlasの一次利用仕事は、説明文として整っているだけなのか。それとも、現在の未完事項を見たときに「何を先に進め、何を待つか」を実際に分ける判定軸として使えるのか。
+> SUI Sensemakingの一次利用仕事は、説明文として整っているだけなのか。それとも、現在の未完事項を見たときに「何を先に進め、何を待つか」を実際に分ける判定軸として使えるのか。
 
 優先順位を後付けで正当化しないため、すでに異なるPriorityを持つ未完事項を同じ場に置いて比較した。
 
@@ -21,16 +21,16 @@
 - `01_Plans/issues/issue-PRODUCT-POSITION-01-primary-job-and-switch-reason.md`
 - `01_Plans/issues/issue-AI-IR-PROJECTION-01-llm-input-ir-as-ai-input-path.md`
 - `01_Plans/issues/issue-EXT-CONN-02-webhook-proposal-ingest.md`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r8.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r8.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02-r2.md`
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r10.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r10.json`
 - `01_Plans/dogfood/cognitive-dogfood-continuous-2026-09-02-r4.md`
 
 ## KJキャンバス
 
 正規データは次のDocumentV1に残した。
 
-- `01_Plans/dogfood/doc_kj_atlas_dogfood_r11.json`
+- `01_Plans/dogfood/doc_sui_sensemaking_dogfood_r11.json`
 
 今回のカードも生成AIが作成した提案段階の材料であるため、`textReviewed: false` としている。
 
@@ -50,7 +50,7 @@ IR未移行の経路では、人間がすでに残した関係、根拠リンク
 
 これは単なる「AIの回答品質をもっと上げたい」という改善とは少し性質が違う。
 
-KJ Atlasが一次価値として守ろうとしているのは、速い自動回答ではなく、根拠や異論、保留、人間の判断を途中で失わないことである。AI入力経路がそれらを落とすなら、AI支援を追加するほど一次価値と逆向きの力が働き得る。
+SUI Sensemakingが一次価値として守ろうとしているのは、速い自動回答ではなく、根拠や異論、保留、人間の判断を途中で失わないことである。AI入力経路がそれらを落とすなら、AI支援を追加するほど一次価値と逆向きの力が働き得る。
 
 したがって、残るIR移行は、少なくとも現在のP1を維持するだけの直接的な価値根拠を持つ。
 

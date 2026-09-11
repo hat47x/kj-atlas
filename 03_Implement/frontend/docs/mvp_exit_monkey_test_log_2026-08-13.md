@@ -1,4 +1,4 @@
-# kj-atlas アドホック・モンキーテスト記録（2026-08-13）
+# sui-sensemaking アドホック・モンキーテスト記録（2026-08-13）
 
 対象読者: maintainer / QA contributor。開発者向け検証記録であり、公開文書ではない。
 
@@ -72,5 +72,5 @@
 ```bash
 cd 03_Implement/frontend
 node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173 &
-KJ_ATLAS_MONKEY_SEED=21 KJ_ATLAS_MONKEY_ACTIONS=120 node ./scripts/monkey_ui_sweep.mjs
+SUI_MONKEY_SEED=21 SUI_MONKEY_ACTIONS=120 node ./scripts/monkey_ui_sweep.mjs
 ```

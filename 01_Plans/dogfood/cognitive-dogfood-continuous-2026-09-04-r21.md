@@ -3,7 +3,7 @@
 - Date: 2026-09-04
 - Scope: 日常開発の自己分析。Case 001〜003の統制比較には含めない。
 - Question: formal Case 001〜003の製品snapshotを2026-08-27時点へ凍結したまま、急速に進む現在mainに対する検証価値をどう失わずに保つか。
-- Canvas: `doc_kj_atlas_dogfood_r21.json`
+- Canvas: `doc_sui_sensemaking_dogfood_r21.json`
 - Result class: 継続dogfoodの実験運用記録。formal Caseの結果、第三者価値実証、製品価値の証明には数えない。
 
 ## 1. 出発点
@@ -12,7 +12,7 @@ formal Case 001〜003では、製品資料と比較条件を `hat47x/kj-atlas@22
 
 一方、2026-09-04時点のmain `16136ef03d516facd82f438fd3f158c3fa9456f8` は、固定snapshotより986 commits先へ進んでいる。R7〜R20の継続dogfood、AI入力IR、merge意味論、SaaS関連の実装・検証などもこの期間に追加された。
 
-この差を見て元のRound 1を現在mainへ差し替えると、事前登録した比較条件を自分たちで壊す。しかし、元の結果をそのまま「現在のKJ Atlasの結論」と呼べば、今度は時間経過による移送妥当性を過大評価する。
+この差を見て元のRound 1を現在mainへ差し替えると、事前登録した比較条件を自分たちで壊す。しかし、元の結果をそのまま「現在のSUI Sensemakingの結論」と呼べば、今度は時間経過による移送妥当性を過大評価する。
 
 したがって問題は、**凍結を守るか、現在性を取るかの二者択一ではない**。
 
@@ -29,20 +29,20 @@ Case 001の固定20資料の一つ `README.md` は、固定manifest上のblob SH
 1. repository全体のcommit距離。
 2. formal inputとして使った各資料の意味ドリフト。
 3. そのCaseの問いに直接関係する製品契約の変化。
-4. KJ Atlas runtime/UI contractの変化。
+4. SUI Sensemaking runtime/UI contractの変化。
 5. 元の結論が現在状態でも成立するかという移送結果。
 
 ## 3. evidence snapshotとruntimeを別概念として確認した結果
 
-formal packageは、固定製品資料、Arm固有の`launch.md`、C/Dの空starter、B/Dの固定skill sourceを運ぶ。しかし、KJ Atlasの実行binaryやfrontend一式をartifactへ同梱していない。
+formal packageは、固定製品資料、Arm固有の`launch.md`、C/Dの空starter、B/Dの固定skill sourceを運ぶ。しかし、SUI Sensemakingの実行binaryやfrontend一式をartifactへ同梱していない。
 
 そのため、packageだけを見ると「証拠は8月27日、UIは操作者がその時点で使える最新版」という読み方も技術的には可能だった。
 
-ただし、既存のfreeze記録は「Case 001〜003は、同じKJ Atlas product commitを使用する」としている。C/D共通UI runbookも「製品runtimeの参照基準」を、各Caseで固定したproduct snapshotとpreflightで確認済みの同一UI contractとしている。
+ただし、既存のfreeze記録は「Case 001〜003は、同じSUI Sensemaking product commitを使用する」としている。C/D共通UI runbookも「製品runtimeの参照基準」を、各Caseで固定したproduct snapshotとpreflightで確認済みの同一UI contractとしている。
 
 したがってformal Round 1の既存契約に最も整合する解釈は、次である。
 
-> **製品について読む証拠だけでなく、C/Dで操作するKJ Atlas runtimeも `2232b3bb26647e5c4a083f55bdbf83c161698649` を基準にする。**
+> **製品について読む証拠だけでなく、C/Dで操作するSUI Sensemaking runtimeも `2232b3bb26647e5c4a083f55bdbf83c161698649` を基準にする。**
 
 ここで不足していたのは新しいtreatmentではなく、その既存条件をoperator手順へ実行可能な形で明示することである。
 
@@ -61,7 +61,7 @@ Case 001〜003の元のRound 1について、次は変更しない。
 
 R7〜R20や2026-09-04 mainの新しい実装を、元のArmへ「現在性を上げるため」に追加しない。これらは元の比較では後発情報であり、混ぜれば別実験になる。
 
-C/Dでは、可能な限り固定product commitのKJ Atlas runtimeを起動して操作する。current mainを代用して結果だけ元のformal Caseへ入れない。
+C/Dでは、可能な限り固定product commitのSUI Sensemaking runtimeを起動して操作する。current mainを代用して結果だけ元のformal Caseへ入れない。
 
 固定runtimeを実際に起動できない、重大な安全上の理由で使用できない、または実験そのものが成立しない契約破損が判明した場合は、黙ってcurrent mainへ切り替えない。元runを`invalid / blocked`として理由を保存し、別revisionとして再設計する。
 
@@ -83,7 +83,7 @@ R7〜R20は、formal Caseを待つ間にも実際の開発判断へKJ的外部�
 
 特にR15→R16では、同じ測定値を保持したまま解釈を訂正した。R18→R20では、merge方式という意味属性がbackendだけでなくfrontend、fallback、UI、人間判断、保存済みdecisionまで通らなければ「存在する」とは言えないことを実装へ戻した。
 
-ただし、これらは比較条件を知った設計者コンテキストで行われ、通常文書/skill/KJ Atlasを分離した対照を持たない。したがって、formal Caseの認知増分を証明する材料には昇格させない。
+ただし、これらは比較条件を知った設計者コンテキストで行われ、通常文書/skill/SUI Sensemakingを分離した対照を持たない。したがって、formal Caseの認知増分を証明する材料には昇格させない。
 
 役割は次のように分ける。
 
@@ -124,7 +124,7 @@ formal portfolioでは比較可能性のために時計を止める。しかし�
 ## 9. 次工程
 
 1. formal inputファイルは変更しない。
-2. C/D operator手順に、KJ Atlas runtimeも固定product commitから起動することを明示する。
+2. C/D operator手順に、SUI Sensemaking runtimeも固定product commitから起動することを明示する。
 3. Case 001 Arm Cを、fresh context + frozen evidence + frozen runtimeで実走する。
 4. C → D → B → A、Case 001 → 002 → 003の順序を維持する。
 5. 元portfolioのblind review / unblind後に初めて、current-state replicationの必要性を判定する。

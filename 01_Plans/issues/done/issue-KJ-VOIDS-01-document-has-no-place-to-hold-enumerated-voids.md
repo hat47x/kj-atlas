@@ -5,25 +5,25 @@
 - Source Issue: `01_Plans/research/direction-review-2026-08-13.md` 優先3-1
 - Priority: P1
 - Owner: Maintainer
-- Scope: `03_Implement/frontend/src/domain/types.ts`, `void_detection.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `03_Implement/backend/src/kj_atlas_api/models.py`, `02_Architecture/schemas.md`
-- Related ADR/Spec: `00_Prompt/kj_technique.md`（§4 空白の列挙・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
-- Norms: `KJT-INSPECT-03`, `KJT-SIGN-04`
+- Scope: `03_Implement/frontend/src/domain/types.ts`, `void_detection.ts`, `validate.ts`, `inquiry_bundle_safe_mode.ts`, `App.tsx`, `03_Implement/backend/src/sui_sensemaking_api/models.py`, `02_Architecture/schemas.md`
+- Related ADR/Spec: `00_Prompt/sensemaking_technique.md`（§4 空白の列挙・§6 失敗の徴候）, `01_Plans/adr/ADR-0058-document-contract-v1-rebaseline.md`
+- Norms: `SUI-INSPECT-03`, `SUI-SIGN-04`
 - Expected verification level: `integration`
 
 ## 課題
 
 方法論の正本は空白の列挙を「この技法の最大の産物のひとつ」とし、空白ゼロを失敗の徴候としている。
 
-> `KJT-INSPECT-03` 空白を見つける（`00_Prompt/kj_technique.md` §4）
+> `SUI-INSPECT-03` 空白を見つける（`00_Prompt/sensemaking_technique.md` §4）
 >
-> 未実装の帰結として `KJT-SIGN-04`（空白の指摘がゼロ件）が検出不能である。
+> 未実装の帰結として `SUI-SIGN-04`（空白の指摘がゼロ件）が検出不能である。
 > **空白を見つける（この技法の最大の産物のひとつ）**
 > 配置すると、「ここに本来あるべき束が無い」という空白が見える。
 > 空白を必ず言語化して列挙する。「見当たらなかった」で済ませない。
 > **空白がゼロ件なら、それは材料が完全なのではなく、探索が足りない。**
 > 空白は次の情報収集の指示になる。
 
-しかし `DocumentV1` には空白を保持できる場所が無い（`kj_technique.md:196` の「空白の指摘がゼロ件」を評価できない）。方向性レビュー優先3-1の「業務✓✓ / データ✗ / 機能✗」の典型。
+しかし `DocumentV1` には空白を保持できる場所が無い（`sensemaking_technique.md:196` の「空白の指摘がゼロ件」を評価できない）。方向性レビュー優先3-1の「業務✓✓ / データ✗ / 機能✗」の典型。
 
 ## 対応方針
 

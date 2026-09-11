@@ -58,8 +58,8 @@ Current normative anchors:
 - **互換なし（backward-incompatible）**
   - 既存列の削除、必須化、意味変更は未実施。
   - `Document.version` の意味変更を伴う migration は未実施。
-  - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json --dry-run`
-  - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json`
+  - dry-run: `python -m sui_sensemaking_api.backfill_identity_refs --database-url <SUI_DATABASE_URL> --mapping-json mapping.json --dry-run`
+  - apply: `python -m sui_sensemaking_api.backfill_identity_refs --database-url <SUI_DATABASE_URL> --mapping-json mapping.json`
 
 属性境界（persist/transient/forbidden）:
 

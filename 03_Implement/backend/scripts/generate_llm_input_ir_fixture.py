@@ -3,7 +3,7 @@
 
 The spec's AC-1 / AC-4 require the fixture to be derivable from the spec alone
 and without any LLM: this script only runs the deterministic projection in
-`kj_atlas_api.llm_input_ir`, so `KJ_ATLAS_LLM_PROVIDER=none` is irrelevant here.
+`sui_sensemaking_api.llm_input_ir`, so `SUI_LLM_PROVIDER=none` is irrelevant here.
 
 Usage (from `03_Implement/backend`):
 
@@ -20,14 +20,14 @@ from pathlib import Path
 _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_BACKEND_ROOT / "src"))
 
-from kj_atlas_api.llm_input_ir import (  # noqa: E402
+from sui_sensemaking_api.llm_input_ir import (  # noqa: E402
     IR_VERSION,
     build_llm_input_ir,
     ir_sha256,
     source_from_document,
     validate_llm_input_ir,
 )
-from kj_atlas_api.models import DocumentV1  # noqa: E402
+from sui_sensemaking_api.models import DocumentV1  # noqa: E402
 
 FIXTURE_DIR = _BACKEND_ROOT / "tests" / "fixtures"
 DOCUMENT_PATH = FIXTURE_DIR / "llm_input_ir_document.json"

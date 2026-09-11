@@ -21,7 +21,7 @@ export function registerContextProjectionTool(server: McpServer, documentClientC
     {
       title: "Get context projection",
       description:
-        "Read-only, constraint-scoped, SafeMode-respecting projection of a kj-atlas document " +
+        "Read-only, constraint-scoped, SafeMode-respecting projection of a sui-sensemaking document " +
         "(ADR-0054 stage 1). The output never includes a score, rank, confidence, or priority " +
         "value of any kind. When safeMode is true (the default), no card text is exposed -- only " +
         "structure and counts. " +

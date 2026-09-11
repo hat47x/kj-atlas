@@ -1,7 +1,7 @@
-# kj-atlas AI プロンプト / 応答契約コア — 監査・再設計・評価ルーブリック
+# sui-sensemaking AI プロンプト / 応答契約コア — 監査・再設計・評価ルーブリック
 
 作成: 2026-07-23 / 対象コミット: `main`（origin と同期）
-対象: `03_Implement/backend/src/kj_atlas_api/routes/ai.py` の 5 ビルダー
+対象: `03_Implement/backend/src/sui_sensemaking_api/routes/ai.py` の 5 ビルダー
 成果物種別: **ドラフトのみ（コード変更なし）**。以下の再設計文は「downstream エンジニアがそのまま差し込める」形で提示する。
 
 ---
@@ -341,7 +341,7 @@ return "\n".join(
 - **I5〔J〕 少数意見保護**: 馴染まないカード/少数の声が黙殺されていない（`ADR-0048:49`）。混在時は warnings か本文で緊張を提示。
 - **I6〔J〕 矛盾の検出**: メンバー間に矛盾があるとき warnings に反映（`llm_quality_strategy.md:43` missing contradictions）。
 - **I7〔J〕 register**: 推量寄りの日本語（断定しすぎない）。
-- **I8〔J〕 転写検査**: `summaryText` が他の島の要約としても成立してしまわないか（分類名化していないか。`00_Prompt/kj_technique.md §3` 転写検査）。
+- **I8〔J〕 転写検査**: `summaryText` が他の島の要約としても成立してしまわないか（分類名化していないか。`00_Prompt/sensemaking_technique.md §3` 転写検査）。
 
 ### 3.3 generate narrative
 - **G-N1〔D〕** `text` 非空（`ai.py:292`）。

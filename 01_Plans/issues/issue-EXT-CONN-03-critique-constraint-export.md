@@ -22,7 +22,7 @@
 
 ## 背景
 
-TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好チェックの57.5%が違反されたまま残る」ことを示した。記憶への保存では不十分で、**次回実行の制約として明示的に渡す**必要がある。kj-atlas には critique（違和感・理由不要・非ブロッキング）→ constraint（再配置条件）の内部設計が既にあり（`hil_rs_payload.ts` の `buildHilRsCritiqueInputs`: card/island の critiqueTags＋自由記述 → `CritiqueInput.constraintHints`）、これを外部エージェントへ輸出することで「同じ誤りを繰り返すAI」への訂正チャネルになる（リサーチ役割C）。ADR-0054 は本段階の効果を3段階中最大と位置づけている。
+TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好チェックの57.5%が違反されたまま残る」ことを示した。記憶への保存では不十分で、**次回実行の制約として明示的に渡す**必要がある。sui-sensemaking には critique（違和感・理由不要・非ブロッキング）→ constraint（再配置条件）の内部設計が既にあり（`hil_rs_payload.ts` の `buildHilRsCritiqueInputs`: card/island の critiqueTags＋自由記述 → `CritiqueInput.constraintHints`）、これを外部エージェントへ輸出することで「同じ誤りを繰り返すAI」への訂正チャネルになる（リサーチ役割C）。ADR-0054 は本段階の効果を3段階中最大と位置づけている。
 
 ## 方式設計（2026-07-15 固定。正本: `schemas.md` §18）
 
@@ -81,7 +81,7 @@ TRACE（arXiv:2606.13174）は「Mem0 記憶を使っても適用可能な選好
 
 - 制約の自動生成・自動学習（人間の付けた違和感・判断のみが源泉）。
 - 制約への重み・スコア付け（反スコアリング維持）。
-- エージェント側の遵守実装・遵守検証（受け手の責務。kj-atlas は明示的に渡すところまで）。agent-response.v1 への「制約に応答する」フィールドの追加もしない（§18.8）。
+- エージェント側の遵守実装・遵守検証（受け手の責務。sui-sensemaking は明示的に渡すところまで）。agent-response.v1 への「制約に応答する」フィールドの追加もしない（§18.8）。
 - `contradictionSignalDecisions`・`shelf` の輸出（§18.3。将来の版でも加算のみ）。
 - 通知・プッシュ（縁側の原則維持）。
 

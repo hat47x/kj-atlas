@@ -6,13 +6,13 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.db import get_db
-from kj_atlas_api.main import app
-from kj_atlas_api.models import AIProposalDecisionEventRow, AIProposalRow, Base
-from kj_atlas_api.model_registry_repository import register_model, register_provider
-from kj_atlas_api.models_ai import ProposalEnvelope
-from kj_atlas_api.routes import ai
-from kj_atlas_api.settings import settings as _settings
+from sui_sensemaking_api.db import get_db
+from sui_sensemaking_api.main import app
+from sui_sensemaking_api.models import AIProposalDecisionEventRow, AIProposalRow, Base
+from sui_sensemaking_api.model_registry_repository import register_model, register_provider
+from sui_sensemaking_api.models_ai import ProposalEnvelope
+from sui_sensemaking_api.routes import ai
+from sui_sensemaking_api.settings import settings as _settings
 
 
 @pytest.fixture()

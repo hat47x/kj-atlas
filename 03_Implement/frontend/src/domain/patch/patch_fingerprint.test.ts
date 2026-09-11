@@ -24,7 +24,7 @@ describe("patch_fingerprint", () => {
 
   it("compute/verify fingerprint", async () => {
     const patch: PatchV1 = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op-1", kind: "delete_card", cardId: "c1" }],
     };

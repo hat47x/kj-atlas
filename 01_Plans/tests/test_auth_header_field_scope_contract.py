@@ -5,19 +5,19 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-AUTH_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/auth_context.py'
-TRUSTED_AUTH_EDGE = ROOT / '03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py'
-SAAS_REQUEST_CONTEXT = ROOT / '03_Implement/backend/src/kj_atlas_api/saas_request_context.py'
+AUTH_CONTEXT = ROOT / '03_Implement/backend/src/sui_sensemaking_api/auth_context.py'
+TRUSTED_AUTH_EDGE = ROOT / '03_Implement/backend/src/sui_sensemaking_api/trusted_auth_edge.py'
+SAAS_REQUEST_CONTEXT = ROOT / '03_Implement/backend/src/sui_sensemaking_api/saas_request_context.py'
 CONFIG = ROOT / '04_Documentation/configuration.md'
 REGISTRY = ROOT / '02_Architecture/runtime_parameter_registry.md'
 API_DOC = ROOT / '02_Architecture/api.md'
 
 FIELDS = {
-    'KJ_ATLAS_AUTH_PROVIDER_FIELD': 'auth_provider_field',
-    'KJ_ATLAS_AUTH_USER_FIELD': 'auth_user_field',
-    'KJ_ATLAS_AUTH_EMAIL_FIELD': 'auth_email_field',
-    'KJ_ATLAS_AUTH_NAME_FIELD': 'auth_name_field',
-    'KJ_ATLAS_AUTH_SUBJECT_FIELD': 'auth_subject_field',
+    'SUI_AUTH_PROVIDER_FIELD': 'auth_provider_field',
+    'SUI_AUTH_USER_FIELD': 'auth_user_field',
+    'SUI_AUTH_EMAIL_FIELD': 'auth_email_field',
+    'SUI_AUTH_NAME_FIELD': 'auth_name_field',
+    'SUI_AUTH_SUBJECT_FIELD': 'auth_subject_field',
 }
 
 

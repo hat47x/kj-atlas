@@ -1428,7 +1428,7 @@
 - VerificationLevel=docs-check と GoNoGoGate=Required を維持。
 
 ### Phase 5 Verify（docs-check）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/sui-sensemaking`
 - 実行: `git diff --check`
 - 自己修復回数: 0/3（失敗なし）。
 

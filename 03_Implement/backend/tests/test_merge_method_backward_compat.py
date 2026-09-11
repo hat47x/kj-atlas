@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 
-from kj_atlas_api.models import MergeSuggestionDecision
+from sui_sensemaking_api.models import MergeSuggestionDecision
 
 
 def _decision_payload() -> dict[str, object]:

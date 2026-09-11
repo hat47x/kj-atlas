@@ -14,10 +14,10 @@ down_revision: str | None = "20260717_0008"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-DOCUMENT_POLICY = "kj_atlas_documents_tenant_isolation"
-MERGE_LOG_POLICY = "kj_atlas_merge_logs_tenant_isolation"
+DOCUMENT_POLICY = "sui_sensemaking_documents_tenant_isolation"
+MERGE_LOG_POLICY = "sui_sensemaking_merge_logs_tenant_isolation"
 TENANT_EXPRESSION = (
-    "tenant_id = NULLIF(current_setting('kj_atlas.tenant_id', true), '')"
+    "tenant_id = NULLIF(current_setting('sui_sensemaking.tenant_id', true), '')"
 )
 
 

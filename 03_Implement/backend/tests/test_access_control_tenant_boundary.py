@@ -4,14 +4,14 @@ from dataclasses import replace
 
 import pytest
 
-from kj_atlas_api.access_control import (
+from sui_sensemaking_api.access_control import (
     AccessDecision,
     AccessRequest,
     AccessResource,
     AuthContext,
     resolve_access_decision,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 
 
 class RecordingAdapter:

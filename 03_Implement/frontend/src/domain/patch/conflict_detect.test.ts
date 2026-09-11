@@ -23,7 +23,7 @@ describe("detectPatchConflicts", () => {
     const baseline = makeDoc("base");
     const current = makeDoc("yours");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
     };
@@ -39,7 +39,7 @@ describe("detectPatchConflicts", () => {
     const baseline = makeDoc("base");
     const current = makeDoc("base");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
     };
@@ -54,7 +54,7 @@ describe("detectPatchConflicts", () => {
     const baseline = makeDoc("base");
     const current = makeDoc("updated-by-you");
     const patch: PatchDocument = {
-      kind: "kj-atlas-patch",
+      kind: "sui-sensemaking-patch",
       version: 1,
       ops: [{ id: "op1", kind: "delete_card", cardId: "c1" }],
     };

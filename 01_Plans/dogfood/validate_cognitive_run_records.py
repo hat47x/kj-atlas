@@ -20,7 +20,7 @@ EXPECTED_ORDER = {"C": 1, "D": 2, "B": 3, "A": 4}
 CASE_CONTRACTS = {
     "case-001": {
         "question": (
-            "KJ Atlasは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、"
+            "SUI Sensemakingは、既存のAIチャット、ホワイトボード、質的分析ツール、文書/issue管理では十分に満たしにくい、"
             "どの利用仕事のために存在するべきか。現在の設計・実装・dogfoodは、その価値をどこまで実現し、"
             "何をまだ実証できていないか。"
         ),
@@ -29,7 +29,7 @@ CASE_CONTRACTS = {
     },
     "case-002": {
         "question": (
-            "KJ Atlasのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、"
+            "SUI Sensemakingのカード化、束ね、表札、反対視点、空白探索、配置、叙述などのAI支援について、"
             "どこまでを提案・自動化し、どこで人間の判断・確認・有益な摩擦を必須とするべきか。"
             "現在のproposal-only原則は、操作ごとの誤り方と利用価値に対して粗すぎないか、"
             "または十分に一般的な安全境界か。"
@@ -39,7 +39,7 @@ CASE_CONTRACTS = {
     },
     "case-003": {
         "question": (
-            "KJ Atlasはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な"
+            "SUI Sensemakingはoffline/local/self-hostによるデータ統制と、共同分析・共有・組織導入に必要な"
             "同期/collaborationをどの境界で両立するべきか。local-firstを中核価値、配備オプション、"
             "安全境界、または特定利用ケース向け要件のどれとして扱うべきか。"
         ),
@@ -71,7 +71,7 @@ REQUIRED_META = [
     "Execution order position",
     "Operator",
     "Model/provider",
-    "KJ Atlas version/commit",
+    "SUI Sensemaking version/commit",
     "cultural-substrate-weaving version/commit",
     "Source manifest ID",
     "Execution artifact name",
@@ -357,9 +357,9 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
                 "under the preregistered C→D→B→A order"
             )
 
-    if PRODUCT_SHA not in fields.get("KJ Atlas version/commit", ""):
+    if PRODUCT_SHA not in fields.get("SUI Sensemaking version/commit", ""):
         errors.append(
-            "KJ Atlas snapshot does not match the frozen cognitive-dogfood product SHA"
+            "SUI Sensemaking snapshot does not match the frozen cognitive-dogfood product SHA"
         )
 
     skill_version = fields.get(
@@ -449,7 +449,7 @@ def validate_record(path: Path) -> tuple[list[str], list[str]]:
         if "## 10. InquiryJourney actual-use record (C/D only)" not in text:
             errors.append("C/D requires InquiryJourney actual-use section")
         for label in (
-            "KJ Atlas document ID/file",
+            "SUI Sensemaking document ID/file",
             "InquiryJourney/bundle reference",
         ):
             value = fields.get(label)

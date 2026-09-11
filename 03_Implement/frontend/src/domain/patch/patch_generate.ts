@@ -18,7 +18,7 @@ export async function buildPatchForExport(patch: PatchV1, metadata: PatchExportM
     ...patch,
     author: cleanOptionalText(metadata.author),
     authorNote: cleanOptionalText(metadata.authorNote),
-    sourceApp: cleanOptionalText(metadata.sourceApp) ?? "kj-atlas",
+    sourceApp: cleanOptionalText(metadata.sourceApp) ?? "sui-sensemaking",
   };
 
   const fingerprint = await computePatchFingerprint(next);

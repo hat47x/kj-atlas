@@ -6,12 +6,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "02_Architecture/runtime_parameter_registry.md"
-TRUSTED_SAAS_RUNTIME = ROOT / "03_Implement/backend/src/kj_atlas_api/trusted_saas_runtime.py"
+TRUSTED_SAAS_RUNTIME = ROOT / "03_Implement/backend/src/sui_sensemaking_api/trusted_saas_runtime.py"
 
 KEYS_AND_TYPES = {
-    "KJ_ATLAS_ACCESS_CONTROL_ADAPTER": "ExternalPolicyAccessControlAdapter",
-    "KJ_ATLAS_DOCUMENT_POLICY_BINDING_RESOLVER": "ExternalHttpDocumentPolicyBindingResolver",
-    "KJ_ATLAS_TENANT_CAPABILITY_RESOLVER": "ExternalHttpTenantCapabilityResolver",
+    "SUI_ACCESS_CONTROL_ADAPTER": "ExternalPolicyAccessControlAdapter",
+    "SUI_DOCUMENT_POLICY_BINDING_RESOLVER": "ExternalHttpDocumentPolicyBindingResolver",
+    "SUI_TENANT_CAPABILITY_RESOLVER": "ExternalHttpTenantCapabilityResolver",
 }
 
 

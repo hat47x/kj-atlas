@@ -8,7 +8,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from benchmark_generation_codec import benchmark_git
-from kj_atlas_api.generation_codec import (
+from sui_sensemaking_api.generation_codec import (
     EncodedGenerationBlob,
     canonical_json_bytes,
     encode_generation,

@@ -16,8 +16,8 @@ import { storeTokens } from "./token_store";
 // Storage keys (must match oauth_login.ts)
 // ---------------------------------------------------------------------------
 
-const PKCE_VERIFIER_KEY = "kj_atlas_pkce_verifier";
-const OAUTH_STATE_KEY = "kj_atlas_oauth_state";
+const PKCE_VERIFIER_KEY = "sui_sensemaking_pkce_verifier";
+const OAUTH_STATE_KEY = "sui_sensemaking_oauth_state";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -26,7 +26,7 @@ const OAUTH_STATE_KEY = "kj_atlas_oauth_state";
 function resolveBrokerBaseUrl(): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const env = (import.meta as any).env as Record<string, string> | undefined;
-  return env?.KJ_ATLAS_BROKER_BASE_URL?.trim() || "http://localhost:18081";
+  return env?.SUI_BROKER_BASE_URL?.trim() || "http://localhost:18081";
 }
 
 // ---------------------------------------------------------------------------

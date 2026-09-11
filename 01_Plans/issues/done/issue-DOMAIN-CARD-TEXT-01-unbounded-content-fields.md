@@ -5,13 +5,13 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: Maintainer
-- Scope: `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/frontend/src/domain/validate_doc.ts`
+- Scope: `03_Implement/backend/src/sui_sensemaking_api/models.py`, `03_Implement/frontend/src/domain/validate_doc.ts`
 - Related ADR/Spec: `02_Architecture/schemas.md`
 - Expected verification level: `unit`
 
 ## 課題
 
-- 現在の問題: このコードベースは監査・セッション関連fieldを一貫して文字数上限で境界づけている（`audit.py`の`MAX_AUDIT_IDENTIFIER_LENGTH`等、`models.py`の`RelationSummary.text`は`Field(max_length=RELATION_SUMMARY_TEXT_MAX_LENGTH)`）。一方、同じ`models.py`内の主要コンテンツfield — `Card.text`、`Island.title`/`summaryText`、`Narrative.text`/`title`、`EvidenceLink.note`、`MergeSuggestion.mergedTextDraft` — にはいずれも`max_length`が指定されていない（`grep max_length 03_Implement/backend/src/kj_atlas_api/models.py`でヒットするのは`RelationSummary.text`関連の1箇所のみ）。frontend側の`validate_doc.ts`も非空・trimの確認のみで文字数上限は確認していない。
+- 現在の問題: このコードベースは監査・セッション関連fieldを一貫して文字数上限で境界づけている（`audit.py`の`MAX_AUDIT_IDENTIFIER_LENGTH`等、`models.py`の`RelationSummary.text`は`Field(max_length=RELATION_SUMMARY_TEXT_MAX_LENGTH)`）。一方、同じ`models.py`内の主要コンテンツfield — `Card.text`、`Island.title`/`summaryText`、`Narrative.text`/`title`、`EvidenceLink.note`、`MergeSuggestion.mergedTextDraft` — にはいずれも`max_length`が指定されていない（`grep max_length 03_Implement/backend/src/sui_sensemaking_api/models.py`でヒットするのは`RelationSummary.text`関連の1箇所のみ）。frontend側の`validate_doc.ts`も非空・trimの確認のみで文字数上限は確認していない。
 - 利用者または開発への影響: 極端に長い文字列を持つ文書が保存・共有された場合、他のfieldが持つ境界保護（監査ログの肥大化防止、HTTP転送量の制限等）と一貫しない挙動になる。ただし、この資料型ツールの性質上「長い引用・議事録の丸ごと保持」が正当な用途であり得るため、適切な上限値そのものは製品判断を要する。
 
 ## 対応方針

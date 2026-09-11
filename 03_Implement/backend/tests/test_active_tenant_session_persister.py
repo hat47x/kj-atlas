@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-import kj_atlas_api.active_tenant_session as active_tenant_session
-from kj_atlas_api.active_tenant_session import (
+import sui_sensemaking_api.active_tenant_session as active_tenant_session
+from sui_sensemaking_api.active_tenant_session import (
     InMemoryActiveTenantSessionPersister,
     TenantSessionChangedError,
     _new_session_version,
     canonical_tenant_session_version,
     tenant_session_cookie_is_secure,
 )
-from kj_atlas_api.tenant_context import TenantContext
+from sui_sensemaking_api.tenant_context import TenantContext
 from tests.conftest import fake_request, fake_response
 
 
@@ -143,7 +143,7 @@ class TestInMemoryActiveTenantSessionPersister:
 
         assert "user-1" not in persister._sessions
         cookie = response.headers["set-cookie"]
-        assert "Kj-Atlas-Tenant-Session-Version=" in cookie
+        assert "Sui-Sensemaking-Tenant-Session-Version=" in cookie
         assert "Max-Age=0" in cookie
         assert "HttpOnly" in cookie
         assert "Secure" in cookie
@@ -232,4 +232,4 @@ class TestInMemoryActiveTenantSessionPersister:
             )
 
         assert persister._sessions["user-1"] == expected
-        assert "Kj-Atlas-Tenant-Session-Version" not in response.headers.get("set-cookie", "")
+        assert "Sui-Sensemaking-Tenant-Session-Version" not in response.headers.get("set-cookie", "")

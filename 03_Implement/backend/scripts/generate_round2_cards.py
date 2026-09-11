@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate the W-type round-2 (現状把握) cards for kj-atlas self-improvement.
+"""Generate the W-type round-2 (現状把握) cards for sui-sensemaking self-improvement.
 
-Round 2 posture (現状把握) gathers the current state of kj-atlas AND external
+Round 2 posture (現状把握) gathers the current state of sui-sensemaking AND external
 knowledge (KJ method practice, human-AI collaboration research) as cards. These
 extend the round-1 200 cards naturally.
 
-Sources: kj_technique.md (50-100 cards normal / 一行見出し for 1000+),
+Sources: sensemaking_technique.md (50-100 cards normal / 一行見出し for 1000+),
 W型問題解決モデル (川喜田), Randazzo et al. 2025 (Cyborgs/Centaurs/
 Self-Automators, cognitive surrender), Human-AI Collaboration Cards.
 """
@@ -63,22 +63,22 @@ CARDS: list[tuple[str, str]] = [
     ("ha-11", "最終的な意思決定は参加者間の相互作用で行う設計が望ましい（人間×AI協働）"),
     ("ha-12", "生成AIと人間の協働で得た洞察の質がAI単独より高いことが本質価値である（人間×AI協働）"),
 
-    # --- kj-atlas 現状把握（内部観察の整理） ---
-    ("ks-01", "kj-atlasは現在、単一業態・4カード規模のE2Eでしか実物大フローを検証していない（kj-atlas現状）"),
-    ("ks-02", "階層島（parentIslandId）はschemaにあるがE2Eで未固定である（kj-atlas現状）"),
-    ("ks-03", "W型6ラウンドは要件（w_type_iterative_inquiry_requirements.md）にあるがE2Eで未検証である（kj-atlas現状）"),
-    ("ks-04", "ロール4区分（システム管理者/業務管理者/一般ユーザ/閲覧専用）の境界がE2Eで未固定である（kj-atlas現状）"),
-    ("ks-05", "card-groupsは100枚上限が200枚の束ねを遮っていた（kj-atlas現状）"),
-    ("ks-06", "接地は10件上限で、大きな島の表札が書けない（kj-atlas現状）"),
-    ("ks-07", "大量カードの「一行見出し」集約（階層化）が未実装である（kj-atlas現状）"),
-    ("ks-08", "多層図解（全体インデックス＋細部）が未対応である（kj-atlas現状）"),
-    ("ks-09", "グループ化の「最大10グループ」原則に対応する収束UIが未検証である（kj-atlas現状）"),
-    ("ks-10", "人間×AI協働の3モード（Cyborgs/Centaurs/Self-Automators）に対応する検証がない（kj-atlas現状）"),
-    ("ks-11", "認知的放棄（Self-Automators）を防ぐ proposal-only・human_reviewed のUI固定が不足している（kj-atlas現状）"),
-    ("ks-12", "カードの「境界オブジェクト」としての役割（外在化・媒介）がUIで示されていない（kj-atlas現状）"),
-    ("ks-13", "大量カードのUI的許容（一画面での可読性・ナビゲーション）が未検証である（kj-atlas現状）"),
-    ("ks-14", "大量カードの整合的な取り扱い（一貫した束ね・島統合）が未検証である（kj-atlas現状）"),
-    ("ks-15", "実装・設計・要件自体の不備を検出する仕組みが不十分である（kj-atlas現状）"),
+    # --- sui-sensemaking 現状把握（内部観察の整理） ---
+    ("ks-01", "sui-sensemakingは現在、単一業態・4カード規模のE2Eでしか実物大フローを検証していない（sui-sensemaking現状）"),
+    ("ks-02", "階層島（parentIslandId）はschemaにあるがE2Eで未固定である（sui-sensemaking現状）"),
+    ("ks-03", "W型6ラウンドは要件（w_type_iterative_inquiry_requirements.md）にあるがE2Eで未検証である（sui-sensemaking現状）"),
+    ("ks-04", "ロール4区分（システム管理者/業務管理者/一般ユーザ/閲覧専用）の境界がE2Eで未固定である（sui-sensemaking現状）"),
+    ("ks-05", "card-groupsは100枚上限が200枚の束ねを遮っていた（sui-sensemaking現状）"),
+    ("ks-06", "接地は10件上限で、大きな島の表札が書けない（sui-sensemaking現状）"),
+    ("ks-07", "大量カードの「一行見出し」集約（階層化）が未実装である（sui-sensemaking現状）"),
+    ("ks-08", "多層図解（全体インデックス＋細部）が未対応である（sui-sensemaking現状）"),
+    ("ks-09", "グループ化の「最大10グループ」原則に対応する収束UIが未検証である（sui-sensemaking現状）"),
+    ("ks-10", "人間×AI協働の3モード（Cyborgs/Centaurs/Self-Automators）に対応する検証がない（sui-sensemaking現状）"),
+    ("ks-11", "認知的放棄（Self-Automators）を防ぐ proposal-only・human_reviewed のUI固定が不足している（sui-sensemaking現状）"),
+    ("ks-12", "カードの「境界オブジェクト」としての役割（外在化・媒介）がUIで示されていない（sui-sensemaking現状）"),
+    ("ks-13", "大量カードのUI的許容（一画面での可読性・ナビゲーション）が未検証である（sui-sensemaking現状）"),
+    ("ks-14", "大量カードの整合的な取り扱い（一貫した束ね・島統合）が未検証である（sui-sensemaking現状）"),
+    ("ks-15", "実装・設計・要件自体の不備を検出する仕組みが不十分である（sui-sensemaking現状）"),
 ]
 
 

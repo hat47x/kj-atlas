@@ -5,7 +5,7 @@
 - Source Issue: `02_Architecture/post-mvp-business-scope-design-program.html` §18（Maintainer直接指示、2026-08-25）, `01_Plans/issues/done/issue-PGM-ITER-05-02-cross-tenant-sharing-external-comparison.md`（外部比較調査）
 - Priority: P2
 - Owner: Maintainer
-- Scope: `01_Plans/adr/`, `03_Implement/backend/src/kj_atlas_api/guest_admission_models.py`, `03_Implement/backend/src/kj_atlas_api/guest_admission_repository.py`, `03_Implement/backend/src/kj_atlas_api/guest_auth_session_models.py`, `03_Implement/backend/src/kj_atlas_api/guest_auth_state.py`, `03_Implement/backend/src/kj_atlas_api/guest_request_auth.py`, `03_Implement/backend/src/kj_atlas_api/tenant_db_guard.py`, `03_Implement/backend/src/kj_atlas_api/trusted_auth_edge.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`
+- Scope: `01_Plans/adr/`, `03_Implement/backend/src/sui_sensemaking_api/guest_admission_models.py`, `03_Implement/backend/src/sui_sensemaking_api/guest_admission_repository.py`, `03_Implement/backend/src/sui_sensemaking_api/guest_auth_session_models.py`, `03_Implement/backend/src/sui_sensemaking_api/guest_auth_state.py`, `03_Implement/backend/src/sui_sensemaking_api/guest_request_auth.py`, `03_Implement/backend/src/sui_sensemaking_api/tenant_db_guard.py`, `03_Implement/backend/src/sui_sensemaking_api/trusted_auth_edge.py`, `03_Implement/backend/src/sui_sensemaking_api/routes/docs.py`
 - Related ADR/Spec: `01_Plans/adr/ADR-0059-saas-tenant-authorization-boundary.md`, `01_Plans/adr/ADR-0067-three-element-constraint-design-method.md`, `01_Plans/adr/ADR-0080-idp-independent-guest-admission-primitive.md`, `02_Architecture/cross-tenant-sharing-external-comparison-2026-08-25.html`
 - Expected verification level: `integration`
 
@@ -57,7 +57,7 @@ R1は**外部IdP/OAuthからguest identityを検証してserver-owned sessionへ
 
 `lane-c/guest-admission-auth-edge-r2-20260906`で、R1のexact-grant predicateを実HTTP requestへ接続する第二段を実装した。
 
-- member用`saas_auth_sessions`とは別に`guest_auth_sessions`を追加し、`Kj-Atlas-Guest-Session`のopaque valueは既存と同じkeyed-hash方式でサーバー側hashだけを正本にする。
+- member用`saas_auth_sessions`とは別に`guest_auth_sessions`を追加し、`Sui-Sensemaking-Guest-Session`のopaque valueは既存と同じkeyed-hash方式でサーバー側hashだけを正本にする。
 - guest session rowはcookie hashから**tenant確定前**に引く認証状態であるため、それ自体をtenant RLS tableにはしない。rowからtenantを得た直後にtransaction-local tenant scopeを設定し、`guest_principals`・`guest_document_grants`・`documents`のFORCE RLS境界へ戻る。これはguestをmembershipへ昇格させる例外ではなく、pre-tenant authentication stateとtenant-scoped authorization stateを分離するための境界である。
 - session作成時と各session解決時の双方で、active principalかつverified `(issuer, subject)`が完全一致することを再検査する。principal revoke後は、cookie自体が期限内でも次requestで401となる。
 - guest cookieが存在するrequestはmember resolverへfall-throughしない。unknown / malformed / expired / revoked guest sessionは401、session persistence未構成は503でfail closedする。
@@ -77,7 +77,7 @@ R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外�
 - 公開`POST /session/guest/redeem`のrequest schemaは`state`と`identityCredential`だけを受け付け、`tenantId` / `guestPrincipalId` / `issuer` / `subject`等のclient自己申告を`extra=forbid`で拒否する。tenant・guest principal・verification methodはhost-created stateからのみ復元する。
 - 本人確認結果はguest専用`VerifiedGuestIdentity(issuer, subject)`へ閉じ、member用`VerifiedTenantClaim`、`TenantMembershipRow`、`TenantIdentityProviderRow`へのfallbackを設けない。production verifierはdeployment adapterから明示注入する契約とし、未構成時は503でfail closedする。
 - state rowを`FOR UPDATE`で一回性確認した後、pending principalのverified identity bind、`guest_auth_sessions` row発行、state consumeを**同一DB transaction**でcommitする。session persistence失敗を強制したintegration testではprincipal activation・state consume・session rowのすべてがrollbackされる。
-- redeem成功後はR2aの`Kj-Atlas-Guest-Session`をそのまま利用し、既存exact document grantだけがreadを許可する。guest principalの存在だけでtenant内文書へ広がる経路は追加していない。
+- redeem成功後はR2aの`Sui-Sensemaking-Guest-Session`をそのまま利用し、既存exact document grantだけがreadを許可する。guest principalの存在だけでtenant内文書へ広がる経路は追加していない。
 - SQLite HTTP integrationではstate非平文保存、redeem→cookie→exact grant GET、replay拒否、期限切れ拒否、identity verifier失敗、client tenant/principal/claim注入拒否、atomic rollback、membership/tenant-IdP行0件を固定した。
 - PostgreSQL 16 restricted runtime roleでは、`guest_redeem_states`が意図したpre-tenant非RLS、`guest_principals`がFORCE RLSのままであることを確認し、state解決後だけtenant scopeへ戻ってprincipalをactivateし、state consumeとsession rowを同時commitできることを固定した。
 - 最終verification run `34046511190`でRuff、focused HTTP/repository tests、PostgreSQL 16、migration lineage、persistence shapes、`docs_check`、`git diff --check`を確認する。
@@ -92,11 +92,11 @@ R2aは**sessionの消費側**を実HTTPまで固定した段階であり、外�
 - provider/JWKS障害はcredential不正と区別して503、署名・issuer・audience・provider不一致は401へ閉じる。
 - 実署名RS256 tokenを使うHTTP integrationで、tenant IdP trust/member rowsが0件のままredeem→guest cookie→exact-grant readへ到達し、その同一sessionに対するhost側grant revokeは次GETで404、principal revokeは次GETで401となることを固定する。
 
-R2cが固定するのは**configured OIDCまたはbroker-issued JWTの検証境界**である。provider固有のredirect UI、authorization-code exchange、nonce/PKCEをkj-atlas自身が直接担うことや、opaque OAuth tokenしか提供しない全providerを同一adapterで直接処理することまでは主張しない。それらはdeployment broker/provider adapterの責務であり、guest admissionのtenant-independent trust primitiveとは分離する。
+R2cが固定するのは**configured OIDCまたはbroker-issued JWTの検証境界**である。provider固有のredirect UI、authorization-code exchange、nonce/PKCEをsui-sensemaking自身が直接担うことや、opaque OAuth tokenしか提供しない全providerを同一adapterで直接処理することまでは主張しない。それらはdeployment broker/provider adapterの責務であり、guest admissionのtenant-independent trust primitiveとは分離する。
 
 ### 親issue外に残す将来境界
 
-- provider redirect/callbackをkj-atlas自身が直接実装する場合のprovider固有nonce/PKCE/UI。
+- provider redirect/callbackをsui-sensemaking自身が直接実装する場合のprovider固有nonce/PKCE/UI。
 - guest session logout / explicit revokeの公開境界と、そのCSRF・監査契約。
 - guest writeを将来開く場合のgrant read/write意味、CSRF、PDPとの責務分離。
 
@@ -116,7 +116,7 @@ PGM-ITER-05-03は、Accepted ADR-0080で定めたD1〜D4をR1〜R2cで実装・i
 - R2b（PR #3039）でhost-bound one-time redeem stateからverified guest identityをbindし、principal activation・state consume・guest session発行を同一transactionへ固定した。
 - R2c（PR #3041 / merge `c40f1c54c87fabc0e34578948dca3a754ec93914`）でconfigured OIDC/JWKSの実署名検証をproduction runtimeへ接続した。実署名RS256 integrationでも`TenantIdentityProviderRow`・`UserIdentityRow`・`TenantMembershipRow`を作らず、guest-only identity→session→exact grant read→host revokeまでを固定した。
 
-Doneは「任意の外部IdP/OAuth方式をkj-atlas自身が直接実装済み」という意味ではない。provider固有redirect UI、authorization-code exchange、nonce/PKCE、opaque token用adapter、guest logout、将来のguest writeは本issueの受入条件外であり、必要になった時点で別issueとして扱う。受入先tenantのIdP trustをguestへ流用しないこと、guest principalだけからtenant-wide document visibilityを導出しないことはDone後も不変条件とする。
+Doneは「任意の外部IdP/OAuth方式をsui-sensemaking自身が直接実装済み」という意味ではない。provider固有redirect UI、authorization-code exchange、nonce/PKCE、opaque token用adapter、guest logout、将来のguest writeは本issueの受入条件外であり、必要になった時点で別issueとして扱う。受入先tenantのIdP trustをguestへ流用しないこと、guest principalだけからtenant-wide document visibilityを導出しないことはDone後も不変条件とする。
 
 ## 検証
 
