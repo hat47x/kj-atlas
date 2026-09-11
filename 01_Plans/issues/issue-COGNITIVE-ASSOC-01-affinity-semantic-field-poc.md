@@ -2,6 +2,22 @@
 
 > 個人OSS・プレリリース段階では `ADR-0039` を適用し、実行に必要な情報だけを記載する。
 
+- Type: Process
+- Status: In Progress
+- Source Issue: `COGNITIVE-EVAL-01`
+- Priority: P1
+- Owner: Maintainer
+- Scope: `01_Plans/research/`, `01_Plans/dogfood/`, `01_Plans/issues/`, PoC用の非製品コード
+- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
+- Norms: `DOM-CORE-01`, `DOM-CORE-02`, `DOM-CORE-03`, `DOM-CORE-04`
+- Expected verification level: docs-check + reproducible offline benchmark
+- Working branch: `research/cognitive-assoc-01-kj-semantic-field-20260910`
+- Research record: `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
+
+`kj_*`を含む既存パスやworking branch名は技術識別子であり、本issueで用いる技法の一般名称ではない。
+
+本issueは新ADRを起票しない。`ADR-0047`のexecution-first方針に従い先に実証し、永続状態、production API、provider、安全境界、性能予算等に新しい設計判断が必要になった場合のみR-1..R-4へ戻る。
+
 ## 1. 根幹の趣旨
 
 kj-atlasが支援したいのは、カードを機械的に分類することではない。
@@ -141,18 +157,4 @@ Gate Aでは表層類似を越えたか、Gate BではFly-inspired方式に独�
 
 ## 12. 管理情報
 
-- Type: Process
-- Status: In Progress
-- Source Issue: `COGNITIVE-EVAL-01`
-- Priority: P1
-- Owner: Maintainer
-- Scope: `01_Plans/research/`, `01_Plans/dogfood/`, `01_Plans/issues/`, PoC用の非製品コード
-- Related ADR/Spec: `ADR-0047`, `ADR-0046`, `ADR-0067`, `00_Prompt/domain.md`, `00_Prompt/kj_technique.md`, `00_Prompt/cognitive_frame_and_evolution_criteria.md`, `00_Prompt/ai_kj_execution_procedures.md`, `COGNITIVE-EVAL-01`, `COGNITIVE-DOGFOOD-01`
-- Norms: `DOM-CORE-01`, `DOM-CORE-02`, `DOM-CORE-03`, `DOM-CORE-04`
-- Expected verification level: docs-check + reproducible offline benchmark
-- Working branch: `research/cognitive-assoc-01-kj-semantic-field-20260910`
-- Research record: `01_Plans/research/fly-inspired-affinity-semantic-field-research-2026-09-10.md`
-
-`kj_*`を含む既存パスやworking branch名は技術識別子であり、本issueで用いる技法の一般名称ではない。
-
-本issueは新ADRを起票しない。`ADR-0047`のexecution-first方針に従い先に実証し、永続状態、production API、provider、安全境界、性能予算等に新しい設計判断が必要になった場合のみR-1..R-4へ戻る。
+管理情報は文書冒頭のメタデータブロックを正本とする（二重管理を避けるため、この節では再掲しない）。
