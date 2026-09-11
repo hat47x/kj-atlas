@@ -1,8 +1,11 @@
-import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment happy-dom
+
+import React, { act } from "react";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SharePanel } from "./SharePanel";
-import { setActiveLocale } from "../i18n/translate";
+import { setActiveLocale, t } from "../i18n/translate";
 
 function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<typeof SharePanel>> = {}) {
   const props: React.ComponentProps<typeof SharePanel> = {
@@ -96,8 +99,59 @@ function buildProps(safeMode: boolean, overrides: Partial<React.ComponentProps<t
   return { ...props, ...overrides };
 }
 
-afterEach(() => {
+const roots: Root[] = [];
+const actGlobal = globalThis as typeof globalThis & {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
+actGlobal.IS_REACT_ACT_ENVIRONMENT = true;
+
+async function mountSharePanel(
+  props: React.ComponentProps<typeof SharePanel>,
+): Promise<{ container: HTMLElement; root: Root }> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  roots.push(root);
+  await act(async () => {
+    root.render(React.createElement(SharePanel, props));
+  });
+  return { container, root };
+}
+
+function dispatchKey(target: Element, key: string): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  target.dispatchEvent(event);
+  return event;
+}
+
+function buttonByText(container: HTMLElement, text: string): HTMLButtonElement {
+  const button = [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent === text,
+  );
+  if (!button) {
+    throw new Error(`button not found: ${text}`);
+  }
+  return button;
+}
+
+async function flushAnimationFrame(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+afterEach(async () => {
+  while (roots.length > 0) {
+    const root = roots.pop();
+    if (root) {
+      await act(async () => root.unmount());
+    }
+  }
+  document.body.replaceChildren();
   setActiveLocale("ja");
+  vi.restoreAllMocks();
+});
+
+afterAll(() => {
+  delete actGlobal.IS_REACT_ACT_ENVIRONMENT;
 });
 
 describe("SharePanel safe mode copy", () => {
@@ -231,6 +285,121 @@ describe("SharePanel bundle granularity", () => {
 
     const availableHtml = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true, { canIncludeTraces: true })));
     expect(availableHtml).toContain("Evidence, contradiction, and analytics traces for the selected card will be included.");
+  });
+});
+
+describe("SharePanel pre-share summary gate (UX-SHARE-01 AC-5)", () => {
+  const disclosingSummary = {
+    unreviewedCards: 1,
+    unreviewedIslands: 0,
+    holdCards: 0,
+    critiqueTargets: 1,
+    evidenceLinks: 0,
+    contradictionLinks: 1,
+    evidenceGapCards: 0,
+  };
+
+  it("skips the gate and exports immediately when there is nothing to disclose", async () => {
+    const onExportBundleZip = vi.fn();
+    const { container } = await mountSharePanel(
+      buildProps(true, { onExportBundleZip }),
+    );
+    const exportButton = buttonByText(container, t("share.panel.export.bundle_export"));
+
+    await act(async () => exportButton.click());
+
+    expect(onExportBundleZip).toHaveBeenCalledTimes(1);
+    expect(onExportBundleZip).toHaveBeenCalledWith({
+      includeOutline: true,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: false,
+      includeVisualCueAssets: false,
+      exportGranularity: "detail",
+    });
+    expect(container.querySelector('[data-panel="pre-share-summary-gate"]')).toBeNull();
+  });
+
+  it("shows the gate instead of exporting when there is something to disclose, and Continue exports the captured options", async () => {
+    const onExportBundleZip = vi.fn();
+    const { container } = await mountSharePanel(
+      buildProps(true, { onExportBundleZip, domainExpressionSummary: disclosingSummary }),
+    );
+    const exportButton = buttonByText(container, t("share.panel.export.bundle_export"));
+
+    await act(async () => exportButton.click());
+    expect(onExportBundleZip).not.toHaveBeenCalled();
+
+    const gate = container.querySelector('[data-panel="pre-share-summary-gate"]');
+    expect(gate).not.toBeNull();
+    expect(gate?.getAttribute("role")).toBe("alertdialog");
+    expect(gate?.textContent).toContain(
+      t("share.panel.pre_share_gate.summary", { unreviewed: 1, critique: 1, contradictions: 1 }),
+    );
+
+    const continueButton = buttonByText(container, t("share.panel.pre_share_gate.continue"));
+    await act(async () => continueButton.click());
+
+    expect(onExportBundleZip).toHaveBeenCalledTimes(1);
+    expect(onExportBundleZip).toHaveBeenCalledWith({
+      includeOutline: true,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: false,
+      includeVisualCueAssets: false,
+      exportGranularity: "detail",
+    });
+    expect(container.querySelector('[data-panel="pre-share-summary-gate"]')).toBeNull();
+  });
+
+  it("Back cancels without exporting and restores focus to the export button", async () => {
+    const onExportBundleZip = vi.fn();
+    const { container } = await mountSharePanel(
+      buildProps(true, { onExportBundleZip, domainExpressionSummary: disclosingSummary }),
+    );
+    const exportButton = buttonByText(container, t("share.panel.export.bundle_export"));
+
+    await act(async () => exportButton.click());
+    const backButton = buttonByText(container, t("share.panel.pre_share_gate.back"));
+
+    await act(async () => {
+      backButton.click();
+      await flushAnimationFrame();
+    });
+
+    expect(onExportBundleZip).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-panel="pre-share-summary-gate"]')).toBeNull();
+    expect(document.activeElement).toBe(exportButton);
+  });
+
+  it("Escape inside the gate closes only the gate (stopPropagation), leaving the outer panel open", async () => {
+    const onExportBundleZip = vi.fn();
+    const onToggleOpen = vi.fn();
+    const { container } = await mountSharePanel(
+      buildProps(true, { onExportBundleZip, onToggleOpen, domainExpressionSummary: disclosingSummary }),
+    );
+    const exportButton = buttonByText(container, t("share.panel.export.bundle_export"));
+
+    await act(async () => exportButton.click());
+    const gate = container.querySelector('[data-panel="pre-share-summary-gate"]');
+    expect(gate).not.toBeNull();
+    if (!gate) {
+      throw new Error("pre-share summary gate was not rendered");
+    }
+
+    await act(async () => {
+      const escape = dispatchKey(gate, "Escape");
+      expect(escape.defaultPrevented).toBe(true);
+      await flushAnimationFrame();
+    });
+
+    expect(onExportBundleZip).not.toHaveBeenCalled();
+    // The outer panel's own Escape handler (handlePanelKeyDown) calls
+    // onToggleOpen -- it must never fire from an Escape pressed inside the
+    // gate, which is exactly what handlePreShareGateKeyDown's
+    // event.stopPropagation() exists to prevent.
+    expect(onToggleOpen).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-panel="pre-share-summary-gate"]')).toBeNull();
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(document.activeElement).toBe(exportButton);
   });
 });
 
