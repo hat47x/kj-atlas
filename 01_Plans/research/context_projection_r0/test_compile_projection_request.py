@@ -50,7 +50,8 @@ class ContextProjectionR0CompilerTests(unittest.TestCase):
         request = self.load("generative_ai_proposal.json")
         request["permission"]["canCreateProposal"] = False
         query = compile_projection_request(request)
-        self.assertEqual(query["outputMode"], "candidate")
+        self.assertNotEqual(query["outputMode"], "proposal")
+        self.assertEqual(query["outputMode"], "summary")
 
     def test_permission_must_be_server_resolved(self) -> None:
         request = self.load("sei_contrast.json")
