@@ -2,7 +2,7 @@
 
 - Status: Research / Non-normative
 - Date: 2026-09-12
-- Related: `information-network-query-and-qualitative-analysis-2026-09-12.md`, `non-llm-cognitive-substrate-placement-2026-09-12.md`, `00_Prompt/domain.md`
+- Related: `information-network-query-and-qualitative-analysis-2026-09-12.md`, `actor-role-interest-context-projection-contract-2026-09-12.md`, `query-intent-execution-ladder-2026-09-12.md`, `non-llm-cognitive-substrate-placement-2026-09-12.md`, `00_Prompt/domain.md`
 
 ## 1. 根幹の趣旨
 
@@ -139,9 +139,11 @@ SEIはSUIの全永続情報を自前memoryへ複製せず、必要なときにSU
 
 SUIは「外部から来た」という理由だけで情報を劣位・上位に置かない。誰が、どの経路で、どの目的で追加したかを保持する。
 
-## 4. 関心（Interest）と役割（Role）を分ける
+## 4. 関心（Interest）・役割（Role）・権限（Permission）を分ける
 
-Roleは責務・権限を表す。
+Roleは、そのinteractionで期待される**責務・機能**を表す。Roleそのものは権限を付与しない。
+
+Permissionは、何を読めるか、proposalを作れるか、review / approval / publishを実行できるかという**認可上の能力**を表し、authorization layerが別に解決する。
 
 Interestは、その時点で何を見ようとしているかを表す。
 
@@ -154,13 +156,15 @@ Actor
  + Role
  + Current Interest
  + Inquiry
- + Permission
+ + Effective Permission
  + History / Provenance constraints
         ↓
 Context Projection
 ```
 
-Roleを固定personaへしない。Interestを長期的な属性へ固定しない。
+Roleを固定personaへしない。Interestを長期的な属性へ固定しない。Role名からPermissionを推測しない。
+
+具体的なR0契約は`actor-role-interest-context-projection-contract-2026-09-12.md`を参照する。
 
 ## 5. Working Graph / Projection / Consensus Graphの関係
 
@@ -205,6 +209,8 @@ External Contributions ──┘          │
 
 これらを直ちに新しいproduction enumへしない。まず、現在の`patch + approval`、Critique、HoldState、provenanceでどこまで表現できるかを確認する。
 
+また、現行`human_reviewed`は内容レビュー状態であり、上記の合意段階を表すenumとして流用しない。
+
 ## 7. SUI Queryは合意形成のための「見方」を提供する
 
 情報ネットワークQueryは、単なる検索機能ではなく、主体間の認知差を確認する手段でもある。
@@ -219,6 +225,8 @@ External Contributions ──┘          │
 - 同じ問いに対する複数projectionの差
 
 SUIはこれらをsubgraph、比較表、空間配置、timeline、provenance matrix等へ投影できることを目指す。
+
+Query Intentごとの実行責務は`query-intent-execution-ladder-2026-09-12.md`で、D0 deterministicから必要な場合だけD1〜D5へ上げる。
 
 ## 8. 「合意形成場」として守る停止線
 
@@ -263,9 +271,9 @@ SEI re-query
 
 1. **SUI = 多主体の認知合意形成場** — 本書
 2. **SUI = 情報ネットワークのQuery / 定性分析環境** — `information-network-query-and-qualitative-analysis-2026-09-12.md`
-3. **SEI / SUIの責務配置** — `non-llm-cognitive-substrate-placement-2026-09-12.md`
-4. Query Intent / Projection Contract
-5. actor / role / interest / permissionの最小contract
+3. **Actor / Role / Interest / Inquiry / Permission → Context Projection** — `actor-role-interest-context-projection-contract-2026-09-12.md`
+4. **Query Intentごとの軽量実行階層** — `query-intent-execution-ladder-2026-09-12.md`
+5. **SEI / SUIの責務配置** — `non-llm-cognitive-substrate-placement-2026-09-12.md`
 6. Working / Projection / Consensus Graphの複数主体化
 7. API / UI / machine interface
 8. dogfood / Evidence
