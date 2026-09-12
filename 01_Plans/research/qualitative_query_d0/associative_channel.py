@@ -20,6 +20,9 @@ class D2AssociativeError(ValueError):
 
 REQUEST_SCHEMA = "sui.associative-recall-request/v1alpha1"
 RESPONSE_SCHEMA = "sui.associative-recall-response/v1alpha1"
+MAX_SCOPE_ITEMS = 512
+MAX_ANCHORS = 32
+MAX_CANDIDATES = 64
 QUERY_INTENTS = {
     "neighborhood",
     "contrast",
@@ -164,15 +167,25 @@ def build_associative_request(
     anchors = sorted(set(anchor_refs))
     if not anchors:
         raise D2AssociativeError("anchorRefs must not be empty")
+    if len(anchors) > MAX_ANCHORS:
+        raise D2AssociativeError(f"anchorRefs exceeds v1alpha1 limit: {MAX_ANCHORS}")
     unknown_anchors = [ref for ref in anchors if ref not in network.nodes]
     if unknown_anchors:
         raise D2AssociativeError(f"anchorRefs contains unknown refs: {unknown_anchors}")
-    if not isinstance(candidate_limit, int) or candidate_limit < 1:
-        raise D2AssociativeError("candidateLimit must be a positive integer")
+    if (
+        not isinstance(candidate_limit, int)
+        or isinstance(candidate_limit, bool)
+        or not (1 <= candidate_limit <= MAX_CANDIDATES)
+    ):
+        raise D2AssociativeError(
+            f"candidateLimit must be an integer in [1, {MAX_CANDIDATES}]"
+        )
 
     scope = sorted(network.nodes) if scope_refs is None else sorted(set(scope_refs))
     if not scope:
         raise D2AssociativeError("scopeRefs must not be empty")
+    if len(scope) > MAX_SCOPE_ITEMS:
+        raise D2AssociativeError(f"scopeRefs exceeds v1alpha1 limit: {MAX_SCOPE_ITEMS}")
     unknown_scope = [ref for ref in scope if ref not in network.nodes]
     if unknown_scope:
         raise D2AssociativeError(f"scopeRefs contains unknown refs: {unknown_scope}")
