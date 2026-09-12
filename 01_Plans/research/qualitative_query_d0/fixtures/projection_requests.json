@@ -1,0 +1,88 @@
+{
+  "sameContrast": [
+    {
+      "requestId": "human-same-contrast",
+      "actor": {"actorRef": "human:research", "kind": "human"},
+      "roles": ["compare", "explore"],
+      "interest": {"focusRefs": ["c1", "c5"], "themes": ["difference"], "seek": ["contrast"]},
+      "inquiry": "c1とc5の構造上の共通点と差異を見る",
+      "permission": {
+        "resolutionSource": "server_resolved",
+        "readableScopes": ["document:working"],
+        "canSeeUnreviewed": false,
+        "canCreateProposal": false,
+        "canReview": true,
+        "canApprove": false,
+        "canPublish": false
+      },
+      "sourceScope": "document",
+      "desiredProjection": ["comparison_table", "spatial_layout"],
+      "diversityNeed": "default",
+      "unresolvedNeed": "default",
+      "previewConfirmed": true
+    },
+    {
+      "requestId": "ai-same-contrast",
+      "actor": {"actorRef": "ai:research", "kind": "generative_ai"},
+      "roles": ["compare", "synthesize", "propose"],
+      "interest": {"focusRefs": ["c1", "c5"], "themes": ["difference"], "seek": ["contrast"]},
+      "inquiry": "c1とc5の構造上の共通点と差異を見る",
+      "permission": {
+        "resolutionSource": "server_resolved",
+        "readableScopes": ["document:working"],
+        "canSeeUnreviewed": false,
+        "canCreateProposal": true,
+        "canReview": false,
+        "canApprove": false,
+        "canPublish": false
+      },
+      "sourceScope": "document",
+      "desiredProjection": ["comparison_table", "compact_narrative"],
+      "diversityNeed": "default",
+      "unresolvedNeed": "default",
+      "previewConfirmed": true
+    },
+    {
+      "requestId": "sei-same-contrast",
+      "actor": {"actorRef": "sei:research", "kind": "sei_cognition"},
+      "roles": ["compare", "explore"],
+      "interest": {"focusRefs": ["c1", "c5"], "themes": ["difference"], "seek": ["contrast"]},
+      "inquiry": "c1とc5の構造上の共通点と差異を見る",
+      "permission": {
+        "resolutionSource": "server_resolved",
+        "readableScopes": ["document:working"],
+        "canSeeUnreviewed": false,
+        "canCreateProposal": true,
+        "canReview": false,
+        "canApprove": false,
+        "canPublish": false
+      },
+      "sourceScope": "document",
+      "desiredProjection": ["subgraph"],
+      "diversityNeed": "default",
+      "unresolvedNeed": "default",
+      "previewConfirmed": true
+    }
+  ],
+  "unreviewedNeighborhood": {
+    "requestId": "sei-unreviewed-neighborhood",
+    "actor": {"actorRef": "sei:research", "kind": "sei_cognition"},
+    "roles": ["explore"],
+    "interest": {"focusRefs": ["c7"], "themes": ["contradiction"], "seek": ["neighborhood"]},
+    "inquiry": "未レビューのc7周辺を確認する",
+    "permission": {
+      "resolutionSource": "server_resolved",
+      "readableScopes": ["document:working"],
+      "canSeeUnreviewed": true,
+      "canCreateProposal": true,
+      "canReview": false,
+      "canApprove": false,
+      "canPublish": false
+    },
+    "sourceScope": "document",
+    "desiredProjection": ["subgraph"],
+    "diversityNeed": "default",
+    "unresolvedNeed": "increase",
+    "previewConfirmed": true
+  }
+}
