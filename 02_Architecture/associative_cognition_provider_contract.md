@@ -107,7 +107,7 @@ type AssociativeRecallResponseV1Alpha1 = {
   candidateRefs: string[];
   evidence: Array<{
     ref: string;
-    matchedChannelRefs?: string[];
+    matchedChannelRefs: string[];
   }>;
   noveltyCue: "none" | "abstain";
 };
@@ -125,18 +125,28 @@ type AssociativeRecallResponseV1Alpha1 = {
 - `outcome=abstain`なら`candidateRefs=[]`かつ`noveltyCue=abstain`
 - `outcome=candidates`なら`noveltyCue=none`
 - evidenceのrefはcandidateRefsの部分集合
-- `score / confidence / importance / rank / activation`をresponse contractへ入れない
+- `score / confidence / importance / rank / activation / similarity`をresponse contractへ入れない
 
 Providerが内部でactivation等を利用してもよいが、SUI境界より内側でcandidate narrowingへ使い、正式responseには漏らさない。
 
-## 5. matchedChannelRefs
+## 5. matchedChannelRefs は「一致証明」ではなく channel provenance
 
-利用可能な場合だけ、SUIが与えたchannel由来を返してよい。
+`matchedChannelRefs`は、Providerがcandidate化に利用したと申告する**入力channelの由来**である。
+
+これは、
+
+- semantic matchの証明
+- relationの確定
+- similarity scoreの代用品
+
+ではない。
+
+SUIは、少なくともanchor側とcandidate側の双方にそのchannel由来が実在することだけを検証する。Provider内部のhashやactivationを再構成して「本当に寄与したか」までは推測しない。
 
 例:
 
 ```text
-text
+channel:text
  graph:relationType:related
  graph:neighborKind:card
  provenance:source:s1
@@ -145,7 +155,9 @@ text
  grouping:hold:held
 ```
 
-Providerが内部hashから安全に復元できない場合は省略する。説明を捏造しない。
+`channel:text`は「双方のtext channelがProvider入力に存在し、Providerがそのchannelを利用したと申告した」ことだけを意味する。text内容が一致した、意味が近い、という意味ではない。
+
+Providerが内部表現から安全にchannel provenanceを外在化できない場合は、`matchedChannelRefs=[]`を返す。説明を捏造しない。
 
 ## 6. SUI側ChannelResult
 
@@ -193,7 +205,7 @@ SEI Cognition側のSACS研究では、sparse representation、competition、asso
 - learned sparse expansion
 - HDC / VSA
 - Random Indexing
--別process / local device / distributed execution
+- 別process / local device / distributed execution
 
 ## 8. COGNITIVE-ASSOC-01との停止線
 
