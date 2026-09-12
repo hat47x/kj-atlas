@@ -1,0 +1,35 @@
+name: associative-conformance-fixture-once
+
+on:
+  push:
+    branches:
+      - contract/associative-conformance-fixture-v1-20260912
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run qualitative query tests
+        working-directory: 01_Plans/research/qualitative_query_d0
+        run: python -m unittest -v
+      - name: Compile research Python
+        working-directory: 01_Plans/research/qualitative_query_d0
+        run: python -m py_compile *.py fixtures/synthetic_associative_provider.py
+      - name: Verify frozen digest literal
+        run: grep -R "a9a627e3ce3580dab010608efd30d11e84de2c66a39dcb6ff508d793c00260d2" 01_Plans/research/qualitative_query_d0/fixtures/associative_contract_conformance_v1.json 01_Plans/research/qualitative_query_d0/test_associative_conformance.py
+      - name: Ensure fixed affinity benchmark is not consumed
+        run: |
+          ! grep -R "doc_cognitive_dogfood_meta_r1\|doc_kj_atlas_dogfood_r3" 01_Plans/research/qualitative_query_d0/test_associative_conformance.py 01_Plans/research/qualitative_query_d0/fixtures/associative_contract_conformance_v1.json
+      - name: Documentation checks
+        run: python 01_Plans/docs_check.py
+      - name: Diff hygiene
+        run: git diff --check origin/main...HEAD
