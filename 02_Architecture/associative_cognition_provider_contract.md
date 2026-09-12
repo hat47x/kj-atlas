@@ -88,10 +88,13 @@ type AssociativeItem = {
 - requestはvisibility-filter済みsnapshotから作る
 - `items[].ref`は一意
 - `anchorRefs`はitems内に存在する
-- `candidateLimit >= 1`
+- v1alpha1のbounded上限は `items <= 512`, `anchorRefs <= 32`, `1 <= candidateLimit <= 64`
+- 上限超過時にscopeをProvider側で黙ってtruncateしない。SUI側でscopeを再構成するかfail-closedする
 - SUIが持たないprovenanceを推測して埋めない
 - raw permission / credentialをProviderへ渡さない
 - Providerへcanonical networkのwrite authorityを渡さない
+
+上限は内容価値のrankingではなく、Providerへ渡すCognitive Workspaceの帯域境界である。
 
 ## 4. Response
 
