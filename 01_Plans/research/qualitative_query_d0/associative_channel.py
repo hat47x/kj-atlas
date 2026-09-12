@@ -68,11 +68,17 @@ def _require_string_list(value: Any, field: str) -> list[str]:
     return result
 
 
-def _node_feature_refs(item: dict[str, Any]) -> set[str]:
+def _node_channel_refs(item: dict[str, Any]) -> set[str]:
+    """Return externally explainable channel provenance refs.
+
+    These refs only establish that a channel/attribute exists on an item. They
+    do not prove semantic equivalence or reconstruct provider activation.
+    """
+
     channels = item.get("channels", {})
     refs: set[str] = set()
     if isinstance(channels.get("text"), str) and channels["text"].strip():
-        refs.add("text")
+        refs.add("channel:text")
     graph = channels.get("graph")
     if isinstance(graph, dict):
         refs.update(f"graph:relationType:{value}" for value in graph.get("relationTypes", []))
@@ -260,9 +266,9 @@ def normalize_associative_response(
     if not isinstance(evidence_value, list):
         raise D2AssociativeError("evidence must be a list")
     evidence_by_ref: dict[str, list[str]] = {}
-    anchor_feature_refs: set[str] = set()
+    anchor_channel_refs: set[str] = set()
     for anchor_ref in anchors:
-        anchor_feature_refs.update(_node_feature_refs(item_by_ref[anchor_ref]))
+        anchor_channel_refs.update(_node_channel_refs(item_by_ref[anchor_ref]))
 
     for evidence in evidence_value:
         if not isinstance(evidence, dict) or set(evidence) != _EVIDENCE_KEYS:
@@ -273,10 +279,12 @@ def normalize_associative_response(
         if ref in evidence_by_ref:
             raise D2AssociativeError("duplicate evidence.ref")
         matched = _require_string_list(evidence["matchedChannelRefs"], "matchedChannelRefs")
-        allowed = _node_feature_refs(item_by_ref[ref]) & anchor_feature_refs
+        allowed = _node_channel_refs(item_by_ref[ref]) & anchor_channel_refs
         invented = sorted(set(matched) - allowed)
         if invented:
-            raise D2AssociativeError(f"matchedChannelRefs not grounded in both sides: {invented}")
+            raise D2AssociativeError(
+                f"matchedChannelRefs not present on both anchor and candidate: {invented}"
+            )
         evidence_by_ref[ref] = sorted(matched)
 
     normalized_candidates = sorted(candidate_refs)
