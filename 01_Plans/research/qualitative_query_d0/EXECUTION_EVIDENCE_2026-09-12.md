@@ -1,9 +1,9 @@
 # D0 Deterministic Qualitative Query — Execution Evidence 2026-09-12
 
-- Status: Executable research evidence
-- Scope: synthetic information network + R0 Context Projection integration
+- Status: Executable evidence for formal projection contract
+- Scope: `QualitativeNetworkSnapshot` + formal `ContextProjectionRequest` + D0 query/projection
 - Runtime: GitHub Actions, Ubuntu 24.04, CPython 3.12.14
-- Production claim: none
+- Formal contract: `../../../02_Architecture/information_network_projection_contract.md`
 
 ## 1. 実行結果
 
@@ -11,85 +11,101 @@ branch上の実ファイルをcheckoutし、`01_Plans/research/qualitative_query
 
 ```bash
 python -m unittest -v
+python -m py_compile *.py
 ```
 
-2段階で検証した。
+結果:
 
-### D0 core
+- **31 tests passed**
+- unittest reported **0.024s**
+- Python compile: success
+- legacy executable import guard: success
+- `python 01_Plans/docs_check.py`: success
+- `git diff --check origin/main...HEAD`: success
+- GitHub Actions workflow conclusion: success
 
-- **12 tests passed**
-- unittest reported 0.007s
-- workflow conclusion: success
+検証用one-shot workflowは実行後にbranchから削除し、merge対象には含めない。
 
-### R0 Context Projection接続後
+## 2. Formal ContextProjectionRequestで確認したこと
 
-- **21 tests passed**
-- unittest reported 0.017s
-- workflow conclusion: success
+1. request / actor / interest / permissionをclosed-worldで検証する。
+2. Permissionは`server_resolved`のみ受理する。
+3. Roleが`approve` / `publish`でもpermissionを付与しない。
+4. Actor kindを変えても同一selection入力を恣意的に変更しない。
+5. set-like listは決定論的に正規化する。
+6. legacy `document` source scopeを拒否し、formal `network / working / consensus`だけを受理する。
+7. unknown Actor kindをfail-closedする。
+8. readable scope空集合をfail-closedする。
+9. unreviewed visibilityはpermissionとtrusted SafeMode allowanceのAND条件で決める。
+10. legacy request keyをunknown keyとして拒否する。
 
-一時validation workflowは検証後にbranchから削除し、merge対象には含めない。
-
-## 2. D0 coreで確認したこと
+## 3. D0 coreで確認したこと
 
 1. explicit graph BFSによるneighborhood
 2. contrastでshared / left-only / right-only facetを保持
-3. bridgeで複数のshortest pathを保持しstrength scoreを付けない
+3. bridgeで複数shortest pathを保持しstrength scoreを付けない
 4. explicit pathが無いことを`unrelated`と断定しない
 5. residualをparallel reasonsとして返しscore化しない
 6. hold / unreviewed / Critique / contradictionをunresolvedとして保持
 7. temporal orderingをcausalityへ読み替えない
-8. provenanceをsource / actor別に保持し、source欠落も残す
+8. provenanceをsource / actor別に保持し、欠落も残す
 9. 同一selectionをcomparison table / subgraph / spatial layoutへ投影できる
 10. D0が`compact_narrative`生成を拒否しD4境界を維持する
 11. query実行がsource networkを変更しない
 12. unknown refsをfail-closedする
 
-## 3. R0 Context Projection接続で追加確認したこと
+## 4. Multi-actor E2Eで確認したこと
 
-1. Human / Generative AI / SEIが、同じcontrast inquiryとfocusから**同一selection digest**を得る。
+1. Human / Generative AI / SEIが同じcontrast inquiryとfocusから**同一selection digest**を得る。
 2. 同一selectionをHumanには`comparison_table + spatial_layout`、SEIには`subgraph`として返せる。
-3. Generative AIが`compact_narrative`を要求しても、D0では生成せずD4へ明示的にdeferする。
-4. opaque `actorRef`を既存`ContextQueryV1`へ混入させず、outer projection traceだけで保持できる。
-5. 未レビューcardをfocusしたqueryは、SafeMode allowanceなしではfail-closedする。
-6. `canSeeUnreviewed=true`かつSafeMode allowanceありの場合だけ未レビューcardをD0入力へ含められる。
-7. Permissionが未レビュー閲覧を許さなければ、SafeMode allowanceだけでは見えない。
+3. Generative AIの`compact_narrative`要求をD0で生成せずD4へ明示deferする。
+4. actor identityはtraceとして保持するがselection内容へ混入しない。
+5. SafeMode allowanceなしで未レビューfocusをfail-closedする。
+6. `canSeeUnreviewed=true`かつSafeMode allowanceありの場合だけ未レビューnodeを入力へ含める。
+7. Permissionが未レビュー閲覧を許さなければSafeMode allowanceだけでは見えない。
 8. Query / Projection実行で元networkを変更しない。
 9. E2E responseへ`score / confidence / importance / rank`を導入しない。
-10. first sliceで複数D0 selection intentを同時指定した場合は曖昧に統合せずfail-closedする。
-11. `affinity`をD0へ黙って読み替えず、D2/D3以降の対象として停止する。
+10. 複数D0 selection intentを曖昧に統合せずfail-closedする。
+11. `affinity`をD0へ黙って読み替えずD2/D3以降へ残す。
 
-## 4. 追加のsynthetic確認
+## 5. Legacy boundary
 
-container環境からgithub.comを直接cloneする経路はDNS解決できなかったため、同一fixtureと同一アルゴリズム境界についてローカルでも独立に確認した。
+実行検証では、D0実装ディレクトリに次が残っていないことも確認した。
 
-- c1近傍depth=1 / 2
-- c1→c5の2本のexplicit shortest path
-- c1→c7でexplicit pathなし
-- c4 / c5 / c6 / c7 / c8のresidual理由
-- contrastのsource facet
-- provenance grouping
+- `context_projection_r0`
+- `compile_projection_request`
+- `compiledContextQuery`
 
-GitHub Actionsによるbranch実ファイルのunit test成功を正本の実行Evidenceとし、ローカル確認は補助Evidenceとして扱う。
+旧 `DocumentV1 / ContextQueryV1 / ContextBundleV1` へのcompile・adapterは正式pipelineに含めない。
 
-## 5. このEvidenceが意味すること
+正式pipelineは次である。
 
-- D0の7種queryを生成モデルなしで決定論的に実行できる。
+```text
+SUI Information Network
+ -> QualitativeNetworkSnapshot
+ -> ContextProjectionRequest
+ -> D0..D5 Selection / Analysis
+ -> Context Projection
+```
+
+## 6. このEvidenceが意味すること
+
+- D0の7種Queryを生成モデルなしで決定論的に実行できる。
+- formal Requestを旧Queryへの変換なしで直接D0へ渡せる。
 - residual / unresolvedをrankingではなく理由と状態として返せる。
 - bridge pathを意味の強さへ昇格させず候補経路として返せる。
 - SelectionとProjectionを分離し、同じselectionを主体別interfaceへ整形できる。
-- R0 compilerのreviewFilterをD0入力前に適用できる。
-- Human / AI / SEIでProjection Formが違っても、selection自体をActor kindだけで変えずに共有できる。
-- query / projectionはread-only derived viewとして実行できる。
+- Actor kind / RoleとPermissionを分離できる。
+- Query / Projectionはread-only derived viewとして実行できる。
 
-## 6. このEvidenceが意味しないこと
+## 7. このEvidenceが意味しないこと
 
-- production `DocumentV1`への統合が完了したこと。
-- Authorization layerが実装済みであること。
-- 実データ規模で十分なlatency / memoryを持つこと。
+- SUI Information Networkの永続storageが完成したこと。
+- WorkingGraph / ConsensusGraphの永続実装が完成したこと。
+- Authorization layer全体が完成したこと。
+- 実データ規模でlatency / memory要件を満たすこと。
 - D0だけで深層意味近接を扱えること。
-- sparse associative / static semantic / local SLMが不要であること。
-- Queryが人間・AI・SEIの認知品質を実際に向上させたこと。
-- ContextQuery / ContextBundle v2が必要または不要と確定したこと。
-- Actorごとに異なるselectionを作るべきケースの規則が確定したこと。
+- D1 / D2 / D3 / D4が不要であること。
+- Queryが実利用で認知品質を向上させたこと。
 
-次は、production schemaを変えずに`DocumentV1 / ContextBundleV1`相当からD0 research networkへ投影するadapterを検討し、syntheticだけでなく既存dogfood構造をread-onlyで利用できるかを確認する。
+次は旧仕様互換を挟まず、formal snapshot上へD1 lexical sparseを追加する。

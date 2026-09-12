@@ -49,6 +49,15 @@ class D0ProjectionE2ETests(unittest.TestCase):
         self.assertEqual(ai_forms, ["comparison_table"])
         self.assertEqual(sei_forms, ["subgraph"])
 
+    def test_actor_identity_is_trace_not_selection_input(self) -> None:
+        human = execute_projection_request(self.network, self.requests["sameContrast"][0])
+        sei = execute_projection_request(self.network, self.requests["sameContrast"][2])
+        self.assertNotEqual(human["actor"]["actorRef"], sei["actor"]["actorRef"])
+        self.assertEqual(human["selectionDigest"], sei["selectionDigest"])
+        rendered_selection = json.dumps(human["selection"], ensure_ascii=False)
+        self.assertNotIn(human["actor"]["actorRef"], rendered_selection)
+        self.assertNotIn(sei["actor"]["actorRef"], rendered_selection)
+
     def test_ai_narrative_is_deferred_to_d4_not_generated_in_d0(self) -> None:
         request = self.requests["sameContrast"][1]
         result = execute_projection_request(self.network, request)
@@ -62,13 +71,6 @@ class D0ProjectionE2ETests(unittest.TestCase):
                 }
             ],
         )
-
-    def test_actor_ref_stays_out_of_compiled_context_query(self) -> None:
-        request = self.requests["sameContrast"][2]
-        result = execute_projection_request(self.network, request)
-        rendered_query = json.dumps(result["compiledContextQuery"], ensure_ascii=False)
-        self.assertNotIn(request["actor"]["actorRef"], rendered_query)
-        self.assertEqual(result["actorRef"], request["actor"]["actorRef"])
 
     def test_unreviewed_focus_is_hidden_without_safe_mode_allowance(self) -> None:
         request = self.requests["unreviewedNeighborhood"]
@@ -86,7 +88,7 @@ class D0ProjectionE2ETests(unittest.TestCase):
             request,
             safe_mode_allows_unreviewed=True,
         )
-        self.assertEqual(allowed["compiledContextQuery"]["reviewFilter"], "includeUnreviewed")
+        self.assertEqual(allowed["trace"]["reviewVisibility"], "include_unreviewed")
         self.assertEqual(allowed["selection"]["selectedNodeRefs"], ["c7", "c8"])
 
         denied_request = copy.deepcopy(request)
@@ -108,7 +110,7 @@ class D0ProjectionE2ETests(unittest.TestCase):
         result = execute_projection_request(self.network, self.requests["sameContrast"][0])
         self.assert_no_ranking_keys(result)
 
-    def test_multiple_d0_selection_intents_fail_closed_in_first_slice(self) -> None:
+    def test_multiple_d0_selection_intents_fail_closed(self) -> None:
         request = copy.deepcopy(self.requests["sameContrast"][0])
         request["interest"]["seek"] = ["contrast", "provenance"]
         with self.assertRaisesRegex(D0ExecutionError, "exactly one"):
@@ -118,6 +120,12 @@ class D0ProjectionE2ETests(unittest.TestCase):
         request = copy.deepcopy(self.requests["sameContrast"][2])
         request["interest"]["seek"] = ["affinity"]
         with self.assertRaisesRegex(D0ExecutionError, "exactly one"):
+            execute_projection_request(self.network, request)
+
+    def test_legacy_request_key_is_rejected(self) -> None:
+        request = copy.deepcopy(self.requests["sameContrast"][0])
+        request["previewConfirmed"] = True
+        with self.assertRaisesRegex(D0ExecutionError, "unknown keys"):
             execute_projection_request(self.network, request)
 
 

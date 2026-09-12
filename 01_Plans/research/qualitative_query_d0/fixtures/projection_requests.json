@@ -8,18 +8,17 @@
       "inquiry": "c1とc5の構造上の共通点と差異を見る",
       "permission": {
         "resolutionSource": "server_resolved",
-        "readableScopes": ["document:working"],
+        "readableScopes": ["network:working"],
         "canSeeUnreviewed": false,
         "canCreateProposal": false,
         "canReview": true,
         "canApprove": false,
         "canPublish": false
       },
-      "sourceScope": "document",
+      "sourceScope": "network",
       "desiredProjection": ["comparison_table", "spatial_layout"],
       "diversityNeed": "default",
-      "unresolvedNeed": "default",
-      "previewConfirmed": true
+      "unresolvedNeed": "default"
     },
     {
       "requestId": "ai-same-contrast",
@@ -29,18 +28,17 @@
       "inquiry": "c1とc5の構造上の共通点と差異を見る",
       "permission": {
         "resolutionSource": "server_resolved",
-        "readableScopes": ["document:working"],
+        "readableScopes": ["network:working"],
         "canSeeUnreviewed": false,
         "canCreateProposal": true,
         "canReview": false,
         "canApprove": false,
         "canPublish": false
       },
-      "sourceScope": "document",
+      "sourceScope": "network",
       "desiredProjection": ["comparison_table", "compact_narrative"],
       "diversityNeed": "default",
-      "unresolvedNeed": "default",
-      "previewConfirmed": true
+      "unresolvedNeed": "default"
     },
     {
       "requestId": "sei-same-contrast",
@@ -50,18 +48,17 @@
       "inquiry": "c1とc5の構造上の共通点と差異を見る",
       "permission": {
         "resolutionSource": "server_resolved",
-        "readableScopes": ["document:working"],
+        "readableScopes": ["network:working"],
         "canSeeUnreviewed": false,
         "canCreateProposal": true,
         "canReview": false,
         "canApprove": false,
         "canPublish": false
       },
-      "sourceScope": "document",
+      "sourceScope": "network",
       "desiredProjection": ["subgraph"],
       "diversityNeed": "default",
-      "unresolvedNeed": "default",
-      "previewConfirmed": true
+      "unresolvedNeed": "default"
     }
   ],
   "unreviewedNeighborhood": {
@@ -72,17 +69,16 @@
     "inquiry": "未レビューのc7周辺を確認する",
     "permission": {
       "resolutionSource": "server_resolved",
-      "readableScopes": ["document:working"],
+      "readableScopes": ["network:working"],
       "canSeeUnreviewed": true,
       "canCreateProposal": true,
       "canReview": false,
       "canApprove": false,
       "canPublish": false
     },
-    "sourceScope": "document",
+    "sourceScope": "network",
     "desiredProjection": ["subgraph"],
     "diversityNeed": "default",
-    "unresolvedNeed": "increase",
-    "previewConfirmed": true
+    "unresolvedNeed": "increase"
   }
 }
